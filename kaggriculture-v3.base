@@ -1,0 +1,35 @@
+filters:
+  and:
+    - file.inFolder("cookbook/kaggriculture-v3")
+    - file.ext == "md"
+    - file.basename != "index"
+    - file.basename != "log"
+views:
+  - type: table
+    name: All knowledge
+    order:
+      - file.name
+      - type
+      - status
+      - description
+      - tags
+      - file.mtime
+    sort:
+      - property: file.mtime
+        direction: DESC
+      - property: type
+        direction: ASC
+    columnSize:
+      file.name: 372
+  - type: table
+    name: Needs review
+    filters:
+      or:
+        - status == "draft"
+        - status == null
+    order:
+      - file.name
+      - type
+      - status
+      - description
+      - file.mtime

@@ -14,7 +14,6 @@ from owl.model.attn import use_flash_attn
 from owl.model.base import (
     ModelActionEntropies,
     ModelActionLogProbs,
-    ModelActions,
     ModelEvaluation,
     ModelHiddenState,
     ModelOutput,
@@ -48,6 +47,7 @@ from owl.rl import (
     EntityBasedBaseConfig,
     ObsBatch,
 )
+from owl.rl import ActionBundle as ModelActions
 
 RECURRENT_TRANSFORMER_V1: Literal["recurrent_transformer_v1"] = (
     "recurrent_transformer_v1"

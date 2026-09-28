@@ -1,0 +1,57 @@
+{
+  "torch": "2.9.0",
+  "platform": "macOS-26.4-arm64-arm-64bit",
+  "cpu_threads": 1,
+  "n_envs": 8,
+  "perspectives": 16,
+  "model_parameters": 8294450,
+  "model_sha256": "70cd83e6dffe9bc9f582bcc628f10b5ae72f889f40ac4655b022eac973960174",
+  "warmups": 2,
+  "measured_repeats": 5,
+  "scenarios": [
+    {
+      "label": "native_reset",
+      "actors_per_seat": 1,
+      "saved_mean_frames": 8.75,
+      "saved_max_frames": 12,
+      "metrics": {
+        "rollout_forward": {
+          "mean_ms": 149.6857084101066,
+          "min_ms": 149.29937501437962,
+          "max_ms": 150.13862500200048,
+          "scalar_extractions": 12,
+          "arange_calls": 2
+        },
+        "evaluate_autograd": {
+          "mean_ms": 157.42442520568147,
+          "min_ms": 155.4239169927314,
+          "max_ms": 159.58425001008436,
+          "scalar_extractions": 1,
+          "arange_calls": 2
+        }
+      }
+    },
+    {
+      "label": "synthetic_16_actors",
+      "actors_per_seat": 16,
+      "saved_mean_frames": 21.4375,
+      "saved_max_frames": 27,
+      "metrics": {
+        "rollout_forward": {
+          "mean_ms": 186.37840839801356,
+          "min_ms": 184.24979201518,
+          "max_ms": 189.2789170378819,
+          "scalar_extractions": 27,
+          "arange_calls": 2
+        },
+        "evaluate_autograd": {
+          "mean_ms": 193.94708340987563,
+          "min_ms": 192.84541701199487,
+          "max_ms": 196.26545900246128,
+          "scalar_extractions": 1,
+          "arange_calls": 2
+        }
+      }
+    }
+  ]
+}

@@ -1,14 +1,13 @@
 [project]
 name = "owl"
 version = "0.1.0"
-description = "An RL library for the Kaggle 2026 Orbit Wars competition"
+description = "Kaggriculture v3 using Isaiah Pressman's Rust/PyO3 and PPO infrastructure"
 readme = "README.md"
 authors = [
     { name = "IsaiahPressman" }
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "kaggle-environments>=1.28.0",
     "numpy>=2.4.4",
     "pydantic>=2.13.2",
     "pyyaml>=6.0.3",
@@ -19,7 +18,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "kaggle>=2.1.0",
     "maturin>=1.13.1,<2.0",
     "mypy",
     "pytest>=9.0.3",
@@ -30,6 +28,10 @@ dev = [
 [project.optional-dependencies]
 flash-attn = [
     "flash-attn>=2.8.3",
+]
+reference = [
+    "kaggle>=2.1.0",
+    "kaggle-environments==1.32.7",
 ]
 
 [build-system]
@@ -43,7 +45,7 @@ python-source = "python"
 features = ["extension-module"]
 
 [tool.uv]
-cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.rs" }, { file = "Cargo.toml" }, { file = "Cargo.lock" }]
+cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.rs" }, { file = "engine_rs/src/**/*.rs" }, { file = "engine_rs/Cargo.toml" }, { file = "Cargo.toml" }, { file = "Cargo.lock" }]
 constraint-dependencies = ["protobuf<7"]
 no-build-isolation-package = ["flash-attn"]
 
@@ -56,7 +58,6 @@ torchvision = [
   { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
   { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
 ]
-kaggle-environments = { git = "https://github.com/Kaggle/kaggle-environments" }
 
 
 [[tool.uv.index]]
@@ -129,6 +130,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "-ra"
+pythonpath = ["."]
 strict_markers = true
 markers = [
     "slow: long-running tests excluded from the default fast test target",

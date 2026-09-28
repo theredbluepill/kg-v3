@@ -21,7 +21,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/venv/bin:/opt/cargo/bin:$PATH
 
 RUN test "${TARGETPLATFORM}" = "linux/amd64" || \
-    (echo "This image targets linux/amd64 CUDA Slurm nodes. Build with: docker build --platform linux/amd64 -t orbit-wars:dev ." >&2 && exit 1)
+    (echo "This image targets linux/amd64 CUDA Slurm nodes. Build with: docker build --platform linux/amd64 -t kg-v3:dev ." >&2 && exit 1)
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -39,7 +39,7 @@ RUN apt-get update && \
         rdma-core && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace/orbit-wars
+WORKDIR /workspace/kg-v3
 
 COPY rust-toolchain.toml ./
 
@@ -56,6 +56,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
 COPY pyproject.toml uv.lock Cargo.toml Cargo.lock rustfmt.toml ./
 COPY .cargo/ .cargo/
 COPY src/lib.rs src/lib.rs
+COPY engine_rs/ engine_rs/
 
 RUN --mount=type=cache,target=/opt/cargo/registry \
     --mount=type=cache,target=/opt/cargo/git \
@@ -71,13 +72,13 @@ COPY . .
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=cache,target=/opt/cargo/registry \
     --mount=type=cache,target=/opt/cargo/git \
-    --mount=type=cache,target=/workspace/orbit-wars/target \
+    --mount=type=cache,target=/workspace/kg-v3/target \
     just prepare-container
 
-RUN mkdir -p /opt/orbit-wars-native/owl && \
-    cp python/owl/rs*.so /opt/orbit-wars-native/owl/
+RUN mkdir -p /opt/kg-v3-native/owl && \
+    cp python/owl/rs*.so /opt/kg-v3-native/owl/
 
 ENV UV_COMPILE_BYTECODE=0 \
-    OWL_NATIVE_MODULE_DIR=/opt/orbit-wars-native/owl
+    OWL_NATIVE_MODULE_DIR=/opt/kg-v3-native/owl
 
 CMD ["bash"]

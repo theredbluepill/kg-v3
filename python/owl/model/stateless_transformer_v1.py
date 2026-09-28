@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal, Self, TypeAlias, TypeVar, assert_never, cast
+from typing import Any, Literal, Self, TypeAlias, TypeVar, assert_never, cast
 
 import torch
 import torch.nn.functional as F
@@ -11,6 +11,7 @@ from pydantic import Field, model_validator
 from torch import nn
 
 from owl.config import BaseConfig
+from owl.kaggriculture.types import KaggricultureActionConfig
 from owl.model.actor import (
     ActorConfig,
     ActorDiscreteTargetBinsConfig,
@@ -48,7 +49,6 @@ from owl.model.base import (
     ModelActionEntropies,
     ModelActionKLDivergences,
     ModelActionLogProbs,
-    ModelActions,
     ModelEvaluation,
     ModelHiddenState,
     ModelOutput,
@@ -75,6 +75,7 @@ from owl.rl import (
     PureActionMask,
     PureActions,
 )
+from owl.rl import ActionBundle as ModelActions
 
 __all__ = [
     "STATELESS_TRANSFORMER_V1",
@@ -251,7 +252,20 @@ class _StudentDistillationEval:
     actor_inputs: _ActorInputs | None
 
 
-class StatelessTransformerV1(BaseModelAPI):
+class StatelessTransformerV1(BaseModelAPI[ObsBatch, ActionBundle]):
+    @property
+    def action_spec(self) -> ActionConfig:
+        spec = self._action_spec
+        if isinstance(spec, KaggricultureActionConfig):
+            raise ValueError("Orbit transformer cannot use Kaggriculture actions")
+        return spec
+
+    @action_spec.setter
+    def action_spec(self, value: ActionConfig | KaggricultureActionConfig) -> None:
+        if isinstance(value, KaggricultureActionConfig):
+            raise ValueError("Orbit transformer cannot use Kaggriculture actions")
+        self._action_spec = value
+
     def __init__(
         self,
         config: StatelessTransformerV1Config,
@@ -971,7 +985,7 @@ class StatelessTransformerV1(BaseModelAPI):
         self,
         obs: ObsBatch,
         actions: ModelActions,
-        teacher: BaseModelAPI,
+        teacher: BaseModelAPI[Any, Any],
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
@@ -1310,7 +1324,7 @@ class StatelessTransformerV1(BaseModelAPI):
     def evaluate_action_kl(
         self,
         obs: ObsBatch,
-        teacher: BaseModelAPI,
+        teacher: BaseModelAPI[Any, Any],
         actions: ModelActions,
         *,
         hidden_state: ModelHiddenState | None = None,

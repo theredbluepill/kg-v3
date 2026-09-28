@@ -1,4 +1,18 @@
-# Containerization
+# Kaggriculture v3 container adaptation
+
+The training Dockerfile retains the starter CUDA/uv/Rust build and includes the
+vendored `engine_rs/` path dependency before Cargo resolves packages. Its workspace
+and external native-module cache use `kg-v3`. Run `configs/kaggriculture.yaml` with
+the shared `scripts/run_ppo.py` entrypoint. Container execution and CUDA throughput
+must be verified on the actual NVIDIA host; local macOS tests do not qualify them.
+
+The Kaggle submission container/agent below remains an inherited Orbit serving
+path. Including the new native dependency makes its build graph coherent, but
+Kaggriculture serving and competition packaging are not qualified by this port.
+
+---
+
+## Containerization
 
 This repository can be built into an image that contains Python 3.12, `uv`, the
 repo-pinned Rust toolchain, Cargo dependencies, Python dependencies, and the

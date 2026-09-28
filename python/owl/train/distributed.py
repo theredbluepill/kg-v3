@@ -4,13 +4,14 @@ import os
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
-from typing import Self, TypeVar, cast
+from typing import Any, Self, TypeVar, cast
 
 import torch
 import torch.distributed as dist
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel
 
+from owl.game import ObservationBatch as ObsBatch
 from owl.model import (
     BaseModelAPI,
     CachedTeacherDistillationTargets,
@@ -23,9 +24,13 @@ from owl.model import (
     ModelTeacherEvaluation,
     StatelessTransformerV1,
 )
-from owl.rl import ObsBatch
 
 T = TypeVar("T")
+
+
+def _cpu_ddp_enabled() -> bool:
+    """Opt in to Gloo for correctness diagnostics without hiding missing CUDA."""
+    return os.environ.get("OWL_ALLOW_CPU_DDP") == "1"
 
 
 @dataclass(frozen=True)
@@ -42,7 +47,7 @@ class DistributedContext:
         local_rank = int(os.environ.get("LOCAL_RANK", "0"))
         if torch.cuda.is_available():
             device = torch.device("cuda", local_rank)
-        elif local_rank != 0:
+        elif local_rank != 0 and not _cpu_ddp_enabled():
             raise RuntimeError(
                 "CUDA is not available - can't create distributed context"
             )
@@ -93,7 +98,7 @@ def distributed_session() -> Iterator[DistributedContext]:
 
     manage_process_group = int(os.environ.get("WORLD_SIZE", "1")) > 1
     if manage_process_group:
-        if not torch.cuda.is_available():
+        if not torch.cuda.is_available() and not _cpu_ddp_enabled():
             raise RuntimeError(
                 "distributed session requires CUDA, but CUDA is not available"
             )
@@ -104,9 +109,12 @@ def distributed_session() -> Iterator[DistributedContext]:
         if dist.is_initialized():
             raise RuntimeError("torch.distributed is already initialized")
 
-        dist.init_process_group(
-            backend="nccl", device_id=torch.device(f"cuda:{local_rank}")
-        )
+        if torch.cuda.is_available():
+            dist.init_process_group(
+                backend="nccl", device_id=torch.device(f"cuda:{local_rank}")
+            )
+        else:
+            dist.init_process_group(backend="gloo")
 
     try:
         yield DistributedContext.from_runtime()
@@ -166,7 +174,7 @@ def all_reduce_any(value: bool, context: DistributedContext) -> bool:
 
 
 class _DistributedModelDispatch(nn.Module):
-    def __init__(self, model: BaseModelAPI) -> None:
+    def __init__(self, model: BaseModelAPI[Any, Any]) -> None:
         super().__init__()
         self.model = model
 
@@ -219,7 +227,7 @@ class _DistributedModelDispatch(nn.Module):
                 raise ValueError("teacher is required for evaluate_action_kl")
             return self.model.evaluate_action_kl(
                 cast(ObsBatch, obs),
-                cast(BaseModelAPI, teacher),
+                cast(BaseModelAPI[Any, Any], teacher),
                 cast(ModelActions, actions),
                 hidden_state=hidden_state,
                 dones=cast(torch.Tensor | None, dones),
@@ -236,7 +244,7 @@ class _DistributedModelDispatch(nn.Module):
             return self.model.evaluate_actions_with_teacher(
                 cast(ObsBatch, obs),
                 cast(ModelActions, actions),
-                cast(BaseModelAPI, teacher),
+                cast(BaseModelAPI[Any, Any], teacher),
                 hidden_state=hidden_state,
                 dones=cast(torch.Tensor | None, dones),
                 compute_teacher_action_kl=compute_teacher_action_kl,
@@ -264,28 +272,28 @@ class _DistributedModelDispatch(nn.Module):
         raise ValueError(f"unknown distributed model mode: {mode}")
 
 
-class DistributedModelAdapter(BaseModelAPI):
+class DistributedModelAdapter(BaseModelAPI[Any, Any]):
     def __init__(
         self,
-        model: BaseModelAPI,
+        model: BaseModelAPI[Any, Any],
         context: DistributedContext,
     ) -> None:
         super().__init__()
         if not context.initialized:
             raise ValueError("DistributedModelAdapter requires an initialized context")
-        if context.device.type != "cuda":
+        if context.device.type != "cuda" and not _cpu_ddp_enabled():
             raise RuntimeError("distributed model wrapping requires a CUDA device")
         self.action_spec = model.action_spec
         self._ddp = DistributedDataParallel(
             _DistributedModelDispatch(model),
-            device_ids=[context.local_rank],
-            output_device=context.local_rank,
+            device_ids=[context.local_rank] if context.device.type == "cuda" else None,
+            output_device=context.local_rank if context.device.type == "cuda" else None,
             find_unused_parameters=_requires_unused_parameter_detection(model),
             broadcast_buffers=False,
         )
 
     @property
-    def wrapped_model(self) -> BaseModelAPI:
+    def wrapped_model(self) -> BaseModelAPI[Any, Any]:
         return self._ddp.module.model
 
     def no_sync(self) -> AbstractContextManager[None]:
@@ -330,7 +338,7 @@ class DistributedModelAdapter(BaseModelAPI):
     def evaluate_action_kl(
         self,
         obs: ObsBatch,
-        teacher: BaseModelAPI,
+        teacher: BaseModelAPI[Any, Any],
         actions: ModelActions,
         *,
         hidden_state: ModelHiddenState | None = None,
@@ -353,7 +361,7 @@ class DistributedModelAdapter(BaseModelAPI):
         self,
         obs: ObsBatch,
         actions: ModelActions,
-        teacher: BaseModelAPI,
+        teacher: BaseModelAPI[Any, Any],
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
@@ -441,16 +449,16 @@ class DistributedModelAdapter(BaseModelAPI):
 
 
 def wrap_model_for_distributed(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     context: DistributedContext,
-) -> BaseModelAPI:
+) -> BaseModelAPI[Any, Any]:
     if not context.initialized:
         return model
     return DistributedModelAdapter(model, context)
 
 
 def model_no_sync_context(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     *,
     enabled: bool,
 ) -> AbstractContextManager[None]:
@@ -461,7 +469,7 @@ def model_no_sync_context(
     return nullcontext()
 
 
-def _requires_unused_parameter_detection(model: BaseModelAPI) -> bool:
+def _requires_unused_parameter_detection(model: BaseModelAPI[Any, Any]) -> bool:
     if not isinstance(model, StatelessTransformerV1):
         return False
     # Player-count adapters are selected conditionally by batch composition, so a
@@ -470,7 +478,7 @@ def _requires_unused_parameter_detection(model: BaseModelAPI) -> bool:
     return model.config.player_count_adapters_enabled
 
 
-def unwrap_model(model: BaseModelAPI) -> BaseModelAPI:
+def unwrap_model(model: BaseModelAPI[Any, Any]) -> BaseModelAPI[Any, Any]:
     if isinstance(model, DistributedModelAdapter):
         return model.wrapped_model
     return model

@@ -110,6 +110,13 @@ should own implementation, test updates, and documentation corrections.
 
 ## Test Strategy
 
+The Kaggriculture dependency enables `serde_json/arbitrary_precision` for the
+shared crate graph. Generation-fixture uniform draws deserialize through
+`serde_json::Number` before conversion to finite `f64`, since internally tagged
+enum buffering otherwise treats decimal numbers as maps. This compatibility
+adapter changes only test input decoding; random-call and output parity checks
+remain unchanged.
+
 Start with component tests:
 
 - Geometry: distance and point-to-segment distance.

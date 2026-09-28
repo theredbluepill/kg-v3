@@ -1,4 +1,17 @@
-# Model Architecture
+# Kaggriculture model adaptation
+
+The active v3 architecture is `kaggriculture_transformer`, documented in
+[kaggriculture-model.md](kaggriculture-model.md). Its seat-private stems and
+native-grammar action decoder reuse the transformer primitives described below.
+`BaseModelAPI` is generic in observation/action types so game schemas remain
+explicit; original Orbit APIs remain available for regression coverage.
+
+The original Orbit architecture below is inherited reference material, not the
+Kaggriculture action or observation contract.
+
+---
+
+## Model Architecture
 
 This document summarizes the current trainable actor-critic model for the Orbit
 Wars RL API.

@@ -7,9 +7,11 @@ from typing import Annotated, Any, Literal, SupportsFloat, TypeAlias, cast
 
 import numpy as np
 import torch
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from owl.config import BaseConfig
+from owl.kaggriculture.rewards import KaggricultureRewardConfig
+from owl.kaggriculture.types import KaggricultureActionConfig, KaggricultureObsConfig
 from owl.rs import RlVecEnv as _RustRlVecEnv
 from owl.rs import (
     discrete_target_actions_to_kaggle as _discrete_target_actions_to_kaggle,
@@ -228,7 +230,9 @@ class DiscreteTargetBinActions:
 
 
 ActionBundle: TypeAlias = PureActions | DiscreteTargetActions | DiscreteTargetBinActions
-RewardMode: TypeAlias = Literal["win_loss", "win_only", "ship_ratio"]
+RewardMode: TypeAlias = Literal[
+    "win_loss", "win_only", "ship_ratio", "win_share", "margin"
+]
 
 
 @dataclass
@@ -261,13 +265,60 @@ ActionMask: TypeAlias = (
 )
 
 
+SupportedObsConfig: TypeAlias = Annotated[
+    EntityBasedConfig
+    | EntityBasedExtV1Config
+    | EntityBasedExtV2Config
+    | EntityBasedCrossAttnV1Config
+    | KaggricultureObsConfig,
+    Field(discriminator="obs_spec"),
+]
+SupportedActionConfig: TypeAlias = Annotated[
+    ActionPureConfig
+    | ActionDiscreteTargetsConfig
+    | ActionDiscreteTargetBinsConfig
+    | KaggricultureActionConfig,
+    Field(discriminator="action_spec"),
+]
+
+
 class EnvConfig(BaseConfig):
     n_envs: int = Field(default=2, ge=1)
-    obs_spec: ObsConfig = Field(default_factory=EntityBasedConfig)
-    action_spec: ActionConfig = Field(default_factory=ActionPureConfig)
+    obs_spec: SupportedObsConfig = Field(default_factory=EntityBasedConfig)
+    action_spec: SupportedActionConfig = Field(default_factory=ActionPureConfig)
     two_player_weight: float = Field(default=0.5, ge=0.0, le=1.0)
     reward_mode: RewardMode = "win_loss"
     pin_memory: bool = True
+    seed: int = Field(default=0, ge=0)
+    native_threads: int = Field(default=1, ge=1)
+    reward_shaping: KaggricultureRewardConfig = Field(
+        default_factory=KaggricultureRewardConfig
+    )
+
+    @model_validator(mode="after")
+    def _validate_game(self) -> EnvConfig:
+        farm_obs = isinstance(self.obs_spec, KaggricultureObsConfig)
+        farm_actions = isinstance(self.action_spec, KaggricultureActionConfig)
+        if farm_obs != farm_actions:
+            raise ValueError("observation and action specs must describe the same game")
+        if farm_obs and self.two_player_weight != 1.0:
+            raise ValueError(
+                "Kaggriculture has exactly two players; use two_player_weight=1"
+            )
+        if farm_obs and self.reward_mode == "ship_ratio":
+            raise ValueError(
+                "ship_ratio is an Orbit Wars reward, not a Kaggriculture reward"
+            )
+        if not farm_obs and (
+            self.reward_mode in ("win_share", "margin") or self.reward_shaping.enabled
+        ):
+            raise ValueError("Kaggriculture rewards require Kaggriculture observations")
+        if self.reward_shaping.enabled and self.reward_mode not in (
+            "win_loss",
+            "win_share",
+        ):
+            raise ValueError("economic shaping requires bounded win_loss or win_share")
+        return self
 
     @field_validator("n_envs")
     @classmethod
@@ -1616,7 +1667,7 @@ def _rows_to_array(rows: Any, *, name: str) -> np.ndarray:
         raise TypeError(f"obs['{name}'] must be a list")
     if not rows:
         return np.empty((0, 7), dtype=np.float64)
-    array = np.asarray(rows, dtype=np.float64)
+    array: np.ndarray = np.asarray(rows, dtype=np.float64)
     if array.ndim != 2 or array.shape[1] != 7:
         raise ValueError(f"obs['{name}'] must have shape (n, 7)")
     return np.ascontiguousarray(array)

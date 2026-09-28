@@ -844,8 +844,9 @@ def test_fixed_teacher_fresh_launch_leaves_last_best_unseeded(
             two_player_weight: float,
             reward_mode: object,
             pin_memory: bool,
+            **kwargs: object,
         ) -> None:
-            del two_player_weight, reward_mode, pin_memory
+            del two_player_weight, reward_mode, pin_memory, kwargs
             self.n_envs = n_envs
             self.obs_spec = obs_spec
             self.action_spec = action_spec
@@ -906,7 +907,7 @@ def test_fixed_teacher_fresh_launch_leaves_last_best_unseeded(
         lambda: nullcontext(DistributedContext.single_process_cpu()),
     )
     monkeypatch.setattr(run_ppo, "_create_run_dir", fake_create_run_dir)
-    monkeypatch.setattr(run_ppo, "VectorizedEnv", FakeEnv)
+    monkeypatch.setattr(run_ppo, "create_env", FakeEnv)
     monkeypatch.setattr(
         run_ppo,
         "_create_model",
@@ -974,8 +975,9 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
             two_player_weight: float,
             reward_mode: object,
             pin_memory: bool,
+            **kwargs: object,
         ) -> None:
-            del two_player_weight, reward_mode, pin_memory
+            del two_player_weight, reward_mode, pin_memory, kwargs
             self.n_envs = n_envs
             self.obs_spec = obs_spec
             self.action_spec = action_spec
@@ -1048,7 +1050,7 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
         lambda: nullcontext(DistributedContext.single_process_cpu()),
     )
     monkeypatch.setattr(run_ppo, "_create_run_dir", fake_create_run_dir)
-    monkeypatch.setattr(run_ppo, "VectorizedEnv", FakeEnv)
+    monkeypatch.setattr(run_ppo, "create_env", FakeEnv)
     monkeypatch.setattr(run_ppo, "_create_model", fake_create_model)
     monkeypatch.setattr(
         run_ppo, "configure_model_compile", fake_configure_model_compile
@@ -1563,7 +1565,7 @@ def test_evaluate_games_carries_recurrent_hidden_state(
             keep = ~dones.all(dim=1).to(device=hidden_state.device)
             return hidden_state * keep.to(dtype=hidden_state.dtype)
 
-    monkeypatch.setattr(run_ppo, "VectorizedEnv", FakeEnv)
+    monkeypatch.setattr(run_ppo, "create_env", FakeEnv)
     current_model = RecordingRecurrentModel(initial=0.0, launch_value=True)
     last_best_model = RecordingRecurrentModel(initial=10.0, launch_value=False)
     base_cfg = _config_with_envs(2)

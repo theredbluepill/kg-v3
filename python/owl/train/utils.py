@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import warnings
 from contextlib import AbstractContextManager, nullcontext
-from typing import Literal, Protocol, assert_never
+from typing import Any, Literal, Protocol, assert_never
 
 import torch
 import torch._dynamo
 
 from owl.model import BaseModelAPI, RecurrentTransformerV1, StatelessTransformerV1
+from owl.model.kaggriculture import KaggricultureTransformer
 
 ModelCompileTarget = Literal["none", "mlp", "trunk"]
 ModelCompileMode = Literal[
@@ -67,7 +68,9 @@ def autocast_context(
             assert_never(cfg.dtype)
 
 
-def configure_model_compile(model: BaseModelAPI, cfg: ModelCompileConfig) -> int:
+def configure_model_compile(
+    model: BaseModelAPI[Any, Any], cfg: ModelCompileConfig
+) -> int:
     match cfg.model_compile:
         case "none":
             return 0
@@ -81,7 +84,9 @@ def configure_model_compile(model: BaseModelAPI, cfg: ModelCompileConfig) -> int
                 raise RuntimeError(
                     "rl.model_compile='trunk' does not support recurrent_transformer_v1"
                 )
-            if not isinstance(model, StatelessTransformerV1):
+            if not isinstance(
+                model, (StatelessTransformerV1, KaggricultureTransformer)
+            ):
                 raise RuntimeError(
                     "rl.model_compile='trunk' requires stateless_transformer_v1"
                 )
@@ -91,7 +96,7 @@ def configure_model_compile(model: BaseModelAPI, cfg: ModelCompileConfig) -> int
 
 
 def _compile_transformer_mlp_modules(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     *,
     mode: ModelCompileMode,
 ) -> int:

@@ -572,3 +572,28 @@ def test_wrap_model_for_distributed_requires_cuda_device() -> None:
         match="distributed model wrapping requires a CUDA device",
     ):
         wrap_model_for_distributed(model, context)
+
+
+def test_explicit_cpu_diagnostic_initializes_gloo(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+    monkeypatch.setenv("OWL_ALLOW_CPU_DDP", "1")
+    monkeypatch.setenv("WORLD_SIZE", "2")
+    monkeypatch.setenv("LOCAL_RANK", "1")
+    monkeypatch.setattr(distributed_module.torch.cuda, "is_available", lambda: False)
+    monkeypatch.setattr(distributed_module.dist, "is_available", lambda: True)
+    monkeypatch.setattr(distributed_module.dist, "is_initialized", lambda: False)
+    monkeypatch.setattr(
+        distributed_module.dist,
+        "init_process_group",
+        lambda backend: calls.append(backend),
+    )
+    monkeypatch.setattr(
+        distributed_module.dist,
+        "destroy_process_group",
+        lambda: calls.append("destroy"),
+    )
+    with distributed_session() as context:
+        assert context.device.type == "cpu"
+    assert calls == ["gloo", "destroy"]

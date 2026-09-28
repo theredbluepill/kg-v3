@@ -51,6 +51,13 @@ from the installed `kaggle-environments` Orbit Wars implementation and written
 to `tests/fixtures/generation/reference_generation.json`. Rust consumes the
 recorded random call stream and compares generated output.
 
+The v3 integration regenerated these fixtures with `kaggle-environments==1.32.7`
+and downloaded both required replay episodes with the lockfile's `kaggle==2.1.0`.
+Uniform fixture numbers explicitly handle the unified `serde_json/arbitrary_precision`
+feature; all six generation checks and replay parity execute without disabling
+`REQUIRE_PARITY_FIXTURES`. This verifies the retained Orbit tests, not Kaggriculture
+game parity.
+
 The generated fixture currently covers:
 
 - planet generation from seed `42`

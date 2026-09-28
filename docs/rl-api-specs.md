@@ -1,4 +1,40 @@
-# RL API Specs
+# Kaggriculture v3 native RL contract
+
+The active config is `configs/kaggriculture.yaml`. `owl.game.create_env` chooses
+`KaggricultureVectorizedEnv`; `owl.rs.KaggricultureBatch` is built through the
+starter's Cargo/maturin/PyO3 surface with the reused `engine_rs` rules crate.
+Rust transitions and feature preparation write caller-owned NumPy views of Torch
+host/pinned tensors, releasing the GIL for native work. No ctypes is used on this
+path. Reset and diagnostic snapshots may use JSON; per-turn stepping uses arrays.
+
+| Tensor | Type | Shape |
+| --- | --- | --- |
+| features | float32 | `[N,2,8176]` for observation version 2 |
+| context | int64 | `[N,4]`: step, actor counts by seat, market limit |
+| entity_mask | bool | `[N,2,241]`, observable own actors |
+| still_playing | bool | `[N,2]` |
+| action_mask.can_act | bool | `[N,2,252]`, potential frame envelope |
+| actions.tokens | int64 | `[N,2,252,12]`, checked before native narrowing |
+| actions.lengths | int64 | `[N,2]` |
+| rewards/dones | float32/bool | `[N,2]` |
+
+The static action mask is a frame envelope. Prefix-dependent vocabulary masks
+come from the native grammar. Old buffer versions remain named explicitly;
+version 2 adds 11 investment/configuration features to the 8165-feature source
+schema. The active transformer requires version 2.
+
+Each seat row contains only that seat's legal view. Rust buffers are reused and
+fully overwritten; the PPO trainer clones CPU observations and stores historical
+rows before the next step. The adapter saves terminal rewards/metrics, resets only
+finished worlds, and returns reset observations alongside transition dones.
+Time-limit truncation is distinct from terminal reward and bootstraps the old
+state before resetting. Environment parallelism is controlled by `native_threads`.
+
+The original Orbit contract below documents inherited regression surfaces only.
+
+---
+
+## RL API Specs
 
 This document describes the currently available RL observation and action specs.
 The Python config API uses pydantic discriminator fields so future specs can add

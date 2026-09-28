@@ -2,18 +2,28 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeAlias, TypeVar
 
 import torch
 from torch import nn
 
-from owl.rl import ActionBundle, ActionConfig, ObsBatch
+from owl.kaggriculture.types import KaggricultureActionConfig, KaggricultureActions
+from owl.rl import ActionBundle, ActionConfig
 
 if TYPE_CHECKING:
     from owl.model.stateless_transformer_v1 import CachedTeacherDistillationTargets
 
 InputLayer = nn.Module | nn.Parameter
-ModelActions: TypeAlias = ActionBundle
+ModelActions: TypeAlias = ActionBundle | KaggricultureActions
+
+
+class TensorObservation(Protocol):
+    @property
+    def entity_mask(self) -> torch.Tensor: ...
+
+
+ObservationT = TypeVar("ObservationT", bound=TensorObservation)
+ActionT = TypeVar("ActionT")
 ModelHiddenState: TypeAlias = object
 
 
@@ -79,19 +89,19 @@ class ModelServingOutput:
     next_hidden_state: ModelHiddenState | None = None
 
 
-class BaseModelAPI(nn.Module, ABC):
+class BaseModelAPI(nn.Module, ABC, Generic[ObservationT, ActionT]):
     @property
-    def action_spec(self) -> ActionConfig:
+    def action_spec(self) -> ActionConfig | KaggricultureActionConfig:
         return self._action_spec
 
     @action_spec.setter
-    def action_spec(self, value: ActionConfig) -> None:
+    def action_spec(self, value: ActionConfig | KaggricultureActionConfig) -> None:
         self._action_spec = value
 
     @abstractmethod
     def forward(
         self,
-        obs: ObsBatch,
+        obs: ObservationT,
         *,
         deterministic: bool = False,
         hidden_state: ModelHiddenState | None = None,
@@ -100,8 +110,8 @@ class BaseModelAPI(nn.Module, ABC):
     @abstractmethod
     def evaluate_actions(
         self,
-        obs: ObsBatch,
-        actions: ModelActions,
+        obs: ObservationT,
+        actions: ActionT,
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
@@ -110,16 +120,16 @@ class BaseModelAPI(nn.Module, ABC):
     @abstractmethod
     def compute_value(
         self,
-        obs: ObsBatch,
+        obs: ObservationT,
         *,
         hidden_state: ModelHiddenState | None = None,
     ) -> torch.Tensor: ...
 
     def evaluate_action_kl(
         self,
-        obs: ObsBatch,
-        teacher: BaseModelAPI,
-        actions: ModelActions,
+        obs: ObservationT,
+        teacher: BaseModelAPI[Any, Any],
+        actions: ActionT,
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
@@ -130,9 +140,9 @@ class BaseModelAPI(nn.Module, ABC):
 
     def evaluate_actions_with_teacher(
         self,
-        obs: ObsBatch,
-        actions: ModelActions,
-        teacher: BaseModelAPI,
+        obs: ObservationT,
+        actions: ActionT,
+        teacher: BaseModelAPI[Any, Any],
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
@@ -145,8 +155,8 @@ class BaseModelAPI(nn.Module, ABC):
 
     def compute_teacher_distillation_targets(
         self,
-        obs: ObsBatch,
-        actions: ModelActions,
+        obs: ObservationT,
+        actions: ActionT,
         *,
         compute_action_kl: bool = True,
         compute_value: bool = True,
@@ -157,8 +167,8 @@ class BaseModelAPI(nn.Module, ABC):
 
     def evaluate_actions_with_cached_teacher(
         self,
-        obs: ObsBatch,
-        actions: ModelActions,
+        obs: ObservationT,
+        actions: ActionT,
         teacher_targets: CachedTeacherDistillationTargets,
         *,
         hidden_state: ModelHiddenState | None = None,
@@ -192,7 +202,7 @@ class BaseModelAPI(nn.Module, ABC):
         """
         return False
 
-    def count_non_masked_tokens(self, obs: ObsBatch) -> torch.Tensor:
+    def count_non_masked_tokens(self, obs: ObservationT) -> torch.Tensor:
         """Return the number of unmasked model tokens represented by ``obs``.
 
         Models with learned or architecture-specific tokens should override this.
@@ -202,7 +212,7 @@ class BaseModelAPI(nn.Module, ABC):
 
     def serve(
         self,
-        obs: ObsBatch,
+        obs: ObservationT,
         *,
         deterministic: bool = False,
         hidden_state: ModelHiddenState | None = None,

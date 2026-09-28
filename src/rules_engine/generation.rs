@@ -694,7 +694,24 @@ mod tests {
         #[serde(rename = "randint")]
         Randint { low: i32, high: i32, value: i32 },
         #[serde(rename = "uniform")]
-        Uniform { low: f64, high: f64, value: f64 },
+        Uniform {
+            #[serde(deserialize_with = "fixture_float")]
+            low: f64,
+            #[serde(deserialize_with = "fixture_float")]
+            high: f64,
+            #[serde(deserialize_with = "fixture_float")]
+            value: f64,
+        },
+    }
+
+    fn fixture_float<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<f64, D::Error> {
+        // The Kaggriculture dependency enables serde_json/arbitrary_precision.
+        // Tagged-enum buffering represents decimals as Number's private map;
+        // deserialize through Number before converting to the oracle's f64.
+        serde_json::Number::deserialize(deserializer)?
+            .as_f64()
+            .filter(|number| number.is_finite())
+            .ok_or_else(|| serde::de::Error::custom("expected a finite fixture number"))
     }
 
     struct FixtureRandom {

@@ -51,6 +51,7 @@ ENV UV_PYTHON=/opt/kaggle-build-venv/bin/python \
 COPY Cargo.toml Cargo.lock pyproject.toml rustfmt.toml ./
 COPY .cargo/ .cargo/
 COPY src/lib.rs src/lib.rs
+COPY engine_rs/ engine_rs/
 
 RUN --mount=type=cache,target=/opt/cargo/registry \
     --mount=type=cache,target=/opt/cargo/git \

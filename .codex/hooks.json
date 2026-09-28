@@ -1,0 +1,95 @@
+{
+  "description": "Keep Codex context, edits, notes, and corrections aligned with the project cookbook.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/cookbook-preflight.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Loading the project cookbook",
+            "additionalContextLimit": 16000
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/cookbook-preflight.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Refreshing the project cookbook",
+            "additionalContextLimit": 16000
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/cookbook-preflight.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Loading the project cookbook for the subagent",
+            "additionalContextLimit": 16000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/cookbook-preflight.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Checking the cookbook before this change"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/cookbook-lint.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Linting cookbook note shape"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/cookbook-correction-check.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Checking subagent corrections against the record"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/cookbook-correction-check.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Checking corrections against the record"
+          }
+        ]
+      }
+    ]
+  }
+}

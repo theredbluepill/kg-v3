@@ -62,7 +62,9 @@ class WandbLogger(MetricLogger):
             init_kwargs["id"] = resume_run_id
             init_kwargs["resume"] = "must"
         self._run = wandb.init(
-            project="orbit-wars",
+            project="kg-v3"
+            if cfg.model.model_arch == "kaggriculture_transformer"
+            else "orbit-wars",
             dir=run_dir,
             name=run_dir.name,
             config=cfg.model_dump(mode="json"),

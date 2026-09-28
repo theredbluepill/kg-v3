@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import cast
+from typing import Any, cast
 
 import torch
 from torch import nn
@@ -36,7 +36,7 @@ def lora_config_for_model(config: ModelConfig) -> LoRAConfig | None:
 
 
 def apply_lora_to_stateless_transformer(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     config: LoRAConfig,
 ) -> LoRAApplication:
     if not isinstance(model, StatelessTransformerV1):

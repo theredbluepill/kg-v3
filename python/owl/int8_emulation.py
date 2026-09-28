@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import torch
 import torch.nn.functional as F
 
@@ -43,7 +45,7 @@ class Int8EmulatedLinear(torch.nn.Module):
         return output.to(dtype=autocast_dtype)
 
 
-def apply_int8_emulation(model: BaseModelAPI) -> int:
+def apply_int8_emulation(model: BaseModelAPI[Any, Any]) -> int:
     output_layer_ids = {id(layer) for layer in model.get_output_layers()}
     return _replace_int8_emulated_linear_children(model, output_layer_ids)
 

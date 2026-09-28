@@ -1,0 +1,66 @@
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+93 files left unchanged
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uv run mypy python/ scripts/
+Success: no issues found in 58 source files
+uv run --extra reference pytest tests/ -m "not slow"
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/poonszesen/kg-v3
+configfile: pyproject.toml
+plugins: platformdirs-4.12.1
+collected 775 items
+
+tests/kaggriculture/test_codec.py .....                                  [  0%]
+tests/kaggriculture/test_env.py ...............                          [  2%]
+tests/kaggriculture/test_last_best.py ...                                [  2%]
+tests/kaggriculture/test_model.py ...................                    [  5%]
+tests/kaggriculture/test_training.py ...........                         [  6%]
+tests/owl/agent/test_agent.py .......................................... [ 12%]
+...........                                                              [ 13%]
+tests/owl/agent/test_kaggle_engine_sanitization.py ....                  [ 14%]
+tests/owl/agent/test_kaggle_observation.py ...                           [ 14%]
+tests/owl/model/test_attn.py .....ss                                     [ 15%]
+tests/owl/model/test_model_config_files.py ............................. [ 19%]
+.................                                                        [ 21%]
+tests/owl/model/test_recurrent_transformer_v1.py ..............          [ 23%]
+tests/owl/model/test_stateless_transformer_v1.py ....................... [ 26%]
+........................................................................ [ 35%]
+...............................                                          [ 39%]
+tests/owl/test_checkpoint_quantization.py .............................. [ 43%]
+..............                                                           [ 45%]
+tests/owl/test_config.py .........                                       [ 46%]
+tests/owl/test_int8_emulation.py ...s                                    [ 46%]
+tests/owl/test_replay.py ...                                             [ 47%]
+tests/owl/test_rl.py ................................................... [ 53%]
+...........................                                              [ 57%]
+tests/owl/train/test_advantages.py ..............                        [ 59%]
+tests/owl/train/test_config.py ......................................... [ 64%]
+...........................                                              [ 67%]
+tests/owl/train/test_distributed.py .................                    [ 70%]
+tests/owl/train/test_loss.py .............                               [ 71%]
+tests/owl/train/test_metrics.py ..                                       [ 72%]
+tests/owl/train/test_optimizer.py ...........                            [ 73%]
+tests/owl/train/test_ppo.py ............................................ [ 79%]
+..........                                                               [ 80%]
+tests/scripts/test_benchmark_checkpoints.py ............................ [ 84%]
+.........                                                                [ 85%]
+tests/scripts/test_download_replays.py ....                              [ 85%]
+tests/scripts/test_extract_model_weights.py .................            [ 87%]
+tests/scripts/test_roundtrip_checkpoint_quantization.py ................ [ 89%]
+..                                                                       [ 90%]
+tests/scripts/test_run_ppo.py .......................................... [ 95%]
+................................                                         [ 99%]
+tests/tools/test_replay_viewer.py ..                                     [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/owl/model/test_attn.py:60: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/model/test_attn.py:80: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/test_int8_emulation.py:15: x86 torch quantized backend is unavailable: qnnpack
+======================== 772 passed, 3 skipped in 5.80s ========================
+uv run python scripts/check_doc_freshness.py
+No doc updates required

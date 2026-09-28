@@ -11,6 +11,7 @@ from owl.model import (
     create_model,
 )
 from owl.model.actor import ActorConfig
+from owl.model.config import KaggricultureTransformerConfig
 from owl.rl import (
     ActionConfig,
     ActionDiscreteTargetsConfig,
@@ -28,6 +29,8 @@ def _load_model_config_file(config_path: Path) -> ModelConfig:
         config_data = yaml.safe_load(f)
 
     match config_data["model_arch"]:
+        case "kaggriculture_transformer":
+            return KaggricultureTransformerConfig.from_file(config_path)
         case "stateless_transformer_v1":
             return StatelessTransformerV1Config.from_file(config_path)
         case "recurrent_transformer_v1":

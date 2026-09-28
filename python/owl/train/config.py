@@ -3,6 +3,7 @@ from typing import Self
 from pydantic import Field, model_validator
 
 from owl.config import BaseConfig
+from owl.kaggriculture.types import KaggricultureObsConfig
 from owl.model import ActorDiscreteTargetBinsConfig, ModelConfig
 from owl.rl import ActionDiscreteTargetBinsConfig, EnvConfig
 
@@ -23,6 +24,33 @@ class FullConfig(BaseConfig):
 
     @model_validator(mode="after")
     def _validate_cross_config_constraints(self) -> Self:
+        if isinstance(self.env.obs_spec, KaggricultureObsConfig):
+            if self.model.model_arch != "kaggriculture_transformer":
+                raise ValueError("Kaggriculture requires its game-specific model")
+            if self.rl.teacher_mode is not None or self.rl.eval_replay_games:
+                raise ValueError(
+                    "Kaggriculture teacher distillation and Orbit replay export "
+                    "are not supported"
+                )
+            if self.rl.ppo_clip_mode != "per_player":
+                raise ValueError(
+                    "Kaggriculture uses joint turn probabilities: "
+                    "set ppo_clip_mode=per_player"
+                )
+            expected_value_mode = {"margin": "margin", "win_only": "win_only"}.get(
+                self.env.reward_mode, "win_loss"
+            )
+            if self.model.value_mode != expected_value_mode:
+                raise ValueError(
+                    f"reward_mode={self.env.reward_mode} requires "
+                    f"value_mode={expected_value_mode}"
+                )
+            if self.env.reward_shaping.enabled and self.rl.gamma != 1.0:
+                raise ValueError("ported economic potential shaping requires gamma=1")
+            if self.rl.value_loss != "mse":
+                raise ValueError(
+                    "Kaggriculture seat-private critics require value_loss=mse"
+                )
         if self.model.actor.action_spec != self.env.action_spec.action_spec:
             raise ValueError("model actor action_spec must match env action_spec")
         if (

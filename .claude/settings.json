@@ -1,0 +1,79 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/cookbook-gate.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Loading the project cookbook"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/cookbook-gate.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Refreshing the project cookbook"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/cookbook-gate.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Checking the cookbook before this change"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/cookbook-lint.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Linting cookbook note shape"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/cookbook-correction-check.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Checking subagent corrections against the record"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/cookbook-correction-check.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Checking corrections against the record"
+          }
+        ]
+      }
+    ]
+  }
+}

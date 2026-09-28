@@ -1,0 +1,38 @@
+# Two-rank first SPS check; capacity/throughput not yet qualified.
+# V3 uses the original run_ppo/PPOTrainer lifecycle with a native Kaggriculture game boundary.
+# This is a functional starting configuration, not a measured throughput optimum.
+env:
+  n_envs: 8
+  obs_spec:
+    obs_spec: kaggriculture
+    observation_version: 2
+  action_spec:
+    action_spec: kaggriculture
+    max_frames: 252
+  two_player_weight: 1.0
+  reward_mode: win_loss
+  pin_memory: true
+  native_threads: 2
+model: kaggriculture
+optimizer:
+  optimizer: adamw
+  learning_rate: 0.0001
+  weight_decay: 0.01
+rl:
+  checkpoint_freq: 100000
+  horizon: 64
+  ppo_epochs: 1
+  segments_per_minibatch: 1
+  gradient_accumulation_steps: 2
+  gamma: 1.0
+  gae_lambda: 0.95
+  ppo_clip_mode: per_player
+  value_loss: mse
+  normalize_advantages: true
+  teacher_mode: null
+  teacher_kl_coef: 0.0
+  teacher_value_coef: 0.0
+  eval_replay_games: 0
+  dtype: bfloat16
+  model_compile: trunk
+  compile_mode: null

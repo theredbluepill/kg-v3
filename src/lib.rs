@@ -1,3 +1,4 @@
+mod kaggriculture;
 mod rl;
 pub mod rules_engine;
 
@@ -15,5 +16,6 @@ fn assert_release_build() {
 fn rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(assert_release_build, m)?)?;
     rl::add_to_module(m)?;
+    kaggriculture::add_to_module(m)?;
     Ok(())
 }

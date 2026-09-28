@@ -12,8 +12,14 @@ from typing import Any
 import torch
 from owl.checkpoint_quantization import dequantize_model_state_dict
 from owl.int8_emulation import apply_int8_emulation
+from owl.kaggriculture.types import (
+    KaggricultureActionConfig,
+    KaggricultureActions,
+    KaggricultureObsConfig,
+)
 from owl.model import (
     BaseModelAPI,
+    ModelActions,
     ModelHiddenState,
     ModelOutput,
     apply_lora_to_stateless_transformer,
@@ -25,6 +31,7 @@ from owl.model import (
 from owl.replay import ReplayRecorder
 from owl.rl import (
     ActionBundle,
+    ActionConfig,
     ActionMask,
     DecodedLaunchActions,
     DiscreteTargetActionMask,
@@ -51,9 +58,20 @@ PLAYER_COUNTS = (2, 4)
 class LoadedCheckpoint:
     path: Path
     config: FullConfig
-    model: BaseModelAPI
+    model: BaseModelAPI[Any, Any]
     env_steps: int | None
     int8_emulation: bool = False
+
+
+def _orbit_checkpoint_specs(config: FullConfig) -> tuple[ObsConfig, ActionConfig]:
+    obs_spec, action_spec = config.env.obs_spec, config.env.action_spec
+    if isinstance(obs_spec, KaggricultureObsConfig) or isinstance(
+        action_spec, KaggricultureActionConfig
+    ):
+        raise ValueError(
+            "Legacy Orbit benchmarking does not support Kaggriculture checkpoints"
+        )
+    return obs_spec, action_spec
 
 
 @dataclass(frozen=True)
@@ -162,6 +180,8 @@ def run_benchmark(
     replay_output_path: Path | None,
     replay_rng: random.Random,
 ) -> BenchmarkResult:
+    _, action_spec = _orbit_checkpoint_specs(checkpoint_a.config)
+    _orbit_checkpoint_specs(checkpoint_b.config)
     if n_games == 0:
         return BenchmarkResult(
             player_count=player_count,
@@ -171,12 +191,11 @@ def run_benchmark(
             stats=MatchupStats.empty(),
         )
 
-    cfg = checkpoint_a.config
     n_envs = _benchmark_n_envs(n_envs, n_games)
     env = VectorizedEnv(
         n_envs=n_envs,
         obs_spec=_benchmark_env_obs_spec(checkpoint_a, checkpoint_b),
-        action_spec=cfg.env.action_spec,
+        action_spec=action_spec,
         two_player_weight=1.0 if player_count == 2 else 0.0,
         pin_memory=device.type == "cuda",
     )
@@ -321,8 +340,8 @@ def _benchmark_env_obs_spec(
     checkpoint_a: LoadedCheckpoint,
     checkpoint_b: LoadedCheckpoint,
 ) -> ObsConfig:
-    obs_spec_a = checkpoint_a.config.env.obs_spec
-    obs_spec_b = checkpoint_b.config.env.obs_spec
+    obs_spec_a, _ = _orbit_checkpoint_specs(checkpoint_a.config)
+    obs_spec_b, _ = _orbit_checkpoint_specs(checkpoint_b.config)
     max_entities = max(obs_spec_a.max_entities, obs_spec_b.max_entities)
     if obs_spec_a.max_entities == max_entities:
         return obs_spec_a
@@ -349,10 +368,11 @@ def _load_checkpoint(
         raise ValueError(f"{path} must contain a checkpoint mapping")
 
     config = FullConfig.from_file(_checkpoint_config_path(path))
+    obs_spec, action_spec = _orbit_checkpoint_specs(config)
     model = create_model(
         config.model,
-        obs_spec=config.env.obs_spec,
-        action_spec=config.env.action_spec,
+        obs_spec=obs_spec,
+        action_spec=action_spec,
     ).to(device)
     lora_config = lora_config_for_model(config.model)
     if lora_config is not None:
@@ -393,10 +413,8 @@ def _actions_for_checkpoints(
     device: torch.device,
     determinism: CheckpointDeterminism,
 ) -> tuple[DecodedLaunchActions, ModelHiddenState | None, ModelHiddenState | None]:
-    obs_spec_a = checkpoint_a.config.env.obs_spec
-    obs_spec_b = checkpoint_b.config.env.obs_spec
-    action_spec_a = checkpoint_a.config.env.action_spec
-    action_spec_b = checkpoint_b.config.env.action_spec
+    obs_spec_a, action_spec_a = _orbit_checkpoint_specs(checkpoint_a.config)
+    obs_spec_b, action_spec_b = _orbit_checkpoint_specs(checkpoint_b.config)
     obs_a = env.observation_for_spec(obs_spec_a, action_spec_a)
     obs_b = env.observation_for_spec(obs_spec_b, action_spec_b)
     output_a = _checkpoint_output(
@@ -522,7 +540,9 @@ def _action_mask_to_device(obs: ObsBatch, device: torch.device) -> ActionMask:
     )
 
 
-def _model_actions_to_cpu(actions: ActionBundle) -> ActionBundle:
+def _model_actions_to_cpu(actions: ModelActions) -> ActionBundle:
+    if isinstance(actions, KaggricultureActions):
+        raise ValueError("Legacy Orbit benchmarking received Kaggriculture actions")
     if isinstance(actions, PureActions):
         return PureActions(
             launch=actions.launch.cpu(),

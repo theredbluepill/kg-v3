@@ -10,6 +10,7 @@ from pydantic import ConfigDict, Field
 
 from owl.checkpoint_quantization import load_model_state_dict_streaming
 from owl.config import BaseConfig
+from owl.kaggriculture.types import KaggricultureActionConfig, KaggricultureObsConfig
 from owl.model import (
     BaseModelAPI,
     ModelConfig,
@@ -36,6 +37,7 @@ from owl.rl import (
     EntityBasedBaseConfig,
     EnvConfig,
     ObsBatch,
+    ObsConfig,
     PureActionMask,
     PureActions,
     TargetingMode,
@@ -78,6 +80,21 @@ class AgentCheckpointConfig(BaseConfig):
     model: ModelConfig
 
 
+def _orbit_checkpoint_specs(
+    config: AgentCheckpointConfig,
+) -> tuple[ObsConfig, ActionConfig]:
+    obs_spec, action_spec = config.env.obs_spec, config.env.action_spec
+    if (
+        isinstance(obs_spec, KaggricultureObsConfig)
+        or isinstance(action_spec, KaggricultureActionConfig)
+        or config.model.model_arch == "kaggriculture_transformer"
+    ):
+        raise ValueError(
+            "Legacy Orbit serving does not support Kaggriculture checkpoints"
+        )
+    return obs_spec, action_spec
+
+
 class Agent:
     _fallback_checkpoint_path: Path | None = None
 
@@ -115,7 +132,7 @@ class Agent:
         self.hidden_state: ModelHiddenState | None = None
 
         self.fallback_checkpoint_config: AgentCheckpointConfig | None = None
-        self.fallback_model: BaseModelAPI | None = None
+        self.fallback_model: BaseModelAPI[Any, Any] | None = None
         self._fallback_checkpoint_path = None
         if fallback_checkpoint_config_path is not None:
             assert fallback_checkpoint_path is not None
@@ -146,6 +163,7 @@ class Agent:
             raise ValueError(f"expected Kaggle config at {checkpoint_config_path}")
 
         checkpoint_config = AgentCheckpointConfig.from_file(checkpoint_config_path)
+        _orbit_checkpoint_specs(checkpoint_config)
         checkpoint_config = apply_max_entities_override(
             checkpoint_config,
             self.config.max_entities_override,
@@ -166,7 +184,7 @@ class Agent:
         checkpoint_config_path: Path,
         checkpoint_path: Path,
         allow_recurrent: bool = True,
-    ) -> tuple[AgentCheckpointConfig, BaseModelAPI]:
+    ) -> tuple[AgentCheckpointConfig, BaseModelAPI[ObsBatch, ActionBundle]]:
         checkpoint_config = self._load_checkpoint_config(
             checkpoint_config_path=checkpoint_config_path,
             allow_recurrent=allow_recurrent,
@@ -182,21 +200,22 @@ class Agent:
         *,
         checkpoint_config: AgentCheckpointConfig,
         checkpoint_path: Path,
-    ) -> BaseModelAPI:
+    ) -> BaseModelAPI[ObsBatch, ActionBundle]:
+        obs_spec, action_spec = _orbit_checkpoint_specs(checkpoint_config)
         if not checkpoint_path.is_file():
             raise ValueError(f"expected Kaggle checkpoint at {checkpoint_path}")
         if isinstance(checkpoint_config.model, RecurrentTransformerV1Config):
             model = create_model(
                 checkpoint_config.model,
-                obs_spec=checkpoint_config.env.obs_spec,
-                action_spec=checkpoint_config.env.action_spec,
+                obs_spec=obs_spec,
+                action_spec=action_spec,
             )
         else:
             with torch.device("meta"):
                 model = create_model(
                     checkpoint_config.model,
-                    obs_spec=checkpoint_config.env.obs_spec,
-                    action_spec=checkpoint_config.env.action_spec,
+                    obs_spec=obs_spec,
+                    action_spec=action_spec,
                 )
             model.to_empty(device="cpu")
         lora_config = lora_config_for_model(checkpoint_config.model)
@@ -291,15 +310,13 @@ class Agent:
             checkpoint_config = self.fallback_checkpoint_config
             hidden_state = None
 
-        min_fleet_size = _resolve_min_fleet_size(
-            self.config,
-            checkpoint_config.env.action_spec,
-        )
+        obs_spec, action_spec = _orbit_checkpoint_specs(checkpoint_config)
+        min_fleet_size = _resolve_min_fleet_size(self.config, action_spec)
         obs_dict = kaggle_obs.to_rl_observation()
         encoded = encode_python_observation_with_metrics(
             obs_dict,
-            obs_spec=checkpoint_config.env.obs_spec,
-            action_spec=checkpoint_config.env.action_spec,
+            obs_spec=obs_spec,
+            action_spec=action_spec,
             fleet_filter_min_size=min_fleet_size,
         )
         obs = encoded.obs
@@ -331,16 +348,21 @@ class Agent:
         inference_ms = _elapsed_ms(inference_start)
 
         conversion_start = perf_counter()
+        if not isinstance(
+            output.actions,
+            PureActions | DiscreteTargetActions | DiscreteTargetBinActions,
+        ):
+            raise ValueError("Legacy Orbit serving received Kaggriculture actions")
         actions_expanded = expand_actions_to_full_action_slots(
             output.actions,
             compacted.action_entity_indices,
-            action_spec=checkpoint_config.env.action_spec,
+            action_spec=action_spec,
         )
         actions = actions_to_kaggle(
             obs_dict,
             kaggle_obs.player,
             actions_expanded,
-            action_spec=checkpoint_config.env.action_spec,
+            action_spec=action_spec,
         )
         conversion_ms = _elapsed_ms(conversion_start)
         total_ms = _elapsed_ms(total_start, exclude_s=fallback_init_s)
@@ -437,9 +459,9 @@ def _elapsed_ms(start: float, *, exclude_s: float = 0.0) -> int:
 
 
 def _quantize_model_for_inference(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     use_int8_quantization: bool,
-) -> BaseModelAPI:
+) -> BaseModelAPI[Any, Any]:
     if not use_int8_quantization:
         return model
     _ensure_dynamic_quantization_engine()
@@ -463,7 +485,7 @@ def _quantize_model_for_inference(
     return quantized_model
 
 
-def _dynamic_quantization_qconfig_spec(model: BaseModelAPI) -> dict[Any, Any]:
+def _dynamic_quantization_qconfig_spec(model: BaseModelAPI[Any, Any]) -> dict[Any, Any]:
     output_layer_ids = {id(layer) for layer in model.get_output_layers()}
     qconfig_spec: dict[Any, Any] = {
         torch.nn.Linear: torch.quantization.default_dynamic_qconfig

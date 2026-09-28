@@ -11,6 +11,18 @@ import torch
 from pydantic import Field, model_validator
 
 from owl.config import BaseConfig
+from owl.game import ActionBatch as ActionBundle
+from owl.game import GameActionMask as ActionMask
+from owl.game import GameEnv as VectorizedEnv
+from owl.game import ObservationBatch as ObsBatch
+from owl.game import step_env
+from owl.kaggriculture.types import (
+    KaggricultureActionConfig,
+    KaggricultureActionMask,
+    KaggricultureActions,
+    KaggricultureObsBatch,
+    KaggricultureObsConfig,
+)
 from owl.model import (
     ActorDiscreteTargetsConfig,
     BaseModelAPI,
@@ -29,21 +41,22 @@ from owl.model import (
 from owl.rl import (
     ACTION_ENTITY_SLOTS,
     OUTER_PLAYER_SLOTS,
-    ActionBundle,
-    ActionConfig,
     ActionDiscreteTargetBinsConfig,
     ActionDiscreteTargetsConfig,
-    ActionMask,
     ActionPureConfig,
     DiscreteTargetActionMask,
     DiscreteTargetActions,
     DiscreteTargetBinActionMask,
     DiscreteTargetBinActions,
     EntityBasedBaseConfig,
-    ObsBatch,
     PureActionMask,
     PureActions,
-    VectorizedEnv,
+)
+from owl.rl import (
+    ObsBatch as OrbitObsBatch,
+)
+from owl.rl import (
+    SupportedActionConfig as ActionConfig,
 )
 from owl.train.advantages import compile_compute_gae, compute_winner_lambda_targets
 from owl.train.distributed import (
@@ -115,7 +128,7 @@ TeacherScheduleConfig: TypeAlias = Annotated[
 
 _OBS_TENSOR_FIELDS = tuple(
     field
-    for field in ObsBatch.model_fields
+    for field in OrbitObsBatch.model_fields
     if field
     not in {
         "action_mask",
@@ -252,9 +265,10 @@ class _PPORolloutBuffer:
         *,
         horizon: int,
         n_envs: int,
-        obs_spec: EntityBasedBaseConfig,
+        obs_spec: EntityBasedBaseConfig | KaggricultureObsConfig,
         action_spec: ActionConfig,
         device: torch.device,
+        observation: KaggricultureObsBatch | None = None,
     ) -> None:
         if horizon <= 0:
             raise ValueError("horizon must be positive")
@@ -262,6 +276,44 @@ class _PPORolloutBuffer:
             raise ValueError("n_envs must be positive")
         self.horizon = horizon
         self.n_envs = n_envs
+        self.obs: ObsBatch
+        self.actions: ActionBundle
+        if isinstance(action_spec, KaggricultureActionConfig):
+            if observation is None or not isinstance(obs_spec, KaggricultureObsConfig):
+                raise ValueError(
+                    "Kaggriculture rollout storage requires its initial observation"
+                )
+            self.obs = _map_observation(
+                observation,
+                lambda tensor: torch.zeros(
+                    (horizon, *tensor.shape), dtype=tensor.dtype, device=device
+                ),
+            )
+            players = observation.still_playing.shape[-1]
+            self.actions = KaggricultureActions(
+                tokens=torch.zeros(
+                    (horizon, n_envs, players, action_spec.max_frames, 12),
+                    dtype=torch.int64,
+                    device=device,
+                ),
+                lengths=torch.zeros(
+                    (horizon, n_envs, players), dtype=torch.int64, device=device
+                ),
+            )
+            shape = (horizon, n_envs, players)
+            self.logp = torch.zeros(shape, device=device)
+            self.entity_logp = torch.zeros(
+                (*shape, action_spec.max_frames), device=device
+            )
+            self.values = torch.zeros(shape, device=device)
+            self.rewards = torch.zeros(shape, device=device)
+            self.dones = torch.zeros(shape, dtype=torch.bool, device=device)
+            self.truncated = torch.zeros(shape, dtype=torch.bool, device=device)
+            self.bootstrap_values = torch.zeros(shape, device=device)
+            self.initial_hidden_state: ModelHiddenState | None = None
+            return
+        if isinstance(obs_spec, KaggricultureObsConfig):
+            raise ValueError("Kaggriculture observations require Kaggriculture actions")
         can_act_shape: tuple[int, ...]
         if isinstance(action_spec, ActionPureConfig):
             can_act_shape = (horizon, n_envs, OUTER_PLAYER_SLOTS, ACTION_ENTITY_SLOTS)
@@ -308,7 +360,7 @@ class _PPORolloutBuffer:
             )
         else:
             action_mask = DiscreteTargetBinActionMask(can_act=can_act)
-        self.obs = ObsBatch(
+        self.obs = OrbitObsBatch(
             planets=torch.zeros(
                 (horizon, n_envs, obs_spec.max_planets, obs_spec.planet_channels),
                 dtype=torch.float32,
@@ -395,7 +447,7 @@ class _PPORolloutBuffer:
                 OUTER_PLAYER_SLOTS,
                 ACTION_ENTITY_SLOTS,
             )
-            self.actions: ActionBundle = DiscreteTargetBinActions(
+            self.actions = DiscreteTargetBinActions(
                 target=torch.zeros(action_shape, dtype=torch.int64, device=device),
                 fleet_bin=torch.zeros(action_shape, dtype=torch.int64, device=device),
             )
@@ -462,7 +514,7 @@ class _PPORolloutBuffer:
             dtype=torch.float32,
             device=device,
         )
-        self.initial_hidden_state: ModelHiddenState | None = None
+        self.initial_hidden_state = None
 
     def write_step(
         self,
@@ -521,15 +573,22 @@ class PPOTrainer:
         *,
         config: PPOConfig,
         env: VectorizedEnv,
-        model: BaseModelAPI,
+        model: BaseModelAPI[Any, Any],
         optimizer: _Optimizer,
         device: torch.device,
         lr_scheduler: _LRScheduler | None = None,
-        teacher_model: BaseModelAPI | None = None,
+        teacher_model: BaseModelAPI[Any, Any] | None = None,
         teacher_active: bool = False,
         distributed_context: DistributedContext | None = None,
     ) -> None:
         self.env = env
+        if isinstance(env.action_spec, KaggricultureActionConfig):
+            if config.ppo_clip_mode != "per_player":
+                raise ValueError("Kaggriculture requires joint per_player PPO clipping")
+            if config.value_loss != "mse" or teacher_model is not None:
+                raise ValueError(
+                    "Kaggriculture supports MSE critics without teacher distillation"
+                )
         self.model = model
         if model.action_spec != env.action_spec:
             raise ValueError("model and env action_spec must match")
@@ -587,7 +646,7 @@ class PPOTrainer:
         else:
             self._env_step_count = torch.zeros(0, dtype=torch.long)
             self._is_truncation_game = torch.zeros(0, dtype=torch.bool)
-        self.teacher_model: BaseModelAPI | None = None
+        self.teacher_model: BaseModelAPI[Any, Any] | None = None
         self.teacher_active = False
         self.rollout = _PPORolloutBuffer(
             horizon=config.horizon,
@@ -595,6 +654,9 @@ class PPOTrainer:
             obs_spec=env.obs_spec,
             action_spec=env.action_spec,
             device=device,
+            observation=self._obs
+            if isinstance(self._obs, KaggricultureObsBatch)
+            else None,
         )
         self._last_env_metrics: dict[str, list[float]] = {}
         self.set_teacher_model(teacher_model, active=teacher_active)
@@ -605,7 +667,7 @@ class PPOTrainer:
 
     def set_teacher_model(
         self,
-        teacher_model: BaseModelAPI | None,
+        teacher_model: BaseModelAPI[Any, Any] | None,
         *,
         active: bool,
     ) -> None:
@@ -685,7 +747,11 @@ class PPOTrainer:
         model_tokens = self._sum_int(
             unwrap_model(self.model).count_non_masked_tokens(segments.obs)
         )
-        active_entities = self._sum_int(_policy_entity_mask(segments.obs).sum())
+        active_entities = self._sum_int(
+            segments.obs.entity_mask.sum()
+            if isinstance(segments.obs, KaggricultureObsBatch)
+            else _policy_entity_mask(segments.obs).sum()
+        )
         advantages, returns = self._compute_gae(
             rewards=segments.rewards,
             values=segments.values,
@@ -767,6 +833,10 @@ class PPOTrainer:
         metrics["perf/steps_per_second"] = float(rollout_steps / elapsed)
         metrics["perf/tokens_per_second"] = float(model_tokens / elapsed)
         metrics["perf/active_entities_per_second"] = float(active_entities / elapsed)
+        if isinstance(segments.actions, KaggricultureActions):
+            action_frames = self._sum_int(segments.actions.lengths.sum())
+            metrics["train/action_frames"] = float(action_frames)
+            metrics["perf/action_frames_per_second"] = float(action_frames / elapsed)
         return metrics
 
     def write_checkpoint(
@@ -775,7 +845,7 @@ class PPOTrainer:
         *,
         env_steps: int,
         wandb_run_id: str | None = None,
-        model: BaseModelAPI | None = None,
+        model: BaseModelAPI[Any, Any] | None = None,
     ) -> None:
         checkpoint_model = unwrap_model(self.model if model is None else model)
         checkpoint = {
@@ -960,10 +1030,12 @@ class PPOTrainer:
             & ~env_done
         )
         truncated = torch.zeros(
-            (self.n_envs, OUTER_PLAYER_SLOTS), dtype=torch.bool, device=self.device
+            (self.n_envs, self._obs.still_playing.shape[-1]),
+            dtype=torch.bool,
+            device=self.device,
         )
         bootstrap_values = torch.zeros(
-            (self.n_envs, OUTER_PLAYER_SLOTS),
+            (self.n_envs, self._obs.still_playing.shape[-1]),
             dtype=torch.float32,
             device=self.device,
         )
@@ -981,7 +1053,10 @@ class PPOTrainer:
                 boot = _model_compute_value(self.model, trunc_obs, hidden_state=None)
             bootstrap_values[idx] = boot.to(bootstrap_values.dtype)
             truncated[idx] = True
-            rewards[idx] = 0.0
+            # Native economic shaping is a real reward on this transition.
+            # Resetting the world cuts the trajectory, not the already-earned reward.
+            if not isinstance(next_obs, KaggricultureObsBatch):
+                rewards[idx] = 0.0
             dones[idx] = True
             # VectorizedEnv.truncate_envs requires a CPU bool mask (it refuses to
             # silently sync a device tensor to host).
@@ -2058,6 +2133,8 @@ def _map_action_mask(
     action_mask: ActionMask,
     fn: Callable[[torch.Tensor], torch.Tensor],
 ) -> ActionMask:
+    if isinstance(action_mask, KaggricultureActionMask):
+        return KaggricultureActionMask(can_act=fn(action_mask.can_act))
     if isinstance(action_mask, PureActionMask):
         return PureActionMask(
             can_act=fn(action_mask.can_act),
@@ -2075,6 +2152,10 @@ def _map_action_bundle(
     actions: ActionBundle,
     fn: Callable[[torch.Tensor], torch.Tensor],
 ) -> ActionBundle:
+    if isinstance(actions, KaggricultureActions):
+        return KaggricultureActions(
+            tokens=fn(actions.tokens), lengths=fn(actions.lengths)
+        )
     if isinstance(actions, PureActions):
         return PureActions(
             launch=fn(actions.launch),
@@ -2093,24 +2174,27 @@ def _map_action_bundle(
     )
 
 
-def _map_optional_obs_tensors(
+def _map_observation(
     obs: ObsBatch,
     fn: Callable[[torch.Tensor], torch.Tensor],
-) -> dict[str, torch.Tensor | None]:
-    return {
-        field: None if (tensor := getattr(obs, field)) is None else fn(tensor)
-        for field in _OBS_OPTIONAL_TENSOR_FIELDS
-    }
+) -> ObsBatch:
+    """Preserve each game's declared tensor schema through every PPO layout."""
+    values = {}
+    for field in type(obs).model_fields:
+        if field == "action_mask":
+            continue
+        tensor = getattr(obs, field)
+        values[field] = None if tensor is None else fn(tensor)
+    return type(obs)(**values, action_mask=_map_action_mask(obs.action_mask, fn))
 
 
 def _copy_obs_time_step(dst: ObsBatch, step: int, src: ObsBatch) -> None:
-    for field in _OBS_TENSOR_FIELDS:
-        dst_tensor = getattr(dst, field)
-        src_tensor = getattr(src, field)
-        dst_tensor[step].copy_(src_tensor)
-    for field in _OBS_OPTIONAL_TENSOR_FIELDS:
-        dst_tensor = getattr(dst, field)
-        src_tensor = getattr(src, field)
+    if type(dst) is not type(src):
+        raise ValueError("rollout observation game schemas must match")
+    for field in type(dst).model_fields:
+        if field == "action_mask":
+            continue
+        dst_tensor, src_tensor = getattr(dst, field), getattr(src, field)
         if dst_tensor is None:
             if src_tensor is not None:
                 raise ValueError(f"rollout obs has no {field} buffer")
@@ -2132,32 +2216,17 @@ def _copy_actions_time_step(dst: ActionBundle, step: int, src: ActionBundle) -> 
 
 
 def _obs_segment_major(obs: ObsBatch) -> ObsBatch:
-    return ObsBatch(
-        **{
-            field: getattr(obs, field).transpose(0, 1).contiguous()
-            for field in _OBS_TENSOR_FIELDS
-        },
-        **_map_optional_obs_tensors(
-            obs,
-            lambda tensor: tensor.transpose(0, 1).contiguous(),
-        ),
-        action_mask=_action_mask_segment_major(obs.action_mask),
-    )
+    return _map_observation(obs, lambda tensor: tensor.transpose(0, 1).contiguous())
 
 
 def _actions_segment_major(actions: ActionBundle) -> ActionBundle:
     return _map_action_bundle(
-        actions,
-        lambda tensor: tensor.transpose(0, 1).contiguous(),
+        actions, lambda tensor: tensor.transpose(0, 1).contiguous()
     )
 
 
 def _obs_index(obs: ObsBatch, idx: torch.Tensor) -> ObsBatch:
-    return ObsBatch(
-        **{field: getattr(obs, field)[idx] for field in _OBS_TENSOR_FIELDS},
-        **_map_optional_obs_tensors(obs, lambda tensor: tensor[idx]),
-        action_mask=_action_mask_index(obs.action_mask, idx),
-    )
+    return _map_observation(obs, lambda tensor: tensor[idx])
 
 
 def _actions_index(actions: ActionBundle, idx: torch.Tensor) -> ActionBundle:
@@ -2165,60 +2234,25 @@ def _actions_index(actions: ActionBundle, idx: torch.Tensor) -> ActionBundle:
 
 
 def _obs_to_device(
-    obs: ObsBatch,
-    device: torch.device,
-    *,
-    non_blocking: bool = False,
+    obs: ObsBatch, device: torch.device, *, non_blocking: bool = False
 ) -> ObsBatch:
-    if device.type == "cpu":
-        return ObsBatch(
-            **{
-                field: getattr(obs, field).to(device, non_blocking=non_blocking).clone()
-                for field in _OBS_TENSOR_FIELDS
-            },
-            **_map_optional_obs_tensors(
-                obs,
-                lambda tensor: tensor.to(device, non_blocking=non_blocking).clone(),
-            ),
-            action_mask=_action_mask_to_device(
-                obs.action_mask,
-                device,
-                non_blocking=non_blocking,
-                clone=True,
-            ),
-        )
+    def move(tensor: torch.Tensor) -> torch.Tensor:
+        moved = tensor.to(device, non_blocking=non_blocking)
+        # Native buffers are overwritten on step; CPU history owns its bytes too.
+        return moved.clone() if device.type == "cpu" else moved
 
-    return ObsBatch(
-        **{
-            field: getattr(obs, field).to(device, non_blocking=non_blocking)
-            for field in _OBS_TENSOR_FIELDS
-        },
-        **_map_optional_obs_tensors(
-            obs,
-            lambda tensor: tensor.to(device, non_blocking=non_blocking),
-        ),
-        action_mask=_action_mask_to_device(
-            obs.action_mask,
-            device,
-            non_blocking=non_blocking,
-            clone=False,
-        ),
-    )
+    return _map_observation(obs, move)
 
 
 def _copy_obs_to_device_(
-    dst: ObsBatch,
-    src: ObsBatch,
-    *,
-    non_blocking: bool = False,
+    dst: ObsBatch, src: ObsBatch, *, non_blocking: bool = False
 ) -> None:
-    for field in _OBS_TENSOR_FIELDS:
-        dst_tensor = getattr(dst, field)
-        src_tensor = getattr(src, field)
-        dst_tensor.copy_(src_tensor, non_blocking=non_blocking)
-    for field in _OBS_OPTIONAL_TENSOR_FIELDS:
-        dst_tensor = getattr(dst, field)
-        src_tensor = getattr(src, field)
+    if type(dst) is not type(src):
+        raise ValueError("observation game schemas must match")
+    for field in type(dst).model_fields:
+        if field == "action_mask":
+            continue
+        dst_tensor, src_tensor = getattr(dst, field), getattr(src, field)
         if dst_tensor is None:
             if src_tensor is not None:
                 raise ValueError(f"destination obs has no {field} buffer")
@@ -2227,9 +2261,7 @@ def _copy_obs_to_device_(
         else:
             dst_tensor.copy_(src_tensor, non_blocking=non_blocking)
     _copy_action_mask_to_device_(
-        dst.action_mask,
-        src.action_mask,
-        non_blocking=non_blocking,
+        dst.action_mask, src.action_mask, non_blocking=non_blocking
     )
 
 
@@ -2249,14 +2281,7 @@ def _flatten_tensor_time(tensor: torch.Tensor) -> torch.Tensor:
 
 
 def _flatten_obs_time(obs: ObsBatch) -> ObsBatch:
-    return ObsBatch(
-        **{
-            field: _flatten_tensor_time(getattr(obs, field))
-            for field in _OBS_TENSOR_FIELDS
-        },
-        **_map_optional_obs_tensors(obs, _flatten_tensor_time),
-        action_mask=_action_mask_flatten_time(obs.action_mask),
-    )
+    return _map_observation(obs, _flatten_tensor_time)
 
 
 def _flatten_actions_time(actions: ActionBundle) -> ActionBundle:
@@ -2268,7 +2293,7 @@ def _step_env(
     actions: ActionBundle,
 ) -> tuple[ObsBatch, torch.Tensor, torch.Tensor, dict[str, list[float]]]:
     cpu_actions = _actions_to_cpu(actions)
-    return env.step(cpu_actions)
+    return step_env(env, cpu_actions)
 
 
 def _extend_env_metrics(
@@ -2629,7 +2654,7 @@ def _checkpoint_optional_str(value: object, *, name: str) -> str | None:
 
 
 def _require_stateless_teacher(
-    teacher: BaseModelAPI,
+    teacher: BaseModelAPI[Any, Any],
     *,
     batch_size: int,
     device: torch.device,
@@ -2640,8 +2665,8 @@ def _require_stateless_teacher(
 
 
 def _validate_fixed_teacher_action_compatibility(
-    student: BaseModelAPI,
-    teacher: BaseModelAPI,
+    student: BaseModelAPI[Any, Any],
+    teacher: BaseModelAPI[Any, Any],
 ) -> None:
     if not isinstance(student, StatelessTransformerV1) or not isinstance(
         teacher,
@@ -2662,7 +2687,7 @@ def _validate_fixed_teacher_action_compatibility(
 
 
 def _model_forward(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     obs: ObsBatch,
     *,
     hidden_state: ModelHiddenState | None,
@@ -2673,7 +2698,7 @@ def _model_forward(
 
 
 def _model_compute_value(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     obs: ObsBatch,
     *,
     hidden_state: ModelHiddenState | None,
@@ -2684,7 +2709,7 @@ def _model_compute_value(
 
 
 def _model_evaluate_actions(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     obs: ObsBatch,
     actions: ModelActions,
     *,
@@ -2697,10 +2722,10 @@ def _model_evaluate_actions(
 
 
 def _model_evaluate_actions_with_teacher(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     obs: ObsBatch,
     actions: ModelActions,
-    teacher: BaseModelAPI,
+    teacher: BaseModelAPI[Any, Any],
     *,
     hidden_state: ModelHiddenState | None,
     dones: torch.Tensor,
@@ -2719,7 +2744,7 @@ def _model_evaluate_actions_with_teacher(
 
 
 def _model_evaluate_actions_with_cached_teacher(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     obs: ObsBatch,
     actions: ModelActions,
     teacher_targets: CachedTeacherDistillationTargets,
@@ -2866,7 +2891,7 @@ def _player_count_rates(still_playing: torch.Tensor) -> dict[str, torch.Tensor]:
     alive_counts = still_playing.sum(dim=-1)
     return {
         f"train/{player_count}p_rate": alive_counts.eq(player_count).float().mean()
-        for player_count in range(1, OUTER_PLAYER_SLOTS + 1)
+        for player_count in range(1, still_playing.shape[-1] + 1)
     }
 
 

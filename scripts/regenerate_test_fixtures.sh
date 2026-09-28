@@ -24,8 +24,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-uv run python scripts/generate_reference_fixtures.py --outfile "$GENERATION_TMP"
-uv run python scripts/download_replays.py "${EPISODE_IDS[@]}" --save-dir "$REPLAY_TMP_DIR"
+uv run --extra reference python scripts/generate_reference_fixtures.py --outfile "$GENERATION_TMP"
+uv run --extra reference python scripts/download_replays.py "${EPISODE_IDS[@]}" --save-dir "$REPLAY_TMP_DIR"
 
 mv "$GENERATION_TMP" "$GENERATION_FIXTURE"
 rm -f "$REPLAY_FIXTURE_DIR"/replay-*.jsonl

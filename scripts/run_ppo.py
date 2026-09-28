@@ -13,6 +13,11 @@ from typing import Any, Literal
 
 import torch
 import yaml
+from owl.game import ActionBatch as ActionBundle
+from owl.game import GameActionMask as ActionMask
+from owl.game import ObservationBatch as ObsBatch
+from owl.game import create_env, step_env
+from owl.kaggriculture.types import KaggricultureActions, KaggricultureObsConfig
 from owl.model import (
     BaseModelAPI,
     LoRAApplication,
@@ -27,19 +32,17 @@ from owl.model import (
 )
 from owl.replay import ReplayRecorder
 from owl.rl import (
-    ActionBundle,
-    ActionConfig,
-    ActionMask,
-    DiscreteTargetActionMask,
     DiscreteTargetActions,
-    DiscreteTargetBinActionMask,
     DiscreteTargetBinActions,
     EntityBasedBaseConfig,
-    ObsBatch,
-    ObsConfig,
-    PureActionMask,
     PureActions,
     VectorizedEnv,
+)
+from owl.rl import (
+    SupportedActionConfig as ActionConfig,
+)
+from owl.rl import (
+    SupportedObsConfig as ObsConfig,
 )
 from owl.rs import assert_release_build
 from owl.train import FullConfig, PPOTrainer, configure_torch
@@ -57,6 +60,7 @@ from owl.train.optimizer import (
     create_optimizer,
 )
 from owl.train.ppo import PPOCheckpointMetadata, _mean_env_metrics
+from owl.train.ppo import _obs_to_device as _training_obs_to_device
 from owl.train.utils import (
     DTypeConfig,
     autocast_context,
@@ -150,13 +154,17 @@ def main() -> None:
             run_dir = launch.run_dir
 
         device = distributed.device
-        env = VectorizedEnv(
+        env = create_env(
             n_envs=cfg.env.n_envs,
             obs_spec=cfg.env.obs_spec,
             action_spec=cfg.env.action_spec,
             two_player_weight=cfg.env.two_player_weight,
             reward_mode=cfg.env.reward_mode,
             pin_memory=cfg.env.pin_memory,
+            seed=cfg.env.seed + distributed.rank,
+            seed_stride=distributed.world_size,
+            native_threads=cfg.env.native_threads,
+            reward_shaping=cfg.env.reward_shaping,
         )
         model, lora_application = _create_training_model_for_config(
             cfg,
@@ -276,7 +284,7 @@ def _run_training_session(
     distributed: DistributedContext,
     start_env_steps: int = 0,
     resume_run_id: str | None = None,
-    last_best_model: BaseModelAPI | None = None,
+    last_best_model: BaseModelAPI[Any, Any] | None = None,
     trainable_parameters: int | None = None,
     compiled_model_modules: int = 0,
     lora_application: LoRAApplication | None = None,
@@ -338,7 +346,7 @@ def _run_training_session_worker(
     max_runtime_seconds: float | None,
     distributed: DistributedContext,
     start_env_steps: int = 0,
-    last_best_model: BaseModelAPI | None = None,
+    last_best_model: BaseModelAPI[Any, Any] | None = None,
 ) -> None:
     _run_training_loop(
         trainer=trainer,
@@ -366,7 +374,7 @@ def _run_training_loop(
     dist_ctx: DistributedContext,
     start_env_steps: int = 0,
     wandb_run_id: str | None = None,
-    last_best_model: BaseModelAPI | None = None,
+    last_best_model: BaseModelAPI[Any, Any] | None = None,
 ) -> int:
     env_steps = start_env_steps
     started_at = time.monotonic()
@@ -717,7 +725,7 @@ def _create_model(
     *,
     obs_spec: ObsConfig,
     action_spec: ActionConfig,
-) -> BaseModelAPI:
+) -> BaseModelAPI[Any, Any]:
     return create_model(config, obs_spec=obs_spec, action_spec=action_spec)
 
 
@@ -727,7 +735,7 @@ def _create_training_model_for_config(
     device: torch.device,
     reset_parameters: bool = False,
     roundtrip_lora_base: bool = True,
-) -> tuple[BaseModelAPI, LoRAApplication | None]:
+) -> tuple[BaseModelAPI[Any, Any], LoRAApplication | None]:
     model = _create_model(
         cfg.model,
         obs_spec=cfg.env.obs_spec,
@@ -742,7 +750,7 @@ def _create_training_model_for_config(
 
 
 def _apply_lora_for_config(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     config: ModelConfig,
 ) -> LoRAApplication | None:
     lora_config = lora_config_for_model(config)
@@ -752,7 +760,7 @@ def _apply_lora_for_config(
 
 
 def _roundtrip_lora_base_quantization_for_config(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     config: ModelConfig,
 ) -> None:
     lora_config = lora_config_for_model(config)
@@ -791,7 +799,7 @@ def _load_teacher_init_model(
     *,
     student_cfg: FullConfig,
     device: torch.device,
-) -> BaseModelAPI:
+) -> BaseModelAPI[Any, Any]:
     checkpoint_path = checkpoint_path.resolve()
     if not checkpoint_path.is_file():
         raise ValueError(f"teacher_init checkpoint does not exist: {checkpoint_path}")
@@ -825,7 +833,7 @@ def _initial_last_best_model(
     cfg: FullConfig,
     *,
     device: torch.device,
-) -> BaseModelAPI | None:
+) -> BaseModelAPI[Any, Any] | None:
     if cfg.rl.teacher_mode != "last_best" or cfg.rl.teacher_init is None:
         return None
     # last_best is refreshed in place with the student's weights whenever the
@@ -882,6 +890,14 @@ def _teacher_obs_spec_for_student(
     student_obs_spec: ObsConfig,
     checkpoint_path: Path,
 ) -> ObsConfig:
+    if isinstance(teacher_obs_spec, KaggricultureObsConfig) or isinstance(
+        student_obs_spec, KaggricultureObsConfig
+    ):
+        if teacher_obs_spec != student_obs_spec:
+            raise ValueError(
+                "teacher and student Kaggriculture observation specs must match"
+            )
+        return teacher_obs_spec
     if not isinstance(teacher_obs_spec, EntityBasedBaseConfig) or not isinstance(
         student_obs_spec, EntityBasedBaseConfig
     ):
@@ -902,7 +918,7 @@ def _teacher_obs_spec_for_student(
 
 
 def _load_model_weights(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     *,
     path: Path,
     device: torch.device,
@@ -1024,7 +1040,7 @@ def _create_eval_model_for_config(
     *,
     device: torch.device,
     roundtrip_lora_base: bool = True,
-) -> BaseModelAPI:
+) -> BaseModelAPI[Any, Any]:
     model, _ = _create_training_model_for_config(
         cfg,
         device=device,
@@ -1035,11 +1051,11 @@ def _create_eval_model_for_config(
 
 
 def _create_eval_model_from_weights(
-    source_model: BaseModelAPI,
+    source_model: BaseModelAPI[Any, Any],
     cfg: FullConfig,
     *,
     device: torch.device,
-) -> BaseModelAPI:
+) -> BaseModelAPI[Any, Any]:
     model = _create_eval_model_for_config(
         cfg,
         device=device,
@@ -1052,14 +1068,14 @@ def _create_eval_model_from_weights(
 
 
 def _refresh_eval_model_from_weights(
-    target_model: BaseModelAPI,
-    source_model: BaseModelAPI,
+    target_model: BaseModelAPI[Any, Any],
+    source_model: BaseModelAPI[Any, Any],
 ) -> None:
     target_model.load_state_dict(source_model.state_dict())
     target_model.eval()
 
 
-def _compile_eval_model(model: BaseModelAPI, cfg: FullConfig) -> None:
+def _compile_eval_model(model: BaseModelAPI[Any, Any], cfg: FullConfig) -> None:
     configure_model_compile(model, cfg.rl)
     model.eval()
 
@@ -1076,7 +1092,7 @@ def _resume_wandb_run_id(
 
 
 def _load_model_from_checkpoint(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     *,
     path: Path,
     device: torch.device,
@@ -1200,8 +1216,8 @@ def _format_checkpoint_step(env_steps: int) -> str:
 
 def _evaluate_against_last_best(
     *,
-    current_model: BaseModelAPI,
-    last_best_model: BaseModelAPI,
+    current_model: BaseModelAPI[Any, Any],
+    last_best_model: BaseModelAPI[Any, Any],
     cfg: FullConfig,
     device: torch.device,
     replay_dir: Path | None = None,
@@ -1257,8 +1273,8 @@ def _evaluate_against_last_best(
 
 def _evaluate_games(
     *,
-    current_model: BaseModelAPI,
-    last_best_model: BaseModelAPI,
+    current_model: BaseModelAPI[Any, Any],
+    last_best_model: BaseModelAPI[Any, Any],
     cfg: FullConfig,
     n_games: int,
     n_envs: int,
@@ -1266,18 +1282,21 @@ def _evaluate_games(
     replay_games: int = 0,
     replay_output_path: Path | None = None,
 ) -> tuple[_EvalStats, dict[int, _EvalStats], dict[str, list[float]], int]:
-    env = VectorizedEnv(
+    env = create_env(
         n_envs=n_envs,
         obs_spec=cfg.env.obs_spec,
         action_spec=cfg.env.action_spec,
         two_player_weight=cfg.env.two_player_weight,
         reward_mode=cfg.env.reward_mode,
         pin_memory=device.type == "cuda",
+        seed=cfg.env.seed,
+        native_threads=cfg.env.native_threads,
+        reward_shaping=cfg.env.reward_shaping,
     )
     obs = env.reset()
-    assignments = torch.full((n_envs, 4), -1, dtype=torch.int64)
+    assignments = torch.full(obs.still_playing.shape, -1, dtype=torch.int64)
     start_masks = obs.still_playing.clone()
-    returns = torch.zeros((n_envs, 4), dtype=torch.float32)
+    returns = torch.zeros(obs.still_playing.shape, dtype=torch.float32)
     recorder = (
         ReplayRecorder(
             output_path=replay_output_path,
@@ -1306,6 +1325,10 @@ def _evaluate_games(
         if started_games < n_games:
             current_game_ordinals[env_index] = started_games
             if recorder is not None:
+                if not isinstance(env, VectorizedEnv):
+                    raise TypeError(
+                        "Orbit replay recorder requires an Orbit environment"
+                    )
                 recorder.start_episode(
                     env,
                     env_index,
@@ -1337,13 +1360,15 @@ def _evaluate_games(
                 device=device,
             )
         )
-        obs, rewards, dones, _step_env_metrics = env.step(actions)
+        obs, rewards, dones, _step_env_metrics = step_env(env, actions)
         hidden_current = current_model.reset_hidden_state(hidden_current, dones)
         hidden_last_best = last_best_model.reset_hidden_state(hidden_last_best, dones)
         steps += n_envs
         terminal_envs = torch.nonzero(dones.all(dim=1), as_tuple=False).flatten()
         terminal_env_set = {int(env_index.item()) for env_index in terminal_envs}
         if recorder is not None:
+            if not isinstance(env, VectorizedEnv):
+                raise TypeError("Orbit replay recorder requires an Orbit environment")
             recorder.record_step(
                 env,
                 terminal_envs=terminal_env_set,
@@ -1361,17 +1386,18 @@ def _evaluate_games(
                 if terminal_metrics is None:
                     raise RuntimeError(f"missing terminal metrics for env {env_index}")
                 _extend_single_env_metrics(env_metrics, terminal_metrics)
+                outcome = _evaluation_outcome(cfg, terminal_metrics, returns[env_index])
                 _record_eval_terminal_result(
                     stats,
                     assignments[env_index],
                     start_masks[env_index],
-                    returns[env_index],
+                    outcome,
                 )
                 _record_eval_terminal_result(
                     stats_by_player_count[player_count],
                     assignments[env_index],
                     start_masks[env_index],
-                    returns[env_index],
+                    outcome,
                 )
                 games += 1
 
@@ -1386,6 +1412,10 @@ def _evaluate_games(
             if started_games < n_games:
                 current_game_ordinals[env_index] = started_games
                 if recorder is not None:
+                    if not isinstance(env, VectorizedEnv):
+                        raise TypeError(
+                            "Orbit replay recorder requires an Orbit environment"
+                        )
                     recorder.start_episode(
                         env,
                         env_index,
@@ -1397,6 +1427,20 @@ def _evaluate_games(
             else:
                 current_game_ordinals[env_index] = None
     return stats, stats_by_player_count, env_metrics, steps
+
+
+def _evaluation_outcome(
+    cfg: FullConfig,
+    terminal_metrics: dict[str, float],
+    training_returns: torch.Tensor,
+) -> torch.Tensor:
+    """Checkpoint wins use the game objective, never its training surrogate."""
+    if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+        return torch.tensor(
+            [terminal_metrics["bank_0"], terminal_metrics["bank_1"]],
+            dtype=torch.float64,
+        )
+    return training_returns
 
 
 def _player_count_for_eval(active_slots: torch.Tensor, env_index: int) -> int:
@@ -1502,8 +1546,8 @@ def _eval_actions_for_assignments(
     obs: ObsBatch,
     assignments: torch.Tensor,
     *,
-    current_model: BaseModelAPI,
-    last_best_model: BaseModelAPI,
+    current_model: BaseModelAPI[Any, Any],
+    last_best_model: BaseModelAPI[Any, Any],
     config: DTypeConfig,
     device: torch.device,
 ) -> ActionBundle:
@@ -1526,8 +1570,8 @@ def _eval_actions_for_assignments_and_hidden(
     obs: ObsBatch,
     assignments: torch.Tensor,
     *,
-    current_model: BaseModelAPI,
-    last_best_model: BaseModelAPI,
+    current_model: BaseModelAPI[Any, Any],
+    last_best_model: BaseModelAPI[Any, Any],
     hidden_current: ModelHiddenState | None,
     hidden_last_best: ModelHiddenState | None,
     config: DTypeConfig,
@@ -1556,7 +1600,7 @@ def _eval_actions_for_assignments_and_hidden(
 
 
 def _model_output_for_eval(
-    model: BaseModelAPI,
+    model: BaseModelAPI[Any, Any],
     obs: ObsBatch,
     *,
     deterministic: bool,
@@ -1568,78 +1612,13 @@ def _model_output_for_eval(
 
 
 def _obs_to_device(obs: ObsBatch, device: torch.device) -> ObsBatch:
-    return ObsBatch(
-        **{
-            field: getattr(obs, field).to(
-                device=device,
-                non_blocking=device.type == "cuda",
-            )
-            for field in ObsBatch.model_fields
-            if field
-            not in {
-                "action_mask",
-                "player_features",
-                "fleet_target",
-                "target_incoming_features",
-            }
-        },
-        action_mask=_action_mask_to_device(obs, device),
-        player_features=(
-            None
-            if obs.player_features is None
-            else obs.player_features.to(
-                device=device,
-                non_blocking=device.type == "cuda",
-            )
-        ),
-        fleet_target=(
-            None
-            if obs.fleet_target is None
-            else obs.fleet_target.to(
-                device=device,
-                non_blocking=device.type == "cuda",
-            )
-        ),
-        target_incoming_features=(
-            None
-            if obs.target_incoming_features is None
-            else obs.target_incoming_features.to(
-                device=device,
-                non_blocking=device.type == "cuda",
-            )
-        ),
-    )
+    return _training_obs_to_device(obs, device, non_blocking=device.type == "cuda")
 
 
 def _action_mask_to_device(obs: ObsBatch, device: torch.device) -> ActionMask:
-    if isinstance(obs.action_mask, PureActionMask):
-        return PureActionMask(
-            can_act=obs.action_mask.can_act.to(
-                device=device,
-                non_blocking=device.type == "cuda",
-            ),
-            max_launch=obs.action_mask.max_launch.to(
-                device=device,
-                non_blocking=device.type == "cuda",
-            ),
-        )
-    if isinstance(obs.action_mask, DiscreteTargetActionMask):
-        return DiscreteTargetActionMask(
-            can_act=obs.action_mask.can_act.to(
-                device=device,
-                non_blocking=device.type == "cuda",
-            ),
-            max_launch=obs.action_mask.max_launch.to(
-                device=device,
-                non_blocking=device.type == "cuda",
-            ),
-        )
-    return DiscreteTargetBinActionMask(
-        can_act=obs.action_mask.can_act.to(
-            device=device,
-            non_blocking=device.type == "cuda",
-        )
-    )
+    return _training_obs_to_device(
+        obs, device, non_blocking=device.type == "cuda"
+    ).action_mask
 
 
 def _select_actions(
@@ -1649,6 +1628,13 @@ def _select_actions(
 ) -> ActionBundle:
     if type(actions_a) is not type(actions_b):
         raise ValueError("checkpoint action bundles must have matching kinds")
+    if isinstance(actions_a, KaggricultureActions) and isinstance(
+        actions_b, KaggricultureActions
+    ):
+        return KaggricultureActions(
+            tokens=_select_action(actions_a.tokens, actions_b.tokens, use_a),
+            lengths=_select_action(actions_a.lengths, actions_b.lengths, use_a),
+        )
     if isinstance(actions_a, PureActions) and isinstance(actions_b, PureActions):
         action_mask = use_a[:, :, None, None]
         return PureActions(

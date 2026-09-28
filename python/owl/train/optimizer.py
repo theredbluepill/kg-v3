@@ -205,7 +205,9 @@ def lr_multiplier(config: LRScheduleConfig, step: int) -> float:
             assert_never(config.schedule)
 
 
-def create_optimizer(model: BaseModelAPI, config: OptimizerConfig) -> Optimizer:
+def create_optimizer(
+    model: BaseModelAPI[Any, Any], config: OptimizerConfig
+) -> Optimizer:
     trainable_params = [param for param in model.parameters() if param.requires_grad]
     if not trainable_params:
         raise ValueError("optimizer requires at least one trainable parameter")
@@ -260,7 +262,7 @@ def create_optimizer(model: BaseModelAPI, config: OptimizerConfig) -> Optimizer:
     assert_never(config.optimizer)
 
 
-def _excluded_from_muon_param_ids(model: BaseModelAPI) -> set[int]:
+def _excluded_from_muon_param_ids(model: BaseModelAPI[Any, Any]) -> set[int]:
     return {
         id(param)
         for layer in (*model.get_input_layers(), *model.get_output_layers())

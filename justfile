@@ -26,10 +26,10 @@ py-static:
     uv run mypy {{py_src}} {{py_scripts}}
 [group: 'python']
 py-test:
-    uv run pytest {{py_tests}} -m "not slow"
+    uv run --extra reference pytest {{py_tests}} -m "not slow"
 [group: 'python']
 py-test-full:
-    uv run pytest {{py_tests}}
+    uv run --extra reference pytest {{py_tests}}
 [group: 'python']
 py-prepare: py-format py-lint py-static py-test docs-fresh
 
