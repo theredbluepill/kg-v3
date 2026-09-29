@@ -1,8 +1,10 @@
-# Brief — Phase 4: Teacher distillation (Claude), v1
+# Brief — Phase 4: Teacher distillation (Claude), v2
 
 Plan: Phase 4 (4.1 distributions and KL, 4.2 targets and cache, 4.3 model methods and trainer wiring, 4.4 configs); principles I0, I5, I6, I11; lessons L6, L14. Reviewer: Codex (brief review before any code, then one review per sub-task before it merges into `kg/isaiah-gap-closure`). The previous plan's Tasks 3.2–3.5 (`kg/reference-2026-09-29:ops/gap-closure-2026-09-29/plan.md`) supply the task shapes; this brief rewrites them for the rebuilt grammar heads (`python/owl/model/kaggriculture_actor.py`) and for the `TeacherTargets` protocol that stream C already merged.
 
 Written on `kg/rebuild-trainer-model` at `4cac1a1`. Line numbers refer to that tree unless a branch is named.
+
+This v2 replaces v1 as the operative text. Review history: `codex/brief-4-review.md` (v1 at `4ba9081`, REVISE: two P1 and three P2 findings plus a stale test option; all applied here — P1-1 stateless teacher dispatch in §3.2 and T15b; P1-2 grammar signature on the cached path in §1.2, §2.1, §3.1 and T15; P2-3 one calculation/cache dtype rule in §1.1–§1.3 and T6; P2-4 phase completion requires T18/T19 to execute in §6; P2-5 T18's metric and first-minibatch check; `--extra reference` removed from §5). The reviewer's open-point answers (single-chunk no-copy `concat`, Orbit's asymmetric `concat` kept) are adopted.
 
 ## 0. Inputs read, status and dependencies
 
@@ -39,12 +41,14 @@ Notation: seat row `r`; unit frame `f ∈ [0, 241)`; market position `p ∈ [0, 
 - `market_kind`: queue availability, then HIRE removed where `actor_counts + exclusive_final_HIRE_prefix(p) ≥ hire_limit`;
 - market item and digits indexed by the replayed kind.
 
-Teacher and student each produce fp32 logits `z` (`_density_dtype`), masked as Isaiah masks target logits: `ẑ = z.masked_fill(~M, torch.finfo(torch.float32).min)`. Then
+Teacher and student each produce logits `z` in the density dtype (`_density_dtype`: FP32, or FP64 when the model runs in FP64 for exactness tests), masked as Isaiah masks target logits with that dtype's minimum: `ẑ = z.masked_fill(~M, torch.finfo(z.dtype).min)`. Then
 
 ```text
 KL_k(r, f) = Σ_{v ∈ M_k} p_T(v) · (log p_T(v) − log p_S(v)),   p = softmax(ẑ)
-           = categorical_kl_from_logits(ẑ_T, ẑ_S, M_k)          # common.py:113, reused unchanged
+           = categorical_kl_from_logits(ẑ_T, ẑ_S, M_k)          # common.py:113
 ```
+
+**One dtype rule.** `categorical_kl_from_logits` computes in `torch.promote_types(teacher.dtype, student.dtype, float32)` instead of `.float()`: it upcasts BF16/FP16 to FP32 and never demotes. This is a schema-generic refactor of Isaiah's helper, identical for every input he passes (BF16/FP16/FP32 give FP32 as before); only FP64 inputs change, from a lossy FP32 cast to FP64. The masked fill therefore never meets a narrower dtype, so `finfo(z.dtype).min` stays finite in both FP32 and FP64. The cache stores the teacher's density dtype (FP32 in production, FP64 only in FP64 tests); cached admission accepts FP32 or FP64 slot logits and rejects anything else.
 
 Weights:
 - unit slots × `unit_live[r, f]` (`live & f < actor_counts`)
@@ -58,10 +62,10 @@ Reduction: `per_player_entity[*lead, 252] = Σ_slots`. PPO's unchanged `_output_
 
 - **Direction and gates follow Isaiah:** `KL(teacher ‖ student)`, the same masks and factorization gates as PPO replay, and zero for non-acting entries.
 - **Teacher-forced conditionals, like Isaiah's size KL at the selected target.** Within a frame the factors are chained: `unit_item`'s mask and hidden depend on the replayed `unit_kind`. The sum of per-slot KLs at the replayed prefix is the chain-rule integrand of the joint-program KL evaluated at a behavior-policy sample, not at a teacher sample. It is Isaiah's estimator; unbiasedness for the joint KL is **not** claimed. Unit frames are conditionally independent given the observation (no cross-frame prefix), and so are market positions, except for the HIRE-capacity mask and STOP, which both depend only on earlier positions' replayed kinds.
-- **Same masked supports on both sides.** The student and the teacher see the same replayed tokens, the same tables and the same runtime context, so `M_k` is identical. The HIRE-capacity mask uses the *final* HIRE prefix, which the Task 2.3 enumeration test proved equals the sequential sampler's density.
+- **Same masked supports on both sides, only when the grammar matches.** The student and the teacher see the same replayed tokens and the same runtime context, so `M_k` is identical **if and only if they share the grammar tables and `hire_limit`**. Replay admission does **not** establish this: removing HIRE from one model's `market_kind` table leaves a PASS-plus-STOP program legal for both while changing its probabilities, and with mismatched supports Isaiah's helper can return a negative "KL" (review probe: −0.27031). Each model therefore carries a host-side `GrammarSignature` (SHA-256 over the eight tables' names, shapes and bytes, taken once at construction, plus the live `action_spec.hire_limit`). Cached targets carry the teacher's signature, and the student rejects a different one before any kernel (§3.1); the combined path compares signatures and tables. The HIRE-capacity mask uses the *final* HIRE prefix, which the Task 2.3 enumeration test proved equals the sequential sampler's density.
 - **Marginalization after STOP.** The program ends at the first final `NONE` (position `s`). Positions `p > s` are marginalized in the density (zero log-prob and entropy) because they are not part of the program. They therefore contribute **zero** KL, and the KL is never computed against logits the program never used. The STOP decision itself is distilled: at every `p ≤ s`, `market_kind`'s KL includes `P(NONE)`. At `p = s`, the item and digit masks are `{0}`, which gives exactly 0.
 - **Degenerate supports give exactly 0.** Padded unit frames, unavailable positions, the forced sentinel at `p == order_limits` and inactive rows all have singleton supports. `log_softmax` gives 0 on the single entry and `p = 0` elsewhere, so `KL = 0` exactly, before any liveness weight.
-- **Numerics.** No `-inf` enters the KL path: the `finfo.min` fill gives `p = 0` exactly at masked entries, and `categorical_kl_from_logits` zeroes those terms with `masked_fill`, so neither the forward nor the backward pass forms `0 · ∞`. The density path keeps its `-inf` masking (Task 2.3). Because a masked entry contributes `exp(·) = 0` in both fills, `log_softmax` agrees on unmasked entries; test 4.1-T2 pins this.
+- **Numerics.** No `-inf` enters the KL path: the `finfo(z.dtype).min` fill gives `p = 0` exactly at masked entries, the helper never narrows that dtype (§1.1), and `categorical_kl_from_logits` zeroes those terms with `masked_fill`, so neither the forward nor the backward pass forms `0 · ∞`. The density path keeps its `-inf` masking (Task 2.3). Because a masked entry contributes `exp(·) = 0` in both fills, `log_softmax` agrees on unmasked entries; test 4.1-T2 pins this.
 - **Scale.** A seat's KL sums up to 241 × 5 + 11 × 4 conditional KLs. Orbit sums over its action entities. `teacher_kl_coef` stays Isaiah's 0.005 (recipe alignment). The larger per-seat sum is a recorded residual difference, not an escalation.
 
 ### 1.3 Where it is computed
@@ -70,11 +74,12 @@ Inside `policy_core`, while each slot's logits, mask and liveness are in hand, s
 
 ```python
 # kaggriculture_actor.py, inside the per-slot loop (unit and market stages)
+# logits are already in the density dtype (FP32, or FP64 in FP64 tests)
 masked = logits.masked_fill(~mask, torch.finfo(logits.dtype).min)
 if collect_logits:
     slot_logits[slot] = masked                      # [B, 241 | 11, W_k]
 if teacher_logits is not None:
-    kl = categorical_kl_from_logits(teacher_logits[slot], masked, mask)
+    kl = categorical_kl_from_logits(teacher_logits[slot], masked, mask)  # promotes, never demotes
     slot_kl[slot] = kl * unit_live                  # market: * market_live
 ```
 
@@ -91,12 +96,15 @@ if teacher_logits is not None:
 class KaggricultureTeacherTargets(TeacherTargets):
     """Frozen last-best targets for one rollout, in the observation lead layout.
 
-    slot_logits[k]: fp32 [*lead, 241, W_k] (unit slots) or [*lead, 11, W_k]
-    (market slots), finfo.min outside the replay-conditioned mask.
+    slot_logits[k]: density dtype (FP32; FP64 only in FP64 tests)
+    [*lead, 241, W_k] (unit slots) or [*lead, 11, W_k] (market slots),
+    finfo(dtype).min outside the replay-conditioned mask.
     winner_probabilities: fp32 [*lead, 2], (self, opponent) from each seat's view.
+    grammar: the teacher's GrammarSignature (host value, no tensor).
     """
     slot_logits: dict[int, torch.Tensor] | None
     winner_probabilities: torch.Tensor | None
+    grammar: GrammarSignature
 
     def index(self, indices: torch.Tensor) -> Self: ...        # dim 0 (segments)
     @classmethod
@@ -104,9 +112,9 @@ class KaggricultureTeacherTargets(TeacherTargets):
     def nbytes(self) -> int: ...                               # tensor metadata only
 ```
 
-- **`concat` validates symmetrically** (the Phase 4 decision stream C deferred). Every chunk must carry the same optional fields and the same slot keys; otherwise it raises `ValueError` naming the field. An empty list also raises. A single chunk is returned as is, with no copy. Isaiah's `CachedTeacherDistillationTargets.concat` keeps its inherited first-chunk rule: the trainer never builds mixed chunks, and stream C's tests pin that rule.
+- **`concat` validates symmetrically** (the Phase 4 decision stream C deferred). Every chunk must carry the same optional fields, the same slot keys and the same `grammar`; otherwise it raises `ValueError` naming the field. An empty list also raises. A single chunk is returned as is, with no copy. Isaiah's `CachedTeacherDistillationTargets.concat` keeps its inherited first-chunk rule: the trainer never builds mixed chunks, and stream C's tests pin that rule.
 - **`nbytes()` joins the protocol** (`teacher_targets.py`), and `CachedTeacherDistillationTargets` implements it too (sum of `tensor.nbytes`; no device sync). PPO logs it as `teacher/cache_bytes`, the Phase 6.1 "teacher cache bytes" record.
-- Rollout masks are **not** cached: the student recomputes them from the same tokens and tables. `index` is plain `tensor[indices]` along dim 0.
+- Rollout masks are **not** cached: the student recomputes them from the same tokens and its own tables, and the `grammar` check (§3.1) makes those tables the teacher's. `index` is plain `tensor[indices]` along dim 0 and carries `grammar` unchanged.
 
 ### 2.2 Size at the configured chunk shapes (arithmetic from contract widths)
 
@@ -163,13 +171,13 @@ Both are unmeasured. Task 6.2 reports `time/teacher_seconds` and `perf/teacher_s
 - `compute_teacher_distillation_targets(obs, actions, *, compute_action_kl, compute_value) -> KaggricultureTeacherTargets`, under `torch.no_grad()`:
   1. `_check_action_layout`;
   2. `encode_observations` once;
-  3. if `compute_action_kl`: `_policy(..., actions, collect_logits=True)`, then `check_replay_flags(result.valid)`. This is one host sync per chunk, which is one per iteration at the configured shapes. A teacher whose tables or `hire_limit` differ from the rollout's fails here with the flag group named;
+  3. if `compute_action_kl`: `_policy(..., actions, collect_logits=True)`, then `check_replay_flags(result.valid)`. This is one host sync per chunk, which is one per iteration at the configured shapes. It rejects a program that the teacher's own grammar does not admit, with the flag group named; it does **not** detect a teacher grammar that differs while still admitting the program (§1.2), which is why the targets carry `grammar = self.grammar_signature()`;
   4. reshape to the lead;
   5. if `compute_value`: winner probabilities.
 
   A disabled target is `None` (Isaiah's behavior).
 - `evaluate_actions_with_cached_teacher(obs, actions, teacher_targets, *, hidden_state=None, dones=None, compute_teacher_action_kl, compute_teacher_value) -> ModelTeacherEvaluation`:
-  1. **Admission before any kernel:** stateless checks as in `evaluate_actions`. `isinstance(teacher_targets, KaggricultureTeacherTargets)`, else `TypeError`. A required target that is `None` raises `ValueError` ("cached teacher action targets are missing" / "value targets"). Shape checks per slot key against `(*lead, 241 | 11, W_k)` and `(*lead, 2)` raise `ValueError`.
+  1. **Admission before any kernel:** stateless checks as in `evaluate_actions` (`hidden_state` and `dones` must be `None`; PPO's wrappers dispatch statelessly, §3.2). `isinstance(teacher_targets, KaggricultureTeacherTargets)`, else `TypeError`. A required target that is `None` raises `ValueError` ("cached teacher action targets are missing" / "value targets"). When the action KL is required, `teacher_targets.grammar != self.grammar_signature()` raises `ValueError` naming both signatures, slot keys must equal `POLICY_SLOTS`, slot dtypes must be FP32 or FP64, and shapes must equal `(*lead, 241 | 11, W_k)`; winner targets must be `(*lead, 2)`. Each failure raises `ValueError`.
   2. **Student:** one encode; `_policy(..., actions, teacher_logits=<flattened to rows>)`; `check_replay_flags`.
   3. **Assembly:**
      - The student `ModelEvaluation` is built exactly as `evaluate_actions` builds it: extract `_evaluation_from(result, encoded, obs)` and use it in both.
@@ -177,8 +185,8 @@ Both are unmeasured. Task 6.2 reports `time/teacher_seconds` and `perf/teacher_s
      - Winner tensors: `[*lead, 2]`.
 - `evaluate_actions_with_teacher(obs, actions, teacher, ...)` (the combined path Isaiah retains for the bit-for-bit contract):
   1. `isinstance(teacher, KaggricultureTransformer)`, else `ValueError`;
-  2. `teacher.action_spec == self.action_spec`;
-  3. per-table `torch.equal`, else `ValueError`;
+  2. `teacher.action_spec == self.action_spec` and `teacher.grammar_signature() == self.grammar_signature()`;
+  3. per-table `torch.equal` (catches an in-place table edit after construction), else `ValueError`;
   4. student encode;
   5. teacher `encode_observations` and `_policy(collect_logits=True)` under `no_grad`;
   6. pass the live row-layout logits into the student `_policy` without the lead reshape or `TeacherTargets` round trip, then assemble as above.
@@ -191,8 +199,10 @@ Both are unmeasured. Task 6.2 reports `time/teacher_seconds` and `perf/teacher_s
   - New `teacher_value_cross_entropy(student_winner_log_probabilities, teacher_winner_probabilities, *, value_mask) -> Tensor` (per state). Its default body is Isaiah's formula moved verbatim from `ppo._teacher_value_cross_entropy`: `(-teacher.detach() * student).sum(dim=-1)`, with `value_mask` unused because his joint distribution already zeroes inactive slots.
   - The `supports_cached_teacher_distillation` docstring is made model-generic.
 - **`stateless_transformer_v1.py`:** `evaluate_actions_with_cached_teacher` adds the `isinstance(teacher_targets, CachedTeacherDistillationTargets)` narrowing (`TypeError`), and the class gains `nbytes()`. Nothing else changes.
+- **`python/owl/model/actor/common.py`:** `categorical_kl_from_logits` computes in `torch.promote_types(teacher.dtype, student.dtype, torch.float32)` (§1.1). Isaiah's inputs give the same FP32 computation as before; his teacher tests must pass unchanged.
 - **`python/owl/train/ppo.py`:**
   - `TeacherTargets | None` annotations.
+  - **Stateless teacher dispatch (review P1-1).** `_model_evaluate_actions_with_teacher` and `_model_evaluate_actions_with_cached_teacher` follow `_model_evaluate_actions`: when `hidden_state is None` they call the model without `hidden_state` and `dones`; otherwise they pass both. Isaiah's stateless model ignores sequence-shaped `dones` (`_encode_distillation_observations`), so Orbit results are unchanged, while Kaggriculture's stateless checks (which reject non-`None` `dones`) now hold on the teacher path. T15b tests both wrappers at helper level, without the pending rollout seam.
   - `teacher_value_loss_values = unwrap_model(self.model).teacher_value_cross_entropy(student_log, teacher_probs, value_mask=batch_value_mask)` at the same point, outside autocast, where the free function ran. The two `.view_as(batch_old_values)` calls on the teacher/student winner tensors are dropped: for Orbit those tensors already have that shape, so the result is bit-identical. `_teacher_value_cross_entropy` is removed, and `tests/owl/train/test_loss.py:321` retargets to the base method (call syntax only).
   - Log `teacher/cache_bytes = teacher_targets.nbytes()` when targets are precomputed.
   - `set_teacher_model`'s error text drops "discrete_targets actor" for "cached action-KL support".
@@ -229,7 +239,7 @@ Owner's Mac rules for every step: CPU only, `OMP_NUM_THREADS=2`, tiny models (`_
 
 ```bash
 OMP_NUM_THREADS=2 uv run pytest tests/kaggriculture/test_teacher.py -q
-OMP_NUM_THREADS=2 uv run --extra reference pytest tests/owl tests/scripts tests/tools -m "not slow" -q
+OMP_NUM_THREADS=2 uv run pytest tests/owl tests/scripts tests/tools -m "not slow" -q
 OMP_NUM_THREADS=2 uvx --from rust-just just py-prepare     # not full prepare: no Rust changes
 ```
 
@@ -250,7 +260,8 @@ Shared test helpers (`_tiny`, `_base_case`, `_replay_case`, `_map_obs`, `_cat_ob
     This needs no second KL formula in the oracle beyond the definition.
   - **T4 chunking.** Monkeypatch `km.head_rows_per_chunk` to 2 and the trunk limit as in `test_model_encoder.py:445–484`. `slot_logits` and `kl` are `torch.equal` (heads) and `assert_close` (trunk, same tolerance as those tests) to the unchunked result. A spy counts ≥ 2 head calls and ≥ 2 trunk calls.
   - **T5 compile capture.** Extend the fullgraph test (`test_model_heads.py:669`): the captured core with `teacher_logits` and `collect_logits=True` equals eager.
-  - **T6 gradients.** The KL loss sum gives finite gradients on every student head parameter and none on teacher parameters (`requires_grad_(False)`, `.grad is None`). A finite difference on one student head weight matches autograd within the existing FD test's tolerance.
+  - **T6 gradients.** The KL loss sum gives finite gradients on every student head parameter and none on teacher parameters (`requires_grad_(False)`, `.grad is None`). In FP64 (student and teacher `.double()`, `_obs_double`), a central finite difference (ε = 1e-6) on one student head weight matches autograd within the existing FD test's `rel=1e-6`. This is valid only because the KL helper no longer demotes FP64 (§1.1); the review's probe (analytic 0.08540231 vs FD 0.08940697) is what the old cast produced, and a mutation restoring `.float()` must fail this test.
+  - **Non-vacuity (KL tests).** Each mutation is applied, run and reverted, with its log kept under `ops/rebuild-2026-09-29/trainer-model/`: (a) KL computed without the student mask (`categorical_kl_from_logits(..., logits, mask)` on unmasked student logits) must fail T3; (b) the market KL not weighted by `market_live` must fail T1; (c) the helper's `.float()` cast restored must fail T6's FD check; (d) `slot_logits` collected from `-inf`-masked logits must fail T2 or T1 (NaN/inf).
 - [ ] **Step 2:** run, expect FAIL (missing parameters and fields).
 - [ ] **Step 3: implement** §1.3 and `_evaluation_from`. Keep `forward`/`evaluate_actions` behavior identical: `teacher_logits=None`, `collect_logits=False`, and `kl`/`slot_logits` `None`.
 - [ ] **Step 4:** the 4.1 tests, `tests/kaggriculture` (all heads tests unchanged), the Isaiah suites and `py-prepare`.
@@ -258,14 +269,17 @@ Shared test helpers (`_tiny`, `_base_case`, `_replay_case`, `_map_obs`, `_cat_ob
 
 ### Task 4.2 — targets and cache
 
-**Files:** create `python/owl/model/kaggriculture_teacher.py`; modify `python/owl/model/teacher_targets.py` (`nbytes`), `stateless_transformer_v1.py` (`nbytes` on the cached type only), `python/owl/model/__init__.py` (export) and `kaggriculture.py` (`compute_teacher_distillation_targets`).
+**Files:** create `python/owl/model/kaggriculture_teacher.py` (`KaggricultureTeacherTargets`, `GrammarSignature`, `grammar_signature(tables, hire_limit)`, `TEACHER_TARGET_BYTES_PER_ROW`); modify `python/owl/model/teacher_targets.py` (`nbytes`), `stateless_transformer_v1.py` (`nbytes` on the cached type only), `python/owl/model/__init__.py` (export), `kaggriculture_actor.py` (the tables' digest, taken once at construction) and `kaggriculture.py` (`grammar_signature()`, `compute_teacher_distillation_targets`).
 
 - [ ] **Step 1: failing tests**
   - **T7 shapes and flags.** On a segment-major `[N=3, T=2, 2]` batch: every unit key is `[3, 2, 2, 241, W_k]` fp32 and every market key `[3, 2, 2, 11, W_k]`; winner probabilities are `[3, 2, 2, 2]` and sum to 1. `compute_action_kl=False` gives `slot_logits is None`; `compute_value=False` gives `winner_probabilities is None`. The teacher must not require grad on outputs.
   - **T8 replay admission in the teacher path.** A non-canonical program (from `test_model_heads.py`'s rejection cases) raises `GrammarReplayError` from `compute_teacher_distillation_targets`. So does a teacher built with `hire_limit = actor_counts + 1` replaying a program with 3 HIREs that the student (`hire_limit` 241) sampled; the support group is named.
-  - **T9 index/concat.** Three layouts (both targets, KL only, value only) × chunk sizes {1, 2, 3} over `N = 3`: `concat([t.index(a), t.index(b), ...]) == t`, exactly per tensor. A single chunk returns the same object. Mixed presence raises in **both** orders; mismatched slot key sets raise; an empty list raises. Error texts name the field.
+  - **T9 index/concat.** Three layouts (both targets, KL only, value only) × chunk sizes {1, 2, 3} over `N = 3`: `concat([t.index(a), t.index(b), ...]) == t`, exactly per tensor, and `grammar` is carried. A single chunk returns the same object. Mixed presence raises in **both** orders; mismatched slot key sets raise; mismatched `grammar` raises; an empty list raises. Error texts name the field.
+  - **T9b grammar signature.** Equal for two models built from the same tables and `hire_limit`; different when one table entry flips or `hire_limit` differs; stamped on the targets by `compute_teacher_distillation_targets`.
   - **T10 bytes.** `nbytes()` equals the sum of tensor `nbytes`, and equals `rows × 102,208` for full targets on a `_tiny` model (widths come from the contract, not D). `CachedTeacherDistillationTargets.nbytes()` works on Isaiah's existing fixtures.
+  - **T10b cache arithmetic.** A module constant `TEACHER_TARGET_BYTES_PER_ROW` derived from `kt.SLOT_WIDTHS`, `MAX_ACTORS` and `MARKET_POSITIONS` equals 102,208, and rollout rows give 1,674,575,872 B (2-rank, 16,384 rows) and 837,287,936 B (4-rank, 8,192 rows). Phase 4.4 reuses the constant.
   - **T11 chunked precompute.** The trainer-style loop (`index` segments in chunks of 1, then `concat`) equals one whole-batch call: `torch.equal` for heads-only differences, `assert_close` where the trunk batch size differs (mirror `test_ppo.py:2939`).
+  - **Non-vacuity (target tests).** Mutations, each run and reverted with logs kept: (a) `concat` validating only against the first chunk must fail T9's reversed-order case; (b) `index` slicing dim 1 must fail T9; (c) `grammar` dropped from `concat`'s equality check must fail T9's mismatched-grammar case; (d) `nbytes` counting only slot logits must fail T10.
 - [ ] **Steps 2–4:** FAIL; implement §2.1 and §3.1's first method; the tests, the Isaiah suites (stream C's `test_teacher_targets.py` unchanged) and `py-prepare`.
 - [ ] **Step 5:** update the Phase 4 Reference, the index line and the log. Commit "Cache Kaggriculture teacher targets under the TeacherTargets protocol (Phase 4.2)".
 
@@ -277,16 +291,18 @@ Shared test helpers (`_tiny`, `_base_case`, `_replay_case`, `_map_obs`, `_cat_ob
   - **T12 bit-for-bit (I6).** CPU fp32, `_tiny` student and a different-seed teacher, segment-major `mixed` batch: `evaluate_actions_with_teacher` vs `compute_teacher_distillation_targets` + `evaluate_actions_with_cached_teacher`. Every field is `torch.equal`: `action_kl` `event`, `per_player_entity` and each component, teacher winner probabilities, student winner log-probs, `teacher_value_cross_entropy`, student log-probs, entropies and values.
   - **T13 teacher = student copy.** (`load_state_dict`): KL is exactly zero, and the value CE equals the live-seat mean of the student's winner entropy (`assert_close` 1e-6).
   - **T14 value CE reduction.** Hand tensors: two live seats give the mean of two CEs. One non-live seat is excluded. No live seat gives 0, with state weight 0 in `_value_state_weight`. Summing would fail the test (a guard against doubling).
-  - **T15 admission.** Wrong target type → `TypeError` (and `CachedTeacherDistillationTargets` into Kaggriculture, and the reverse into Isaiah's model); wrong slot shape or missing key → `ValueError`; missing required target → `ValueError`; all before any kernel (a spy on `encode_observations` sees zero calls). The combined path rejects a non-Kaggriculture teacher, a different `action_spec` and different tables.
+  - **T15 admission.** Wrong target type → `TypeError` (and `CachedTeacherDistillationTargets` into Kaggriculture, and the reverse into Isaiah's model); wrong slot shape or missing key → `ValueError`; missing required target → `ValueError`; all before any kernel (a spy on `encode_observations` sees zero calls). The combined path rejects a non-Kaggriculture teacher, a different `action_spec` and different tables. **Grammar mismatch that replay cannot see (review P1-2):** a teacher built with HIRE removed from `market_kind` computes targets for a HIRE-free program that both grammars admit (no `GrammarReplayError`); the student's cached path then raises `ValueError` naming the grammar before any kernel. Non-vacuity: the same targets re-stamped with the student's signature (`dataclasses.replace`) pass admission and yield a `market_kind` KL different from a matched teacher's, so the signature is the only guard. A mutation removing the signature check must fail this test.
+  - **T15b stateless teacher dispatch (review P1-1, runs now).** `ppo._model_evaluate_actions_with_cached_teacher` and `ppo._model_evaluate_actions_with_teacher`, called on a Kaggriculture student with `hidden_state=None` and a non-`None` `dones` tensor (as `_update_minibatch` passes), succeed and equal the direct model call; on Isaiah's `StatelessTransformerV1` fixture they equal the direct call with `dones` passed (Orbit unchanged).
   - **T16 Orbit regression.** Isaiah's teacher tests pass unchanged. `StatelessTransformerV1.teacher_value_cross_entropy` is `torch.equal` to the removed free function's formula on `test_ppo.py:2939`'s rollout. `test_loss.py:321` passes with its new call syntax.
   - **T17 seat isolation and statelessness.** Changing seat 1's observation leaves seat 0's targets and KL unchanged (`torch.equal`). Two calls give equal targets.
   - **T18 trainer** (skip until Task 3.1 trainer seam and 3.2 land). A fake 2-env Kaggriculture env, `teacher_mode` last-best with an active teacher:
     - the precompute runs once per iteration (spy) under `no_grad`, and minibatches use `targets.index`;
-    - `train/teacher_kl` is finite and > 0 for a perturbed teacher, and exactly 0 for a student copy;
+    - `teacher/kl` is finite and > 0 for a perturbed teacher; for a student copy it is exactly 0 **on the first minibatch** (checked by spying `_update_minibatch`'s loss metrics before any optimizer step, or with a single update step at zero learning rate), because later minibatches follow student updates;
     - `teacher/cache_bytes == 2 × 64 × 2 × 102,208` at horizon 64 (or the test's horizon);
     - `teacher/kl_coef` and `teacher/value_coef` are logged;
     - `set_teacher_model` rejects a hidden-state teacher through the existing path.
-  - **T19 `run_ppo` last-best** (skip until `kg/rebuild-configs` is merged). `_teacher_obs_spec_for_student` covers the Kaggriculture equality path, a mismatch and the cross-game `TypeError`. After a forced promotion, the teacher's targets equal the student's (KL 0), and the tables survive the refresh (`torch.equal` to the grammar's). A resume restores the teacher from `checkpoint_last_best.pt`. A fresh launch from weights activates the teacher. The checkpoint key set contains no teacher cache.
+  - **T19a `_teacher_obs_spec_for_student` (runs now; a pure function).** The Kaggriculture equality path, a mismatch and the cross-game `TypeError`; Isaiah's two existing tests pass unchanged.
+  - **T19b `run_ppo` last-best** (skip until `kg/rebuild-configs` is merged). After a forced promotion, the teacher's targets equal the student's (KL 0), and the tables survive the refresh (`torch.equal` to the grammar's). A resume restores the teacher from `checkpoint_last_best.pt`. A fresh launch from weights activates the teacher. The checkpoint key set contains no teacher cache.
 - [ ] **Steps 2–4:** FAIL; implement §3.1–§3.2; the tests, the full suite, the Isaiah suites and `py-prepare` (with docs-fresh against the mapped docs above).
 - [ ] **Step 5:** update the Phase 4 Reference. Revise the stream C Reference's "Trainer typing is still concrete" and "concat asymmetry" limits in place, linking the Phase 4 note (note, index and log together). Commit "Wire Kaggriculture teacher distillation through Isaiah's cached-teacher path (Phase 4.3)".
 
@@ -301,7 +317,7 @@ Shared test helpers (`_tiny`, `_base_case`, `_replay_case`, `_map_obs`, `_cat_ob
 
 ## 6. Acceptance for Phase 4
 
-- **Tests:** T1–T17 and the 4.4 tests pass on CPU. T18/T19 are written and either pass or are skipped with their named dependency.
+- **Tests:** T1–T17, T15b, T19a and the 4.4 tests pass on CPU. **Phase 4 is complete only when T18 and T19b execute and pass** (review P2-4). During intermediate sub-tasks they are written and skipped with their named dependency, and each sub-task report lists them as open; a report with them skipped may close 4.1–4.3 as sub-tasks but must state that Phase 4 is not complete.
 - **No regressions:** Isaiah's suites stay green; `py-prepare` passes; no Rust changes.
 - **Refactors, not shims:** no free-function shims for the removed `_teacher_value_cross_entropy`, no `getattr`/`setattr` in first-class paths, and every narrowing is `isinstance` with an explicit error.
 - **Cookbook:** one Phase 4 Reference, the revised stream C and configs References, index lines and prepended log entries.
