@@ -25,6 +25,17 @@ the driver therefore signals every started stage's process group itself:
 SIGTERM, a bounded wait of TERM_GRACE_S, then SIGKILL and a further bounded
 wait of KILL_GRACE_S. The total stays below launch.sh's `timeout -k 20` grace,
 after which `timeout` would SIGKILL the driver and cleanup could not run.
+
+Spawn/registration is atomic with respect to those signals (second post-run
+revision, after Codex review verify-gpu-bundle-r2 finding 3). A stage that
+exists but is not yet in `procs` would be missed by cleanup, so while the main
+thread (Phase 2) starts and registers a stage, the signal handler only records
+the signal; the driver handles it as soon as the stage is registered. Worker
+threads (Phase 1) need no deferral: the handler runs in the main thread, and
+the worker registers under the same lock that cleanup takes, killing the stage
+itself if cleanup already ran. Signals are deferred rather than blocked with
+`signal.pthread_sigmask`, because a child started while they are blocked
+inherits the blocked mask and would then ignore cleanup's SIGTERM.
 """
 
 from __future__ import annotations
@@ -234,6 +245,10 @@ class Driver:
         self.procs: dict[str, subprocess.Popen[bytes]] = {}
         self.failure: int | None = None
         self.cleaned = False
+        # Main-thread spawn window (see _spawn); only the main thread, where
+        # the signal handler also runs, reads or writes these two.
+        self.defer_signals = False
+        self.pending_signal: int | None = None
         self.log_fh = open(RUN / "driver.jsonl", "a")
 
     def log(self, rec: dict[str, Any]) -> None:
@@ -313,6 +328,12 @@ class Driver:
     def _on_signal(self, signum: int, _frame: object) -> None:
         if self.cleaned:
             return
+        if self.defer_signals:
+            # A stage may exist that cleanup cannot see yet; _spawn calls
+            # back once it is registered.
+            if self.pending_signal is None:
+                self.pending_signal = signum
+            return
         name = signal.Signals(signum).name
         with self.lock:
             if self.failure is None:
@@ -325,6 +346,35 @@ class Driver:
         atexit.register(self.cleanup, "atexit")
         for sig in CLEANUP_SIGNALS:
             signal.signal(sig, self._on_signal)
+
+    def _spawn(self, name: str, cmd: list[str], env: dict[str, str],
+               fh: Any) -> subprocess.Popen[bytes]:
+        """Start a stage in its own session and register it for cleanup.
+
+        No cleanup signal can unwind the driver between the child existing and
+        its registration: in the main thread, the handler defers until the
+        stage is in `procs`, including while `Popen` itself is executing.
+        """
+        main = threading.current_thread() is threading.main_thread()
+        if main:
+            self.defer_signals = True
+        try:
+            p = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=fh,
+                                 stderr=subprocess.STDOUT, start_new_session=True)
+            with self.lock:
+                self.procs[name] = p
+                late = self.cleaned
+        finally:
+            if main:
+                self.defer_signals = False
+                pending, self.pending_signal = self.pending_signal, None
+                if pending is not None:
+                    self._on_signal(pending, None)
+        if late:
+            # Cleanup already ran and missed this group; nothing in it
+            # has done work yet, so kill it outright.
+            self._signal_group(p, signal.SIGKILL)
+        return p
 
     def run_stage(self, stage: Stage, gpu: int) -> None:
         name, role, backends, cache, script, args = stage
@@ -353,15 +403,7 @@ class Driver:
                   "cmd": cmd, "status": "launch", "timeout_s": round(timeout)})
         rc: int | str
         with open(RUN / f"{name}.log", "w") as fh:
-            p = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=fh,
-                                 stderr=subprocess.STDOUT, start_new_session=True)
-            with self.lock:
-                self.procs[name] = p
-                late = self.cleaned
-            if late:
-                # Cleanup already ran and missed this group; nothing in it
-                # has done work yet, so kill it outright.
-                self._signal_group(p, signal.SIGKILL)
+            p = self._spawn(name, cmd, env, fh)
             try:
                 rc = p.wait(timeout=timeout)
             except subprocess.TimeoutExpired:

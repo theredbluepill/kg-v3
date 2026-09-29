@@ -12,6 +12,15 @@ Scenarios:
               during a Phase 2 stage (run in the driver's main thread).
   new_complete revised driver; every stage is quick and passes before the
               timeout, so the ordinary exit path (exit 0, no cleanup) is checked.
+  new_spawn_after_popen  revised driver; SIGTERM reaches the driver in the
+              Phase 2 spawn window: after `subprocess.Popen` has returned the
+              stage but before the driver registers it (Codex review
+              verify-gpu-bundle-r2 finding 3). A trace hook on the driver's
+              source fires at the first driver line on which the new Popen is
+              bound and not yet registered, so the window is hit on every run.
+  new_spawn_in_popen  revised driver; the same signal delivered while the
+              `Popen` call is still executing (the child exists but `Popen`
+              has not returned to the driver).
   old_phase1  control: the driver as run in attempt 2 (pod/attempt2/driver.py,
               no signal handler). Expected to leave survivors, which shows
               the check discriminates. The test kills them afterwards.
@@ -24,11 +33,14 @@ and to that group, and after the -k grace sends SIGKILL to both.
 Usage (from any directory): python3 test_driver_cleanup.py
 Exit 0 when every new_* timeout scenario has zero survivors and the driver
 exited on its own (rc 143) before the -k grace, new_complete exited 0 without
-cleanup, and the old_* control left survivors.
+cleanup, each new_spawn_* scenario hit its window (stage started, not yet
+registered), logged a cleanup of that stage, exited 143 and left zero
+survivors, and the old_* control left survivors.
 """
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import importlib.util
 import json
@@ -39,6 +51,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -48,6 +61,10 @@ HERE = Path(__file__).resolve().parent
 NEW_DRIVER = HERE / "driver.py"
 OLD_DRIVER = HERE.parent / "pod" / "attempt2" / "driver.py"
 TIMEOUT_S = 3.0
+# The spawn-race scenarios signal the driver themselves; the outer timeout is
+# only a backstop there and must not fire first.
+RACE_TIMEOUT_S = 30.0
+RACE_STAGE = "c4_race"
 KILL_AFTER_S = 20.0
 
 DUMMY_STAGE = r'''
@@ -106,6 +123,11 @@ def child(driver_path: str, scenario: str, workdir: str, token: str) -> None:
         drv.GPU1_PHASE1 = [stage("c2_long", "correct", "long", token),
                            stage("c1_after", "correct", "long", token)]
         drv.GPU0_PHASE2 = [stage("c4_never", "correct", "long", token)]
+    elif scenario.startswith("new_spawn_"):
+        drv.GPU0_PHASE1 = [stage("c3_quick", "correct", "quick", token)]
+        drv.GPU1_PHASE1 = [stage("c2_quick", "correct", "quick", token)]
+        drv.GPU0_PHASE2 = [stage(RACE_STAGE, "correct", "long", token),
+                           stage("c4_after", "correct", "long", token)]
     elif scenario == "new_complete":
         drv.GPU0_PHASE1 = [stage("c3_quick", "correct", "quick", token)]
         drv.GPU1_PHASE1 = [stage("c2_quick", "correct", "quick", token)]
@@ -116,7 +138,55 @@ def child(driver_path: str, scenario: str, workdir: str, token: str) -> None:
                            stage("c2_ctl_quick", "control", "quick", token)]
         drv.GPU0_PHASE2 = [stage("c4_long_ignore", "correct", "long_ignore_term", token),
                            stage("c4_after", "correct", "long", token)]
-    sys.exit(drv.Driver().main())
+    driver = drv.Driver()
+    if scenario.startswith("new_spawn_"):
+        install_spawn_race(driver, driver_path, scenario, wd)
+    sys.exit(driver.main())
+
+
+def install_spawn_race(driver: Any, driver_path: str, scenario: str, wd: Path) -> None:
+    """Send SIGTERM to this driver process inside RACE_STAGE's spawn window.
+
+    Records the stage PID and whether the driver had registered it at that
+    moment in boundary.json, then signals. The signal is sent from the main
+    thread, where Phase 2 runs, so Python runs the driver's handler at once.
+    """
+    fired: list[int] = []
+
+    def registered(p: subprocess.Popen[bytes]) -> bool:
+        return any(q.pid == p.pid for q in list(driver.procs.values()))
+
+    def fire(p: subprocess.Popen[bytes], hook: str) -> None:
+        fired.append(p.pid)
+        (wd / "boundary.json").write_text(json.dumps(
+            {"hook": hook, "stage_pid": p.pid, "registered_at_signal": registered(p),
+             "registered_groups": sorted(driver.procs)}))
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    def is_race(args: Any) -> bool:
+        return (not fired and threading.current_thread() is threading.main_thread()
+                and any(RACE_STAGE in str(a) for a in args))
+
+    if scenario == "new_spawn_in_popen":
+        class RacingPopen(subprocess.Popen):  # type: ignore[type-arg]
+            def __init__(self, args: Any, *a: Any, **kw: Any) -> None:
+                super().__init__(args, *a, **kw)
+                if is_race(args):
+                    fire(self, "inside Popen, after the child started")
+        subprocess.Popen = RacingPopen  # type: ignore[misc]
+        return
+
+    def trace(frame: Any, event: str, _arg: Any) -> Any:
+        if frame.f_code.co_filename != driver_path:
+            return None
+        p = frame.f_locals.get("p")
+        if (event == "line" and isinstance(p, subprocess.Popen) and is_race(p.args)
+                and not registered(p)):
+            fire(p, f"after Popen returned, before {frame.f_code.co_name} line "
+                    f"{frame.f_lineno}")
+        return trace
+
+    sys.settrace(trace)
 
 
 def emulated_timeout(cmd: list[str], duration: float, kill_after: float,
@@ -178,10 +248,17 @@ def run_scenario(scenario: str, driver: Path) -> dict[str, Any]:
     (wd / "dummy_stage.py").write_text(DUMMY_STAGE)
     cmd = [sys.executable, str(Path(__file__).resolve()), "--child", str(driver),
            scenario, str(wd), token]
-    res = emulated_timeout(cmd, TIMEOUT_S, KILL_AFTER_S, wd / "driver.out")
+    race = scenario.startswith("new_spawn_")
+    res = emulated_timeout(cmd, RACE_TIMEOUT_S if race else TIMEOUT_S, KILL_AFTER_S,
+                           wd / "driver.out")
     time.sleep(1.0)
     pids = sorted(wd.glob("pids/*"))
     pid_alive = {f.name: alive(int(f.name.split("-")[1])) for f in pids}
+    boundary = (json.loads((wd / "boundary.json").read_text())
+                if (wd / "boundary.json").exists() else None)
+    if boundary is not None:
+        # The stage may be killed before it records its own PIDs.
+        pid_alive[f"race_stage-{boundary['stage_pid']}"] = alive(boundary["stage_pid"])
     surv = survivors(token)
     records = [json.loads(line) for line in (wd / "driver.jsonl").read_text().splitlines()
                if line] if (wd / "driver.jsonl").exists() else []
@@ -190,12 +267,17 @@ def run_scenario(scenario: str, driver: Path) -> dict[str, Any]:
         "driver_sha256": sha256(driver), "workdir": str(wd),
         "stage_pids_recorded": len(pids),
         "stage_pids_alive": sorted(k for k, v in pid_alive.items() if v),
+        "boundary": boundary,
         "survivors_by_token": surv,
         "driver_log": [{k: r[k] for k in ("t", "stage", "status", "rc", "signal",
                                            "reason", "groups") if k in r}
                        for r in records],
     })
     if surv or any(pid_alive.values()):
+        if boundary is not None:
+            # EPERM: macOS refuses killpg on a group left with only zombies.
+            with contextlib.suppress(ProcessLookupError, PermissionError):
+                os.killpg(boundary["stage_pid"], signal.SIGKILL)
         for f in pids:
             try:
                 os.kill(int(f.name.split("-")[1]), signal.SIGKILL)
@@ -216,6 +298,8 @@ def main() -> int:
     results = [run_scenario("new_phase1", NEW_DRIVER),
                run_scenario("new_phase2", NEW_DRIVER),
                run_scenario("new_complete", NEW_DRIVER),
+               run_scenario("new_spawn_after_popen", NEW_DRIVER),
+               run_scenario("new_spawn_in_popen", NEW_DRIVER),
                run_scenario("old_phase1", OLD_DRIVER)]
     ok = True
     for r in results:
@@ -225,6 +309,15 @@ def main() -> int:
             good = (clean and not r["timed_out"] and r["rc"] == 0
                     and not any(x.get("status") in ("signal", "stage_cleanup")
                                 for x in r["driver_log"]))
+        elif r["scenario"].startswith("new_spawn_"):
+            b = r["boundary"]
+            cleaned = [g["stage"] for x in r["driver_log"]
+                       if x.get("status") == "stage_cleanup" for g in x["groups"]]
+            launched = [x.get("stage") for x in r["driver_log"]
+                        if x.get("status") == "launch"]
+            good = (clean and b is not None and not b["registered_at_signal"]
+                    and not r["timed_out"] and r["rc"] == 128 + signal.SIGTERM
+                    and RACE_STAGE in cleaned and "c4_after" not in launched)
         elif r["scenario"].startswith("new_"):
             want_pids = 4 if r["scenario"].endswith("phase1") else 2
             good = (clean and r["stage_pids_recorded"] == want_pids and r.get("timed_out")

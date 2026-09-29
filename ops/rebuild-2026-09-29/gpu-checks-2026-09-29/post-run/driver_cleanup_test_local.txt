@@ -1,19 +1,20 @@
-# test_driver_cleanup.py  utc=2026-09-29T09:45:08Z
+# test_driver_cleanup.py  utc=2026-09-29T10:43:15Z
 # platform=macOS-26.4-arm64-arm-64bit python=3.9.6
 # emulated `timeout -s TERM -k 20 3` (GNU timeout not installed locally)
-# test script sha256=15007f03d7b3b656200ab6cec8f6ab755faf6cffe3d27da17cbb5f24195169eb
+# test script sha256=d6e3c6013b5b4e1da1fd74dca12cf0fe215d9939b4725c40c2485c2838f4ae5e
 {
  "timed_out": true,
  "driver_rc": 143,
  "timeout_needed_sigkill": false,
- "driver_exit_after_signal_s": 8.14,
- "elapsed_s": 11.15,
+ "driver_exit_after_signal_s": 8.2,
+ "elapsed_s": 11.2,
  "scenario": "new_phase1",
  "driver": "scripts/driver.py",
- "driver_sha256": "e0876f73f26598b8259c2d4e820888e8dfbaee4366ac4c8b761270ef51b3182a",
- "workdir": "/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-new_phase1-rr_dh8qt",
+ "driver_sha256": "bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3",
+ "workdir": "/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-new_phase1-z9vk346b",
  "stage_pids_recorded": 4,
  "stage_pids_alive": [],
+ "boundary": null,
  "survivors_by_token": [],
  "driver_log": [
   {
@@ -64,13 +65,13 @@
    "groups": [
     {
      "stage": "c3_long_ignore",
-     "pgid": 40484,
+     "pgid": 66779,
      "sigkill": true,
      "survived": false
     },
     {
      "stage": "c2_long",
-     "pgid": 40485,
+     "pgid": 66780,
      "sigkill": false,
      "survived": false
     }
@@ -78,19 +79,20 @@
   }
  ]
 }
-# new_phase1: PASS (survivors=0, pids recorded=4, driver rc=143, driver exit after signal=8.14 s)
+# new_phase1: PASS (survivors=0, pids recorded=4, driver rc=143, driver exit after signal=8.2 s)
 {
  "timed_out": true,
  "driver_rc": 143,
  "timeout_needed_sigkill": false,
- "driver_exit_after_signal_s": 8.15,
- "elapsed_s": 11.15,
+ "driver_exit_after_signal_s": 8.11,
+ "elapsed_s": 11.12,
  "scenario": "new_phase2",
  "driver": "scripts/driver.py",
- "driver_sha256": "e0876f73f26598b8259c2d4e820888e8dfbaee4366ac4c8b761270ef51b3182a",
- "workdir": "/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-new_phase2-p5qrnj0s",
+ "driver_sha256": "bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3",
+ "workdir": "/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-new_phase2-tlkr0l19",
  "stage_pids_recorded": 2,
  "stage_pids_alive": [],
+ "boundary": null,
  "survivors_by_token": [],
  "driver_log": [
   {
@@ -108,19 +110,19 @@
    "status": "launch"
   },
   {
-   "t": 0.3,
+   "t": 0.4,
    "stage": "c3_quick",
    "status": "pass",
    "rc": 0
   },
   {
-   "t": 0.3,
+   "t": 0.4,
    "stage": "c2_quick",
    "status": "pass",
    "rc": 0
   },
   {
-   "t": 0.3,
+   "t": 0.4,
    "stage": "c2_ctl_quick",
    "status": "launch"
   },
@@ -145,13 +147,13 @@
    "signal": "SIGTERM"
   },
   {
-   "t": 11.1,
+   "t": 11.0,
    "status": "stage_cleanup",
    "reason": "signal SIGTERM",
    "groups": [
     {
      "stage": "c4_long_ignore",
-     "pgid": 40540,
+     "pgid": 67485,
      "sigkill": true,
      "survived": false
     }
@@ -159,17 +161,18 @@
   }
  ]
 }
-# new_phase2: PASS (survivors=0, pids recorded=2, driver rc=143, driver exit after signal=8.15 s)
+# new_phase2: PASS (survivors=0, pids recorded=2, driver rc=143, driver exit after signal=8.11 s)
 {
  "timed_out": false,
  "rc": 0,
- "elapsed_s": 0.76,
+ "elapsed_s": 0.83,
  "scenario": "new_complete",
  "driver": "scripts/driver.py",
- "driver_sha256": "e0876f73f26598b8259c2d4e820888e8dfbaee4366ac4c8b761270ef51b3182a",
- "workdir": "/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-new_complete-dkwbft5i",
+ "driver_sha256": "bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3",
+ "workdir": "/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-new_complete-wfaigqfl",
  "stage_pids_recorded": 0,
  "stage_pids_alive": [],
+ "boundary": null,
  "survivors_by_token": [],
  "driver_log": [
   {
@@ -188,22 +191,22 @@
   },
   {
    "t": 0.3,
-   "stage": "c2_quick",
-   "status": "pass",
-   "rc": 0
-  },
-  {
-   "t": 0.3,
    "stage": "c3_quick",
    "status": "pass",
    "rc": 0
   },
   {
    "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.4,
    "status": "phase1_done"
   },
   {
-   "t": 0.3,
+   "t": 0.4,
    "stage": "c4_quick",
    "status": "launch"
   },
@@ -221,27 +224,182 @@
 }
 # new_complete: PASS (survivors=0, pids recorded=0, driver rc=0, driver exit after signal=None s)
 {
+ "timed_out": false,
+ "rc": 143,
+ "elapsed_s": 0.55,
+ "scenario": "new_spawn_after_popen",
+ "driver": "scripts/driver.py",
+ "driver_sha256": "bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3",
+ "workdir": "/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-new_spawn_after_popen-xsomlphp",
+ "stage_pids_recorded": 0,
+ "stage_pids_alive": [],
+ "boundary": {
+  "hook": "after Popen returned, before _spawn line 364",
+  "stage_pid": 67617,
+  "registered_at_signal": false,
+  "registered_groups": [
+   "c2_quick",
+   "c3_quick"
+  ]
+ },
+ "survivors_by_token": [],
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.3,
+   "stage": "c4_race",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "status": "signal",
+   "signal": "SIGTERM"
+  },
+  {
+   "t": 0.5,
+   "status": "stage_cleanup",
+   "reason": "signal SIGTERM",
+   "groups": [
+    {
+     "stage": "c4_race",
+     "pgid": 67617,
+     "sigkill": false,
+     "survived": false
+    }
+   ]
+  }
+ ]
+}
+# new_spawn_after_popen: PASS (survivors=0, pids recorded=0, driver rc=143, driver exit after signal=None s)
+{
+ "timed_out": false,
+ "rc": 143,
+ "elapsed_s": 0.53,
+ "scenario": "new_spawn_in_popen",
+ "driver": "scripts/driver.py",
+ "driver_sha256": "bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3",
+ "workdir": "/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-new_spawn_in_popen-a8iw0xth",
+ "stage_pids_recorded": 0,
+ "stage_pids_alive": [],
+ "boundary": {
+  "hook": "inside Popen, after the child started",
+  "stage_pid": 67622,
+  "registered_at_signal": false,
+  "registered_groups": [
+   "c2_quick",
+   "c3_quick"
+  ]
+ },
+ "survivors_by_token": [],
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.3,
+   "stage": "c4_race",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "status": "signal",
+   "signal": "SIGTERM"
+  },
+  {
+   "t": 0.4,
+   "status": "stage_cleanup",
+   "reason": "signal SIGTERM",
+   "groups": [
+    {
+     "stage": "c4_race",
+     "pgid": 67622,
+     "sigkill": false,
+     "survived": false
+    }
+   ]
+  }
+ ]
+}
+# new_spawn_in_popen: PASS (survivors=0, pids recorded=0, driver rc=143, driver exit after signal=None s)
+{
  "timed_out": true,
  "driver_rc": -15,
  "timeout_needed_sigkill": false,
  "driver_exit_after_signal_s": 0.0,
- "elapsed_s": 3.01,
+ "elapsed_s": 3.0,
  "scenario": "old_phase1",
  "driver": "pod/attempt2/driver.py",
  "driver_sha256": "15b41c74d17c2df708e45843dc1fa6dcfa6ac85329deb7465a542cf2197469b2",
- "workdir": "/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-45w3ljfu",
+ "workdir": "/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-hxgsagvu",
  "stage_pids_recorded": 4,
  "stage_pids_alive": [
-  "grandchild-40764",
-  "grandchild-40765",
-  "leader-40762",
-  "leader-40763"
+  "grandchild-67627",
+  "grandchild-67628",
+  "leader-67625",
+  "leader-67626"
  ],
+ "boundary": null,
  "survivors_by_token": [
-  "40762 /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-45w3ljfu/dummy_stage.py --backends ATEN --record /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-45w3ljfu/c3_long_ignore.backend.json -- /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-45w3ljfu/dummy.py --mode long_ignore_term --token kgv3-cleanup-test-4957ea53ee99 --out /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-45w3ljfu/c3_long_ignore.jsonl",
-  "40763 /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-45w3ljfu/dummy_stage.py --backends ATEN --record /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-45w3ljfu/c2_long.backend.json -- /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-45w3ljfu/dummy.py --mode long --token kgv3-cleanup-test-4957ea53ee99 --out /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-45w3ljfu/c2_long.jsonl",
-  "40764 /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python -c import signal, sys, time; sys.argv[1] == 'ignore' and signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(300) default kgv3-cleanup-test-4957ea53ee99",
-  "40765 /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python -c import signal, sys, time; sys.argv[1] == 'ignore' and signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(300) ignore kgv3-cleanup-test-4957ea53ee99"
+  "67625 /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-hxgsagvu/dummy_stage.py --backends ATEN --record /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-hxgsagvu/c3_long_ignore.backend.json -- /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-hxgsagvu/dummy.py --mode long_ignore_term --token kgv3-cleanup-test-3a7bd748fe3a --out /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-hxgsagvu/c3_long_ignore.jsonl",
+  "67626 /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-hxgsagvu/dummy_stage.py --backends ATEN --record /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-hxgsagvu/c2_long.backend.json -- /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-hxgsagvu/dummy.py --mode long --token kgv3-cleanup-test-3a7bd748fe3a --out /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kgv3-old_phase1-hxgsagvu/c2_long.jsonl",
+  "67627 /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python -c import signal, sys, time; sys.argv[1] == 'ignore' and signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(300) default kgv3-cleanup-test-3a7bd748fe3a",
+  "67628 /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python -c import signal, sys, time; sys.argv[1] == 'ignore' and signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(300) ignore kgv3-cleanup-test-3a7bd748fe3a"
  ],
  "driver_log": [
   {
