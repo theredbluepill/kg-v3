@@ -3056,3 +3056,53 @@ def test_recurrent_transformer_train_iteration_keeps_parameters_finite() -> None
         assert torch.isfinite(parameter).all()
         if parameter.grad is not None:
             assert torch.isfinite(parameter.grad).all()
+
+
+class TruncatingTinyOrbitEnv(TinyOrbitEnv):
+    def __init__(self, *, n_envs: int, episode_length: int) -> None:
+        super().__init__(n_envs=n_envs, episode_length=episode_length)
+        self.truncate_masks: list[torch.Tensor] = []
+
+    def truncate_envs(self, truncate_mask: torch.Tensor) -> ObsBatch:
+        assert truncate_mask.device.type == "cpu"
+        self.truncate_masks.append(truncate_mask.clone())
+        self._steps[truncate_mask] = 0
+        return self._obs()
+
+
+def test_orbit_truncation_drops_cut_transition_reward_and_bootstraps() -> None:
+    # Characterizes Isaiah's Orbit semantics, which rebuild Task 3.2 keeps: the
+    # cut transition's reward is zeroed and its target bootstraps from the critic.
+    torch.manual_seed(5)
+    env = TruncatingTinyOrbitEnv(n_envs=2, episode_length=10)
+    model = TinyOrbitModel()
+    trainer = ppo.PPOTrainer(
+        env=env,
+        model=model,
+        optimizer=torch.optim.AdamW(model.parameters(), lr=0.01, eps=1e-5),
+        config=ppo.PPOConfig(
+            horizon=3,
+            segments_per_minibatch=1,
+            truncation_step=2,
+            truncation_prob=1.0,
+        ),
+        device=torch.device("cpu"),
+    )
+
+    trainer._collect_rollout()
+    rollout = trainer.rollout
+
+    assert [mask.tolist() for mask in env.truncate_masks] == [[True, True]]
+    assert rollout.truncated.any(dim=(1, 2)).tolist() == [False, True, False]
+    assert rollout.truncated[1].all()
+    assert rollout.dones[1].all()
+    # TinyOrbitEnv pays every active player every step, so zeroing is visible.
+    assert rollout.rewards[0].ne(0).all()
+    assert rollout.rewards[2].ne(0).all()
+    assert rollout.rewards[1].eq(0).all()
+    cut_state = TinyOrbitEnv(n_envs=2, episode_length=10)
+    cut_state._steps.fill_(2)
+    with torch.no_grad():
+        expected_bootstrap = model.compute_value(cut_state._obs())
+    torch.testing.assert_close(rollout.bootstrap_values[1], expected_bootstrap)
+    assert rollout.bootstrap_values[0].eq(0).all()

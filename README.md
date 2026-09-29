@@ -225,6 +225,13 @@ samples replay games from the same vectorized eval batch.
 joint action log-probability. Set it to `per_entity` to clip each controllable
 action entity independently before summing those clipped policy-loss terms back
 to the player-step.
+A Kaggriculture environment requires `env.reward_mode: win_loss`, `rl.gamma:
+1.0`, `rl.value_loss: mse` and `rl.ppo_clip_mode: per_player`: its per-seat
+critic reads `2p(self) - 1`, economic shaping bounds complete-episode returns
+only undiscounted, and a seat's turn is one joint autoregressive action. With
+`rl.truncation_step`, an Orbit cut transition's reward is zeroed, while a
+Kaggriculture cut keeps the economic reward earned on that transition; both
+bootstrap from the critic's value of the cut state.
 `rl.first_minibatch_logratio_limit` (default `0.05` nats) is a correctness
 alarm. Before the first optimizer step of each update, the policy-weighted mean
 log-ratio of the first minibatch (replayed versus rollout log-probs, reduced
@@ -349,6 +356,17 @@ shuffled across active player slots for each eval game, and logs
 last-best snapshot is replaced and also saved as `checkpoint_last_best.pt`. If
 the first periodic checkpoint finds no `checkpoint_last_best.pt`, the starting
 last-best model is saved there first, using its starting environment-step count.
+Each evaluation also logs `eval/games` (games scored), `eval/promoted` (1 when
+the snapshot was replaced, else 0) and `eval/promotion_threshold` (0.7).
+Kaggriculture evaluation games are won by the higher raw final bank (equal
+banks draw), never by the shaped training return, and log
+`eval/candidate_bank`, `eval/last_best_bank` and `eval/candidate_bank_margin`
+from the candidate's seat. Each Kaggriculture evaluation is to seed its games
+with `_evaluation_seed(base_seed, env_steps)`, a reproducible seed that differs
+per evaluation, in the non-negative int64 band `[2**62, 2**62 + 2**61)`; the
+native evaluation env that consumes it is pending rebuild Tasks 1.4/1.5, so a
+Kaggriculture config fails fast at evaluation until then. Orbit evaluation
+environments stay unseeded.
 Set `rl.eval_replay_games` to a positive count to save random eval replay
 samples from the weighted eval game set under
 `eval_replays/<checkpoint-name>/` in the run directory. The sampled game

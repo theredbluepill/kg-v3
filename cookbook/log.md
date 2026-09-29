@@ -1,5 +1,16 @@
 # Change log
 
+## 2026-09-29 — Decide Kaggriculture evaluations by raw banks and keep the truncation reward
+
+Rebuild Tasks 3.2 and 3.3 land on the trainer seam; the new [[references/evaluation-and-truncation-follow-the-kaggriculture-objective|evaluation and truncation Reference]] records the inventory.
+- Kaggriculture evaluation games are decided by raw final banks, with candidate bank metrics logged.
+- A Kaggriculture time-limit cut keeps the economic reward earned on that transition; Orbit still zeroes it.
+- `FullConfig` rejects Kaggriculture settings other than `win_loss`, gamma 1, MSE value loss and joint `per_player` clipping.
+- `_evaluation_seed` gives each evaluation a reproducible seed in `[2**62, 2**62 + 2**61)`.
+- Every evaluation logs `eval/games`, `eval/promoted` and `eval/promotion_threshold`.
+
+The checks were CPU TDD with a fake env, a mutation check and `just py-prepare` (1,341 passed, 6 skipped). The native env, config registration and the Kaggriculture evaluation env remain skipped placeholders for Tasks 1.4/1.5.
+
 ## 2026-09-29 — Reconcile overflow notes after merging the heads and GEMM evidence
 
 Codex verified the staged merge of Task 2.3 and the GEMM-limit evidence (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md`).

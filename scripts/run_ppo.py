@@ -14,6 +14,8 @@ from typing import Any, Literal
 
 import torch
 import yaml
+from owl.kaggriculture.evaluation import terminal_seat_banks
+from owl.kaggriculture.types import KaggricultureObsConfig
 from owl.model import (
     BaseModelAPI,
     LoRAApplication,
@@ -69,6 +71,13 @@ MODEL_CURRENT = 0
 MODEL_LAST_BEST = 1
 PLAYER_COUNTS = (2, 4)
 LAST_BEST_WIN_RATE_THRESHOLD = 0.7
+# Native Kaggriculture games take a non-negative int64 seed (engine_rs
+# `Game::new(config, seed: i64, ..)`; contract v4 requires seed >= 0). Training
+# streams draw `base_seed + rank + k * world_size` below 2**62. Evaluation seeds
+# live in the disjoint band [2**62, 2**62 + 2**61), leaving 2**61 seeds of
+# headroom below the int64 limit for the games one evaluation env consumes.
+_EVAL_SEED_BITS = 61
+_EVAL_SEED_FLOOR = 1 << 62
 CHECKPOINT_FINAL = "checkpoint_final.pt"
 CHECKPOINT_LAST_BEST = "checkpoint_last_best.pt"
 _NUMBERED_CHECKPOINT_RE = re.compile(
@@ -442,6 +451,7 @@ def _run_training_loop(
                         last_best_model=last_best_model,
                         cfg=cfg,
                         device=trainer.device,
+                        env_steps=env_steps,
                         replay_dir=(
                             run_dir / "eval_replays" / checkpoint_path.stem
                             if cfg.rl.eval_replay_games > 0
@@ -451,10 +461,17 @@ def _run_training_loop(
                 eval_metrics = broadcast_object(eval_metrics, dist_ctx)
                 if eval_metrics is None:
                     raise RuntimeError("missing broadcast eval metrics")
-                logger.log(eval_metrics, step=env_steps)
                 replace_last_best = (
                     eval_metrics["eval/win_rate_against_last_best"]
                     >= LAST_BEST_WIN_RATE_THRESHOLD
+                )
+                logger.log(
+                    {
+                        **eval_metrics,
+                        "eval/promoted": float(replace_last_best),
+                        "eval/promotion_threshold": LAST_BEST_WIN_RATE_THRESHOLD,
+                    },
+                    step=env_steps,
                 )
                 if replace_last_best:
                     _refresh_eval_model_from_weights(
@@ -1216,6 +1233,7 @@ def _evaluate_against_last_best(
     last_best_model: BaseModelAPI,
     cfg: FullConfig,
     device: torch.device,
+    env_steps: int,
     replay_dir: Path | None = None,
 ) -> dict[str, float]:
     started_at = time.perf_counter()
@@ -1239,6 +1257,7 @@ def _evaluate_against_last_best(
                     n_games=cfg.env.n_envs,
                     n_envs=cfg.env.n_envs,
                     device=device,
+                    env_steps=env_steps,
                     replay_games=cfg.rl.eval_replay_games,
                     replay_output_path=(
                         replay_dir / "eval.jsonl" if replay_dir is not None else None
@@ -1256,6 +1275,7 @@ def _evaluate_against_last_best(
     elapsed = max(time.perf_counter() - started_at, 1e-12)
     metrics = _eval_env_metrics(env_metrics)
     metrics["eval/win_rate_against_last_best"] = stats.win_rate(MODEL_CURRENT)
+    metrics["eval/games"] = float(stats.model_games[MODEL_CURRENT])
     for player_count, player_stats in stats_by_player_count.items():
         if player_stats.model_games[MODEL_CURRENT] == 0:
             continue
@@ -1275,21 +1295,16 @@ def _evaluate_games(
     n_games: int,
     n_envs: int,
     device: torch.device,
+    env_steps: int,
     replay_games: int = 0,
     replay_output_path: Path | None = None,
 ) -> tuple[_EvalStats, dict[int, _EvalStats], dict[str, list[float]], int]:
-    env = VectorizedEnv(
-        n_envs=n_envs,
-        obs_spec=cfg.env.obs_spec,
-        action_spec=cfg.env.action_spec,
-        two_player_weight=cfg.env.two_player_weight,
-        reward_mode=cfg.env.reward_mode,
-        pin_memory=device.type == "cuda",
-    )
+    env = _create_eval_env(cfg, n_envs=n_envs, device=device, env_steps=env_steps)
     obs = env.reset()
-    assignments = torch.full((n_envs, 4), -1, dtype=torch.int64)
+    # One slot per player seat the game exposes (4 Orbit slots, 2 Kaggriculture).
+    assignments = torch.full(obs.still_playing.shape, -1, dtype=torch.int64)
     start_masks = obs.still_playing.clone()
-    returns = torch.zeros((n_envs, 4), dtype=torch.float32)
+    returns = torch.zeros(obs.still_playing.shape, dtype=torch.float32)
     recorder = (
         ReplayRecorder(
             output_path=replay_output_path,
@@ -1373,17 +1388,24 @@ def _evaluate_games(
                 if terminal_metrics is None:
                     raise RuntimeError(f"missing terminal metrics for env {env_index}")
                 _extend_single_env_metrics(env_metrics, terminal_metrics)
+                scores, outcome_metrics = _evaluation_scores_and_metrics(
+                    cfg,
+                    terminal_metrics,
+                    returns[env_index],
+                    assignments[env_index],
+                )
+                _extend_single_env_metrics(env_metrics, outcome_metrics)
                 _record_eval_terminal_result(
                     stats,
                     assignments[env_index],
                     start_masks[env_index],
-                    returns[env_index],
+                    scores,
                 )
                 _record_eval_terminal_result(
                     stats_by_player_count[player_count],
                     assignments[env_index],
                     start_masks[env_index],
-                    returns[env_index],
+                    scores,
                 )
                 games += 1
 
@@ -1409,6 +1431,98 @@ def _evaluate_games(
             else:
                 current_game_ordinals[env_index] = None
     return stats, stats_by_player_count, env_metrics, steps
+
+
+def _evaluation_seed(*, base_seed: int, env_steps: int) -> int:
+    """Fresh, reproducible starting worlds for the evaluation at ``env_steps``.
+
+    A bijective 61-bit mix of ``(base_seed, env_steps)`` placed in the evaluation
+    seed band: for a fixed base seed every evaluation step gets a distinct seed
+    (and vice versa), repeating an evaluation repeats its seed, and the games of
+    different evaluations or runs do not share consecutive seed ranges.
+    """
+    limit = 1 << _EVAL_SEED_BITS
+    for name, value in (("base_seed", base_seed), ("env_steps", env_steps)):
+        if not 0 <= value < limit:
+            raise ValueError(
+                f"{name} must be in [0, 2**{_EVAL_SEED_BITS}), got {value}"
+            )
+    return _EVAL_SEED_FLOOR + _mix_eval_seed_bits(
+        _mix_eval_seed_bits(base_seed) ^ env_steps
+    )
+
+
+def _mix_eval_seed_bits(value: int) -> int:
+    """Bijection on ``[0, 2**61)``: xor-shifts and odd multiplies mod ``2**61``."""
+    mask = (1 << _EVAL_SEED_BITS) - 1
+    value ^= value >> 31
+    value = (value * 0x7FB5D329728EA185) & mask
+    value ^= value >> 27
+    value = (value * 0x81DADEF4BC2DD44D) & mask
+    value ^= value >> 33
+    return value
+
+
+def _create_eval_env(
+    cfg: FullConfig,
+    *,
+    n_envs: int,
+    device: torch.device,
+    env_steps: int,
+) -> VectorizedEnv:
+    """Build the evaluation env for the evaluation at ``env_steps``."""
+    if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+        raise NotImplementedError(
+            "Kaggriculture evaluation needs the native environment (rebuild Tasks "
+            "1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, "
+            f"env_steps={env_steps})"
+        )
+    # Isaiah's Orbit env samples its own games; it takes no seed.
+    return VectorizedEnv(
+        n_envs=n_envs,
+        obs_spec=cfg.env.obs_spec,
+        action_spec=cfg.env.action_spec,
+        two_player_weight=cfg.env.two_player_weight,
+        reward_mode=cfg.env.reward_mode,
+        pin_memory=device.type == "cuda",
+    )
+
+
+def _evaluation_scores_and_metrics(
+    cfg: FullConfig,
+    terminal_metrics: dict[str, float],
+    returns: torch.Tensor,
+    assignment: torch.Tensor,
+) -> tuple[torch.Tensor, dict[str, float]]:
+    """Per-seat scores that decide one evaluation game, plus outcome metrics.
+
+    Kaggriculture games are decided by raw final banks (lesson L1), never by the
+    shaped training return; see ``owl.kaggriculture.evaluation``. Orbit keeps
+    Isaiah's accumulated returns.
+    """
+    if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+        banks = terminal_seat_banks(terminal_metrics)
+        return banks, _candidate_bank_metrics(banks, assignment)
+    return returns, {}
+
+
+def _candidate_bank_metrics(
+    banks: torch.Tensor, assignment: torch.Tensor
+) -> dict[str, float]:
+    """Raw final banks seen from the candidate's seat."""
+    seats = [int(model_index) for model_index in assignment.tolist()]
+    if sorted(seats) != [MODEL_CURRENT, MODEL_LAST_BEST]:
+        raise ValueError(
+            "bank metrics need one candidate and one incumbent seat, "
+            f"got assignment {seats}"
+        )
+    candidate = float(banks[seats.index(MODEL_CURRENT)])
+    incumbent = float(banks[seats.index(MODEL_LAST_BEST)])
+    return {
+        "candidate_bank": candidate,
+        "last_best_bank": incumbent,
+        "candidate_bank_margin": candidate - incumbent,
+    }
 
 
 def _player_count_for_eval(active_slots: torch.Tensor, env_index: int) -> int:
@@ -1491,17 +1605,18 @@ def _record_eval_terminal_result(
     stats: _EvalStats,
     assignment: torch.Tensor,
     start_mask: torch.Tensor,
-    returns: torch.Tensor,
+    scores: torch.Tensor,
 ) -> None:
-    active_returns = returns[start_mask]
-    if active_returns.numel() == 0:
+    """Credit the model whose seats' summed ``scores`` is higher; ties halve."""
+    active_scores = scores[start_mask]
+    if active_scores.numel() == 0:
         raise ValueError("cannot record a terminal result without starting players")
     model_returns = [0.0, 0.0]
     for player in torch.nonzero(start_mask, as_tuple=False).flatten().tolist():
         model_index = int(assignment[player].item())
         if model_index not in (MODEL_CURRENT, MODEL_LAST_BEST):
             raise ValueError(f"missing model assignment for player slot {player}")
-        model_returns[model_index] += float(returns[player].item())
+        model_returns[model_index] += float(scores[player].item())
     if model_returns[MODEL_CURRENT] > model_returns[MODEL_LAST_BEST]:
         stats.add_game_result(MODEL_CURRENT)
     elif model_returns[MODEL_LAST_BEST] > model_returns[MODEL_CURRENT]:

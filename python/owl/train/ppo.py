@@ -11,6 +11,7 @@ import torch
 from pydantic import BaseModel, Field, model_validator
 
 from owl.config import BaseConfig
+from owl.kaggriculture.types import KaggricultureObsBatch
 from owl.model import (
     ActorDiscreteTargetsConfig,
     BaseModelAPI,
@@ -945,10 +946,11 @@ class PPOTrainer:
         Advances per-env step counters, redraws truncation flags for naturally
         reset games, then for each selected game that just reached
         ``truncation_step`` (and did not naturally terminate): evaluates the
-        critic on the truncated state to use as the GAE bootstrap, zeros the
-        reward, marks ``dones`` so the trajectory is cut and the env is reset.
-        ``rewards`` and ``dones`` are modified in place. Returns per-step
-        ``truncated`` flags and ``bootstrap_values`` for the rollout buffer.
+        critic on the truncated state to use as the GAE bootstrap and cuts the
+        trajectory with ``_cut_truncated_envs_`` (whose reward rule is the
+        game's), then resets the env. ``rewards`` and ``dones`` are modified in
+        place. Returns per-step ``truncated`` flags and ``bootstrap_values`` for
+        the rollout buffer.
         """
         truncation_step = self.config.truncation_step
         assert truncation_step is not None  # guaranteed by _truncation_enabled
@@ -962,35 +964,34 @@ class PPOTrainer:
             & self._is_truncation_game
             & ~env_done
         )
-        truncated = torch.zeros(
-            (self.n_envs, OUTER_PLAYER_SLOTS), dtype=torch.bool, device=self.device
-        )
-        bootstrap_values = torch.zeros(
-            (self.n_envs, OUTER_PLAYER_SLOTS),
-            dtype=torch.float32,
-            device=self.device,
-        )
-        if bool(trunc_mask.any()):
-            idx = trunc_mask.nonzero(as_tuple=False).flatten()
-            # next_obs lives on the env (host) device; index there, then move the
-            # small truncated subset to the model device for the value forward.
-            # This must happen before truncate_envs overwrites those obs rows.
-            trunc_obs = _obs_to_device(
-                _obs_index(next_obs, idx.to(device="cpu")),
-                self.device,
-                non_blocking=self._non_blocking_env_to_device,
+        if not bool(trunc_mask.any()):
+            return (
+                torch.zeros_like(dones),
+                torch.zeros(dones.shape, dtype=torch.float32, device=self.device),
             )
-            with _autocast_context(self.config, self.device):
-                boot = _model_compute_value(self.model, trunc_obs, hidden_state=None)
-            bootstrap_values[idx] = boot.to(bootstrap_values.dtype)
-            truncated[idx] = True
-            rewards[idx] = 0.0
-            dones[idx] = True
-            # VectorizedEnv.truncate_envs requires a CPU bool mask (it refuses to
-            # silently sync a device tensor to host).
-            self.env.truncate_envs(trunc_mask.to(device="cpu"))
-            self._env_step_count[idx] = 0
-            self._resample_truncation_games(trunc_mask)
+        idx = trunc_mask.nonzero(as_tuple=False).flatten()
+        # next_obs lives on the env (host) device; index there, then move the
+        # small truncated subset to the model device for the value forward.
+        # This must happen before truncate_envs overwrites those obs rows.
+        trunc_obs = _obs_to_device(
+            _obs_index(next_obs, idx.to(device="cpu")),
+            self.device,
+            non_blocking=self._non_blocking_env_to_device,
+        )
+        with _autocast_context(self.config, self.device):
+            boot = _model_compute_value(self.model, trunc_obs, hidden_state=None)
+        truncated, bootstrap_values = _cut_truncated_envs_(
+            rewards,
+            dones,
+            rows=idx,
+            row_values=boot,
+            keep_transition_reward=_truncation_keeps_transition_reward(next_obs),
+        )
+        # VectorizedEnv.truncate_envs requires a CPU bool mask (it refuses to
+        # silently sync a device tensor to host).
+        self.env.truncate_envs(trunc_mask.to(device="cpu"))
+        self._env_step_count[idx] = 0
+        self._resample_truncation_games(trunc_mask)
         return truncated, bootstrap_values
 
     def _precompute_teacher_targets(
@@ -2700,6 +2701,47 @@ def _model_forward(
     if hidden_state is None:
         return model(obs)
     return model(obs, hidden_state=hidden_state)
+
+
+def _truncation_keeps_transition_reward(obs: BaseModel) -> bool:
+    """Whether a time-limit cut keeps the reward paid on the cut transition.
+
+    Orbit keeps Isaiah's rule and drops it. Kaggriculture keeps it (lesson L2):
+    its economic shaping is a real reward earned on that transition, and ending
+    the trajectory early does not undo it.
+    """
+    if isinstance(obs, ObsBatch):
+        return False
+    if isinstance(obs, KaggricultureObsBatch):
+        return True
+    raise TypeError(f"no truncation reward rule for {type(obs).__name__}")
+
+
+def _cut_truncated_envs_(
+    rewards: torch.Tensor,
+    dones: torch.Tensor,
+    *,
+    rows: torch.Tensor,
+    row_values: torch.Tensor,
+    keep_transition_reward: bool,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """End the trajectories of env ``rows`` at a time limit, in place.
+
+    ``rewards`` and ``dones`` are ``[env, player]``. The cut rows become done and
+    bootstrap from ``row_values`` (the critic's value of the cut state, one row
+    per cut env); no terminal outcome is fabricated. Returns the ``truncated``
+    flags and ``bootstrap_values`` for the rollout buffer.
+    """
+    truncated = torch.zeros_like(dones)
+    bootstrap_values = torch.zeros(
+        dones.shape, dtype=torch.float32, device=dones.device
+    )
+    bootstrap_values[rows] = row_values.to(bootstrap_values.dtype)
+    truncated[rows] = True
+    if not keep_transition_reward:
+        rewards[rows] = 0.0
+    dones[rows] = True
+    return truncated, bootstrap_values
 
 
 def _model_compute_value(

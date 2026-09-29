@@ -3,11 +3,44 @@ from typing import Self
 from pydantic import Field, model_validator
 
 from owl.config import BaseConfig
+from owl.kaggriculture.types import KaggricultureObsConfig
 from owl.model import ActorDiscreteTargetBinsConfig, ModelConfig
-from owl.rl import ActionDiscreteTargetBinsConfig, EnvConfig
+from owl.rl import ActionDiscreteTargetBinsConfig, EnvConfig, RewardMode
 
 from .optimizer import OptimizerConfig
 from .ppo import PPOConfig
+
+
+def _validate_kaggriculture_training(*, reward_mode: RewardMode, rl: PPOConfig) -> None:
+    """Reject settings that change the Kaggriculture objective or critic meaning.
+
+    The per-seat winner critic reads ``value = 2 p(self) - 1`` in (-1, 1), the
+    undiscounted ``win_loss`` return. Economic shaping keeps complete-episode
+    returns in [-1, 1] only through ``terminal_scale`` at gamma 1
+    (``docs/kaggriculture-contract.md``, "Rewards"), and truncation bootstraps
+    from the same critic. One seat's turn is one autoregressive action over its
+    frames, so PPO clips the joint turn ratio.
+    """
+    if reward_mode != "win_loss":
+        raise ValueError(
+            "Kaggriculture requires env.reward_mode='win_loss': its critic value "
+            f"is 2p(self) - 1, got reward_mode={reward_mode!r}"
+        )
+    if rl.gamma != 1.0:
+        raise ValueError(
+            "Kaggriculture requires rl.gamma=1.0: terminal_scale bounds the shaped "
+            f"return only undiscounted, got gamma={rl.gamma}"
+        )
+    if rl.value_loss != "mse":
+        raise ValueError(
+            "Kaggriculture requires rl.value_loss='mse': winner_ce needs the "
+            "win_only reward, and the economic reward is not a winner distribution"
+        )
+    if rl.ppo_clip_mode != "per_player":
+        raise ValueError(
+            "Kaggriculture requires rl.ppo_clip_mode='per_player': a seat's turn "
+            "is one joint autoregressive action, so PPO clips its joint ratio"
+        )
 
 
 class RuntimeConfig(BaseConfig):
@@ -23,6 +56,10 @@ class FullConfig(BaseConfig):
 
     @model_validator(mode="after")
     def _validate_cross_config_constraints(self) -> Self:
+        if isinstance(self.env.obs_spec, KaggricultureObsConfig):
+            _validate_kaggriculture_training(
+                reward_mode=self.env.reward_mode, rl=self.rl
+            )
         if self.model.actor.action_spec != self.env.action_spec.action_spec:
             raise ValueError("model actor action_spec must match env action_spec")
         if (
