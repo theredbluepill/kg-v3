@@ -1,0 +1,139 @@
+{
+  "head": "f23cd4fcfab3187ad008d0bfca2408d5f8f20fdf",
+  "scratch": "/Users/poonszesen/kg-v3-t73/.codex-tmp/replay-source-r3-2p4vlq_6",
+  "original_sha256": "60cee3987d7da842d953ead67da3c370afaaf5ffea64e62cde478352be9473f9",
+  "mutations": [
+    {
+      "name": "byte-guard",
+      "mutated_sha256": "72caabd0112971dde069e4a80a77c53de4f2ed80788ecccb88292abb914d2edc",
+      "build": {
+        "command": [
+          "cargo",
+          "rustc",
+          "--manifest-path",
+          "/Users/poonszesen/kg-v3-t73/.codex-tmp/replay-source-r3-2p4vlq_6/Cargo.toml",
+          "--locked",
+          "--offline",
+          "--features",
+          "extension-module",
+          "--",
+          "-C",
+          "link-arg=-undefined",
+          "-C",
+          "link-arg=dynamic_lookup"
+        ],
+        "returncode": 0,
+        "seconds": 1.1948105419869535,
+        "log": "source-byte-guard-build.log"
+      },
+      "pytest": {
+        "command": [
+          "/Users/poonszesen/kg-v3-t73/.venv/bin/python",
+          "-c",
+          "from owl import rs; import pytest; print(\"extension:\", rs.__file__); raise SystemExit(pytest.main(['-q', 'tests/kaggriculture/test_replay_export_oracles.py::test_native_byte_round_trip_and_wide_seed']))"
+        ],
+        "returncode": 1,
+        "seconds": 2.38752425002167,
+        "log": "source-byte-guard-tests.log"
+      },
+      "restored_sha256": "60cee3987d7da842d953ead67da3c370afaaf5ffea64e62cde478352be9473f9"
+    },
+    {
+      "name": "completion-guard",
+      "mutated_sha256": "66899fe6f5e78ecec499bd03666706579ccdb7b92e2f4c81e2b81e9ca67e99a0",
+      "build": {
+        "command": [
+          "cargo",
+          "rustc",
+          "--manifest-path",
+          "/Users/poonszesen/kg-v3-t73/.codex-tmp/replay-source-r3-2p4vlq_6/Cargo.toml",
+          "--locked",
+          "--offline",
+          "--features",
+          "extension-module",
+          "--",
+          "-C",
+          "link-arg=-undefined",
+          "-C",
+          "link-arg=dynamic_lookup"
+        ],
+        "returncode": 0,
+        "seconds": 1.0579942500335164,
+        "log": "source-completion-guard-build.log"
+      },
+      "pytest": {
+        "command": [
+          "/Users/poonszesen/kg-v3-t73/.venv/bin/python",
+          "-c",
+          "from owl import rs; import pytest; print(\"extension:\", rs.__file__); raise SystemExit(pytest.main(['-q', 'tests/kaggriculture/test_replay_export.py::test_every_successful_native_export_verifies']))"
+        ],
+        "returncode": 1,
+        "seconds": 1.8087487920420244,
+        "log": "source-completion-guard-tests.log"
+      },
+      "restored_sha256": "60cee3987d7da842d953ead67da3c370afaaf5ffea64e62cde478352be9473f9"
+    }
+  ],
+  "baseline_build": {
+    "command": [
+      "cargo",
+      "rustc",
+      "--manifest-path",
+      "/Users/poonszesen/kg-v3-t73/.codex-tmp/replay-source-r3-2p4vlq_6/Cargo.toml",
+      "--locked",
+      "--offline",
+      "--features",
+      "extension-module",
+      "--",
+      "-C",
+      "link-arg=-undefined",
+      "-C",
+      "link-arg=dynamic_lookup"
+    ],
+    "returncode": 0,
+    "seconds": 23.493329207994975,
+    "log": "source-baseline-build.log"
+  },
+  "baseline": {
+    "command": [
+      "/Users/poonszesen/kg-v3-t73/.venv/bin/python",
+      "-c",
+      "from owl import rs; import pytest; print(\"extension:\", rs.__file__); raise SystemExit(pytest.main(['-q', 'tests/kaggriculture/test_replay_export_oracles.py::test_native_byte_round_trip_and_wide_seed', 'tests/kaggriculture/test_replay_export.py::test_every_successful_native_export_verifies']))"
+    ],
+    "returncode": 0,
+    "seconds": 2.8792913329671137,
+    "log": "source-baseline-tests.log"
+  },
+  "restored_build": {
+    "command": [
+      "cargo",
+      "rustc",
+      "--manifest-path",
+      "/Users/poonszesen/kg-v3-t73/.codex-tmp/replay-source-r3-2p4vlq_6/Cargo.toml",
+      "--locked",
+      "--offline",
+      "--features",
+      "extension-module",
+      "--",
+      "-C",
+      "link-arg=-undefined",
+      "-C",
+      "link-arg=dynamic_lookup"
+    ],
+    "returncode": 0,
+    "seconds": 0.8382924580364488,
+    "log": "source-restored-build.log"
+  },
+  "restored": {
+    "command": [
+      "/Users/poonszesen/kg-v3-t73/.venv/bin/python",
+      "-c",
+      "from owl import rs; import pytest; print(\"extension:\", rs.__file__); raise SystemExit(pytest.main(['-q', 'tests/kaggriculture/test_replay_export_oracles.py::test_native_byte_round_trip_and_wide_seed', 'tests/kaggriculture/test_replay_export.py::test_every_successful_native_export_verifies']))"
+    ],
+    "returncode": 0,
+    "seconds": 2.146722166973632,
+    "log": "source-restored-tests.log"
+  },
+  "restored_byte_identical": true,
+  "live_source_unchanged": true
+}

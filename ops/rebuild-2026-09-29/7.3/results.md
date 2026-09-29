@@ -142,3 +142,11 @@ and explicit errors; they are validation coverage, not independent game oracles.
 - Task 1.4 live consumed-seed/reset/terminal custody and eight-game evaluation wiring remain five explicit skips, with intended API comments.
 - Pod-scale eight-game evaluation and recorder overhead are unmeasured. Framework timeout/error episodes and every supported configuration are not qualified.
 - Exact future live-state certification requires every captured full snapshot or an independent oracle; coverage fields report evidence actually supplied.
+
+## Open dependency after verification r3
+
+Canonical trainer evaluation export is deferred to plan Task 3.1 (game seam in
+the trainer, lane A). `run_ppo._create_eval_env` still rejects Kaggriculture
+and the canonical eight-export acceptance test stays skipped until Task 3.1
+lands. The r3 publication fix and this dependency are recorded in
+[r3-fixes/receipt.md](r3-fixes/receipt.md).

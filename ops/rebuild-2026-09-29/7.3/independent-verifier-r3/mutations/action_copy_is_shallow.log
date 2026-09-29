@@ -1,0 +1,33 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_recorder_retains_consumed_seed_actions_tokens_and_custody ________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-48/test_recorder_retains_consumed0')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...complete': True, 'transitions': [{'actions': [{...}, {...}], 'tokens': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+
+    def test_recorder_retains_consumed_seed_actions_tokens_and_custody(
+        tmp_path: Path, native_calls: list[dict[str, Any]]
+    ) -> None:
+        recorder = _recorder(tmp_path)
+        consumed_seed = 2**100 + 19
+        _start(recorder, seed=consumed_seed)
+        live_next_seed = consumed_seed + 1
+        actions = _actions()
+        tokens = [{"tokens": [1, 2, 0], "length": 2}, {"tokens": [3, 0], "length": 1}]
+        expected_actions, expected_tokens = copy.deepcopy(actions), copy.deepcopy(tokens)
+        recorder.record_transition(0, actions, tokens=tokens, captured=_snapshot(1))
+        actions[0]["market"].clear()
+        tokens[0]["tokens"][0] = 100
+        recorder.record_transition(0, _actions(), captured=_snapshot(2, done=True))
+        recorder.finish_game(0, _snapshot(2, done=True))
+        assert native_calls[0]["header"]["seed"] == consumed_seed != live_next_seed
+>       assert native_calls[0]["tape"]["transitions"][0]["actions"] == expected_actions
+E       AssertionError: assert [{'farmer': [...'market': []}] == [{'farmer': [...'market': []}]
+E         
+E         At index 0 diff: {'farmer': ['PASS'], 'hands': [], 'market': []} != {'farmer': ['PASS'], 'hands': [], 'market': [['SELL', 'WHEAT', 0], []]}
+E         Use -v to get more diff
+
+tests/kaggriculture/test_replay_export.py:132: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_recorder_retains_consumed_seed_actions_tokens_and_custody
+1 failed in 0.29s

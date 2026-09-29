@@ -1,0 +1,269 @@
+FFFFFFF.F                                                                [100%]
+=================================== FAILURES ===================================
+_ test_publication_failure_never_leaves_successful_custody[game_000000.json-write] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-767/test_publication_failure_never0')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10eb2cfe0>
+target = 'game_000000.json', stage = 'write'
+
+    @pytest.mark.parametrize("stage", ["write", "close"])
+    @pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+    def test_publication_failure_never_leaves_successful_custody(
+        tmp_path: Path,
+        native_calls: list[dict[str, Any]],
+        monkeypatch: pytest.MonkeyPatch,
+        target: str,
+        stage: str,
+    ) -> None:
+        # Only the first exclusive write of the target fails; the error custody
+        # written afterwards succeeds.
+        recorder = _recorder(tmp_path)
+        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+        with pytest.raises(OSError, match=f"injected {'partial write' if stage == 'write' else 'close'} failure"):
+            _finish_selected_game(recorder)
+        assert len(failed) == 1
+        assert len(native_calls) == 1
+        # No episode, no staging leftovers: exactly one error custody record.
+>       assert sorted(path.name for path in tmp_path.iterdir()) == [
+            "game_000000.custody.json"
+        ]
+E       AssertionError: assert ['game_000000..._000000.json'] == ['game_000000.custody.json']
+E         
+E         Left contains one more item: 'game_000000.json'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_replay_export.py:644: AssertionError
+_ test_publication_failure_never_leaves_successful_custody[game_000000.json-close] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-767/test_publication_failure_never1')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f6ef020>
+target = 'game_000000.json', stage = 'close'
+
+    @pytest.mark.parametrize("stage", ["write", "close"])
+    @pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+    def test_publication_failure_never_leaves_successful_custody(
+        tmp_path: Path,
+        native_calls: list[dict[str, Any]],
+        monkeypatch: pytest.MonkeyPatch,
+        target: str,
+        stage: str,
+    ) -> None:
+        # Only the first exclusive write of the target fails; the error custody
+        # written afterwards succeeds.
+        recorder = _recorder(tmp_path)
+        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+        with pytest.raises(OSError, match=f"injected {'partial write' if stage == 'write' else 'close'} failure"):
+            _finish_selected_game(recorder)
+        assert len(failed) == 1
+        assert len(native_calls) == 1
+        # No episode, no staging leftovers: exactly one error custody record.
+>       assert sorted(path.name for path in tmp_path.iterdir()) == [
+            "game_000000.custody.json"
+        ]
+E       AssertionError: assert ['game_000000..._000000.json'] == ['game_000000.custody.json']
+E         
+E         Left contains one more item: 'game_000000.json'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_replay_export.py:644: AssertionError
+_ test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-767/test_publication_failure_never2')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1117cd520>
+target = 'game_000000.custody.json', stage = 'write'
+
+    @pytest.mark.parametrize("stage", ["write", "close"])
+    @pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+    def test_publication_failure_never_leaves_successful_custody(
+        tmp_path: Path,
+        native_calls: list[dict[str, Any]],
+        monkeypatch: pytest.MonkeyPatch,
+        target: str,
+        stage: str,
+    ) -> None:
+        # Only the first exclusive write of the target fails; the error custody
+        # written afterwards succeeds.
+        recorder = _recorder(tmp_path)
+        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+        with pytest.raises(OSError, match=f"injected {'partial write' if stage == 'write' else 'close'} failure"):
+            _finish_selected_game(recorder)
+        assert len(failed) == 1
+        assert len(native_calls) == 1
+        # No episode, no staging leftovers: exactly one error custody record.
+        assert sorted(path.name for path in tmp_path.iterdir()) == [
+            "game_000000.custody.json"
+        ]
+>       sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_replay_export.py:647: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/decoder.py:338: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.decoder.JSONDecoder object at 0x10182e8d0>
+s = '{"schema_version":1,', idx = 0
+
+    def raw_decode(self, s, idx=0):
+        """Decode a JSON document from ``s`` (a ``str`` beginning with
+        a JSON document) and return a 2-tuple of the Python
+        representation and the index in ``s`` where the document ended.
+    
+        This can be used to decode a JSON document from a string that may
+        have extraneous data at the end.
+    
+        """
+        try:
+>           obj, end = self.scan_once(s, idx)
+                       ^^^^^^^^^^^^^^^^^^^^^^
+E           json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 21 (char 20)
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/decoder.py:354: JSONDecodeError
+_ test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-767/test_publication_failure_never3')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11181a420>
+target = 'game_000000.custody.json', stage = 'close'
+
+    @pytest.mark.parametrize("stage", ["write", "close"])
+    @pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+    def test_publication_failure_never_leaves_successful_custody(
+        tmp_path: Path,
+        native_calls: list[dict[str, Any]],
+        monkeypatch: pytest.MonkeyPatch,
+        target: str,
+        stage: str,
+    ) -> None:
+        # Only the first exclusive write of the target fails; the error custody
+        # written afterwards succeeds.
+        recorder = _recorder(tmp_path)
+        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+        with pytest.raises(OSError, match=f"injected {'partial write' if stage == 'write' else 'close'} failure"):
+            _finish_selected_game(recorder)
+        assert len(failed) == 1
+        assert len(native_calls) == 1
+        # No episode, no staging leftovers: exactly one error custody record.
+        assert sorted(path.name for path in tmp_path.iterdir()) == [
+            "game_000000.custody.json"
+        ]
+        sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+>       assert sidecar["status"] == "error"
+E       AssertionError: assert 'complete' == 'error'
+E         
+E         - error
+E         + complete
+
+tests/kaggriculture/test_replay_export.py:648: AssertionError
+_____ test_unpublishable_error_custody_leaves_no_files_and_the_game_active _____
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-767/test_unpublishable_error_custo0')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111779c40>
+
+    def test_unpublishable_error_custody_leaves_no_files_and_the_game_active(
+        tmp_path: Path, native_calls: list[dict[str, Any]], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        recorder = _recorder(tmp_path)
+        _inject_publication_failure(
+            monkeypatch, "game_000000.custody.json", "write", times=2
+        )
+        with pytest.raises(OSError, match="injected partial write failure") as raised:
+            _finish_selected_game(recorder)
+>       assert list(tmp_path.iterdir()) == []
+E       AssertionError: assert [PosixPath('/...ustody.json')] == []
+E         
+E         Left contains one more item: PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-767/test_unpublishable_error_custo0/game_000000.custody.json')
+E         Use -v to get more diff
+
+tests/kaggriculture/test_replay_export.py:667: AssertionError
+_______________ test_episode_is_durable_before_custody_claims_it _______________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-767/test_episode_is_durable_before0')
+native_calls = []
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11177a3f0>
+
+    def test_episode_is_durable_before_custody_claims_it(
+        tmp_path: Path, native_calls: list[dict[str, Any]], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        events: list[str] = []
+>       original_fsync, original_link = replay_export.os.fsync, replay_export.os.link
+                                        ^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.kaggriculture.replay_export' has no attribute 'os'
+
+tests/kaggriculture/test_replay_export.py:683: AttributeError
+___________ test_publication_never_replaces_a_path_created_meanwhile ___________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-767/test_publication_never_replace0')
+
+    def test_publication_never_replaces_a_path_created_meanwhile(tmp_path: Path) -> None:
+        target = tmp_path / "game_000000.json"
+        target.write_bytes(b"unrelated evidence")
+        published: list[Path] = []
+        with pytest.raises(FileExistsError):
+>           replay_export._publish_new_file(target, b"new episode", published)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.kaggriculture.replay_export' has no attribute '_publish_new_file'
+
+tests/kaggriculture/test_replay_export.py:717: AttributeError
+____ test_partial_episode_write_during_live_evaluation_leaves_error_custody ____
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-767/test_partial_episode_write_dur0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10fc87470>
+
+    def test_partial_episode_write_during_live_evaluation_leaves_error_custody(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Verification r3 probe: game 0's episode write stops after 20 bytes.
+        original = Path.open
+    
+        class PartialWriter:
+            def __init__(self, stream: Any) -> None:
+                self.stream = stream
+    
+            def __enter__(self) -> PartialWriter:
+                self.stream.__enter__()
+                return self
+    
+            def __exit__(self, *args: object) -> None:
+                self.stream.__exit__(*args)
+    
+            def write(self, payload: bytes) -> int:
+                self.stream.write(payload[:20])
+                self.stream.flush()
+                raise OSError("injected partial episode write failure")
+    
+        def open_(path: Path, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
+            stream = original(path, mode, *args, **kwargs)
+            if mode == "xb" and "game_000000.json" in path.name:
+                return PartialWriter(stream)
+            return stream
+    
+        monkeypatch.setattr(Path, "open", open_)
+        with pytest.raises(OSError, match="injected partial episode write") as raised:
+            _run(tmp_path, n_envs=2, n_games=2, count=2, configuration={"episodeSteps": 3})
+        # Game 0 published its own error custody, so no publication note.
+>       assert not hasattr(raised.value, "__notes__")
+E       AssertionError: assert not True
+E        +  where True = hasattr(OSError('injected partial episode write failure'), '__notes__')
+E        +    where OSError('injected partial episode write failure') = <ExceptionInfo OSError('injected partial episode write failure') tblen=6>.value
+
+tests/kaggriculture/test_replay_export_integration.py:401: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-write]
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-close]
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write]
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close]
+FAILED tests/kaggriculture/test_replay_export.py::test_unpublishable_error_custody_leaves_no_files_and_the_game_active
+FAILED tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_never_replaces_a_path_created_meanwhile
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_partial_episode_write_during_live_evaluation_leaves_error_custody
+8 failed, 1 passed, 55 deselected in 0.66s

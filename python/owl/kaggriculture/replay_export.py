@@ -13,7 +13,9 @@ import hashlib
 import importlib
 import importlib.metadata
 import json
+import os
 import random
+import secrets
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -43,6 +45,50 @@ class ReplayConfig(Protocol):
 def _json(value: Any) -> str:
     # Dict order and arbitrary-width Python ints cross the extension as text.
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+
+
+def _publish_new_file(path: Path, payload: bytes, published: list[Path]) -> None:
+    """Durably publish ``payload`` at ``path``, which must not exist yet.
+
+    The bytes go to a dot-prefixed temporary file in the same directory (never
+    matched by ``game_*`` globs), are flushed and fsynced, then hard-linked into
+    place. Unlike rename, linking atomically refuses to replace a path created
+    meanwhile. ``path`` is appended to ``published`` as soon as it exists, so
+    the caller can remove exactly what this attempt created. The temporary file
+    is always removed.
+    """
+    temporary = path.with_name(f".{path.name}.{secrets.token_hex(8)}.tmp")
+    try:
+        with temporary.open("xb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.link(temporary, path)
+        published.append(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _fsync_directory(directory: Path) -> None:
+    """Make published directory entries durable."""
+    descriptor = os.open(directory, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _publish(directory: Path, files: Sequence[tuple[Path, bytes]]) -> None:
+    """Publish ``files`` in order; on any failure remove what was published."""
+    published: list[Path] = []
+    try:
+        for path, payload in files:
+            _publish_new_file(path, payload, published)
+        _fsync_directory(directory)
+    except BaseException:
+        for path in reversed(published):
+            path.unlink(missing_ok=True)
+        raise
 
 
 def load_pinned_framework() -> dict[str, Any]:
@@ -500,12 +546,56 @@ class ReplayRecorder:
         custody_path = self.output_dir / f"{stem}.custody.json"
         if episode_path.exists() or custody_path.exists():
             raise FileExistsError(f"replay custody already exists for {stem}")
-        # Verify before publishing any successful episode. Exclusive creation
-        # protects evidence if a caller accidentally reuses an output directory.
-        with custody_path.open("x", encoding="utf-8") as stream:
-            stream.write(_json(sidecar))
+        # Custody claims success only once its episode is durably published:
+        # the episode goes first, custody after it, and a failure anywhere
+        # removes both before error custody is attempted.
+        files = [(custody_path, _json(sidecar).encode("utf-8"))]
         if episode_bytes is not None:
-            with episode_path.open("xb") as stream:
-                stream.write(episode_bytes)
+            files.insert(0, (episode_path, episode_bytes))
+        try:
+            _publish(self.output_dir, files)
+        except BaseException as error:
+            if sidecar["status"] != "error":
+                self._publish_failure_custody(
+                    replay, sidecar, custody_path, error=error
+                )
+            raise
+        self._retire(replay)
+
+    def _publish_failure_custody(
+        self,
+        replay: _ActiveReplay,
+        sidecar: dict[str, Any],
+        custody_path: Path,
+        *,
+        error: BaseException,
+    ) -> None:
+        """Replace a failed successful publication by error custody.
+
+        If that record cannot be published either, the game stays active (so an
+        abort handler can retry) and the failure is noted on ``error``.
+        """
+        failed = {
+            key: value
+            for key, value in sidecar.items()
+            if key not in ("episode_sha256", "verification")
+        }
+        failed.update(
+            status="error",
+            complete=False,
+            action_tape={**sidecar["action_tape"], "complete": False},
+            error=f"replay publication failed: {type(error).__name__}: {error}",
+        )
+        try:
+            _publish(self.output_dir, [(custody_path, _json(failed).encode("utf-8"))])
+        except Exception as custody_error:
+            error.add_note(
+                f"error custody for game {replay.game_ordinal} was not published: "
+                f"{type(custody_error).__name__}: {custody_error}"
+            )
+            return
+        self._retire(replay)
+
+    def _retire(self, replay: _ActiveReplay) -> None:
         del self._active[replay.game_ordinal]
         self._finished.add(replay.game_ordinal)

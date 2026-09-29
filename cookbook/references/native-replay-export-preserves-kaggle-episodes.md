@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Native replay export preserves Kaggle episodes"
-description: "Task 7.3 seed replay and selected-game custody pass four independent official-fixture round trips, the real pinned-framework oracle and canonical-byte checks, with Kaggle reward representation and JSON number kinds compared strictly after Claude review. After verification r1 the recorder runs over the merged Task 1.4 native env (consumed seeds, before-reset terminal snapshots, eight default-horizon games byte-verified); after verification r2 any evaluation abort writes error custody for every active selected game and re-raises the original error. run_ppo's evaluation call still awaits Task 1.5."
+description: "Task 7.3 seed replay and selected-game custody pass four independent official-fixture round trips, the real pinned-framework oracle and canonical-byte checks, with Kaggle reward representation and JSON number kinds compared strictly after Claude review. After verification r1 the recorder runs over the merged Task 1.4 native env (consumed seeds, before-reset terminal snapshots, eight default-horizon games byte-verified); after verification r2 any evaluation abort writes error custody for every active selected game and re-raises the original error; after verification r3 episode and custody are published transactionally, so a failed write leaves error custody, never successful custody. run_ppo's evaluation call is deferred to Task 3.1."
 tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex", "at": "2026-09-29"}
@@ -54,6 +54,13 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/7.3/r2-fixes/eval-guard-red.log"
   - resource: "repository:ops/rebuild-2026-09-29/7.3/r2-fixes/eval-guard-green.log"
   - resource: "repository:ops/rebuild-2026-09-29/7.3/r2-fixes/prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/independent-verifier-r3/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/receipt.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/publication-red.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/publication-green.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/run_mutations.py"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/mutations.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/prepare.log"
   - resource: "repository:scripts/run_ppo.py"
   - resource: "repository:README.md"
   - resource: "repository:tests/scripts/test_run_ppo.py"
@@ -260,8 +267,9 @@ observation or timeout-policy change; the red is preserved rather than hidden.
 
 `native_evaluation.evaluate_native_games` is the live seam, but
 `run_ppo._evaluate_games` still stops at `_create_eval_env` for Kaggriculture:
-calling the seam from the trainer needs the Task 1.5 torch adapter and the
-model's token policy. Reopen the canonical acceptance when `_create_eval_env`
+calling the seam from the trainer needs the Task 1.5 torch adapter, the
+model's token policy and the Task 3.1 trainer game seam (deferred there after
+verification r3). Reopen the canonical acceptance when `_create_eval_env`
 builds `KaggricultureEnv`; the skipped
 `test_kaggriculture_canonical_evaluation_exports_eight_replays` states it. Pod-scale evaluation and recorder overhead were not
 measured. The eight-game receipt used a deterministic diagnostic program, not
@@ -374,3 +382,32 @@ raised two P2 findings.
 Final `just prepare` (`r2-fixes/prepare.log`): 2,199 Python passes / 12 skips
 (three new custody tests plus the new explicit skip), 289 root Rust passes /
 five ignored, 69 engine passes, trim manifest OK.
+
+## Verification r3 corrections
+
+Independent verification r3 (`independent-verifier-r3/review.md`, REJECT)
+raised two P2 findings.
+
+- **P2, false successful custody (fixed test-first).** `_write` published a
+  `status: complete` sidecar before the episode. An injected episode open or
+  partial-write failure left success custody for a missing or 20-byte invalid
+  episode with a mismatching hash, and the abort handler could not replace it.
+  Publication is now transactional: each file is staged in a dot-prefixed
+  temporary file, fsynced and hard-linked into place (linking, unlike rename,
+  never replaces an existing path); the episode goes before its custody, then
+  the directory is fsynced. On any failure the files this attempt published are
+  removed and an error sidecar (`replay publication failed: ...`, no episode
+  hash or verification) is published before the original exception is
+  re-raised. If that also fails, the game stays active for the abort handler
+  and the failure is a note. Nine tests (episode or custody write/close
+  failure, unpublishable error custody, fsync/link order, no-replace, and the
+  verifier's partial write over two live native games) were red first
+  (`r3-fixes/publication-red.log`); eight source mutations each fail them
+  (`r3-fixes/mutations.json`). The verifier's probes patch the final episode
+  path, which is no longer opened, so the live test carries their scenario.
+- **P2, canonical evaluation (deferred to Task 3.1).** Not implemented on this
+  branch by instruction; the dependency and reopening condition are recorded
+  in `r3-fixes/receipt.md` and the task receipt. Task 7.3 is not landable as
+  complete canonical evaluation export until then.
+
+Final `just prepare` results are in `r3-fixes/prepare.log`.

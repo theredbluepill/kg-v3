@@ -1,0 +1,87 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__ test_selected_decoder_rejection_writes_error_custody_for_every_active_game __
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-42/test_selected_decoder_rejectio0')
+
+    def test_selected_decoder_rejection_writes_error_custody_for_every_active_game(
+        tmp_path: Path,
+    ) -> None:
+        recorder, _, _, raised = _run_aborting(tmp_path, count=2, reject_selected=True)
+        assert "length value 0" in str(raised.value)
+>       _assert_error_custody(tmp_path, recorder, str(raised.value))
+
+tests/kaggriculture/test_replay_export_integration.py:337: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-42/test_selected_decoder_rejectio0')
+recorder = <owl.kaggriculture.replay_export.ReplayRecorder object at 0x1141ddc70>
+error_text = 'length value 0 must be in 2..=12'
+
+    def _assert_error_custody(
+        tmp_path: Path, recorder: replay_export.ReplayRecorder, error_text: str
+    ) -> None:
+        custody = _custody(tmp_path)
+>       assert set(custody) == set(recorder.selected_games)
+E       assert set() == {0, 1}
+E         
+E         Extra items in the right set:
+E         0
+E         1
+E         Use -v to get more diff
+
+tests/kaggriculture/test_replay_export_integration.py:316: AssertionError
+____________ test_native_transaction_rejection_writes_error_custody ____________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-42/test_native_transaction_reject0')
+
+    def test_native_transaction_rejection_writes_error_custody(tmp_path: Path) -> None:
+        # Only an unselected env receives the invalid program: selected decoding
+        # succeeds and the real native batch transaction rejects at env.step.
+        recorder, _, reject_env, raised = _run_aborting(
+            tmp_path, count=1, reject_selected=False
+        )
+        assert reject_env not in recorder.selected_games
+        assert f"env={reject_env} seat=0" in str(raised.value)
+>       _assert_error_custody(tmp_path, recorder, str(raised.value))
+
+tests/kaggriculture/test_replay_export_integration.py:348: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-42/test_native_transaction_reject0')
+recorder = <owl.kaggriculture.replay_export.ReplayRecorder object at 0x11590cbc0>
+error_text = 'env=1 seat=0 length outside 1..=252'
+
+    def _assert_error_custody(
+        tmp_path: Path, recorder: replay_export.ReplayRecorder, error_text: str
+    ) -> None:
+        custody = _custody(tmp_path)
+>       assert set(custody) == set(recorder.selected_games)
+E       assert set() == {0}
+E         
+E         Extra items in the right set:
+E         0
+E         Use -v to get more diff
+
+tests/kaggriculture/test_replay_export_integration.py:316: AssertionError
+_____ test_error_custody_publication_failure_keeps_the_original_exception ______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-42/test_error_custody_publication0')
+
+    def test_error_custody_publication_failure_keeps_the_original_exception(
+        tmp_path: Path,
+    ) -> None:
+        # Occupy game 0's custody path so its error record cannot be published.
+        (tmp_path / "game_000000.custody.json").write_text("{}")
+        recorder, _, _, raised = _run_aborting(tmp_path, count=2, reject_selected=True)
+        assert "length value 0" in str(raised.value)
+>       notes = "\n".join(raised.value.__notes__)
+                          ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'ValueError' object has no attribute '__notes__'. Did you mean: '__ne__'?
+
+tests/kaggriculture/test_replay_export_integration.py:358: AttributeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_selected_decoder_rejection_writes_error_custody_for_every_active_game
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_native_transaction_rejection_writes_error_custody
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_error_custody_publication_failure_keeps_the_original_exception
+3 failed in 0.43s

@@ -1,5 +1,18 @@
 # Change log
 
+## 2026-09-29 — Fix Task 7.3 verification r3: transactional replay publication
+
+Codex verification r3 of Task 7.3 (`ops/rebuild-2026-09-29/7.3/independent-verifier-r3/review.md`,
+REJECT) found two P2s. `ReplayRecorder._write` wrote successful custody before
+the episode, so a failed episode write left `status: complete` for a missing or
+corrupt file. Episode and custody are now staged, fsynced and hard-linked into
+place (episode first, then custody, then a directory fsync); on failure the
+attempt's files are removed and error custody is published before the original
+exception is re-raised. Nine tests were red first; eight source mutations each
+fail them. Canonical `run_ppo` evaluation export is deferred to Task 3.1 and
+recorded as a dependency. The [[references/native-replay-export-preserves-kaggle-episodes|replay-export
+Reference]] and its index line are revised. Receipts are in `ops/rebuild-2026-09-29/7.3/r3-fixes/`.
+
 ## 2026-09-29 — Fix Task 7.3 verification r2: error custody on evaluation abort
 
 Codex verification r2 of Task 7.3 (`ops/rebuild-2026-09-29/7.3/independent-verifier-r2/review.md`,

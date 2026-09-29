@@ -1047,6 +1047,13 @@ the supplied model-seat schedule. Only selected game ordinals perform recording
 work. Start/transition/terminal evidence is copied before later caller writes;
 completed exports have seed/action/checkpoint/seat/version custody sidecars and
 episode SHA-256. Truncation and errors remain explicit non-success records.
+Publication is transactional: each file is written to a dot-prefixed temporary
+file, fsynced and hard-linked into place (never replacing an existing path); the
+episode is published before the custody that claims it, then the directory is
+fsynced. If any step fails, files this attempt published are removed and an
+error sidecar (`replay publication failed: ...`, no episode hash) is published
+before the original exception is re-raised; if that also fails, the game stays
+active and the failure is attached as a note.
 Seeds and checkpoint identity are host metadata, never model inputs.
 
 `owl.kaggriculture.native_evaluation.evaluate_native_games` is the live seam

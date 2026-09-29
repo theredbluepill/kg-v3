@@ -1,0 +1,32 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_live_terminal_snapshot_is_captured_before_auto_reset ___________
+
+    def test_live_terminal_snapshot_is_captured_before_auto_reset() -> None:
+        env = rs.KaggricultureEnv(
+            1, 11, 1, json.dumps({"episodeSteps": 3}), REWARD, 1, hire_limit=HIRE_LIMIT
+        )
+        arrays = buffers(1)
+        env.observe(**arrays)
+        tokens, lengths = market_policy(arrays, np.zeros(1, dtype=np.int64))
+        assert env.terminal_snapshot(0) is None
+        env.step(tokens, lengths, **arrays)
+        assert not arrays["dones"].any()
+        assert env.terminal_snapshot(0) is None
+        env.step(tokens, lengths, **arrays)
+        assert arrays["dones"].all()
+        finished_json = env.terminal_snapshot(0)
+        assert finished_json is not None
+        finished = json.loads(finished_json)
+        live = json.loads(env.state_snapshot(0))
+        # The step returned the replacement game's observation; the terminal
+        # snapshot still belongs to the completed game.
+        assert live["public"]["step"] == 0
+        assert live["done"] is False
+>       assert finished["done"] is True
+E       assert False is True
+
+tests/kaggriculture/test_replay_export_integration.py:222: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_live_terminal_snapshot_is_captured_before_auto_reset
+1 failed in 0.03s

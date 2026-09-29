@@ -480,6 +480,17 @@ published, the other game's record is still written and the failure is attached
 as a note to the original exception. Removing the abort handler, or letting a
 publication failure escape, fails these tests.
 
+Transactional publication (verify r3): injected write and close failures on the
+episode or on its successful custody each leave exactly one error sidecar, no
+episode, no staging file and no active game; the original `OSError` is
+re-raised. When error custody also fails, no file remains and the game stays
+active for the abort handler. A durability test checks the fsync/link order
+(episode, then custody, then directory), and publication refuses to replace an
+existing path. A live two-game run whose episode write stops after 20 bytes
+leaves error custody for both games. Eight source mutations (custody first,
+rename replacing, no fsync, no cleanup, no error custody, staging file left,
+episode hash kept, unpublished game retired) each fail these tests.
+
 Limits: `_evaluate_games` still stops at `_create_eval_env` for Kaggriculture
 (an explicit skipped acceptance test tracks its eight canonical exports);
 calling the seam from the trainer needs the Task 1.5 adapter and the model's token

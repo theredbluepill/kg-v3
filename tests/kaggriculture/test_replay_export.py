@@ -567,3 +567,159 @@ def test_every_successful_native_export_verifies(
     assert report["transitions"] == transitions
     assert report["canonical_json"] == episode_json
     assert json.loads(episode_json)["info"]["v3_native_replay"]["complete"] is complete
+
+
+class _FailingStream:
+    """Wrap a real stream; fail after a partial write or while closing."""
+
+    def __init__(self, stream: Any, stage: str) -> None:
+        self.stream, self.stage = stream, stage
+
+    def __enter__(self) -> _FailingStream:
+        self.stream.__enter__()
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.stream.__exit__(*args)
+        if self.stage == "close" and args[0] is None:
+            raise OSError("injected close failure")
+
+    def write(self, payload: bytes | str) -> int:
+        if self.stage == "write":
+            self.stream.write(payload[:20])
+            self.stream.flush()
+            raise OSError("injected partial write failure")
+        return int(self.stream.write(payload))
+
+    def flush(self) -> None:
+        self.stream.flush()
+
+    def fileno(self) -> int:
+        return int(self.stream.fileno())
+
+
+def _inject_publication_failure(
+    monkeypatch: pytest.MonkeyPatch, name: str, stage: str, times: int
+) -> list[Path]:
+    """Make the first ``times`` exclusive writes of ``name`` fail at ``stage``."""
+    original = Path.open
+    failed: list[Path] = []
+
+    def open_(path: Path, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
+        stream = original(path, mode, *args, **kwargs)
+        if "x" in mode and name in path.name and len(failed) < times:
+            failed.append(path)
+            return _FailingStream(stream, stage)
+        return stream
+
+    monkeypatch.setattr(Path, "open", open_)
+    return failed
+
+
+def _finish_selected_game(recorder: replay_export.ReplayRecorder) -> None:
+    _start(recorder)
+    recorder.record_transition(0, _actions(), captured=_snapshot(1))
+    recorder.record_transition(0, _actions(), captured=_snapshot(2, done=True))
+    recorder.finish_game(0, _snapshot(2, done=True))
+
+
+@pytest.mark.parametrize("stage", ["write", "close"])
+@pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+def test_publication_failure_never_leaves_successful_custody(
+    tmp_path: Path,
+    native_calls: list[dict[str, Any]],
+    monkeypatch: pytest.MonkeyPatch,
+    target: str,
+    stage: str,
+) -> None:
+    # Only the first exclusive write of the target fails; the error custody
+    # written afterwards succeeds.
+    recorder = _recorder(tmp_path)
+    failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+    with pytest.raises(
+        OSError,
+        match=f"injected {'partial write' if stage == 'write' else 'close'} failure",
+    ):
+        _finish_selected_game(recorder)
+    assert len(failed) == 1
+    assert len(native_calls) == 1
+    # No episode, no staging leftovers: exactly one error custody record.
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "game_000000.custody.json"
+    ]
+    sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+    assert sidecar["status"] == "error"
+    assert sidecar["complete"] is False
+    assert sidecar["action_tape"]["complete"] is False
+    assert len(sidecar["action_tape"]["transitions"]) == 2
+    assert "episode_sha256" not in sidecar
+    assert "verification" not in sidecar
+    assert "replay publication failed: OSError: injected" in sidecar["error"]
+    assert recorder.active_games == frozenset()
+
+
+@pytest.mark.usefixtures("native_calls")
+def test_unpublishable_error_custody_leaves_no_files_and_the_game_active(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    recorder = _recorder(tmp_path)
+    _inject_publication_failure(
+        monkeypatch, "game_000000.custody.json", "write", times=2
+    )
+    with pytest.raises(OSError, match="injected partial write failure") as raised:
+        _finish_selected_game(recorder)
+    assert list(tmp_path.iterdir()) == []
+    assert recorder.active_games == frozenset({0})
+    notes = "\n".join(raised.value.__notes__)
+    assert "error custody for game 0 was not published: OSError: injected" in notes
+    # The game stays active, so a later abort handler can still record it.
+    monkeypatch.undo()
+    recorder.fail_game(0, error="evaluation aborted")
+    sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+    assert sidecar["status"] == "error"
+    assert recorder.active_games == frozenset()
+
+
+@pytest.mark.usefixtures("native_calls")
+def test_episode_is_durable_before_custody_claims_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    events: list[str] = []
+    original_fsync, original_link = replay_export.os.fsync, replay_export.os.link
+
+    def fsync(descriptor: int) -> None:
+        events.append("fsync")
+        original_fsync(descriptor)
+
+    def link(source: Any, destination: Any) -> None:
+        events.append(f"link {Path(destination).name}")
+        original_link(source, destination)
+
+    monkeypatch.setattr(replay_export.os, "fsync", fsync)
+    monkeypatch.setattr(replay_export.os, "link", link)
+    recorder = _recorder(tmp_path)
+    _finish_selected_game(recorder)
+    # Each file is fsynced before it appears; custody appears after the
+    # episode; the directory entries are fsynced last.
+    assert events == [
+        "fsync",
+        "link game_000000.json",
+        "fsync",
+        "link game_000000.custody.json",
+        "fsync",
+    ]
+    sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+    episode = (tmp_path / "game_000000.json").read_bytes()
+    assert sidecar["status"] == "complete"
+    assert sidecar["episode_sha256"] == hashlib.sha256(episode).hexdigest()
+
+
+def test_publication_never_replaces_a_path_created_meanwhile(tmp_path: Path) -> None:
+    target = tmp_path / "game_000000.json"
+    target.write_bytes(b"unrelated evidence")
+    published: list[Path] = []
+    with pytest.raises(FileExistsError):
+        replay_export._publish_new_file(target, b"new episode", published)
+    assert target.read_bytes() == b"unrelated evidence"
+    assert published == []
+    assert list(tmp_path.iterdir()) == [target]

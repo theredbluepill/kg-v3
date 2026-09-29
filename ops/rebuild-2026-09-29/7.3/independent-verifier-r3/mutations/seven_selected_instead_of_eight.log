@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_evaluate_games_exports_eight_complete_episodes ______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-36/test_evaluate_games_exports_ei0')
+
+    def test_evaluate_games_exports_eight_complete_episodes(tmp_path: Path) -> None:
+        configuration = {"episodeSteps": 5, "turnsPerDay": 2}
+        n_games = 10
+        _, results, seats = _run(
+            tmp_path,
+            n_envs=2,
+            n_games=n_games,
+            count=8,
+            configuration=configuration,
+            seed=2**62 + 5,
+            stride=1,
+        )
+        assert [r.game_ordinal for r in results] == list(range(n_games))
+        assert len({r.seed for r in results}) == n_games
+        custody = _custody(tmp_path)
+>       assert len(custody) == 8
+E       AssertionError: assert 7 == 8
+E        +  where 7 = len({0: {'action_tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}], 'tokens': [{...}, {...}]}, {'action...aaaaaa', 'incumbent': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'}, 'complete': True, ...}, ...})
+
+tests/kaggriculture/test_replay_export_integration.py:170: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_evaluate_games_exports_eight_complete_episodes
+1 failed in 0.79s

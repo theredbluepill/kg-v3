@@ -364,3 +364,51 @@ def test_error_custody_publication_failure_keeps_the_original_exception(
     assert record["status"] == "error"
     assert len(record["action_tape"]["transitions"]) == 1
     assert recorder.active_games == frozenset({0})
+
+
+def test_partial_episode_write_during_live_evaluation_leaves_error_custody(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Verification r3 probe: game 0's episode write stops after 20 bytes.
+    original = Path.open
+
+    class PartialWriter:
+        def __init__(self, stream: Any) -> None:
+            self.stream = stream
+
+        def __enter__(self) -> PartialWriter:
+            self.stream.__enter__()
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            self.stream.__exit__(*args)
+
+        def write(self, payload: bytes) -> int:
+            self.stream.write(payload[:20])
+            self.stream.flush()
+            raise OSError("injected partial episode write failure")
+
+    def open_(path: Path, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
+        stream = original(path, mode, *args, **kwargs)
+        if mode == "xb" and "game_000000.json" in path.name:
+            return PartialWriter(stream)
+        return stream
+
+    monkeypatch.setattr(Path, "open", open_)
+    with pytest.raises(OSError, match="injected partial episode write") as raised:
+        _run(tmp_path, n_envs=2, n_games=2, count=2, configuration={"episodeSteps": 3})
+    # Game 0 published its own error custody, so no publication note.
+    assert not hasattr(raised.value, "__notes__")
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "game_000000.custody.json",
+        "game_000001.custody.json",
+    ]
+    custody = _custody(tmp_path)
+    assert custody[0]["status"] == "error"
+    assert "replay publication failed" in custody[0]["error"]
+    assert "episode_sha256" not in custody[0]
+    assert custody[1]["status"] == "error"
+    assert "evaluation aborted: OSError" in custody[1]["error"]
+    for record in custody.values():
+        assert record["complete"] is False
+        assert "verification" not in record

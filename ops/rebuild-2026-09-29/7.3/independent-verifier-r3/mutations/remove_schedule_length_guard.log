@@ -1,0 +1,45 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_native_evaluation_rejects_inconsistent_schedule _____________
+
+    def test_native_evaluation_rejects_inconsistent_schedule() -> None:
+        with pytest.raises(ValueError, match="seat_assignments"):
+>           evaluate_native_games(
+                rs.KaggricultureEnv(1, 11, 1, "{}", REWARD, 1, hire_limit=HIRE_LIMIT),
+                buffers(1),
+                market_policy,
+                n_games=2,
+                seat_assignments=[0],
+                configuration={},
+                hire_limit=HIRE_LIMIT,
+                recorder=None,
+                checkpoint_hashes=HASHES,
+                versions=VERSIONS,
+            )
+
+tests/kaggriculture/test_replay_export_integration.py:241: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/r3-python-mutants-r9zi7ptq/native_evaluation.py:200: in evaluate_native_games
+    begin(env_index)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env_index = 0
+
+    def begin(env_index: int) -> None:
+        nonlocal started
+        if started >= n_games:
+            ordinals[env_index] = None
+            candidate_seats[env_index] = -1
+            return
+        ordinal = started
+        started += 1
+        ordinals[env_index] = ordinal
+        seeds[env_index] = env.seed_state()[1][env_index]
+>       candidate_seats[env_index] = seat_assignments[ordinal]
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: list index out of range
+
+.codex-tmp/r3-python-mutants-r9zi7ptq/native_evaluation.py:106: IndexError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_native_evaluation_rejects_inconsistent_schedule
+1 failed in 1.08s
