@@ -697,6 +697,18 @@ mod tests {
         Uniform { low: f64, high: f64, value: f64 },
     }
 
+    #[test]
+    fn arbitrary_precision_uniform_fixture_float() {
+        let call: RandomCall = serde_json::from_str(
+            r#"{"kind":"uniform","low":0.125,"high":1.75,"value":0.625}"#,
+        )
+        .unwrap();
+        let RandomCall::Uniform { low, high, value } = call else {
+            panic!("expected uniform fixture call");
+        };
+        assert_eq!([low, high, value], [0.125, 1.75, 0.625]);
+    }
+
     struct FixtureRandom {
         calls: std::collections::VecDeque<RandomCall>,
     }
