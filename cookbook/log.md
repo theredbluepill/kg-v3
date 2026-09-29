@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-09-29 — Pin the reward admission strengthening with a discriminating case
+
+Claude's review of Task 1.5 Stage 1 (Codex commit `43354c8`) mutation-checked the
+reward predicate, fence and seed-stream tests. Every mutant failed except the
+pinned reference's combined rule, which the shared ten-case table cannot
+separate from the per-component rule. `tests/kaggriculture/test_rewards.py` adds
+one Python/native case (W .2, death weights 0, ineffective .001/.1 → reject). The
+[[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]]
+records it. Review details are in brief 1.5's review history.
+
 ## 2026-09-29 — Implement Task 1.5 Stage 1 Python adapter and game seam
 
 The [[references/native-game-semantics-use-v3-owned-buffers|native boundary Reference]]

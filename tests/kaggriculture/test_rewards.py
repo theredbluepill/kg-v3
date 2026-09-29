@@ -43,6 +43,10 @@ _ADMISSION_CASES = (
     ((0, 0, 0, 0, 0.001, 0), False),
     ((0, 0, 0, 0, 0.001, 0.1), True),
 )
+# Beyond the shared table: the one case separating the per-component predicate
+# from the pinned reference's combined rule, which accepts inert death shaping
+# (W > 0, both death products 0) whenever the ineffective component is active.
+_STRENGTHENING_CASES = (((0.2, 0, 0, 0.25, 0.001, 0.1), False),)
 
 
 def _config(**overrides: float) -> KaggricultureRewardConfig:
@@ -83,7 +87,9 @@ def test_reward_coefficients_required_and_bounded() -> None:
         both.to_native_dict("win_only")  # type: ignore[arg-type]
 
 
-@pytest.mark.parametrize(("coefficients", "accepted"), _ADMISSION_CASES)
+@pytest.mark.parametrize(
+    ("coefficients", "accepted"), _ADMISSION_CASES + _STRENGTHENING_CASES
+)
 def test_reward_admission_predicate_cases(
     coefficients: tuple[float, ...], accepted: bool
 ) -> None:
@@ -96,7 +102,9 @@ def test_reward_admission_predicate_cases(
 
 
 @pytest.mark.skip(reason="needs Task 1.4 binding")
-@pytest.mark.parametrize(("coefficients", "accepted"), _ADMISSION_CASES)
+@pytest.mark.parametrize(
+    ("coefficients", "accepted"), _ADMISSION_CASES + _STRENGTHENING_CASES
+)
 def test_python_and_native_reward_admission_agree(
     coefficients: tuple[float, ...], accepted: bool
 ) -> None:

@@ -24,6 +24,10 @@ one positive binary64 product W times starvation/drought weight. Positive
 ineffective weight requires positive ineffective cap. The ten shared admission
 cases include two underflow cases; the native comparison is written but skipped
 until Task 1.4. This intentionally strengthens the reference's combined rule.
+Claude's Stage 1 review found no test separating the two: a mutant implementing
+the combined rule passed all 65 reward/config tests. One extra Python/native
+case, W .2 with both death weights 0 and ineffective .001/.1, now requires
+rejection and kills that mutant.
 The merged base actually checked raw death weights independently of ineffective
 weight, so it was not precisely the reference's combined check as the prompt
 suggested. The reviewed ABI is the implemented predicate.
@@ -54,7 +58,8 @@ Existing-concept search covered reward, economic penalties, underflow, terminal
 scale, telescoping and truncation. Independent support is the reviewed Task
 1.4 formula/rounding contract and hand-derived CPU examples; the reference
 branch is read-only historical support. Reward/config tests passed 65 with 11
-binding skips after the missing-module red and the missing-YAML-coefficient red.
+binding skips after the missing-module red and the missing-YAML-coefficient red;
+with the review case they pass 66 with 12 binding skips.
 Full Python preparation passed 1,705 tests with 22 skips. Receipts retain actual
 commands, exits and intermediate lint failures, not inherited score evidence.
 
