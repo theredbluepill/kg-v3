@@ -357,14 +357,16 @@ last-best snapshot is replaced and also saved as `checkpoint_last_best.pt`. If
 the first periodic checkpoint finds no `checkpoint_last_best.pt`, the starting
 last-best model is saved there first, using its starting environment-step count.
 Each evaluation also logs `eval/games` (games scored), `eval/promoted` (1 when
-the snapshot was replaced, else 0) and `eval/promotion_threshold` (0.7).
+the snapshot was replaced, else 0; logged only after the promotion's
+checkpoint write and barrier complete) and `eval/promotion_threshold` (0.7).
 Kaggriculture evaluation games are won by the higher raw final bank (equal
 banks draw), never by the shaped training return, and log
 `eval/candidate_bank`, `eval/last_best_bank` and `eval/candidate_bank_margin`
 from the candidate's seat. Each Kaggriculture evaluation is to seed its games
 with `_evaluation_seed(base_seed, env_steps)`, a reproducible seed that differs
-per evaluation, in the non-negative int64 band `[2**62, 2**62 + 2**61)`; the
-native evaluation env that consumes it is pending rebuild Tasks 1.4/1.5, so a
+per evaluation step within a run (the seed ranges of different evaluations or
+runs are not guaranteed disjoint), in the non-negative int64 band
+`[2**62, 2**62 + 2**61)`; the native evaluation env that consumes it is pending rebuild Tasks 1.4/1.5, so a
 Kaggriculture config fails fast at evaluation until then. Orbit evaluation
 environments stay unseeded.
 Set `rl.eval_replay_games` to a positive count to save random eval replay

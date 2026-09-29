@@ -72,10 +72,12 @@ MODEL_LAST_BEST = 1
 PLAYER_COUNTS = (2, 4)
 LAST_BEST_WIN_RATE_THRESHOLD = 0.7
 # Native Kaggriculture games take a non-negative int64 seed (engine_rs
-# `Game::new(config, seed: i64, ..)`; contract v4 requires seed >= 0). Training
-# streams draw `base_seed + rank + k * world_size` below 2**62. Evaluation seeds
-# live in the disjoint band [2**62, 2**62 + 2**61), leaving 2**61 seeds of
-# headroom below the int64 limit for the games one evaluation env consumes.
+# `Game::new(config, seed: i64, ..)`; contract v4 requires seed >= 0). Evaluation
+# seeds start in the band [2**62, 2**62 + 2**61), leaving 2**61 seeds of headroom
+# below the int64 limit for the games one evaluation env consumes. Training
+# streams draw `base_seed + rank + k * world_size`; they stay below this band only
+# while that value is below 2**62, a bound nothing here enforces yet (the native
+# env seam, rebuild Tasks 1.4/1.5, must enforce it to keep the two apart).
 _EVAL_SEED_BITS = 61
 _EVAL_SEED_FLOOR = 1 << 62
 CHECKPOINT_FINAL = "checkpoint_final.pt"
@@ -465,14 +467,6 @@ def _run_training_loop(
                     eval_metrics["eval/win_rate_against_last_best"]
                     >= LAST_BEST_WIN_RATE_THRESHOLD
                 )
-                logger.log(
-                    {
-                        **eval_metrics,
-                        "eval/promoted": float(replace_last_best),
-                        "eval/promotion_threshold": LAST_BEST_WIN_RATE_THRESHOLD,
-                    },
-                    step=env_steps,
-                )
                 if replace_last_best:
                     _refresh_eval_model_from_weights(
                         last_best_model,
@@ -490,6 +484,17 @@ def _run_training_loop(
                             wandb_run_id=wandb_run_id,
                         )
                 dist_ctx.barrier()
+                # Logged only after refresh, teacher update, promoted checkpoint
+                # and barrier complete, so a failed promotion leaves no record
+                # of `eval/promoted` (as the reference branch orders it).
+                logger.log(
+                    {
+                        **eval_metrics,
+                        "eval/promoted": float(replace_last_best),
+                        "eval/promotion_threshold": LAST_BEST_WIN_RATE_THRESHOLD,
+                    },
+                    step=env_steps,
+                )
                 next_checkpoint_env_steps = _next_periodic_checkpoint_step(
                     checkpoint_freq=cfg.rl.checkpoint_freq,
                     env_steps=env_steps,
@@ -1436,10 +1441,12 @@ def _evaluate_games(
 def _evaluation_seed(*, base_seed: int, env_steps: int) -> int:
     """Fresh, reproducible starting worlds for the evaluation at ``env_steps``.
 
-    A bijective 61-bit mix of ``(base_seed, env_steps)`` placed in the evaluation
-    seed band: for a fixed base seed every evaluation step gets a distinct seed
-    (and vice versa), repeating an evaluation repeats its seed, and the games of
-    different evaluations or runs do not share consecutive seed ranges.
+    A 61-bit mix of ``(base_seed, env_steps)`` placed in the evaluation seed band
+    ``[2**62, 2**62 + 2**61)``. Guarantees: repeating an evaluation repeats its
+    seed; for a fixed base seed distinct evaluation steps get distinct seeds, and
+    for a fixed step distinct base seeds do (the mix is a bijection in each input
+    while the other is fixed). It is not injective over input pairs, and the
+    consecutive seeds that different evaluations or runs consume may overlap.
     """
     limit = 1 << _EVAL_SEED_BITS
     for name, value in (("base_seed", base_seed), ("env_steps", env_steps)):

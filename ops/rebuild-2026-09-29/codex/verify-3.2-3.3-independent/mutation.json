@@ -1,0 +1,15 @@
+{
+  "baseline": {
+    "returncode": 0,
+    "output": ".                                                                        [100%]\n1 passed in 1.53s\n"
+  },
+  "mutated": {
+    "returncode": 1,
+    "output": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________ test_kaggriculture_evaluation_decides_winners_by_raw_banks __________\n\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112c17f80>\n\n    def test_kaggriculture_evaluation_decides_winners_by_raw_banks(\n        monkeypatch: pytest.MonkeyPatch,\n    ) -> None:\n        built_for: list[int] = []\n    \n        def fake_create_eval_env(\n            cfg: FullConfig, *, n_envs: int, device: torch.device, env_steps: int\n        ) -> _ShapedReturnMisranksBanksEnv:\n            assert device.type == \"cpu\"\n            assert isinstance(cfg.env.obs_spec, KaggricultureObsConfig)\n            built_for.append(env_steps)\n            return _ShapedReturnMisranksBanksEnv(n_envs)\n    \n        monkeypatch.setattr(run_ppo, \"_create_eval_env\", fake_create_eval_env)\n    \n        stats, stats_by_player_count, env_metrics, steps = run_ppo._evaluate_games(\n            current_model=_LaunchPolicy(launch=True),\n            last_best_model=_LaunchPolicy(launch=False),\n            cfg=_kaggriculture_eval_config(),\n            n_games=2,\n            n_envs=2,\n            device=torch.device(\"cpu\"),\n            env_steps=20_000_000,\n        )\n    \n        # Shaped returns would give the incumbent both games (win rate 0.0); the\n        # banks give the candidate one win and one draw.\n        assert built_for == [20_000_000]\n        assert steps == 2\n        assert stats.model_games == [2, 2]\n>       assert stats.wins == [1.5, 0.5]\nE       assert [0.0, 2.0] == [1.5, 0.5]\nE         \nE         At index 0 diff: 0.0 != 1.5\nE         Use -v to get more diff\n\nops/rebuild-2026-09-29/codex/verify-3.2-3.3-independent/mutation-copy/tests/scripts/test_run_ppo.py:2872: AssertionError\n=========================== short test summary info ============================\nFAILED ops/rebuild-2026-09-29/codex/verify-3.2-3.3-independent/mutation-copy/tests/scripts/test_run_ppo.py::test_kaggriculture_evaluation_decides_winners_by_raw_banks\n1 failed in 1.32s\n"
+  },
+  "restored": {
+    "returncode": 0,
+    "sha256": "53235fb12b9eb93354e27823df60de7ace9f3682d566ba6fd3ae8dffebea324d",
+    "output": ".                                                                        [100%]\n1 passed in 0.85s\n"
+  }
+}

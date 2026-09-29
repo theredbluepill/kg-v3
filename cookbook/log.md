@@ -1,5 +1,13 @@
 # Change log
 
+## 2026-09-29 — Report promotion only after it completes; narrow the evaluation-seed claims
+
+Codex verified Tasks 3.2/3.3 (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify-3.2-3.3-independent/review.md`). The [[references/evaluation-and-truncation-follow-the-kaggriculture-objective|evaluation and truncation Reference]] now records both repairs.
+- `scripts/run_ppo.py` logs the evaluation record, including `eval/promoted`, once, after the incumbent refresh, teacher update, promoted checkpoint and barrier (the reference's order). A new test injects a refresh failure and a promoted-checkpoint write failure; each failed before the change and now leaves no `eval/promoted`.
+- `_evaluation_seed` is documented as distinct per step for a fixed base seed and per base seed for a fixed step, not injective over pairs and not a separator of consecutive seed ranges. Training/evaluation seed separation holds only below a `2**62` training-seed bound that the native seam (Tasks 1.4/1.5) must enforce. The docstring, `README.md`, `docs/rl-api-specs.md` and a characterization test agree.
+
+`just py-prepare` passed (1,344 passed, 6 skipped). The native env and a real Kaggriculture evaluation remain pending.
+
 ## 2026-09-29 — Decide Kaggriculture evaluations by raw banks and keep the truncation reward
 
 Rebuild Tasks 3.2 and 3.3 land on the trainer seam; the new [[references/evaluation-and-truncation-follow-the-kaggriculture-objective|evaluation and truncation Reference]] records the inventory.

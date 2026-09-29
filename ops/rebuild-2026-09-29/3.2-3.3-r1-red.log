@@ -1,0 +1,116 @@
+..FF                                                                     [100%]
+=================================== FAILURES ===================================
+__ test_run_training_loop_reports_promotion_only_after_it_completes[refresh] ___
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-470/test_run_training_loop_reports0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e933680>
+failing_phase = 'refresh'
+
+    @pytest.mark.parametrize("failing_phase", ["refresh", "checkpoint"])
+    def test_run_training_loop_reports_promotion_only_after_it_completes(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        failing_phase: str,
+    ) -> None:
+        cfg = _full_config(checkpoint_freq=1000)
+        trainer = (
+            _FailingLastBestWriteTrainer()
+            if failing_phase == "checkpoint"
+            else _FakeTrainer()
+        )
+        logger = _FakeLogger()
+        _patch_eval_model_from_weights(monkeypatch)
+        monkeypatch.setattr(
+            run_ppo,
+            "_evaluate_against_last_best",
+            lambda **_kwargs: {"eval/win_rate_against_last_best": 0.7, "eval/games": 2.0},
+        )
+        if failing_phase == "refresh":
+    
+            def fail_refresh(*_args: object) -> None:
+                raise RuntimeError("injected incumbent refresh failure")
+    
+            monkeypatch.setattr(run_ppo, "_refresh_eval_model_from_weights", fail_refresh)
+    
+        with pytest.raises((RuntimeError, OSError), match="injected"):
+            run_ppo._run_training_loop(
+                trainer=trainer,
+                logger=logger,
+                run_dir=tmp_path,
+                cfg=cfg,
+                env_steps_per_iteration=1000,
+                max_env_steps=1000,
+                max_runtime_seconds=None,
+                dist_ctx=DistributedContext.single_process_cpu(),
+            )
+    
+        # The iteration's training metrics were logged, but no evaluation record
+        # (and so no `eval/promoted`) exists for a promotion that never completed.
+>       assert [step for _metrics, step in logger.logged] == [1000]
+E       assert [1000, 1000] == [1000]
+E         
+E         Left contains one more item: 1000
+E         Use -v to get more diff
+
+tests/scripts/test_run_ppo.py:3116: AssertionError
+----------------------------- Captured stderr call -----------------------------
+0env steps [00:00, ?env steps/s]1000env steps [00:00, 29330797.20env steps/s]
+_ test_run_training_loop_reports_promotion_only_after_it_completes[checkpoint] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-470/test_run_training_loop_reports1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f1a7a10>
+failing_phase = 'checkpoint'
+
+    @pytest.mark.parametrize("failing_phase", ["refresh", "checkpoint"])
+    def test_run_training_loop_reports_promotion_only_after_it_completes(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        failing_phase: str,
+    ) -> None:
+        cfg = _full_config(checkpoint_freq=1000)
+        trainer = (
+            _FailingLastBestWriteTrainer()
+            if failing_phase == "checkpoint"
+            else _FakeTrainer()
+        )
+        logger = _FakeLogger()
+        _patch_eval_model_from_weights(monkeypatch)
+        monkeypatch.setattr(
+            run_ppo,
+            "_evaluate_against_last_best",
+            lambda **_kwargs: {"eval/win_rate_against_last_best": 0.7, "eval/games": 2.0},
+        )
+        if failing_phase == "refresh":
+    
+            def fail_refresh(*_args: object) -> None:
+                raise RuntimeError("injected incumbent refresh failure")
+    
+            monkeypatch.setattr(run_ppo, "_refresh_eval_model_from_weights", fail_refresh)
+    
+        with pytest.raises((RuntimeError, OSError), match="injected"):
+            run_ppo._run_training_loop(
+                trainer=trainer,
+                logger=logger,
+                run_dir=tmp_path,
+                cfg=cfg,
+                env_steps_per_iteration=1000,
+                max_env_steps=1000,
+                max_runtime_seconds=None,
+                dist_ctx=DistributedContext.single_process_cpu(),
+            )
+    
+        # The iteration's training metrics were logged, but no evaluation record
+        # (and so no `eval/promoted`) exists for a promotion that never completed.
+>       assert [step for _metrics, step in logger.logged] == [1000]
+E       assert [1000, 1000] == [1000]
+E         
+E         Left contains one more item: 1000
+E         Use -v to get more diff
+
+tests/scripts/test_run_ppo.py:3116: AssertionError
+----------------------------- Captured stderr call -----------------------------
+0env steps [00:00, ?env steps/s]1000env steps [00:00, 16448250.98env steps/s]
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_run_training_loop_reports_promotion_only_after_it_completes[refresh]
+FAILED tests/scripts/test_run_ppo.py::test_run_training_loop_reports_promotion_only_after_it_completes[checkpoint]
+2 failed, 2 passed, 88 deselected in 0.75s

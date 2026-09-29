@@ -2934,6 +2934,23 @@ def test_evaluation_seed_fits_the_native_seed_with_headroom() -> None:
         assert seed + 2**61 <= native_limit
 
 
+def test_evaluation_seed_distinguishes_one_input_at_a_time_not_pairs() -> None:
+    # Pins the documented limit: the mix is a bijection in each input while the
+    # other is fixed, not an injection over (base_seed, env_steps) pairs, and it
+    # does not keep consecutive seed ranges apart. Counterexamples from Codex's
+    # 3.2/3.3 verification (verify-3.2-3.3-r1).
+    same = run_ppo._evaluation_seed(base_seed=0, env_steps=0)
+    other_run = run_ppo._evaluation_seed(
+        base_seed=1, env_steps=2_131_737_497_183_550_101
+    )
+    same_run_later = run_ppo._evaluation_seed(
+        base_seed=0, env_steps=787_325_655_728_545_358
+    )
+
+    assert other_run == same
+    assert same_run_later == same + 1
+
+
 @pytest.mark.parametrize(
     ("base_seed", "env_steps"),
     [(-1, 0), (2**61, 0), (0, -1), (0, 2**61)],
@@ -3045,3 +3062,63 @@ def test_run_training_loop_logs_promotion_telemetry_and_evaluation_steps(
         if checkpoint[0].name == "checkpoint_last_best.pt" and checkpoint[1] > 0
     ]
     assert len(promotions) == (2 if promoted else 0)
+
+
+class _FailingLastBestWriteTrainer(_FakeTrainer):
+    def write_checkpoint(
+        self,
+        path: Path,
+        *,
+        env_steps: int,
+        wandb_run_id: str | None = None,
+        model: torch.nn.Module | None = None,
+    ) -> None:
+        if path.name == run_ppo.CHECKPOINT_LAST_BEST and env_steps > 0:
+            raise OSError("injected promoted checkpoint write failure")
+        super().write_checkpoint(
+            path, env_steps=env_steps, wandb_run_id=wandb_run_id, model=model
+        )
+
+
+@pytest.mark.parametrize("failing_phase", ["refresh", "checkpoint"])
+def test_run_training_loop_reports_promotion_only_after_it_completes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failing_phase: str,
+) -> None:
+    cfg = _full_config(checkpoint_freq=1000)
+    trainer = (
+        _FailingLastBestWriteTrainer()
+        if failing_phase == "checkpoint"
+        else _FakeTrainer()
+    )
+    logger = _FakeLogger()
+    _patch_eval_model_from_weights(monkeypatch)
+    monkeypatch.setattr(
+        run_ppo,
+        "_evaluate_against_last_best",
+        lambda **_kwargs: {"eval/win_rate_against_last_best": 0.7, "eval/games": 2.0},
+    )
+    if failing_phase == "refresh":
+
+        def fail_refresh(*_args: object) -> None:
+            raise RuntimeError("injected incumbent refresh failure")
+
+        monkeypatch.setattr(run_ppo, "_refresh_eval_model_from_weights", fail_refresh)
+
+    with pytest.raises((RuntimeError, OSError), match="injected"):
+        run_ppo._run_training_loop(
+            trainer=trainer,
+            logger=logger,
+            run_dir=tmp_path,
+            cfg=cfg,
+            env_steps_per_iteration=1000,
+            max_env_steps=1000,
+            max_runtime_seconds=None,
+            dist_ctx=DistributedContext.single_process_cpu(),
+        )
+
+    # The iteration's training metrics were logged, but no evaluation record
+    # (and so no `eval/promoted`) exists for a promotion that never completed.
+    assert [step for _metrics, step in logger.logged] == [1000]
+    assert all("eval/promoted" not in metrics for metrics, _step in logger.logged)

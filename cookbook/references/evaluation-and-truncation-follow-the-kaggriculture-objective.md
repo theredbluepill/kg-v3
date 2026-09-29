@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Evaluation and truncation follow the Kaggriculture objective"
-description: "Rebuild Tasks 3.2/3.3: raw-bank evaluation winners, truncation that keeps the economic reward, joint per-player clipping and value-mode guards, a per-evaluation seed in a checked int64 band, and promotion telemetry, all proven on the trainer seam with CPU TDD, a fake env and 1,341 Python passes; the native env, config registration and a real Kaggriculture run are still missing."
+description: "Rebuild Tasks 3.2/3.3: raw-bank evaluation winners, truncation that keeps the economic reward, joint per-player clipping and value-mode guards, a per-evaluation seed in a checked int64 band (distinct per step within a run, not a global stream separator), and promotion telemetry logged only after promotion completes, all proven on the trainer seam with CPU TDD, a fake env and 1,344 Python passes; the native env, config registration and a real Kaggriculture run are still missing."
 tags: ["kaggriculture-v3", "adaptation", "evaluation", "rewards"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -23,6 +23,9 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/3.2-3.3-red.log"
   - resource: "repository:ops/rebuild-2026-09-29/3.2-3.3-green.log"
   - resource: "repository:ops/rebuild-2026-09-29/3.2-3.3-py-prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/3.2-3.3-r1-red.log"
+  - resource: "repository:ops/rebuild-2026-09-29/3.2-3.3-r1-py-prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/verify-3.2-3.3-independent/review.md"
   - resource: "reference-branch:kg/reference-2026-09-29/scripts/run_ppo.py"
   - resource: "reference-branch:kg/reference-2026-09-29/python/owl/train/ppo.py"
   - resource: "reference-branch:kg/reference-2026-09-29/python/owl/train/config.py"
@@ -57,15 +60,16 @@ The native Kaggriculture environment (Tasks 1.4/1.5) and the config registration
 - These are `configs/scaling_6m.yaml`'s settings, so the guards encode Isaiah's recipe; `vf_clip_coef` stays free.
 
 **L12 and promotion telemetry** (`scripts/run_ppo.py`).
-- `_evaluation_seed(base_seed, env_steps)` applies a bijective 61-bit xor-shift/odd-multiply mix twice and adds `2**62`. Both inputs must be in `[0, 2**61)`.
-  - The result lies in `[2**62, 2**62 + 2**61)`. That band is non-negative (contract v4) and fits `engine_rs` `Game::new`'s `i64` seed.
-  - It leaves `2**61` seeds of headroom for the consecutive seeds one evaluation env consumes, and it stays disjoint from training streams (`base_seed + rank + k·world_size`, below `2**62`).
-  - For a fixed base seed, distinct evaluation steps get distinct seeds, and vice versa. Unlike the reference's `base + 2**40 + env_steps`, nearby steps or base seeds don't share consecutive seed ranges.
+- `_evaluation_seed(base_seed, env_steps)` mixes the base seed with a bijective 61-bit xor-shift/odd-multiply mix, xors in `env_steps`, mixes again and adds `2**62`. Both inputs must be in `[0, 2**61)`.
+  - The result lies in `[2**62, 2**62 + 2**61)`. That band is non-negative (contract v4) and fits `engine_rs` `Game::new`'s `i64` seed, leaving `2**61` seeds of headroom for the consecutive seeds one evaluation env consumes.
+  - Repeating an evaluation repeats its seed. For a fixed base seed, distinct evaluation steps get distinct seeds; for a fixed step, distinct base seeds do. That is what Task 3.3 requires.
+  - It is not injective over `(base_seed, env_steps)` pairs, and it does not keep the consecutive seed ranges of different evaluations or runs apart: `(0, 0)` and `(1, 2131737497183550101)` collide, and `(0, 787325655728545358)` starts one seed later than `(0, 0)` (Codex verify-3.2-3.3-r1; pinned by a test).
+  - Training streams (`base_seed + rank + k·world_size`) stay below the band only while that value is below `2**62`. Contract v4 requires only non-negative seeds, and nothing enforces that bound yet; the native env seam (Tasks 1.4/1.5) must enforce it to keep training and evaluation seeds apart.
 - `_run_training_loop` passes `env_steps` to `_evaluate_against_last_best`, which passes it to `_evaluate_games` and the new `_create_eval_env`.
   - `_create_eval_env` builds Isaiah's unseeded Orbit `VectorizedEnv` with the same arguments as before.
   - For a Kaggriculture config it raises `NotImplementedError` naming Tasks 1.4/1.5 and the seed rule, so a run fails before touching a non-native env.
 - Isaiah's evaluation count is kept: `cfg.env.n_envs` games on the main process, with no `eval_n_games` knob.
-- Every evaluation log now carries `eval/games`, `eval/promoted` (1 or 0) and `eval/promotion_threshold` (0.7). The promotion decision is computed before the log call, and the rest of the lifecycle is unchanged.
+- Every evaluation log now carries `eval/games`, `eval/promoted` (1 or 0) and `eval/promotion_threshold` (0.7). The evaluation record is logged once, after the incumbent refresh, teacher update, promoted-checkpoint write and barrier complete (the reference's order), so a failed promotion leaves no `eval/promoted` record. Isaiah logged the evaluation before promoting; this moves that log, and a promotion failure now loses that step's evaluation metrics along with the run.
 
 Docs: `README.md` (training) describes the telemetry, the Kaggriculture winner rule, the guards and the truncation difference. The Kaggriculture section of `docs/rl-api-specs.md` records the seed band.
 
@@ -79,14 +83,16 @@ All checks ran on this version on the owner's Mac, CPU-only with `OMP_NUM_THREAD
 | Green | 253 passed, 2 skipped (the explicit integration placeholders) over the new modules, `test_run_ppo.py`, `test_ppo.py` and `test_config.py` | `3.2-3.3-green.log` |
 | Mutation | making Kaggriculture scores the shaped returns fails the L1 test (`[0.0, 2.0] != [1.5, 0.5]`); restored afterwards | `3.2-3.3-green.log` |
 | `just py-prepare` | ruff, format, 3.11 syntax, mypy over 59 files, 1,341 passed / 6 skipped, docs freshness | `3.2-3.3-py-prepare.log` |
+| Review repair red | after Codex verify-3.2-3.3-r1: the new promotion-failure test fails for an injected refresh failure and an injected promoted-checkpoint write failure (`eval/promoted` = 1 already logged) | `3.2-3.3-r1-red.log` |
+| Review repair `just py-prepare` | ruff, format, 3.11 syntax, mypy over 59 files, 1,344 passed / 6 skipped, docs freshness | `3.2-3.3-r1-py-prepare.log` |
 
 What the named tests show:
 - **L1:** a two-seat fake env whose shaped return favors the incumbent in both games, while the banks give the candidate one win and one draw. Evaluation credits the candidate with 1.5 of 2 games and logs margins of 1,000 and 0. The candidate's seat is read from its actions, not assumed.
 - **L2:** `make_obs` contract batches keep a 0.02/−0.02 economic reward on a cut row, and the GAE return there equals that reward plus the bootstrap. Orbit zeroes it. A `PPOTrainer` rollout on a truncating tiny Orbit env pins Isaiah's behavior end to end: the cut step has zero reward, done, a truncated flag and a bootstrap equal to `compute_value` of the cut state.
 - **Clipping:** with 40 acting frames each moved by 0.01 nats, `per_player` clips the joint ratio e^0.4 (clip fraction 1, loss −1.2), while `per_entity` would clip none.
 - **Guards:** each rejected setting fails with its own message. `scaling_6m` settings pass. An Orbit config with gamma 0.99 and `per_entity` still validates, while the same config carrying `KaggricultureObsConfig` fails.
-- **Seed:** 1,000 checkpoint steps and 4 base seeds × 256 adjacent steps are all distinct. Extreme inputs stay in the band with headroom, and out-of-band inputs are rejected.
-- **Telemetry:** a two-evaluation training loop logs `eval/games`, `eval/promoted` and `eval/promotion_threshold` at 0.7 and 0.69, and it promotes only at 0.7.
+- **Seed:** 1,000 checkpoint steps and 4 base seeds × 256 adjacent steps get distinct starting seeds. Extreme inputs stay in the band with headroom, and out-of-band inputs are rejected. A characterization test pins the pair collision and the adjacent-start counterexample above, so the limit stays documented.
+- **Telemetry:** a two-evaluation training loop logs `eval/games`, `eval/promoted` and `eval/promotion_threshold` at 0.7 and 0.69, and it promotes only at 0.7. When the incumbent refresh or the promoted-checkpoint write raises, the loop logs only the iteration's training metrics and no `eval/promoted`.
 
 `cargo test` wasn't run, because no Rust changed. No training, evaluation or GPU run was performed.
 
