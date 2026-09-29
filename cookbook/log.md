@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Point the grammar-table dependency at the Task 1.4 binding
+
+After the Task 1.2 merge (Codex APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1.md`), the Rust grammar tables exist and match the Python stand-in (964 bits, no mismatches). The [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|grammar-heads Reference]], its index line and `docs/model-architecture.md` now name the Task 1.4 Python binding as the remaining dependency.
+
 ## 2026-09-29 — Merge the native grammar with live parity and the heads
 
 Task 1.2 (Codex APPROVE at `7877c46`) forked before Task 1.1b and Task 2.3
