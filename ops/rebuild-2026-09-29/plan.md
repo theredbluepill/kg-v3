@@ -25,7 +25,7 @@
 
 ### Run statement (before every pod run)
 
-`ops/rebuild-2026-09-29/runs/<name>.md` must contain:
+`ops/rebuild-2026-09-29/run-statements/<name>.md` must contain:
 - the question or mechanism tested;
 - exact inputs: config, source commit, checkpoint hashes;
 - the observation that would discriminate between hypotheses;
@@ -70,7 +70,7 @@ Read reference files with `git show kg/reference-2026-09-29:<path>` (the tag `kg
 | L3 | Rank seed streams use `seed+rank` with stride `world_size` on every reset (a `rank*n_envs` offset collided) | 1.4 |
 | L4 | Vendoring the engine turns on `serde_json/arbitrary_precision` for the whole crate, which breaks a test-only float decode in Isaiah's `src/rules_engine/generation.rs` fixtures | 1.1 |
 | L5 | A 4,096-game rank-0 evaluation exceeded the 600 s NCCL broadcast; Isaiah's cadence (128 envs/rank) avoids it, and idle GPUs during evaluation are not a hang | 3.3, 6.x |
-| L6 | An unresolved CUDA illegal memory access appeared in the BC-initialized rollout, surfacing at `_check_flags`; suspects are a dense-state index overflow and async host→device copies from overwritten native buffers | 0.2, 1.4, 2.3 |
+| L6 | **Resolved (Task 0.2):** the CUDA illegal memory access is a Torch 2.9 Inductor max-autotune GEMM template overflowing 32-bit offsets above 2^21 rows, which silently corrupted rollout activations before faulting (cookbook `references/compiled-gemm-template-overflows-above-2-21-rows`) | 2.1 guard, 3.4 cadence, 3.6 alarm |
 | L7 | W&B marks crashed runs "finished", and cleanup delays the traceback | 0.3 |
 | L8 | Self-play collapsed to zero banks through market behavior; BC bootstraps from public replays | Phase 5 |
 | L9 | BC overfit after about 14.6k updates (held-out NLL 0.761 → 1.954); select by held-out NLL | 5.2 |
@@ -152,7 +152,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 - [ ] Env contract: `reset`/`step` signatures, caller-owned pinned buffers, auto-reset, terminal metrics (raw banks per seat), reward configuration, and seed streams (L3).
 - [ ] Acceptance: Codex's review is recorded in the doc; both streams code against this file.
 
-### Task 0.2: Reproduce the CUDA illegal memory access on the reference branch (pod)
+### Task 0.2: Reproduce the CUDA illegal memory access on the reference branch (pod) — DONE, root cause in `results.md`
 
 **Owner:** Codex writes `ops/rebuild-2026-09-29/cuda_repro.py`; Claude runs it. It uses the reference branch checkout on the pod and the BC best checkpoint (SHA-256 `ffd7d9e4…`, identical to its pre-PPO copy; confirm the path on the pod before running).
 
@@ -206,6 +206,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 - [ ] `python/owl/model/kaggriculture.py`: one `ObservationInputStem` per entity group, fed [float channels ‖ one-hot categorical fields]. Per-role parameters `player_tokens[2,D]` (self, opponent), `board_tokens[n_scratch,D]`, `actor_plan_tokens[1,D]` (only this seat acts in its observation), `critic_value_tokens[2,D]`. `TransformerBlock` × depth and `final_norm`. Named encoded fields, never positional slices.
 - [ ] Topology test: build Isaiah's 6m model (`configs/scaling_6m.yaml`) and ours. The shared roles must use identical classes (`ObservationInputStem`, `TransformerBlock`, `LayerNorm`, `OutputProjectionMLP`, the `3D→D` `Linear`); token parameters must be separate per role; `nn.Embedding` may appear only under `actor.`.
 - [ ] Stateless tests: outputs depend only on the current observation; hidden-state keys are rejected.
+- [ ] L6 guard: the compiled trunk fails fast (or chunks) when `rows × tokens × max_inner_dim ≥ 2^31`; boundary test with a stub trunk.
 - [ ] Muon: `get_input_layers` returns each stem's `.input` and the token parameters; `get_output_layers` returns `critic_head.out` and the head `.out`s. Isaiah's rule is then satisfied by construction (L11).
 
 ### Task 2.2: Critic
@@ -244,6 +245,10 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 - [ ] `configs/kaggriculture_2rank.yaml` (128 envs/rank, spm 8, accum 1), `configs/kaggriculture_4rank.yaml` (64/4/1), `target_kl: null`, and the `scaling_6m` optimizer, scheduler, PPO coefficients, compile settings and 20M checkpoint cadence. Economic shaping 0.2 is the owner's choice. `configs/model/kaggriculture_gpu.yaml` forces FlashAttention; a CPU preset and `configs/kaggriculture.yaml` cover local tests.
 - [ ] Workload test: global envs, optimizer steps per iteration, global segments per step and transitions per iteration all equal `scaling_6m`; the optimizer config is equal too. (The previous plan's Task 2.1 has the test code.)
+
+### Task 3.6: First-minibatch log-ratio alarm (L6)
+
+- [ ] In `PPOTrainer._update`, before the first optimizer step of each update, compute the mean log-ratio of the first minibatch. If |mean| > 0.05 nats (well above BF16 replay noise), raise with the rollout batch shape and token count. Test with a model whose sampling and replay paths are deliberately made to disagree.
 
 ### Task 3.5: Bounded local functional check
 

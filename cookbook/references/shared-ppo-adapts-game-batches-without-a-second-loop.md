@@ -18,7 +18,7 @@ The recipe is partially aligned to pinned upstream `scaling_6m.yaml` (`32b3ec9`)
 - The GPU YAMLs still run the historical 4096 env/rank, spm 1, accumulation 2 cadence: 2,048 optimizer steps per iteration against upstream's 16, with four-times-faster scheduler exposure per env step. The [[../decisions/recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]] resolves it toward Isaiah's multi-GPU rule.
 - Teacher action/cache/value adapters are missing and config rejects them. Kaggriculture replay export is also missing, so `eval_replay_games` is 0.
 - Muon grouping and the FlashAttention requirement differ from upstream.
-- A CUDA illegal memory access in the BC-initialized rollout is unresolved (not a confirmed OOM).
+- The CUDA illegal memory access in the BC-initialized rollout is now explained: a Torch Inductor GEMM template overflows 32-bit offsets above 2^21 rows ([[compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]]).
 - W&B reports a crashed run as finished, a behavior inherited from upstream.
 - Every evaluation reuses the same seed (`seed=cfg.env.seed`).
 

@@ -46,4 +46,4 @@ The owner asks to use the reference branch "properly, without blindly copying". 
 - **Rebuild, with the reference as test oracle:** the observation encoding (named per-entity tensors instead of the flat v2 vector sliced at fixed offsets), the environment bindings, the codec, the model, the trainer seams, the configs and BC training.
 - **Reference only:** scripted bots until evaluation needs a few of them, the v2 experiments, and the run receipts.
 
-Lessons from the reference (raw-bank winners, truncation reward, seed streams, the unresolved CUDA fault, cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
+Lessons from the reference (raw-bank winners, truncation reward, seed streams, the CUDA fault (since traced to a compiler GEMM overflow), cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
