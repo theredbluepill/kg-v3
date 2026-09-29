@@ -20,12 +20,13 @@
 - After Python edits run `just py-prepare`; after Rust edits run `just rs-prepare`; before a merge run `just prepare` and complete `docs/pr-checklist.md`. (`just` runs as `uvx --from rust-just just …` on the owner's Mac.)
 - **On the owner's Mac: unit tests and bounded tiny checks only.** A "tiny check" means a tiny model, ≤ 2 environments, ≤ 2 updates, < 1 GB RAM and < 2 min. Anything larger runs on the pod.
 - **Pod:** 2- and 4-rank RTX PRO 6000 are authorized for verification. Before each run: read live price and state, check the pod isn't running someone else's learner, and write a run statement. Only Claude operates the pod.
+- **8 ranks (owner, 2026-09-29):** "we'd likely use 8Xrtx 6000 in main run, 2 rank for diagonose/building." The 2-rank pod stays the smoke, diagnostics and building host; 8× RTX PRO 6000 is the likely main-run hardware ("likely", not a final adoption). `configs/kaggriculture_8rank.yaml` is Isaiah's divided shape (32 envs/rank, spm 2, accum 1). An 8-GPU pod is a new billable resource: state its live hourly price and get the owner's approval before creating it (6.3b).
 - Every material adaptation gets a cookbook record (note + folder index + prepended log).
 - Recipe differences resolve toward Isaiah; residual differences are recorded, not escalated.
 
 ### Resource fit on 2× RTX PRO 6000 (owner, 2026-09-29)
 
-Owner: "when fitting in GPUs, make sure we fits the GPU resource, since we are doing on RTX 6000 while Isaiah is doing in Tufa's B200 clusters". Isaiah's `scaling_6m` targets 1× B200 (192 GB). His `winner_ce_6m_4x5090` is the same recipe fitted to 4× RTX 5090 (32 GB, the same compute-capability-12.x generation as ours). That's the precedent: keep the global configuration identical (I2) and fit only the per-rank shapes and the spm/accumulation split (I1).
+Owner: "when fitting in GPUs, make sure we fits the GPU resource, since we are doing on RTX 6000 while Isaiah is doing in Tufa's B200 clusters". Isaiah's `scaling_6m` targets 1× B200 (192 GB). His `winner_ce_6m_4x5090` fits a different 6M recipe, `winner_ce_6m`, to 4× RTX 5090 (32 GB, the same compute-capability-12.x generation as ours) by dividing `n_envs` and `segments_per_minibatch` by 4. That division is the precedent we apply to `scaling_6m`: keep the global configuration identical (I2) and fit only the per-rank shapes and the spm/accumulation split (I1). His only 8-GPU config, `scaling_50m` (8× B200), keeps 256 envs/rank, so its global batch grows with ranks; it is not a 6M precedent.
 
 - **Hardware, from the pod read:** 2× RTX PRO 6000 Blackwell Server Edition, 97,887 MiB each, cc 12.0, 188 SMs, driver 595.91.07; 64 vCPU; 50 GB pod disk (≈25 GB free).
 - **Memory target:** peak `torch.cuda.max_memory_allocated` ≤ 85% of 97,887 MiB per rank. It is measured at the **densest** states (late-game BC policy, maximum actors and tokens ≈ 720), not early sparse states. It covers rollout, update, teacher precompute and cache, evaluation, and compile/autotune transients. Per-rank shapes (128 envs, spm 8) equal Isaiah's 5090 per-rank shapes; our tokens are about 2× Orbit's (~720 vs ~337), so the expected peak is well under 96 GB. The 6.1 smoke must confirm it. If it doesn't fit, move to spm 4 / accumulation 2 (the same product, I1) before touching anything else, and never change the global batch.
@@ -152,7 +153,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 | 3 Trainer integration | 3.1–3.5 | Claude | 1.5, 2.3 |
 | 4 Teacher distillation | 4.1–4.4 | Claude | 3.x |
 | 5 BC (required) | 5.1 data, 5.2 train | Codex / Claude | 1.5, 2.x, 3.5 |
-| 6 GPU verification | 6.1–6.4 | Claude | 4, 5.2 |
+| 6 GPU verification | 6.1–6.4 (6.3b at 8 ranks after owner pod approval) | Claude | 4, 5.2 |
 | 7 Evaluation and packaging | 7.1–7.5 | mixed | 6.2 |
 | 8 Docs and closeout | 8.1–8.2 | Claude | all |
 
@@ -211,6 +212,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 - [ ] A PyO3 `KaggricultureEnv` in Isaiah's `src/rl` style: batched reset/step, auto-reset, rewards via 1.5's reward config, lazily built terminal metrics, rayon threads, transactional step with rollback on error, and seed streams per L3.
 - [ ] From 0.2 (L6): no host buffer the trainer may still be copying from is overwritten by the next step. Test that the step-t buffers stay intact after step t+1, or document the double-buffer and event contract.
 - [ ] Oracle: seeded fixed-action trajectories (≥ 16 games to termination) match the reference `TrainingBatch` on rewards, dones and final banks.
+- [ ] L3 seed-partition test: the per-rank seed streams (`seed+rank`, stride `world_size`, every reset) are pairwise disjoint across ranks and resets at world sizes 1, 2, 4 **and 8** (8 ranks is the likely main-run shape, 32 envs/rank).
 
 ### Task 1.5: Python adapter and game seam
 
@@ -296,6 +298,15 @@ The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cov
 - [ ] **6.1 Memory smoke, 2 ranks:** one full iteration with the teacher on and a forced evaluation at dense BC positions. Record peak memory per phase against the ≤ 85% target, teacher cache bytes, native step time and the chosen `native_threads`, confirm the FlashAttention path ran, and record the spm/accum split decision (I1/I3; see "Resource fit").
 - [ ] **6.2 Complete-work run, 2 ranks, from the BC best:** 30 min bounded. Report game and learner-seat SPS over complete iterations, 16 optimizer steps per iteration, teacher telemetry, W&B status and whether the L6 fault is absent. Optionally an Nsight capture of one post-warmup iteration.
 - [ ] **6.3 Four ranks:** the same denominators for 15 min.
+- [ ] **6.3b 8-rank qualification (main-run hardware):** owner, 2026-09-29: "we'd likely use 8Xrtx 6000 in main run, 2 rank for diagonose/building." Keep the current 2-rank pod for 6.1/6.2 smoke and diagnostics; 6.3b qualifies `configs/kaggriculture_8rank.yaml` (32 envs/rank, spm 2, accum 1; global shapes equal `scaling_6m`). **The 8-GPU pod is a new billable resource: read and state its live hourly price and get the owner's approval before creating it**; write a run statement first.
+  - Memory smoke at 8-rank shapes: one full iteration with the teacher on and a forced evaluation at dense BC positions, peak memory per phase against the ≤ 85% target.
+  - Complete-work SPS in env steps and in learner turns (valid learner-seat actions) over complete iterations, with 16 optimizer steps per iteration and phase costs. The model-only component estimate (`results.md` "GPU checks bundle (component)", branch `kg/rebuild-gpu-checks`: 1,389 ms mid / 2,372 ms dense per update, 0.90 / 0.95 scaling efficiency vs 2 ranks) excludes the engine, copies, GAE, logging and all-reduce, so it is not an end-to-end prediction.
+  - All-reduce cost measured on the pod's actual interconnect (RTX PRO 6000 has no NVLink; expect PCIe, and read the topology with `nvidia-smi topo -m` rather than assume it); report the gradient all-reduce share of the train step.
+  - vCPU per GPU: read the pod's vCPU count and measure the Rust engine step time at 32 envs/rank with the chosen `native_threads`; `native_threads` × 8 ranks + dataloader/compile workers must fit the vCPUs.
+  - First-minibatch log-ratio alarm (3.6) active and quiet on every rank.
+  - W&B live sync under project `kg-v3` with v3 identifiers; outages stay visible.
+  - Seed-stream disjointness at world size 8 (L3, Task 1.4 test) confirmed from the run's recorded per-rank seeds.
+  - **Batch-size option (corrected 2026-09-29):** `winner_ce_6m` is not an Isaiah-aligned fallback. Relative to `scaling_6m` it changes `value_loss` to `winner_ce`, requires `env.reward_mode: win_only` and `value_mode: win_only`, and uses warmup 200 / decay 150k / `lr_min_ratio` 0.02 and muon weight decay 0.05 (`configs/winner_ce_6m.yaml`); our economic reward is not a winner distribution, and the merged 3.2/3.4 guards reject it. (c1) The full `winner_ce_6m` recipe is a reward-design change: owner decision. (c2) Its batch shape alone (512 envs × horizon 128, spm 32; 64 envs/rank, spm 4 at 8 ranks) on `scaling_6m` settings is a recipe deviation (4× the transitions per optimizer step): if 32 envs/rank underutilizes the GPUs (low GPU busy share; rollout or train-step time dominated by launch overhead), it needs a measured comparison against the divided `scaling_6m` shape (complete-work SPS and learning at equal env steps) before adoption, recorded in the recipe Decision. See the multi-GPU Decision.
 - [ ] **6.4 Orbit end-to-end:** `configs/scaling_6m.yaml`, one GPU, 2 iterations, with a forced evaluation.
 
 ## Phase 7 — Evaluation and packaging
@@ -317,6 +328,6 @@ The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cov
 
 ## Self-review
 
-- **Owner directives covered:** clean base and reference branch (C1–C17, dispositions); same layer topology (I0b, 2.1–2.3); extra BC (Phase 5); 2/4-rank RTX PRO 6000 (Phase 6); Codex (Working with Codex, streams); Isaiah's principles and stateless model (I0–I12).
+- **Owner directives covered:** clean base and reference branch (C1–C17, dispositions); same layer topology (I0b, 2.1–2.3); extra BC (Phase 5); 2/4-rank RTX PRO 6000 (Phase 6) and the likely 8-rank main run (6.3b, owner approval before the pod); Codex (Working with Codex, streams); Isaiah's principles and stateless model (I0–I12).
 - **No blind copying:** only C1 (the rules kernel) keeps reference bytes, and it's trimmed and hash-checked. The grammar, rewards, mask tables and benchmark are reviewed ports. The observation, env, codec, model, trainer seams, configs and BC training are rebuilt, with the reference as oracle.
 - **Every reference lesson (L1–L15) maps to a task.**

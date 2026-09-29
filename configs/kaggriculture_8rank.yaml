@@ -1,17 +1,18 @@
-# Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 2 ranks
-# (2x RTX PRO 6000). Isaiah's 6M multi-GPU division
-# (winner_ce_6m_4x5090.yaml): n_envs and segments_per_minibatch are divided by
-# the world size, so the GLOBAL batch
-# (256 envs), optimizer steps/iter (16), global segments per optimizer step (16)
-# and env steps/iter (16,384) equal scaling_6m; the optimizer, LR schedule, PPO
-# coefficients, compile settings, teacher and checkpoint cadence are unchanged.
-# seg_per_minibatch * grad_accum stays 8 per rank; the split is set from the
-# pre-launch memory smoke (plan Task 6.1: spm 4 / accum 2 if spm 8 does not fit).
+# Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 8 ranks
+# (8x RTX PRO 6000, the owner's likely main-run hardware; 2 ranks stay the
+# diagnostics/building pod). Isaiah's 6M multi-GPU division
+# (winner_ce_6m_4x5090.yaml):
+# n_envs and segments_per_minibatch are divided by the world size, so the GLOBAL
+# batch (8 x 32 = 256 envs), optimizer steps/iter (16), global segments per
+# optimizer step (8 x 2 = 16) and env steps/iter (16,384) equal scaling_6m; the
+# optimizer, LR schedule, PPO coefficients, compile settings, teacher and
+# checkpoint cadence are unchanged. seg_per_minibatch * grad_accum stays 2 per
+# rank (accum 1, as Isaiah's per-rank configs); plan Task 6.3b qualifies it.
 # See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
 # Loads through FullConfig; run_ppo checks its GEMM workload, then stops until the
 # Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.
 env:
-  n_envs: 128
+  n_envs: 32
   obs_spec:
     obs_spec: kaggriculture
     schema_version: 3
@@ -51,7 +52,7 @@ rl:
   horizon: 64
   checkpoint_freq: 20_000_000
   ppo_epochs: 1
-  segments_per_minibatch: 8
+  segments_per_minibatch: 2
   gradient_accumulation_steps: 1
   # gamma=1.0 keeps the critic softmax well-defined
   gamma: 1.0
@@ -70,7 +71,9 @@ rl:
   teacher_kl_coef: 0.005
   teacher_value_coef: 0.005
   # A chunk size of the teacher precompute, not a batch: kept, as in Isaiah's
-  # per-rank configs (scaling_6m_halfbatch, winner_ce_6m_4x5090).
+  # per-rank configs (scaling_6m_halfbatch, winner_ce_6m_4x5090). Per rank the
+  # chunk is min(128, 32) = 32 envs, one whole chunk; the teacher coefficients
+  # are scaling_6m's, so the global teacher targets are unchanged.
   teacher_segments_per_minibatch: 128
   compile_mode: default
   dtype: bfloat16

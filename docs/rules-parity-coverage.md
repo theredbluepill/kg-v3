@@ -458,7 +458,12 @@ teacher distillation (`kg/merge-teacher`), which changes no Rust, full
 `just prepare` passes with the same engine **69** and root **254 passed, four
 ignored**, and Python **1,673 passed, 11 skipped** (Phase 4's two trainer-seam
 and two run_ppo-seam tests added); receipt
-`ops/rebuild-2026-09-29/merge-teacher/prepare.log`. The trim
+`ops/rebuild-2026-09-29/merge-teacher/prepare.log`. After merging the 8-rank
+config and Phase 6.3b plan (`kg/merge-8rank`), which changes only configs,
+tests, the plan and the cookbook, full `just prepare` passes with the same
+engine **69** and root **254 passed, four ignored**, and Python **1,690 passed,
+11 skipped** (the 8-rank config and startup-workload tests added); receipt
+`ops/rebuild-2026-09-29/merge-8rank/prepare.log`. The trim
 checker's fixed authored set is now exactly the replay-parity test plus the
 generated-trace manifest. The native `grammar_tables()` matches all 964 bits of the Python
 heads' `expected_grammar_tables` in a merge-time cross-check, but no Python

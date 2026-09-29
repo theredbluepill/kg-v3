@@ -1,8 +1,9 @@
 """Task 3.4: Kaggriculture configs follow Isaiah's scaling_6m recipe.
 
-The ranked configs apply Isaiah's multi-GPU rule (``winner_ce_6m_4x5090.yaml``):
-per-rank ``n_envs`` and ``segments_per_minibatch`` are divided by the world
-size, everything else is scaling_6m's. Every config loads through the real
+The ranked configs (2, 4 and 8 ranks) apply Isaiah's 6M multi-GPU
+division (``winner_ce_6m_4x5090.yaml``): per-rank ``n_envs`` and
+``segments_per_minibatch`` are divided by the world size, everything else is
+scaling_6m's. Every config loads through the real
 ``FullConfig.from_file``, so each section, the Kaggriculture env and reward
 schema and the cross-section rules are validated by the trainer's own loader.
 """
@@ -30,7 +31,11 @@ from owl.train.ppo import _minibatch_indices
 from pydantic import ValidationError
 
 ROOT = Path(__file__).parents[2]
-_RANKED = {"kaggriculture_2rank.yaml": 2, "kaggriculture_4rank.yaml": 4}
+_RANKED = {
+    "kaggriculture_2rank.yaml": 2,
+    "kaggriculture_4rank.yaml": 4,
+    "kaggriculture_8rank.yaml": 8,
+}
 _ALL = (*_RANKED, "kaggriculture.yaml")
 _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_shaping=0.2,
@@ -50,6 +55,13 @@ class _Sections:
 
 
 @dataclass(frozen=True)
+class _PerRankShape:
+    n_envs: int
+    segments_per_minibatch: int
+    teacher_chunk_segments: int
+
+
+@dataclass(frozen=True)
 class _GlobalWorkload:
     global_envs: int
     optimizer_steps_per_iteration: int
@@ -66,6 +78,41 @@ def _sections(name: str) -> _Sections:
 
 def _scaling_6m() -> FullConfig:
     return FullConfig.from_file(ROOT / "configs" / "scaling_6m.yaml")
+
+
+def _isaiah_per_rank_shape(scaling: FullConfig, world_size: int) -> _PerRankShape:
+    """Isaiah's multi-GPU rule: divide the global shapes by the world size.
+
+    Fails loudly when a global quantity does not divide into whole per-rank
+    shapes, or when the per-rank envs do not split into whole minibatches or
+    whole teacher-precompute chunks.
+    """
+    rl = scaling.rl
+    for name, value in (
+        ("n_envs", scaling.env.n_envs),
+        ("segments_per_minibatch", rl.segments_per_minibatch),
+    ):
+        if value % world_size != 0:
+            raise ValueError(
+                f"scaling_6m {name}={value} is not divisible by world size {world_size}"
+            )
+    n_envs = scaling.env.n_envs // world_size
+    spm = rl.segments_per_minibatch // world_size
+    per_step = spm * rl.gradient_accumulation_steps
+    if n_envs % per_step != 0:
+        raise ValueError(
+            f"per-rank n_envs={n_envs} is not divisible by segments_per_minibatch "
+            f"* gradient_accumulation_steps={per_step}"
+        )
+    # The teacher chunk is a precompute slice, kept at Isaiah's value (his
+    # per-rank configs keep it) and clamped to the rank's envs by the trainer.
+    teacher_chunk = min(rl.teacher_segments_per_minibatch, n_envs)
+    if n_envs % teacher_chunk != 0:
+        raise ValueError(
+            f"per-rank n_envs={n_envs} is not divisible by the teacher chunk "
+            f"min(teacher_segments_per_minibatch, n_envs)={teacher_chunk}"
+        )
+    return _PerRankShape(n_envs, spm, teacher_chunk)
 
 
 def _global_workload(n_envs: int, rl: PPOConfig, world_size: int) -> _GlobalWorkload:
@@ -94,6 +141,48 @@ def test_ranked_config_global_workload_equals_scaling_6m(
     assert _global_workload(ours.env.n_envs, ours.rl, world_size) == expected
 
 
+@pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+def test_ranked_config_per_rank_shapes_are_scaling_6m_divided(
+    name: str, world_size: int
+) -> None:
+    ours = _sections(name)
+    teacher_chunk = min(ours.rl.teacher_segments_per_minibatch, ours.env.n_envs)
+    assert _PerRankShape(
+        ours.env.n_envs, ours.rl.segments_per_minibatch, teacher_chunk
+    ) == _isaiah_per_rank_shape(_scaling_6m(), world_size)
+    assert ours.rl.teacher_segments_per_minibatch == 128
+
+
+@pytest.mark.parametrize(
+    ("world_size", "match"),
+    [
+        (3, "n_envs=256 is not divisible by world size 3"),
+        (32, "segments_per_minibatch=16 is not divisible by world size 32"),
+    ],
+)
+def test_isaiah_per_rank_shape_fails_loudly_when_not_divisible(
+    world_size: int, match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        _isaiah_per_rank_shape(_scaling_6m(), world_size)
+
+
+def test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks() -> None:
+    scaling = _scaling_6m()
+    accum = scaling.model_copy(
+        update={"rl": scaling.rl.model_copy(update={"gradient_accumulation_steps": 3})}
+    )
+    with pytest.raises(ValueError, match="segments_per_minibatch \\* gradient"):
+        _isaiah_per_rank_shape(accum, 2)
+    teacher = scaling.model_copy(
+        update={
+            "rl": scaling.rl.model_copy(update={"teacher_segments_per_minibatch": 24})
+        }
+    )
+    with pytest.raises(ValueError, match="teacher chunk"):
+        _isaiah_per_rank_shape(teacher, 8)
+
+
 @pytest.mark.parametrize("name", _RANKED)
 def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
     scaling = _scaling_6m()
@@ -112,18 +201,21 @@ def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
 
 
 def test_ranked_configs_differ_only_in_per_rank_shapes() -> None:
-    two, four = (_sections(name) for name in _RANKED)
+    two, four, eight = (_sections(name) for name in _RANKED)
     assert (two.env.n_envs, two.rl.segments_per_minibatch) == (128, 8)
     assert (four.env.n_envs, four.rl.segments_per_minibatch) == (64, 4)
-    assert two.env.model_copy(update={"n_envs": 0}) == four.env.model_copy(
-        update={"n_envs": 0}
-    )
-    assert two.model == four.model
+    assert (eight.env.n_envs, eight.rl.segments_per_minibatch) == (32, 2)
     assert two.model.force_flash_attn
     assert (two.env.native_threads, two.env.pin_memory) == (2, True)
-    assert two.rl.model_copy(
-        update={"segments_per_minibatch": 0}
-    ) == four.rl.model_copy(update={"segments_per_minibatch": 0})
+    for other in (four, eight):
+        assert two.env.model_copy(update={"n_envs": 0}) == other.env.model_copy(
+            update={"n_envs": 0}
+        )
+        assert two.model == other.model
+        assert two.optimizer == other.optimizer
+        assert two.rl.model_copy(
+            update={"segments_per_minibatch": 0}
+        ) == other.rl.model_copy(update={"segments_per_minibatch": 0})
 
 
 @pytest.mark.parametrize("name", _ALL)
@@ -202,6 +294,16 @@ def test_four_rank_workloads_fit_the_model_chunking() -> None:
         "minibatch": (512, 1, 1),
         "teacher_chunk": (8_192, 2, 1),
         "evaluation": (128, 1, 1),
+    }
+
+
+def test_eight_rank_workloads_fit_the_model_chunking() -> None:
+    # teacher_chunk = min(128, 32) x 64 x 2 rows: one trunk and one head call.
+    assert _headroom("kaggriculture_8rank.yaml") == {
+        "rollout": (64, 1, 1),
+        "minibatch": (256, 1, 1),
+        "teacher_chunk": (4_096, 1, 1),
+        "evaluation": (64, 1, 1),
     }
 
 
