@@ -1,8 +1,9 @@
 """Kaggriculture tensors — `docs/kaggriculture-contract.md` v4 in code.
 
 Every tensor has leading dims ``[env, seat]``; each row is that seat's legal view.
-``check_contract`` checks the full contract (dtypes, shapes, categorical ranges,
-finiteness) and is for environment admission and tests, not the model hot path.
+``check_contract`` checks the full contract (leading dims exactly ``[env, 2]``,
+dtypes, shapes, per-field lower and upper bounds, finiteness) and is for
+environment admission and tests, not the model hot path.
 """
 
 from __future__ import annotations
@@ -66,6 +67,7 @@ PLAYER_FEATURE_CHANNELS = 44
 MARKET_FLOAT_CHANNELS = 2
 GLOBAL_FEATURE_CHANNELS = 15
 GLOBAL_INT_CHANNELS = 16
+MAX_ORDER_LIMIT = 10
 
 
 class KaggricultureObsConfig(BaseConfig):
@@ -96,36 +98,40 @@ class KaggricultureActions:
 
 _I64, _F32, _F64, _BOOL = torch.int64, torch.float32, torch.float64, torch.bool
 
-# field: (dtype, trailing shape, exclusive categorical upper bound or None)
-_SCHEMA: dict[str, tuple[torch.dtype, tuple[int, ...], int | None]] = {
-    "tile_kind": (_I64, (TILES,), len(TILE_KINDS)),
-    "tile_crop": (_I64, (TILES,), len(CROPS)),
-    "tile_animal": (_I64, (TILES,), len(ANIMALS)),
-    "tile_cell": (_I64, (TILES,), CELLS),
-    "tile_role": (_I64, (TILES,), len(TILE_ROLES)),
-    "tiles_int": (_I64, (TILES, TILE_INT_CHANNELS), None),
-    "tiles_float": (_F32, (TILES, TILE_FLOAT_CHANNELS), None),
-    "actor_slot": (_I64, (ACTOR_SLOTS,), MAX_ACTORS),
-    "actor_cell": (_I64, (ACTOR_SLOTS,), CELLS),
-    "actor_role": (_I64, (ACTOR_SLOTS,), len(ACTOR_ROLES)),
-    "actor_mask": (_BOOL, (ACTOR_SLOTS,), None),
-    "actor_inventory": (_I64, (MAX_ACTORS, ITEM_COUNT), None),
-    "actor_inventory_rank": (_I64, (MAX_ACTORS, ITEM_COUNT), None),
-    "actors_float": (_F32, (ACTOR_SLOTS, ACTOR_FLOAT_CHANNELS), None),
-    "player_features": (_F32, (PLAYERS, PLAYER_FEATURE_CHANNELS), None),
-    "storage_counts": (_I64, (STORAGE_COUNTS,), None),
-    "storage_rank": (_I64, (ITEM_COUNT,), None),
-    "banks": (_F64, (PLAYERS,), None),
-    "shop_type": (_I64, (SHOP_SLOTS,), len(SHOP_TYPES)),
-    "shop_slot": (_I64, (SHOP_SLOTS,), SHOP_SLOTS),
-    "shop_mask": (_BOOL, (SHOP_SLOTS,), None),
-    "market_product": (_I64, (PRODUCT_COUNT,), PRODUCT_COUNT),
-    "market_float": (_F32, (PRODUCT_COUNT, MARKET_FLOAT_CHANNELS), None),
-    "market_int": (_I64, (PRODUCT_COUNT, MARKET_FLOAT_CHANNELS), None),
-    "global_features": (_F32, (GLOBAL_FEATURE_CHANNELS,), None),
-    "globals_int": (_I64, (GLOBAL_INT_CHANNELS,), None),
-    "still_playing": (_BOOL, (), None),
-    "order_limits": (_I64, (), None),
+# field: (dtype, trailing shape, inclusive lower bound, exclusive upper bound).
+# Categorical fields use [0, cardinality); exact counts are non-negative; ranks
+# are 0 (absent) .. ITEM_COUNT; tiles_int allows the -1 sentinels; signed
+# channels (floats, market_int) are unbounded but must be finite.
+_Bounds = tuple[torch.dtype, tuple[int, ...], int | None, int | None]
+_SCHEMA: dict[str, _Bounds] = {
+    "tile_kind": (_I64, (TILES,), 0, len(TILE_KINDS)),
+    "tile_crop": (_I64, (TILES,), 0, len(CROPS)),
+    "tile_animal": (_I64, (TILES,), 0, len(ANIMALS)),
+    "tile_cell": (_I64, (TILES,), 0, CELLS),
+    "tile_role": (_I64, (TILES,), 0, len(TILE_ROLES)),
+    "tiles_int": (_I64, (TILES, TILE_INT_CHANNELS), -1, None),
+    "tiles_float": (_F32, (TILES, TILE_FLOAT_CHANNELS), None, None),
+    "actor_slot": (_I64, (ACTOR_SLOTS,), 0, MAX_ACTORS),
+    "actor_cell": (_I64, (ACTOR_SLOTS,), 0, CELLS),
+    "actor_role": (_I64, (ACTOR_SLOTS,), 0, len(ACTOR_ROLES)),
+    "actor_mask": (_BOOL, (ACTOR_SLOTS,), None, None),
+    "actor_inventory": (_I64, (MAX_ACTORS, ITEM_COUNT), 0, None),
+    "actor_inventory_rank": (_I64, (MAX_ACTORS, ITEM_COUNT), 0, ITEM_COUNT + 1),
+    "actors_float": (_F32, (ACTOR_SLOTS, ACTOR_FLOAT_CHANNELS), None, None),
+    "player_features": (_F32, (PLAYERS, PLAYER_FEATURE_CHANNELS), None, None),
+    "storage_counts": (_I64, (STORAGE_COUNTS,), 0, None),
+    "storage_rank": (_I64, (ITEM_COUNT,), 0, ITEM_COUNT + 1),
+    "banks": (_F64, (PLAYERS,), None, None),
+    "shop_type": (_I64, (SHOP_SLOTS,), 0, len(SHOP_TYPES)),
+    "shop_slot": (_I64, (SHOP_SLOTS,), 0, SHOP_SLOTS),
+    "shop_mask": (_BOOL, (SHOP_SLOTS,), None, None),
+    "market_product": (_I64, (PRODUCT_COUNT,), 0, PRODUCT_COUNT),
+    "market_float": (_F32, (PRODUCT_COUNT, MARKET_FLOAT_CHANNELS), None, None),
+    "market_int": (_I64, (PRODUCT_COUNT, MARKET_FLOAT_CHANNELS), None, None),
+    "global_features": (_F32, (GLOBAL_FEATURE_CHANNELS,), None, None),
+    "globals_int": (_I64, (GLOBAL_INT_CHANNELS,), 0, None),
+    "still_playing": (_BOOL, (), None, None),
+    "order_limits": (_I64, (), 0, MAX_ORDER_LIMIT + 1),
 }
 
 
@@ -165,14 +171,13 @@ class KaggricultureObsBatch(BaseModel):
     def check_contract(self) -> None:
         """Check contract v4; raise ``ValueError`` naming the first bad field."""
         lead = self.still_playing.shape
-        if len(lead) < 1 or lead[-1] != PLAYERS:
+        if len(lead) != 2 or lead[1] != PLAYERS:
             raise ValueError(
-                f"still_playing must end in the seat axis ({PLAYERS}), "
-                f"got {tuple(lead)}"
+                f"still_playing must have shape [env, {PLAYERS}], got {tuple(lead)}"
             )
         # Iterating the pinned schema's known field names is the sanctioned
         # dynamic-access case (AGENTS.md).
-        for name, (dtype, trailing, bound) in _SCHEMA.items():
+        for name, (dtype, trailing, low, high) in _SCHEMA.items():
             tensor: torch.Tensor = getattr(self, name)
             if tensor.dtype != dtype:
                 raise ValueError(f"{name} must be {dtype}, got {tensor.dtype}")
@@ -181,12 +186,10 @@ class KaggricultureObsBatch(BaseModel):
                     f"{name} must have shape {(*lead, *trailing)}, "
                     f"got {tuple(tensor.shape)}"
                 )
-            if (
-                bound is not None
-                and tensor.numel()
-                and (int(tensor.min()) < 0 or int(tensor.max()) >= bound)
-            ):
-                raise ValueError(f"{name} categories must lie in [0, {bound})")
+            if tensor.numel() and low is not None and int(tensor.min()) < low:
+                raise ValueError(f"{name} values must be >= {low}")
+            if tensor.numel() and high is not None and int(tensor.max()) >= high:
+                raise ValueError(f"{name} values must be < {high}")
             if dtype in (_F32, _F64) and not bool(torch.isfinite(tensor).all()):
                 raise ValueError(f"{name} contains non-finite values")
         can_act = self.action_mask.can_act
