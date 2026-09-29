@@ -24,3 +24,9 @@ Interim interpretation (superseded by the result below): I read the mismatch as 
 2. **Guard (Task 2.1):** the model's compiled trunk path fails fast when `rows × tokens × max_inner_dim ≥ 2³¹`, or chunks the forward, with a test at the boundary. This protects evaluation, BC and any future larger batch.
 3. **Silent-corruption alarm (Task 3.x):** at the first minibatch of every update, before any optimizer step, |mean log-ratio| must be ≈ 0. A threshold breach aborts the run with the offending batch shape, because this is how the corruption was first visible.
 4. **Upstream:** record the torch version. Don't upgrade torch or drivers as a fix without a separate, measured decision. Retest the probe after any upgrade.
+
+### Torch 2.8 comparison (ran 03:54Z; the owner rejected the command after it had already started)
+
+The unchanged probe under the pod's system torch 2.8.0+cu128 on GPU 0 gives max |compiled − eager| = 0.0078 both below (M = 2,088,960) and above (M = 2,105,344) the threshold: **no overflow in torch 2.8** for this template. (The "out of resource" autotune lines are candidate configs exceeding sm_120 shared memory, which autotune discards.) Log: pod `runs/cuda-repro-2026-09-29/int32_probe_torch28.log`.
+
+**Owner decision: stay on torch 2.9** (Isaiah's pin, with its locked flash-attn 2.8.3 / triton 3.5.0). The 2.9 overflow is handled by the design requirements above: Isaiah's cadence keeps rows far below the threshold, the trunk chunks and guards, and the first-minibatch log-ratio alarm catches silent corruption. Torch 2.8 remains a measured fallback if 2.9 ever needs replacing.

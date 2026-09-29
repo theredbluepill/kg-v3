@@ -25,3 +25,10 @@
 - **Inputs:** synthetic random tensors; the pod `.venv` (torch 2.9.0+cu128); GPU 0 only. Compile at a small shape first (as the reference run did), then evaluate at M = 2²¹ − 256 and M = 2²¹ + 4,096.
 - **Discriminating observation:** max |compiled − eager| is at BF16 noise below the threshold and large (or a fault) above it → confirmed. Equal behavior on both sides → refuted; look elsewhere.
 - **Stop:** both shapes run once each, or the first fault. **Artifacts:** `runs/cuda-repro-2026-09-29/int32_probe.log`.
+
+## Follow-up run statement — the same probe under torch 2.8 (owner: "just use pt.2.8 will be OK")
+
+- **Question:** does torch 2.8's Inductor max-autotune GEMM template have the same 32-bit overflow above 2²¹ rows?
+- **Inputs:** the unchanged `int32_probe.py` (sha256 `78dd05d3…`), run with the pod's system Python (torch 2.8.0+cu128) on GPU 0.
+- **Discriminating observation:** a fault or large diff at M = 2,105,344 → 2.8 has the bug too, so the guard is still required. BF16-noise diff on both sides → 2.8 avoids it.
+- **Stop:** one run. **Artifact:** `runs/cuda-repro-2026-09-29/int32_probe_torch28.log`.
