@@ -1,0 +1,54 @@
+{
+  "schema": "kaggriculture-bc-shard-v1",
+  "run": {
+    "git_head": "89ca39cfd259de328338c1b15c5251f9a9be8b57",
+    "uv_lock_sha256": "f3311c310217ad8593e487a1846e2069649e427531b0ebc4b415790ec51507f5",
+    "cargo_lock_sha256": "01f02e3cb9fd915e5b0678f9c5f986524929f55262850dc237d46e989440a352",
+    "prepare_sha256": "cfc090144b7d76520d4c194cec3cf5ace30ac72fd06b870e41c533506aaf8e03",
+    "owl_rs_extension": "rs.abi3.so",
+    "owl_rs_sha256": "5ad74acde8162e800763987a83e9aca4952b603cdadf9fe52eb0cf947a49de69",
+    "command": [
+      "/root/kg-v3-bc/.venv/bin/python",
+      "scripts/kaggriculture_prepare_bc.py",
+      "/root/bc-archives",
+      "/workspace/kg-v3-bc-2026-09-29/shards-top1",
+      "--days",
+      "22-28",
+      "--workers",
+      "12",
+      "--turn-stride",
+      "2",
+      "--team",
+      "<team>"
+    ],
+    "workers": 12,
+    "hire_limit": 241,
+    "turn_stride": 2,
+    "bytes_per_turn_row": 216612,
+    "validation_fraction": 0.03,
+    "label_pairing": "observation steps[t], action steps[t+1]",
+    "policy_seats": "the --team seats (by TeamNames SHA-256) that won; both on a draw",
+    "team_sha256": "bdf5243c27ea6e5caf82529c401a47e30f7b9e20731c385ea6a626ac09d8ea24",
+    "include_losses": false
+  },
+  "totals": {
+    "train": {
+      "episodes": 507,
+      "admitted_turns": 182273,
+      "policy_seat_rows": 182273,
+      "draw_episodes": 0
+    },
+    "validation": {
+      "episodes": 16,
+      "admitted_turns": 5748,
+      "policy_seat_rows": 5748,
+      "draw_episodes": 0
+    }
+  },
+  "episode_rejections": {
+    "team absent": 3356,
+    "team lost": 319
+  },
+  "turn_rejections": {},
+  "normalizations": {}
+}
