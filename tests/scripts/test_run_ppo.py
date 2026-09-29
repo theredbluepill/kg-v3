@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 import time
 from argparse import Namespace
@@ -33,6 +34,11 @@ from owl.train import FullConfig, PPOTrainer
 from owl.train.distributed import DistributedContext
 from owl.train.logging import LogMode, MetricLogger
 from owl.train.optimizer import CompositeOptimizer
+from owl.train.utils import (
+    CompileStackReport,
+    GemmBackendClaim,
+    InstalledCompileStack,
+)
 
 _RUN_PPO_PATH = Path(__file__).parents[2] / "scripts" / "run_ppo.py"
 _RUN_PPO_SPEC = importlib.util.spec_from_file_location("run_ppo", _RUN_PPO_PATH)
@@ -432,7 +438,7 @@ class _FakeLogger:
         self.closed = False
         self.close_exit_codes: list[int] = []
         self.logged: list[tuple[dict[str, float], int]] = []
-        self.summary: dict[str, int | float] = {}
+        self.summary: dict[str, int | float | str] = {}
         self._run_id = run_id
 
     @property
@@ -442,7 +448,7 @@ class _FakeLogger:
     def log(self, metrics: dict[str, float], *, step: int) -> None:
         self.logged.append((metrics, step))
 
-    def set_summary(self, key: str, value: int | float) -> None:
+    def set_summary(self, key: str, value: int | float | str) -> None:
         self.summary[key] = value
 
     def close(self, *, exit_code: int = 0) -> None:
@@ -2192,6 +2198,47 @@ def test_run_training_session_sets_trainable_parameter_summary(
     assert logger.close_exit_codes == [0]
 
 
+def test_run_training_session_records_the_compile_gemm_claim(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    logger = _FakeLogger()
+    monkeypatch.setattr(run_ppo, "create_logger", lambda *_a, **_k: logger)
+    claim = GemmBackendClaim(
+        game="kaggriculture",
+        gemm_backends="ATEN",
+        stack=CompileStackReport(
+            torch="2.9.0+cu128", triton="3.5.0", nvidia_driver="595.91.07"
+        ),
+    )
+
+    run_ppo._run_training_session(
+        trainer=_FakeTrainer(),
+        run_dir=tmp_path,
+        cfg=_full_config(),
+        log_mode=LogMode.DEBUG,
+        env_steps_per_iteration=8,
+        max_env_steps=8,
+        max_runtime_seconds=None,
+        distributed=DistributedContext.single_process_cpu(),
+        compiled_model_modules=1,
+        compile_claim=claim,
+    )
+
+    assert logger.summary == {
+        "compiled_model_modules": 1,
+        "compile_gemm_game": "kaggriculture",
+        "compile_gemm_backends": "ATEN",
+        "compile_stack_torch": "2.9.0+cu128",
+        "compile_stack_triton": "3.5.0",
+        "compile_stack_nvidia_driver": "595.91.07",
+    }
+    assert run_ppo._compile_claim_log_line(claim) == (
+        "Compiled GEMM backends: compile_gemm_game=kaggriculture, "
+        "compile_gemm_backends=ATEN, compile_stack_torch=2.9.0+cu128, "
+        "compile_stack_triton=3.5.0, compile_stack_nvidia_driver=595.91.07"
+    )
+
+
 def test_run_training_session_worker_skips_logger_and_final_checkpoint(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -3161,6 +3208,89 @@ def _patch_kaggriculture_startup(
         "_create_training_model_for_config",
     ):
         monkeypatch.setattr(run_ppo, name, sentinel(name))
+    # Hermetic: the compile-stack check reads the probed GPU stack, not the host.
+    monkeypatch.setattr(run_ppo, "installed_compile_stack", lambda: _PROBED_STACK)
+
+
+_PROBED_STACK = InstalledCompileStack(
+    torch="2.9.0+cu128",
+    triton="3.5.0",
+    cuda_available=True,
+    nvidia_drivers=("595.91.07",),
+)
+
+
+def test_main_rejects_an_unprobed_compile_stack_before_allocation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+    argv = [str(_CONFIGS / "kaggriculture_2rank.yaml"), str(tmp_path / "runs")]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    monkeypatch.setattr(
+        run_ppo,
+        "installed_compile_stack",
+        lambda: InstalledCompileStack(
+            torch="2.10.0+cu128",
+            triton="3.5.0",
+            cuda_available=True,
+            nvidia_drivers=("595.91.07",),
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match=re.escape("unprobed torch 2.10.0")):
+        run_ppo.main()
+
+    assert calls == []
+    assert not (tmp_path / "runs").exists()
+
+
+def test_startup_compile_stack_check_prints_the_checked_stack(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    cfg = FullConfig.from_file(_CONFIGS / "kaggriculture_2rank.yaml")
+    assert cfg.rl.model_compile == "trunk"
+    monkeypatch.setattr(run_ppo, "installed_compile_stack", lambda: _PROBED_STACK)
+
+    report = run_ppo._check_compile_stack(
+        cfg.model, rl=cfg.rl, distributed=DistributedContext.single_process_cpu()
+    )
+
+    assert report == CompileStackReport(
+        torch="2.9.0+cu128", triton="3.5.0", nvidia_driver="595.91.07"
+    )
+    assert capsys.readouterr().out == (
+        "Compile stack check: torch 2.9.0+cu128; triton 3.5.0; "
+        "NVIDIA driver 595.91.07\n"
+    )
+
+
+def test_startup_compile_stack_check_skips_orbit_and_uncompiled_models(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(
+        run_ppo,
+        "installed_compile_stack",
+        lambda: pytest.fail("the stack check must not run"),
+    )
+    orbit = _full_config()
+    kaggriculture = FullConfig.from_file(_CONFIGS / "kaggriculture.yaml")
+    assert kaggriculture.rl.model_compile == "none"
+    context = DistributedContext.single_process_cpu()
+
+    assert (
+        run_ppo._check_compile_stack(orbit.model, rl=orbit.rl, distributed=context)
+        is None
+    )
+    assert (
+        run_ppo._check_compile_stack(
+            kaggriculture.model, rl=kaggriculture.rl, distributed=context
+        )
+        is None
+    )
+    assert capsys.readouterr().out == ""
 
 
 def _headroom_lines(out: str) -> list[str]:

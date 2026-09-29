@@ -12,7 +12,7 @@ Reference: `StatelessTransformerV1` and upstream `docs/model-architecture.md` at
 | Token order `[action entities][other entities][players][global][board][plan][critic]` | own actors first, then rival actors, tiles, shops, market | same |
 | Masked tokens excluded as keys and zeroed | `token_mask`; output re-masked | same |
 | Trunk `TransformerBlock × depth` + `final_norm` | Isaiah's classes via a typed `StatelessTransformerV1Config` | same |
-| Flash packing and compile hook | `pack_sequence` / `unpack_sequence`, `torch.compile(..., dynamic=True)` | same, plus the compiled-GEMM overflow guard |
+| Flash packing and compile hook | `pack_sequence` / `unpack_sequence`, `torch.compile(..., dynamic=True)` | same, plus the compiled-GEMM overflow guard and cuBLAS-only compiled GEMMs (`max_autotune_gemm_backends = "ATEN"`, probed-stack check) |
 | Named encoded fields | `KaggricultureEncoded` offsets from named counts | same |
 | No hidden state | Every API rejects `hidden_state`; tested | same |
 | Initialization | `_init_module`, input gain 1, residual `1/sqrt(2·depth)`, token std `D^-0.5` | same |

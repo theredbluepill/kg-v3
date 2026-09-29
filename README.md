@@ -315,6 +315,18 @@ The trunk mode dispatches through the model's `TrunkCompileAPI`
 (`StatelessTransformerV1`, `KaggricultureTransformer`) and never compiles the
 whole model; it rejects cross-attention observations, recurrent models, and
 player-count adapter trunk blocks.
+Compiling a `KaggricultureTransformer` (either target, any mode) first checks
+the probed compile stack (`KAGGRICULTURE_PROBED_COMPILE_STACK` in
+`python/owl/train/utils.py`: torch 2.9.0, triton 3.5.0, NVIDIA driver
+595.91.07; on hosts without CUDA the triton and driver checks are skipped with
+a printed reason), then sets
+`torch._inductor.config.max_autotune_gemm_backends = "ATEN"` so compiled GEMMs
+lower to cuBLAS instead of Inductor's Triton GEMM templates (cookbook decision
+`kaggriculture-compiles-gemms-with-cublas-only`). Orbit compiles keep the
+backends they find. The setting is process-global, so a process that compiles
+one game refuses to compile the other. `run_ppo` repeats the stack check before
+creating the run directory, prints the claimed backends and stack, and records
+them as `compile_gemm_*` and `compile_stack_*` W&B summary fields.
 
 Fresh launches can also initialize the model from an existing full training
 checkpoint without resuming the optimizer, scheduler, config, or W&B run:

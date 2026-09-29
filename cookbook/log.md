@@ -1,5 +1,21 @@
 # Change log
 
+## 2026-09-29 — Require cuBLAS-only GEMMs for compiled Kaggriculture regions
+
+The owner asked that the compiled-GEMM CUDA crash never recur in v3. The
+Codex-approved ATEN-only A/B (branch `kg/rebuild-model` at `9bdd82d`,
+`ops/rebuild-2026-09-29/results.md` lines 259–303) found cuBLAS-only GEMM
+backends correct above the int32 bound at +4.5–6.5 % model-only update wall.
+`configure_model_compile` now checks the probed torch/triton/driver stack and
+sets `max_autotune_gemm_backends = "ATEN"` before any Kaggriculture compile.
+The model refuses other values at compile time and on every compiled trunk
+call. Orbit keeps its backends, a process never compiles both games, and
+`run_ppo` checks the stack at startup and records the claim in W&B
+summaries. The overflow guards stay. New
+[[decisions/kaggriculture-compiles-gemms-with-cublas-only|Decision]]; the
+[[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]
+Consequences carry the measured A/B.
+
 ## 2026-09-29 — Close the startup-assertion gap in the grammar-heads Reference
 
 Codex's merge verification (`ops/rebuild-2026-09-29/codex/verify-merge-trainer-lanes-r1.md`,

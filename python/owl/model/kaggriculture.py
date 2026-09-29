@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 import torch
+import torch._inductor.config as inductor_config
 import torch.nn.functional as F
 from pydantic import Field
 from torch import nn
@@ -71,6 +72,30 @@ _GEMM_ELEMENT_LIMIT = 2**31
 _OVERFLOW_REFERENCE = (
     "cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md"
 )
+
+# Every compiled Kaggriculture region lowers its GEMMs to extern cuBLAS only, so
+# Inductor never emits the Triton mm/addmm/bmm (or decompose-K, persistent-TMA)
+# templates that wrapped the int32 A-load offset. ``configure_model_compile``
+# sets it before compiling; the model refuses to compile, or to call a compiled
+# region, under any other value (cookbook decision
+# kaggriculture-compiles-gemms-with-cublas-only).
+COMPILED_GEMM_BACKENDS = "ATEN"
+_GEMM_BACKENDS_DECISION = (
+    "cookbook/decisions/kaggriculture-compiles-gemms-with-cublas-only.md"
+)
+
+
+def require_compiled_gemm_backends() -> None:
+    """Raise unless Inductor's GEMM backends are Kaggriculture's cuBLAS-only set."""
+    backends = inductor_config.max_autotune_gemm_backends
+    if backends != COMPILED_GEMM_BACKENDS:
+        raise RuntimeError(
+            "compiled Kaggriculture regions require "
+            f"torch._inductor.config.max_autotune_gemm_backends="
+            f"{COMPILED_GEMM_BACKENDS!r}, found {backends!r}; compile through "
+            f"owl.train.utils.configure_model_compile (see {_GEMM_BACKENDS_DECISION})"
+        )
+
 
 _TILE_STEM_WIDTH = (
     kt.TILE_FLOAT_CHANNELS
@@ -265,6 +290,10 @@ class KaggricultureTransformer(
         ) = None
         # Heads run eager in production; tests swap in a captured core here.
         self._compiled_actor_core: Callable[..., GrammarPolicyResult] | None = None
+        # True once any trunk region is compiled (trunk or block-MLP target);
+        # every later trunk call re-checks the GEMM backends, because Inductor
+        # compiles lazily and recompiles on new dynamic shapes.
+        self.compiled_regions_require_gemm_backends = False
         self.reset_parameters()
 
     # --- Isaiah's parameter conventions ---------------------------------------
@@ -447,6 +476,8 @@ class KaggricultureTransformer(
                 "force_flash_attn=True requires CUDA fp16/bf16 tensors "
                 "and the flash-attn package"
             )
+        if self.compiled_regions_require_gemm_backends:
+            require_compiled_gemm_backends()
         trunk = self._compiled_transformer_trunk or self._forward_transformer_trunk
         width = trunk_gemm_width(self.config)
         if should_use_flash:
@@ -508,11 +539,14 @@ class KaggricultureTransformer(
         """Compile the blocks and final norm only; ``_run_trunk`` calls it.
 
         The overflow guard and chunking in ``_run_trunk`` stay in front of the
-        compiled callable; stems, heads and critic stay eager.
+        compiled callable; stems, heads and critic stay eager. Inductor must
+        already be restricted to cuBLAS GEMMs (``COMPILED_GEMM_BACKENDS``).
         """
+        require_compiled_gemm_backends()
         self._compiled_transformer_trunk = torch.compile(
             self._forward_transformer_trunk, mode=mode, dynamic=True
         )
+        self.compiled_regions_require_gemm_backends = True
         return 1
 
     # --- policy / value API (Tasks 2.2 and 2.3) --------------------------------

@@ -19,6 +19,8 @@ from torch import nn
 
 from tests.kaggriculture.conftest import make_obs
 
+pytestmark = pytest.mark.usefixtures("probed_compile_stack")
+
 ROOT = Path(__file__).resolve().parents[2]
 MODE = "max-autotune-no-cudagraphs"
 _TrunkFn = Callable[[torch.Tensor, torch.Tensor | None, object], torch.Tensor]

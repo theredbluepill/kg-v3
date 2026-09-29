@@ -74,9 +74,14 @@ from owl.train.optimizer import (
 )
 from owl.train.ppo import PPOCheckpointMetadata, _mean_env_metrics
 from owl.train.utils import (
+    CompileStackReport,
     DTypeConfig,
+    GemmBackendClaim,
     autocast_context,
+    check_compile_stack,
     configure_model_compile,
+    gemm_backend_claim,
+    installed_compile_stack,
 )
 from tqdm import tqdm
 
@@ -137,7 +142,7 @@ class _NoopLogger:
     def set_summary(
         self,
         key: str,  # noqa: ARG002
-        value: int | float,  # noqa: ARG002
+        value: int | float | str,  # noqa: ARG002
     ) -> None:
         return None
 
@@ -167,6 +172,7 @@ def main() -> None:
         _check_model_workload(
             cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
         )
+        _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
         # Fails before the run dir for Kaggriculture, which has no env yet.
         env_config = require_orbit_env(cfg.env, context=_TRAINER)
 
@@ -203,6 +209,9 @@ def main() -> None:
             ),
         )
         compiled_model_modules = configure_model_compile(model, cfg.rl)
+        compile_claim = gemm_backend_claim()
+        if compile_claim is not None and distributed.is_main_process:
+            print(_compile_claim_log_line(compile_claim))
         teacher_init_model = (
             _load_teacher_init_model(
                 cfg.rl.teacher_init,
@@ -295,6 +304,7 @@ def main() -> None:
             last_best_model=last_best_model,
             trainable_parameters=trainable_parameters,
             compiled_model_modules=compiled_model_modules,
+            compile_claim=compile_claim,
             lora_application=lora_application,
         )
 
@@ -325,6 +335,7 @@ def _run_training_session(
     last_best_model: BaseModelAPI | None = None,
     trainable_parameters: int | None = None,
     compiled_model_modules: int = 0,
+    compile_claim: GemmBackendClaim | None = None,
     lora_application: LoRAApplication | None = None,
 ) -> None:
     if not distributed.is_main_process:
@@ -348,6 +359,9 @@ def _run_training_session(
             logger.set_summary("trainable_parameters", trainable_parameters)
         if compiled_model_modules > 0:
             logger.set_summary("compiled_model_modules", compiled_model_modules)
+        if compile_claim is not None:
+            for key, value in compile_claim.summary().items():
+                logger.set_summary(key, value)
         if lora_application is not None:
             logger.set_summary("lora_modules", lora_application.module_count)
             logger.set_summary(
@@ -785,6 +799,37 @@ def _check_model_workload(
         for line in headroom_log_lines(reports):
             print(line)
     return reports
+
+
+def _check_compile_stack(
+    model_config: ModelConfig | KaggricultureTransformerConfig,
+    *,
+    rl: PPOConfig,
+    distributed: DistributedContext,
+) -> CompileStackReport | None:
+    """Reject an unprobed torch/triton/driver stack before any run dir or model.
+
+    Only compiled Kaggriculture regions carry the cuBLAS-only GEMM setting and
+    its probed stack; ``configure_model_compile`` repeats the check where it
+    applies the setting. Without CUDA the driver and triton checks are skipped
+    with the reason printed.
+    """
+    if not isinstance(model_config, KaggricultureTransformerConfig):
+        return None
+    if rl.model_compile == "none":
+        return None
+    report = check_compile_stack(installed_compile_stack())
+    if distributed.is_main_process:
+        print(
+            f"Compile stack check: torch {report.torch}; triton {report.triton}; "
+            f"NVIDIA driver {report.nvidia_driver}"
+        )
+    return report
+
+
+def _compile_claim_log_line(claim: GemmBackendClaim) -> str:
+    fields = ", ".join(f"{key}={value}" for key, value in claim.summary().items())
+    return f"Compiled GEMM backends: {fields}"
 
 
 def _create_run_dir(output_dir: Path) -> Path:
