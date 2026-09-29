@@ -1,0 +1,20 @@
+>       _sys.exit(status)
+E       SystemExit: 2
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/argparse.py:2637: SystemExit
+----------------------------- Captured stderr call -----------------------------
+usage: pytest [-h] --out OUT --preset {committed,sweep,probes,opponents}
+              [--games GAMES] [--opponent-start OPPONENT_START]
+              [--base-seed BASE_SEED] [--manifest] [--summary SUMMARY]
+              [--include-known-divergences]
+pytest: error: argument --preset: invalid choice: 'opponent-replay' (choose from committed, sweep, probes, opponents)
+=========================== short test summary info ============================
+FAILED tests/scripts/test_kaggriculture_parity.py::test_replay_resumes_fresh_controllers_after_the_recorded_prefix
+FAILED tests/scripts/test_kaggriculture_parity.py::test_replay_refuses_a_prefix_the_fresh_controller_did_not_choose
+FAILED tests/scripts/test_kaggriculture_parity.py::test_replay_refuses_a_prefix_the_engine_does_not_reproduce
+FAILED tests/scripts/test_kaggriculture_parity.py::test_replay_window_must_resume_inside_the_recorded_episode
+FAILED tests/scripts/test_kaggriculture_parity.py::test_replay_points_cover_mid_day_day_reset_and_final_day
+FAILED tests/scripts/test_kaggriculture_parity.py::test_replay_fixture_refuses_changed_oracle_custody
+FAILED tests/scripts/test_kaggriculture_parity.py::test_replay_fixture_refuses_to_overwrite_a_different_frozen_file
+FAILED tests/scripts/test_kaggriculture_parity.py::test_replay_preset_refuses_other_runtimes_before_playing
+8 failed, 28 deselected in 1.18s

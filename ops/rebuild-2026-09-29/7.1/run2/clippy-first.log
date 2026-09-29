@@ -1,0 +1,117 @@
+    Checking num-traits v0.2.19
+    Checking serde_core v1.0.229
+    Checking typenum v1.20.1
+    Checking generic-array v0.14.7
+    Checking num-integer v0.1.47
+    Checking hashbrown v0.17.1
+    Checking equivalent v1.0.2
+    Checking num-bigint v0.4.8
+    Checking indexmap v2.14.2
+    Checking zmij v1.0.23
+    Checking itoa v1.0.18
+    Checking memchr v2.8.3
+    Checking num-rational v0.4.2
+    Checking serde_json v1.0.151
+    Checking serde v1.0.229
+    Checking libc v0.2.189
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+    Checking digest v0.10.7
+    Checking cpufeatures v0.2.17
+    Checking kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-t71/engine_rs)
+    Checking cfg-if v1.0.5
+    Checking sha2 v0.10.9
+    Checking kaggriculture-opponents v0.1.0 (/Users/poonszesen/kg-v3-t71/opponents_rs)
+error: field `farm_hand_cost_mult` is never read
+  --> src/lib.rs:40:5
+   |
+39 | struct ControllerConfig {
+   |        ---------------- field in this struct
+40 |     farm_hand_cost_mult: CostMult,
+   |     ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `ControllerConfig` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+   = note: `-D dead-code` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+error: field `0` is never read
+  --> src/lib.rs:44:17
+   |
+44 | struct CostMult(BigInt);
+   |        -------- ^^^^^^
+   |        |
+   |        field in this struct
+   |
+   = help: consider removing this field
+   = note: `CostMult` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+error: field `config` is never read
+  --> src/lib.rs:62:5
+   |
+61 | pub struct Game {
+   |            ---- field in this struct
+62 |     config: ControllerConfig,
+   |     ^^^^^^
+   |
+   = note: `Game` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+error: function `fib` is never used
+   --> src/lib.rs:106:4
+    |
+106 | fn fib(index: usize) -> BigInt {
+    |    ^^^
+
+error: function `carrot_cycle_step` is never used
+   --> src/native_agents/starter.rs:124:8
+    |
+124 | pub fn carrot_cycle_step(game: &Game, seat: usize, x: i64, y: i64) -> Result<Value, String> {
+    |        ^^^^^^^^^^^^^^^^^
+
+error: function `hire_step` is never used
+   --> src/native_agents/starter.rs:167:8
+    |
+167 | pub fn hire_step(game: &Game, seat: usize) -> Result<Value, String> {
+    |        ^^^^^^^^^
+
+error: method `debug` is never used
+   --> src/native_agents/starter.rs:214:12
+    |
+192 | impl StarterController {
+    | ---------------------- method in this implementation
+...
+214 |     pub fn debug(&self) -> &Value {
+    |            ^^^^^
+
+error: method `debug` is never used
+    --> src/native_agents/ecobot.rs:2888:12
+     |
+2810 | impl EcoBotController {
+     | --------------------- method in this implementation
+...
+2888 |     pub fn debug(&self) -> &Value {
+     |            ^^^^^
+
+error: method `debug` is never used
+   --> src/native_agents/e776.rs:931:12
+    |
+281 | impl E776Controller {
+    | ------------------- method in this implementation
+...
+931 |     pub fn debug(&self) -> &Value {
+    |            ^^^^^
+
+error: method `debug` is never used
+    --> src/native_agents/ecobot.rs:2888:12
+     |
+2810 | impl EcoBotController {
+     | --------------------- method in this implementation
+...
+2888 |     pub fn debug(&self) -> &Value {
+     |            ^^^^^
+     |
+     = note: `-D dead-code` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+error: could not compile `kaggriculture-opponents` (lib) due to 9 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `kaggriculture-opponents` (lib test) due to 2 previous errors

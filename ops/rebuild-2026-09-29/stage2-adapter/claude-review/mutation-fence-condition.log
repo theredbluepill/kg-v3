@@ -1,0 +1,48 @@
+   Building owl @ file:///Users/poonszesen/kg-v3-adapter
+      Built owl @ file:///Users/poonszesen/kg-v3-adapter
+Uninstalled 1 package in 1ms
+Installed 1 package in 1ms
+...F.                                                                    [100%]
+=================================== FAILURES ===================================
+______________________ test_fence_condition[cuda-False-0] ______________________
+
+fake = <owl.kaggriculture.env.KaggricultureVectorizedEnv object at 0x10eef10a0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10eef0f50>
+device = 'cuda', pinned = False, expected = 0
+
+    @pytest.mark.parametrize(
+        ("device", "pinned", "expected"),
+        [("cpu", False, 0), ("cpu", True, 0), ("cuda", False, 0), ("cuda", True, 3)],
+    )
+    def test_fence_condition(fake, monkeypatch, device, pinned, expected):
+        fake.transfer_device = torch.device(device)
+        fake._pin_memory_enabled = pinned
+        events = []
+    
+        class Stream:
+            def synchronize(self):
+                events.append("sync")
+    
+        def current_stream(device):
+            events.append(device)
+            return Stream()
+    
+        monkeypatch.setattr(torch.cuda, "current_stream", current_stream)
+        monkeypatch.setattr(
+            torch.cuda,
+            "is_available",
+            lambda: pytest.fail("unexpected CUDA availability probe"),
+        )
+        fake.reset()
+        fake.step(pass_actions())
+        fake.truncate_envs(torch.tensor([False, True]))
+>       assert events == [torch.device(device), "sync"] * expected
+E       AssertionError: assert [device(type=...uda'), 'sync'] == []
+E         
+E         Left contains 6 more items, first extra item: device(type='cuda')
+E         Use -v to get more diff
+
+tests/kaggriculture/test_env.py:351: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_env.py::test_fence_condition[cuda-False-0] - ...
+1 failed, 4 passed, 34 deselected in 0.04s

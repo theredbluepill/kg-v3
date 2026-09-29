@@ -1,0 +1,1825 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r3-bindings/python/owl/rs.abi3.so
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF                                      [100%]
+=================================== FAILURES ===================================
+_____ test_every_destination_rejected_before_any_write[fortran-tile_kind] ______
+
+name = 'tile_kind', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-tile_crop] ______
+
+name = 'tile_crop', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+____ test_every_destination_rejected_before_any_write[fortran-tile_animal] _____
+
+name = 'tile_animal', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-tile_cell] ______
+
+name = 'tile_cell', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-tile_role] ______
+
+name = 'tile_role', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-tiles_int] ______
+
+name = 'tiles_int', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+____ test_every_destination_rejected_before_any_write[fortran-tiles_float] _____
+
+name = 'tiles_float', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-actor_slot] _____
+
+name = 'actor_slot', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-actor_cell] _____
+
+name = 'actor_cell', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-actor_role] _____
+
+name = 'actor_role', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-actor_mask] _____
+
+name = 'actor_mask', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+__ test_every_destination_rejected_before_any_write[fortran-actor_inventory] ___
+
+name = 'actor_inventory', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_ test_every_destination_rejected_before_any_write[fortran-actor_inventory_rank] _
+
+name = 'actor_inventory_rank', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+____ test_every_destination_rejected_before_any_write[fortran-actors_float] ____
+
+name = 'actors_float', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+__ test_every_destination_rejected_before_any_write[fortran-player_features] ___
+
+name = 'player_features', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+___ test_every_destination_rejected_before_any_write[fortran-storage_counts] ___
+
+name = 'storage_counts', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+____ test_every_destination_rejected_before_any_write[fortran-storage_rank] ____
+
+name = 'storage_rank', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_______ test_every_destination_rejected_before_any_write[fortran-banks] ________
+
+name = 'banks', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-shop_type] ______
+
+name = 'shop_type', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-shop_slot] ______
+
+name = 'shop_slot', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-shop_mask] ______
+
+name = 'shop_mask', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+___ test_every_destination_rejected_before_any_write[fortran-market_product] ___
+
+name = 'market_product', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+____ test_every_destination_rejected_before_any_write[fortran-market_float] ____
+
+name = 'market_float', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_____ test_every_destination_rejected_before_any_write[fortran-market_int] _____
+
+name = 'market_int', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+__ test_every_destination_rejected_before_any_write[fortran-global_features] ___
+
+name = 'global_features', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+____ test_every_destination_rejected_before_any_write[fortran-globals_int] _____
+
+name = 'globals_int', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+___ test_every_destination_rejected_before_any_write[fortran-still_playing] ____
+
+name = 'still_playing', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+____ test_every_destination_rejected_before_any_write[fortran-order_limits] ____
+
+name = 'order_limits', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+______ test_every_destination_rejected_before_any_write[fortran-can_act] _______
+
+name = 'can_act', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+______ test_every_destination_rejected_before_any_write[fortran-rewards] _______
+
+name = 'rewards', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_______ test_every_destination_rejected_before_any_write[fortran-dones] ________
+
+name = 'dones', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_ test_every_destination_rejected_before_any_write[fortran-transition_banks_before] _
+
+name = 'transition_banks_before', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_ test_every_destination_rejected_before_any_write[fortran-transition_banks_after] _
+
+name = 'transition_banks_after', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_ test_every_destination_rejected_before_any_write[fortran-transition_econ_before] _
+
+name = 'transition_econ_before', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+_ test_every_destination_rejected_before_any_write[fortran-transition_econ_after] _
+
+name = 'transition_econ_after', kind = 'fortran'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(
+            ValueError, match=r"overlap|borrow" if kind == "overlap" else name
+        ):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:127: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tile_kind]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tile_crop]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tile_animal]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tile_cell]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tile_role]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tiles_int]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tiles_float]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_slot]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_cell]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_role]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_mask]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_inventory]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_inventory_rank]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actors_float]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-player_features]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-storage_counts]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-storage_rank]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-banks]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-shop_type]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-shop_slot]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-shop_mask]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-market_product]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-market_float]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-market_int]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-global_features]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-globals_int]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-still_playing]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-order_limits]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-can_act]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-rewards]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-dones]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-transition_banks_before]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-transition_banks_after]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-transition_econ_before]
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-transition_econ_after]
+35 failed, 309 deselected in 0.75s

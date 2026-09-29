@@ -1,0 +1,329 @@
+{
+  "environment": {
+    "OMP_NUM_THREADS": "2",
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_NET_OFFLINE": "true",
+    "UV_OFFLINE": "true"
+  },
+  "checks": [
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py -q",
+      "exit_code": 2,
+      "summary": "1 error in 0.04s",
+      "log": "rewards-red.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py -q",
+      "exit_code": 0,
+      "summary": "25 passed, 11 skipped in 0.03s",
+      "log": "rewards-green.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_configs.py -q",
+      "exit_code": 1,
+      "summary": "25 failed, 14 passed in 0.23s",
+      "log": "rewards-configs-red.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py tests/kaggriculture/test_configs.py -q",
+      "exit_code": 0,
+      "summary": "64 passed, 11 skipped in 0.47s",
+      "log": "rewards-configs-green.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py tests/kaggriculture/test_configs.py -q",
+      "exit_code": 0,
+      "summary": "64 passed, 11 skipped in 0.45s",
+      "log": "rewards-final-green.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py -k overflow_rescaling -q",
+      "exit_code": 1,
+      "summary": "1 failed, 36 deselected in 0.02s",
+      "log": "reward-overflow-red.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py -k overflow_rescaling -q",
+      "exit_code": 0,
+      "summary": "1 passed, 36 deselected in 0.01s",
+      "log": "reward-overflow-green.log"
+    },
+    {
+      "command": "uvx --offline ruff format python/owl/kaggriculture/rewards.py tests/kaggriculture/test_rewards.py tests/kaggriculture/test_configs.py",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "rewards-format.log"
+    },
+    {
+      "command": "uvx --offline ruff check python/owl/kaggriculture/rewards.py tests/kaggriculture/test_rewards.py tests/kaggriculture/test_configs.py",
+      "exit_code": 1,
+      "summary": "Found 3 errors.",
+      "log": "rewards-lint.log"
+    },
+    {
+      "command": "uvx --offline ruff check python/owl/kaggriculture/rewards.py tests/kaggriculture/test_rewards.py tests/kaggriculture/test_configs.py",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "rewards-lint-green.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_codec.py -q",
+      "exit_code": 2,
+      "summary": "1 error in 0.04s",
+      "log": "codec-red.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_codec.py -q",
+      "exit_code": 2,
+      "summary": "1 error in 0.04s",
+      "log": "codec-missing-alias.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_codec.py -q",
+      "exit_code": 0,
+      "summary": "6 passed, 1 skipped in 0.03s",
+      "log": "codec-green.log"
+    },
+    {
+      "command": "uv run --offline mypy python/owl/kaggriculture/codec.py",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "codec-mypy.log"
+    },
+    {
+      "command": "uv run --offline ruff check python/owl/kaggriculture/codec.py tests/kaggriculture/test_codec.py",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "codec-ruff.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_env.py -q",
+      "exit_code": 2,
+      "summary": "1 error in 0.05s",
+      "log": "env-red.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_env.py -q",
+      "exit_code": 2,
+      "summary": "1 error in 0.05s",
+      "log": "env-red-2.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_env.py tests/kaggriculture/test_env_cuda_fence.py -q",
+      "exit_code": 1,
+      "summary": "7 failed, 22 passed, 2 skipped in 0.12s",
+      "log": "env-green-1.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_env.py tests/kaggriculture/test_env_cuda_fence.py -q",
+      "exit_code": 0,
+      "summary": "29 passed, 2 skipped in 0.03s",
+      "log": "env-green-2.log"
+    },
+    {
+      "command": "uvx --offline --from rust-just just py-prepare",
+      "exit_code": 1,
+      "summary": "Found 14 errors.",
+      "log": "py-prepare-1.log"
+    },
+    {
+      "command": "uvx --offline --from rust-just just py-prepare",
+      "exit_code": 0,
+      "summary": "1704 passed, 22 skipped in 43.55s",
+      "log": "py-prepare-2.log"
+    },
+    {
+      "command": "uv run --offline python ops/rebuild-2026-09-29/stage1-adapter/check_contract.py",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "abi-check.log"
+    },
+    {
+      "command": "node .codex/hooks/cookbook-lint.mjs < ops/rebuild-2026-09-29/stage1-adapter/cookbook-lint-input.json",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "cookbook-lint.log"
+    },
+    {
+      "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/kaggriculture/test_game.py -q",
+      "exit_code": 1,
+      "summary": "25 failed, 1 passed, 1 skipped in 0.11s",
+      "log": "game-red.log"
+    },
+    {
+      "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/kaggriculture/test_game.py -k 'envelope or hire_limit or config_union' -q",
+      "exit_code": 1,
+      "summary": "3 failed, 1 passed, 23 deselected in 0.05s",
+      "log": "game-config-red.log"
+    },
+    {
+      "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/kaggriculture/test_game.py -k 'envelope or hire_limit or config_union' -q",
+      "exit_code": 2,
+      "summary": "1 error in 0.04s",
+      "log": "game-config-green.log"
+    },
+    {
+      "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/kaggriculture/test_game.py -q",
+      "exit_code": 0,
+      "summary": "26 passed, 1 skipped in 0.04s",
+      "log": "game-green-r1.log"
+    },
+    {
+      "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/kaggriculture/test_game.py -k 'envelope or hire_limit or config_union' -q",
+      "exit_code": 0,
+      "summary": "4 passed, 23 deselected in 0.02s",
+      "log": "game-config-green-r2.log"
+    },
+    {
+      "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline mypy python/owl/kaggriculture/types.py python/owl/kaggriculture/config.py python/owl/game.py",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "game-mypy.log"
+    },
+    {
+      "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uvx --offline ruff check python/owl/kaggriculture/types.py python/owl/kaggriculture/config.py python/owl/game.py tests/kaggriculture/test_game.py",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "game-ruff.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py tests/kaggriculture/test_configs.py tests/kaggriculture/test_game.py tests/kaggriculture/test_env.py tests/kaggriculture/test_env_cuda_fence.py tests/kaggriculture/test_codec.py -q",
+      "exit_code": 0,
+      "summary": "125 passed, 15 skipped in 0.53s",
+      "log": "focused-final-before-overflow-fix.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_env.py -k checks_contract -q",
+      "exit_code": 0,
+      "summary": "1 passed, 29 deselected in 0.01s",
+      "log": "env-contract-final-before-overflow-fix.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_env.py -k fence -q",
+      "exit_code": 0,
+      "summary": "5 passed, 25 deselected in 0.01s",
+      "log": "env-fence-final-before-overflow-fix.log"
+    },
+    {
+      "command": "uvx --offline --from rust-just just py-prepare",
+      "exit_code": 0,
+      "summary": "1704 passed, 22 skipped in 36.72s",
+      "log": "py-prepare-final-before-overflow-fix.log"
+    },
+    {
+      "command": "uv run --offline python /Users/poonszesen/kg-v3-adapter/ops/rebuild-2026-09-29/stage1-adapter/check_contract.py",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "abi-check-final-before-overflow-fix.log"
+    },
+    {
+      "command": "uvx --offline pymarkdownlnt scan docs/rl-api-specs.md",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "docs-lint-final-before-overflow-fix.log"
+    },
+    {
+      "command": "git diff --stat -- tests/owl tests/scripts tests/tools",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "orbit-diff-final-before-overflow-fix.log"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "diff-check-final-before-overflow-fix.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py tests/kaggriculture/test_configs.py -q",
+      "exit_code": 0,
+      "summary": "65 passed, 11 skipped in 0.49s",
+      "log": "rewards-configs-final.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py tests/kaggriculture/test_configs.py tests/kaggriculture/test_game.py tests/kaggriculture/test_env.py tests/kaggriculture/test_env_cuda_fence.py tests/kaggriculture/test_codec.py -q",
+      "exit_code": 0,
+      "summary": "126 passed, 15 skipped in 0.49s",
+      "log": "focused-final.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_env.py -k checks_contract -q",
+      "exit_code": 0,
+      "summary": "1 passed, 29 deselected in 0.01s",
+      "log": "env-contract-final.log"
+    },
+    {
+      "command": "uv run --offline pytest tests/kaggriculture/test_env.py -k fence -q",
+      "exit_code": 0,
+      "summary": "5 passed, 25 deselected in 0.01s",
+      "log": "env-fence-final.log"
+    },
+    {
+      "command": "uvx --offline --from rust-just just py-prepare",
+      "exit_code": 0,
+      "summary": "1705 passed, 22 skipped in 36.61s",
+      "log": "py-prepare-final.log"
+    },
+    {
+      "command": "uv run --offline python /Users/poonszesen/kg-v3-adapter/ops/rebuild-2026-09-29/stage1-adapter/check_contract.py",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "abi-check-final.log"
+    },
+    {
+      "command": "uvx --offline pymarkdownlnt scan docs/rl-api-specs.md",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "docs-lint-final.log"
+    },
+    {
+      "command": "git diff --stat -- tests/owl tests/scripts tests/tools",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "orbit-diff-final.log"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "summary": "non-pytest check; see log",
+      "log": "diff-check-final.log"
+    },
+    {
+      "command": "uv run --offline ruff format python/owl/kaggriculture/codec.py tests/kaggriculture/test_codec.py",
+      "exit_code": 0,
+      "summary": "2 files reformatted",
+      "evidence": "codec agent tool output, codec-results.md"
+    },
+    {
+      "command": "uv run --offline ruff check python/owl/kaggriculture/codec.py tests/kaggriculture/test_codec.py",
+      "exit_code": 1,
+      "summary": "5 initial test-style findings, corrected",
+      "evidence": "codec agent tool output, codec-results.md"
+    },
+    {
+      "command": "uv run --offline python -",
+      "exit_code": 0,
+      "summary": "tiny NumPy probe selected adjacent-f32 rounding discriminator",
+      "stdin": "import numpy as np\nfor x in (0.02043, 0.001, 0.01, 0.05, 0.07, 0.00017, 0.1):\n  print(x, np.float32(np.float64(np.float32(-x))+.65), np.float32(.65-x))\nfor i in range(1,10000):\n  x=i*.000001\n  if np.float32(np.float64(np.float32(-x))+.65) != np.float32(.65-x):\n    print('distinct',x, repr(float(np.float32(np.float64(np.float32(-x))+.65))), repr(float(np.float32(.65-x))))\n    break\n",
+      "evidence": "reward agent tool output"
+    },
+    {
+      "command": "uv run --offline python -c 'from owl import rs; print([n for n in dir(rs) if \"kaggriculture\" in n.lower()])'",
+      "exit_code": 0,
+      "summary": "['encode_kaggriculture_headers_into']",
+      "evidence": "main tool output"
+    },
+    {
+      "command": "git diff --stat -- tests/owl tests/scripts tests/tools",
+      "exit_code": 0,
+      "summary": "empty output",
+      "log": "orbit-diff-closeout.log"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "summary": "empty output",
+      "log": "diff-check-closeout.log"
+    }
+  ]
+}

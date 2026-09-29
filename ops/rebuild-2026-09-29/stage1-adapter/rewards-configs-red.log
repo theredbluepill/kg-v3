@@ -1,0 +1,1182 @@
+FFFFFFFFFFFF........FFFF.FFFFFFFF.....F                                  [100%]
+=================================== FAILURES ===================================
+_ test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_2rank.yaml-2] _
+
+name = 'kaggriculture_2rank.yaml', world_size = 2
+
+    @pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+    def test_ranked_config_global_workload_equals_scaling_6m(
+        name: str, world_size: int
+    ) -> None:
+        scaling = _scaling_6m()
+>       ours = _sections(name)
+               ^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_2rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_ test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_4rank.yaml-4] _
+
+name = 'kaggriculture_4rank.yaml', world_size = 4
+
+    @pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+    def test_ranked_config_global_workload_equals_scaling_6m(
+        name: str, world_size: int
+    ) -> None:
+        scaling = _scaling_6m()
+>       ours = _sections(name)
+               ^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_4rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_ test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_2rank.yaml] _
+
+name = 'kaggriculture_2rank.yaml'
+
+    @pytest.mark.parametrize("name", _RANKED)
+    def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
+        scaling = _scaling_6m()
+>       ours = _sections(name)
+               ^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_2rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_ test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_4rank.yaml] _
+
+name = 'kaggriculture_4rank.yaml'
+
+    @pytest.mark.parametrize("name", _RANKED)
+    def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
+        scaling = _scaling_6m()
+>       ours = _sections(name)
+               ^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_4rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+______________ test_ranked_configs_differ_only_in_per_rank_shapes ______________
+
+    def test_ranked_configs_differ_only_in_per_rank_shapes() -> None:
+>       two, four = (_sections(name) for name in _RANKED)
+        ^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:117: in <genexpr>
+    two, four = (_sections(name) for name in _RANKED)
+                 ^^^^^^^^^^^^^^^
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_2rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+______ test_config_env_and_cross_section_rules[kaggriculture_2rank.yaml] _______
+
+name = 'kaggriculture_2rank.yaml'
+
+    @pytest.mark.parametrize("name", _ALL)
+    def test_config_env_and_cross_section_rules(name: str) -> None:
+>       ours = _sections(name)
+               ^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_2rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+______ test_config_env_and_cross_section_rules[kaggriculture_4rank.yaml] _______
+
+name = 'kaggriculture_4rank.yaml'
+
+    @pytest.mark.parametrize("name", _ALL)
+    def test_config_env_and_cross_section_rules(name: str) -> None:
+>       ours = _sections(name)
+               ^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_4rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_________ test_config_env_and_cross_section_rules[kaggriculture.yaml] __________
+
+name = 'kaggriculture.yaml'
+
+    @pytest.mark.parametrize("name", _ALL)
+    def test_config_env_and_cross_section_rules(name: str) -> None:
+>       ours = _sections(name)
+               ^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_____________ test_local_config_is_the_recipe_on_a_tiny_cpu_model ______________
+
+    def test_local_config_is_the_recipe_on_a_tiny_cpu_model() -> None:
+        scaling = _scaling_6m()
+>       ours = _sections("kaggriculture.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+________________ test_two_rank_workloads_fit_the_model_chunking ________________
+
+    def test_two_rank_workloads_fit_the_model_chunking() -> None:
+        # teacher_chunk = min(128, 128) x 64 x 2 rows: at most three trunk calls
+        # (exactly three when every row is fully padded) and two head calls.
+>       assert _headroom("kaggriculture_2rank.yaml") == {
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "rollout": (256, 1, 1),
+            "minibatch": (1_024, 1, 1),
+            "teacher_chunk": (16_384, 3, 2),
+            "evaluation": (256, 1, 1),
+        }
+
+tests/kaggriculture/test_configs.py:192: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:172: in _headroom
+    ours = _sections(name)
+           ^^^^^^^^^^^^^^^
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_2rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_______________ test_four_rank_workloads_fit_the_model_chunking ________________
+
+    def test_four_rank_workloads_fit_the_model_chunking() -> None:
+        # teacher_chunk = min(128, 64) x 64 x 2 rows.
+>       assert _headroom("kaggriculture_4rank.yaml") == {
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "rollout": (128, 1, 1),
+            "minibatch": (512, 1, 1),
+            "teacher_chunk": (8_192, 2, 1),
+            "evaluation": (128, 1, 1),
+        }
+
+tests/kaggriculture/test_configs.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:172: in _headroom
+    ours = _sections(name)
+           ^^^^^^^^^^^^^^^
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_4rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+______________ test_headroom_lines_label_the_padded_trunk_bounds _______________
+
+    def test_headroom_lines_label_the_padded_trunk_bounds() -> None:
+>       ours = _sections("kaggriculture_2rank.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:211: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_2rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_ test_configs_load_through_full_config_and_build_the_model[kaggriculture_2rank.yaml] _
+
+name = 'kaggriculture_2rank.yaml'
+
+    @pytest.mark.parametrize("name", _ALL)
+    def test_configs_load_through_full_config_and_build_the_model(name: str) -> None:
+>       cfg = FullConfig.from_file(ROOT / "configs" / name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:289: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_2rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_ test_configs_load_through_full_config_and_build_the_model[kaggriculture_4rank.yaml] _
+
+name = 'kaggriculture_4rank.yaml'
+
+    @pytest.mark.parametrize("name", _ALL)
+    def test_configs_load_through_full_config_and_build_the_model(name: str) -> None:
+>       cfg = FullConfig.from_file(ROOT / "configs" / name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:289: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_4rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_ test_configs_load_through_full_config_and_build_the_model[kaggriculture.yaml] _
+
+name = 'kaggriculture.yaml'
+
+    @pytest.mark.parametrize("name", _ALL)
+    def test_configs_load_through_full_config_and_build_the_model(name: str) -> None:
+>       cfg = FullConfig.from_file(ROOT / "configs" / name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:289: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_________ test_config_round_trips_through_the_kaggriculture_env_schema _________
+
+    def test_config_round_trips_through_the_kaggriculture_env_schema() -> None:
+>       data = _config_data("kaggriculture_2rank.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:300: in _config_data
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture_2rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+___________ test_kaggriculture_model_requires_the_kaggriculture_env ____________
+
+    def test_kaggriculture_model_requires_the_kaggriculture_env() -> None:
+>       data = _config_data("kaggriculture.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:336: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:300: in _config_data
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+___________ test_kaggriculture_env_requires_the_kaggriculture_model ____________
+
+    def test_kaggriculture_env_requires_the_kaggriculture_model() -> None:
+>       data = _config_data("kaggriculture.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:344: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:300: in _config_data
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+__________________ test_kaggriculture_env_rejects_orbit_specs __________________
+
+    def test_kaggriculture_env_rejects_orbit_specs() -> None:
+>       data = _config_data("kaggriculture.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:351: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:300: in _config_data
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_ test_kaggriculture_env_rejects_fields_outside_its_schema[two_player_weight-1.0] _
+
+key = 'two_player_weight', value = 1.0
+
+    @pytest.mark.parametrize(
+        ("key", "value"),
+        [("two_player_weight", 1.0), ("reward_mode", "win_only"), ("native_threads", 0)],
+    )
+    def test_kaggriculture_env_rejects_fields_outside_its_schema(
+        key: str, value: object
+    ) -> None:
+>       data = _config_data("kaggriculture.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:364: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:300: in _config_data
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_ test_kaggriculture_env_rejects_fields_outside_its_schema[reward_mode-win_only] _
+
+key = 'reward_mode', value = 'win_only'
+
+    @pytest.mark.parametrize(
+        ("key", "value"),
+        [("two_player_weight", 1.0), ("reward_mode", "win_only"), ("native_threads", 0)],
+    )
+    def test_kaggriculture_env_rejects_fields_outside_its_schema(
+        key: str, value: object
+    ) -> None:
+>       data = _config_data("kaggriculture.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:364: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:300: in _config_data
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+__ test_kaggriculture_env_rejects_fields_outside_its_schema[native_threads-0] __
+
+key = 'native_threads', value = 0
+
+    @pytest.mark.parametrize(
+        ("key", "value"),
+        [("two_player_weight", 1.0), ("reward_mode", "win_only"), ("native_threads", 0)],
+    )
+    def test_kaggriculture_env_rejects_fields_outside_its_schema(
+        key: str, value: object
+    ) -> None:
+>       data = _config_data("kaggriculture.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:364: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:300: in _config_data
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+__________ test_kaggriculture_reward_rejects_the_winner_ce_value_loss __________
+
+    def test_kaggriculture_reward_rejects_the_winner_ce_value_loss() -> None:
+>       data = _config_data("kaggriculture.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:371: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:300: in _config_data
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+_________________ test_kaggriculture_reward_requires_gamma_one _________________
+
+    def test_kaggriculture_reward_requires_gamma_one() -> None:
+>       data = _config_data("kaggriculture.yaml")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:378: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:300: in _config_data
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+____ test_require_orbit_env_narrows_orbit_and_fails_fast_for_kaggriculture _____
+
+    def test_require_orbit_env_narrows_orbit_and_fails_fast_for_kaggriculture() -> None:
+        orbit = _scaling_6m().env
+        assert require_orbit_env(orbit, context="caller") is orbit
+        with pytest.raises(RuntimeError, match="caller cannot run Kaggriculture yet"):
+>           require_orbit_env(_sections("kaggriculture.yaml").env, context="caller")
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:426: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:63: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/Users/poonszesen/kg-v3-adapter/configs/kaggriculture.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/config.py:49: ValidationError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_2rank.yaml-2]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_4rank.yaml-4]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_2rank.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_4rank.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes
+FAILED tests/kaggriculture/test_configs.py::test_config_env_and_cross_section_rules[kaggriculture_2rank.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_config_env_and_cross_section_rules[kaggriculture_4rank.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_config_env_and_cross_section_rules[kaggriculture.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_local_config_is_the_recipe_on_a_tiny_cpu_model
+FAILED tests/kaggriculture/test_configs.py::test_two_rank_workloads_fit_the_model_chunking
+FAILED tests/kaggriculture/test_configs.py::test_four_rank_workloads_fit_the_model_chunking
+FAILED tests/kaggriculture/test_configs.py::test_headroom_lines_label_the_padded_trunk_bounds
+FAILED tests/kaggriculture/test_configs.py::test_configs_load_through_full_config_and_build_the_model[kaggriculture_2rank.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_configs_load_through_full_config_and_build_the_model[kaggriculture_4rank.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_configs_load_through_full_config_and_build_the_model[kaggriculture.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_config_round_trips_through_the_kaggriculture_env_schema
+FAILED tests/kaggriculture/test_configs.py::test_kaggriculture_model_requires_the_kaggriculture_env
+FAILED tests/kaggriculture/test_configs.py::test_kaggriculture_env_requires_the_kaggriculture_model
+FAILED tests/kaggriculture/test_configs.py::test_kaggriculture_env_rejects_orbit_specs
+FAILED tests/kaggriculture/test_configs.py::test_kaggriculture_env_rejects_fields_outside_its_schema[two_player_weight-1.0]
+FAILED tests/kaggriculture/test_configs.py::test_kaggriculture_env_rejects_fields_outside_its_schema[reward_mode-win_only]
+FAILED tests/kaggriculture/test_configs.py::test_kaggriculture_env_rejects_fields_outside_its_schema[native_threads-0]
+FAILED tests/kaggriculture/test_configs.py::test_kaggriculture_reward_rejects_the_winner_ce_value_loss
+FAILED tests/kaggriculture/test_configs.py::test_kaggriculture_reward_requires_gamma_one
+FAILED tests/kaggriculture/test_configs.py::test_require_orbit_env_narrows_orbit_and_fails_fast_for_kaggriculture
+25 failed, 14 passed in 0.23s
+
+EXIT_CODE=1

@@ -1,5 +1,17 @@
 # Change log
 
+## 2026-09-29 — Merge Task 7.1's native opponents onto the integration
+
+`kg/merge-7-1` merges `kg/rebuild-7-1` (`908c73f`, Codex `verify-7.1-r2` APPROVE) onto the integration at `faed717`. Two cookbook files conflicted. This log keeps both sides, integration first; the [[references/index|References index]] places the [[references/snapshot-view-isolates-byte-exact-evaluation-opponents|opponent Reference]] under "Phase 5 and 7". `engine_rs/TRIM_MANIFEST.json` auto-merged to the branch's bytes, and rerunning `ops/rebuild-2026-09-29/7.1/update_trim_manifest.py` left it unchanged. The Task 7.1 Codex prompts, reports, view-probe source and the two verification transcripts, deferred by the custody sweep, are committed, along with the compact files from Codex's `verify-7.1-r2/` evidence directory. Two implementation transcripts over 512 KiB, two tracked-file inventories and the verifier's regenerated fixture copies stay local; `ops/rebuild-2026-09-29/evidence-custody.md` and `.json` list each one with its SHA-256. The opponent Reference now cites the committed prompt and probe as repository sources and records the r2 verification. `plan.md` ticks 7.1, and `phase-status.md` marks it merged. Checks on `faed717`: full `just prepare` passed: engine 69, root Rust 254 with four ignored, opponents 22, Python 1,771 passed with 22 skipped (`ops/rebuild-2026-09-29/merge-7.1/prepare.log`). Codex `verify-merge-7-1-r1` found one P2: `.gitignore`'s `replay-*.json` rule had kept `verify-7.1-r2/regeneration/replay-summary.json` out of the landing commit; it is force-added, and r2 approved. Tasks 1.4 and 1.5 then landed on the integration (`5b43062`), so the staging branch merged that tip. `cookbook/log.md`, `docs/rules-parity-coverage.md` and `phase-status.md` conflicted and keep both landings, 1.4/1.5 first. The merged native env has no hook that seats an `opponents_rs` controller, so the nine learned-seat opponent tests now skip with that reason instead of `needs Task 1.4 binding`; this also keeps the [[references/native-game-semantics-use-v3-owned-buffers|native semantics Reference]]'s statement that no test carries that skip true. The opponent Reference and the coverage page say the same. Full `just prepare` on the merged tree: engine 69, root Rust 274 with five ignored, opponents 22, Python 2,400 passed with 21 skipped (`ops/rebuild-2026-09-29/merge-7.1/prepare-on-5b43062.log`, recorded in `docs/rules-parity-coverage.md`). Gaps: default config and CPython 3.11 only, no native opponent seat for the learned policy yet, and the replay prefixes come only from the controllers' own play.
+
+## 2026-09-29 — Apply the Tasks 1.4/1.5 merge verification's P3 edits (verify-merge-env-adapter r1)
+
+Codex verification r1 of `kg/merge-env-adapter` at `49a4835` (APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1.md`, evidence in `ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/`) found no merge defect: every parent test name survives (two BASE tests were deliberately replaced on the adapter branch), six scratch mutations failed and restored cleanly. It raised two P3s on parent prose made stale by the merge, now fixed: the [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]] (and its index line), the [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|model Reference]], the four `configs/kaggriculture*.yaml` headers and `docs/rl-api-specs.md`'s fence paragraph now name only Task 3.1 rollout storage and action mapping as the blocker, since the native env and adapter exist; the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]] now places the reward config in `rewards.py` with six required coefficients and the Task 1.5 admission rules, and states run_ppo's workload, compile-stack, then explicit Kaggriculture guard order. Historical results are unchanged. Text only; no training or GPU run.
+
+## 2026-09-29 — Merge Tasks 1.4 and 1.5 native environment and Python adapter onto the integration
+
+`kg/rebuild-adapter` (Task 1.5 Stage 2 plus verify-r1 P3 edits at `8699ca9`, containing Task 1.4 at `b6b722f`, both Codex-approved) merged with `--no-ff` onto `kg/isaiah-gap-closure` at `faed717` in staging branch `kg/merge-env-adapter-r2` (restaged: the first staging at `666deec`, `kg/merge-env-adapter`, passed Codex verify r1 but the integration moved before landing). Five files conflicted and keep both sides: this log (integration entries first, then the adapter branch's), the phase-grouped [[references/index|References index]] (the integration's grouping and other lines plus the adapter's evaluation and grammar-heads updates and its [[references/native-game-semantics-use-v3-owned-buffers|native-semantics]] and [[references/reward-reuse-preserves-objective-and-critic-semantics|reward-reuse]] lines, reward-reuse moved from the historical section into Phase 0 and 1; the configs line keeps 8 ranks and the Task 3.1 stop reason), the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]] (8-rank description, Task 3.1 stop reason, source union, and the evaluation env's Kaggriculture branch), `docs/model-architecture.md` and `docs/rl-api-specs.md` (teacher targets plus the Task 1.5 adapter section). Semantic fixes: `configs/kaggriculture_8rank.yaml` gains the now-required `econ_ineffective_cap: 0.1` like the 2/4-rank configs; `tests/kaggriculture/test_teacher.py`'s run_ppo seam skip reason names Task 3.1 rather than a missing native env; two stale Task 1.5 claims in `docs/rules-parity-coverage.md` now say the native grammar tables are wired, and its count paragraph records this merge. `engine_rs/TRIM_MANIFEST.json` is unchanged. `just prepare`: engine 69, root 274 passed / five ignored, Python 2,319 passed / 10 skipped, docs-fresh passes (`ops/rebuild-2026-09-29/merge-env-adapter/prepare.log`). No training or GPU run.
+
 ## 2026-09-29 — Wire every v3 launcher to W&B and fail fast without a key
 
 The owner asked "why BC training has nop W&B report? make sure all v3 experiments wired to w&b." The A100 BC run had gone out with `--wandb-mode offline`, and no receipt recorded the outage. The audit (`ops/rebuild-2026-09-29/wandb-audit.md`) found that Isaiah's `run_ppo` logged to `orbit-wars` with no v3 identity and discovered a missing key late. On branch `kg/rebuild-wandb`:
@@ -99,6 +111,65 @@ built from three surveys and rechecked with `git merge-base --is-ancestor`
 against `b8747b6`. It lists notes that exist only on unmerged branches, which
 are not linked yet. `plan.md` now ticks only tasks merged into integration and
 marks 4.1–4.3 and 6.0 as approved, not merged.
+## 2026-09-29 — Check opponent mid-episode replay against the original submissions
+
+Codex's verification of Task 7.1 rejected the qualification because
+mid-episode replay was checked natively only and stopped at the reconstruction
+boundary (brief §6). The generator's `opponent-replay` preset now rebuilds fresh
+original controllers in both seats from each frozen oracle prefix at steps 37,
+360 and 695 and freezes 24 resumed steps per case; fresh native controllers
+rebuilt the same way match all 1,152 resumed actions and 24 final states, and
+tampering and a scratch controller mutation fail. The stale 19-test count is now
+22. The [[references/snapshot-view-isolates-byte-exact-evaluation-opponents|opponent Reference]]
+and `docs/rules-parity-coverage.md` carry the denominators and the
+foreign-prefix limit. Receipts: `ops/rebuild-2026-09-29/7.1/verify-r1/`.
+
+## 2026-09-29 — Qualify the four opponents against their originals on CPython 3.11
+
+Claude's review of Task 7.1 regenerated the original-submission oracles on
+CPython 3.11.15, the interpreter of Kaggle's simulation image (v163, per v2's
+container Reference). Codex's single 3.12.13 trace had failed at R04 step 12
+because CPython 3.12 made float `sum()` compensated; the native port sums
+sequentially, as 3.11 does. Eight games (seeds 20260929–20260936, each bot
+twice in each seat) now match all 11,504 original actions and every state.
+The generator, custody checker and Rust oracle test refuse non-3.11 oracles,
+and three production mutations fail their tests. The
+[[references/snapshot-view-isolates-byte-exact-evaluation-opponents|opponent Reference]]
+and `docs/rules-parity-coverage.md` carry the denominators and remaining gaps
+(no Python-side shortage, rejection or mid-episode replay coverage; license
+notices; default config only; Task 1.4 binding). Receipts:
+`ops/rebuild-2026-09-29/7.1/review/`.
+
+## 2026-09-29 — Import evaluation controllers through a v3-owned snapshot view
+
+Claude's revised Task 7.1 placement resolves the private-engine boundary with an
+opaque engine owner, current snapshot accessors and the one hire-cost value.
+Four controller files and E776 policy data stay byte-exact in `opponents_rs`;
+registry/lifecycle/default-config runner and custody checks are implemented.
+The first original-Python trace stops at R04 step 12: native `WEST`, Python
+`NORTH` for hand 2. Python 3.12 floating summation versus native sequential
+summation changes an anchor threshold; a 13-observation counterfactual isolates
+that cause. Final review also closes a derived-`Debug` engine-state leak with
+a snapshot/config-only formatter and a failing-then-passing regression; 19
+opponent tests pass and the original-Python comparison remains failing. The
+corpus is not widened. The
+[[references/snapshot-view-isolates-byte-exact-evaluation-opponents|current Reference]]
+replaces the stop-only note and corrects its unsupported owner attribution:
+the old STOP instruction came from Claude's placement prompt. Run-1 receipts
+at `21d0f45` are preserved; final outcomes are recorded in
+`ops/rebuild-2026-09-29/7.1/results.md` and separate `run2/` receipts.
+
+## 2026-09-29 — Stop Task 7.1 at the frozen engine's external-crate boundary
+
+The requested standalone crate cannot compile the byte-exact controllers:
+`fib` and `Game.config` are private, and five required accessors lived in the
+excluded reference `policy_rows.rs`. The all-target compile probe fails before
+any bot can run, triggering Claude's placement prompt's explicit STOP instruction. No production
+crate or oracle traces are added. The
+[[references/snapshot-view-isolates-byte-exact-evaluation-opponents|current opponent Reference, with run-1 history]]
+and coverage page record the exact blocker and unimplemented qualification;
+receipts are in `ops/rebuild-2026-09-29/7.1/`. The trim updater records only
+non-engine bookkeeping and preserves every retained/authored/excluded entry.
 
 ## 2026-09-29 — Capture every engine build input in observation-oracle custody
 
@@ -112,6 +183,165 @@ predates the repair; its gap is stated in the
 [[references/structured-observations-preserve-legal-state-and-order|observation Reference]]
 and `docs/rules-parity-coverage.md`. Receipts:
 `ops/rebuild-2026-09-29/merge-1.3/verify-r1-fix/`.
+
+## 2026-09-29 — Task 1.5 verify r1: boundary tests and stale native-status claims
+
+Codex's independent verification of `832b836` found no production defect and
+approved with four P3 edits. Tests now reject malformed codec seat pairs and
+decode tensors before native calls, the board-size and per-turn order upper
+bounds, a negative inactive death cap, and invalid allocator/constructor
+integers before allocation or native construction; each guard's removal fails
+a named test. The [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|config]],
+[[references/evaluation-and-truncation-follow-the-kaggriculture-objective|evaluation]]
+and [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|grammar-head]]
+References and their index lines no longer say the native env or tables are
+missing; they name Task 3.1 as the remaining blocker.
+
+## 2026-09-29 — Task 1.5 Stage 2: adapter, codec and tables on the real native binding
+
+Codex's Stage 2 (`d0d65f7`) runs the Stage 1 adapter, factory and codec against
+Task 1.4's binding and removes every `needs Task 1.4 binding` skip. It makes the
+strict `native_grammar_tables` the model default, builds the Kaggriculture
+evaluation env through `create_env`, and keeps `run_ppo`'s stop, which now names
+Task 3.1's missing rollout storage. The reward oracle's Stage 1 overflow
+rescaling was wrong against live native rewards and is removed. Claude's review
+killed four restored mutants, and full `just prepare` passes on the Mac. The
+[[references/native-game-semantics-use-v3-owned-buffers|native boundary Reference]]
+and [[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]]
+record the evidence. The pod DMA test and the two-rank smoke remain.
+
+## 2026-09-29 — Merge Task 1.4 native environment into the Task 1.5 adapter branch
+
+`kg/rebuild-env` (`b6b722f`, Codex-approved) merges into `kg/rebuild-adapter`.
+`python/owl/rs.pyi` keeps Task 1.4's ruff-formatted stub. Its declarations are
+AST-identical to the Stage 1 verbatim copy, so the file has one `KaggricultureEnv`
+class block and one declaration of each grammar/codec function, and the Stage 1
+`fmt: off`/E501 exemptions are no longer needed. The
+[[references/native-game-semantics-use-v3-owned-buffers|native boundary Reference]]
+keeps both episodes' sections, sources and one merged index description.
+
+## 2026-09-29 — Pin the reward admission strengthening with a discriminating case
+
+Claude's review of Task 1.5 Stage 1 (Codex commit `43354c8`) mutation-checked the
+reward predicate, fence and seed-stream tests. Every mutant failed except the
+pinned reference's combined rule, which the shared ten-case table cannot
+separate from the per-component rule. `tests/kaggriculture/test_rewards.py` adds
+one Python/native case (W .2, death weights 0, ineffective .001/.1 → reject). The
+[[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]]
+records it. Review details are in brief 1.5's review history.
+
+## 2026-09-29 — Implement Task 1.5 Stage 1 Python adapter and game seam
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native boundary Reference]]
+and [[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]]
+now record the one-buffer Python adapter/fence, strict game/factory seam,
+required reward coefficients and independent rounding oracle, cold native-only
+codec, verbatim Task 1.4 stub and explicit YAML cap. Task 3.4's observation-tag
+union, reward field names and trainer stop remain. CPU test-first evidence and
+full Python preparation pass (1,705 tests, 22 skips); native lifecycle/replay,
+Stage 2 tables, Task 3.1 runtime and pod DMA remain open. No native build or
+training ran. Reconciliations are appended to brief 1.5; exact command receipts
+and skipped-test inventory are in `ops/rebuild-2026-09-29/stage1-adapter/results.md`.
+
+## 2026-09-29 — Roll back a failed fixture-pair publication (Codex verify r3)
+
+Codex's third Task 1.4 verification confirmed the r2 fix, found no production
+defect and approved with one P3 edit.
+
+- **Recorder publication.** A failure while replacing the manifest, after the
+  NPZ was replaced, left half a pair. `publish_pair` now restores each replaced
+  target, or removes one that did not exist before, before re-raising. Two
+  tests inject that failure for a fresh output and for an existing one, and
+  both fail against the previous recorder. The fix does not cover a process
+  killed between the two replacements.
+- **Fixture.** The recorder hash is part of fixture custody, so the fixture was
+  re-recorded on the Mac within the recorder's watchdog. The NPZ is
+  byte-identical, and only `recorder_sha256` changed in the manifest.
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+records the evidence. Receipts: `ops/rebuild-2026-09-29/1.4/p3-rerecord/` and
+`ops/rebuild-2026-09-29/codex/verify-env-r3/`.
+
+## 2026-09-29 — Test each recorder size budget and archive hash (Codex verify r2)
+
+Codex's second Task 1.4 verification confirmed both r1 fixes, found no
+production defect and approved with one P3 edit.
+
+- **Recorder tests.** The size and hash tests made the declared size disagree
+  with the file, so the size check fired first. The compressed-size cap and
+  both archive hash checks could be removed and every test still passed. The
+  new tests change one field at a time: a cap lowered below a valid fixture, a
+  declared size one byte too large, a same-length flipped byte, and a wrong
+  archive or expanded digest. Each asserts its exact error before `np.load`.
+  Removing any of the six size/hash guards now fails a named test.
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+records the evidence. Receipts: `ops/rebuild-2026-09-29/1.4/verify-r2-fixes/`
+and `ops/rebuild-2026-09-29/codex/verify-env-r2/`.
+
+## 2026-09-29 — Test each recorder inventory guard and close the stale constructor status (Codex verify r1)
+
+Codex's independent Task 1.4 verification approved with two P3 edits and found
+no production defect.
+
+- **Recorder tests.** The old inventory tests failed on the array hash before
+  reaching the semantic guards, so seven guards could be removed unnoticed. A
+  separate test keeps the hash check. Seventeen coherent probes refresh the
+  array metadata and assert the exact error. Removing any of the 14 guards now
+  fails a named test.
+- **API doc.** `docs/rl-api-specs.md` now says contract v4.2 incorporates the
+  approved Q1 constructor refinement.
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+records the evidence. Receipts: `ops/rebuild-2026-09-29/1.4/verify-r1-fixes/`
+and `ops/rebuild-2026-09-29/codex/verify-env-independent/`.
+
+## 2026-09-29 — Qualify the Task 1.4 native env against the reference oracle (Claude review)
+
+Claude reviewed Codex's Task 1.4 implementation (`8d98ea8`, `9dc2d02`) against
+the brief and found no production defect.
+
+- **Oracle on the pod.** The review ran the checks the Mac budget blocked. The
+  pinned reference TrainingBatch was recorded for 16 games and the native env
+  matches it bit for bit over all 11,504 transitions.
+- **Mutations.** An inverted-`dones` mutant fails at game 0, step 0. The release
+  overflow proof passes, and fails when the engine override is disabled.
+  Advancing seeds by 1 instead of the stride fails world sizes 2 and 8. A
+  premature terminal-record clear fails the reset/truncate rollback test.
+- **New test.** A native L6 test proves that every call rewrites all 35 outputs
+  of the one buffer set in place, including padding. Dropping one transition
+  copy makes it fail.
+- **Timings.** Release timings are recorded as component numbers only.
+- **Contract.** v4.2 now records the agreed Q1 constructor refinement.
+- **Checks.** Full `just prepare` passes on the Mac: Python 2,042 passed with 7
+  skips.
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+now carries this evidence. The
+[[references/evaluation-and-truncation-follow-the-kaggriculture-objective|evaluation Reference]]
+now places any training-only seed band in the Task 1.5 factory, not in native
+admission. Receipts: `ops/rebuild-2026-09-29/1.4/claude-review/`.
+
+## 2026-09-29 — Add transactional native lifecycle and the codec/table ABI
+
+Task 1.4 extends the existing root module over the merged grammar and structured
+encoder: staged game/seed/terminal publication, Rust rewards, selected-row
+truncation and four cold codec/table functions. Restored mutations catch early
+live seed writes, whole-batch truncate publication and colliding rank offsets;
+world sizes 2 and 8 consume 67 seeds per rank. Native Python suites pass 383
+cases; root Rust passes 274 with five ignored, and the engine passes 69. The
+[[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+now records this current implementation, inventory and limits while preserving
+reference-branch history. The sole reference-recording attempt stopped at the
+Mac memory limit during compilation, recording zero games and publishing no
+fixture. The requested five-file Python check reports 497 passes and two
+missing-fixture failures. Both preparation commands pass their static checks;
+full `prepare` also passes Rust, build and trim, then both exceed the Mac RSS
+budget during pytest. Broad Python completion, full trajectory and release
+qualification remain PENDING (pod); the Python adapter, device bridge and CUDA
+entry fence belong to Task 1.5. Native seeds use the approved checked i64
+domain; training-band separation is a factory
+policy, not an added native cap.
 
 ## 2026-09-29 — Merge Task 1.3 structured observations onto the trainer-lane integration
 

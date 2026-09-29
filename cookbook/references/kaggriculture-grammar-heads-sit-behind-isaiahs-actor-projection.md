@@ -1,11 +1,11 @@
 ---
 type: "Reference"
 title: "Kaggriculture grammar heads sit behind Isaiah's actor projection"
-description: "Task 2.3 adds Isaiah's 3D→D actor input projection and batched grammar heads with exact coupled-Gumbel HIRE sampling, same-path replay with support/length/canonical flags and one host check, head GEMM-extent chunking, and a 6,252,223-parameter preset; synthetic grammar tables stand in until the Task 1.4 binding exposes the Task 1.2 native tables (which exist and match the stand-in bit-for-bit)."
+description: "Task 2.3 adds Isaiah's 3D→D actor input projection and batched grammar heads with exact coupled-Gumbel HIRE sampling, same-path replay with support/length/canonical flags and one host check, head GEMM-extent chunking, and a 6,252,223-parameter preset; since Task 1.5 the model defaults to the validated native Task 1.2 tables, which match the independent expected tables bit for bit."
 tags: ["kaggriculture-v3", "model", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
-sources: [{"resource": "repository:python/owl/model/kaggriculture_actor.py"}, {"resource": "repository:python/owl/model/kaggriculture.py"}, {"resource": "repository:python/owl/kaggriculture/gpu_grammar.py"}, {"resource": "repository:tests/kaggriculture/test_model_heads.py"}, {"resource": "repository:tests/kaggriculture/test_gpu_grammar.py"}, {"resource": "repository:tests/kaggriculture/test_model_encoder.py"}, {"resource": "repository:docs/model-architecture.md"}, {"resource": "repository:docs/kaggriculture-model.md"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/2.3-action-heads.md"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/brief-2.3-r3.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/gpu_sampling_grammar.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_sampler.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_model.py"}]
+sources: [{"resource": "repository:python/owl/model/kaggriculture_actor.py"}, {"resource": "repository:python/owl/model/kaggriculture.py"}, {"resource": "repository:python/owl/kaggriculture/gpu_grammar.py"}, {"resource": "repository:tests/kaggriculture/test_model_heads.py"}, {"resource": "repository:tests/kaggriculture/test_gpu_grammar.py"}, {"resource": "repository:tests/kaggriculture/test_model_encoder.py"}, {"resource": "repository:docs/model-architecture.md"}, {"resource": "repository:docs/kaggriculture-model.md"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/2.3-action-heads.md"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/brief-2.3-r3.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/gpu_sampling_grammar.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_sampler.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_model.py"}, {"resource": "repository:tests/kaggriculture/test_native_tables.py"}, {"resource": "repository:tests/kaggriculture/test_codec.py"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.5.md"}]
 ---
 
 # Kaggriculture grammar heads sit behind Isaiah's actor projection
@@ -20,9 +20,9 @@ sources: [{"resource": "repository:python/owl/model/kaggriculture_actor.py"}, {"
 
   Stage input is `base + prefix / sqrt(stage + 1)`, and the prefix resets for every observation. The reference model was a design and test oracle only: it had a `prefix_norm` and a factorized `frame_input`, and neither was taken.
 - **Tables.** `GrammarTables` (`python/owl/kaggriculture/gpu_grammar.py`) holds the eight Task 1.2 tables, with validation.
-  - `expected_grammar_tables()` re-derives them from the brief's support rules.
-  - `native_grammar_tables()` is the named hook for the Task 1.4 binding of the Task 1.2 tables. It raises `NotImplementedError` until then.
-  - The model defaults to the expected tables and keeps them as non-persistent buffers, so they never enter checkpoints.
+  - `expected_grammar_tables()` re-derives them from the brief's support rules; it is now a test oracle only.
+  - `native_grammar_tables()` (Task 1.5 Stage 2) checks the Task 1.4 binding's constants, then exactly eight C-contiguous bool arrays, with no fallback.
+  - The model defaults to the native tables, loaded once per construction, and keeps them as non-persistent buffers, so they never enter checkpoints. Explicit injection still works.
 - **Sampling.** Exact Gumbel-max throughout. `couple_market_kinds` implements the HIRE correction: the raw-HIRE prefix masks HIRE where capacity is exhausted, and the argmax is re-taken over the same perturbed scores. Densities use the final-HIRE prefix. STOP is the first final NONE, which keeps its slot-7 density; the sentinel has zero density.
 - **Replay.** `evaluate_actions` runs the same core, teacher-forced.
   - Python shape and dtype checks run before any kernel.
@@ -66,7 +66,7 @@ sources: [{"resource": "repository:python/owl/model/kaggriculture_actor.py"}, {"
 
 ## Limits and reopening conditions
 
-- The masks come from synthetic tables until the Task 1.4 binding exposes `kaggriculture_grammar_tables`. Then implement `native_grammar_tables`, switch the model default, and let `test_native_tables_match_expected_tables` run. Brief item 11 (recorded reference programs) also waits for the Task 1.4 binding and model integration of the Task 1.2 native tables.
+- Task 1.5 Stage 2 closed the table gap: `native_grammar_tables` is the model default and `test_native_tables_match_expected_tables` runs. Brief item 11 (recorded reference programs) now round-trips through the native codec (`tests/kaggriculture/test_codec.py`); replaying them through the model heads is not tested.
 - The actor count is the own `actor_mask` sum, which assumes own actors fill slots `0..n-1` in frame order, as the contract and fixture do. `can_act` is not read by the heads.
 - The prefix embeddings (std `D^-0.5`) are added to a LayerNorm-scaled base with no second norm, as the brief specifies. At initialization the prefix signal is about `1/sqrt(D)` of the base. Whether this conditions strongly enough is untested; reopen if per-slot KL or BC accuracy shows weak item/quantity conditioning on kind.
 - The unit input materializes `[rows, 241, 3D]`, which is about 0.8 GB FP32 at 1,024 rows. The reference's factorized projection is mathematically equivalent if memory binds (Phase 6).

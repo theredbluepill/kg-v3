@@ -367,6 +367,10 @@ def _isolated_env_available() -> str | None:
 
 def test_live_kaggle_engine_regenerates_committed_traces(tmp_path: Path) -> None:
     """Rerun Kaggle's engine and require byte-identical committed traces."""
+    if sys.platform == "darwin":
+        pytest.skip(
+            "Mac bound: committed regeneration exceeds two live games; run on pod"
+        )
     reason = _isolated_env_available()
     if reason is not None:
         pytest.skip(reason)
@@ -392,3 +396,278 @@ def test_live_kaggle_engine_regenerates_committed_traces(tmp_path: Path) -> None
         assert (tmp_path / entry["path"]).read_bytes() == (
             GENERATED / entry["path"]
         ).read_bytes(), entry["path"]
+
+
+# ---------------------------------------------------- original opponent oracles
+
+
+def test_sibling_oracle_rejects_changed_source(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(generator, "_sibling_blob", lambda _path: b"changed source")
+    with pytest.raises(generator.ParityGeneratorError, match="SHA-256"):
+        generator.sibling_oracle_files("r04")
+
+
+def test_sibling_oracle_rejects_unknown_bot() -> None:
+    with pytest.raises(generator.ParityGeneratorError, match="unknown sibling"):
+        generator.sibling_oracle_files("other")
+
+
+def test_sibling_oracle_instances_have_fresh_module_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = (
+        b"count = 0\ndef agent(obs, config=None):\n global count\n"
+        b" count += 1\n return {'count': count}\n"
+    )
+    monkeypatch.setattr(
+        generator, "sibling_oracle_files", lambda _bot: {"agents/r04/main.py": source}
+    )
+    original_path = list(sys.path)
+    original_modules = set(sys.modules)
+    first = generator.SiblingPolicy("r04")
+    second = generator.SiblingPolicy("r04")
+    rng = random.Random(0)
+    try:
+        assert first({}, {}, rng).action == {"count": 1}
+        assert first({}, {}, rng).action == {"count": 2}
+        assert second({}, {}, rng).action == {"count": 1}
+        assert first({}, {}, rng).action == {"count": 3}
+        assert sys.path == original_path
+        assert not any(
+            key.startswith("_kagg_oracle_")
+            for key in set(sys.modules) - original_modules
+        )
+    finally:
+        first.close()
+        second.close()
+    assert not first.root.exists()
+    assert not second.root.exists()
+
+
+def test_opponent_specs_cover_both_seats_and_enforce_live_batch_bound() -> None:
+    specs = generator.opponent_specs(0, 2, 20260929) + generator.opponent_specs(
+        2, 2, 20260929
+    )
+    assert len(specs) == 4
+    for seat in range(2):
+        assert {spec.policies[seat] for spec in specs} == {
+            "builtin:starter",
+            "sibling:r04",
+            "sibling:ecobot",
+            "sibling:e776",
+        }
+    assert all(spec.variant == "default" for spec in specs)
+    with pytest.raises(generator.ParityGeneratorError, match="one or two"):
+        generator.opponent_specs(0, 3, 20260929)
+
+
+def test_opponent_coverage_counts_actual_events() -> None:
+    public: dict[str, Any] = {
+        "step": 0,
+        "day": 0,
+        "hour": 0,
+        "farms": [
+            {"hands": [], "tiles": [[{"kind": "WEED"}]]},
+            {"hands": [], "tiles": [[None]]},
+        ],
+        "market": {"inventory": {"WHEAT": 0}},
+    }
+    records = [
+        {"initial": {"public": public}},
+        {
+            "type": "transition",
+            "from_step": 0,
+            "actions": [{"market": [["HIRE"], ["BUY_PRODUCT", "WHEAT", 1]]}, {}],
+            "expected": {
+                **public,
+                "step": 1,
+                "farms": [
+                    {**public["farms"][0], "hands": [[5, 4]]},
+                    public["farms"][1],
+                ],
+            },
+        },
+    ]
+    counts = generator.opponent_coverage(records)
+    assert counts[0]["openings"] == counts[1]["openings"] == 1
+    assert counts[0]["hires"] == 1
+    assert counts[1]["hires"] == 0
+    assert counts[0]["weed_presence"] == 1
+    assert counts[0]["buy_quantity_above_inventory_index"] == 1
+    assert counts[0]["mid_episode_replay"] == 0
+
+
+def test_e776_package_modules_are_independent_per_seat(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    files = {
+        "agents/e776/main.py": (
+            b"from e776_pkg.entry import policy\n"
+            b"def kaggriculture_e776_agent(obs, config=None): return policy(obs)\n"
+        ),
+        "agents/e776/e776_pkg/__init__.py": b"",
+        "agents/e776/e776_pkg/entry.py": (
+            b"count = 0\ndef policy(obs):\n global count\n count += 1\n"
+            b" return {'count': count}\n"
+        ),
+    }
+    monkeypatch.setattr(generator, "sibling_oracle_files", lambda _bot: files)
+    first, second = generator.SiblingPolicy("e776"), generator.SiblingPolicy("e776")
+    try:
+        rng = random.Random(0)
+        assert first({}, {}, rng).action == {"count": 1}
+        assert first({}, {}, rng).action == {"count": 2}
+        assert second({}, {}, rng).action == {"count": 1}
+        assert "e776_pkg.entry" not in sys.modules
+    finally:
+        first.close()
+        second.close()
+
+
+def test_opponent_deadline_cannot_be_swallowed_by_original_agent() -> None:
+    def simulate_original_agent() -> None:
+        with generator.opponent_deadline():
+            # R04 catches Exception around its entire original agent. The deadline
+            # must escape that handler and become an explicit generator failure.
+            try:
+                raise generator._OpponentDeadline
+            except Exception:
+                pytest.fail("original agent swallowed the deadline")
+
+    with pytest.raises(generator.ParityGeneratorError, match="Mac bound"):
+        simulate_original_agent()
+
+
+def test_opponent_custody_failure_preserves_existing_manifest(tmp_path: Path) -> None:
+    manifest = {
+        "traces": [{"path": "missing.jsonl.gz", "sha256": "0" * 64, "bytes": 0}]
+    }
+    path = tmp_path / "MANIFEST.json"
+    frozen = json.dumps(manifest)
+    path.write_text(frozen)
+    with pytest.raises(FileNotFoundError):
+        generator.write_opponent_manifest(tmp_path, [], generator.pinned_engine())
+    assert path.read_text() == frozen
+
+
+def test_opponent_oracle_requires_the_competition_python_runtime() -> None:
+    """R04 sums floats; CPython 3.12's compensated sum() changes its decisions."""
+    assert generator.oracle_python_runtime((3, 11, 15)) == "3.11.15"
+    for version in [(3, 12, 13), (3, 10, 14), (3, 13, 0)]:
+        with pytest.raises(generator.ParityGeneratorError, match=r"CPython 3\.11"):
+            generator.oracle_python_runtime(version)
+
+
+def test_opponent_preset_refuses_other_runtimes_before_playing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(generator.sys, "version_info", (3, 12, 13, "final", 0))
+    out = tmp_path / "oracle"
+    status = generator.main(["--preset", "opponents", "--out", str(out)])
+    assert status == 2
+    assert "CPython 3.11" in capsys.readouterr().err
+    assert not out.exists()
+
+
+# ------------------------------------------- original mid-episode replay oracle
+
+
+@pytest.fixture(scope="module")
+def starter_trace() -> tuple[list[dict[str, Any]], ModuleType, ModuleType]:
+    """One live default game (the Mac bound allows two) for replay unit checks."""
+    pin = generator.pinned_engine()
+    kaggle, module, digest = generator.load_pinned_kaggle(pin)
+    spec = generator.GameSpec(
+        # Not "oracle-": that prefix enables the per-process 1 GB generation bound.
+        name="replay-unit",
+        seed=20261001,
+        policies=("builtin:starter", "builtin:starter"),
+        variant="default",
+        policy_seed=20261001,
+    )
+    result = generator.play(spec, kaggle, module, pin, digest)
+    return result.records, kaggle, module
+
+
+def test_replay_resumes_fresh_controllers_after_the_recorded_prefix(
+    starter_trace: tuple[list[dict[str, Any]], ModuleType, ModuleType],
+) -> None:
+    records, kaggle, module = starter_trace
+    case = generator.replay_case(records, 30, 5, kaggle, module)
+    assert case["source"] == "replay-unit.jsonl.gz"
+    assert case["policies"] == ["builtin:starter", "builtin:starter"]
+    assert (case["reconstruct_step"], case["resume_steps"]) == (30, 5)
+    assert case["resumed_actions"] == [
+        records[1 + step]["actions"] for step in range(30, 35)
+    ]
+    assert case["continuous_equal_actions"] == [5, 5]
+    assert case["final"]["public"] == records[35]["expected"]
+    assert case["final"]["privates"] == records[35]["privates"]
+    assert case["final"]["statuses"] == records[35]["statuses"]
+
+
+def test_replay_refuses_a_prefix_the_fresh_controller_did_not_choose(
+    starter_trace: tuple[list[dict[str, Any]], ModuleType, ModuleType],
+) -> None:
+    records, kaggle, module = starter_trace
+    altered = json.loads(json.dumps(records))
+    altered[1 + 7]["actions"][1] = {"farmer": ["TASK_7_1_MUTATION"]}
+    with pytest.raises(generator.ParityGeneratorError, match="prefix step 7 seat 1"):
+        generator.replay_case(altered, 30, 5, kaggle, module)
+
+
+def test_replay_refuses_a_prefix_the_engine_does_not_reproduce(
+    starter_trace: tuple[list[dict[str, Any]], ModuleType, ModuleType],
+) -> None:
+    records, kaggle, module = starter_trace
+    altered = json.loads(json.dumps(records))
+    altered[1 + 11]["expected"]["hour"] += 1
+    with pytest.raises(generator.ParityGeneratorError, match="reconstruction step 11"):
+        generator.replay_case(altered, 30, 5, kaggle, module)
+
+
+def test_replay_window_must_resume_inside_the_recorded_episode() -> None:
+    generator.replay_window(695, 24, 719)
+    for point, resume in [(0, 24), (37, 0), (700, 24)]:
+        with pytest.raises(generator.ParityGeneratorError, match="replay window"):
+            generator.replay_window(point, resume, 719)
+
+
+def test_replay_points_cover_mid_day_day_reset_and_final_day() -> None:
+    hours = [point % 24 for point in generator.REPLAY_POINTS]
+    assert hours[0] not in (0, 23)
+    assert 0 in hours
+    last = generator.REPLAY_POINTS[-1]
+    assert last + generator.REPLAY_RESUME_STEPS == 719
+    assert (last + 1) // 24 == 29
+
+
+def test_replay_fixture_refuses_changed_oracle_custody(tmp_path: Path) -> None:
+    oracle = tmp_path / "oracle"
+    oracle.mkdir()
+    (oracle / "a.jsonl.gz").write_bytes(b"changed")
+    manifest = {"traces": [{"path": "a.jsonl.gz", "sha256": "0" * 64, "bytes": 7}]}
+    (oracle / "MANIFEST.json").write_text(json.dumps(manifest))
+    with pytest.raises(generator.ParityGeneratorError, match="oracle custody"):
+        generator.oracle_sources(oracle)
+
+
+def test_replay_fixture_refuses_to_overwrite_a_different_frozen_file(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / generator.REPLAY_FILE
+    path.write_bytes(b"frozen")
+    with pytest.raises(generator.ParityGeneratorError, match="frozen replay"):
+        generator.write_replay_fixture(tmp_path, {"cases": []})
+    assert path.read_bytes() == b"frozen"
+
+
+def test_replay_preset_refuses_other_runtimes_before_playing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(generator.sys, "version_info", (3, 12, 13, "final", 0))
+    out = tmp_path / "replay"
+    status = generator.main(["--preset", "opponent-replay", "--out", str(out)])
+    assert status == 2
+    assert "CPython 3.11" in capsys.readouterr().err
+    assert not out.exists()

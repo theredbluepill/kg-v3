@@ -1,0 +1,15 @@
+{
+  "passed": 2042,
+  "skipped": 7,
+  "sharded_passed": 2041,
+  "typing_isolated_passed": 1,
+  "typing_isolated_command": [
+    "uv",
+    "run",
+    "pytest",
+    "tests/kaggriculture/test_base_generics_typing.py",
+    "--noconftest",
+    "-q"
+  ],
+  "note": "Typing probe is independent of conftest compile fixtures. --noconftest avoids irrelevant torch runtime imports alongside fresh-cache mypy; same unchanged test with its built-in tmp_path fixture. Model-head shard split into 8+8+16+33 = 65 passing cases. No source tests changed."
+}

@@ -1,0 +1,11 @@
+--- original/src/kaggriculture/reward.rs
++++ mutant/src/kaggriculture/reward.rs
+@@ -40,7 +40,7 @@
+             return Err("econ_ineffective_weight requires a positive cap".into());
+         }
+         let active = if *w > 0. { *cap } else { 0. } + if *i > 0. { *ic } else { 0. };
+-        if active >= 1. {
++        if false && active >= 1. {
+             return Err("active economic caps must sum below one".into());
+         }
+         Ok(())

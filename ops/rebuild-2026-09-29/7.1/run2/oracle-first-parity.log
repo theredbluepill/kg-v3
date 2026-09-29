@@ -1,0 +1,24 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running tests/oracle_parity.rs (opponents_rs/target/debug/deps/oracle_parity-8030d8af9305f351)
+
+running 3 tests
+test comparator_preserves_numbers_array_order_and_state_key_order ... ok
+test every_oracle_rejects_tampered_actions_for_both_seats_and_changed_seed ... mutation "oracle-00-starter-vs-r04.jsonl.gz" seat 0: step 0 seat 0 starter action.farmer[0]: native="PASS" python="TASK_7_1_MUTATION"
+mutation "oracle-00-starter-vs-r04.jsonl.gz" seat 1: step 0 seat 1 r04 action.farmer[0]: native="BUILD_PASTURE" python="TASK_7_1_MUTATION"
+seed mutation "oracle-00-starter-vs-r04.jsonl.gz": Some("step 0 rewards[0]: native=0.0 python=0")
+ok
+test original_python_oracles_match_native_actions_and_states ... "oracle-00-starter-vs-r04.jsonl.gz": ReplayReport { compared_actions: [1, 1], matched_actions: [1, 1], transitions: 1, mismatch: Some("step 0 rewards[0]: native=0.0 python=0") }
+
+thread 'original_python_oracles_match_native_actions_and_states' (11466045) panicked at tests/oracle_parity.rs:249:86:
+called `Result::unwrap()` on an `Err` value: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    original_python_oracles_match_native_actions_and_states
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.98s
+
+error: test failed, to rerun pass `--test oracle_parity`

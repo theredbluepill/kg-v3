@@ -1,0 +1,102 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_main_rejects_an_unprobed_compile_stack_before_allocation _________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-824/test_main_rejects_an_unprobed_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1102f9f10>
+
+    def test_main_rejects_an_unprobed_compile_stack_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / "kaggriculture_2rank.yaml"), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+        monkeypatch.setattr(
+            run_ppo,
+            "installed_compile_stack",
+            lambda: InstalledCompileStack(
+                torch="2.10.0+cu128",
+                triton="3.5.0",
+                cuda_available=True,
+                nvidia_drivers=("595.91.07",),
+            ),
+        )
+    
+        with pytest.raises(RuntimeError, match=re.escape("unprobed torch 2.10.0")):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3382: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:183: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-824/test_main_rejects_an_unprobed_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1102f9f10>
+
+    def test_main_rejects_an_unprobed_compile_stack_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / "kaggriculture_2rank.yaml"), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+        monkeypatch.setattr(
+            run_ppo,
+            "installed_compile_stack",
+            lambda: InstalledCompileStack(
+                torch="2.10.0+cu128",
+                triton="3.5.0",
+                cuda_available=True,
+                nvidia_drivers=("595.91.07",),
+            ),
+        )
+    
+>       with pytest.raises(RuntimeError, match=re.escape("unprobed torch 2.10.0")):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'unprobed\\ torch\\ 2\\.10\\.0'
+E         Actual message: 'run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented'
+
+tests/scripts/test_run_ppo.py:3381: AssertionError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+GEMM workload headroom minibatch: 1024 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 5.776x headroom, <= 1 call(s)); heads 11096 rows/call (10.84x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16384 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 0.361x headroom, <= 3 call(s)); heads 11096 rows/call (0.6772x headroom, 2 call(s))
+GEMM workload headroom evaluation: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_main_rejects_an_unprobed_compile_stack_before_allocation
+1 failed in 0.82s

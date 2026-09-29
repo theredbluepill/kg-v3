@@ -1,0 +1,11 @@
+--- original/src/kaggriculture/reward.rs
++++ mutant/src/kaggriculture/reward.rs
+@@ -61,7 +61,7 @@
+             // Positive finite W times +inf safely saturates at the cap. Disabled
+             // components short-circuit, avoiding 0*inf while retaining R's order.
+             (self.econ_shaping
+-                * (self.econ_starvation_weight * c[0] as f64
++                * (self.econ_starvation_weight * c[3] as f64
+                     + self.econ_drought_weight * c[1] as f64))
+                 .min(self.econ_cap)
+         } else {

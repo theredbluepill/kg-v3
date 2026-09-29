@@ -1,0 +1,29 @@
+   Compiling kaggriculture-opponents v0.1.0 (/Users/poonszesen/kg-v3-t71/opponents_rs)
+error[E0616]: field `by_seat` of struct `MarketStepMetrics` is private
+  --> src/runner.rs:74:62
+   |
+74 |                     result.submitted_orders = metrics.market.by_seat[seat].submitted_orders;
+   |                                                              ^^^^^^^ private field
+
+error[E0616]: field `by_seat` of struct `MarketStepMetrics` is private
+  --> src/runner.rs:75:64
+   |
+75 |                     result.zero_commit_orders = metrics.market.by_seat[seat].zero_commit_orders;
+   |                                                                ^^^^^^^ private field
+
+error[E0616]: field `by_seat` of struct `MarketStepMetrics` is private
+  --> src/runner.rs:76:62
+   |
+76 |                     result.committed_orders = metrics.market.by_seat[seat].committed_orders;
+   |                                                              ^^^^^^^ private field
+
+error[E0616]: field `by_seat` of struct `UnitStepMetrics` is private
+  --> src/runner.rs:77:69
+   |
+77 |                     result.ineffective_unit_commands = metrics.unit.by_seat[seat].ineffective_unit_commands();
+   |                                                                     ^^^^^^^ private field
+
+For more information about this error, try `rustc --explain E0616`.
+error: could not compile `kaggriculture-opponents` (lib) due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `kaggriculture-opponents` (lib test) due to 4 previous errors

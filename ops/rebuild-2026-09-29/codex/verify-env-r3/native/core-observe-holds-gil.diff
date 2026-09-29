@@ -1,0 +1,19 @@
+--- original/src/kaggriculture/bindings.rs
++++ mutant/src/kaggriculture/bindings.rs
+@@ -387,12 +387,10 @@
+ }
+ 
+ // Only Send work/results cross the GIL boundary; Python guards stay in callers.
+-fn native_work<T: Send, F: FnOnce() -> T + Send>(py: Python<'_>, work: F) -> T {
+-    py.detach(|| {
+-        #[cfg(test)]
+-        detached_test::await_python_progress();
+-        work()
+-    })
++fn native_work<T: Send, F: FnOnce() -> T + Send>(_py: Python<'_>, work: F) -> T {
++    #[cfg(test)]
++    detached_test::await_python_progress();
++    work()
+ }
+ 
+ #[pyclass(name = "KaggricultureEnv", module = "owl.rs")]

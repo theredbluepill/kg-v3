@@ -1,0 +1,29 @@
+   Compiling kaggriculture-opponents v0.1.0 (/Users/poonszesen/kg-v3-t71/opponents_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.66s
+     Running tests/oracle_parity.rs (target/debug/deps/oracle_parity-8030d8af9305f351)
+
+running 2 tests
+test original_python_mid_episode_replays_match_native_resumed_actions ... FAILED
+test replay_comparison_rejects_tampered_resumed_actions_and_final_state ... FAILED
+
+failures:
+
+---- original_python_mid_episode_replays_match_native_resumed_actions stdout ----
+
+thread 'original_python_mid_episode_replays_match_native_resumed_actions' (11696719) panicked at tests/oracle_parity.rs:312:5:
+generate the original-Python replay oracle first: /Users/poonszesen/kg-v3-t71/opponents_rs/fixtures/replay/REPLAY.json.gz
+
+---- replay_comparison_rejects_tampered_resumed_actions_and_final_state stdout ----
+
+thread 'replay_comparison_rejects_tampered_resumed_actions_and_final_state' (11696720) panicked at tests/oracle_parity.rs:312:5:
+generate the original-Python replay oracle first: /Users/poonszesen/kg-v3-t71/opponents_rs/fixtures/replay/REPLAY.json.gz
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    original_python_mid_episode_replays_match_native_resumed_actions
+    replay_comparison_rejects_tampered_resumed_actions_and_final_state
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--test oracle_parity`

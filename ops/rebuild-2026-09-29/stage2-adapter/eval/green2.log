@@ -1,0 +1,65 @@
+....F.....                                                               [100%]
+=================================== FAILURES ===================================
+_____ test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds _____
+
+    def test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds() -> None:
+        cfg = _kaggriculture_eval_config()
+        assert isinstance(cfg.env, KaggricultureEnvConfig)
+        cfg = cfg.model_copy(
+            update={
+                "env": cfg.env.model_copy(
+                    update={
+                        "seed": 7,
+                        "native_threads": 1,
+                        "config": cfg.env.config.model_copy(update={"episode_steps": 3}),
+                    }
+                )
+            }
+        )
+    
+        def evaluate(env_steps: int) -> tuple[list[object], list[tuple[float, float]]]:
+            env = run_ppo._create_eval_env(
+                cfg, n_envs=2, device=torch.device("cpu"), env_steps=env_steps
+            )
+            assert isinstance(env, KaggricultureVectorizedEnv)
+            seed = run_ppo._evaluation_seed(base_seed=7, env_steps=env_steps)
+            assert env.seed_state() == (seed + 2, (seed, seed + 1))
+            # Match the evaluation caller's explicit reset after factory construction.
+            obs = env.reset()
+            assert env.seed_state() == (seed + 4, (seed + 2, seed + 3))
+            initial = [env.state_snapshot(i) for i in range(2)]
+            for step in range(2):
+                programs = [
+                    tuple(
+                        {
+                            "farmer": ["PASS"],
+                            "hands": [["PASS"]]
+                            * (int(obs.actor_mask[i, s, :MAX_ACTORS].sum()) - 1),
+                            "market": [],
+                        }
+                        for s in range(2)
+                    )
+                    for i in range(2)
+                ]
+                actions = encode_actions(programs, obs, action_spec=env.action_spec)
+                obs, _rewards, dones, _metrics = env.step(actions)
+                obs.check_contract()
+                assert bool(dones.all()) == (step == 1)
+            banks = []
+            for i in range(2):
+                terminal = env.terminal_metrics(i)
+                assert terminal is not None
+                assert terminal["episode_steps"] == 2
+                banks.append((terminal["bank_0"], terminal["bank_1"]))
+            return initial, banks
+    
+        first_worlds, first_banks = evaluate(1000)
+        different_worlds, _different_banks = evaluate(2000)
+        repeated_worlds, repeated_banks = evaluate(1000)
+>       assert first_worlds != different_worlds
+E       AssertionError: assert [{'done': False, 'privates': [{'inventories': [{}], 'seeds': {'CARROT': 0, 'MELON': 0, 'STRAWBERRY': 0, 'TOMATO': 0, ....0, ...}, 'prices': {'CARROT': 35, 'EGG': 50, 'FERTILIZER': 100, 'MELON': 250, ...}}, ...}, 'rewards': [0.0, 0.0], ...}] != [{'done': False, 'privates': [{'inventories': [{}], 'seeds': {'CARROT': 0, 'MELON': 0, 'STRAWBERRY': 0, 'TOMATO': 0, ....0, ...}, 'prices': {'CARROT': 35, 'EGG': 50, 'FERTILIZER': 100, 'MELON': 250, ...}}, ...}, 'rewards': [0.0, 0.0], ...}]
+
+tests/scripts/test_run_ppo.py:3137: AssertionError
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds
+1 failed, 9 passed, 97 deselected in 0.21s

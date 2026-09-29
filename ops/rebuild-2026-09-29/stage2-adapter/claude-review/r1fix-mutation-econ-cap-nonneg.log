@@ -1,0 +1,24 @@
+F.........................................                               [100%]
+=================================== FAILURES ===================================
+________________ test_reward_coefficients_required_and_bounded _________________
+
+    def test_reward_coefficients_required_and_bounded() -> None:
+        with pytest.raises(ValidationError):
+            KaggricultureRewardConfig.model_validate({})
+        for name in _COEFFICIENTS:
+            missing = _RECIPE.copy()
+            del missing[name]
+            with pytest.raises(ValidationError, match=name):
+                KaggricultureRewardConfig.model_validate(missing)
+            for bad in (-0.01, float("nan"), float("inf"), -float("inf"), True, "1"):
+                with pytest.raises(ValidationError, match=name):
+                    KaggricultureRewardConfig.model_validate(_RECIPE | {name: bad})
+        # With shaping inactive, only nonnegative admission rejects a negative cap.
+>       with pytest.raises(ValidationError, match="econ_cap"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+tests/kaggriculture/test_rewards.py:71: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_rewards.py::test_reward_coefficients_required_and_bounded
+1 failed, 41 passed in 0.49s

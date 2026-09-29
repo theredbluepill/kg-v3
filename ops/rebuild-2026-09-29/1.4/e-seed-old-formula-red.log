@@ -1,0 +1,130 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__ test_seed_partition_across_constructor_full_partial_and_terminal_resets[2] __
+
+world_size = 2
+
+    @pytest.mark.parametrize("world_size", [2, 8])
+    def test_seed_partition_across_constructor_full_partial_and_terminal_resets(world_size: int) -> None:
+        # Ranks run sequentially: only this rank's two native games are live.
+        base, n_envs = 17000, 2
+        streams: list[list[int]] = []
+        for rank in range(world_size):
+            initial_seed, stride = _rank_seed_stream(base, rank, n_envs, world_size)
+            env = make_env(n_envs, seed=initial_seed, stride=stride, config='{"episodeSteps":2}')
+            arrays = buffers(n_envs)
+            env.observe(**arrays)
+            consumed = list(env.seed_state()[1])
+            assert consumed == [initial_seed, initial_seed + stride]
+            tokens, lengths = pass_actions(n_envs)
+            for cycle in range(13):
+                before = snapshot(arrays), diagnostics(env, n_envs)
+                tokens[1, 1, 0, 1] = 2**62
+                with pytest.raises(ValueError, match="env=1.*seat=1"):
+                    env.step(tokens, lengths, **arrays)
+                assert (snapshot(arrays), diagnostics(env, n_envs)) == before
+                tokens[1, 1, 0, 1] = 1
+    
+                next_seed, _ = env.seed_state()
+                env.reset(**arrays)
+                # Simultaneous resets reserve in ascending environment order.
+                assert env.seed_state() == (next_seed + 2 * stride, (next_seed, next_seed + stride))
+                consumed.extend(env.seed_state()[1])
+                next_seed, old_seeds = env.seed_state()
+                selected = cycle % 2
+                mask = np.array([selected == 0, selected == 1], dtype=np.bool_)
+                env.truncate_envs(mask, **arrays)
+                expected = list(old_seeds)
+                expected[selected] = next_seed
+                assert env.seed_state() == (next_seed + stride, tuple(expected))
+                consumed.append(next_seed)
+    
+                next_seed, _ = env.seed_state()
+                info = env.step(tokens, lengths, **arrays)
+                assert arrays["dones"].all()
+                assert info["total_games_played"] == [1.0, 1.0]
+                assert env.seed_state() == (next_seed + 2 * stride, (next_seed, next_seed + stride))
+                consumed.extend(env.seed_state()[1])
+                before_observe = env.seed_state()
+                env.observe(**arrays)
+                assert env.seed_state() == before_observe
+            assert len(consumed) == 67 and len(set(consumed)) == 67
+            streams.append(consumed)
+            del env  # Do not keep completed ranks' two-game batches alive.
+    
+        for rank, stream in enumerate(streams):
+            for peer in range(rank):
+>               assert set(stream).isdisjoint(streams[peer]), f"rank {rank} collides with rank {peer}"
+E               AssertionError: rank 1 collides with rank 0
+E               assert False
+E                +  where False = <built-in method isdisjoint of set object at 0x10f20f760>([17000, 17001, 17002, 17003, 17004, 17005, ...])
+E                +    where <built-in method isdisjoint of set object at 0x10f20f760> = {17002, 17003, 17004, 17005, 17006, 17007, ...}.isdisjoint
+E                +      where {17002, 17003, 17004, 17005, 17006, 17007, ...} = set([17002, 17003, 17004, 17005, 17006, 17007, ...])
+
+tests/kaggriculture/test_native_env.py:377: AssertionError
+__ test_seed_partition_across_constructor_full_partial_and_terminal_resets[8] __
+
+world_size = 8
+
+    @pytest.mark.parametrize("world_size", [2, 8])
+    def test_seed_partition_across_constructor_full_partial_and_terminal_resets(world_size: int) -> None:
+        # Ranks run sequentially: only this rank's two native games are live.
+        base, n_envs = 17000, 2
+        streams: list[list[int]] = []
+        for rank in range(world_size):
+            initial_seed, stride = _rank_seed_stream(base, rank, n_envs, world_size)
+            env = make_env(n_envs, seed=initial_seed, stride=stride, config='{"episodeSteps":2}')
+            arrays = buffers(n_envs)
+            env.observe(**arrays)
+            consumed = list(env.seed_state()[1])
+            assert consumed == [initial_seed, initial_seed + stride]
+            tokens, lengths = pass_actions(n_envs)
+            for cycle in range(13):
+                before = snapshot(arrays), diagnostics(env, n_envs)
+                tokens[1, 1, 0, 1] = 2**62
+                with pytest.raises(ValueError, match="env=1.*seat=1"):
+                    env.step(tokens, lengths, **arrays)
+                assert (snapshot(arrays), diagnostics(env, n_envs)) == before
+                tokens[1, 1, 0, 1] = 1
+    
+                next_seed, _ = env.seed_state()
+                env.reset(**arrays)
+                # Simultaneous resets reserve in ascending environment order.
+                assert env.seed_state() == (next_seed + 2 * stride, (next_seed, next_seed + stride))
+                consumed.extend(env.seed_state()[1])
+                next_seed, old_seeds = env.seed_state()
+                selected = cycle % 2
+                mask = np.array([selected == 0, selected == 1], dtype=np.bool_)
+                env.truncate_envs(mask, **arrays)
+                expected = list(old_seeds)
+                expected[selected] = next_seed
+                assert env.seed_state() == (next_seed + stride, tuple(expected))
+                consumed.append(next_seed)
+    
+                next_seed, _ = env.seed_state()
+                info = env.step(tokens, lengths, **arrays)
+                assert arrays["dones"].all()
+                assert info["total_games_played"] == [1.0, 1.0]
+                assert env.seed_state() == (next_seed + 2 * stride, (next_seed, next_seed + stride))
+                consumed.extend(env.seed_state()[1])
+                before_observe = env.seed_state()
+                env.observe(**arrays)
+                assert env.seed_state() == before_observe
+            assert len(consumed) == 67 and len(set(consumed)) == 67
+            streams.append(consumed)
+            del env  # Do not keep completed ranks' two-game batches alive.
+    
+        for rank, stream in enumerate(streams):
+            for peer in range(rank):
+>               assert set(stream).isdisjoint(streams[peer]), f"rank {rank} collides with rank {peer}"
+E               AssertionError: rank 1 collides with rank 0
+E               assert False
+E                +  where False = <built-in method isdisjoint of set object at 0x10f20fca0>([17000, 17001, 17002, 17003, 17004, 17005, ...])
+E                +    where <built-in method isdisjoint of set object at 0x10f20fca0> = {17002, 17003, 17004, 17005, 17006, 17007, ...}.isdisjoint
+E                +      where {17002, 17003, 17004, 17005, 17006, 17007, ...} = set([17002, 17003, 17004, 17005, 17006, 17007, ...])
+
+tests/kaggriculture/test_native_env.py:377: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_seed_partition_across_constructor_full_partial_and_terminal_resets[2]
+FAILED tests/kaggriculture/test_native_env.py::test_seed_partition_across_constructor_full_partial_and_terminal_resets[8]
+2 failed, 337 deselected in 0.68s

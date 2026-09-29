@@ -1,0 +1,82 @@
+FFF.                                                                     [100%]
+=================================== FAILURES ===================================
+______________________________ test_game_envelope ______________________________
+
+    def test_game_envelope() -> None:
+>       config = kt.KaggricultureGameConfig()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.kaggriculture.types' has no attribute 'KaggricultureGameConfig'. Did you mean: 'KaggricultureObsConfig'?
+
+tests/kaggriculture/test_game.py:52: AttributeError
+___________ test_integral_float_envelope_matches_real_header_encoder ___________
+
+    def test_integral_float_envelope_matches_real_header_encoder() -> None:
+        from .test_observe import _allocate, _arrays, _header, _write
+    
+        header = _header()
+        integer_config = header["configuration"]
+        float_config = {
+            key: float(value) if type(value) is int else value
+            for key, value in integer_config.items()
+        }
+        header["configuration"] = float_config
+        arrays = _arrays(_allocate(1, pin_memory=False))
+        _write(json.dumps([header]), arrays)
+        before = {key: value.copy() for key, value in arrays.items()}
+>       config = kt.KaggricultureGameConfig.model_validate(float_config)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.kaggriculture.types' has no attribute 'KaggricultureGameConfig'. Did you mean: 'KaggricultureObsConfig'?
+
+tests/kaggriculture/test_game.py:118: AttributeError
+________________________ test_hire_limit_has_one_owner _________________________
+
+    def test_hire_limit_has_one_owner() -> None:
+        cfg = KaggricultureEnvConfig.model_validate(_env_data() | {"n_envs": 1})
+        assert cfg.n_envs == 1
+>       assert cfg.seed == 0
+               ^^^^^^^^
+
+tests/kaggriculture/test_game.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureEnvConfig(n_envs=1, obs_spec=KaggricultureObsConfig(obs_spec='kaggriculture', schema_version=3), action_s..._weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=False, native_threads=1)
+item = 'seed'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'KaggricultureEnvConfig' object has no attribute 'seed'
+
+.venv/lib/python3.12/site-packages/pydantic/main.py:1042: AttributeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_game.py::test_game_envelope - AttributeError:...
+FAILED tests/kaggriculture/test_game.py::test_integral_float_envelope_matches_real_header_encoder
+FAILED tests/kaggriculture/test_game.py::test_hire_limit_has_one_owner - Attr...
+3 failed, 1 passed, 23 deselected in 0.05s
+
+EXIT_CODE=1

@@ -1,0 +1,34 @@
+PASS: real trim updater output is byte-idempotent
+PASS: retained/authored/excluded exactly equal base
+PASS: no other tracked engine file changed
+PASS: direct cookbook note lint returns {}
+Resource limit: sandbox denied ps; aggregate live RSS was not measured. No new opponent game or model diagnostic ran.
+
+COMMAND ["uvx", "--offline", "ruff", "check", "ops/rebuild-2026-09-29/7.1/update_trim_manifest.py", "ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py"]
+All checks passed!
+EXIT 0
+
+COMMAND ["uvx", "--offline", "ruff", "format", "--check", "ops/rebuild-2026-09-29/7.1/update_trim_manifest.py", "ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py"]
+2 files already formatted
+EXIT 0
+
+COMMAND ["uv", "run", "--offline", "python", "ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py"]
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+EXIT 0
+
+COMMAND ["uv", "run", "--offline", "python", "scripts/check_engine_trim.py"]
+engine trim manifest: OK
+EXIT 0
+
+COMMAND ["uv", "run", "--offline", "python", "scripts/check_doc_freshness.py"]
+No doc updates required
+EXIT 0
+
+COMMAND ["git", "diff", "--check"]
+EXIT 0
+PASS: exact changed-file inventory (24 files), no absent registered path
+PASS: real manifest remains byte-idempotent

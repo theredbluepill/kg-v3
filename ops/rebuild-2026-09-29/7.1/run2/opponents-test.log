@@ -1,0 +1,55 @@
+   Compiling kaggriculture-opponents v0.1.0 (/Users/poonszesen/kg-v3-t71/opponents_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.24s
+     Running unittests src/lib.rs (opponents_rs/target/debug/deps/kaggriculture_opponents-c15c6cc20a17684c)
+
+running 12 tests
+test native_agents::starter::tests::a_farmer_who_cannot_afford_a_seed_passes_with_an_empty_market ... ok
+test native_agents::starter::tests::carrot_cycle_step_is_the_starter_rule_at_the_assigned_tile ... ok
+test native_agents::starter::tests::carrot_loop_follows_the_kit_starter_across_the_first_four_days ... ok
+test native_agents::starter::tests::hands_are_always_empty_even_for_a_farm_with_hands ... ok
+test native_agents::starter::tests::hire_step_requests_one_hand_when_affordable_and_not_at_the_days_end ... ok
+test view_tests::debug_does_not_expose_hidden_engine_fields ... ok
+test view_tests::e776_visibility ... ok
+test view_tests::ecobot_visibility ... ok
+test view_tests::fibonacci_and_config_are_exact ... ok
+test view_tests::r04_visibility ... ok
+test view_tests::snapshot_refreshes_only_after_success ... ok
+test view_tests::starter_visibility ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.25s
+
+     Running tests/lifecycle.rs (opponents_rs/target/debug/deps/lifecycle-74fb322d277ff2f5)
+
+running 5 tests
+test changed_seed_changes_actions ... ok
+test independent_seats_and_mid_episode_replay ... ok
+test matches_reject_nondefault_configuration ... ok
+test registry_and_lifecycle_fail_explicitly ... ok
+test same_seed_has_identical_action_hashes_banks_and_execution ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.75s
+
+     Running tests/oracle_parity.rs (opponents_rs/target/debug/deps/oracle_parity-8030d8af9305f351)
+
+running 3 tests
+test comparator_preserves_numbers_array_order_and_state_key_order ... ok
+test every_oracle_rejects_tampered_actions_for_both_seats ... ok
+test original_python_oracles_match_native_actions_and_states ... FAILED
+
+failures:
+
+---- original_python_oracles_match_native_actions_and_states stdout ----
+"oracle-00-starter-vs-r04.jsonl.gz": ReplayReport { compared_actions: [13, 13], matched_actions: [13, 12], transitions: 12, mismatch: Some("step 12 seat 1 r04 action.hands[2][0]: native=\"WEST\" python=\"NORTH\"") }
+
+thread 'original_python_oracles_match_native_actions_and_states' (11555882) panicked at tests/oracle_parity.rs:259:5:
+original Python parity failed:
+"oracle-00-starter-vs-r04.jsonl.gz": step 12 seat 1 r04 action.hands[2][0]: native="WEST" python="NORTH"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    original_python_oracles_match_native_actions_and_states
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.01s
+
+error: test failed, to rerun pass `--test oracle_parity`

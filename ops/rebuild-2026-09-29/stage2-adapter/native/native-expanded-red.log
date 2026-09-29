@@ -1,0 +1,64 @@
+........................................................................ [ 55%]
+.......F.................................................s               [100%]
+=================================== FAILURES ===================================
+_ test_extreme_value_native_rewards_match_independent_oracle[tiny-W-overflowing-inner-sum] _
+
+overrides = {'econ_drought_weight': 1e+308, 'econ_ineffective_weight': 0, 'econ_shaping': 1e-320, 'econ_starvation_weight': 1e+308}
+
+    @pytest.mark.parametrize(
+        "overrides",
+        [
+            {"econ_shaping": 1e308, "econ_starvation_weight": 1e308,
+             "econ_drought_weight": 1e308, "econ_ineffective_weight": 1e308,
+             "econ_cap": 0.7},
+            {"econ_shaping": 0, "econ_starvation_weight": 1e308,
+             "econ_drought_weight": 1e308, "econ_ineffective_weight": 0},
+            {"econ_shaping": 1e-320, "econ_starvation_weight": 1e308,
+             "econ_drought_weight": 1e308, "econ_ineffective_weight": 0},
+        ],
+        ids=["overflow-saturation", "disabled-extremes", "tiny-W-overflowing-inner-sum"],
+    )
+    def test_extreme_value_native_rewards_match_independent_oracle(overrides) -> None:
+        config = _config(**overrides)
+        recorder = _recorder()
+        env = rs.KaggricultureEnv(
+            1, 17000, 1, '{"episodeSteps":97}', config.to_native_dict("win_loss"),
+            1, hire_limit=241,
+        )
+        out = buffers(1)
+        env.observe(**out)
+        for step in range(96):
+            public = json.loads(env.state_snapshot(0))["public"]
+            tokens = np.zeros((1, 2, 252, 12), dtype=np.int64)
+            lengths = np.zeros((1, 2), dtype=np.int64)
+            for seat in range(2):
+                action = recorder.policy.action(public, seat)
+                lengths[0, seat] = rs.kaggriculture_encode(
+                    json.dumps(action), int(out["actor_mask"][0, seat, :241].sum()),
+                    int(out["order_limits"][0, seat]), 241, tokens[0, seat],
+                )
+            env.step(tokens, lengths, **out)
+            expected = transition_rewards(
+                torch.from_numpy(out["transition_econ_before"]),
+                torch.from_numpy(out["transition_econ_after"]),
+                torch.from_numpy(out["transition_banks_after"]),
+                torch.from_numpy(out["dones"]), config,
+            ).numpy()
+>           np.testing.assert_array_equal(out["rewards"], expected, err_msg=f"step={step}")
+E           AssertionError: 
+E           Arrays are not equal
+E           step=71
+E           Mismatched elements: 2 / 2 (100%)
+E           Mismatch at indices:
+E            [0, 0]: -0.25 (ACTUAL), -9.999888287218206e-13 (DESIRED)
+E            [0, 1]: 0.25 (ACTUAL), 9.999888287218206e-13 (DESIRED)
+E           Max absolute difference among violations: 0.25
+E           Max relative difference among violations: 2.500028e+11
+E            ACTUAL: array([[-0.25,  0.25]], dtype=float32)
+E            DESIRED: array([[-9.999888e-13,  9.999888e-13]], dtype=float32)
+
+tests/kaggriculture/test_rewards.py:394: AssertionError
+=========================== short test summary info ============================
+SKIPPED [1] tests/kaggriculture/test_env_cuda_fence.py:11: CUDA is unavailable
+FAILED tests/kaggriculture/test_rewards.py::test_extreme_value_native_rewards_match_independent_oracle[tiny-W-overflowing-inner-sum]
+1 failed, 128 passed, 1 skipped in 0.41s

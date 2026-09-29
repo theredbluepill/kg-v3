@@ -1,0 +1,88 @@
+[
+  {
+    "name": "native-rebuild",
+    "command": [
+      "uv",
+      "run",
+      "maturin",
+      "develop",
+      "--locked",
+      "--offline",
+      "--skip-install"
+    ],
+    "exit_code": 0,
+    "seconds": 3.207
+  },
+  {
+    "name": "engine-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "engine_rs/Cargo.toml",
+      "--locked",
+      "--offline"
+    ],
+    "exit_code": 0,
+    "seconds": 18.265
+  },
+  {
+    "name": "root-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline"
+    ],
+    "exit_code": 0,
+    "seconds": 33.051
+  },
+  {
+    "name": "engine-trim",
+    "command": [
+      "uv",
+      "run",
+      "python",
+      "scripts/check_engine_trim.py"
+    ],
+    "exit_code": 0,
+    "seconds": 2.593
+  },
+  {
+    "name": "pytest",
+    "command": [
+      "uv",
+      "run",
+      "pytest",
+      "tests",
+      "-m",
+      "not slow",
+      "-q"
+    ],
+    "exit_code": 1,
+    "seconds": 180.939
+  },
+  {
+    "name": "mypy",
+    "command": [
+      "uv",
+      "run",
+      "mypy",
+      "python/owl",
+      "scripts"
+    ],
+    "exit_code": 0,
+    "seconds": 0.529
+  },
+  {
+    "name": "docs-freshness",
+    "command": [
+      "uv",
+      "run",
+      "python",
+      "scripts/check_doc_freshness.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.118
+  }
+]

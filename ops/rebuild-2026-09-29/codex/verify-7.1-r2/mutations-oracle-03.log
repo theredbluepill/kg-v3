@@ -1,0 +1,27 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running tests/oracle_parity.rs (/Users/poonszesen/kg-v3-t71/.codex-tmp/verify-7-1/mutation-target/debug/deps/oracle_parity-2708bb43cc4f2ddf)
+
+running 1 test
+"oracle-00-starter-vs-r04.jsonl.gz": ReplayReport { compared_actions: [719, 719], matched_actions: [719, 719], transitions: 719, mismatch: None }
+"oracle-01-r04-vs-ecobot.jsonl.gz": ReplayReport { compared_actions: [719, 719], matched_actions: [719, 719], transitions: 719, mismatch: None }
+"oracle-02-ecobot-vs-e776.jsonl.gz": ReplayReport { compared_actions: [719, 719], matched_actions: [719, 719], transitions: 719, mismatch: None }
+"oracle-03-e776-vs-starter.jsonl.gz": ReplayReport { compared_actions: [38, 38], matched_actions: [38, 37], transitions: 37, mismatch: Some("step 37 seat 1 starter action.farmer[0]: native=\"PASS\" python=\"INDEPENDENT_VERIFIER_MUTATION\"") }
+"oracle-04-starter-vs-r04.jsonl.gz": ReplayReport { compared_actions: [719, 719], matched_actions: [719, 719], transitions: 719, mismatch: None }
+"oracle-05-r04-vs-ecobot.jsonl.gz": ReplayReport { compared_actions: [719, 719], matched_actions: [719, 719], transitions: 719, mismatch: None }
+"oracle-06-ecobot-vs-e776.jsonl.gz": ReplayReport { compared_actions: [719, 719], matched_actions: [719, 719], transitions: 719, mismatch: None }
+"oracle-07-e776-vs-starter.jsonl.gz": ReplayReport { compared_actions: [719, 719], matched_actions: [719, 719], transitions: 719, mismatch: None }
+
+thread 'original_python_oracles_match_native_actions_and_states' (11798164) panicked at tests/oracle_parity.rs:271:5:
+original Python parity failed:
+"oracle-03-e776-vs-starter.jsonl.gz": step 37 seat 1 starter action.farmer[0]: native="PASS" python="INDEPENDENT_VERIFIER_MUTATION"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test original_python_oracles_match_native_actions_and_states ... FAILED
+
+failures:
+
+failures:
+    original_python_oracles_match_native_actions_and_states
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 21.42s
+
+error: test failed, to rerun pass `--test oracle_parity`

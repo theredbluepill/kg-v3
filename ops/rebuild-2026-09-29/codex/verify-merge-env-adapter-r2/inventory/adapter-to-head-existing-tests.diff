@@ -1,0 +1,311 @@
+diff --git a/tests/kaggriculture/test_model_heads.py b/tests/kaggriculture/test_model_heads.py
+index 29667a4..c17047a 100644
+--- a/tests/kaggriculture/test_model_heads.py
++++ b/tests/kaggriculture/test_model_heads.py
+@@ -22,18 +22,24 @@ from owl.train.optimizer import MuonConfig, create_optimizer
+ from torch import nn
+ 
+ from tests.kaggriculture.conftest import make_obs
++from tests.kaggriculture.helpers import (
++    EMPTY,
++    HIRE,
++    NONE,
++    PASS,
++    F,
++    K,
++    Order,
++    _base_case,
++    _obs_double,
++    _replay_case,
++    _seat_program,
++    _take_actions,
++    _take_obs,
++    _tiny,
++)
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+-F, K = kt.MAX_FRAMES, kt.ACTION_SLOTS
+-PASS, NORTH = kt.UNIT_KINDS.index("PASS"), kt.UNIT_KINDS.index("NORTH")
+-PICKUP, PLACE = kt.UNIT_KINDS.index("PICKUP"), kt.UNIT_KINDS.index("PLACE")
+-PLANT = kt.UNIT_KINDS.index("PLANT")
+-NONE, HIRE = gg.MARKET_NONE, gg.MARKET_HIRE
+-BUY_SEED, SELL, EMPTY = (
+-    kt.MARKET_KINDS.index("BUY_SEED"),
+-    kt.MARKET_KINDS.index("SELL"),
+-    gg.MARKET_EMPTY,
+-)
+ HEAD_NAMES = {kt.SLOT_NAMES[s] for s in ka.POLICY_SLOTS}
+ IMPLICIT_SLOTS = [0, 2, 11]
+ ATOL = 1e-5
+@@ -42,112 +48,6 @@ ATOL = 1e-5
+ # --- helpers --------------------------------------------------------------------------
+ 
+ 
+-def _tiny(*, hire_limit: int = 241, seed: int = 5, **overrides: Any) -> Any:
+-    torch.manual_seed(seed)
+-    fields: dict[str, Any] = {
+-        "embed_dim": 16,
+-        "depth": 1,
+-        "n_heads": 2,
+-        "mlp_ratio": 2.0,
+-        "n_scratch_tokens": 1,
+-    }
+-    return km.KaggricultureTransformer(
+-        km.KaggricultureTransformerConfig(**(fields | overrides)),
+-        obs_spec=kt.KaggricultureObsConfig(),
+-        action_spec=kt.KaggricultureActionConfig(hire_limit=hire_limit),
+-    )
+-
+-
+-def _obs_fields() -> list[str]:
+-    return [
+-        name for name in kt.KaggricultureObsBatch.model_fields if name != "action_mask"
+-    ]
+-
+-
+-def _map_obs(obs: kt.KaggricultureObsBatch, fn: Any) -> kt.KaggricultureObsBatch:
+-    return kt.KaggricultureObsBatch(
+-        **{name: fn(getattr(obs, name)) for name in _obs_fields()},
+-        action_mask=kt.KaggricultureActionMask(can_act=fn(obs.action_mask.can_act)),
+-    )
+-
+-
+-def _cat_obs(batches: list[kt.KaggricultureObsBatch]) -> kt.KaggricultureObsBatch:
+-    return kt.KaggricultureObsBatch(
+-        **{
+-            name: torch.cat([getattr(b, name) for b in batches])
+-            for name in _obs_fields()
+-        },
+-        action_mask=kt.KaggricultureActionMask(
+-            can_act=torch.cat([b.action_mask.can_act for b in batches])
+-        ),
+-    )
+-
+-
+-def _take_obs(obs: kt.KaggricultureObsBatch, index: torch.Tensor) -> Any:
+-    return _map_obs(obs, lambda t: t.index_select(0, index))
+-
+-
+-def _take_actions(actions: kt.KaggricultureActions, index: torch.Tensor) -> Any:
+-    return kt.KaggricultureActions(
+-        tokens=actions.tokens.index_select(0, index),
+-        lengths=actions.lengths.index_select(0, index),
+-    )
+-
+-
+-def _set_order_limits(obs: kt.KaggricultureObsBatch, limits: list[int]) -> None:
+-    """Per-env order limits (both seats), with the matching ``can_act``."""
+-    own = obs.actor_mask[..., : kt.MAX_ACTORS].sum(-1)
+-    obs.order_limits[:] = torch.tensor(limits)[:, None]
+-    frames = torch.arange(F)
+-    obs.action_mask.can_act[:] = frames < (own + obs.order_limits + 1)[..., None]
+-
+-
+-def _obs_double(obs: kt.KaggricultureObsBatch) -> kt.KaggricultureObsBatch:
+-    return _map_obs(
+-        obs, lambda t: t.double() if t.dtype == torch.float32 else t.clone()
+-    )
+-
+-
+-Unit = tuple[int, int, int, int, int]  # kind, item, present, high, low
+-Order = tuple[int, int, int, int]  # kind, item, high, low
+-
+-
+-def _seat_program(units: list[Unit], orders: list[Order]) -> tuple[torch.Tensor, int]:
+-    tokens = torch.zeros(F, K, dtype=torch.int64)
+-    for actor, (kind, item, present, high, low) in enumerate(units):
+-        tokens[actor, :7] = torch.tensor([actor, kind, 0, item, present, high, low])
+-    base = len(units)
+-    for position, (kind, item, high, low) in enumerate(orders):
+-        tokens[base + position, 7:11] = torch.tensor([kind, item, high, low])
+-    tokens[base + len(orders), 11] = 1  # STOP: market NONE with the stop bit
+-    return tokens, base + len(orders) + 1
+-
+-
+-def _actions(programs: list[list[tuple[torch.Tensor, int]]]) -> kt.KaggricultureActions:
+-    return kt.KaggricultureActions(
+-        tokens=torch.stack([torch.stack([t for t, _ in env]) for env in programs]),
+-        lengths=torch.tensor([[n for _, n in env] for env in programs]),
+-    )
+-
+-
+-def _base_case() -> tuple[kt.KaggricultureObsBatch, kt.KaggricultureActions]:
+-    """Hand-built programs for one env.
+-
+-    Seat 0: 2 actors, STOP at queue position 2 of 3; seat 1: 3 actors, STOP at
+-    the forced sentinel (position 3).
+-    """
+-    obs = make_obs(envs=1, own_actors=2, rival_actors=3, order_limit=3)
+-    seat0 = _seat_program(
+-        [(PICKUP, 2, 1, 1, 5), (PASS, 0, 0, 0, 0)],
+-        [(SELL, 3, 0, 7), (EMPTY, 0, 0, 0)],
+-    )
+-    seat1 = _seat_program(
+-        [(NORTH, 0, 0, 0, 0)] * 3,
+-        [(HIRE, 0, 0, 0), (BUY_SEED, 4, 31, 31), (EMPTY, 0, 0, 0)],
+-    )
+-    return obs, _actions([[seat0, seat1]])
+-
+-
+ def _assert_saved(
+     evaluation: Any, saved: dict[str, torch.Tensor], index: torch.Tensor | None = None
+ ) -> None:
+@@ -169,50 +69,6 @@ def _assert_saved(
+ # --- §7.1 replay invariant ------------------------------------------------------------
+ 
+ 
+-def _replay_case(name: str) -> tuple[Any, kt.KaggricultureObsBatch]:
+-    if name == "dense":
+-        return _tiny(), make_obs(
+-            envs=2, own_actors=241, rival_actors=241, order_limit=10
+-        )
+-    if name == "hire_capacity":
+-        model = _tiny()
+-        with torch.no_grad():
+-            bias = model.actor.heads["market_kind"].out.bias
+-            bias[HIRE] = 8.0
+-            bias[NONE] = -8.0
+-        obs = make_obs(
+-            envs=3,
+-            own_actors=(238, 240, 241),
+-            rival_actors=(239, 1, 236),
+-            order_limit=10,
+-        )
+-        return model, obs
+-    if name == "stop_every_position":
+-        model = _tiny()
+-        with torch.no_grad():
+-            model.actor.heads["market_kind"].out.bias[NONE] = -30.0
+-        obs = _cat_obs(
+-            [
+-                make_obs(own_actors=1 + p % 3, rival_actors=2, order_limit=max(p, 1))
+-                for p in range(11)
+-            ]
+-        )
+-        _set_order_limits(obs, list(range(11)))
+-        return model, obs
+-    assert name == "mixed"
+-    obs = _cat_obs(
+-        [
+-            make_obs(envs=2, own_actors=(1, 241), rival_actors=(7, 3), order_limit=10),
+-            make_obs(envs=2, own_actors=(5, 2), rival_actors=(1, 60), order_limit=4),
+-            make_obs(envs=1, own_actors=9, rival_actors=4, order_limit=1),
+-        ]
+-    )
+-    _set_order_limits(obs, [10, 3, 4, 0, 1])
+-    obs.still_playing[1, 0] = False
+-    obs.still_playing[3, 1] = False
+-    return _tiny(), obs
+-
+-
+ @pytest.mark.parametrize(
+     "case", ["dense", "hire_capacity", "stop_every_position", "mixed"]
+ )
+diff --git a/tests/owl/train/test_loss.py b/tests/owl/train/test_loss.py
+index 76e4698..b66b795 100644
+--- a/tests/owl/train/test_loss.py
++++ b/tests/owl/train/test_loss.py
+@@ -1,6 +1,8 @@
+ import owl.train.ppo as ppo
+ import pytest
+ import torch
++from owl.model import StatelessTransformerV1, StatelessTransformerV1Config
++from owl.rl import ActionPureConfig, EntityBasedConfig
+ from owl.train import PPOConfig
+ from owl.train.ppo import _ppo_loss
+ 
+@@ -327,9 +329,15 @@ def test_teacher_value_cross_entropy_sums_active_winner_distribution() -> None:
+     )
+     teacher = student_probabilities.clone()
+ 
+-    cross_entropy = ppo._teacher_value_cross_entropy(
++    model = StatelessTransformerV1(
++        StatelessTransformerV1Config(embed_dim=8, depth=1, n_heads=2),
++        obs_spec=EntityBasedConfig(),
++        action_spec=ActionPureConfig(max_per_planet_launches=1),
++    )
++    cross_entropy = model.teacher_value_cross_entropy(
+         student_probabilities.clamp_min(1e-8).log(),
+         teacher,
++        value_mask=teacher > 0,
+     )
+ 
+     assert torch.allclose(
+diff --git a/tests/tools/test_observation_oracle_custody.py b/tests/tools/test_observation_oracle_custody.py
+index 6097976..846dbdc 100644
+--- a/tests/tools/test_observation_oracle_custody.py
++++ b/tests/tools/test_observation_oracle_custody.py
+@@ -503,8 +503,11 @@ def regeneration_harness(
+         "scripts/kaggriculture_observation_oracle/record.rs",
+         "scripts/kaggriculture_observation_oracle/regenerate.py",
+         "engine_rs/TRIM_MANIFEST.json",
+-        "engine_rs/src/lib.rs",
++        "engine_rs/Cargo.toml",
+         "engine_rs/Cargo.lock",
++        "engine_rs/src/lib.rs",
++        "engine_rs/src/econ_attrib.rs",
++        "engine_rs/src/py_random.rs",
+         *(
+             f"engine_rs/fixtures/episode-{episode}.jsonl.gz"
+             for episode in oracle.EPISODES
+@@ -613,6 +616,9 @@ def regeneration_harness(
+         ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+         ("admission", "Cargo.lock"),
+         ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
++        ("producer", "engine_rs/src/py_random.rs"),
++        ("admission", "engine_rs/Cargo.toml"),
++        ("export", "engine_rs/src/econ_attrib.rs"),
+         ("reference", "HEAD"),
+     ],
+ )
+@@ -660,6 +666,50 @@ def test_regeneration_source_identity_is_captured_before_producer(
+     )
+ 
+ 
++def test_regeneration_identity_records_every_engine_build_input(
++    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
++) -> None:
++    root, _calls = regeneration_harness(tmp_path, monkeypatch)
++    output = tmp_path / "final"
++    oracle.regenerate(output, oracle.PIN)
++    identity = json.loads((output / "manifest.json").read_bytes())["source_identity"]
++    recorded = {**identity["dirty_files"]}
++    engine_keys = dict(oracle.ENGINE_PATHS)
++    for key, value in identity["engine"].items():
++        recorded[engine_keys[key]] = value
++    for path in (
++        "engine_rs/Cargo.toml",
++        "engine_rs/Cargo.lock",
++        "engine_rs/src/lib.rs",
++        "engine_rs/src/econ_attrib.rs",
++        "engine_rs/src/py_random.rs",
++    ):
++        assert recorded[path] == oracle.hash_file(root / path)
++
++
++@pytest.mark.parametrize("phase", ["", "producer"])
++def test_regeneration_rejects_an_undeclared_engine_source(
++    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str
++) -> None:
++    root, calls = regeneration_harness(
++        tmp_path,
++        monkeypatch,
++        drift_phase=phase,
++        drift_path="engine_rs/src/undeclared.rs",
++    )
++    if not phase:
++        (root / "engine_rs/src/undeclared.rs").write_bytes(b"mod x;\n")
++    output = tmp_path / "final"
++    with pytest.raises(ValueError, match="undeclared engine source"):
++        oracle.regenerate(output, oracle.PIN)
++    assert ("producer" in calls) == bool(phase)
++    assert not output.exists()
++
++
++def test_declared_engine_inputs_cover_the_live_engine_crate() -> None:
++    oracle.require_declared_engine_sources(ROOT)
++
++
+ def test_missing_corpus_names_the_manifest_and_regeneration_command(
+     tmp_path: Path,
+ ) -> None:

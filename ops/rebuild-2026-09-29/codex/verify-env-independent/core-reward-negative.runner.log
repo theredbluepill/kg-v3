@@ -1,0 +1,24 @@
+{"argv": ["cargo", "test", "--locked", "--offline", "--lib", "reward_rejects_invalid_coefficients_and_handles_huge_counts", "--", "--test-threads=1"], "exit_status": 101, "wall_seconds": 1.5673850839957595, "sampled_process_group_peak_rss_bytes": 547176448, "stop_reason": null, "time_limit_seconds": 115.0, "rss_limit_bytes": 1006632960, "rss_sampling_seconds": 0.1}
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-independent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.97s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 1 test
+test kaggriculture::env_tests::reward_rejects_invalid_coefficients_and_handles_huge_counts ... FAILED
+
+failures:
+
+---- kaggriculture::env_tests::reward_rejects_invalid_coefficients_and_handles_huge_counts stdout ----
+
+thread 'kaggriculture::env_tests::reward_rejects_invalid_coefficients_and_handles_huge_counts' (11702284) panicked at src/kaggriculture/env_tests.rs:95:9:
+assertion failed: c.validate().is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::env_tests::reward_rejects_invalid_coefficients_and_handles_huge_counts
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 278 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+
