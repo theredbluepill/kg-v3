@@ -66,7 +66,7 @@ sources: [{"resource": "repository:python/owl/model/kaggriculture_actor.py"}, {"
 
 ## Limits and reopening conditions
 
-- The masks come from synthetic tables until the Task 1.4 binding exposes `kaggriculture_grammar_tables`. Then implement `native_grammar_tables`, switch the model default, and let `test_native_tables_match_expected_tables` run. Brief item 11 (recorded reference programs) also waits for 1.2.
+- The masks come from synthetic tables until the Task 1.4 binding exposes `kaggriculture_grammar_tables`. Then implement `native_grammar_tables`, switch the model default, and let `test_native_tables_match_expected_tables` run. Brief item 11 (recorded reference programs) also waits for the Task 1.4 binding and model integration of the Task 1.2 native tables.
 - The actor count is the own `actor_mask` sum, which assumes own actors fill slots `0..n-1` in frame order, as the contract and fixture do. `can_act` is not read by the heads.
 - The prefix embeddings (std `D^-0.5`) are added to a LayerNorm-scaled base with no second norm, as the brief specifies. At initialization the prefix signal is about `1/sqrt(D)` of the base. Whether this conditions strongly enough is untested; reopen if per-slot KL or BC accuracy shows weak item/quantity conditioning on kind.
 - The unit input materializes `[rows, 241, 3D]`, which is about 0.8 GB FP32 at 1,024 rows. The reference's factorized projection is mathematically equivalent if memory binds (Phase 6).
