@@ -590,7 +590,12 @@ config and Phase 6.3b plan (`kg/merge-8rank`), which changes only configs,
 tests, the plan and the cookbook, full `just prepare` passes with the same
 engine **69** and root **254 passed, four ignored**, and Python **1,690 passed,
 11 skipped** (the 8-rank config and startup-workload tests added); receipt
-`ops/rebuild-2026-09-29/merge-8rank/prepare.log`. The trim
+`ops/rebuild-2026-09-29/merge-8rank/prepare.log`. After merging Task 7.1's
+opponents (`kg/merge-7-1`), which adds the standalone `opponents_rs` crate and
+changes no engine or root-crate Rust, full `just prepare` passes with the same
+engine **69** and root **254 passed, four ignored**, opponents **22** (12 unit,
+five lifecycle, five oracle), and Python **1,771 passed, 22 skipped**; receipt
+`ops/rebuild-2026-09-29/merge-7.1/prepare.log`. The trim
 checker's fixed authored set is now exactly the replay-parity test plus the
 generated-trace manifest. The native `grammar_tables()` matches all 964 bits of the Python
 heads' `expected_grammar_tables` in a merge-time cross-check, but no Python

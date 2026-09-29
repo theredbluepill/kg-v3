@@ -6,8 +6,8 @@ tags: ["kaggriculture-v3", "adaptation", "opponents", "parity"]
 status: "implemented"
 generated: {"by": "openai/codex; revised by anthropic/claude", "at": "2026-09-29"}
 sources:
-  - resource: "external-repository:/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/task-7.1-impl-prompt.md"
-  - resource: "external-repository:/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/task-7.1-claude-view-probe-lib.rs"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/task-7.1-impl-prompt.md"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/task-7.1-claude-view-probe-lib.rs"
   - resource: "repository:opponents_rs/src/lib.rs"
   - resource: "repository:opponents_rs/src/native_agents.rs"
   - resource: "repository:opponents_rs/src/registry.rs"
@@ -45,6 +45,7 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/7.1/verify-r1/results.md"
   - resource: "repository:ops/rebuild-2026-09-29/7.1/verify-r1/parity-replay.json"
   - resource: "repository:ops/rebuild-2026-09-29/7.1/verify-r1/replay-controller-mutation.log"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/verify-7.1-r2/report.md"
   - resource: "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/kaggle-simulation-container.md"
 ---
 
@@ -138,6 +139,10 @@ cases, view/visibility, lifecycle, determinism and the five-test oracle suite. R
 private perturbations never change an action at seven checkpoints per seat;
 own-state perturbations do (positive control). Mutations in `review/mutations.log`
 (dropping the step guard, a stale snapshot, a wrong `fib`) each fail tests.
+Codex's independent verification r2 approved `908c73f`: it reran the checks,
+regenerated all eight oracles, their manifest and the replay fixture
+byte-for-byte, and detected 36 injected changes in 13 scratch trials, all
+restored (`ops/rebuild-2026-09-29/codex/verify-7.1-r2/report.md`).
 
 **Coverage gaps.** The oracles exercise openings, 29 day resets per seat, weeds,
 hires (R04, EcoBot, E776) and final-day sells. No trace has a rejected step, a

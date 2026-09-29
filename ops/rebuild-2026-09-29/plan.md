@@ -311,7 +311,7 @@ The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cov
 
 ## Phase 7 — Evaluation and packaging
 
-- [ ] **7.1 (Codex) Opponents:** import 3–5 native bots, chosen for different play styles (e.g. v43, farm2945, cha22, starter), as V with their own manifest and parity checks.
+- [x] **7.1 (Codex) Opponents:** (merged at `908c73f` by `b6cd4f2`) import 3–5 native bots, chosen for different play styles (e.g. v43, farm2945, cha22, starter), as V with their own manifest and parity checks.
 - [ ] **7.2 (Claude) Panel script:** win rate, bank margin, seeds, both seats, denominators, legality, completion and runtime, labelled selection vs held-out.
 - [ ] **7.3 (Codex) Replay export:** Kaggle episode format, round-tripped through the native engine from the seed header; 8 replays per evaluation.
 - [ ] **7.4 (Claude) Kaggle agent packaging:** validated on one bounded local episode.

@@ -1,6 +1,6 @@
 # Rebuild phase status
 
-**As of 2026-09-29 22:15 HKT (14:15Z).** The integration branch `kg/isaiah-gap-closure` is at `666deec`. This file is on `kg/merge-custody`, which sits on `666deec` and adds these: the value-gap merge `2f535ea`, the phase-map merge `2ebf538`, the architecture-image record `1df17dd`, the evidence-custody commits `c8aaaac`, `470b527` and `7911b16`, and the custody-review fixes that follow them (including the value-gap r1 edits). Rows marked **merged (custody)** land with that branch.
+**As of 2026-09-29 23:05 HKT (15:05Z).** The integration branch `kg/isaiah-gap-closure` is at `faed717`, which includes the custody branch (`kg/merge-custody`: the value-gap merge `2f535ea`, the phase-map merge `2ebf538`, the architecture-image record `1df17dd`, the evidence-custody commits `c8aaaac`, `470b527` and `7911b16`, and the custody-review fixes). This file is on `kg/merge-7-1`, which sits on `faed717` and adds the Task 7.1 merge `b6cd4f2` and its landing record. Rows marked **merged (custody)** landed with the custody branch; the 7.1 row lands with `kg/merge-7-1`. Other rows were not re-read at this landing.
 
 This is a working artifact, not a durable cookbook claim. Update it at each landing: a merge, a Codex verdict, or a state change. When a row changes, re-check it against git and the cited report. Don't copy a row into a cookbook note without re-checking it. The cookbook stays organised by concept (`cookbook/references/`, `cookbook/decisions/`). This file is the one place that maps those notes and receipts onto the plan's phases (`ops/rebuild-2026-09-29/plan.md`).
 
@@ -10,7 +10,7 @@ This is a working artifact, not a durable cookbook claim. Update it at each land
 - **`codex/…`** is `rebuild/codex/…`. The custody sweep committed the compact reports for merged work. The inventory and the manifest are described in `rebuild/evidence-custody.md` and `rebuild/evidence-custody.json`.
 - **`codex/…` (local)** means the report is not tracked on any branch. It exists only in the main worktree, `/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/`. This covers in-progress work, which lands with its own merge, and reports written after the 13:48Z inventory.
 - **`<branch>:<path>`** is a path tracked on that branch but not in this tree.
-- **"Merged"** means the commit is an ancestor of `666deec`, or of this branch for the custody rows. Each was checked with `git merge-base --is-ancestor` at 22:10 HKT. Branch heads were read at 22:12 HKT; in-progress branches may have moved since.
+- **"Merged"** means the commit is an ancestor of `666deec`, or of `faed717` for the custody rows, or of this branch for the 7.1 row. Each was checked with `git merge-base --is-ancestor` at 22:10 HKT. Branch heads were read at 22:12 HKT; in-progress branches may have moved since.
 
 State values: **merged**, **merged (custody)**, **approved, not merged** (Codex APPROVE, not on integration), **in review**, **in progress**, **blocked**, **not started**.
 
@@ -27,7 +27,7 @@ The done count only includes plan checkboxes whose work is merged. Rows without 
 | 4 Teacher | 3 / 4 | 4.1–4.3 merged | 4.4 configs (not started) |
 | 5 BC | 0 / 2 | in progress | 5.2 trainer approved and 5.1 preparer approved at `356d19f`, both unmerged; two later preparer commits unreviewed |
 | 6 GPU verification | 1 / 6 | 6.0 merged; evidence merged | 6.1 after 1.4/1.5, 3.5 and 5.2 |
-| 7 Evaluation and packaging | 0 / 5 | 7.1 approved; 7.3 in review; 7.4 brief awaiting re-review | 7.1 merge; 7.3 verification (Codex run active) |
+| 7 Evaluation and packaging | 1 / 5 | 7.1 merged (`kg/merge-7-1`); 7.3 in review; 7.4 brief awaiting re-review | 7.3 verification |
 | 8 Docs and closeout | 0 / 3 | 8.1a partial (custody) | Needs the earlier phases |
 
 Live processes at 22:11 HKT (`ps`):
@@ -115,7 +115,7 @@ Live processes at 22:11 HKT (`ps`):
 
 | Task | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
 |---|---|---|---|---|---|---|
-| 7.1 Opponents | approved, not merged | `kg/rebuild-7-1` `908c73f` (base `b8747b6`): Codex run 2 `7ae9bbf`, Claude review `f15a413`, verify r1 fixes `908c73f` | `codex/verify-7.1-r1.md` REJECT; `codex/verify-7.1-r2.md` APPROVE at `908c73f` (both local) | `kg/rebuild-7-1:ops/rebuild-2026-09-29/7.1/` | `kg/rebuild-7-1:cookbook/references/snapshot-view-isolates-byte-exact-evaluation-opponents.md` | Not rebased on the current integration. |
+| 7.1 Opponents | merged (`kg/merge-7-1`) | `kg/rebuild-7-1` `908c73f` (base `b8747b6`): Codex run 2 `7ae9bbf`, Claude review `f15a413`, verify r1 fixes `908c73f`; merged by `b6cd4f2` | `codex/verify-7.1-r1.md` REJECT; `codex/verify-7.1-r2.md` APPROVE at `908c73f` (evidence `codex/verify-7.1-r2/`); merge verification `codex/verify-merge-7-1-r*.md` | `rebuild/7.1/`; `rebuild/merge-7.1/prepare.log` | `cookbook/references/snapshot-view-isolates-byte-exact-evaluation-opponents.md` | Default config and CPython 3.11 only; learned-seat binding waits on 1.4; own-play replay prefixes only; source-notice limits. Two implementation transcripts stay local (over 512 KiB). |
 | 7.2 Panel script | not started | None | None | None | Contract: `cookbook/decisions/evaluation-preserves-generality-and-evidence.md` | Depends on 7.1 and 6.2. |
 | 7.3 Replay export | in review | `kg/rebuild-7-3` `f23cd4f` (base `0b8cf98`, merges 1.4 at `37c1e51`) | `codex/verify-7.3-r1.md` REJECT; `codex/verify-7.3-r2.md` REJECT on `822c951` (local); `f23cd4f` addresses r2; a Codex run started 22:07 | `kg/rebuild-7-3:ops/rebuild-2026-09-29/7.3/` | `kg/rebuild-7-3:cookbook/references/native-replay-export-preserves-kaggle-episodes.md` | No approving verdict yet. Depends on the unmerged 1.4. |
 | 7.4 Packaging | in review (brief) | `kg/rebuild-7-4-brief` `ff6195e`; review applied in `2ac7ddb` | `codex/brief-7.4-review.md` REVISE on `eccdd12` (local); no re-review found | `kg/rebuild-7-4-brief:ops/rebuild-2026-09-29/briefs/7.4-packaging.md` | `kg/rebuild-7-4-brief:cookbook/references/kaggle-packaging-reuses-the-starter-submission-path.md` | No implementation. The owner decides any submission. |
@@ -146,7 +146,6 @@ These notes exist only on unmerged branches, found with `git diff --diff-filter=
 | Note | Branches |
 |---|---|
 | `cookbook/references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best.md` | `kg/rebuild-bc-trainer`, `kg/rebuild-bc-now` |
-| `cookbook/references/snapshot-view-isolates-byte-exact-evaluation-opponents.md` | `kg/rebuild-7-1` |
 | `cookbook/references/native-replay-export-preserves-kaggle-episodes.md` | `kg/rebuild-7-3` |
 | `cookbook/references/kaggle-packaging-reuses-the-starter-submission-path.md` | `kg/rebuild-7-4-brief` |
 
