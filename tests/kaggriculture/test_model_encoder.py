@@ -107,7 +107,13 @@ def test_stems_tokens_and_trunk_use_isaiah_classes_and_widths() -> None:
     assert model.board_tokens.shape == (2, 16)
     assert model.actor_plan_tokens.shape == (1, 16)
     assert model.critic_value_tokens.shape == (2, 16)
-    assert not any(isinstance(m, nn.Embedding) for m in model.modules())
+    # Encoder categories are one-hot stem inputs; embeddings exist only in the
+    # game-specific action heads (Task 2.3).
+    embeddings = [
+        name for name, m in model.named_modules() if isinstance(m, nn.Embedding)
+    ]
+    assert embeddings
+    assert all(name.startswith("actor.") for name in embeddings)
 
 
 def test_preset_shares_isaiah_6m_trunk_except_depth() -> None:
@@ -165,7 +171,7 @@ def test_initialization_follows_isaiah_scheme() -> None:
     _assert_orthogonal_gain(model.critic_head.up, hidden, "critic_head.up")
     _assert_orthogonal_gain(model.critic_head.out, 1.0, "critic_head.out")
     norms = [m for m in model.modules() if isinstance(m, nn.LayerNorm)]
-    assert len(norms) == 2 * 2 + 1  # two per block plus final_norm
+    assert len(norms) == 2 * 2 + 1 + 1  # two per block, final_norm, actor source
     for norm in norms:
         torch.testing.assert_close(norm.weight, torch.ones_like(norm.weight))
         assert int(torch.count_nonzero(norm.bias)) == 0
@@ -347,7 +353,7 @@ def test_masked_actors_and_shops_do_not_affect_present_tokens() -> None:
     torch.testing.assert_close(a.hidden[present], b.hidden[present])
 
 
-def test_every_api_rejects_hidden_state_and_heads_are_deferred() -> None:
+def test_every_api_rejects_hidden_state() -> None:
     model = _tiny()
     obs = make_obs()
     actions = kt.KaggricultureActions(
@@ -363,14 +369,8 @@ def test_every_api_rejects_hidden_state_and_heads_are_deferred() -> None:
     ):
         with pytest.raises(ValueError, match="stateless"):
             call()
-    for call in (
-        lambda: model(obs),
-        lambda: model.evaluate_actions(obs, actions),
-        lambda: model.serve(obs),
-        lambda: model.serve(obs, deterministic=True),
-    ):
-        with pytest.raises(NotImplementedError, match=r"Task 2\.3"):
-            call()
+    with pytest.raises(ValueError, match="dones"):
+        model.evaluate_actions(obs, actions, dones=torch.zeros(1, 2))
 
 
 def test_unexpected_recurrent_checkpoint_keys_are_rejected() -> None:
@@ -471,6 +471,8 @@ def test_padded_chunks_dispatch_exact_row_slices_in_order(
     monkeypatch.setattr(model, "_forward_transformer_trunk", spy)
     with torch.inference_mode():
         chunked = model.encode_observations(obs).hidden
+    # Only the trunk sees the lowered limit here; restore it before the heads.
+    monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", 2**31)
     assert [x.shape[0] for x, _ in seen] == sizes
     start = 0
     for x, mask in seen:
@@ -782,7 +784,8 @@ def test_critic_is_isaiah_output_projection_shared_across_players() -> None:
     model = _tiny()
     assert type(model.critic_head) is OutputProjectionMLP
     assert model.critic_head.out.out_features == 1
-    assert model.get_output_layers() == (model.critic_head.out,)
+    assert model.get_output_layers()[0] is model.critic_head.out
+    assert model.get_output_layers()[1:] == model.actor.get_output_layers()
 
 
 def test_values_are_two_p_self_minus_one_from_a_winner_softmax() -> None:
