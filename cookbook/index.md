@@ -15,7 +15,8 @@ The repository's cookbook records reusable decisions and knowledge across bounde
 
 # Browse
 
-- [[references/index|Adaptation contracts and verification boundaries]]
+- [[references/index|Adaptation contracts and verification boundaries]], grouped by rebuild phase
+- Phase tracker (working artifact, task state per phase): `ops/rebuild-2026-09-29/phase-status.md`
 
 - [[decisions/index|Decisions]]
 - [[workflows/index|Workflows]]

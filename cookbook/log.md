@@ -1,5 +1,22 @@
 # Change log
 
+## 2026-09-29 — Group the References index by rebuild phase and add a phase tracker
+
+The owner asked whether a phase-based cookbook record existed. None did. Notes
+are concept-scoped, and phase state lived only in `plan.md` checkboxes, receipts
+and the untracked pause checkpoint. The
+[[references/index|References index]] is now grouped by phase (0/1 engine,
+2 model, 3 trainer, 4 teacher, 5/7 data preparation, 6 GPU evidence,
+cross-cutting). Its "Reference branch (historical)" section keeps only the five
+notes that describe `kg/reference-2026-09-29`. Four current-tree notes (native
+semantics, compiled GEMM, encoder, grammar heads) and the starter-history note
+moved out of that section. Entry text is unchanged. Task state stays out of the
+cookbook: `ops/rebuild-2026-09-29/phase-status.md` is a dated working tracker,
+built from three surveys and rechecked with `git merge-base --is-ancestor`
+against `b8747b6`. It lists notes that exist only on unmerged branches, which
+are not linked yet. `plan.md` now ticks only tasks merged into integration and
+marks 4.1–4.3 and 6.0 as approved, not merged.
+
 ## 2026-09-29 — Capture every engine build input in observation-oracle custody
 
 Codex verification r1 of the Task 1.3 merge (`e197528`, REJECT) found that the
