@@ -2651,7 +2651,9 @@ def _checkpoint_nonnegative_int(value: object, *, name: str) -> int:
     return value
 
 
-_CHECKPOINT_KEYS = frozenset(
+# Every top-level key ``PPOTrainer.write_checkpoint`` saves; the single allowed
+# set for every run_ppo/PPOTrainer checkpoint loader.
+CHECKPOINT_KEYS = frozenset(
     {
         "model",
         "optimizer",
@@ -2665,6 +2667,8 @@ _CHECKPOINT_KEYS = frozenset(
         "wandb_run_id",
     }
 )
+# Keys a full checkpoint may omit (older checkpoints lack them).
+OPTIONAL_CHECKPOINT_KEYS = frozenset({"total_active_entities"})
 
 
 def reject_unknown_checkpoint_keys(checkpoint: dict[object, object]) -> None:
@@ -2673,15 +2677,24 @@ def reject_unknown_checkpoint_keys(checkpoint: dict[object, object]) -> None:
     Anything else (for example opponent identity or carried hidden state) is
     rejected, never silently ignored. A model-weights checkpoint may omit keys.
     """
-    unexpected_keys = set(checkpoint) - _CHECKPOINT_KEYS
+    unexpected_keys = set(checkpoint) - CHECKPOINT_KEYS
     if unexpected_keys:
         raise ValueError(
             f"checkpoint has unexpected keys {sorted(map(str, unexpected_keys))}"
         )
 
 
+# Keys ``_checkpoint_metadata`` reads; a model-only checkpoint lacks them.
+_METADATA_CHECKPOINT_KEYS = frozenset(
+    {"model", "env_steps", "player_step_total", "total_games_played", "wandb_run_id"}
+)
+
+
 def _checkpoint_metadata(checkpoint: dict[object, object]) -> PPOCheckpointMetadata:
     reject_unknown_checkpoint_keys(checkpoint)
+    missing_keys = _METADATA_CHECKPOINT_KEYS - set(checkpoint)
+    if missing_keys:
+        raise ValueError(f"checkpoint is missing keys {sorted(missing_keys)}")
     total_active_entities = checkpoint.get("total_active_entities", 0)
     return PPOCheckpointMetadata(
         env_steps=_checkpoint_nonnegative_int(

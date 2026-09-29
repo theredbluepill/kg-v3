@@ -169,8 +169,10 @@ scheduler state. `--load-model-weights-mode model_fresh_critic_head`
 (`critic_head.*`), which keeps the fresh launch's initialization; the optimizer
 starts fresh as in `model_only`. The checkpoint must still hold every model
 tensor, and any checkpoint key or model tensor the trainer does not save is
-rejected (also by the `teacher_init` loader).
-resume launches load checkpoint weights and optimizer state without resetting
+rejected (also by the `teacher_init` loader). The main rank records the
+checkpoint's resolved path, SHA-256 and load mode in the run directory's
+`warm_start.json` and as `warm_start/*` metric-run summary keys.
+Resume launches load checkpoint weights and optimizer state without resetting
 the model first.
 Set `model.lora` on stateless transformer configs to run PPO as a LoRA
 fine-tune. LoRA freezes the base model, wraps selected linear projections, and

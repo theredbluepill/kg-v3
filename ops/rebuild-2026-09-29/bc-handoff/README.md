@@ -40,12 +40,13 @@ the BC critic's value distribution on a real held-out game.
   `PPOTrainer.load_model_weights` into eager, 2-rank and 8-rank models; values,
   winner probabilities and log-probs on 8 real rows are equal across the three
   and finite; policy-seat turn NLL 0.419 on those rows.
-- `critic_probe.txt` (all 360 rows of the shard): with the BC critic head,
-  700 of 720 seat values (97.2 %) have |value| > 1 − 2e-6 (both seats on 345
-  of 360 turns), and the values are already [−1, 1] at turn 20 of 720. With
-  each model's target set opposite to its own prediction, the MSE value loss's
-  gradient norm on `critic_head` is 0.118 with the BC head and 12.4 with a
-  fresh head. With a
+- `critic_probe.txt` (saturation over all 360 rows of the shard): with the BC
+  critic head, 700 of 720 seat values (97.2 %) have |value| > 1 − 2e-6 (both
+  seats on 345 of 360 turns), and the values are already [−1, 1] at turn 20 of
+  720 (row 10, the first printed row after turn 0; turns 1–19 were not
+  printed). On a 30-row sample (every 12th row), with each model's
+  target set opposite to its own prediction, the MSE value loss's gradient norm
+  on `critic_head` is 0.118 with the BC head and 12.4 with a fresh head. With a
   fresh head, no row saturates (mean |value| 0.468) and the actor log-probs are
   bit-identical to the BC-head model's.
 - Prohibited state: before this change `PPOTrainer.load_model_weights` ignored
@@ -53,7 +54,10 @@ the BC critic's value distribution on a real held-out game.
   `ppo.reject_unknown_checkpoint_keys` now rejects them, in
   `ppo._checkpoint_metadata` and in `run_ppo._load_model_weights` (the
   `teacher_init` loader, which also ignored them: Codex r1 P2). Unknown model tensors were
-  already rejected by `load_model_state_dict_allowing_lora`.
+  already rejected by `load_model_state_dict_allowing_lora`. A minimal
+  `{"model": ...}` checkpoint loads only through the `teacher_init` loader;
+  through `--load-model-weights` it now fails with a named
+  `checkpoint is missing keys [...]` error instead of a bare `KeyError`.
 
 ## Decision and launch
 
@@ -72,6 +76,9 @@ torchrun --nproc-per-node 2 scripts/run_ppo.py configs/kaggriculture_2rank.yaml 
   --load-model-weights-mode model_fresh_critic_head
 ```
 
+The run directory's `warm_start.json` (and the `warm_start/*` metric-run summary
+keys) must then show SHA-256 `fd854587…6f51` and mode `model_fresh_critic_head`.
+
 ## Checks
 
 - `targeted-tests.log`: 14 passed (the new handoff tests, 3 configs × 3 modes,
@@ -81,10 +88,47 @@ torchrun --nproc-per-node 2 scripts/run_ppo.py configs/kaggriculture_2rank.yaml 
   12 skipped, docs fresh. It needed two pre-existing docstring fixes
   (`bc_data.py`, `bc.py`) for ruff D205/D209.
 
+## Claude verification r1 fixes
+
+Report: `ops/rebuild-2026-09-29/codex/claude-verify-bchandoff-r1.md` (main
+checkout; REQUEST CHANGES, two P2s, four P3s).
+
+- P2-1 (mode wiring untested; M8/M9 survived):
+  `test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher` now
+  runs `main` once per mode through the fake trainer and checks the mode
+  passed to `_fresh_state_keys_for_mode`, the `fresh_state_keys` and the
+  `load_optimizer` flag.
+- P2-2 (no warm-start custody): on a fresh launch with `--load-model-weights`
+  the main rank writes `warm_start.json` (resolved path, SHA-256, mode) and
+  sets `warm_start/*` metric-run summary keys; tested in the same `main` test
+  and in `test_run_training_session_sets_launch_summaries`.
+- `mutations-r1fix.txt`: M8 2 failed, M9 1 failed; dropping the
+  `warm_start.json` write 3 failed, the summaries 1 failed, the digest 3
+  failed.
+- P3-1: `launch-train.sbatch` accepts `model_fresh_critic_head`;
+  `docs/containerization.md` documents it.
+- P3-2: loader-scope wording narrowed to `run_ppo`/`PPOTrainer`, the Orbit
+  inference/tooling loaders named as unchecked, and the minimal-checkpoint
+  sentence scoped to `teacher_init`; `ppo._checkpoint_metadata` now raises a
+  named `ValueError` for missing metadata keys (test in `test_bc.py`).
+- P3-3: one exported `ppo.CHECKPOINT_KEYS`/`OPTIONAL_CHECKPOINT_KEYS` pair
+  feeds `reject_unknown_checkpoint_keys` and `run_ppo._checkpoint_metadata`,
+  with tests that `write_checkpoint` saves exactly that set and that
+  `run_ppo._checkpoint_metadata` follows it.
+- P3-4: the 4-rank claim is now stated as following from equal model
+  sections (`real_check.txt` covers eager, 2-rank and 8-rank). The critic
+  gradient figure is labelled as a 30-row sample (every 12th row).
+- `py-prepare-r1fix.log`: `just py-prepare` after these fixes (2,196 passed, 12 skipped,
+  docs fresh).
+- `targeted-tests-r1fix.log`: the handoff tests with the real checkpoint and
+  shard after these fixes, 13 passed, 0 skipped (peak RSS 1.54 GB, over the
+  1 GB tiny-check budget).
+
 ## Limits
 
-- `run_ppo` still stops before the environment for Kaggriculture; the tests call
-  the load function the fresh-launch branch calls, not `main`. No PPO update ran
+- `run_ppo` still stops before the environment for Kaggriculture; `main`'s
+  fresh-launch branch runs only through a fake trainer, and the handoff tests
+  call the load function it calls on Kaggriculture models. No PPO update ran
   from the BC checkpoint, so whether the fresh head learns faster than the BC
   head is inferred from the gradient probe, not measured.
 - One real validation game; the saturation fraction is not a corpus statistic.

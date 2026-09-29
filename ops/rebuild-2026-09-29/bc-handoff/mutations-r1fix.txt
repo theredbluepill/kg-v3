@@ -1,0 +1,18 @@
+Mutation re-run after the Claude verification r1 fixes (2026-09-30, Mac CPU).
+Each mutation was applied to scripts/run_ppo.py alone, then
+  OMP_NUM_THREADS=2 uv run pytest -q -p no:cacheprovider \
+    tests/kaggriculture/test_bc.py tests/scripts/test_run_ppo.py tests/kaggriculture/test_teacher.py
+ran, and the file was restored byte-for-byte (cmp) afterwards.
+Unmutated baseline for these three files: 196 passed, 6 skipped.
+
+M8  main passes "model_only" instead of the launch mode to _fresh_state_keys_for_mode
+    CAUGHT: 2 failed (test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher
+    [model_and_optimizer], [model_fresh_critic_head])
+M9  main loads optimizer state for any mode except model_only
+    CAUGHT: 1 failed ([model_fresh_critic_head])
+WS  warm_start.json written under another name
+    CAUGHT: 3 failed (all three modes)
+SUM warm_start/* summary keys not set
+    CAUGHT: 1 failed (test_run_training_session_sets_launch_summaries)
+SHA warm_start.json records a constant instead of the checkpoint digest
+    CAUGHT: 3 failed (all three modes)

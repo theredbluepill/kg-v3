@@ -1113,6 +1113,16 @@ def test_ppo_load_rejects_prohibited_checkpoint_state(
         path=tmp_path / "minimal.pt",
         device=torch.device("cpu"),
     )
+    # --load-model-weights needs the run metadata; a minimal checkpoint fails
+    # with a named error rather than a bare KeyError.
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"checkpoint is missing keys \['env_steps', 'player_step_total', "
+            r"'total_games_played', 'wandb_run_id'\]"
+        ),
+    ):
+        load({"model": clean["model"]}, "minimal-weights.pt")
     # Nor inside the model state: an opponent embedding has no place to load.
     tainted = {
         **clean,
