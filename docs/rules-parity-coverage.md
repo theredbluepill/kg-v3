@@ -463,7 +463,15 @@ config and Phase 6.3b plan (`kg/merge-8rank`), which changes only configs,
 tests, the plan and the cookbook, full `just prepare` passes with the same
 engine **69** and root **254 passed, four ignored**, and Python **1,690 passed,
 11 skipped** (the 8-rank config and startup-workload tests added); receipt
-`ops/rebuild-2026-09-29/merge-8rank/prepare.log`. The trim
+`ops/rebuild-2026-09-29/merge-8rank/prepare.log`. After merging Tasks 1.4 and
+1.5 (`kg/merge-env-adapter`, onto the GPU-receipts integration `666deec`), full
+`just prepare` passes with engine **69** (41 unit, nine RNG, 19 replay-parity),
+root **274 passed, five ignored** (Task 1.4's native lifecycle, admission and
+recorder tests added) and Python **2,319 passed, 10 skipped** (both sides'
+suites; Task 1.5 un-skips the native-table and evaluation-env tests, while
+the four teacher trainer/run_ppo seam tests, CUDA, pinned-memory, flash-attn and
+x86 quantization cases stay skipped); receipt
+`ops/rebuild-2026-09-29/merge-env-adapter/prepare.log`. The trim
 checker's fixed authored set is now exactly the replay-parity test plus the
 generated-trace manifest. The native `grammar_tables()` matches all 964 bits of the Python
 heads' `expected_grammar_tables` in that merge-time cross-check. Task 1.4 now
