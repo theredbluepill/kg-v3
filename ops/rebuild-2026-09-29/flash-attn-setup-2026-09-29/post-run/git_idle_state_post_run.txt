@@ -1,0 +1,19 @@
+# post-run git/idle-state receipt for pod w7ia3zvxqsvs3g (read-only commands; taken AFTER Phase 6.0 ended at ~06:27Z, not during it)
+date_utc: 2026-09-29T06:36:54Z
+$ git rev-parse HEAD
+69397da3d1559be4fbb525636122d8a9bc614a49
+$ git symbolic-ref -q HEAD   # exit 1 = detached HEAD
+exit=1
+$ git status --porcelain   # empty = clean (runs/ is gitignored)
+exit=0
+$ git status --porcelain --untracked-files=no | wc -l
+0
+$ git check-ignore -v runs/flash-attn-setup-2026-09-29
+.gitignore:27:runs/	runs/flash-attn-setup-2026-09-29
+exit=0
+$ nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+0, 0 MiB, 0 %
+1, 0 MiB, 0 %
+$ nvidia-smi --query-compute-apps=pid,process_name --format=csv,noheader   # empty = no compute apps
+$ ps -eo pid,cmd | grep -E "python|torchrun|run_ppo|cargo|pip" | grep -v grep | wc -l
+0

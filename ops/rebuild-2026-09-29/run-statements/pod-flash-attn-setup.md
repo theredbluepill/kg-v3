@@ -1,0 +1,42 @@
+# Run statement — flash-attn on the pod and the real FlashAttention path (Phase 6.0, single GPU, ≤ 90 min)
+
+- **Question (environment + diagnostic, not training):** the GEMM-limit probe found no `flash-attn` in the pod venv, while our preset (`configs/model/kaggriculture.yaml`) sets `force_flash_attn: true`. Can a v3 environment on the pod install `flash-attn 2.8.3` through the project's `flash-attn` extra against the locked torch 2.9.0+cu128, and does the model's packed FlashAttention varlen path then actually run and agree with SDPA on sm_120 (RTX PRO 6000 Blackwell)?
+- **Hypotheses and discriminating observations:**
+  - **Wheel availability:** with `FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE` (pyproject `extra-build-variables`) flash-attn's `setup.py` downloads `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` from the v2.8.3 GitHub release; if the download failed, SKIP_CUDA_BUILD would produce a wheel *without* `flash_attn_2_cuda`, so `import flash_attn` failing (or `flash_attn_available()` false) is the discriminating signal. Pre-check (Mac, 06:18Z): HTTP 200 for both the torch2.9 and torch2.8 cp312 cxx11abiTRUE wheel URLs.
+  - **sm_120 support:** the sdist `setup.py` (sha256 of sdist `1e71dd64…0370d`, equal to the `uv.lock` hash) defaults `FLASH_ATTN_CUDA_ARCHS="80;90;100;120"` and adds `arch=compute_120,code=sm_120` when the CUDA toolkit is ≥ 12.8. The installed `.so` is checked with `cuobjdump --list-elf` for an `sm_120` cubin. No sm_120 cubin and no compatible PTX, or a "no kernel image" error on the smoke → blocker, reported as such (no workaround).
+  - **Kernel numerics (a):** `flash_attn_varlen_func` on BF16 packed q/k/v (8 heads, head_dim 32, 256 sequences of 214–709 tokens, ~180k total) vs per-sequence `F.scaled_dot_product_attention` in fp32 math: expected max |Δ| at BF16 noise (≲ 1e-2). A large diff or error → kernel wrong/unsupported on sm_120.
+  - **Model path (b):** `KaggricultureTransformer` with the preset config (width 256, depth 8, 8 heads, `force_flash_attn=True`), fp32 params under `torch.autocast(bfloat16)` with TF32 on, on a 256-row contract-valid batch from `tests/kaggriculture/conftest.py::make_obs` (128 envs, varied actor/shop counts). Evidence the flash path ran: `use_flash_attn(x)` true, a counting wrapper on `owl.model.kaggriculture.pack_sequence` fires once per forward, and the torch profiler records a flash-attn forward CUDA kernel (`flash_fwd*`) in both eager and compiled (`compile_transformer_trunk(mode="max-autotune-no-cudagraphs")`, dynamic) runs. Compiled vs eager and flash vs padded SDPA (same weights, `use_flash_attn` patched false, `force_flash_attn=False`) over present tokens: expected BF16-level agreement; report max |Δ|, mean |Δ| and the fraction outside `0.02 + 0.02|ref|`.
+  - **Tests (c):** `uv run pytest tests/owl/model/test_attn.py -q` runs the two flash-attn CUDA tests that skip on the Mac (expected: all pass, 0 skipped).
+- **Inputs and code path:**
+  - Source: integration branch `kg/isaiah-gap-closure` at `69397da3d1559be4fbb525636122d8a9bc614a49` (tree `eef9249e…`; `python/owl/model` tree `2a5a02cf…`; `uv.lock` sha256 `f3311c31…07f5`; `pyproject.toml` sha256 `6912a9e9…bb01`; `python/owl/model/kaggriculture.py` sha256 `92f4df61…9dee`). Transferred as `git bundle create v3.bundle HEAD` + scp; cloned to `/workspace/kg-v3-rebuild` and checked out at that commit. No push to origin, no credentials copied.
+  - Environment: `/workspace/kg-v3-rebuild/.venv`, Python 3.12, `uv sync --frozen --group dev` then `--extra flash-attn` (torch 2.9.0+cu128 and triton 3.5.0 from the lock; flash-attn 2.8.3 via the extra). System uv 0.9.0 and the pod's existing rustup toolchain `nightly-2026-04-18` (matching `rust-toolchain.toml`) are used as found; nothing system-wide is upgraded. Rust extension built with `uv run maturin develop` (the justfile `build` recipe).
+  - Smoke script: `ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/smoke_flash.py` (sha256 recorded in the receipt), run with `CUDA_VISIBLE_DEVICES=0`.
+  - Hardware: pod `w7ia3zvxqsvs3g`, 2× RTX PRO 6000 Blackwell (cc 12.0), driver 595.91.07, GPU 0 only.
+- **Stopping condition:** the three smoke parts complete, or the first hard blocker (wheel unavailable and no sm_120 support, import failure, "no kernel image"), or 90 minutes wall. If a source build becomes necessary it is bounded by `MAX_JOBS` sized to the pod's cgroup (54 CPUs quota, RAM ample) and `TORCH_CUDA_ARCH_LIST=12.0`/`FLASH_ATTN_CUDA_ARCHS=120`, and counts against the same 90 minutes.
+- **Budget:** ≤ 90 min wall on the already-running pod ($4.18/h ≈ $6.3 max; no new billable resource).
+- **Artifacts:** pod `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` (setup logs, `versions.json`, `cuobjdump` listing, smoke JSON/log, pytest log). Local copy of logs and a summary in `ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/`; result section "Phase 6.0 — flash-attn on the pod" in `ops/rebuild-2026-09-29/results.md`.
+- **Safety:** pre-check 06:16Z: `nvidia-smi` 0 MiB / 0 % on both GPUs, no compute apps, no python/torchrun/run_ppo/cargo/pip process. Re-checked immediately before the smoke. `/workspace/kg-v3` and its `.venv` are not touched; `/workspace/gemm-limits-src-1ddc71d` is not touched. No driver/CUDA/system-torch changes, no security changes. Never stop, restart or delete the pod; it is left running and idle.
+
+---
+
+## Post-run addendum (2026-09-29 ≈06:40Z, after Codex review `codex/verify-flash-attn-r1.md`)
+
+The text above this rule is the pre-run statement, byte-for-byte: its first 5,427 bytes hash to sha256 `405c4bd62b19ad072c17e3039276d010ad0e8740a2f2bc3a44b9f027492aaac3`. Check with `head -c 5427 pod-flash-attn-setup.md | shasum -a 256`. Nothing above the rule was edited after the run.
+
+**Custody of this statement.** Git first records the file in `4fd40c7` at 06:28:07Z, which is after execution. That commit alone does not show when the statement was written. The operator session's transcript does show the timing:
+- The `Write` of this file happened at **06:17:58.822Z**, and the written content has the same sha256 (`405c4bd6…aac3`).
+- The first command that changed the pod (bundle, clone, checkout) started at **06:18:04Z**.
+- The earlier 06:16:25Z call only read state.
+
+The excerpts are in `../flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`. That transcript is a local harness log kept outside git and is not tamper-evident. The excerpt file records its sha256 at extraction time. No copy of this statement was placed on the pod.
+
+**Corrections to the wording above.** The original text stays as written; these corrections apply to it.
+- **(a) reference.** "fp32 SDPA in fp32 math" means `F.scaled_dot_product_attention` on fp32 inputs, with the backend chosen automatically. The math backend was not selected explicitly, and the backend actually used was not profiled.
+- **(b) expectation.** The trunk result did not meet the "BF16-level agreement" expectation as a proven claim. The trunk smoke completed with outliers: 0.017–0.021 % of elements fall outside `0.02 + 0.02|ref|`, and the script asserts no numerical acceptance. See `../results.md` for details.
+- **Safety claims.** Some of the safety claims above now have receipts:
+  - Pre-check 06:16:25Z, pre-smoke re-check 06:24:26Z, end-of-run check 06:26:39Z and post-commit check 06:28:14Z are all in the transcript excerpts.
+  - A fresh post-run check at 06:36:54Z is in `../flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`.
+  - "`/workspace/kg-v3` and its `.venv` are not touched" needs a qualification. A read-only check at 06:38Z (`../flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found no file in `/workspace/kg-v3` with a changed mtime. However, 19,796 entries in `/workspace/kg-v3/.venv` have a changed ctime. All of those are hard-linked regular files, and the sampled files share their inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, but the two venvs now share inodes.
+  - `/workspace/gemm-limits-src-1ddc71d` has no mtime or ctime changes.
+  - The driver is still 595.91.07, and the system torch is still 2.8.0+cu128 (`version.py` mtime 2025-10-09).
+  - "No credentials copied" and "nothing pushed" remain **operator-reported**. The only retained evidence is the pod clone's remote list, which shows just the bundle path.

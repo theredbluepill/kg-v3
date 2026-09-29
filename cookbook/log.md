@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Merge the kg/rebuild-model ops evidence and cookbook refresh onto the integration
+
+The Codex-approved `kg/rebuild-model` commits `4fd40c7`..`8093d51` change only `ops/` and `cookbook/`: Phase 6.0 flash-attn, model-only SPS ceiling and ATEN-only GEMM A/B receipts, the cookbook refresh and the [[workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict|codex exec Workflow]]. Two files conflicted. This log keeps both sides, integration first. The [[references/index|References index]] keeps every integration line, including the cuBLAS-only lane's [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] text, adds the two new References at the top and takes the corrected Task 0.3 Rust status. `results.md` auto-merged to the branch's copy, so the integration's "`results.md` lines 259–303" citations now resolve in this tree. The [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment Reference]] no longer says the compiled-GEMM FlashAttention limit awaits revision, because the cuBLAS-only lane revised it.
+
 ## 2026-09-29 — Reconcile the teacher Reference's open dependencies after the merge
 
 Codex verification r1 of the Phase 4 merge (`a424d8c`, APPROVE WITH EDITS,
@@ -483,6 +487,33 @@ Codex verified `0e989a1..5ec3af1` (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/c
 ## 2026-09-29 — Add the Kaggriculture grammar action heads (Task 2.3)
 
 The new [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|heads Reference]] records Task 2.3 as the approved brief v3 specifies. It covers Isaiah's `3D → D` actor input projection; a `KaggricultureGrammarActor` with nine `OutputProjectionMLP` slot heads and prefix embeddings; typed `GrammarTables`, with synthetic expected tables and a named native hook for Task 1.2; exact coupled-Gumbel HIRE sampling; and same-path replay with support, length and canonical flags checked in one host transfer. It also covers the §9 overflow guards (trunk width by enumeration, packed chunking, head-extent chunking). The preset has 6,252,223 parameters, inside the 6–10M budget at depth 8. `tests/kaggriculture`: 256 passed, 1 skipped (waiting on Task 1.2). `just py-prepare`: 979 passed, 4 skipped. Four deliberate mutations failed their tests and were restored byte-for-byte. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now says the packed path chunks instead of raising. On `kg/rebuild-heads`, pending Codex verification.
+
+## 2026-09-29 — Narrow the orchestration-receipt claim in the codex exec workflow
+
+Codex's second cookbook-refresh review (P3) noted that an exit status proves only the child's outcome. The [[workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict|codex exec workflow]] now says that tying a parent's return to a child's exit needs a timestamped process-lifecycle log.
+
+## 2026-09-29 — Apply Codex's cookbook-refresh review and record the codex exec workflow
+
+Codex reviewed the refresh commits `bcd9627`, `5247daa`, `92e88e0` and `9bfa0a0` (APPROVE WITH EDITS; local `ops/rebuild-2026-09-29/codex/verify-cookbook-refresh-r1.md`). All seven edits are applied:
+- The [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling Reference]] no longer claims that comparing complete-work SPS with the ceiling attributes cost to the engine, host work or all-reduce. That needs matched trainer phase measurements. It also drops the "only if" explanation for a trainer above the ceiling. Its r2 manifest line now reads 21/21 checksums verified, with 20 non-README artifacts unchanged and the README's checksum changed.
+- The [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment Reference]], its description and its index line drop the "within BF16 spacing" claim, because the magnitude of the largest-error element was not retained. The measured maxima and tolerance results stay. The hard-link hazard is now scoped to two sampled cross-venv inode checks, with uv-cache causation inferred (the follow-up receipt is added as a source). "The heads did not exist" now reads "the actor heads did not exist (the critic head did)".
+- `ops/rebuild-2026-09-29/plan.md` now labels the parent-return cause of the two incomplete Codex reviews as operator-reported and inferred.
+- The new [[workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict|codex exec Workflow]] records the adaptation from `9bfa0a0`: stdin, foreground, verdict and resume rules, with the transcripts I checked and their limits.
+
+## 2026-09-29 — Correct the Task 0.3 Rust status and the root index's References scope
+
+The [[references/failed-training-reports-status-before-distributed-cleanup|failure-reporting Reference]] and its index line still said Claude's cross-review was pending and Rust parity was blocked (148 passed, 7 failed). Both contradicted the Task 0.3 receipt (`ops/rebuild-2026-09-29/0.3-results.md`, "Claude review") and the earlier log entry: the review found no blocker, and with the git-ignored Orbit fixtures copied in, `cargo test` gave 155 passed, 2 ignored. The [[index|root index]] no longer says every Reference describes `kg/reference-2026-09-29`; the References index states each note's scope. Moving current-tree notes out of that index's "Reference branch" section is left until the in-flight lanes land.
+
+## 2026-09-29 — Record the model-only SPS ceiling and fix non-resolving ops paths
+
+The new [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling Reference]] promotes the component probe (`cb4af49`, `ddf1fb2`; Codex `verify-sps-ceiling` r1 APPROVE WITH EDITS, r2 APPROVE; the ATEN A/B's default arm reproduced its update walls). It is a scoped upper bound with an engine budget of 53–116 µs per env step, not a throughput result, and it is not rankable.
+- The [[decisions/throughput-means-correct-complete-work|throughput Decision]] cited `ops/gpu-sps-2026-09-29/results.md` as if it were in the current tree; it exists only on `kg/reference-2026-09-29`. It now says so and names the rebuild's component Reference.
+- The [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] scopes its host-history paths the same way. It now names the memory metric as the plan's `max_memory_allocated` (not the owner's words), and records that reserved memory and torch's 94.97 GiB denominator differ from that target.
+
+## 2026-09-29 — Record the pod's flash-attn 2.8.3 environment (Phase 6.0)
+
+The new [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment Reference]] promotes the Phase 6.0 receipts (`4fd40c7`, `78df33c`; Codex `verify-flash-attn` r1 APPROVE WITH EDITS, r2 APPROVE). It records the separate venv and its versions, the forward-only flash evidence, and three hazards: the torch 2.9 wheel is a mutable release asset that `uv.lock` does not pin, the old and new venvs share hard-linked files, and two custody claims are operator-reported. Trunk numerics stay unqualified. The compiled-GEMM Reference's "no flash-attn" limit is now stale; its revision is left to the ATEN lane. Evidence: `ops/rebuild-2026-09-29/results.md`, "Phase 6.0".
+
 ## 2026-09-29 — Tighten the compiled-GEMM Reference after Codex's second review
 
 Codex re-verified the GEMM-limit evidence (APPROVE WITH EDITS, no blocking findings; `ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md`). The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] and `results.md` now:

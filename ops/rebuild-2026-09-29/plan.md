@@ -120,8 +120,14 @@ Read reference files with `git show kg/reference-2026-09-29:<path>` (the tag `kg
 git worktree add ../kg-v3-codex -b kg/rebuild-codex kg/isaiah-gap-closure
 (cd ../kg-v3-codex && uv sync --extra reference && cargo fetch)
 codex exec -C ../kg-v3-codex -s workspace-write \
-  -o ops/rebuild-2026-09-29/codex/<task>.md "<task prompt>"
+  -o ops/rebuild-2026-09-29/codex/<task>.md "<task prompt>" \
+  </dev/null 2>&1 | tee ops/rebuild-2026-09-29/codex/<task>-transcript.log
 ```
+
+- **Running `codex exec` (rules adopted after episodes in this rebuild):**
+  - **Close stdin** (`</dev/null`). With an open non-tty stdin, `codex exec` prints "Reading additional input from stdin..." and waits (for example `codex/brief-2.3-r3-transcript.log`).
+  - **Run it in the foreground, or poll until it exits.** A verifier or orchestrator agent must not return while `codex exec` is still running. In Task 1.1b r2 (`verify-1.1b-r2-attempt2-killed-transcript.log`) and Task 2.3 r2 (`verify-2.3-r2-attempt1-killed-transcript.log`) the transcripts stop mid-review without a verdict of their own (their `VERDICT` lines are quoted from the prompt or from earlier reports the reviewer read); that the parent agent's return terminated the child is operator-reported and inferred, since no termination signal or parent-lifecycle receipt was retained. Check that the `-o` report exists and ends with a verdict before treating a run as complete.
+  - **After a usage limit**, keep the failed attempt's transcript under an `-attemptN-<reason>-transcript.log` name, then resume from the partial commit with a separate resume prompt (`<task>-resume-prompt.md`) rather than rerunning from scratch (`task-1.2-impl-resume-*`, `verify-1.1b-r2-attempt1-usage-limit-transcript.log`).
 
 - **Task prompt contents:** the plan path and task id; the Global Constraints (quote the Mac and pod rules); the task's reference files with their dispositions; required tests; and "report changed files, commands run with their results, and open questions".
 - **Contract first:** Task 0.1 fixes the observation, action and env contract before the streams diverge. Changing it later needs both agents to agree, recorded in the contract doc.

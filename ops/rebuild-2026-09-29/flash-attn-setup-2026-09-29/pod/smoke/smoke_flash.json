@@ -1,0 +1,139 @@
+{
+  "torch": "2.9.0+cu128",
+  "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "capability": [
+    12,
+    0
+  ],
+  "tolerance": "|d| <= 0.02 + 0.02|ref|",
+  "a_kernel": {
+    "heads": 8,
+    "head_dim": 32,
+    "n_seq": 256,
+    "total_tokens": 173518,
+    "min_len": 214,
+    "max_len": 709,
+    "out_dtype": "torch.bfloat16",
+    "flash_vs_sdpa_fp32": {
+      "max_abs": 0.00359499454498291,
+      "mean_abs": 0.00010687458416214213,
+      "ref_max_abs": 1.379217505455017,
+      "frac_outside_tol": 0.0,
+      "n": 44420608,
+      "finite": true
+    },
+    "sdpa_bf16_vs_sdpa_fp32_noise_baseline": {
+      "max_abs": 0.00359499454498291,
+      "mean_abs": 0.00010589673911454156,
+      "ref_max_abs": 1.379217505455017,
+      "frac_outside_tol": 0.0,
+      "n": 44420608,
+      "finite": true
+    },
+    "flash_vs_sdpa_bf16": {
+      "max_abs": 0.00390625,
+      "mean_abs": 7.03355108271353e-05,
+      "ref_max_abs": 1.3828125,
+      "frac_outside_tol": 0.0,
+      "n": 44420608,
+      "finite": true
+    },
+    "flash_kernels": [
+      "void flash::flash_fwd_kernel<Flash_fwd_kernel_traits<32, 128, 128, 4, false, false, cutlass::bfloat16_t, Flash_kernel_traits<32, 128, 128, 4, cutlass::bfloat16_t> >, false, false, false, false, false, true, false, false>(flash::Flash_fwd_params)"
+    ]
+  },
+  "a_wall_s": 2.8805980682373047,
+  "b_model": {
+    "config": {
+      "model_arch": "kaggriculture_transformer",
+      "embed_dim": 256,
+      "depth": 8,
+      "n_heads": 8,
+      "mlp_ratio": 2.0,
+      "activation": "gelu",
+      "n_scratch_tokens": 4,
+      "force_flash_attn": true
+    },
+    "rows": 256,
+    "make_obs_s": 2.6888558864593506,
+    "present_tokens_total": 173108,
+    "padded_seq_len": 709,
+    "eager_flash_use_flash_attn_x": true,
+    "eager_flash_x_dtype": "torch.bfloat16",
+    "seqlen_min": 221,
+    "seqlen_max": 709,
+    "seqlen_total": 173108,
+    "eager_flash": {
+      "pack_calls": [
+        [
+          173108,
+          709
+        ]
+      ],
+      "varlen_attention_python_calls": 8,
+      "flash_kernels": [
+        "void flash::flash_fwd_kernel<Flash_fwd_kernel_traits<32, 128, 128, 4, false, false, cutlass::bfloat16_t, Flash_kernel_traits<32, 128, 128, 4, cutlass::bfloat16_t> >, false, false, false, false, false, true, false, false>(flash::Flash_fwd_params)"
+      ],
+      "sdpa_like_kernels": [],
+      "wall_s_profiled": 0.08560657501220703
+    },
+    "compiled_flash_use_flash_attn_x": true,
+    "compiled_flash_x_dtype": "torch.bfloat16",
+    "compiled_flash": {
+      "first_call_compile_s": 20.6303288936615,
+      "pack_calls": [
+        [
+          173108,
+          709
+        ]
+      ],
+      "flash_kernels": [
+        "void flash::flash_fwd_kernel<Flash_fwd_kernel_traits<32, 128, 128, 4, false, false, cutlass::bfloat16_t, Flash_kernel_traits<32, 128, 128, 4, cutlass::bfloat16_t> >, false, false, false, false, false, true, false, false>(flash::Flash_fwd_params)"
+      ],
+      "triton_kernel_count": 12,
+      "wall_s_profiled": 0.022110700607299805,
+      "repeat_consistency_max_abs": 0.0
+    },
+    "compiled_vs_eager_64rows": {
+      "max_abs": 0.0871884822845459,
+      "mean_abs": 0.005415158811956644,
+      "ref_max_abs": 3.864929437637329,
+      "frac_outside_tol": 0.00017485747230239213,
+      "n": 10911744,
+      "finite": true
+    },
+    "eager_padded_use_flash_attn_x": true,
+    "eager_padded_x_dtype": "torch.bfloat16",
+    "eager_padded": {
+      "pack_calls": [],
+      "flash_kernels": []
+    },
+    "compiled_vs_eager_flash": {
+      "max_abs": 0.0871884822845459,
+      "mean_abs": 0.005415042862296104,
+      "ref_max_abs": 4.030257225036621,
+      "frac_outside_tol": 0.0001764613698469475,
+      "n": 44315648,
+      "finite": true
+    },
+    "eager_flash_vs_eager_padded_sdpa": {
+      "max_abs": 0.08051800727844238,
+      "mean_abs": 0.004975189454853535,
+      "ref_max_abs": 4.011500358581543,
+      "frac_outside_tol": 0.00021405532606877387,
+      "n": 44315648,
+      "finite": true
+    },
+    "compiled_flash_vs_eager_padded_sdpa": {
+      "max_abs": 0.07747316360473633,
+      "mean_abs": 0.005459361709654331,
+      "ref_max_abs": 4.011500358581543,
+      "frac_outside_tol": 0.0001858711475506425,
+      "n": 44315648,
+      "finite": true
+    },
+    "masked_positions_zero": true
+  },
+  "b_wall_s": 27.758091926574707,
+  "max_memory_allocated_mib": 1723.91162109375
+}

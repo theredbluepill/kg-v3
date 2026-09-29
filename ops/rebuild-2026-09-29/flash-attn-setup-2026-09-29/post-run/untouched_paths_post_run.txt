@@ -1,0 +1,20 @@
+# post-run read-only check: were paths the run statement promised not to touch modified since the run began? (mtime/ctime evidence only)
+date_utc: 2026-09-29T06:38:19Z
+$ find /workspace/kg-v3 -xdev \( -newermt "2026-09-29 06:16:00Z" -o -newerct "2026-09-29 06:16:00Z" \) | wc -l
+19796
+$ ... | head -5
+/workspace/kg-v3/.venv/bin/maturin
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/__init__.py
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/buf.py
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/mman.py
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/util.py
+$ find /workspace/gemm-limits-src-1ddc71d -xdev \( -newermt "2026-09-29 06:16:00Z" -o -newerct "2026-09-29 06:16:00Z" \) | wc -l
+0
+$ ... | head -5
+$ nvidia-smi --query-gpu=driver_version --format=csv,noheader
+595.91.07
+595.91.07
+$ python3 -c "import torch;print(torch.__version__, torch.__file__)"   # system python
+2.8.0+cu128 /usr/local/lib/python3.12/dist-packages/torch/__init__.py
+$ stat -c "%y %n" $(python3 -c "import torch,os;print(os.path.dirname(torch.__file__))")/version.py
+2025-10-09 06:07:50.000000000 +0000 /usr/local/lib/python3.12/dist-packages/torch/version.py

@@ -55,12 +55,18 @@ TDD on this version produced **9 expected failures and 2 passing controls**, the
 the final `py-prepare` each pass **722 tests**, with **3 hardware/backend skips**.
 Python preparation also passes formatting, lint, 3.11 syntax, mypy over 48 source
 files and documentation freshness. A separate native Codex review finds no
-task-scope blocker; Claude's cross-review remains pending.
+task-scope blocker, and Claude's cross-review of the production diff found no
+blocking finding (`0.3-results.md`, "Claude review").
 
-`cargo test` and the full `prepare` attempt each report **148 passes, 7 failures,
-2 ignored** because this checkout lacks the generation and replay parity fixtures.
-No Rust source changed, no fixture download ran, and parity requirements were not
-disabled. The receipt records the initial test-style lint failure and its repair.
+In the fresh worktree, `cargo test` and the full `prepare` attempt each reported
+**148 passes, 7 failures, 2 ignored**: the 7 failures were the git-ignored
+generated Orbit parity fixtures missing from that checkout, not a code defect.
+With `tests/fixtures/generation` and `tests/fixtures/orbit_wars_replays` copied
+from the main checkout, Claude's rerun of `cargo test` gave **155 passed, 0
+failed, 2 ignored**; the receipt records only that `cargo test` rerun, not a
+repeated `prepare`. No Rust source changed, no fixture download ran, and parity
+requirements were not disabled. The receipt records the initial test-style lint
+failure and its repair.
 
 W&B is a local test double and CUDA/NCCL entry points are mocked. This does not
 qualify live telemetry, multi-rank execution, CUDA fault recovery, performance or
