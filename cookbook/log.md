@@ -1,5 +1,25 @@
 # Change log
 
+## 2026-09-29 — Apply Codex's review of the Task 5.1 owner-direction edits
+
+Codex reviewed the 5.1 BC data brief after the owner's two directions ("kaggle
+obs shd be step+1"; "you can use current pod to do the BC") and returned
+REVISE (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md`). All
+findings are applied to `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md`. The
+step+1 transition check now builds its header with the recorded `info.seed`:
+on local episode 114406062 the pinned Python engine matched 719/719
+transitions with it, 704/719 with placeholder 0 and 0/719 with the shifted
+pairing, so a placeholder would reject valid demonstrations. The seed stays
+out of encoding, model inputs and shards. The check is an offline root-crate
+Rust binary whose per-turn results go into the manifest, leaving 1.4's
+production API unchanged. The pod run uses a fresh copy-linked venv because
+the existing venvs share hard-linked files. Custody text now cites the
+reference `source.json` archive hash and the ZIP found on the current pod;
+no volume access is needed for the pinned slice. Brief only, no code; the
+Rust harness has not run. The
+[[references/rebuild-data-preparation-preserves-replay-identity|replay identity Reference]]
+records the seed finding and the custody correction.
+
 ## 2026-09-29 — Apply Codex's rereview to the Task 5.1 BC data brief
 
 Codex reread `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` at `bcefd02`
