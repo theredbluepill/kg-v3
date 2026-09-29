@@ -1,5 +1,16 @@
 # Change log
 
+## 2026-09-29 — Close Codex verification of the live parity check
+
+Codex approved Task 1.1b with edits; commit `6217868` fixes them test-first. The
+[[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]]
+now records that the sweep classifies D1/D2 only from the observed mismatch (a
+corrupted state on a D1 line stays unclassified), submits the `null` probe
+exactly, checks full-state rollback on rejected steps and keeps seven minimal
+one-step repros. The rerun 40-game sweep matches the first (306/343 agree, 37
+confirmed D1/D2, 0 new); receipts are in `ops/rebuild-2026-09-29/1.1b/verify-r1/`.
+Kernel bytes are unchanged.
+
 ## 2026-09-29 — Check the Rust kernel live against Kaggle's engine
 
 Owner: “can you add a parity check after your rust engine, with kaggle envcironments?”

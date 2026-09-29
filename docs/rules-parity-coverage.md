@@ -312,11 +312,18 @@ perturbed. A Python test regenerates the committed set from the live engine and
 requires identical bytes; it skips with a message when an isolated 1.32.7
 environment cannot be built offline.
 
-The recorded sweep ran `uv run python scripts/kaggriculture_parity/sweep.py
---games 40` at commit `8ca378b` on the owner's Mac (single process, 46 s):
-base seed 20,260,929, 12 rotating policy/configuration pairs, 343 traces and
-23,339 transitions. Its summary, including per-policy counts and every first
-divergence, is `ops/rebuild-2026-09-29/1.1b/sweep-summary.json`. Set
+The current recorded sweep ran `uv run python
+scripts/kaggriculture_parity/sweep.py --games 40` at commit `6217868` (after the
+verification fixes) on the owner's Mac (single process, 47 s): base seed
+20,260,929, 12 rotating policy/configuration pairs, 343 traces and 23,339
+transitions, 204 Python rejections (155 in games, 49 in probes). All 40 games
+agree; 37 probe divergences are confirmed D1 12 and D2 25 (every D1 ASCII
+recheck passes), with 0 new. Its summary, including per-policy counts and every
+first divergence, is `ops/rebuild-2026-09-29/1.1b/verify-r1/sweep-summary.json`;
+the first sweep at `8ca378b` (same counts, input-only classification, null probe
+submitted as PASS) is kept at `ops/rebuild-2026-09-29/1.1b/sweep-summary.json`.
+With `--include-known-divergences` (12 games, base seed 777), 8 diverge, all
+confirmed (D1 2, D2 6). Set
 `KAGG_PARITY_TRACES=<absolute dir>` (and optionally `KAGG_PARITY_REPORT`) to
 replay a larger directory with the same comparator.
 

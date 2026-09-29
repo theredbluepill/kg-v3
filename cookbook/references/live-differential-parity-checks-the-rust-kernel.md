@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Live differential parity checks the Rust kernel"
-description: "Task 1.1b replays traces generated live from Kaggle's hash-pinned kaggriculture engine through the vendored Rust kernel: 8 committed games and a 40-game local sweep agree; 303 input probes find two malformed-input divergence classes (Unicode digits, unhashable items), recorded as expected failures."
+description: "Task 1.1b replays traces generated live from Kaggle's hash-pinned kaggriculture engine through the vendored Rust kernel: 8 committed games and a 40-game local sweep agree; 303 input probes find two malformed-input divergence classes (Unicode digits, unhashable items), kept as minimal expected failures and classified only from their observed mismatch."
 tags: ["kaggriculture-v3", "adaptation", "parity", "rules-engine"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -19,6 +19,7 @@ sources:
   - resource: "repository:docs/rules-parity-coverage.md"
   - resource: "repository:ops/rebuild-2026-09-29/1.1b/results.md"
   - resource: "repository:ops/rebuild-2026-09-29/1.1b/sweep-summary.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.1b/verify-r1/sweep-summary.json"
 ---
 
 # Live differential parity checks the Rust kernel
@@ -43,15 +44,22 @@ concept beyond that Decision and the coverage document.
   kaggle-environments==1.32.7`, and the project manifest and lock stay unchanged.
 - **Format.** Traces use the official `kaggriculture-re-parity-v1` records. They
   add a `rejected` record for steps on which Python's interpreter raises, where
-  Kaggle's `env.step` keeps its state. Rust must error without mutating state.
+  Kaggle's `env.step` keeps its state. Rust must error without mutating state:
+  public and private values and key order, statuses, rewards and completion.
 - **Inputs.** The inputs come from seeded random, edge-case, Kaggle built-in and
   mixed-seat policies across default, free-hire (250 actors), rich (market-loop
-  escape) and custom configurations. There are also 303 one-command probes.
+  escape) and custom configurations. There are also 303 one-command probes;
+  scripted actions, including a `null` whole action, are submitted exactly.
 - **Comparator.** `replay_parity.rs` compares official, committed-generated and
   `KAGG_PARITY_TRACES` traces using the same code. It reports the first line,
   step, kind and field path, with expected and actual values.
+- **Classification.** The sweep names a known class only when the observed
+  mismatch has that class's signature: D2 needs Python's unhashable
+  `TypeError` and Rust acceptance on that line; D1 needs a Rust recheck, with
+  that line's Unicode digits spelled in ASCII, to pass the line. Otherwise the
+  divergence is new and the sweep exits 1.
 - **Custody.** `engine_rs/fixtures/generated/MANIFEST.json` pins 15 traces
-  (667,059 bytes); `check_engine_trim.py` validates it, and `TRIM_MANIFEST.json`
+  (665,021 bytes); `check_engine_trim.py` validates it, and `TRIM_MANIFEST.json`
   pins the manifest.
 
 ## Findings
@@ -69,8 +77,9 @@ on malformed input:
   lookup: a unit verb, a PLANT crop (also for missing hands), a PICKUP/PLACE
   item, or a BUY_SEED/BUY_ANIMAL item. Rust treats these as no-ops.
 
-The vendored kernel bytes are pinned, so nothing was repaired. Seven minimized
-repros are expected-failure fixtures with explicit reasons. Rust asserts the
+The vendored kernel bytes are pinned, so nothing was repaired. Seven minimal
+repros, one-step games whose first action carries only the divergent field, are
+expected-failure fixtures with explicit reasons. Rust asserts the
 exact divergence, so a change in either engine fails the test. Full-game
 policies exclude D1/D2 inputs by default; with them restored, 8 of 12 games
 diverge, all classified D1/D2. The model's grammar emits only ASCII names and
@@ -82,7 +91,11 @@ accepts external actions would need explicit handling.
 Checks run on this branch are recorded in `ops/rebuild-2026-09-29/1.1b/results.md`:
 66/66 engine tests, the trim checker, the Python tests (including live
 byte-identical regeneration of the committed set), perturbation tests, and
-`just prepare`. Generated games use weak policies (most random seats go
+`just prepare`. Codex verification (`verify-1.1b-r1`) approved with edits; the
+fixes (confirmed classification, exact null probe, full-state rollback check,
+minimal repros, corrected wording) and their checks are recorded in the same
+receipt, with the rerun sweep in `ops/rebuild-2026-09-29/1.1b/verify-r1/`.
+Generated games use weak policies (most random seats go
 bankrupt); only the four official episodes are competitive worlds. Kaggle
 framework behavior outside the interpreter is not modeled. The 40-game, 303-probe
 sweep is a bounded sample, and a pod-scale sweep remains open. Reopen D1/D2 if

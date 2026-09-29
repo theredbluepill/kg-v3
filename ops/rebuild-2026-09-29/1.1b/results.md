@@ -80,8 +80,8 @@ process). The log is `sweep.log`, and the summary is `sweep-summary.json`.
   PICKUP/PLACE item, or a BUY_SEED/BUY_ANIMAL item. Rust accepts the step as a
   no-op. See probes 030–035, 102–113, 118, 144, 145, 179, 180, 290 and 291.
 
-Seven minimized repros in `engine_rs/fixtures/generated/divergence-*.jsonl.gz`
-are expected failures. Rust asserts their exact line, step, kind and field.
+Seven repros in `engine_rs/fixtures/generated/divergence-*.jsonl.gz` (minimal
+since the verification fixes below) are expected failures. Rust asserts their exact line, step, kind and field.
 Evidence is kept in `evidence/first-failing-games/`: the first five failing
 full-game traces, with `rust-report.json` giving each first divergence (steps
 13, 14, 15, 30 and 45).
@@ -89,6 +89,51 @@ full-game traces, with `rust-report.json` giving each first divergence (steps
 `with-known-divergences/` contains 12 games generated with
 `--include-known-divergences` (at `33e1428` plus the uncommitted path fix, seed
 777). Eight diverge; D1 accounts for 2 and D2 for 6, and 0 are unclassified.
+
+## Verification fixes (verify-1.1b-r1)
+
+Codex verified `9ee7fb8` (report
+`/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-1.1b-r1.md`):
+APPROVE WITH EDITS, no blocking findings. Commit `6217868` fixes each edit.
+Tests were written before the fixes; the Rust rollback tests (unresolved names)
+and the repro manifest test were observed failing first:
+
+- **Sweep classification.** `classify` matched inputs only, so a trace corrupted
+  at `public.day` on a D1 line was reported as D1 with `new_divergences: 0`.
+  `confirmed_class` now requires the observed signature: D2 needs a `rejected`
+  record, `TypeError: unhashable type` and Rust `rust_accepted`; D1 needs a
+  Python-accepted transition and a Rust recheck, with only that line's Unicode
+  digits spelled in ASCII, that passes the line. Receipt:
+  `verify-r1/negative-classification.log` (the reviewer's corruption,
+  `{'unclassified': 1}`, new 1).
+- **Null probe.** `None` was the no-script sentinel, so probe 296 (`null` whole
+  action) submitted PASS. `scripted_choices` submits scripted actions exactly;
+  probe 296 now records `null`, Python accepts it and Rust agrees.
+- **Rollback check.** Rejected steps compared order-insensitive `Value`s and
+  skipped statuses/rewards/done. `rollback_difference` compares public and
+  private values and key order, statuses, rewards and completion; three Rust
+  tests cover key-order-only, private-order and scalar mutations.
+- **Minimal repros.** The seven divergence fixtures are one-step games
+  (`episodeSteps` 2) whose first seat-0 action carries only the divergent
+  field; they diverge at line 1, step 0 with the recorded kinds and fields.
+  They were regenerated live; the eight game traces are byte-identical. The 15
+  committed files now total 665,021 bytes.
+- **Wording.** Rich orders are 10^12 units; quantity probes cover the four
+  quantity-taking market verbs; the null probe and minimal repros are described
+  as above.
+
+Checks at `6217868` (Mac, offline):
+
+| Check | Result |
+| --- | --- |
+| `uvx --offline --from rust-just just prepare` (before commit, same tree) | exit 0; root Rust 155 passed/2 ignored; engine 41 + 9 + 19 replay; Python 800 passed, 3 platform skips; docs fresh (`verify-r1/prepare.log`) |
+| `sweep.py --games 40` | 343 traces, 23,339 transitions, 306 agree, 37 diverge (D1 12, D2 25), 0 new; 12/12 D1 rechecks pass; 46.8 s (`verify-r1/sweep-summary.json`, `sweep.log`) |
+| `sweep.py --games 12 --base-seed 777 --no-probes --include-known-divergences` | 8/12 diverge, D1 2, D2 6, 0 new (`verify-r1/with-known-divergences/`) |
+| Corrupted D1 line | unclassified, new 1 (`verify-r1/negative-classification.log`) |
+
+Residual: D1 confirmation depends on the ASCII recheck replay, so a defect that
+coincides with a D1 input and disappears under ASCII spelling would still be
+classified D1.
 
 ## Limits
 
