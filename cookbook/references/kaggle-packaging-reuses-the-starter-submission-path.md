@@ -78,7 +78,6 @@ These come from sources read on 2026-09-29.
 **Competition rules.**
 
 - Only the latest 2 submissions count for the final leaderboard.
-- The deadline is 2026-09-30T23:59Z.
 - The FAQ's size, RAM and vCPU values are unrendered placeholders, so they are
   unknown.
 

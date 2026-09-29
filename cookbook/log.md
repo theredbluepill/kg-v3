@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Remove the competition deadline from the packaging Reference
+
+At the owner's direction, the cookbook records no competition deadline. The [[references/kaggle-packaging-reuses-the-starter-submission-path|packaging Reference]] keeps only the packaging rules that bear on the design.
+
 ## 2026-09-29 — Draft the Task 7.4 Kaggle packaging brief
 
 `ops/rebuild-2026-09-29/briefs/7.4-packaging.md` plans the packaged agent on
