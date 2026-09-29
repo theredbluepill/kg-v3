@@ -1,6 +1,6 @@
 # References
 
-- [[structured-observations-preserve-legal-state-and-order|Structured observation rebuild]] — Native fields and caller buffers match the frozen 512-state pinned-reference oracle bitwise over 8,176 offsets and pass the real Task 2.1 schema. Seeded states use Claude's R1 policy correction, v2. `just prepare`: 244 Rust passed, 87 engine passed, 1,437 Python passed. Optimized timing is a pod handoff.
+- [[structured-observations-preserve-legal-state-and-order|Structured observation rebuild]] — Native fields and caller buffers match the frozen 512-state pinned-reference oracle bitwise over 8,176 offsets and pass the real Task 2.1 schema. Seeded states use Claude's R1 policy correction, v2. Verification round 1 fixes retire the grammar bridge to root and CUDA-guard pinned cases; `just prepare`: 254 Rust passed, 69 engine passed, 1,437 Python passed. Optimized timing is a pod handoff.
 
 ## Current rebuild
 
@@ -14,7 +14,7 @@
 Since the [[../decisions/restart-the-port-from-isaiahs-clean-base|restart]], the following References describe the implementation on branch `kg/reference-2026-09-29` (tag `kg-reference-2026-09-29`), not the current tree. Use them as reference for the rebuild.
 
 - [[full-turn-intentions-coordinate-batched-action-heads|Full-turn intentions coordinate batched action heads]] — Optional U/A hypothesis; Isaiah and the current model already retain shared scratch/plan context. No demonstrated need or cost-benefit for a dedicated coordinator.
-- [[native-game-semantics-use-v3-owned-buffers|Native game semantics use v3-owned buffers]] — Task 1.2 typed grammar/strict codec, independent 320-program oracle and dense/selected-replay kernel checks, with Claude's per-oracle mutation review; the receipt scopes future L4/GPU limits. Historical adapter evidence stays on the reference branch.
+- [[native-game-semantics-use-v3-owned-buffers|Native game semantics use v3-owned buffers]] — Task 1.2 typed grammar/strict codec, independent 320-program oracle and dense/selected-replay kernel checks, with Claude's per-oracle mutation review; Task 1.3 moved the kernel tests to root integration and repaired L4, GPU limits remain. Historical adapter evidence stays on the reference branch.
 - [[starter-history-and-knowledge-remain-retrievable|Starter history and knowledge remain retrievable]] — The Isaiah source history/license, redirected remotes and selective cookbook lifecycle are retained with explicit verification limits.
 - [[shared-ppo-adapts-game-batches-without-a-second-loop|Shared PPO adapts game batches without a second loop]] — One shared Isaiah PPO trainer carries Kaggriculture batches; its core is upstream-equivalent, the recipe is partially aligned, and teacher, cadence, CUDA-fault and GPU-qualification gaps are tracked in ops. Historical SPS measurements link to their receipts.
 - [[explicit-game-tokens-and-grammar-replace-orbit-heads|Explicit game tokens and grammar replace Orbit heads]] — Restored player token and entity/player/plan batched heads pass local checks; checkpoint schema changes explicitly, while prior GPU results retain their old-model scope.

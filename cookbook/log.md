@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-09-29 — Fix Task 1.3 verification round 1: retire the grammar bridge and guard pinned cases
+
+Codex's independent verification of `7b5eacd` found no encoder semantic defect but rejected on four findings. All four are fixed test-first:
+- The in-process pinned-memory probe could kill pytest on macOS (SIGSEGV). Pinned cases now run only with CUDA, as in the starter, and assert pinning.
+- The contract v4.1 grammar bridge is retired. Nine kernel tests moved to root `src/kaggriculture/grammar_kernel_tests.rs`; the engine file and its trim registration are removed; a decode mutation fails the root route.
+- Coverage docs now point to current receipts.
+- The missing-oracle error no longer asserts the obsolete quota diagnosis.
+
+`just prepare` passes: 254 root Rust (four ignored), 69 engine, 1,437 Python (six skipped). The [[references/structured-observations-preserve-legal-state-and-order|observation Reference]] carries the evidence. Optimized timing remains open.
+
 ## 2026-09-29 — Qualify the structured observation oracle after Claude's R1 correction
 
 Claude reviewed Codex's incomplete Task 1.3 and merged integration, which brought the Task 2.1 schema and the Task 1.2 grammar. Claude then adopted seeded policy `observation-corpus-v2`: HIRE entries during hours 0–7, stopping at 16 hands. This makes R1's unchanged quota of more than 16 actors reachable, with 6 qualifying states.

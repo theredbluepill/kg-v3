@@ -25,6 +25,9 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/1.3/g-recorder-compile.json"
   - resource: "repository:ops/rebuild-2026-09-29/1.3/r1-blocker.md"
   - resource: "repository:ops/rebuild-2026-09-29/1.3/claude-review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/independent-7b5eacd/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/r1-fixes/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/retire_grammar_bridge.py"
   - resource: "repository:tests/fixtures/kaggriculture/observation-v3/manifest.json"
   - resource: "repository:Cargo.toml"
   - resource: "repository:Cargo.lock"
@@ -35,6 +38,10 @@ sources:
   - resource: "repository:src/kaggriculture/observe.rs"
   - resource: "repository:src/kaggriculture/tests.rs"
   - resource: "repository:src/kaggriculture/oracle_corpus.rs"
+  - resource: "repository:src/kaggriculture/grammar_kernel_tests.rs"
+  - resource: "repository:engine_rs/TRIM_MANIFEST.json"
+  - resource: "repository:scripts/check_engine_trim.py"
+  - resource: "repository:tests/tools/test_check_engine_trim.py"
   - resource: "repository:src/rules_engine/generation.rs"
   - resource: "repository:python/owl/rs.pyi"
   - resource: "repository:scripts/kaggriculture_observation_oracle/record.rs"
@@ -148,16 +155,22 @@ Three mutations show the checks discriminate, and each was restored:
 - A one-byte reference corruption fails custody.
 - Reversed shed ranks fail the real-schema corpus test.
 
-Final `just prepare` passes:
-- root Rust: 244 passed, four ignored
-- engine: 87 passed
-- Python: 1,437 passed, six skipped
+Codex's independent verification of `7b5eacd` found no encoder semantic defect
+but rejected on four findings, all fixed test-first (`r1-fixes/results.md`).
+The in-process pinned-memory probe could kill pytest (SIGSEGV) on macOS, so the
+pinned cases now run only where CUDA is available, as in the starter, and then
+assert every buffer is pinned. The contract v4.1 grammar bridge is retired (see
+below). Coverage docs point to current receipts, and the missing-oracle error
+no longer asserts the obsolete R1 quota diagnosis.
 
-On macOS the two pinned-memory binding cases skip, because torch cannot fill
-MPS-pinned host memory. The probe now performs a write. A second defect is also
-fixed: the watchdog charged the caller's pre-existing memory (pytest with torch,
-over 1 GB) to child commands, which failed two custody tests under `just
-prepare`. Receipts are in `claude-review.md`.
+After those fixes `just prepare` passes:
+- root Rust: 254 passed, four ignored
+- engine: 69 passed
+- Python: 1,437 passed, six skipped (two are the CUDA-guarded pinned cases)
+
+Claude's earlier review also fixed the watchdog, which had charged the caller's
+pre-existing memory (pytest with torch, over 1 GB) to child commands. Receipts
+are in `claude-review.md` and `r1-fixes/`.
 
 The fat-LTO release build stops after 53.81 seconds at sampled aggregate RSS
 1,052,393,472 bytes. No test body or phase costs are measured. `timing.json`
@@ -185,7 +198,7 @@ game/seed/terminal rollback and buffer reuse fences. The unavailable pinned weed
 JSON-schema range remains the reviewed Task 7.5 parity item; no <=1 cap is invented.
 
 Contract v4.1 retires the temporary engine `grammar_kernel.rs` bridge at the first
-production root-to-engine dependency. Task 1.3 creates that dependency, but the
-bridge is still present. Moving it into root integration, and updating its trim
-registration, is left to Task 1.4. Pinned-memory and GPU paths are unqualified
-on this Mac.
+production root-to-engine dependency, which Task 1.3 creates. The nine kernel
+acceptance/replay-state tests now run in root `grammar_kernel_tests.rs`; the
+engine file and its authored trim registration are gone, and a decode mutation
+fails the root route. Pinned-memory and GPU paths are unqualified on this Mac.

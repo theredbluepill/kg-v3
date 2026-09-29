@@ -18,6 +18,9 @@ pub use observe::{
 mod tests;
 
 #[cfg(test)]
+mod grammar_kernel_tests;
+
+#[cfg(test)]
 mod oracle_corpus;
 
 use kaggriculture_engine::TraceHeader;

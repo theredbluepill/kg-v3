@@ -235,5 +235,8 @@ Exact fields, strict tiles and both-seat privacy checks are observation coverage
 not new Python-engine rules parity. Task 1.3 receipts, including the qualified
 512-state oracle and the pending pod timing, are in `ops/rebuild-2026-09-29/1.3/`.
 Contract v4.1 retires the temporary `engine_rs/tests/grammar_kernel.rs` bridge
-at the first production root-to-engine dependency, which Task 1.3 creates. That
-test still exists; moving it into root integration is left to Task 1.4.
+at the first production root-to-engine dependency, which Task 1.3 creates. Its
+nine kernel acceptance/replay-state tests now run in the root crate as
+`src/kaggriculture/grammar_kernel_tests.rs` against the pinned engine; the engine
+test file and its authored trim registration are removed. One integration route
+remains: the root crate.

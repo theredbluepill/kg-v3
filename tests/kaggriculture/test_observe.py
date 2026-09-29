@@ -273,19 +273,27 @@ def _assert_semantics(
             assert not bool(batch.player_features[env, seat, 1, 11:].any())
 
 
+# Pinned host buffers are a CUDA staging feature; the starter's vectorized env
+# disables pin_memory without CUDA. Never touch the allocator elsewhere: on macOS
+# torch 2.9 routes it to MPS, which raises or kills the process (SIGSEGV).
+_CUDA_PINNED = pytest.param(
+    True,
+    marks=pytest.mark.skipif(
+        not torch.cuda.is_available(), reason="pinned host memory requires CUDA"
+    ),
+    id="pinned",
+)
+
+
 @pytest.mark.parametrize("n_envs", [1, 2])
-@pytest.mark.parametrize("pin_memory", [False, True])
+@pytest.mark.parametrize(
+    "pin_memory", [pytest.param(False, id="unpinned"), _CUDA_PINNED]
+)
 def test_native_writer_uses_real_schema_and_keeps_all_pointers(
     n_envs: int, pin_memory: bool
 ) -> None:
-    if pin_memory:
-        # The probe must write: on macOS, torch allocates MPS-pinned host memory
-        # but has no CPU fill kernel for it, so allocation alone is not support.
-        try:
-            torch.empty(1, pin_memory=True).fill_(0)
-        except RuntimeError as error:
-            pytest.skip(f"host pinned allocator unusable: {error}")
     batch = _allocate(n_envs, pin_memory=pin_memory)
+    assert {tensor.is_pinned() for tensor in _tensors(batch).values()} == {pin_memory}
     pointers = {name: tensor.data_ptr() for name, tensor in _tensors(batch).items()}
     headers = [_header() for _ in range(n_envs)]
     for env, header in enumerate(headers):

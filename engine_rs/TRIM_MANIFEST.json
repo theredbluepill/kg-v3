@@ -710,11 +710,6 @@
       "path": "engine_rs/fixtures/generated/MANIFEST.json",
       "sha256": "89a66bc1d3e2314e736e8196347ea1dd7888faa72c2f4f187ee7f5e8c6465c2f",
       "reason": "Pins each Task 1.1b trace generated live from kaggle-environments 1.32.7 (SHA-256, size, policies, seeds, config, documented expected divergences)"
-    },
-    {
-      "path": "engine_rs/tests/grammar_kernel.rs",
-      "sha256": "416ed73aaa707bce0994bbdd46d97f9887a3990a5945304e365305051c5ba8c5",
-      "reason": "Task 1.2 authored shared-grammar integration tests; independent of retained kernel bytes"
     }
   ],
   "non_engine_changes": [
@@ -724,11 +719,11 @@
     },
     {
       "path": "scripts/check_engine_trim.py",
-      "reason": "Python provenance checker required by Claude review; replaces planned Node tool. Task 1.1b: also validates the generated-trace manifest, inventory, hashes, engine pin and 4 MB budget. Task 1.2: extends the fixed authored inventory to exactly the replay and grammar kernel tests plus the generated-trace manifest."
+      "reason": "Python provenance checker required by Claude review; replaces planned Node tool. Task 1.1b: also validates the generated-trace manifest, inventory, hashes, engine pin and 4 MB budget. Task 1.2: extends the fixed authored inventory to exactly the replay and grammar kernel tests plus the generated-trace manifest. Task 1.3: authored set drops the retired grammar bridge."
     },
     {
       "path": "tests/tools/test_check_engine_trim.py",
-      "reason": "Test-first pytest coverage for provenance and inventory drift. Task 1.1b: generated-manifest drift cases. Task 1.2: exact authored-set inventory, omissions, third-file and authored-hash attacks."
+      "reason": "Test-first pytest coverage for provenance and inventory drift. Task 1.1b: generated-manifest drift cases. Task 1.2: exact authored-set inventory, omissions, third-file and authored-hash attacks. Task 1.3: retired-bridge rejection cases."
     },
     {
       "path": "justfile",
@@ -736,7 +731,7 @@
     },
     {
       "path": "docs/rules-parity-coverage.md",
-      "reason": "Document current Kaggriculture replay and unit coverage without changing Orbit coverage. Task 1.1b: live differential parity coverage, divergences and limits. Task 1.2: scope historical Task 1.1 counts and record independent grammar and kernel qualification boundaries."
+      "reason": "Document current Kaggriculture replay and unit coverage without changing Orbit coverage. Task 1.1b: live differential parity coverage, divergences and limits. Task 1.2: scope historical Task 1.1 counts and record independent grammar and kernel qualification boundaries. Task 1.3: grammar bridge retirement."
     },
     {
       "path": "cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md",
@@ -748,7 +743,7 @@
     },
     {
       "path": "cookbook/log.md",
-      "reason": "Prepend material Task 1.1 adaptation record. Task 1.1b: prepend the live parity record. Task 1.2: prepend the native grammar record."
+      "reason": "Prepend material Task 1.1 adaptation record. Task 1.1b: prepend the live parity record. Task 1.2: prepend the native grammar record. Task 1.3: prepend the bridge retirement record."
     },
     {
       "path": "ops/rebuild-2026-09-29/1.1",
@@ -796,7 +791,7 @@
     },
     {
       "path": "src/kaggriculture/grammar_tests.rs",
-      "reason": "Shared test-first vocabulary, support graph, oracle, codec, coupled-HIRE and cursor replay tests under both packages."
+      "reason": "Shared test-first vocabulary, support graph, oracle, codec, coupled-HIRE and cursor replay tests under both packages. Task 1.3: root package only after the engine bridge retired."
     },
     {
       "path": "tests/tools/test_record_grammar_reference.py",
@@ -829,6 +824,18 @@
     {
       "path": "ops/rebuild-2026-09-29/1.2",
       "reason": "Declared checks, actual command logs, explicit stubs and restored negative controls, reference recorder/harness custody and completion receipt."
+    },
+    {
+      "path": "src/kaggriculture/grammar_kernel_tests.rs",
+      "reason": "Task 1.3: root integration home of the nine kernel acceptance/replay-state tests moved from the retired engine grammar bridge (contract v4.1)."
+    },
+    {
+      "path": "src/kaggriculture/mod.rs",
+      "reason": "Task 1.3: register the root grammar kernel acceptance tests."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/1.3",
+      "reason": "Task 1.3 receipts, including this grammar-bridge retirement generator."
     }
   ]
 }

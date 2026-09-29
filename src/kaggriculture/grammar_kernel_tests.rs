@@ -1,17 +1,12 @@
-// The vendored library needs these command-line allowances; authored tests do not.
-#![deny(
-    clippy::too_many_arguments,
-    clippy::collapsible_if,
-    clippy::needless_range_loop
-)]
+//! Kernel acceptance and replay-state tests for the production grammar.
+//!
+//! Contract v4.1 moved these from the temporary `engine_rs/tests/grammar_kernel.rs`
+//! bridge into root integration at the first production root -> engine edge.
+//! Decoded programs execute on the byte-pinned `kaggriculture_engine` kernel.
 
-// Temporary test-only bridge: retire when the root gains its first engine dependency.
-#[path = "../../src/kaggriculture/grammar.rs"]
-mod grammar;
-
-use grammar::{SLOTS, Slot, TOKENS_PER_SEAT, decode, encode, plan};
-use kaggriculture_engine::{Config, ECON_PASS, Game, TraceHeader};
-use serde_json::{Value, json};
+use super::grammar::{decode, encode, plan, Slot, SLOTS, TOKENS_PER_SEAT};
+use kaggriculture_engine::{Config, Game, TraceHeader, ECON_PASS};
+use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -78,8 +73,12 @@ fn read_jsonl(path: &Path) -> Vec<Value> {
         .collect()
 }
 
-fn engine_root() -> PathBuf {
+fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+}
+
+fn engine_root() -> PathBuf {
+    repo_root().join("engine_rs")
 }
 
 fn real_header() -> Value {
@@ -87,16 +86,10 @@ fn real_header() -> Value {
 }
 
 fn oracle_records() -> Vec<Value> {
-    let root = engine_root();
-    read_jsonl(
-        &root
-            .parent()
-            .unwrap()
-            .join("tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz"),
-    )
-    .into_iter()
-    .skip(1)
-    .collect()
+    read_jsonl(&repo_root().join("tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz"))
+        .into_iter()
+        .skip(1)
+        .collect()
 }
 
 fn explicit_game(header: &Value, seat: usize, actors: usize, money: f64) -> Game {
@@ -265,11 +258,9 @@ fn decoded_dense_241_and_hire_capacity() {
         assert_eq!(hired.public_state().farms[seat].hires_today, 1);
         expected["market"] = json!([["HIRE"], ["HIRE"]]);
         let mut output = vec![-99; TOKENS_PER_SEAT];
-        assert!(
-            encode(&p, &expected, &mut output)
-                .unwrap_err()
-                .starts_with("hire capacity")
-        );
+        assert!(encode(&p, &expected, &mut output)
+            .unwrap_err()
+            .starts_with("hire capacity"));
         assert_eq!(output, vec![-99; TOKENS_PER_SEAT]);
 
         let exhausted = plan(241, 10, 241).unwrap();

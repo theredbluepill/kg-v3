@@ -1023,10 +1023,10 @@ model/device. Task 2.3 consumes these shapes directly. The bindings and actual
 model integration are later work; no Python grammar reconstruction or binary
 DFA runtime compatibility layer is introduced here.
 
-The engine integration test includes the same Rust source under edition 2024;
-the root builds it under edition 2021 with a separate Serde feature graph.
-At the first production root → engine dependency (1.3/1.4), move acceptance and
-replay-state tests into root integration, delete the temporary engine test
-and its authored registration, and reopen L4. CPU checked token admission
+The root builds this source under edition 2021. Task 1.3 created the first
+production root → engine dependency, unified the Serde feature graph (L4 repair
+in `docs/rules-engine.md`) and retired the temporary engine include: kernel
+acceptance and replay-state tests run in root integration
+(`src/kaggriculture/grammar_kernel_tests.rs`). CPU checked token admission
 addresses a separate indexing hazard; it does not qualify the L6 Inductor
 GEMM overflow fix, CUDA/BF16 replay, batching transactions or buffer lifetimes.

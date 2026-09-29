@@ -2179,7 +2179,15 @@ fn reconstruction_feature_streams_support_both_formats_and_exact_eof() {
 
 fn compare_corpus_streams(directory: &Path) -> CorpusResult<()> {
     let manifest_path = directory.join("manifest.json");
-    require(manifest_path.is_file(), "qualified 512-state observation oracle missing: R1 non-synthetic >16-actor quota is 0 < 4; full reference comparison remains blocked")?;
+    require(
+        manifest_path.is_file(),
+        format!(
+            "observation oracle fixture missing: {} not found; regenerate it with \
+             scripts/kaggriculture_observation_oracle/regenerate.py --output {}",
+            manifest_path.display(),
+            directory.display()
+        ),
+    )?;
     // Admission checks hashes, exact record/source identity, all coverage quotas,
     // record order and per-seat byte blocks before any tensor comparison. The
     // existing environment is reused: nested editable Cargo builds are forbidden.
@@ -2247,6 +2255,19 @@ fn compare_corpus_streams(directory: &Path) -> CorpusResult<()> {
     }
     states.finish()?;
     features.finish()
+}
+
+#[test]
+fn missing_observation_oracle_names_files_and_regeneration_only() {
+    let scratch = FeatureScratch::new().unwrap();
+    let message = compare_corpus_streams(&scratch.directory)
+        .unwrap_err()
+        .to_string();
+    assert!(message.contains("manifest.json"), "{message}");
+    assert!(message.contains("regenerate.py"), "{message}");
+    // Absent files are not coverage evidence; no quota diagnosis is asserted.
+    assert!(!message.contains("quota"), "{message}");
+    assert!(!message.contains("0 < 4"), "{message}");
 }
 
 #[test]

@@ -141,9 +141,9 @@ Task 1.1 retains a standalone `engine_rs` package pinned to reference commit
 `kaggle-environments==1.32.7`, Python engine SHA-256
 `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`.
 `engine_rs/TRIM_MANIFEST.json` accounts for all 125 reference files: 12 retained,
-113 excluded, plus exactly three authored files (the replay and grammar/kernel
-tests and the generated-trace `MANIFEST.json`) and the non-engine change
-inventory.
+113 excluded, plus exactly two authored files (the replay-parity test and the
+generated-trace `MANIFEST.json`; Task 1.3 retired the grammar/kernel bridge to
+root integration) and the non-engine change inventory.
 `python scripts/check_engine_trim.py` checks hashes, exhaustive inventory,
 declared original-line edits, exact Cargo removals and append-only provenance.
 Independently of manifest declarations, only `lib.rs`, `Cargo.toml`,
@@ -439,9 +439,11 @@ live parity and Task 2.3's heads, the engine suite passes **87, none ignored**
 (41 retained unit, nine RNG, 19 replay-parity, 18 shared grammar/kernel), the
 root suite **164 passed, two ignored**, Python **1,337 passed, four skipped**
 and tooling pytest alone 106; receipts are in
-`ops/rebuild-2026-09-29/merge-1.2/`. The trim checker's fixed authored set is
-now exactly the replay and grammar kernel tests plus the generated-trace
-manifest. The native `grammar_tables()` matches all 964 bits of the Python
+`ops/rebuild-2026-09-29/merge-1.2/`. Those engine counts are historical: Task
+1.3 retired the grammar bridge (below), so the engine suite is now 69 tests (41
+retained unit, nine RNG, 19 replay-parity) and the nine kernel acceptance tests
+run in the root crate. The trim checker's fixed authored set is now exactly the
+replay-parity test plus the generated-trace manifest. The native `grammar_tables()` matches all 964 bits of the Python
 heads' `expected_grammar_tables` in a merge-time cross-check, but no Python
 binding exists yet, so the heads still use the Python stand-in.
 CPU grammar admission does not qualify
@@ -482,12 +484,24 @@ These checks discriminate:
 
 All three mutations were restored. Forty-five custody tests cover corruption,
 ordering, strict metadata, source drift and resource guards. The actual Task
-2.1 `check_contract()` runs on every binding batch and on all 512 records. On
-macOS the pinned-memory variants skip, because torch cannot fill MPS-pinned
-host memory. Pinned and GPU behavior are therefore unqualified.
+2.1 `check_contract()` runs on every binding batch and on all 512 records. The
+pinned-memory variants run only where CUDA is available, matching the starter's
+CUDA-only pinning, and then also assert that every buffer is pinned. Elsewhere
+they skip without touching the allocator: on macOS torch 2.9 routes pinned
+allocation to MPS, where a fill raises or kills the process (SIGSEGV observed in
+independent verification). Pinned and GPU behavior are therefore unqualified.
 
 The exactly-one-snapshot test passes after its two-acquisition mutation fails.
 The optimized timing build stops at the Mac memory limit before any phase runs,
 and no debug timing is substituted. The pod command is in
-`ops/rebuild-2026-09-29/1.3/timing.json`; phase costs remain unmeasured. Actual
-command counts and receipts are in `ops/rebuild-2026-09-29/1.3/results.md`.
+`ops/rebuild-2026-09-29/1.3/timing.json`; phase costs remain unmeasured. Current
+qualification counts and receipts are in `ops/rebuild-2026-09-29/1.3/claude-review.md`
+and, for the verification round 1 fixes, `ops/rebuild-2026-09-29/1.3/r1-fixes/`.
+`ops/rebuild-2026-09-29/1.3/results.md` is the frozen, historical pre-integration
+handoff receipt (incomplete qualification).
+
+Task 1.3 also retires the contract v4.1 grammar bridge: the nine kernel
+acceptance/replay-state tests moved from `engine_rs/tests/grammar_kernel.rs` to
+root `src/kaggriculture/grammar_kernel_tests.rs`, and the engine file and its
+authored trim registration are removed. A restored BuyLand-as-HIRE decode
+mutation fails the root `decoded_programs_feed_kernel` test.
