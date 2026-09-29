@@ -549,7 +549,9 @@ def test_every_successful_native_export_verifies(
     header, tape = _native_replay_input()
     tape = {"complete": complete, "transitions": tape["transitions"][:transitions]}
     if not exports:
-        with pytest.raises(ValueError, match="reached DONE while completion not claimed"):
+        with pytest.raises(
+            ValueError, match="reached DONE while completion not claimed"
+        ):
             replay_export.rs.export_kaggriculture_episode(
                 json.dumps(header), json.dumps(tape)
             )
@@ -564,6 +566,4 @@ def test_every_successful_native_export_verifies(
     assert report["mode"] == "byte"
     assert report["transitions"] == transitions
     assert report["canonical_json"] == episode_json
-    assert (
-        json.loads(episode_json)["info"]["v3_native_replay"]["complete"] is complete
-    )
+    assert json.loads(episode_json)["info"]["v3_native_replay"]["complete"] is complete

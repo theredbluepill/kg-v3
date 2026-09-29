@@ -996,6 +996,13 @@ impl PyKaggricultureEnv {
         result.set_item("econ_1", record.econ[1].to_vec().into_pyarray(py))?;
         Ok(Some(result.unbind()))
     }
+    fn terminal_snapshot(&self, env_index: usize) -> PyResult<Option<String>> {
+        Ok(self
+            .native
+            .terminal_snapshot(env_index)
+            .map_err(python_error)?
+            .map(str::to_owned))
+    }
     fn state_snapshot(&self, env_index: usize) -> PyResult<String> {
         self.native.state_snapshot(env_index).map_err(python_error)
     }

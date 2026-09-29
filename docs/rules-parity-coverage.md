@@ -448,13 +448,34 @@ its failed expectation is retained. Supplied action payloads remain preserved in
 the episode/tape and the episode hash binds custody. The byte-mode control uses
 a numeric-representation mutation instead.
 
-Limits: Task 1.4's `KaggricultureEnv` binding is absent, so five explicit cases
-in `test_replay_export_integration.py` skip with `needs Task 1.4 binding`:
-construction/reset/simultaneous-reset seed custody (three cases), exactly eight
-live evaluation exports, and terminal-before-auto-reset capture. `_evaluate_games`
-is unchanged. No pod-scale eight-game evaluation or recorder-overhead measurement
-ran. The small framework configuration and four recorded worlds are bounded
-oracles, not exhaustive supported-configuration or timeout/INVALID/error parity.
+Completion claims must agree with the replay both ways: a tape claiming
+completion must reach DONE, and a DONE tape exported with `complete=false` is
+rejected at `/complete` instead of emitting bytes that fail their own import
+(verify r1). Every successfully exported completion variant verifies in byte
+mode. The byte-guard regression respells `3000.0` as `3.0e3` (same number kind,
+same value) and requires the canonical-number-byte diagnostic at
+`/steps/0/0/observation/farms/0/money`; the integer spelling separately
+exercises the number-kind check.
+
+Live native evaluation (verify r1, after merging Task 1.4):
+`tests/kaggriculture/test_replay_export_integration.py` drives
+`owl.rs.KaggricultureEnv` through `native_evaluation.evaluate_native_games` with
+a deterministic program mixing PASS, HARVEST, BUY_PRODUCT and SELL frames. It
+checks consumed-seed custody for construction, explicit reset and simultaneous
+terminal resets (seed headers, `info.seed` and ordinal/env order), captures the
+completed game's snapshot from `terminal_snapshot(i)` after the step has
+already published the replacement game, and exports eight of ten games at
+`episodeSteps=5`, each with initial, terminal, four bank and four full-snapshot
+evidence rows plus the executed tokens. Source mutations (seed off by one,
+terminal snapshot read after auto-reset, swapped seat actions, reversed ordinal
+order) each fail these tests. An ops receipt exports and byte-verifies eight
+default-horizon (719-transition) games on two envs.
+
+Limits: `_evaluate_games` still stops at `_create_eval_env` for Kaggriculture;
+calling the seam from the trainer needs the Task 1.5 adapter and the model's token
+policy. No pod-scale evaluation or recorder-overhead measurement ran. The small
+framework configuration and four recorded worlds are bounded oracles, not
+exhaustive supported-configuration or timeout/INVALID/error parity.
 
 ## Kaggriculture Native Grammar (Task 1.2)
 

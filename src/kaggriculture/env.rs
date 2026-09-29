@@ -89,6 +89,9 @@ pub struct TerminalRecord {
     pub episode_steps: i64,
     pub winner: i64,
     pub econ: [[i64; 32]; 2],
+    /// Completed game's full native snapshot as JSON, serialized before the
+    /// auto-reset replaces the game. Diagnostic custody only; never model input.
+    pub snapshot: String,
 }
 struct EnvSlot {
     game: ObservationGame,
@@ -308,6 +311,9 @@ impl NativeEnv {
             .ok_or_else(|| EnvError::Value(format!("env_index={index} outside batch")))?
             .terminal
             .as_ref())
+    }
+    pub fn terminal_snapshot(&self, index: usize) -> Result<Option<&str>, EnvError> {
+        Ok(self.terminal_metrics(index)?.map(|r| r.snapshot.as_str()))
     }
     pub fn prepare_observe(&self) -> Result<PendingBatch, EnvError> {
         caught(|| {
@@ -559,6 +565,8 @@ impl NativeEnv {
                                             -1
                                         },
                                         econ: after_econ,
+                                        snapshot: serde_json::to_string(&game.game().snapshot())
+                                            .map_err(|e| EnvError::Value(e.to_string()))?,
                                     })
                                 } else {
                                     None

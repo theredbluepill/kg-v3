@@ -2,8 +2,9 @@
 
 This recorder does not call an environment or consume a seed. The caller supplies
 its consumed seed and copies diagnostic state before the environment auto-resets.
-Nothing in this module feeds model observations. Production wiring awaits Task
-1.4's native environment and the Kaggriculture evaluation branch.
+Nothing in this module feeds model observations. ``native_evaluation`` drives
+it over the Task 1.4 native environment; the trainer's Kaggriculture evaluation
+branch still awaits the Task 1.5 adapter.
 """
 
 from __future__ import annotations

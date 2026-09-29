@@ -647,6 +647,21 @@ fn default_horizon_terminates_at_719() {
             -1
         }
     );
+    // The completed game's full snapshot is captured before auto-reset; the
+    // live slot already holds the replacement game.
+    let finished: serde_json::Value = serde_json::from_str(&record.snapshot).unwrap();
+    assert_eq!(finished["done"], json!(true));
+    assert_eq!(finished["public"]["step"], json!(719));
+    assert_eq!(finished["statuses"], json!(["DONE", "DONE"]));
+    for seat in 0..2 {
+        assert_eq!(
+            finished["public"]["farms"][seat]["money"].as_f64(),
+            Some(record.banks[seat])
+        );
+    }
+    let live: serde_json::Value = serde_json::from_str(&env.state_snapshot(0).unwrap()).unwrap();
+    assert_eq!(live["public"]["step"], json!(0));
+    assert_eq!(live["done"], json!(false));
     let mut fresh = Output::new(1);
     fresh.observe(&env);
     assert_eq!(fresh.transition, out.transition);

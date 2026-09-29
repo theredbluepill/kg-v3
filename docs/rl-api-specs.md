@@ -1049,11 +1049,22 @@ completed exports have seed/action/checkpoint/seat/version custody sidecars and
 episode SHA-256. Truncation and errors remain explicit non-success records.
 Seeds and checkpoint identity are host metadata, never model inputs.
 
-The native `KaggricultureEnv` binding and `_evaluate_games` recorder wiring are
-not implemented here. The planned binding-dependent cases remain explicit
-`pytest.skip("needs Task 1.4 binding")` tests; the two- and four-rank configs already
-request eight replays, but no live eight-game evaluation is qualified by this
-diagnostic API.
+`owl.kaggriculture.native_evaluation.evaluate_native_games` is the live seam
+over the Task 1.4 `KaggricultureEnv` binding and its caller-owned buffers. It
+starts ordinals in env-index order (initial games from construction `observe` or
+an explicit `reset`, then each terminal env's replacement), reads each game's
+consumed seed from `seed_state()` once that game exists, decodes the executed
+tokens with `kaggriculture_decode` against the pre-step observation, and for
+selected games captures the full snapshot after every transition, taking the
+terminal one from `terminal_snapshot(i)` before any later native call. It fails
+the game explicitly if a snapshot's banks differ from the published transition
+banks. The policy callback receives the buffers and each env's candidate seat;
+seeds and checkpoint identity never enter them. Tests run the lifecycle cases
+(construction, explicit reset, simultaneous terminal reset, before-reset
+terminal capture) and an eight-of-ten export at a tiny horizon; an ops receipt
+exports and byte-verifies eight default-horizon games. `run_ppo._evaluate_games`
+still stops at `_create_eval_env` for Kaggriculture: calling this seam from the
+trainer needs the Task 1.5 torch adapter and model token policy.
 
 ### Native grammar boundary (Task 1.2)
 
@@ -1237,14 +1248,17 @@ buffers are pinned and the transfer device is CUDA. CPU or unpinned use makes
 no CUDA call. Every asynchronous reader must finish or join that stream before
 reuse. This fence and the adapter are not implemented by Task 1.4.
 
-Cold diagnostics are `terminal_metrics(i)`, `state_snapshot(i)` and
-`seed_state()`. A terminal record contains finite float64-valued Python floats
+Cold diagnostics are `terminal_metrics(i)`, `terminal_snapshot(i)`,
+`state_snapshot(i)` and `seed_state()`. A terminal record contains finite float64-valued Python floats
 `bank_0`, `bank_1`, `margin_0`, Python int `episode_steps`, winner 0/1/-1 from raw
 bank comparison, and independent C-contiguous int64 `[32]` arrays `econ_0` and
 `econ_1`. Each read returns fresh containers. The record is `None` before a
 terminal transition, after the next successful nonterminal step, or after a
 selected explicit reset; failed calls preserve it. `state_snapshot(i)` returns
-JSON text for diagnosis, never policy input. `seed_state()` returns the nested
+JSON text for diagnosis, never policy input. `terminal_snapshot(i)` returns the
+completed game's full native snapshot JSON, serialized inside the terminal step
+before auto-reset replaced the game, with the same lifetime as the terminal record
+(Task 7.3). `seed_state()` returns the nested
 tuple `(next_seed, (current_env_seed, ...))`.
 
 Seeds, next counter and stride are i64: seed in `[0, 2**63-1]`, stride in

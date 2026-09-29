@@ -647,6 +647,9 @@ class KaggricultureEnv:
     def terminal_metrics(
         self, env_index: int
     ) -> KaggricultureTerminalMetrics | None: ...
+    def terminal_snapshot(self, env_index: int) -> str | None:
+        """Completed game's snapshot JSON, captured before auto-reset."""
+
     def state_snapshot(self, env_index: int) -> str: ...
     def seed_state(self) -> tuple[int, tuple[int, ...]]: ...
 
