@@ -9,9 +9,12 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import math
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from types import SimpleNamespace
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -185,7 +188,7 @@ def _run(
 
 def _rehash(root: Path, index: int, path: Path) -> None:
     manifest = json.loads((root / MANIFEST_NAME).read_text())
-    manifest["episodes"][index]["shard_sha256"] = bc_module._sha256(path)
+    manifest["episodes"][index]["shard_sha256"] = bc_module.file_sha256(path)
     manifest["episodes"][index]["shard_bytes"] = path.stat().st_size
     (root / MANIFEST_NAME).write_text(json.dumps(manifest))
 
@@ -343,6 +346,75 @@ def test_loss_decreases_on_a_memorizable_batch(tmp_path: Path) -> None:
     assert losses[-1] < 0.5 * losses[0], losses
 
 
+def test_bc_loss_matches_a_hand_computed_objective() -> None:
+    """Oracle: per-frame probabilities in, the length-normalized NLL + CE out."""
+    frame_probs = torch.tensor(
+        [[[0.5, 0.25, 1.0], [0.8, 1.0, 1.0]], [[0.1, 1.0, 1.0], [0.5, 0.5, 0.5]]]
+    )
+    lengths = torch.tensor([[2, 1], [1, 3]])
+    # Seat rows: (self win, opponent win) probabilities.
+    winner = torch.tensor([[[0.6, 0.4], [0.3, 0.7]], [[0.2, 0.8], [0.5, 0.5]]])
+    evaluation = cast(
+        Any,
+        SimpleNamespace(
+            log_probs=SimpleNamespace(per_player_entity=frame_probs.log()),
+            winner_log_probabilities=winner.log(),
+        ),
+    )
+    batch = cast(
+        Any,
+        SimpleNamespace(
+            actions=SimpleNamespace(lengths=lengths),
+            # Row 0: seat 0 wins; row 1: a draw.
+            final_banks=torch.tensor([[9.0, 1.0], [4.0, 4.0]], dtype=torch.float64),
+        ),
+    )
+    turn_nll = [
+        [-math.log(0.5 * 0.25) / 2, -math.log(0.8) / 1],
+        [-math.log(0.1) / 1, -math.log(0.125) / 3],
+    ]
+    value_ce = [
+        [-math.log(0.6), -math.log(0.7)],
+        [-0.5 * (math.log(0.2) + math.log(0.8)), -math.log(0.5)],
+    ]
+    terms = bc_terms(evaluation, batch)
+    assert torch.allclose(terms.turn_nll, torch.tensor(turn_nll))
+    assert torch.allclose(terms.value_ce, torch.tensor(value_ce))
+    expected = float(np.mean(turn_nll)) + 0.25 * float(np.mean(value_ce))
+    assert float(bc_loss(terms, value_coef=0.25)) == pytest.approx(expected)
+
+
+def _train_objective(model: torch.nn.Module, data: Path) -> float:
+    split = load_bc_dataset(data).train
+    batch = split.gather(np.arange(split.num_rows, dtype=np.int64))
+    with torch.no_grad():
+        terms = bc_terms(
+            cast(Any, model).evaluate_actions(batch.obs, batch.actions), batch
+        )
+    return float(bc_loss(terms, value_coef=1.0))
+
+
+def test_the_real_training_loop_lowers_the_objective(tmp_path: Path) -> None:
+    """train_bc's own update path moves every tensor and lowers the train loss."""
+    data = _dataset_root(tmp_path)
+    config = _bc_config(
+        optimizer=AdamWConfig(learning_rate=1e-2), max_steps=12, eval_interval_steps=12
+    )
+    initial = build_bc_model(_ppo_config(), device=_CONTEXT.device, seed=config.seed)
+    before = _train_objective(initial, data)
+    _, trained = _run(tmp_path / "run", data, config)
+    after = _train_objective(trained, data)
+    assert 0.0 < after < 0.9 * before, (before, after)
+    unchanged = [
+        name
+        for (name, a), (_, b) in zip(
+            initial.state_dict().items(), trained.state_dict().items(), strict=True
+        )
+        if a.is_floating_point() and torch.equal(a, b)
+    ]
+    assert unchanged == []
+
+
 def test_bc_loss_reaches_every_parameter(tmp_path: Path) -> None:
     """The critic is trained with the policy; DDP needs no unused-parameter scan."""
     dataset = load_bc_dataset(_dataset_root(tmp_path))
@@ -390,27 +462,66 @@ def test_train_sharding_is_deterministic_per_rank_and_epoch() -> None:
 # --- selection and the stop rule ----------------------------------------------------
 
 
-def test_held_out_selection_keeps_best_and_stops_after_patience() -> None:
+def test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience() -> None:
     selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
     assert selection.observe(3.0, step=0)
     assert selection.observe(2.0, step=2)
-    assert not selection.observe(1.97, step=4)  # inside min_delta
+    # A new minimum inside min_delta is still the best checkpoint; it only fails
+    # to reset the patience count.
+    assert selection.observe(1.97, step=4)
+    assert (selection.best_nll, selection.best_step) == (1.97, 4)
+    assert selection.evals_since_improvement == 1
     assert not selection.should_stop
     assert not selection.observe(2.4, step=6)
     assert selection.should_stop
-    assert (selection.best_nll, selection.best_step) == (2.0, 2)
+    assert (selection.best_nll, selection.best_step) == (1.97, 4)
     with pytest.raises(ValueError, match="advance"):
         selection.observe(1.0, step=6)
     with pytest.raises(ValueError, match="finite"):
         selection.observe(float("nan"), step=8)
 
 
-def test_training_keeps_the_best_checkpoint_and_stops_on_degradation(
+def test_held_out_patience_ignores_a_trickle_below_min_delta() -> None:
+    """Sub-min_delta gains keep the best current but do not slide the reference."""
+    selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+    assert selection.observe(2.0, step=0)
+    assert selection.observe(1.97, step=1)
+    assert selection.observe(1.94, step=2)  # 0.06 below 2.0, only 0.03 below 1.97
+    assert selection.evals_since_improvement == 0
+    assert selection.observe(1.91, step=3)
+    assert selection.observe(1.90, step=4)
+    assert selection.should_stop
+    assert (selection.best_nll, selection.best_step) == (1.90, 4)
+
+
+def test_best_checkpoint_is_the_minimum_even_inside_min_delta(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """The verifier's probe: NLLs 2.0, 1.97, 2.4 with min_delta 0.05 keep step 1."""
     data = _dataset_root(tmp_path)
-    scripted = iter([3.0, 2.0, 2.5, 2.6, 2.7])
-    snapshots: dict[int, dict[str, torch.Tensor]] = {}
+    scripted = iter([2.0, 1.97, 2.4])
+    _script_validation(monkeypatch, scripted, snapshots={})
+    run_dir = tmp_path / "run"
+    config = _bc_config(
+        eval_interval_steps=1, patience_evals=2, min_delta=0.05, max_steps=50
+    )
+    result, _ = _run(run_dir, data, config)
+    assert result.stop_reason == "no_held_out_improvement"
+    assert (result.steps, result.best_step, result.best_validation_nll) == (2, 1, 1.97)
+    record = json.loads((run_dir / CHECKPOINT_BC_BEST_RECORD).read_text())
+    assert (record["bc_step"], record["validation_nll"]) == (1, 1.97)
+    assert (
+        torch.load(run_dir / CHECKPOINT_BC_BEST, weights_only=False)["optimizer_steps"]
+        == 1
+    )
+
+
+def _script_validation(
+    monkeypatch: pytest.MonkeyPatch,
+    scripted: Iterator[float],
+    *,
+    snapshots: dict[int, dict[str, torch.Tensor]],
+) -> None:
     real = bc_module.evaluate_rows
 
     def scripted_eval(model: Any, split: Any, rows: Any, **kwargs: Any) -> RowMetrics:
@@ -426,6 +537,16 @@ def test_training_keeps_the_best_checkpoint_and_stops_on_degradation(
         )
 
     monkeypatch.setattr(bc_module, "evaluate_rows", scripted_eval)
+
+
+def test_training_keeps_the_best_checkpoint_and_stops_on_degradation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data = _dataset_root(tmp_path)
+    snapshots: dict[int, dict[str, torch.Tensor]] = {}
+    _script_validation(
+        monkeypatch, iter([3.0, 2.0, 2.5, 2.6, 2.7]), snapshots=snapshots
+    )
     run_dir = tmp_path / "run"
     config = _bc_config(eval_interval_steps=1, patience_evals=2, max_steps=50)
     result, _ = _run(run_dir, data, config)
@@ -439,7 +560,7 @@ def test_training_keeps_the_best_checkpoint_and_stops_on_degradation(
     record = json.loads((run_dir / CHECKPOINT_BC_BEST_RECORD).read_text())
     assert record["bc_step"] == 1
     assert record["validation_nll"] == 2.0
-    assert record["sha256"] == bc_module._sha256(run_dir / CHECKPOINT_BC_BEST)
+    assert record["sha256"] == bc_module.file_sha256(run_dir / CHECKPOINT_BC_BEST)
     history = [
         json.loads(line) for line in (run_dir / BC_HISTORY).read_text().splitlines()
     ]
@@ -484,14 +605,133 @@ def test_resume_rejects_another_dataset_or_world_size(tmp_path: Path) -> None:
         tmp_path / "other",
         [_episode("x", "train", 4, seed=7), _episode("y", "validation", 2, seed=8)],
     )
+    config, ppo_config = _bc_config(max_steps=2), _ppo_config()
     with pytest.raises(ValueError, match="manifest"):
         bc_module.check_resume_compatible(
-            state, dataset=load_bc_dataset(other), world_size=1
+            state,
+            dataset=load_bc_dataset(other),
+            world_size=1,
+            config=config,
+            ppo_config=ppo_config,
         )
     with pytest.raises(ValueError, match="world size"):
         bc_module.check_resume_compatible(
-            state, dataset=load_bc_dataset(data), world_size=2
+            state,
+            dataset=load_bc_dataset(data),
+            world_size=2,
+            config=config,
+            ppo_config=ppo_config,
         )
+
+
+def test_resume_rejects_changed_trajectory_settings(tmp_path: Path) -> None:
+    """Only max_steps may change on resume; the rest set the continued trajectory."""
+    data = _dataset_root(tmp_path)
+    config = _bc_config(max_steps=2)
+    _run(tmp_path / "run", data, config)
+    state = load_bc_state(tmp_path / "run" / BC_STATE)
+    dataset = load_bc_dataset(data)
+    ppo_config = _ppo_config()
+
+    def check(bc: BCConfig, ppo: FullConfig = ppo_config) -> None:
+        bc_module.check_resume_compatible(
+            state, dataset=dataset, world_size=1, config=bc, ppo_config=ppo
+        )
+
+    check(config.model_copy(update={"max_steps": 40}))
+    for field, value in (
+        ("seed", 12),
+        ("rows_per_rank", 1),
+        ("gradient_accumulation_steps", 2),
+        ("min_delta", 0.1),
+        ("optimizer", AdamWConfig(learning_rate=1e-4)),
+    ):
+        with pytest.raises(ValueError, match=rf"bc\.{field}\b"):
+            check(config.model_copy(update={field: value}))
+    changed_ppo = ppo_config.model_copy(
+        update={"rl": ppo_config.rl.model_copy(update={"dtype": "bfloat16"})}
+    )
+    with pytest.raises(ValueError, match=r"ppo\.rl"):
+        check(config, changed_ppo)
+
+
+def _script_argv(
+    monkeypatch: pytest.MonkeyPatch, target: Path, data: Path, *extra: str
+) -> None:
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "train_bc.py",
+            str(target),
+            "--data",
+            str(data),
+            "--log-mode",
+            "debug",
+            *extra,
+        ],
+    )
+
+
+def test_script_resume_records_a_new_attempt_with_its_own_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data = _dataset_root(tmp_path)
+    config_path = tmp_path / "bc.yaml"
+    _bc_config(max_steps=2, eval_interval_steps=1).to_file(config_path)
+    out = tmp_path / "runs"
+    _script_argv(
+        monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+    )
+    train_bc_script.main()
+    (run_dir,) = out.iterdir()
+    saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+    saved.model_copy(update={"max_steps": 4}).to_file(run_dir / "bc_config.yaml")
+    parent_sha = bc_module.file_sha256(run_dir / BC_STATE)
+    monkeypatch.setattr(train_bc_script, "_git_head", lambda: "b")
+    _script_argv(monkeypatch, run_dir, data)
+    train_bc_script.main()
+
+    attempts = [
+        json.loads(line)
+        for line in (run_dir / train_bc_script.ATTEMPTS).read_text().splitlines()
+    ]
+    assert [a["source_commit"] for a in attempts] == ["a", "b"]
+    assert [a["attempt"] for a in attempts] == [0, 1]
+    assert [a["start_step"] for a in attempts] == [0, 2]
+    assert [a["parent_state_sha256"] for a in attempts] == [None, parent_sha]
+    result = json.loads((run_dir / BC_RESULT).read_text())
+    assert result["steps"] == 4
+    assert result["source_commit"] == "b"
+    assert result["attempt"] == 1
+    assert result["attempt_source_commits"] == ["a", "b"]
+    assert result["parent_state_sha256"] == parent_sha
+    best = json.loads((run_dir / CHECKPOINT_BC_BEST_RECORD).read_text())
+    # The best checkpoint's sidecar names the attempt that wrote it.
+    assert best["source_commit"] == ["a", "b"][best["attempt"]]
+    assert best["attempt_source_commits"] == ["a", "b"][: best["attempt"] + 1]
+
+
+def test_script_resume_rejects_an_edited_seed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data = _dataset_root(tmp_path)
+    config_path = tmp_path / "bc.yaml"
+    _bc_config(max_steps=2).to_file(config_path)
+    out = tmp_path / "runs"
+    _script_argv(
+        monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+    )
+    train_bc_script.main()
+    (run_dir,) = out.iterdir()
+    saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+    saved.model_copy(update={"seed": saved.seed + 1, "max_steps": 4}).to_file(
+        run_dir / "bc_config.yaml"
+    )
+    _script_argv(monkeypatch, run_dir, data, "--source-commit", "a")
+    with pytest.raises(ValueError, match=r"bc\.seed"):
+        train_bc_script.main()
+    assert load_bc_state(run_dir / BC_STATE).step == 2
 
 
 # --- PPO handoff --------------------------------------------------------------------
@@ -576,9 +816,8 @@ def test_script_runs_fresh_and_resumes_on_cpu(
     )
     train_bc_script.main()
     (run_dir,) = out.iterdir()
-    assert json.loads((run_dir / "launch.json").read_text())["source_commit"] == (
-        "test-commit"
-    )
+    (attempt,) = (run_dir / train_bc_script.ATTEMPTS).read_text().splitlines()
+    assert json.loads(attempt)["source_commit"] == "test-commit"
     assert load_bc_state(run_dir / BC_STATE).step == 2
     saved = BCConfig.from_file(run_dir / "bc_config.yaml")
     assert saved.ppo_config == Path(PPO_CONFIG_NAME)
@@ -587,7 +826,16 @@ def test_script_runs_fresh_and_resumes_on_cpu(
     monkeypatch.setattr(
         sys,
         "argv",
-        ["train_bc.py", str(run_dir), "--data", str(data), "--log-mode", "debug"],
+        [
+            "train_bc.py",
+            str(run_dir),
+            "--data",
+            str(data),
+            "--log-mode",
+            "debug",
+            "--source-commit",
+            "test-commit",
+        ],
     )
     train_bc_script.main()
     assert load_bc_state(run_dir / BC_STATE).step == 4

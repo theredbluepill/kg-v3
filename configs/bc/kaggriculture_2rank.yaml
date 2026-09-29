@@ -33,7 +33,8 @@ max_grad_norm: 10.0
 value_coef: 1.0
 # L9: the reference's held-out NLL bottomed out near 14.6k updates and then rose
 # for 60k; evaluate every 200 steps and stop after 10 evaluations (2,000 steps)
-# without a new best.
+# without an improvement of more than min_delta. min_delta sets only the patience
+# count; every strict new minimum still replaces the best checkpoint.
 eval_interval_steps: 200
 patience_evals: 10
 min_delta: 0.0

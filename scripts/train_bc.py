@@ -5,10 +5,18 @@ Resume:     train_bc.py RUN_DIR --data DATASET
 
 Launch multi-GPU runs with torchrun like ``scripts/run_ppo.py``. The run
 directory holds the PPO ``config.yaml`` the checkpoint belongs to, the resolved
-``bc_config.yaml``, ``launch.json`` provenance, ``checkpoint_bc_best.pt`` (the
-run_ppo checkpoint schema; start PPO with ``--load-model-weights``) and its
-``checkpoint_bc_best.json`` record, ``bc_state.pt`` for restarts,
-``bc_history.jsonl`` (the held-out NLL curve) and ``bc_result.json``.
+``bc_config.yaml``, ``bc_attempts.jsonl`` (one record per launch or resume),
+``checkpoint_bc_best.pt`` (the run_ppo checkpoint schema; start PPO with
+``--load-model-weights``) and its ``checkpoint_bc_best.json`` record,
+``bc_state.pt`` for restarts, ``bc_history.jsonl`` (the held-out NLL curve) and
+``bc_result.json``.
+
+Every resume is a new attempt. It reads its own source identity (``git`` or
+``--source-commit``) and records it with the parent ``bc_state.pt`` SHA-256 and
+every earlier attempt's source, so records written after a resume never carry
+the launch's source alone. The resumed settings must match the saved trajectory
+(``check_resume_compatible``); only ``max_steps`` in ``bc_config.yaml`` may be
+raised.
 """
 
 from __future__ import annotations
@@ -39,10 +47,12 @@ from owl.train.bc import (
     PPO_CONFIG_NAME,
     BCConfig,
     BCResumeState,
+    Provenance,
     build_bc_model,
     check_bc_workload,
     check_resume_compatible,
     create_bc_logger,
+    file_sha256,
     load_bc_configs,
     load_bc_state,
     restore_bc_state,
@@ -55,7 +65,7 @@ from owl.train.logging import LogMode, MetricLogger
 from owl.train.optimizer import create_lr_scheduler, create_optimizer
 from owl.train.utils import configure_model_compile
 
-LAUNCH_RECORD = "launch.json"
+ATTEMPTS = "bc_attempts.jsonl"
 
 
 class _NoopLogger(MetricLogger):
@@ -112,17 +122,14 @@ def main() -> None:
         if resume_dir is not None:
             resume = load_bc_state(resume_dir / BC_STATE)
             check_resume_compatible(
-                resume, dataset=dataset, world_size=context.world_size
+                resume,
+                dataset=dataset,
+                world_size=context.world_size,
+                config=bc_config,
+                ppo_config=ppo_config,
             )
             run_dir = resume_dir
-            provenance = _read_provenance(run_dir)
         else:
-            provenance = {
-                "source_commit": args.source_commit or _git_head(),
-                "dataset_root": str(args.data.resolve()),
-                "dataset_manifest_sha256": dataset.manifest_sha256,
-                "world_size": context.world_size,
-            }
             created = (
                 _create_run_dir(args.output_dir) if context.is_main_process else None
             )
@@ -132,11 +139,20 @@ def main() -> None:
                 bc_config.model_copy(
                     update={"ppo_config": Path(PPO_CONFIG_NAME)}
                 ).to_file(run_dir / BC_CONFIG_NAME)
-                (run_dir / LAUNCH_RECORD).write_text(
-                    json.dumps(provenance, indent=2, sort_keys=True) + "\n",
-                    encoding="utf-8",
-                )
-            context.barrier()
+        attempt = (
+            _start_attempt(
+                run_dir,
+                source_commit=args.source_commit or _git_head(),
+                data=args.data,
+                dataset_manifest_sha256=dataset.manifest_sha256,
+                world_size=context.world_size,
+                resume=resume,
+            )
+            if context.is_main_process
+            else None
+        )
+        provenance: Provenance = broadcast_object(attempt, context)
+        context.barrier()
 
         model = build_bc_model(ppo_config, device=context.device, seed=bc_config.seed)
         compiled = configure_model_compile(model, ppo_config.rl)
@@ -204,21 +220,72 @@ def _logger_session(logger: MetricLogger) -> Iterator[MetricLogger]:
 
 
 def _logger_config(
-    bc_config: BCConfig, ppo_config: FullConfig, provenance: dict[str, str | int]
+    bc_config: BCConfig, ppo_config: FullConfig, provenance: Provenance
 ) -> dict[str, Any]:
     return {
         "bc": bc_config.model_dump(mode="json"),
         "ppo": ppo_config.model_dump(mode="json"),
-        "provenance": provenance,
+        "provenance": dict(provenance),
         "method": "BC teacher-forced replay NLL + winner CE on raw final banks",
     }
 
 
-def _read_provenance(run_dir: Path) -> dict[str, str | int]:
-    record = json.loads((run_dir / LAUNCH_RECORD).read_text(encoding="utf-8"))
-    if not isinstance(record, dict):
-        raise ValueError(f"{run_dir / LAUNCH_RECORD} must hold a JSON object")
-    return {str(k): v for k, v in record.items() if isinstance(v, str | int)}
+def _start_attempt(
+    run_dir: Path,
+    *,
+    source_commit: str,
+    data: Path,
+    dataset_manifest_sha256: str,
+    world_size: int,
+    resume: BCResumeState | None,
+) -> dict[str, object]:
+    """Append this launch's attempt record; it is the provenance of its outputs.
+
+    A resume names the ``bc_state.pt`` it continues (SHA-256 read before this
+    attempt overwrites it) and carries every earlier attempt's source, since the
+    weights it continues were trained under them.
+    """
+    path = run_dir / ATTEMPTS
+    earlier = _read_attempts(path) if resume is not None else []
+    if resume is None and path.exists():
+        raise FileExistsError(f"fresh BC run already has attempts: {path}")
+    if resume is not None and not earlier:
+        raise ValueError(f"resume needs the run's attempt records: {path}")
+    record: dict[str, object] = {
+        "attempt": len(earlier),
+        "source_commit": source_commit,
+        "attempt_source_commits": [
+            *(str(a["source_commit"]) for a in earlier),
+            source_commit,
+        ],
+        "start_step": 0 if resume is None else resume.step,
+        "parent_state_sha256": (
+            None if resume is None else file_sha256(run_dir / BC_STATE)
+        ),
+        "dataset_root": str(data.resolve()),
+        "dataset_manifest_sha256": dataset_manifest_sha256,
+        "world_size": world_size,
+        "started_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+    }
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, sort_keys=True) + "\n")
+    return record
+
+
+def _read_attempts(path: Path) -> list[dict[str, object]]:
+    if not path.is_file():
+        raise FileNotFoundError(f"BC attempt records missing: {path}")
+    records = [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+    for index, record in enumerate(records):
+        if not isinstance(record, dict) or record.get("attempt") != index:
+            raise ValueError(f"{path} line {index + 1} is not attempt {index}")
+        if not isinstance(record.get("source_commit"), str):
+            raise ValueError(f"{path} attempt {index} has no source_commit")
+    return records
 
 
 def _git_head() -> str:
@@ -291,7 +358,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source-commit",
         default=None,
-        help="Recorded source identity when the checkout has no git metadata",
+        help="This attempt's source identity when the checkout has no git metadata",
     )
     parser.add_argument(
         "-o",
@@ -310,8 +377,6 @@ def _parse_args() -> argparse.Namespace:
             raise ValueError(f"resume needs a BC run directory, got {args.target}")
         if args.overrides is not None:
             raise ValueError("resume launches cannot use config overrides")
-        if args.source_commit is not None:
-            raise ValueError("resume keeps the run's recorded source commit")
     if args.max_runtime_hours is not None and args.max_runtime_hours <= 0.0:
         raise ValueError("--max-runtime-hours must be positive")
     return args

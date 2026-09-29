@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_contract_shapes_cover_every_observation_field ______________
+
+    def test_contract_shapes_cover_every_observation_field() -> None:
+>       assert set(OBS_FIELDS) | {"action_mask"} == set(
+            kt.KaggricultureObsBatch.model_fields
+        )
+E       AssertionError: assert {'action_mask...or_role', ...} == {'action_mask...or_role', ...}
+E         
+E         Extra items in the right set:
+E         'globals_int'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:598: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_contract_shapes_cover_every_observation_field
+1 failed, 17 deselected in 0.06s

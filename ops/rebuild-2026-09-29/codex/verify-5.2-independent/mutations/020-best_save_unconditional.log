@@ -1,0 +1,47 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_training_keeps_the_best_checkpoint_and_stops_on_degradation _______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-13/test_training_keeps_the_best_c0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112297710>
+
+    def test_training_keeps_the_best_checkpoint_and_stops_on_degradation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        scripted = iter([3.0, 2.0, 2.5, 2.6, 2.7])
+        snapshots: dict[int, dict[str, torch.Tensor]] = {}
+        real = bc_module.evaluate_rows
+    
+        def scripted_eval(model: Any, split: Any, rows: Any, **kwargs: Any) -> RowMetrics:
+            metrics = real(model, split, rows, **kwargs)
+            if split.split == "train":
+                return metrics
+            snapshots[len(snapshots)] = copy.deepcopy(model.state_dict())
+            return RowMetrics(
+                turn_nll=next(scripted),
+                frame_nll=metrics.frame_nll,
+                value_ce=metrics.value_ce,
+                seat_rows=metrics.seat_rows,
+            )
+    
+        monkeypatch.setattr(bc_module, "evaluate_rows", scripted_eval)
+        run_dir = tmp_path / "run"
+        config = _bc_config(eval_interval_steps=1, patience_evals=2, max_steps=50)
+        result, _ = _run(run_dir, data, config)
+        assert result.stop_reason == "no_held_out_improvement"
+        assert (result.steps, result.best_step) == (3, 1)
+        assert (result.best_validation_nll, result.final_validation_nll) == (2.0, 2.6)
+        best = torch.load(run_dir / CHECKPOINT_BC_BEST, weights_only=False)
+>       assert best["optimizer_steps"] == 1
+E       assert 3 == 1
+
+tests/kaggriculture/test_bc.py:436: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_best': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.009059666015673429, 'time/elapsed_seconds': 0.035085084033198655}
+{'bc/step': 1.0, 'bc/validation_nll': 2.0, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 1.0, 'bc/evals_since_best': 0.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.008998417004477233, 'time/elapsed_seconds': 0.06613679201109335, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 218.17388501509296}
+{'bc/step': 2.0, 'bc/validation_nll': 2.5, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 1.0, 'bc/evals_since_best': 1.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.008898083993699402, 'time/elapsed_seconds': 0.09623354201903567, 'bc/train_nll': 3.9168338775634766, 'bc/train_value_ce': 0.7537779808044434, 'bc/grad_norm': 2.7767531871795654, 'perf/learner_seat_rows_per_second': 346.7468908911678}
+{'bc/step': 3.0, 'bc/validation_nll': 2.6, 'bc/validation_frame_nll': 4.1109320776803155, 'bc/validation_value_ce': 0.7385952472686768, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 1.0, 'bc/evals_since_best': 2.0, 'bc/learner_seat_rows': 12.0, 'bc/epoch': 0.6, 'time/eval_seconds': 0.008811875013634562, 'time/elapsed_seconds': 0.12646850000601262, 'bc/train_nll': 3.828782320022583, 'bc/train_value_ce': 0.7821226119995117, 'bc/grad_norm': 2.3529200553894043, 'perf/learner_seat_rows_per_second': 338.5586474924415}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_training_keeps_the_best_checkpoint_and_stops_on_degradation
+1 failed, 17 deselected in 0.29s

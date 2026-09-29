@@ -27,15 +27,20 @@ ratio (1.0). The reference branch froze the critic head, but its shared trunk
 still moved, so its critic arrived at PPO miscalibrated without a target.
 
 Selection. ``HeldOutSelection`` keeps the checkpoint with the lowest held-out
-policy NLL on the fixed validation episodes and stops after ``patience_evals``
-evaluations without an improvement (lesson L9: held-out NLL reached its minimum
-and then degraded while training loss kept falling).
+policy NLL on the fixed validation episodes (every strict new minimum) and stops
+after ``patience_evals`` evaluations without an improvement of more than
+``min_delta`` over the last such improvement (lesson L9: held-out NLL reached its
+minimum and then degraded while training loss kept falling). ``min_delta`` only
+sets the patience count; it never discards a lower checkpoint.
 
 Data. Each rank holds rows ``[rank::world_size]`` of every episode
 (``load_bc_dataset``); training order is a pure function of ``(seed, step,
 micro, rank)`` over that partition (``TrainSharding``), so ranks never share a
-row and a restart from ``bc_state.pt`` replays exactly. Every evaluation covers
-all validation rows (each rank its partition, reduced across ranks).
+row and a restart from ``bc_state.pt`` replays exactly under the same source and
+settings. The state records every trajectory setting (``continuation_settings``:
+the BC config except ``max_steps``, and the whole PPO config); a resume must match
+them, so only the step budget can grow. Every evaluation covers all validation
+rows (each rank its partition, reduced across ranks).
 """
 
 from __future__ import annotations
@@ -93,6 +98,8 @@ BC_RESULT = "bc_result.json"
 PPO_CONFIG_NAME = "config.yaml"
 BC_CONFIG_NAME = "bc_config.yaml"
 StopReason = Literal["no_held_out_improvement", "max_steps", "max_runtime"]
+Provenance = Mapping[str, object]
+"""JSON attempt identity copied into the best-checkpoint record and the result."""
 
 
 class BCConfig(BaseConfig):
@@ -377,18 +384,27 @@ def evaluate_rows(
 
 @dataclass
 class HeldOutSelection:
-    """Best-by-held-out-NLL selection and the sustained-non-improvement stop."""
+    """Lowest-held-out-NLL selection and the sustained-non-improvement stop.
+
+    Selection and patience are separate. ``best_nll``/``best_step`` follow every
+    strict new minimum, whose checkpoint is kept. ``improvement_nll`` is the NLL
+    of the last evaluation that beat the previous one by more than ``min_delta``;
+    ``evals_since_improvement`` counts evaluations since then, so gains smaller
+    than ``min_delta`` still update the best checkpoint but do not reset the
+    patience count.
+    """
 
     patience_evals: int
     min_delta: float
     best_nll: float = math.inf
     best_step: int = -1
-    evals_since_best: int = 0
+    improvement_nll: float = math.inf
+    evals_since_improvement: int = 0
     last_nll: float = math.nan
     last_step: int = -1
 
     def observe(self, nll: float, *, step: int) -> bool:
-        """Record one evaluation; ``True`` when it is the new best."""
+        """Record one evaluation; ``True`` when it is the new lowest NLL."""
         if not math.isfinite(nll):
             raise ValueError(f"held-out NLL must be finite, got {nll} at step {step}")
         if step <= self.last_step:
@@ -397,17 +413,20 @@ class HeldOutSelection:
             )
         self.last_nll = nll
         self.last_step = step
-        if nll < self.best_nll - self.min_delta:
+        if nll < self.improvement_nll - self.min_delta:
+            self.improvement_nll = nll
+            self.evals_since_improvement = 0
+        else:
+            self.evals_since_improvement += 1
+        if nll < self.best_nll:
             self.best_nll = nll
             self.best_step = step
-            self.evals_since_best = 0
             return True
-        self.evals_since_best += 1
         return False
 
     @property
     def should_stop(self) -> bool:
-        return self.evals_since_best >= self.patience_evals
+        return self.evals_since_improvement >= self.patience_evals
 
 
 # --- checkpoints ----------------------------------------------------------------
@@ -455,12 +474,23 @@ def _write_text_atomic(text: str, path: Path) -> None:
     tmp_path.replace(path)
 
 
-def _sha256(path: Path) -> str:
+def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for block in iter(lambda: handle.read(1 << 20), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def continuation_settings(config: BCConfig, ppo_config: FullConfig) -> dict[str, Any]:
+    """Every setting that shapes the trajectory: all but the step budget.
+
+    ``ppo_config`` is compared by content, not by the path that named it.
+    """
+    return {
+        "bc": config.model_dump(mode="json", exclude={"max_steps", "ppo_config"}),
+        "ppo": ppo_config.model_dump(mode="json"),
+    }
 
 
 @dataclass(frozen=True)
@@ -470,6 +500,7 @@ class BCResumeState:
     wandb_run_id: str | None
     dataset_manifest_sha256: str
     world_size: int
+    continuation: Mapping[str, Any]
     model: Mapping[str, torch.Tensor]
     optimizer: Mapping[str, Any]
     lr_scheduler: Mapping[str, Any] | None
@@ -481,6 +512,7 @@ _RESUME_KEYS = {
     "wandb_run_id",
     "dataset_manifest_sha256",
     "world_size",
+    "continuation",
     "model",
     "optimizer",
     "lr_scheduler",
@@ -500,6 +532,7 @@ def load_bc_state(path: Path) -> BCResumeState:
         wandb_run_id=state["wandb_run_id"],
         dataset_manifest_sha256=str(state["dataset_manifest_sha256"]),
         world_size=int(state["world_size"]),
+        continuation=state["continuation"],
         model=state["model"],
         optimizer=state["optimizer"],
         lr_scheduler=state["lr_scheduler"],
@@ -507,8 +540,19 @@ def load_bc_state(path: Path) -> BCResumeState:
 
 
 def check_resume_compatible(
-    state: BCResumeState, *, dataset: BCDataset, world_size: int
+    state: BCResumeState,
+    *,
+    dataset: BCDataset,
+    world_size: int,
+    config: BCConfig,
+    ppo_config: FullConfig,
 ) -> None:
+    """A resume continues the saved trajectory: same data, ranks and settings.
+
+    Only ``max_steps`` may differ. A changed seed, batch, accumulation, optimizer
+    or schedule, selection rule or PPO config would silently change the rows or
+    updates after the saved step, so it needs a fresh run instead.
+    """
     if state.dataset_manifest_sha256 != dataset.manifest_sha256:
         raise ValueError(
             "resume dataset manifest differs from the run's: "
@@ -518,6 +562,21 @@ def check_resume_compatible(
         raise ValueError(
             f"resume needs the run's world size {state.world_size} for the same "
             f"data order, got {world_size}"
+        )
+    current = continuation_settings(config, ppo_config)
+    changed = [
+        f"{section}.{key}"
+        for section in sorted(set(state.continuation) | set(current))
+        for key in sorted(
+            set(state.continuation.get(section, {})) | set(current.get(section, {}))
+        )
+        if state.continuation.get(section, {}).get(key)
+        != current.get(section, {}).get(key)
+    ]
+    if changed:
+        raise ValueError(
+            "resume settings differ from the saved trajectory's (only max_steps may "
+            f"change; start a fresh run instead): {', '.join(changed)}"
         )
 
 
@@ -629,7 +688,7 @@ def train_bc(
     context: DistributedContext,
     run_dir: Path,
     logger: MetricLogger,
-    provenance: Mapping[str, str | int],
+    provenance: Provenance,
     resume: BCResumeState | None = None,
     max_runtime_seconds: float | None = None,
     clock: Callable[[], float] = time.monotonic,
@@ -638,7 +697,9 @@ def train_bc(
 
     Rank 0 writes the best checkpoint (run_ppo schema), its sidecar record, the
     resume state and the NLL history; every rank takes the same decisions from
-    all-reduced metrics.
+    all-reduced metrics. ``provenance`` identifies this attempt (its own source,
+    not the launch's) and is copied into the records it writes; a ``resume``
+    must already have passed ``check_resume_compatible``.
     """
     device = context.device
     if (dataset.rank, dataset.world_size) != (context.rank, context.world_size):
@@ -653,6 +714,7 @@ def train_bc(
         rank_rows=dataset.train.rank_rows,
     )
     held_out = np.arange(dataset.validation.num_rows, dtype=np.int64)
+    continuation = continuation_settings(config, ppo_config)
     history_path = run_dir / BC_HISTORY
     started = clock()
     if resume is None:
@@ -688,7 +750,7 @@ def train_bc(
             "bc/validation_seat_rows": float(metrics.seat_rows),
             "bc/best_validation_nll": selection.best_nll,
             "bc/best_step": float(selection.best_step),
-            "bc/evals_since_best": float(selection.evals_since_best),
+            "bc/evals_since_improvement": float(selection.evals_since_improvement),
             "bc/learner_seat_rows": float(step * sharding.rows_per_step * kt.PLAYERS),
             "bc/epoch": step / sharding.steps_per_epoch,
             "time/eval_seconds": clock() - eval_started,
@@ -727,6 +789,7 @@ def train_bc(
                     "wandb_run_id": wandb_run_id,
                     "dataset_manifest_sha256": dataset.manifest_sha256,
                     "world_size": context.world_size,
+                    "continuation": continuation,
                     "model": _cpu_state_dict(model),
                     "optimizer": optimizer.state_dict(),
                     "lr_scheduler": (
@@ -804,7 +867,7 @@ def train_bc(
                     **asdict(result),
                     "selection": "lowest held-out policy NLL; not PPO promotion",
                     "best_checkpoint": CHECKPOINT_BC_BEST,
-                    "best_checkpoint_sha256": _sha256(run_dir / CHECKPOINT_BC_BEST),
+                    "best_checkpoint_sha256": file_sha256(run_dir / CHECKPOINT_BC_BEST),
                     "dataset_manifest_sha256": dataset.manifest_sha256,
                     "world_size": context.world_size,
                     "rows_per_step": sharding.rows_per_step,
@@ -875,7 +938,7 @@ def _save_best(
     nll: float,
     wandb_run_id: str | None,
     dataset: BCDataset,
-    provenance: Mapping[str, str | int],
+    provenance: Provenance,
 ) -> None:
     path = run_dir / CHECKPOINT_BC_BEST
     write_atomic(
@@ -888,7 +951,7 @@ def _save_best(
         json.dumps(
             {
                 "checkpoint": CHECKPOINT_BC_BEST,
-                "sha256": _sha256(path),
+                "sha256": file_sha256(path),
                 "bc_step": step,
                 "validation_nll": nll,
                 "dataset_manifest_sha256": dataset.manifest_sha256,

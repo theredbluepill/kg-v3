@@ -453,6 +453,13 @@ torchrun --nproc-per-node 2 scripts/train_bc.py configs/bc/kaggriculture_2rank.y
 torchrun --nproc-per-node 2 scripts/train_bc.py runs/bc/<run> --data <dataset>  # restart
 ```
 
+A restart is a new attempt: `bc_attempts.jsonl` gains a record with the
+checkout's own source (`git`, or `--source-commit`), the parent `bc_state.pt`
+SHA-256 and every earlier attempt's source, and the best-checkpoint record and
+`bc_result.json` carry the attempt that wrote them. The restart must keep the
+saved trajectory's settings (the BC config except `max_steps`, and the whole
+PPO config); only `max_steps` in the run's `bc_config.yaml` may be raised.
+
 A BC config (`BCConfig`, `owl.train.bc`) names the PPO config it warm-starts
 (`ppo_config`); the model, `rl.dtype` (BF16 autocast) and `rl.model_compile`
 (through `configure_model_compile`, so the Kaggriculture cuBLAS-only claim
@@ -477,8 +484,10 @@ validation rows are evaluated; the lowest held-out NLL is saved as
 `--load-model-weights` or `rl.teacher_init` once `run_ppo.py` runs
 Kaggriculture (it stops before the environment until Tasks 1.4 and 3.1 land;
 the loaders accept the checkpoint today). Training stops after
-`patience_evals` evaluations without a new best, at `max_steps` or at
-`--max-runtime-hours`. `bc_history.jsonl` holds the NLL curve,
+`patience_evals` evaluations without an improvement of more than `min_delta`
+over the last such improvement, at `max_steps` or at `--max-runtime-hours`;
+`min_delta` sets only that patience count, and every strict new minimum still
+replaces the best checkpoint. `bc_history.jsonl` holds the NLL curve,
 `checkpoint_bc_best.json` the best checkpoint's SHA-256 and step, and
 `bc_result.json` the stopping reason. W&B runs go to project `kg-v3` with
 `job_type` `bc`.
