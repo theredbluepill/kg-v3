@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Literal, Self, TypeAlias, TypeVar, assert_never, cast
 
@@ -57,6 +57,7 @@ from owl.model.base import (
 )
 from owl.model.lora_config import LoRAConfig
 from owl.model.lora_linear import LoRALinear
+from owl.model.teacher_targets import TeacherTargets
 from owl.rl import (
     ACTION_ENTITY_SLOTS,
     OUTER_PLAYER_SLOTS,
@@ -102,11 +103,9 @@ __all__ = [
     "binary_entropy_from_logits",
     "build_packed_sequence",
     "build_pairwise_action_features",
-    "concat_teacher_distillation_targets",
     "discrete_action_entropy",
     "discretized_logistic_mixture_log_prob",
     "event_entropy_from_params",
-    "index_teacher_distillation_targets",
     "masked_action_entropy_from_params",
     "masked_event_log_prob_from_params",
     "masked_softmax",
@@ -226,7 +225,7 @@ class _ValueDistillationOutput:
 
 
 @dataclass(frozen=True)
-class CachedTeacherDistillationTargets:
+class CachedTeacherDistillationTargets(TeacherTargets):
     """Precomputed frozen-teacher distillation targets for a rollout.
 
     Produced once per iteration by ``compute_teacher_distillation_targets`` and
@@ -234,11 +233,66 @@ class CachedTeacherDistillationTargets:
     the teacher trunk runs once instead of once per minibatch. Tensors are stored
     in the same layout as the observations they were computed from (segment-major
     ``[N, T, ...]`` in the PPO trainer); they are sliced per minibatch with
-    ``index_teacher_distillation_targets``.
+    ``index`` and joined from chunks with ``concat`` (``TeacherTargets``).
     """
 
     action_params: DiscreteTargetPolicyParams | None
     winner_probabilities: torch.Tensor | None
+
+    def index(self, indices: torch.Tensor) -> Self:
+        """Slice cached teacher targets along the leading (segment) dimension."""
+        action_params = (
+            _map_policy_params(self.action_params, lambda tensor: tensor[indices])
+            if self.action_params is not None
+            else None
+        )
+        winner_probabilities = (
+            self.winner_probabilities[indices]
+            if self.winner_probabilities is not None
+            else None
+        )
+        return type(self)(
+            action_params=action_params,
+            winner_probabilities=winner_probabilities,
+        )
+
+    @classmethod
+    def concat(cls, chunks: Sequence[Self]) -> Self:
+        """Concatenate per-chunk cached teacher targets along the segment dimension."""
+        if not chunks:
+            raise ValueError("cannot concatenate an empty list of teacher targets")
+        action_params: DiscreteTargetPolicyParams | None = None
+        if chunks[0].action_params is not None:
+            params: list[DiscreteTargetPolicyParams] = []
+            for chunk in chunks:
+                if chunk.action_params is None:
+                    raise ValueError(
+                        "inconsistent action_params across teacher target chunks"
+                    )
+                params.append(chunk.action_params)
+            action_params = DiscreteTargetPolicyParams(
+                target_logits=torch.cat([p.target_logits for p in params], dim=0),
+                size_mix_logits=torch.cat([p.size_mix_logits for p in params], dim=0),
+                size_mu=torch.cat([p.size_mu for p in params], dim=0),
+                size_scale=torch.cat([p.size_scale for p in params], dim=0),
+                continue_logits=_cat_optional_tensors(
+                    [p.continue_logits for p in params]
+                ),
+            )
+        winner_probabilities: torch.Tensor | None = None
+        if chunks[0].winner_probabilities is not None:
+            winners: list[torch.Tensor] = []
+            for chunk in chunks:
+                if chunk.winner_probabilities is None:
+                    raise ValueError(
+                        "inconsistent winner_probabilities across teacher target chunks"
+                    )
+                winners.append(chunk.winner_probabilities)
+            winner_probabilities = torch.cat(winners, dim=0)
+        return cls(
+            action_params=action_params,
+            winner_probabilities=winner_probabilities,
+        )
 
 
 @dataclass(frozen=True)
@@ -2378,65 +2432,6 @@ def _unflatten_policy_params(
     return _map_policy_params(
         params,
         lambda tensor: _unflatten_time_tensor(tensor, sequence_shape),
-    )
-
-
-def index_teacher_distillation_targets(
-    targets: CachedTeacherDistillationTargets,
-    indices: torch.Tensor,
-) -> CachedTeacherDistillationTargets:
-    """Slice cached teacher targets along the leading (segment) dimension."""
-    action_params = (
-        _map_policy_params(targets.action_params, lambda tensor: tensor[indices])
-        if targets.action_params is not None
-        else None
-    )
-    winner_probabilities = (
-        targets.winner_probabilities[indices]
-        if targets.winner_probabilities is not None
-        else None
-    )
-    return CachedTeacherDistillationTargets(
-        action_params=action_params,
-        winner_probabilities=winner_probabilities,
-    )
-
-
-def concat_teacher_distillation_targets(
-    chunks: list[CachedTeacherDistillationTargets],
-) -> CachedTeacherDistillationTargets:
-    """Concatenate per-chunk cached teacher targets along the segment dimension."""
-    if not chunks:
-        raise ValueError("cannot concatenate an empty list of teacher targets")
-    action_params: DiscreteTargetPolicyParams | None = None
-    if chunks[0].action_params is not None:
-        params: list[DiscreteTargetPolicyParams] = []
-        for chunk in chunks:
-            if chunk.action_params is None:
-                raise ValueError(
-                    "inconsistent action_params across teacher target chunks"
-                )
-            params.append(chunk.action_params)
-        action_params = DiscreteTargetPolicyParams(
-            target_logits=torch.cat([p.target_logits for p in params], dim=0),
-            size_mix_logits=torch.cat([p.size_mix_logits for p in params], dim=0),
-            size_mu=torch.cat([p.size_mu for p in params], dim=0),
-            size_scale=torch.cat([p.size_scale for p in params], dim=0),
-            continue_logits=_cat_optional_tensors([p.continue_logits for p in params]),
-        )
-    winner_probabilities: torch.Tensor | None = None
-    if chunks[0].winner_probabilities is not None:
-        winners: list[torch.Tensor] = []
-        for chunk in chunks:
-            if chunk.winner_probabilities is None:
-                raise ValueError(
-                    "inconsistent winner_probabilities across teacher target chunks"
-                )
-            winners.append(chunk.winner_probabilities)
-        winner_probabilities = torch.cat(winners, dim=0)
-    return CachedTeacherDistillationTargets(
-        action_params=action_params,
-        winner_probabilities=winner_probabilities,
     )
 
 

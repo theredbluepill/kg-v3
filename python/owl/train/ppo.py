@@ -22,8 +22,6 @@ from owl.model import (
     ModelOutput,
     ModelTeacherEvaluation,
     StatelessTransformerV1,
-    concat_teacher_distillation_targets,
-    index_teacher_distillation_targets,
     load_model_state_dict_allowing_lora,
 )
 from owl.rl import (
@@ -1029,7 +1027,7 @@ class PPOTrainer:
                         compute_value=compute_value,
                     )
                 )
-        return concat_teacher_distillation_targets(chunks)
+        return type(chunks[0]).concat(chunks)
 
     def _compute_winner_targets(
         self,
@@ -1266,7 +1264,7 @@ class PPOTrainer:
                     self.model,
                     batch_segment_obs,
                     batch_segment_actions,
-                    index_teacher_distillation_targets(teacher_targets, idx),
+                    teacher_targets.index(idx),
                     hidden_state=batch_hidden_state,
                     dones=segments.dones[idx],
                     compute_teacher_action_kl=compute_teacher_action_kl,
