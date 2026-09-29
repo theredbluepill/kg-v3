@@ -441,11 +441,12 @@ Setup:
 
 **Mechanism observed:**
 - Every compiled stage logged exactly one Dynamo recompile, `GLOBAL_STATE changed: grad_mode`. No-grad and grad-enabled calls therefore run **different compiled trunk graphs**. Isaiah's rerun processes each report Dynamo `unique_graphs: 2`.
-- Within one grad mode everything was bit-identical:
+- Within one grad mode, every **measured Kaggriculture** comparison was bit-identical (all Kaggriculture cells in `summary.json`):
   - `evaluate_actions` under no_grad = S exactly.
   - `compute_value` under no_grad = S exactly; with grad it reproduces R's gap (same max).
-  - Repeated sample and replay: exactly equal.
+  - Repeated sample (values and actions) and repeated grad replay: exactly equal.
   - Trunk input (stems, eager): identical across grad modes.
+- Isaiah's control measured fewer of these, and not all were exact. `is_gap.py` does not test repeated sampling or trunk-input equality. Its repeated grad replay and no-grad `compute_value` were exactly equal. Its no-grad `evaluate_actions` differed from sampling by 1.19e-7–2.38e-7 max (eager and the Amendment 3 rerun), and its eager pair-value gap was 2.38e-7, while its eager head-swap gap was 0. These are float-rounding differences, not exact equality.
 
 **Pre-declared predictions (all five support H1):**
 
@@ -454,25 +455,25 @@ Setup:
 | 0 | A, BF16 compiled: value gap V | [0.005, 0.05] | ATEN **0.0195 / 0.0195** (256 / 1,024 rows); default **0.0156 / 0.0233**. Reproduced. Mean \|Δ\| 0.0041–0.0044 |
 | 1 | B, eager BF16: V | ≤ 1e-3 and ≤ 0.1 × A | **0** at both row counts; hidden states bit-identical (exact-equal fraction 1.0) → H1 |
 | 2 | C, fp32 (autocast off, TF32 off; padded SDPA), 256 rows: V | compiled ≤ 1e-3, eager ≤ 1e-4 | compiled **8.3e-7** (ATEN) / **1.2e-6** (default); eager **0** → H1 |
-| 3 | D, actor `.out` gain 1.0: event log-prob gap L | ratio ≥ 10, ≥ 5e-3, eager ≤ 1e-3 | L 3.6e-4 → **0.032–0.037**, ratio **86–101×** (≈ the 100× gain ratio) under both backends; eager **0**; per-row joint log-ratio max 0.16–0.27 nats → H1 |
+| 3 | D, actor `.out` layers reinitialized at gain 1.0 (new seed, new directions, actions resampled): event log-prob gap L | ratio ≥ 10, ≥ 5e-3, eager ≤ 1e-3 | L 3.59e-4–3.72e-4 → **0.032–0.037**, ratio **86–101×** under both backends; eager **0**; per-row joint log-ratio max 0.16–0.27 nats → H1. The ratio is close to the 100× gain ratio, but the case changes weights and actions as well as gain, so it does not isolate gain |
 | 4 | E, compiled BF16: trunk hidden at critic tokens | (i)–(iv) of the statement | See the list below → H1 at both backends and row counts |
 | 5 | F, Isaiah compiled (Amendment 3 rerun): head-swap value gap | ≥ 0.25 × Kaggriculture's; his eager ≤ 1e-3 | default **0.0145 / 0.0191**, ATEN **0.0117 / 0.0161**, vs Kaggriculture 0.0195 (0.60–0.98×); his eager **0** → H1 |
 
 Prediction 4, case E in detail:
 - Grad-vs-no-grad mean |Δ| is 0.0048 (ATEN) and 0.0051–0.0052 (default). The no-grad path's own error against an fp32 reference is 0.0054, and the grad path's is 0.0060, 1.1× that.
-- Critic-token relative mean equals the all-token value (0.0061 vs 0.0061), and the plan and own-actor tokens match it. The noise is not critic-specific.
+- Critic-token relative mean is approximately the all-token value under each backend: about 0.0061 (ATEN) and 0.0066 (default), and the plan and own-actor tokens agree to within about 1 %. The noise is not critic-specific.
 - Head swap: the same critic head on each path's hidden states reproduces the full gap (HS = V). With an fp32 head, HS is 0.0148–0.0168.
 - Against an fp32-reference value, the no-grad and grad values each err by 0.013–0.015 max and 0.0032–0.0041 mean. **Neither path is "the wrong one"**: the gap is the difference of two BF16 errors of the same size.
 - BF16 head rounding alone contributes 0.006–0.009 (fp32 vs BF16 head on the same hidden states).
 
-- **Isaiah's log-probs are not suppressed like Kaggriculture's.** His compiled per-entity log-prob gap is 0.044–0.057 nats, and his per-player joint log-ratio max is 0.053–0.075 (means −9e-4 to +1e-4). Kaggriculture's is 3.6e-4, even though both actors' `.out` gains are 0.01. H1's "actor heads suppress the noise ~100×" therefore holds for Kaggriculture's grammar heads, not for Isaiah's `discrete_targets` actor. The cause, for example his ship-size mixture density, was not investigated. This does not bear on the value-gap attribution.
+- **Isaiah's log-prob gaps are larger than Kaggriculture's.** His compiled per-entity log-prob gap is 0.044–0.057 nats, and his per-player joint log-ratio max is 0.053–0.075 (means −9e-4 to +1e-4). Kaggriculture's event log-prob gap is 3.59e-4–3.72e-4, although both actors' `.out` gains are 0.01. No gain ablation was run on Isaiah's actor, and larger log-prob differences do not by themselves show larger logit differences, so whether his actor suppresses trunk noise, and why its gaps are larger (his ship-size mixture density is one candidate), is not established. This does not bear on the value-gap attribution.
 - **Attempt 3's invalid Isaiah cells.** Its 256-row compiled Isaiah cells, one fresh recompile per call, gave a similar value gap (0.0151–0.0156). They also showed nonzero same-mode differences (0.005–0.012) that vanished once recompiles were fixed.
 
 **Attribution: H1 is supported; H2 is not.**
 - The value gap comes from grad-mode-specific compiled graphs of the trunk rounding differently in BF16. It vanishes in eager BF16 and in fp32, compiled or not, and is the same size under ATEN-only and default GEMM backends.
-- It is carried to the value by the gain-1.0 critic head. Raising the actor gain to 1.0 raises Kaggriculture's log-prob gap by the gain ratio.
+- It is carried to the value by the gain-1.0 critic head. Reinitializing Kaggriculture's actor output layers at gain 1.0 (with a new seed and resampled actions) raised its log-prob gap 86–101×, close to the 100× gain ratio. That is consistent with the small actor gain suppressing the noise, but the case did not isolate gain, so gain-only causality is not established.
 - Isaiah's model on real Orbit Wars states shows the same value gap, 0.6–1.0× Kaggriculture's.
-- No Kaggriculture-specific grad-path cause was found: critic tokens are not special, the trunk input is identical, and the head and masking are bit-identical within a grad mode.
+- No Kaggriculture-specific grad-path cause was found: critic tokens are not special, the trunk input is identical, and the measured Kaggriculture head and masking outputs are bit-identical within a grad mode.
 
 **Limits:**
 - One stack and fresh weights. A trained critic's logit scale can grow or shrink the gap, so these magnitudes do not qualify value-clip or bootstrap margins for trained models.

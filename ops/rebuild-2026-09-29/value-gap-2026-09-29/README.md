@@ -18,7 +18,7 @@ Run statement: `../run-statements/value-gap-diagnostic.md`, with Amendments 1–
 | 1 (10:47:44–10:49:20Z) | 95.9 s | 3 | `kgC_fp32_comp_aten`: Inductor compile error in the fp32 training graph (`analyze_memory_coalescing`, sympy `is_constant`). Amendment 1 | `pod/attempt1/` |
 | 2 (10:52:29–10:53:41Z) | 72.1 s | 3 | `kgC_fp32_eager`: CUDA OOM at 1,024 rows (92.4 GiB allocated). Amendment 2 | `pod/attempt2/` |
 | 3 (10:58:27–11:02:23Z) | 236.5 s | 0 | all 9 stages passed. The compiled F stages hit Dynamo's recompile limit through the `is_gap.py` flash wrapper, so their 1,024-row cells ran eagerly. Amendment 3 | `pod/` |
-| 3-F rerun (11:06:06–11:06:50Z) | 44.6 s | 0 | `isF_comp_default` and `isF_comp_aten` passed, on attempt 3's states, with one `grad_mode` recompile each and no limit | `pod/frerun/` |
+| 3-F rerun (11:06:06–11:06:50Z) | 44.6 s | 0 | `isF_comp_default` and `isF_comp_aten` passed, on attempt 3's states (operator-reported; see the run statement's post-run addendum), with one `grad_mode` recompile each and no limit | `pod/frerun/` |
 
 - The idle gate passed at 0 s at every launch. GPUs were idle after every run and at 11:08:15Z, at 0 MiB, 0 % and with no compute processes (`receipts/idle_nvidia_smi_*`, `post-run/`).
 - The pod was left running and idle.
@@ -32,5 +32,5 @@ Run statement: `../run-statements/value-gap-diagnostic.md`, with Amendments 1–
 - `driver.jsonl` and `launch.out` per attempt.
 - `summarize.py` and `summary.json` (the table and the pre-declared prediction verdicts).
 - `pre-launch/`: local cleanup tests and the dry-run note (not evidence).
-- `large_files.sha256`: the excluded files, which stay on the pod: Orbit Wars observation files (`obs/orbit_obs_{256,1024}.pt`, 30.6 MB / 122.3 MB per attempt), the per-attempt cache hash lists `receipts/caches_and_obs.sha256` (0.9–2.8 MB), and Inductor/Triton cache file counts.
+- `pod/large_files.sha256`: the excluded files, which stay on the pod: Orbit Wars observation files (`obs/orbit_obs_{256,1024}.pt`, 30.6 MB / 122.3 MB per attempt), the per-attempt cache hash lists `receipts/caches_and_obs.sha256` (0.9–2.8 MB), and Inductor/Triton cache file counts. The file is kept as copied from the pod. Its lines 13–14 (`fc1a0b35…` and the `ls -l` line dated 11:06) name `receipts/caches_and_obs.sha256` without a directory, like line 7, but they belong to the rerun, `frerun/receipts/caches_and_obs.sha256`. They follow the attempt-2 cache count, precede the `frerun` cache count, and are dated inside the rerun's launch window (11:06:03–11:06:56Z, `pod/frerun/launch.out`). Line 7 is attempt 3's list.
 - `MANIFEST.sha256`: sha256 of every file in this directory.

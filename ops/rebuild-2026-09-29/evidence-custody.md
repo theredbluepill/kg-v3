@@ -1,6 +1,6 @@
 # Evidence custody sweep — 2026-09-29
 
-This is a working record of which local rebuild evidence was committed and which stays outside git. The machine-readable manifest is [`evidence-custody.json`](evidence-custody.json). It lists every MANIFEST, DEFER and EXCLUDE entry with its path, bytes, SHA-256 (not for EXCLUDE), location and reason.
+This is a working record of which local rebuild evidence was committed and which stays outside git. The machine-readable manifest is [`evidence-custody.json`](evidence-custody.json). It lists every MANIFEST and DEFER entry with its path, bytes, SHA-256, location and reason, and every EXCLUDE entry with its path and reason only.
 
 - **Branch:** `kg/merge-custody`, worktree `/Users/poonszesen/kg-v3-m-custody`.
 - **BASE:** `kg/isaiah-gap-closure` at `666deec`, after `kg/merge-gpu-receipts` landed.
