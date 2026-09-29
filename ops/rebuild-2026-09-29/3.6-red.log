@@ -6,8 +6,8 @@ ___________ test_ppo_config_defaults_first_minibatch_logratio_limit ____________
 >       assert ppo.PPOConfig().first_minibatch_logratio_limit == pytest.approx(0.05)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/owl/train/test_ppo.py:1983: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/owl/train/test_ppo.py:1983:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = PPOConfig(horizon=64, checkpoint_freq=None, ppo_epochs=1, segments_per_minibatch=1, gradient_accumulation_steps=1, gam...e='trunk', model_compile_mode='max-autotune-no-cudagraphs', dtype='float32', truncation_step=None, truncation_prob=0.0)
 item = 'first_minibatch_logratio_limit'
@@ -18,7 +18,7 @@ item = 'first_minibatch_logratio_limit'
             attribute = private_attributes[item]
             if hasattr(attribute, '__get__'):
                 return attribute.__get__(self, type(self))  # type: ignore
-    
+
             try:
                 # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
                 return self.__pydantic_private__[item]  # type: ignore
@@ -31,7 +31,7 @@ item = 'first_minibatch_logratio_limit'
                 pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
             except AttributeError:
                 pydantic_extra = None
-    
+
             if pydantic_extra and item in pydantic_extra:
                 return pydantic_extra[item]
             else:
@@ -58,8 +58,8 @@ shift = -0.2, gradient_accumulation_steps = 1
             model, gradient_accumulation_steps=gradient_accumulation_steps
         )
 
-tests/owl/train/test_ppo.py:2007: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/owl/train/test_ppo.py:2007:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 model = ShiftedReplayModel(
   (input_proj): Linear(in_features=3, out_features=8, bias=True)
@@ -108,8 +108,8 @@ shift = -0.2, gradient_accumulation_steps = 2
             model, gradient_accumulation_steps=gradient_accumulation_steps
         )
 
-tests/owl/train/test_ppo.py:2007: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/owl/train/test_ppo.py:2007:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 model = ShiftedReplayModel(
   (input_proj): Linear(in_features=3, out_features=8, bias=True)
@@ -158,8 +158,8 @@ shift = 0.2, gradient_accumulation_steps = 1
             model, gradient_accumulation_steps=gradient_accumulation_steps
         )
 
-tests/owl/train/test_ppo.py:2007: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/owl/train/test_ppo.py:2007:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 model = ShiftedReplayModel(
   (input_proj): Linear(in_features=3, out_features=8, bias=True)
@@ -208,8 +208,8 @@ shift = 0.2, gradient_accumulation_steps = 2
             model, gradient_accumulation_steps=gradient_accumulation_steps
         )
 
-tests/owl/train/test_ppo.py:2007: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/owl/train/test_ppo.py:2007:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 model = ShiftedReplayModel(
   (input_proj): Linear(in_features=3, out_features=8, bias=True)
@@ -250,8 +250,8 @@ __________ test_first_minibatch_logratio_alarm_passes_matching_replay __________
 >       trainer = _logratio_alarm_trainer(model)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/owl/train/test_ppo.py:2029: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/owl/train/test_ppo.py:2029:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 model = ShiftedReplayModel(
   (input_proj): Linear(in_features=3, out_features=8, bias=True)
@@ -292,8 +292,8 @@ ________ test_first_minibatch_logratio_alarm_ignores_later_minibatches _________
 >       trainer = _logratio_alarm_trainer(model)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/owl/train/test_ppo.py:2039: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/owl/train/test_ppo.py:2039:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 model = ShiftedReplayModel(
   (input_proj): Linear(in_features=3, out_features=8, bias=True)
@@ -334,8 +334,8 @@ ___________ test_first_minibatch_logratio_alarm_checks_every_update ____________
 >       trainer = _logratio_alarm_trainer(model)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/owl/train/test_ppo.py:2049: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/owl/train/test_ppo.py:2049:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 model = ShiftedReplayModel(
   (input_proj): Linear(in_features=3, out_features=8, bias=True)
@@ -376,8 +376,8 @@ _____________ test_first_minibatch_logratio_alarm_can_be_disabled ______________
 >       trainer = _logratio_alarm_trainer(model, limit=None)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/owl/train/test_ppo.py:2060: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/owl/train/test_ppo.py:2060:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 model = ShiftedReplayModel(
   (input_proj): Linear(in_features=3, out_features=8, bias=True)
