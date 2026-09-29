@@ -39,6 +39,21 @@ unverified. The [[references/bc-bootstrap-uses-native-replay-features-and-curren
 corrects its omitted-unit claim: inserted Python None is rejected by the codec,
 not encoded as NONE. No engine, bot, exporter or preparation code was imported;
 no training, download or network operation ran.
+## 2026-09-29 — Close Codex's lane B re-verification edits on the model branch
+
+Codex re-verified `4fdb526` (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify2-lane-B-r1b.md`). Three edits: `check_contract` now rejects −1 on the `tiles_int` count channels (yield, unwatered, unfed) while keeping the day/deadline sentinels; the contract-valid fixture uses the engine's `farmHandCostMult × fib(hires_today)` next-hire cost and rejects a zero configured order limit; the critic tests assert hand-computed, nonuniform winner probabilities and changed-seat responsiveness, and fail when critic logits are forced to zero (3 failures, source restored). `just py-prepare`: 884 passed, 3 skipped. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder reference]] is unchanged: its claims were already scoped to these checks.
+
+## 2026-09-29 — Close Codex's Task 2.1 verification findings on the model branch
+
+Codex's [verification](../ops/rebuild-2026-09-29/codex/verify-stream-b-2.1.md) approved Task 2.1 with edits. `check_contract` now requires leading dims exactly `[E, 2]` and per-field bounds (non-negative counts, ranks, globals and order limits; −1 tile sentinels and signed `market_int` still pass). The synthetic fixture now writes each seat's legal view of one game. New tests cover packed dispatch, distinct-mask chunk slices, marker-checked offsets, the mypy generics probe, and initialization, API and Muon membership, each seen failing against the old code or a deliberate one-line mutation (the compile-key and SiLU checks were not mutation-tested). The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] records the checks: `tests/kaggriculture` 155 passed, `just py-prepare` 878 passed, 3 skipped.
+
+## 2026-09-29 — Add Isaiah's critic to the Kaggriculture model (Task 2.2)
+
+The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now covers the critic: an `OutputProjectionMLP` shared over the self and opponent critic-value tokens, a winner softmax, and value `2p(self) − 1` from each seat's own view, with Isaiah's output gain and Muon exclusion. `just py-prepare` gives 767 passed. This is on `kg/rebuild-model`, pending Codex verification.
+
+## 2026-09-29 — Build the Kaggriculture encoder on Isaiah's layers (Task 2.1)
+
+The new [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] covers the contract types, the PEP 696 generic model base, and an encoder built entirely from Isaiah's classes, with one-hot stems, per-role tokens, a typed trunk config, his initialization, and the compiled-GEMM chunking guard. `just py-prepare` gives 762 passed. The work sits on branch `kg/rebuild-model`, pending Codex verification before merge.
 
 ## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
 
