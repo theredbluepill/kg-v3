@@ -50,8 +50,9 @@ KAGGRICULTURE_TRANSFORMER: Literal["kaggriculture_transformer"] = (
     "kaggriculture_transformer"
 )
 
-# Compiled GEMM templates in torch 2.9 overflow 32-bit offsets once
-# rows x inner dim reaches 2**31 (cookbook reference
+# Compiled mm/addmm templates in torch 2.9 form A-load and output-store offsets
+# in int32, so every compiled GEMM needs rows x max(K, N_out, fused-epilogue row
+# stride) < 2**31 (cookbook reference
 # compiled-gemm-template-overflows-above-2-21-rows).
 _GEMM_ELEMENT_LIMIT = 2**31
 _OVERFLOW_REFERENCE = (
@@ -122,14 +123,42 @@ def sequence_length(config: KaggricultureTransformerConfig) -> int:
     )
 
 
-def gemm_kmax(config: KaggricultureTransformerConfig) -> int:
-    """Largest GEMM inner dim in a block: D->D attention, D->H->D MLP."""
+def trunk_gemm_width(config: KaggricultureTransformerConfig) -> int:
+    """Max GEMM operand/output width in the compiled trunk.
+
+    The maximum of ``max(in_features, out_features)`` over every ``nn.Linear``
+    in a ``TransformerBlock``: ``D -> D`` attention projections and the
+    ``D -> H -> D`` MLP (``H = int(D * mlp_ratio)``). A test enumerates the
+    blocks' Linear layers so a new block layout cannot silently exceed it.
+    """
     return max(config.embed_dim, int(config.embed_dim * config.mlp_ratio))
 
 
-def rows_per_chunk(*, tokens: int, kmax: int) -> int:
+def rows_per_chunk(*, tokens: int, width: int) -> int:
     """Largest padded row count whose GEMMs stay below the overflow limit."""
-    return (_GEMM_ELEMENT_LIMIT - 1) // (tokens * kmax)
+    return (_GEMM_ELEMENT_LIMIT - 1) // (tokens * width)
+
+
+def packed_row_chunks(row_tokens: list[int], *, width: int) -> list[tuple[int, int]]:
+    """Split rows at row boundaries so each chunk's packed tokens x width < 2**31.
+
+    Greedy in row order; raises only when a single row cannot fit.
+    """
+    chunks: list[tuple[int, int]] = []
+    start, packed = 0, 0
+    for row, tokens in enumerate(row_tokens):
+        if tokens * width >= _GEMM_ELEMENT_LIMIT:
+            raise ValueError(
+                f"row {row} packs {tokens} tokens x {width}, at or above the 2**31 "
+                f"GEMM limit; see {_OVERFLOW_REFERENCE}"
+            )
+        if (packed + tokens) * width >= _GEMM_ELEMENT_LIMIT:
+            chunks.append((start, row))
+            start, packed = row, 0
+        packed += tokens
+    if row_tokens:
+        chunks.append((start, len(row_tokens)))
+    return chunks
 
 
 def _one_hot(index: torch.Tensor, classes: int, like: torch.Tensor) -> torch.Tensor:
@@ -356,19 +385,13 @@ class KaggricultureTransformer(
                 "and the flash-attn package"
             )
         trunk = self._compiled_transformer_trunk or self._forward_transformer_trunk
-        kmax = gemm_kmax(self.config)
+        width = trunk_gemm_width(self.config)
         if should_use_flash:
-            packed_x, packed = pack_sequence(x, token_mask, max_seqlen=x.shape[1])
-            if packed_x.shape[0] * kmax >= _GEMM_ELEMENT_LIMIT:
-                raise ValueError(
-                    f"packed trunk input has {packed_x.shape[0]} rows x {kmax}, "
-                    f"at or above 2**31; see {_OVERFLOW_REFERENCE}"
-                )
-            return unpack_sequence(trunk(packed_x, None, packed), packed)
-        chunk = rows_per_chunk(tokens=x.shape[1], kmax=kmax)
+            return self._run_packed_trunk(trunk, x, token_mask, width)
+        chunk = rows_per_chunk(tokens=x.shape[1], width=width)
         if chunk <= 0:
             raise ValueError(
-                f"a single padded row of {x.shape[1]} tokens x {kmax} reaches the "
+                f"a single padded row of {x.shape[1]} tokens x {width} reaches the "
                 f"2**31 GEMM limit; see {_OVERFLOW_REFERENCE}"
             )
         if x.shape[0] <= chunk:
@@ -380,6 +403,33 @@ class KaggricultureTransformer(
             ],
             dim=0,
         )
+
+    @staticmethod
+    def _run_packed_trunk(
+        trunk: Callable[
+            [torch.Tensor, torch.Tensor | None, PackedSequence | None], torch.Tensor
+        ],
+        x: torch.Tensor,
+        token_mask: torch.Tensor,
+        width: int,
+    ) -> torch.Tensor:
+        """Packed dispatch, chunked at row boundaries below the GEMM limit.
+
+        The padded bound needs no sync; only a batch whose padded size could
+        overflow transfers its per-row token counts to plan the chunks.
+        """
+        rows, tokens = x.shape[:2]
+        if rows * tokens * width < _GEMM_ELEMENT_LIMIT:
+            packed_x, packed = pack_sequence(x, token_mask, max_seqlen=tokens)
+            return unpack_sequence(trunk(packed_x, None, packed), packed)
+        row_tokens = [int(n) for n in token_mask.sum(dim=1).tolist()]
+        outputs = []
+        for start, stop in packed_row_chunks(row_tokens, width=width):
+            packed_x, packed = pack_sequence(
+                x[start:stop], token_mask[start:stop], max_seqlen=tokens
+            )
+            outputs.append(unpack_sequence(trunk(packed_x, None, packed), packed))
+        return torch.cat(outputs, dim=0)
 
     def _forward_transformer_trunk(
         self,
