@@ -1,0 +1,26 @@
+{"density": "dense", "density_spec": {"own": 241, "rival": 241, "shops": 8}, "envs": 128, "rows_A_D": 256, "rows_B": 1024, "rows_C": 16384, "tokens_per_row_min": 709, "tokens_per_row_max": 709, "padded_seq_len": 709, "make_obs_s": 2.800689458847046, "n_params": 6252223, "torch": "2.9.0+cu128", "cuda_runtime": "12.8", "flash_attn": "2.8.3", "triton": "3.5.0", "device_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition", "tf32_matmul": true, "trunk_compile": "torch.compile(mode=max-autotune-no-cudagraphs, dynamic=True)", "heads": "eager", "autocast": "bfloat16, fp32 params", "grammar_tables": "expected_grammar_tables (synthetic)", "git_head": "e1458d2a717d9d731a367cbb78b98616ee6649f4", "gpu_total_gib": 94.972412109375}
+[A_rollout_forward_256] first=8.43s median=29.11ms p90=29.12ms peak_alloc=0.97GiB chunks/iter=1.0 flash=True
+[D_compute_value_256] first=0.03s median=25.75ms p90=25.89ms peak_alloc=0.86GiB chunks/iter=1.0 flash=True
+V0929 07:12:45.745000 148400 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/kaggriculture.py:493
+V0929 07:12:45.745000 148400 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V0929 07:12:45.745000 148400 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     - 0/0: GLOBAL_STATE changed: grad_mode 
+[B_ppo_train_step_1024] first=9.75s median=332.71ms p90=332.93ms peak_alloc=40.28GiB chunks/iter=1.0 flash=True
+[C_teacher_forward_16384] first=1.88s median=1731.73ms p90=1732.19ms peak_alloc=31.93GiB chunks/iter=3.0 flash=True
+{
+  "formula": "update_wall = 64*t_A + t_C + 16*t_B + t_D; ceiling_sps_rank = 8192/update_wall",
+  "env_steps_per_update_per_rank": 8192,
+  "minibatches_per_update": 16,
+  "update_wall_s_median": 8.943539784431456,
+  "update_wall_s_p90": 8.94846439743042,
+  "share": {
+    "A_64x": 0.20828136844885095,
+    "B_16x": 0.595209739178264,
+    "C": 0.19362933818080083,
+    "D": 0.0028795541920843227
+  },
+  "ceiling_sps_per_rank_median": 915.9684193791248,
+  "ceiling_sps_per_rank_p90": 915.4643340093478,
+  "ceiling_sps_2_ranks_approx_median": 1831.9368387582497,
+  "model_s_per_env_step": 0.0010917406963417305
+}
+wrote /workspace/kg-v3-rebuild/runs/aten-gemm-ab-2026-09-29/bench_aten/results_dense.json

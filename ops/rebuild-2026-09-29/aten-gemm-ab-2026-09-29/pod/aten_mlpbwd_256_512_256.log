@@ -1,0 +1,39 @@
+/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/torch/backends/__init__.py:46: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /pytorch/aten/src/ATen/Context.cpp:80.)
+  self.setter(val)
+/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/torch/autograd/graph.py:841: UserWarning: Attempting to run cuBLAS, but there was no current CUDA context! Attempting to set the primary context... (Triggered internally at /pytorch/aten/src/ATen/cuda/CublasHandlePool.cpp:270.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.020447999238967896}
+AUTOTUNE addmm(4096x512, 4096x256, 256x512)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.0204 ms 100.0% 
+  addmm 0.0276 ms 74.0% 
+SingleProcess AUTOTUNE benchmarking takes 0.0460 seconds and 0.0002 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.019936000928282738}
+AUTOTUNE addmm(4096x256, 4096x512, 512x256)
+strides: [0, 1], [512, 1], [1, 512]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.0199 ms 100.0% 
+  addmm 0.0239 ms 83.3% 
+SingleProcess AUTOTUNE benchmarking takes 0.0403 seconds and 0.0001 seconds precompiling for 2 choices
+V0929 07:07:52.807000 139253 torch/_dynamo/guards.py:4181] [0/1] [__recompiles] Recompiling function forward in /workspace/kg-v3-rebuild/runs/aten-gemm-ab-2026-09-29/probe_linear.py:32
+V0929 07:07:52.807000 139253 torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V0929 07:07:52.807000 139253 torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     - 0/0: 512*x.size()[0] <= 2147483647  # (_inductor/codegen/simd.py:1440 in can_use_32bit_indexing)
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 5.789663791656494}
+AUTOTUNE addmm(4194305x512, 4194305x256, 256x512)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 5.7897 ms 100.0% 
+  addmm 11.4125 ms 50.7% 
+SingleProcess AUTOTUNE benchmarking takes 0.1843 seconds and 0.0001 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 4.343808174133301}
+AUTOTUNE addmm(4194305x256, 4194305x512, 512x256)
+strides: [0, 1], [512, 1], [1, 512]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 4.3438 ms 100.0% 
+  addmm 7.1987 ms 60.3% 
+SingleProcess AUTOTUNE benchmarking takes 0.1404 seconds and 0.0001 seconds precompiling for 2 choices

@@ -255,3 +255,49 @@ Evidence that the flash path ran:
 **Profiling.** `nsys` absence on the pod is operator-reported (06:41:21Z pre-check; no command-output receipt retained). Nothing was installed and no timeline exists. In-step phase attribution is unresolved. Host/event median agreement cannot show the calls are intrinsically synchronous, because the timer calls `end.synchronize()` before reading the host clock.
 
 **Run conduct.** The prelaunch capture showed 563 MiB on both GPUs (0 % util, no compute processes), not 0 MiB, and launch followed one second later. The driver did not enforce the statement's first-failure stop or 45-minute aggregate limit (three independent 25-min timeouts, no `set -e`). All densities exited 0 in 227 s total, so neither gap affected the timings.
+
+## ATEN-only GEMM A/B (2026-09-29, 07:06–07:15Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+
+**Infrastructure diagnostic, not a learning change.** One setting changed: `torch._inductor.config.max_autotune_gemm_backends` from torch 2.9.0's default `"ATEN,TRITON,CPP"` to `"ATEN"`, so every compiled mm/addmm lowers to extern cuBLAS instead of Inductor's Triton mm templates. The timing half is a **component measurement conditional on the A/B/C/D synthetic schedule** ("Model-only SPS ceiling (component)" above), not end-to-end SPS.
+
+- Pre-run statement: `run-statements/aten-gemm-ab.md`, committed with the scripts in `9904121` at 07:06:00Z. Driver 07:06:31Z–07:14:55Z, 503.9 s, exit 0; no first-failure stop fired.
+- Source: `e1458d2` (integration HEAD, unchanged); the pod checkout's porcelain was empty before and after.
+- Stack: torch 2.9.0+cu128, triton 3.5.0, **real flash-attn 2.8.3**, driver 595.91.07.
+- Idle gate passed at 0 MiB / 0 % / no processes. The pod was left running and idle.
+- Evidence, custody and limits: `aten-gemm-ab-2026-09-29/README.md`.
+
+**Correctness above the int32 bound (guard bypassed, compared element-wise to eager):** every case that failed under default backends was correct under ATEN-only.
+- Real trunk, packed, at 4,194,305 / 4,198,400 / 4,194,444 / 8,387,470 tokens: 0 wrong tokens, max |Δ| ≤ 0.1699.
+- Linear 768→256 at 2,796,203 rows and Linear 512→256 at 4,198,401 and 8,388,608 rows: 0 bad rows, max |Δ| 0.0 (the same cuBLAS call as eager).
+- MLP 256→512→256 forward and backward at 4,194,305 rows: forward and dX clean; parameter-gradient relative max ≤ 0.0026.
+
+The default-backend controls in the same run reproduced the failure: the trunk had 2 and 4,665 wrong tokens (the second with 1,194,240 non-finite values), identical to the earlier probe, and Linear 768→256 hit an illegal memory access during autotuning. The A/B therefore discriminates.
+
+**Kernel evidence** comes from the analyzer (rev 2, unchanged) and a template census:
+- Every ATEN-only cache has **zero `triton_tem_` definitions or launches**. GEMMs are `extern_kernels.bias_addmm`/`mm`, including the trunk backward graph of the bench's B (96 `mm`).
+- Every ATEN autotune line logs `num_triton_choices: 0`.
+- Pointwise and reduction fusions stay Triton (for example, 4 pointwise and 5 persistent-reduction kernels per trunk-forward wrapper).
+- In the same run, the default caches launch the vulnerable templates (`…addmm_gelu_t_9`, A-load `512*idx_m`, `ks0: i32`; backward `triton_tem_fused_mm_*`, `ks0: i32`).
+- Decompose-K and persistent-TMA text is absent everywhere, but the default caches had none either. Their exclusion under ATEN rests on source gating: `kernel/mm.py` adds them only inside `use_triton_template`, which requires `TRITON` in the backend list.
+
+**Timing cost (medians, CUDA events, 20 iterations, same order and counts):**
+
+| density | A fwd 256 | B train 1,024 | C teacher-proxy 16,384 | D value 256 | update wall default → ATEN | cost | ceiling SPS/rank |
+|---|---|---|---|---|---|---|---|
+| mid (303) | 12.90 → 15.23 ms | 177.8 → 186.2 ms | 986.4 → 1,004.7 ms | 9.37 → 11.84 ms | 4.667 → 4.970 s | **+6.5 %** | 1,755 → 1,648 |
+| dense (709) | 25.39 → 29.11 ms | 326.7 → 332.7 ms | 1,687.4 → 1,731.7 ms | 21.97 → 25.75 ms | 8.562 → 8.944 s | **+4.5 %** | 957 → 916 |
+
+- The default arm reproduces the earlier ceiling run (4.662 s and 8.564 s).
+- Every p90 is within 0.53 % of its median.
+- The cost is concentrated in the small no-grad calls (A +15–18 %, D +17–26 %), where cuBLAS cannot absorb Inductor's fused casts, bias+GELU and residual+LayerNorm. B and C lose 1.8–4.7 %.
+- Allocated memory is unchanged. Cold compile is faster (mid B first call: 39.6 s → 26.0 s).
+
+**Limits:**
+- One stack; inputs up to 2³² elements (8,388,608 × 512).
+- The real-trunk backward was not element-compared above the bound. That rests on the synthetic MLP backward plus kernel evidence.
+- Non-GEMM Triton kernels rely on Inductor's own 32-bit-indexing guards (they recompiled here and were correct).
+- bmm was not exercised.
+- No nsys timeline, and one run per arm.
+- The setting is process-global.
+- The compiled path is still not reachable from `run_ppo` config at `e1458d2`.
+- Nothing was wired into repo code.
