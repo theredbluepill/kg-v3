@@ -6,7 +6,7 @@ tags: ["kaggriculture-v3", "compute"]
 status: "stable"
 generated: {"by": "openai/codex", "at": "2026-09-28"}
 decider: "Owner, later two-GPU-first directive on 2026-09-28 supersedes the initial four-rank preference."
-sources: [{"resource": "user-directive:2026-09-29:fit-rtx6000-resources"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/cookbook-cleanup-2026-09-29/host-history.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/plan.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/host-replacement.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:four-rank-first"}, {"resource": "user-directive:2026-09-28:two-gpu-sps-first"}, {"resource": "repository:ops/cookbook-setup-checks.md"}]
+sources: [{"resource": "user-directive:2026-09-29:fit-rtx6000-resources"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/cookbook-cleanup-2026-09-29/host-history.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/plan.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/host-replacement.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:four-rank-first"}, {"resource": "user-directive:2026-09-28:two-gpu-sps-first"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "repository:ops/rebuild-2026-09-29/results.md"}]
 ---
 
 # Start multi-GPU qualification with two ranks
@@ -23,7 +23,7 @@ Pod retention: the owner directive “不用關pod” means bounded runs stop tr
 
 W&B authentication is configured locally in `~/.netrc` with mode `0600` (key never printed or recorded). That setup does not prove remote upload; verify live synchronization during each authorized run and use project `kg-v3`.
 
-Host, stock and pod history (IDs, regions, prices, download probes) is operational evidence, kept in `ops/cookbook-cleanup-2026-09-29/host-history.md` and `ops/gpu-sps-2026-09-29/results.md`.
+Host, stock and pod history (IDs, regions, prices, download probes) is operational evidence, kept on branch `kg/reference-2026-09-29` in `ops/cookbook-cleanup-2026-09-29/host-history.md` and `ops/gpu-sps-2026-09-29/results.md`; neither file is in the current tree. Rebuild pod runs keep their receipts under `ops/rebuild-2026-09-29/`.
 
 ## Fit Isaiah's recipe to our GPUs — owner, 2026-09-29
 
@@ -31,4 +31,4 @@ Host, stock and pod history (IDs, regions, prices, download probes) is operation
 
 > let's stick with 2.9 then.
 
-Sources: `user-directive:2026-09-29:fit-rtx6000-resources`, `user-directive:2026-09-29:stay-on-torch-2-9`. Keep Isaiah's global configuration and fit only the per-rank shapes and the spm/accumulation split, as his own `winner_ce_6m_4x5090` does for 32 GB RTX 5090s. The target peak is ≤ 85% of 97,887 MiB per rank, measured at the densest states. Throughput is measured, not assumed from B200 results. Torch stays at Isaiah's pinned 2.9.0; the compiler overflow is handled by the batch cadence, trunk chunking and a first-minibatch log-ratio alarm ([[../references/compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]]). The resource-fit rules are in `ops/rebuild-2026-09-29/plan.md`.
+Sources: `user-directive:2026-09-29:fit-rtx6000-resources`, `user-directive:2026-09-29:stay-on-torch-2-9`. Keep Isaiah's global configuration and fit only the per-rank shapes and the spm/accumulation split, as his own `winner_ce_6m_4x5090` does for 32 GB RTX 5090s. The target peak is ≤ 85% of 97,887 MiB per rank, measured at the densest states. The rebuild plan (`ops/rebuild-2026-09-29/plan.md`, "Resource fit") defines that peak as `torch.cuda.max_memory_allocated`; the owner's words above name no metric. Caching-allocator reserved memory is a separate risk: the [[../references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]] probe saw 40.3 GiB allocated but 85.0 GiB reserved, and its percentages use torch's 94.97 GiB total rather than 97,887 MiB (95.59 GiB). Throughput is measured, not assumed from B200 results. Torch stays at Isaiah's pinned 2.9.0; the compiler overflow is handled by the batch cadence, trunk chunking and a first-minibatch log-ratio alarm ([[../references/compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]]). The resource-fit rules are in `ops/rebuild-2026-09-29/plan.md`.

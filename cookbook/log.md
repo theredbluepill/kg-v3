@@ -1,5 +1,11 @@
 # Change log
 
+## 2026-09-29 — Record the model-only SPS ceiling and fix non-resolving ops paths
+
+The new [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling Reference]] promotes the component probe (`cb4af49`, `ddf1fb2`; Codex `verify-sps-ceiling` r1 APPROVE WITH EDITS, r2 APPROVE; the ATEN A/B's default arm reproduced its update walls). It is a scoped upper bound with an engine budget of 53–116 µs per env step, not a throughput result, and it is not rankable.
+- The [[decisions/throughput-means-correct-complete-work|throughput Decision]] cited `ops/gpu-sps-2026-09-29/results.md` as if it were in the current tree; it exists only on `kg/reference-2026-09-29`. It now says so and names the rebuild's component Reference.
+- The [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] scopes its host-history paths the same way. It now names the memory metric as the plan's `max_memory_allocated` (not the owner's words), and records that reserved memory and torch's 94.97 GiB denominator differ from that target.
+
 ## 2026-09-29 — Record the pod's flash-attn 2.8.3 environment (Phase 6.0)
 
 The new [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment Reference]] promotes the Phase 6.0 receipts (`4fd40c7`, `78df33c`; Codex `verify-flash-attn` r1 APPROVE WITH EDITS, r2 APPROVE). It records the separate venv and its versions, the forward-only flash evidence, and three hazards: the torch 2.9 wheel is a mutable release asset that `uv.lock` does not pin, the old and new venvs share hard-linked files, and two custody claims are operator-reported. Trunk numerics stay unqualified. The compiled-GEMM Reference's "no flash-attn" limit is now stale; its revision is left to the ATEN lane. Evidence: `ops/rebuild-2026-09-29/results.md`, "Phase 6.0".

@@ -2,6 +2,7 @@
 
 ## Current rebuild
 
+- [[model-only-sps-ceiling-bounds-per-rank-throughput|Model-only SPS ceiling bounds per-rank throughput]] — Conditional component estimate, not end-to-end SPS: 2,085 / 1,757 / 957 model-only env steps/s per rank (sparse / mid / dense) on a synthetic update schedule at `e1458d2`; engine budget 53–116 µs per env step for ≤ 10 % loss; allocated peak 40.3 GiB, reserved 85.0 GiB unexplained. Not rankable. Codex-approved.
 - [[pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|Pod v3 environment runs flash-attn 2.8.3 forward on sm_120]] — Phase 6.0 venv `/workspace/kg-v3-rebuild` (torch 2.9.0, triton 3.5.0, flash-attn 2.8.3 prebuilt wheel with sm_120 cubins); varlen kernel matches SDPA within BF16 spacing and the packed flash path runs in eager and compiled trunk forwards. Forward only, trunk numerics unqualified; wheel digest outside `uv.lock` and hard-linked venvs are hazards. Codex-approved.
 - [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope and Rust parity blocked by missing fixtures.
 
