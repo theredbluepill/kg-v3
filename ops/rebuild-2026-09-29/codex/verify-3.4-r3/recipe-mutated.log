@@ -1,0 +1,30 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_2rank.yaml-2] _
+
+name = 'kaggriculture_2rank.yaml', world_size = 2
+
+    @pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+    def test_ranked_config_global_workload_equals_scaling_6m(
+        name: str, world_size: int
+    ) -> None:
+        scaling = _scaling_6m()
+        ours = _sections(name)
+        expected = _global_workload(scaling.env.n_envs, scaling.rl, 1)
+        assert expected == _GlobalWorkload(256, 16, 16, 16_384)
+>       assert _global_workload(ours.env.n_envs, ours.rl, world_size) == expected
+E       AssertionError: assert _GlobalWorklo...eration=16384) == _GlobalWorklo...eration=16384)
+E         
+E         Omitting 2 identical items, use -vv to show
+E         Differing attributes:
+E         ['optimizer_steps_per_iteration', 'global_segments_per_step']
+E         
+E         Drill down into differing attribute optimizer_steps_per_iteration:
+E           optimizer_steps_per_iteration: 32 != 16...
+E         
+E         ...Full output truncated (3 lines hidden), use '-vv' to show
+
+.codex-tmp/kg-config-verify-4_31ut59/tests/kaggriculture/test_configs.py:94: AssertionError
+=========================== short test summary info ============================
+FAILED .codex-tmp/kg-config-verify-4_31ut59/tests/kaggriculture/test_configs.py::test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_2rank.yaml-2]
+1 failed, 1 passed, 37 deselected in 0.71s

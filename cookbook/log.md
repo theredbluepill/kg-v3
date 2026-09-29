@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Record completed config/model integration in the recipe Decision
+
+Codex approved Task 3.4 r3 with one P3 (`ops/rebuild-2026-09-29/codex/verify-3.4-r3.md`): the [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|recipe Decision]] still said the ranked configs could not load and called the alignment targets unapplied. Its heading, a new current-state paragraph, Limits, description and index line now record that both targets are encoded in the configs and model, the YAMLs load through `FullConfig`, and the verification's CPU checks passed (pytest 1,373 passed / 4 skipped, mypy 59 files clean, cargo 155 passed / 2 ignored, startup mutation 4 → 4 failed → 4 passed). Native env/trainer integration, teacher execution and GPU qualification stay pending. The owner's rule, quote and historical evidence are unchanged; the status text is implementation state, not owner adoption.
+
 ## 2026-09-29 — Load the Kaggriculture configs through the real FullConfig (Task 3.4 r2 fixes)
 
 Codex rejected Task 3.4 again (`ops/rebuild-2026-09-29/codex/verify-3.4-r2.md`): the three configs failed `FullConfig.from_file` with five schema errors each, the startup tests bypassed that loader, and the ranked configs called `native_threads` measured. The fix:
