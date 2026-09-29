@@ -1,0 +1,1894 @@
+{
+  "schema_version": 1,
+  "reference_commit": "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0",
+  "source_sha256": {
+    "engine_rs/src/myolie_sampler.rs": "563793903e43911b372a90b379d617ffdbab505d87af195694c380e75b57ac29",
+    "engine_rs/src/ffi.rs": "84c19507b1945106cbffbc878bb0324ed71f581065c1e1b90c4360fe47df4369",
+    "python/owl/kaggriculture/actor_codec.py": "88ed3d44a7a0dc1cbc386035d323c34b17a3d14a2d4a520ad30240345140e5d6",
+    "python/owl/kaggriculture/gpu_sampling_grammar.py": "03a4cd06f005aac59ced91ad73e03840fb7cf5a407da5d49ac7d34a04d105c20"
+  },
+  "trace_sha256": {
+    "95324500": "47cdfa489b7a80edf8ec1361f2f55cd033c75824d624cd7c9e9daaa3137affd7",
+    "95901360": "e80653f445570a3778a3fb9026a66614b1ecaa2ea417cf8358d3f1850d725281",
+    "95921764": "bc3e01cd12ff70fd2f78bfbe7129d5caca468a6324c124c25c9efebc86fbd3f2",
+    "95990191": "4bf1a3b09c644719c8b36a619289844e52c3458d0e25dc0a0a1429bc6eaa0d1b"
+  },
+  "recorder_sha256": "14e805c1e797eabe8d7840988e76a158c705411094c64e118973bb39ffbab66f",
+  "harness_sha256": "8ecf3b73f20b8ffc777b1793bbce89d3a77a67485fdbaf675470b6dcfb8a8d97",
+  "append_patch_sha256": "3613db286bd1e15f9eb8cd8adf06248db4695139779d02d0292eee66586e22a6",
+  "cargo_lock_sha256": "c76725f0f07325924f7f00e0fc6b0dbdddb83d33230191f76daf6a6cf51253f1",
+  "toolchain_sha256": "eb5146fdb76187d4511f2d51413279f0cac8ae0d825c71bf3c541ab3272a1a6d",
+  "commands": [
+    [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2/engine_rs/Cargo.toml",
+      "--offline",
+      "--locked",
+      "--lib",
+      "ffi::task12_oracle::record_requests",
+      "--",
+      "--exact",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2/engine_rs/Cargo.toml",
+      "--offline",
+      "--locked",
+      "--lib",
+      "ffi::task12_oracle::record_requests",
+      "--",
+      "--exact",
+      "--nocapture",
+      "--test-threads=1"
+    ]
+  ],
+  "tools": {
+    "cargo": "cargo 1.97.0-nightly (eb94155a9 2026-04-09)",
+    "rustc": "rustc 1.97.0-nightly (e9e32aca5 2026-04-17)",
+    "python": "Python 3.12.13"
+  },
+  "counts": {
+    "accepted": 320,
+    "sampled": 256,
+    "replay": 64,
+    "dense": 64,
+    "dense_full_market": 22,
+    "full_market": 188,
+    "mutations": 44,
+    "replay_rejected": 0
+  },
+  "replay_scan": {
+    "95324500": {
+      "candidates": 1438,
+      "selected": {
+        "0": 4,
+        "1": 4,
+        "2": 4,
+        "3": 4
+      },
+      "codec_rejections": {},
+      "canonical_layout_exclusions": {}
+    },
+    "95901360": {
+      "candidates": 1438,
+      "selected": {
+        "0": 4,
+        "1": 4,
+        "2": 4,
+        "3": 4
+      },
+      "codec_rejections": {},
+      "canonical_layout_exclusions": {}
+    },
+    "95921764": {
+      "candidates": 1438,
+      "selected": {
+        "0": 4,
+        "1": 4,
+        "2": 4,
+        "3": 4
+      },
+      "codec_rejections": {},
+      "canonical_layout_exclusions": {}
+    },
+    "95990191": {
+      "candidates": 1438,
+      "selected": {
+        "0": 4,
+        "1": 4,
+        "2": 4,
+        "3": 4
+      },
+      "codec_rejections": {},
+      "canonical_layout_exclusions": {}
+    }
+  },
+  "disagreements": [
+    {
+      "id": "mutation-missing-stop",
+      "sampler": {
+        "accepted": false,
+        "action": null,
+        "error": "invalid Myolie sampler token length 23"
+      },
+      "training_decoder": {
+        "not_applicable": true,
+        "reason": "incomplete candidate tokens have no equal-length FFI prefix"
+      },
+      "python_codec": {
+        "not_applicable": true,
+        "reason": "incomplete candidate tokens cannot form Python frame dictionaries"
+      },
+      "v4_expected": {
+        "accepted": false,
+        "action": null,
+        "reason": "missing-stop"
+      }
+    },
+    {
+      "id": "mutation-hire-capacity-1-1",
+      "sampler": {
+        "accepted": false,
+        "action": null,
+        "error": "Myolie sampler frame 1 slot 7 token 1 violates syntax mask"
+      },
+      "training_decoder": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [],
+          "market": [
+            [
+              "HIRE"
+            ]
+          ]
+        },
+        "error": null
+      },
+      "python_codec": {
+        "accepted": false,
+        "action": null,
+        "error": "target violates syntax mask: market_kind"
+      },
+      "v4_expected": {
+        "accepted": false,
+        "action": null,
+        "reason": "hire-capacity-1-1"
+      }
+    },
+    {
+      "id": "mutation-hire-capacity-17-16",
+      "sampler": {
+        "accepted": false,
+        "action": null,
+        "error": "Myolie sampler frame 17 slot 7 token 1 violates syntax mask"
+      },
+      "training_decoder": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ]
+          ],
+          "market": [
+            [
+              "HIRE"
+            ]
+          ]
+        },
+        "error": null
+      },
+      "python_codec": {
+        "accepted": false,
+        "action": null,
+        "error": "target violates syntax mask: market_kind"
+      },
+      "v4_expected": {
+        "accepted": false,
+        "action": null,
+        "reason": "hire-capacity-17-16"
+      }
+    },
+    {
+      "id": "mutation-hire-capacity-240-241",
+      "sampler": {
+        "accepted": false,
+        "action": null,
+        "error": "Myolie sampler frame 241 slot 7 token 1 violates syntax mask"
+      },
+      "training_decoder": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ]
+          ],
+          "market": [
+            [
+              "HIRE"
+            ],
+            [
+              "HIRE"
+            ]
+          ]
+        },
+        "error": null
+      },
+      "python_codec": {
+        "accepted": false,
+        "action": null,
+        "error": "target violates syntax mask: market_kind"
+      },
+      "v4_expected": {
+        "accepted": false,
+        "action": null,
+        "reason": "hire-capacity-240-241"
+      }
+    },
+    {
+      "id": "mutation-hire-capacity-241-241",
+      "sampler": {
+        "accepted": false,
+        "action": null,
+        "error": "Myolie sampler frame 241 slot 7 token 1 violates syntax mask"
+      },
+      "training_decoder": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ],
+            [
+              "PASS"
+            ]
+          ],
+          "market": [
+            [
+              "HIRE"
+            ]
+          ]
+        },
+        "error": null
+      },
+      "python_codec": {
+        "accepted": false,
+        "action": null,
+        "error": "target violates syntax mask: market_kind"
+      },
+      "v4_expected": {
+        "accepted": false,
+        "action": null,
+        "reason": "hire-capacity-241-241"
+      }
+    },
+    {
+      "id": "mutation-padding-nonzero",
+      "sampler": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [],
+          "market": []
+        },
+        "error": null
+      },
+      "training_decoder": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [],
+          "market": []
+        },
+        "error": null
+      },
+      "python_codec": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [],
+          "market": []
+        },
+        "error": null
+      },
+      "v4_expected": {
+        "accepted": false,
+        "action": null,
+        "reason": "padding must be zero (v4.1 question 2); reference verdict covers prefix only"
+      }
+    },
+    {
+      "id": "mutation-padding-out-of-width",
+      "sampler": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [],
+          "market": []
+        },
+        "error": null
+      },
+      "training_decoder": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [],
+          "market": []
+        },
+        "error": null
+      },
+      "python_codec": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [],
+          "market": []
+        },
+        "error": null
+      },
+      "v4_expected": {
+        "accepted": false,
+        "action": null,
+        "reason": "padding must be zero (v4.1 question 2); reference verdict covers prefix only"
+      }
+    },
+    {
+      "id": "mutation-padding-negative",
+      "sampler": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [],
+          "market": []
+        },
+        "error": null
+      },
+      "training_decoder": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [],
+          "market": []
+        },
+        "error": null
+      },
+      "python_codec": {
+        "accepted": true,
+        "action": {
+          "farmer": [
+            "PASS"
+          ],
+          "hands": [],
+          "market": []
+        },
+        "error": null
+      },
+      "v4_expected": {
+        "accepted": false,
+        "action": null,
+        "reason": "padding must be zero (v4.1 question 2); reference verdict covers prefix only"
+      }
+    }
+  ],
+  "missing_rejection_categories": [
+    "unknown market command",
+    "unsupported unit command arguments",
+    "market item syntax",
+    "extra hand commands",
+    "market queue limit",
+    "quantity range",
+    "hire capacity"
+  ],
+  "compressed_sha256": "fa26a81fa21189b5329f04af069c5b70491927d1a9d7200d443cfdd89ec6ebd3",
+  "uncompressed_sha256": "36d87a61d174959545a85fdf74eef10fc917502420c07b427a8d2a871547542e",
+  "compressed_bytes": 199448,
+  "uncompressed_bytes": 2901204
+}

@@ -1,0 +1,110 @@
+#[cfg(test)]
+mod task12_oracle {
+    use serde::Deserialize;
+    use serde_json::{Value, json};
+    use std::io::{BufRead, Write};
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Shape {
+        actors: u32,
+        order_limit: u32,
+        hire_limit: u32,
+    }
+    #[derive(Deserialize)]
+    #[serde(tag = "op", deny_unknown_fields)]
+    enum Request {
+        #[serde(rename = "plan")]
+        Plan { id: String, shape: Shape },
+        #[serde(rename = "decode")]
+        Decode {
+            id: String,
+            shape: Shape,
+            seat: usize,
+            tokens: Vec<i64>,
+            length: i32,
+            padding_edits: Vec<[i64; 3]>,
+        },
+    }
+    fn verdict(result: Result<Value, String>) -> Value {
+        match result {
+            Ok(action) => json!({"accepted":true,"action":action,"error":null}),
+            Err(error) => json!({"accepted":false,"action":null,"error":error}),
+        }
+    }
+    fn run(request: Request) -> Value {
+        match request {
+            Request::Plan { id, shape } => {
+                let result =
+                    crate::myolie_sampler::plan(shape.actors, shape.order_limit, shape.hire_limit);
+                match result {
+                    Ok(bytes) => json!({"id":id,"bytes":bytes,"error":null}),
+                    Err(error) => json!({"id":id,"bytes":null,"error":error}),
+                }
+            },
+            Request::Decode {
+                id,
+                shape,
+                seat,
+                tokens,
+                length,
+                padding_edits,
+            } => {
+                assert!((1..=241).contains(&shape.actors));
+                assert!((1..=10).contains(&shape.order_limit));
+                assert!((1..=241).contains(&shape.hire_limit));
+                assert!(seat < 2 && tokens.len() <= 3024 && (-1..=253).contains(&length));
+                let compact: Vec<i16> = tokens
+                    .into_iter()
+                    .map(|value| i16::try_from(value).expect("checked i16 request"))
+                    .collect();
+                let sampler = verdict(crate::myolie_sampler::decode(
+                    shape.actors,
+                    shape.order_limit,
+                    shape.hire_limit,
+                    &compact,
+                ));
+                let config = crate::Config {
+                    max_market_orders_per_turn: i64::from(shape.order_limit).into(),
+                    ..crate::Config::default()
+                };
+                let mut game = crate::Game::new(config, 73, 2).unwrap();
+                let farmer = game.farms[seat].farmer.clone();
+                game.farms[seat]
+                    .hands
+                    .resize(usize::try_from(shape.actors).unwrap() - 1, farmer);
+                let mut padded = vec![0_i16; 3024];
+                padded[..compact.len()].copy_from_slice(&compact);
+                for [frame, slot, value] in padding_edits {
+                    let frame = usize::try_from(frame).unwrap();
+                    let slot = usize::try_from(slot).unwrap();
+                    assert!(
+                        frame < 252
+                            && slot < 12
+                            && i64::try_from(frame).unwrap() >= i64::from(length)
+                    );
+                    padded[frame * 12 + slot] = i16::try_from(value).unwrap();
+                }
+                let training = if compact.len() != usize::try_from(length.max(0)).unwrap() * 12 {
+                    json!({"not_applicable":true,"reason":"incomplete candidate tokens have no equal-length FFI prefix"})
+                } else {
+                    verdict(super::myolie_action(&game, seat, &padded, length))
+                };
+                json!({"id":id,"sampler":sampler,"training_decoder":training})
+            },
+        }
+    }
+    #[test]
+    fn record_requests() {
+        let input = std::fs::File::open(std::env::var("KG_GRAMMAR_ORACLE_INPUT").unwrap()).unwrap();
+        let mut output = std::io::BufWriter::new(
+            std::fs::File::create(std::env::var("KG_GRAMMAR_ORACLE_OUTPUT").unwrap()).unwrap(),
+        );
+        for line in std::io::BufReader::new(input).lines() {
+            let request: Request = serde_json::from_str(&line.unwrap()).unwrap();
+            serde_json::to_writer(&mut output, &run(request)).unwrap();
+            writeln!(output).unwrap();
+        }
+        output.flush().unwrap();
+    }
+}

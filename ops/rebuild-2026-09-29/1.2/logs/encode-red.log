@@ -1,0 +1,32 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true cargo test --locked --lib grammar_encode -- --test-threads=1
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-grammar)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.27s
+     Running unittests src/lib.rs (target/debug/deps/rs-70d11de31c3178d2)
+
+running 2 tests
+test kaggriculture::grammar::tests::grammar_encode_rejects ... FAILED
+test kaggriculture::grammar::tests::grammar_encode_round_trip ... FAILED
+
+failures:
+
+---- kaggriculture::grammar::tests::grammar_encode_rejects stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_encode_rejects' (10030272) panicked at src/kaggriculture/grammar_tests.rs:678:5:
+expected "action keys", got "grammar encode not implemented: test-first stub"; null
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- kaggriculture::grammar::tests::grammar_encode_round_trip stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_encode_round_trip' (10030273) panicked at src/kaggriculture/grammar_tests.rs:651:50:
+called `Result::unwrap()` on an `Err` value: "grammar encode not implemented: test-first stub"
+
+
+failures:
+    kaggriculture::grammar::tests::grammar_encode_rejects
+    kaggriculture::grammar::tests::grammar_encode_round_trip
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 162 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+
+EXIT_CODE=101

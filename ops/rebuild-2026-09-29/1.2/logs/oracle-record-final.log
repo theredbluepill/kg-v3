@@ -1,0 +1,48 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline python ops/rebuild-2026-09-29/1.2/oracle/record_reference.py record --reference-root /Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2 --output tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz --manifest tests/fixtures/kaggriculture/grammar-v4-reference.manifest.json
+Native command: ["cargo", "test", "--manifest-path", "/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2/engine_rs/Cargo.toml", "--offline", "--locked", "--lib", "ffi::task12_oracle::record_requests", "--", "--exact", "--nocapture", "--test-threads=1"]
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (.codex-tmp/grammar-reference-build-1.2/debug/deps/kaggriculture_engine-226c6940f04d292f)
+
+running 1 test
+test ffi::task12_oracle::record_requests ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 120 filtered out; finished in 0.94s
+
+Replay scan: {"95324500": {"candidates": 1438, "canonical_layout_exclusions": {}, "codec_rejections": {}, "selected": {"0": 4, "1": 4, "2": 4, "3": 4}}, "95901360": {"candidates": 1438, "canonical_layout_exclusions": {}, "codec_rejections": {}, "selected": {"0": 4, "1": 4, "2": 4, "3": 4}}, "95921764": {"candidates": 1438, "canonical_layout_exclusions": {}, "codec_rejections": {}, "selected": {"0": 4, "1": 4, "2": 4, "3": 4}}, "95990191": {"candidates": 1438, "canonical_layout_exclusions": {}, "codec_rejections": {}, "selected": {"0": 4, "1": 4, "2": 4, "3": 4}}}
+Native command: ["cargo", "test", "--manifest-path", "/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2/engine_rs/Cargo.toml", "--offline", "--locked", "--lib", "ffi::task12_oracle::record_requests", "--", "--exact", "--nocapture", "--test-threads=1"]
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running unittests src/lib.rs (.codex-tmp/grammar-reference-build-1.2/debug/deps/kaggriculture_engine-226c6940f04d292f)
+
+running 1 test
+test ffi::task12_oracle::record_requests ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 120 filtered out; finished in 0.17s
+
+{
+  "mode": "record",
+  "counts": {
+    "accepted": 320,
+    "sampled": 256,
+    "replay": 64,
+    "dense": 64,
+    "dense_full_market": 22,
+    "full_market": 188,
+    "mutations": 44,
+    "replay_rejected": 0
+  },
+  "compressed_sha256": "fa26a81fa21189b5329f04af069c5b70491927d1a9d7200d443cfdd89ec6ebd3",
+  "uncompressed_sha256": "36d87a61d174959545a85fdf74eef10fc917502420c07b427a8d2a871547542e",
+  "compressed_bytes": 199448,
+  "uncompressed_bytes": 2901204,
+  "missing_rejection_categories": [
+    "unknown market command",
+    "unsupported unit command arguments",
+    "market item syntax",
+    "extra hand commands",
+    "market queue limit",
+    "quantity range",
+    "hire capacity"
+  ]
+}
+
+EXIT_CODE=0

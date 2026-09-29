@@ -1,0 +1,25 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true cargo test --locked --lib grammar_replays_reference_program -- --test-threads=1
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-grammar)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.84s
+     Running unittests src/lib.rs (target/debug/deps/rs-70d11de31c3178d2)
+
+running 1 test
+test kaggriculture::grammar::tests::grammar_replays_reference_program ... FAILED
+
+failures:
+
+---- kaggriculture::grammar::tests::grammar_replays_reference_program stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_replays_reference_program' (10051246) panicked at src/kaggriculture/grammar_tests.rs:842:9:
+token 3
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::grammar::tests::grammar_replays_reference_program
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 165 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+
+EXIT_CODE=101

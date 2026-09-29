@@ -1,5 +1,19 @@
 # Change log
 
+## 2026-09-29 — Rebuild the native grammar under the reviewed Task 1.2 contract
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native semantics Reference]]
+now records the compiled typed grammar, strict native codec and direct tables,
+with the complete changed-path inventory and five agreed v4.1 clarifications.
+The independent 320-program oracle reproduces exactly; nine shared grammar tests
+and nine kernel tests cover malformed transport, coupled HIRE, both-seat dense
+execution, the 240-to-241 boundary and 64 replay-state comparisons. Captured
+stubs and restored negative controls distinguish real checks from self-agreement.
+Full preparation passes: 164 root Rust tests (two ignored), 77 engine tests,
+1,045 Python tests (three platform skips), formatting/lint/typing/docs and the
+trim checker. The receipt records remaining L4/binding/GPU limits. Historical
+adapter and performance evidence remains reference-scoped.
+
 ## 2026-09-29 — Report action-mask shapes in the replay-drift alarm and refresh its evidence
 
 Codex's stream C re-verification (approve with edits) found stale evidence and one diagnostic gap, now corrected in the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:

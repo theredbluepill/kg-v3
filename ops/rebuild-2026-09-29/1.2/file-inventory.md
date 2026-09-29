@@ -1,0 +1,146 @@
+# Task 1.2 — changed and added paths
+
+Compared with pre-task `a88150c`; includes the partial `cdd2617` commit and this working tree.
+No retained engine source, engine Cargo/lockfile/license, root Cargo.lock or L4 generation fixture changed.
+Ignored scratch request/response/build artifacts are deliberately excluded from this handoff inventory.
+
+- `Cargo.toml` — Promote existing serde_json from dev to normal dependency through Cargo; no new crate.
+- `cookbook/log.md` — Prepended Task1.2 adaptation and actual verification outcome.
+- `cookbook/references/index.md` — Updated current native semantics Reference description.
+- `cookbook/references/native-game-semantics-use-v3-owned-buffers.md` — One current adaptation record with changed paths/checks/gaps, preserving historical scope.
+- `docs/kaggriculture-contract.md` — Five agreed v4.1 clarifications without semantic changes.
+- `docs/rl-api-specs.md` — Native grammar signatures/table ABI, admission, future bindings and retirement.
+- `docs/rules-parity-coverage.md` — Current grammar/kernel coverage and exact final counts, historical scope and gaps.
+- `engine_rs/TRIM_MANIFEST.json` — Final computed authored test hash and Task1.2 non-engine registration.
+- `engine_rs/tests/grammar_kernel.rs` — Same-source engine integration: nine kernel tests plus nine shared grammar tests.
+- `ops/rebuild-2026-09-29/1.2/checks.json` — Machine-readable prior statements, argv, environment, actual results and log paths.
+- `ops/rebuild-2026-09-29/1.2/commands.md` — Rendered complete validation command/result ledger.
+- `ops/rebuild-2026-09-29/1.2/controls/decode-stub.rs.txt` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/encode-stub.rs.txt` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/final-sentinel.before` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/final-sentinel.patch` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/hire-guard.before` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/hire-guard.patch` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/kernel-buy-land.before` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/kernel-buy-land.patch` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/replay-render-corrected.before` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/replay-render-corrected.patch` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/replay-render.before` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/replay-render.patch` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/controls/transitions-stub.rs.txt` — Preserved explicit stub or exact before/patch custody for a restored negative control.
+- `ops/rebuild-2026-09-29/1.2/file-inventory.md` — This complete changed/added-path inventory relative to pre-task commit.
+- `ops/rebuild-2026-09-29/1.2/logs/authored-rust-format.log` — Actual command stdout/stderr and direct exit receipt for authored-rust-format.
+- `ops/rebuild-2026-09-29/1.2/logs/checker-current-inventory.log` — Actual command stdout/stderr and direct exit receipt for checker-current-inventory.
+- `ops/rebuild-2026-09-29/1.2/logs/checker-green.log` — Actual command stdout/stderr and direct exit receipt for checker-green.
+- `ops/rebuild-2026-09-29/1.2/logs/checker-placeholder-format.log` — Actual command stdout/stderr and direct exit receipt for checker-placeholder-format.
+- `ops/rebuild-2026-09-29/1.2/logs/checker-placeholder-hash.log` — Actual command stdout/stderr and direct exit receipt for checker-placeholder-hash.
+- `ops/rebuild-2026-09-29/1.2/logs/checker-red.log` — Actual command stdout/stderr and direct exit receipt for checker-red.
+- `ops/rebuild-2026-09-29/1.2/logs/constants-green.log` — Actual command stdout/stderr and direct exit receipt for constants-green.
+- `ops/rebuild-2026-09-29/1.2/logs/constants-red.log` — Actual command stdout/stderr and direct exit receipt for constants-red.
+- `ops/rebuild-2026-09-29/1.2/logs/decode-green.log` — Actual command stdout/stderr and direct exit receipt for decode-green.
+- `ops/rebuild-2026-09-29/1.2/logs/decode-red.log` — Actual command stdout/stderr and direct exit receipt for decode-red.
+- `ops/rebuild-2026-09-29/1.2/logs/docs-fresh-final.log` — Actual command stdout/stderr and direct exit receipt for docs-fresh-final.
+- `ops/rebuild-2026-09-29/1.2/logs/encode-green.log` — Actual command stdout/stderr and direct exit receipt for encode-green.
+- `ops/rebuild-2026-09-29/1.2/logs/encode-red.log` — Actual command stdout/stderr and direct exit receipt for encode-red.
+- `ops/rebuild-2026-09-29/1.2/logs/engine-bytes-from-task-start.log` — Actual command stdout/stderr and direct exit receipt for engine-bytes-from-task-start.
+- `ops/rebuild-2026-09-29/1.2/logs/engine-bytes-guard.log` — Actual command stdout/stderr and direct exit receipt for engine-bytes-guard.
+- `ops/rebuild-2026-09-29/1.2/logs/engine-serde-features.log` — Actual command stdout/stderr and direct exit receipt for engine-serde-features.
+- `ops/rebuild-2026-09-29/1.2/logs/final-branch.log` — Actual command stdout/stderr and direct exit receipt for final-branch.
+- `ops/rebuild-2026-09-29/1.2/logs/final-docs-lint.log` — Actual command stdout/stderr and direct exit receipt for final-docs-lint.
+- `ops/rebuild-2026-09-29/1.2/logs/final-engine-cargo.log` — Actual command stdout/stderr and direct exit receipt for final-engine-cargo.
+- `ops/rebuild-2026-09-29/1.2/logs/final-engine-grammar.log` — Actual command stdout/stderr and direct exit receipt for final-engine-grammar.
+- `ops/rebuild-2026-09-29/1.2/logs/final-kernel-hash.log` — Actual command stdout/stderr and direct exit receipt for final-kernel-hash.
+- `ops/rebuild-2026-09-29/1.2/logs/final-orbit-python-existing-deps.log` — Actual command stdout/stderr and direct exit receipt for final-orbit-python-existing-deps.
+- `ops/rebuild-2026-09-29/1.2/logs/final-orbit-python.log` — Actual command stdout/stderr and direct exit receipt for final-orbit-python.
+- `ops/rebuild-2026-09-29/1.2/logs/final-reference-pin.log` — Actual command stdout/stderr and direct exit receipt for final-reference-pin.
+- `ops/rebuild-2026-09-29/1.2/logs/final-root-cargo.log` — Actual command stdout/stderr and direct exit receipt for final-root-cargo.
+- `ops/rebuild-2026-09-29/1.2/logs/final-root-grammar.log` — Actual command stdout/stderr and direct exit receipt for final-root-grammar.
+- `ops/rebuild-2026-09-29/1.2/logs/final-staging-guard.log` — Actual command stdout/stderr and direct exit receipt for final-staging-guard.
+- `ops/rebuild-2026-09-29/1.2/logs/final-status.log` — Actual command stdout/stderr and direct exit receipt for final-status.
+- `ops/rebuild-2026-09-29/1.2/logs/final-tool-pytest.log` — Actual command stdout/stderr and direct exit receipt for final-tool-pytest.
+- `ops/rebuild-2026-09-29/1.2/logs/final-trim.log` — Actual command stdout/stderr and direct exit receipt for final-trim.
+- `ops/rebuild-2026-09-29/1.2/logs/final-whitespace.log` — Actual command stdout/stderr and direct exit receipt for final-whitespace.
+- `ops/rebuild-2026-09-29/1.2/logs/hire-green.log` — Actual command stdout/stderr and direct exit receipt for hire-green.
+- `ops/rebuild-2026-09-29/1.2/logs/hire-negative.log` — Actual command stdout/stderr and direct exit receipt for hire-negative.
+- `ops/rebuild-2026-09-29/1.2/logs/kernel-clippy.log` — Actual command stdout/stderr and direct exit receipt for kernel-clippy.
+- `ops/rebuild-2026-09-29/1.2/logs/kernel-format.log` — Actual command stdout/stderr and direct exit receipt for kernel-format.
+- `ops/rebuild-2026-09-29/1.2/logs/kernel-green.log` — Actual command stdout/stderr and direct exit receipt for kernel-green.
+- `ops/rebuild-2026-09-29/1.2/logs/kernel-initial.log` — Actual command stdout/stderr and direct exit receipt for kernel-initial.
+- `ops/rebuild-2026-09-29/1.2/logs/kernel-renderer-red.log` — Actual command stdout/stderr and direct exit receipt for kernel-renderer-red.
+- `ops/rebuild-2026-09-29/1.2/logs/missing-sentinel-green.log` — Actual command stdout/stderr and direct exit receipt for missing-sentinel-green.
+- `ops/rebuild-2026-09-29/1.2/logs/missing-sentinel-negative.log` — Actual command stdout/stderr and direct exit receipt for missing-sentinel-negative.
+- `ops/rebuild-2026-09-29/1.2/logs/ops-helpers-format.log` — Actual command stdout/stderr and direct exit receipt for ops-helpers-format.
+- `ops/rebuild-2026-09-29/1.2/logs/ops-helpers-lint.log` — Actual command stdout/stderr and direct exit receipt for ops-helpers-lint.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-format-final.log` — Actual command stdout/stderr and direct exit receipt for oracle-format-final.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-format-hardening.log` — Actual command stdout/stderr and direct exit receipt for oracle-format-hardening.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-format-tests-final.log` — Actual command stdout/stderr and direct exit receipt for oracle-format-tests-final.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-harness-format.log` — Actual command stdout/stderr and direct exit receipt for oracle-harness-format.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-lint-clean.log` — Actual command stdout/stderr and direct exit receipt for oracle-lint-clean.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-lint-final.log` — Actual command stdout/stderr and direct exit receipt for oracle-lint-final.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-lint-fix2.log` — Actual command stdout/stderr and direct exit receipt for oracle-lint-fix2.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-lint-postformat.log` — Actual command stdout/stderr and direct exit receipt for oracle-lint-postformat.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-python-format.log` — Actual command stdout/stderr and direct exit receipt for oracle-python-format.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-python-format2.log` — Actual command stdout/stderr and direct exit receipt for oracle-python-format2.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-readonly-final-audit.log` — Actual command stdout/stderr and direct exit receipt for oracle-readonly-final-audit.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-record-final.log` — Actual command stdout/stderr and direct exit receipt for oracle-record-final.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-record-first.log` — Actual command stdout/stderr and direct exit receipt for oracle-record-first.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-scratch-bytecode-clean.log` — Actual command stdout/stderr and direct exit receipt for oracle-scratch-bytecode-clean.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-scratch-final-state.log` — Actual command stdout/stderr and direct exit receipt for oracle-scratch-final-state.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-scratch-ignored-audit.log` — Actual command stdout/stderr and direct exit receipt for oracle-scratch-ignored-audit.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-sha256-final.log` — Actual command stdout/stderr and direct exit receipt for oracle-sha256-final.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-tooling-final.log` — Actual command stdout/stderr and direct exit receipt for oracle-tooling-final.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-validator-explicit-error-control.log` — Actual command stdout/stderr and direct exit receipt for oracle-validator-explicit-error-control.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-validator-explicit-error-restored.log` — Actual command stdout/stderr and direct exit receipt for oracle-validator-explicit-error-restored.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-validator-green-first.log` — Actual command stdout/stderr and direct exit receipt for oracle-validator-green-first.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-validator-green.log` — Actual command stdout/stderr and direct exit receipt for oracle-validator-green.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-validator-hardening.log` — Actual command stdout/stderr and direct exit receipt for oracle-validator-hardening.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-validator-negative-control.log` — Actual command stdout/stderr and direct exit receipt for oracle-validator-negative-control.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-validator-red.log` — Actual command stdout/stderr and direct exit receipt for oracle-validator-red.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-validator-restored-green.log` — Actual command stdout/stderr and direct exit receipt for oracle-validator-restored-green.
+- `ops/rebuild-2026-09-29/1.2/logs/oracle-verify-final.log` — Actual command stdout/stderr and direct exit receipt for oracle-verify-final.
+- `ops/rebuild-2026-09-29/1.2/logs/prepare-final.log` — Actual command stdout/stderr and direct exit receipt for prepare-final.
+- `ops/rebuild-2026-09-29/1.2/logs/py-prepare-final.log` — Actual command stdout/stderr and direct exit receipt for py-prepare-final.
+- `ops/rebuild-2026-09-29/1.2/logs/register-final-kernel-hash.log` — Actual command stdout/stderr and direct exit receipt for register-final-kernel-hash.
+- `ops/rebuild-2026-09-29/1.2/logs/replay-walk-green-corrected.log` — Actual command stdout/stderr and direct exit receipt for replay-walk-green-corrected.
+- `ops/rebuild-2026-09-29/1.2/logs/replay-walk-green.log` — Actual command stdout/stderr and direct exit receipt for replay-walk-green.
+- `ops/rebuild-2026-09-29/1.2/logs/replay-walk-negative-corrected.log` — Actual command stdout/stderr and direct exit receipt for replay-walk-negative-corrected.
+- `ops/rebuild-2026-09-29/1.2/logs/replay-walk-negative.log` — Actual command stdout/stderr and direct exit receipt for replay-walk-negative.
+- `ops/rebuild-2026-09-29/1.2/logs/resumed-source-identity.log` — Actual command stdout/stderr and direct exit receipt for resumed-source-identity.
+- `ops/rebuild-2026-09-29/1.2/logs/root-serde-features.log` — Actual command stdout/stderr and direct exit receipt for root-serde-features.
+- `ops/rebuild-2026-09-29/1.2/logs/rs-prepare-common-format.log` — Actual command stdout/stderr and direct exit receipt for rs-prepare-common-format.
+- `ops/rebuild-2026-09-29/1.2/logs/rs-prepare-first.log` — Actual command stdout/stderr and direct exit receipt for rs-prepare-first.
+- `ops/rebuild-2026-09-29/1.2/logs/serde-promote-add.log` — Actual command stdout/stderr and direct exit receipt for serde-promote-add.
+- `ops/rebuild-2026-09-29/1.2/logs/serde-promote-remove-dev.log` — Actual command stdout/stderr and direct exit receipt for serde-promote-remove-dev.
+- `ops/rebuild-2026-09-29/1.2/logs/shared-format-engine-check.log` — Actual command stdout/stderr and direct exit receipt for shared-format-engine-check.
+- `ops/rebuild-2026-09-29/1.2/logs/shared-format-root.log` — Actual command stdout/stderr and direct exit receipt for shared-format-root.
+- `ops/rebuild-2026-09-29/1.2/logs/transition-stub-hash.log` — Actual command stdout/stderr and direct exit receipt for transition-stub-hash.
+- `ops/rebuild-2026-09-29/1.2/logs/transitions-green.log` — Actual command stdout/stderr and direct exit receipt for transitions-green.
+- `ops/rebuild-2026-09-29/1.2/logs/transitions-red.log` — Actual command stdout/stderr and direct exit receipt for transitions-red.
+- `ops/rebuild-2026-09-29/1.2/logs/trim-after-prepare.log` — Actual command stdout/stderr and direct exit receipt for trim-after-prepare.
+- `ops/rebuild-2026-09-29/1.2/mutate_check.py` — Preserve before/patch/hashes for temporary controls and restore exact source in finally.
+- `ops/rebuild-2026-09-29/1.2/oracle/README.md` — Detailed oracle custody, disagreement, deterministic rerun and test-first receipt.
+- `ops/rebuild-2026-09-29/1.2/oracle/record_reference.py` — Offline independent actual-reference plan/decoder/codec recorder, strict validator and deterministic writer.
+- `ops/rebuild-2026-09-29/1.2/oracle/reference_harness.rs` — Authored append-only reference FFI test harness, preserving independent decoder verdicts.
+- `ops/rebuild-2026-09-29/1.2/oracle/scratch/.gitignore` — Ignore regenerable native request/response working artifacts, preserving authored/source custody.
+- `ops/rebuild-2026-09-29/1.2/oracle/scratch/actor_codec.py.original` — Pinned reference pre-edit/source bytes or exact append-only oracle harness patch.
+- `ops/rebuild-2026-09-29/1.2/oracle/scratch/append.patch` — Pinned reference pre-edit/source bytes or exact append-only oracle harness patch.
+- `ops/rebuild-2026-09-29/1.2/oracle/scratch/ffi.rs.before` — Pinned reference pre-edit/source bytes or exact append-only oracle harness patch.
+- `ops/rebuild-2026-09-29/1.2/oracle/scratch/ffi.rs.original` — Pinned reference pre-edit/source bytes or exact append-only oracle harness patch.
+- `ops/rebuild-2026-09-29/1.2/oracle/scratch/gpu_sampling_grammar.py.original` — Pinned reference pre-edit/source bytes or exact append-only oracle harness patch.
+- `ops/rebuild-2026-09-29/1.2/oracle/scratch/myolie_sampler.rs.original` — Pinned reference pre-edit/source bytes or exact append-only oracle harness patch.
+- `ops/rebuild-2026-09-29/1.2/results.md` — Complete implementation receipt: TDD, oracle/kernel facts, deviations and numbered risks.
+- `ops/rebuild-2026-09-29/1.2/run_check.py` — Declare prior check statement; capture combined output and unmasked exit under fixed offline/two-job environment.
+- `ops/rebuild-2026-09-29/plan.md` — Task1.2 compiled location/completion and deferred include retirement.
+- `scripts/check_engine_trim.py` — Fixed authored allowlist of exactly replay_parity.rs and grammar_kernel.rs.
+- `src/kaggriculture.rs` — Register the compiled grammar module.
+- `src/kaggriculture/grammar.rs` — Typed plan/cursor, checked support, eight tables, strict canonical encode/decode.
+- `src/kaggriculture/grammar_tests.rs` — Nine shared semantic tests with independent fixtures, matrices and coupled-HIRE law.
+- `src/lib.rs` — Register Kaggriculture alongside the existing root modules.
+- `tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz` — Frozen 320-program independent corpus plus44 classified controls.
+- `tests/fixtures/kaggriculture/grammar-v4-reference.manifest.json` — Source/output hashes, schedule, counts, rejection and disagreement custody.
+- `tests/tools/test_check_engine_trim.py` — Test-first authored-inventory omission/hash/third-file regressions.
+- `tests/tools/test_record_grammar_reference.py` — 25 strict independent oracle schema/corruption/determinism tests.
+
+The detached reference worktree has one authorized source change:
+`.codex-tmp/grammar-reference-1.2/engine_rs/src/ffi.rs`:
+the exact append-only test harness. Its pre-edit bytes and patch are listed above; no Git metadata was written.

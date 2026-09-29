@@ -1,0 +1,16 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true cargo tree --manifest-path engine_rs/Cargo.toml --offline --locked -e features -i serde_json
+serde_json v1.0.151
+├── serde_json feature "arbitrary_precision"
+│   └── kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+│       └── kaggriculture-engine feature "default" (command-line)
+├── serde_json feature "default"
+│   └── kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs) (*)
+├── serde_json feature "indexmap"
+│   └── serde_json feature "preserve_order"
+│       └── kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs) (*)
+├── serde_json feature "preserve_order" (*)
+└── serde_json feature "std"
+    ├── serde_json feature "default" (*)
+    └── serde_json feature "preserve_order" (*)
+
+EXIT_CODE=0

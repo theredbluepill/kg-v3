@@ -1,0 +1,25 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true cargo test --locked --lib grammar_tables_match_reference_and_reachable_states -- --test-threads=1
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-grammar)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.51s
+     Running unittests src/lib.rs (target/debug/deps/rs-70d11de31c3178d2)
+
+running 1 test
+test kaggriculture::grammar::tests::grammar_tables_match_reference_and_reachable_states ... FAILED
+
+failures:
+
+---- kaggriculture::grammar::tests::grammar_tables_match_reference_and_reachable_states stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_tables_match_reference_and_reachable_states' (10001153) panicked at src/kaggriculture/grammar_tests.rs:411:35:
+called `Result::unwrap()` on an `Err` value: "grammar tables not implemented: test-first stub"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::grammar::tests::grammar_tables_match_reference_and_reachable_states
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 158 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+
+EXIT_CODE=101

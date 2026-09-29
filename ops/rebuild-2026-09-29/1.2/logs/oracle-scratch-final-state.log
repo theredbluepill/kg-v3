@@ -1,0 +1,6 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true python3 -c 'import pathlib,subprocess; root=pathlib.Path(".codex-tmp/grammar-reference-1.2"); print(subprocess.check_output(["git","status","--short","--untracked-files=all"],cwd=root,text=True)); before=pathlib.Path("ops/rebuild-2026-09-29/1.2/oracle/scratch/ffi.rs.before").read_bytes(); append=pathlib.Path("ops/rebuild-2026-09-29/1.2/oracle/reference_harness.rs").read_bytes(); assert (root/"engine_rs/src/ffi.rs").read_bytes()==before+append; assert not list((root/"python/owl/kaggriculture").glob("__pycache__/actor_codec.*.pyc")); print("exact append and no codec bytecode: OK")'
+ M engine_rs/src/ffi.rs
+
+exact append and no codec bytecode: OK
+
+EXIT_CODE=0

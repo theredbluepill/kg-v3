@@ -1,0 +1,975 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uvx --offline ruff check --fix ops/rebuild-2026-09-29/1.2/oracle/record_reference.py tests/tools/test_record_grammar_reference.py
+E501 Line too long (197 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:23:89
+   |
+21 | …
+22 | …
+23 | …resent','unit_quantity_high','unit_quantity','market_kind','market_item','market_quantity_high','market_quantity','stop']
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 | …
+25 | …1),(241,1,241),(241,10,241)]
+   |
+
+E501 Line too long (104 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:25:89
+   |
+23 | NAMES = ['unit_actor','unit_kind','unit_target','unit_item','unit_quantity_present','unit_quantity_high','unit_quantity','market_kind'…
+24 | WIDTHS = [241,20,128,16,2,32,32,8,16,32,32,2]
+25 | SHAPES = [(1,1,241),(1,10,241),(2,10,241),(17,10,16),(231,10,241),(240,10,241),(241,1,241),(241,10,241)]
+   |                                                                                         ^^^^^^^^^^^^^^^^
+26 | EPISODES = [95324500,95901360,95921764,95990191]
+27 | SOURCES = ['engine_rs/src/myolie_sampler.rs','engine_rs/src/ffi.rs','python/owl/kaggriculture/actor_codec.py','python/owl/kaggricultur…
+   |
+
+E501 Line too long (161 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:27:89
+   |
+25 | …10,241),(240,10,241),(241,1,241),(241,10,241)]
+26 | …
+27 | …c/ffi.rs','python/owl/kaggriculture/actor_codec.py','python/owl/kaggriculture/gpu_sampling_grammar.py']
+   |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+28 | …b372a90b379d617ffdbab505d87af195694c380e75b57ac29','engine_rs/src/ffi.rs':'84c19507b1945106cbffbc878bb0324ed71f581065c1e1b90c4360fe47…
+29 | …nit_quantity_present':(20,2), 'unit_quantity_high':(2,32), 'unit_quantity_low':(2,2,32), 'market_kind':(8,), 'market_item':(8,16), 'm…
+   |
+
+E501 Line too long (308 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:28:89
+   |
+26 | …
+27 | …griculture/actor_codec.py','python/owl/kaggriculture/gpu_sampling_grammar.py']
+28 | …87af195694c380e75b57ac29','engine_rs/src/ffi.rs':'84c19507b1945106cbffbc878bb0324ed71f581065c1e1b90c4360fe47df4369','python/owl/kaggriculture/actor_codec.py':'88ed3d44a7a0dc1cbc386035d323c34b17a3d14a2d4a520ad30240345140e5d6'}
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+29 | …,2), 'unit_quantity_high':(2,32), 'unit_quantity_low':(2,2,32), 'market_kind':(8,), 'market_item':(8,16), 'market_quantity':(8,32)}
+30 | … item syntax','extra hand commands','market queue limit','quantity range','hire capacity']
+   |
+
+E501 Line too long (214 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:29:89
+   |
+27 | …griculture/actor_codec.py','python/owl/kaggriculture/gpu_sampling_grammar.py']
+28 | …87af195694c380e75b57ac29','engine_rs/src/ffi.rs':'84c19507b1945106cbffbc878bb0324ed71f581065c1e1b90c4360fe47df4369','python/owl/kaggricu…
+29 | …,2), 'unit_quantity_high':(2,32), 'unit_quantity_low':(2,2,32), 'market_kind':(8,), 'market_item':(8,16), 'market_quantity':(8,32)}
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+30 | … item syntax','extra hand commands','market queue limit','quantity range','hire capacity']
+31 | …'training_decoder','python_codec','v4_expected'}
+   |
+
+E501 Line too long (173 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:30:89
+   |
+28 | …0b379d617ffdbab505d87af195694c380e75b57ac29','engine_rs/src/ffi.rs':'84c19507b1945106cbffbc878bb0324ed71f581065c1e1b90c4360fe47df4369…
+29 | …antity_present':(20,2), 'unit_quantity_high':(2,32), 'unit_quantity_low':(2,2,32), 'market_kind':(8,), 'market_item':(8,16), 'market_…
+30 | … arguments','market item syntax','extra hand commands','market queue limit','quantity range','hire capacity']
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+31 | …g_edits','sampler','training_decoder','python_codec','v4_expected'}
+32 | …e','from_step','seat','raw_action'}, 'mutation':{'category'}, 'replay_rejected':{'episode','from_step','seat','raw_action','category'…
+   |
+
+E501 Line too long (131 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:31:89
+   |
+29 | …em':(20,16), 'unit_quantity_present':(20,2), 'unit_quantity_high':(2,32), 'unit_quantity_low':(2,2,32), 'market_kind':(8,), 'market_i…
+30 | …upported unit command arguments','market item syntax','extra hand commands','market queue limit','quantity range','hire capacity']
+31 | …ens','length','padding_edits','sampler','training_decoder','python_codec','v4_expected'}
+   |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 | …'}, 'replay':{'episode','from_step','seat','raw_action'}, 'mutation':{'category'}, 'replay_rejected':{'episode','from_step','seat','r…
+33 | …e_commit','source_sha256','trace_sha256','recorder_sha256','harness_sha256','append_patch_sha256','cargo_lock_sha256','toolchain_sha2…
+   |
+
+E501 Line too long (199 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:32:89
+   |
+30 | …market item syntax','extra hand commands','market queue limit','quantity range','hire capacity']
+31 | …pler','training_decoder','python_codec','v4_expected'}
+32 | …','seat','raw_action'}, 'mutation':{'category'}, 'replay_rejected':{'episode','from_step','seat','raw_action','category'}}
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+33 | …ha256','recorder_sha256','harness_sha256','append_patch_sha256','cargo_lock_sha256','toolchain_sha256','commands','tools','counts','r…
+   |
+
+E501 Line too long (351 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:33:89
+   |
+31 | …'training_decoder','python_codec','v4_expected'}
+32 | …t','raw_action'}, 'mutation':{'category'}, 'replay_rejected':{'episode','from_step','seat','raw_action','category'}}
+33 | …,'recorder_sha256','harness_sha256','append_patch_sha256','cargo_lock_sha256','toolchain_sha256','commands','tools','counts','replay_scan','disagreements','missing_rejection_categories','compressed_sha256','uncompressed_sha256','compressed_bytes','uncompressed_bytes'}
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+E501 Line too long (109 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:50:89
+   |
+49 | def jsonl(rows):
+50 |     return b''.join((json.dumps(row, separators=(',',':'), ensure_ascii=True)+'\n').encode() for row in rows)
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^
+   |
+
+E501 Line too long (99 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:55:89
+   |
+53 | def deterministic_gzip(payload: bytes) -> bytes:
+54 |     target = io.BytesIO()
+55 |     with gzip.GzipFile(filename='', mode='wb', fileobj=target, mtime=0, compresslevel=9) as stream:
+   |                                                                                         ^^^^^^^^^^^
+56 |         stream.write(payload)
+57 |     return target.getvalue()
+   |
+
+E501 Line too long (155 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:62:89
+   |
+60 | …
+61 | …
+62 | …pressed_sha256':sha(payload), 'compressed_bytes':len(compressed), 'uncompressed_bytes':len(payload)}
+   |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+E501 Line too long (104 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:66:89
+   |
+65 | def counts(rows):
+66 |     accepted = [r for r in rows if r['source'] in ('sampled','replay') and r['v4_expected']['accepted']]
+   |                                                                                         ^^^^^^^^^^^^^^^^
+67 |     return {'accepted':len(accepted),'sampled':sum(r['source']=='sampled' for r in accepted),'replay':sum(r['source']=='replay' for r …
+   |
+
+E501 Line too long (550 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:67:89
+   |
+65 | …
+66 | …pected']['accepted']]
+67 | …accepted),'replay':sum(r['source']=='replay' for r in accepted),'dense':sum(r['shape']['actors']==241 for r in accepted),'dense_full_market':sum(r['shape']['actors']==241 and r['shape']['order_limit']==10 and r['length']==252 for r in accepted),'full_market':sum(r['length']==r['shape']['actors']+r['shape']['order_limit']+1 for r in accepted),'mutations':sum(r['source']=='mutation' for r in rows),'replay_rejected':sum(r['source']=='replay_rejected' for r in rows)}
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+E501 Line too long (715 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:72:89
+   |
+70 | …
+71 | …
+72 | …t_bytes(p)) for p in SOURCES},'trace_sha256':{str(e):sha((ROOT/f'engine_rs/fixtures/episode-{e}.jsonl.gz').read_bytes()) for e in EPISODES},'recorder_sha256':sha(Path(__file__).read_bytes()),'harness_sha256':sha((HERE/'reference_harness.rs').read_bytes()),'append_patch_sha256':sha((HERE/'scratch/append.patch').read_bytes()) if (HERE/'scratch/append.patch').exists() else sha(b''),'cargo_lock_sha256':sha(git_bytes('engine_rs/Cargo.lock')),'toolchain_sha256':sha(git_bytes('rust-toolchain.toml')),'commands':[], 'tools':{}, 'counts':counts(rows),'replay_scan':{},'disagreements':[],'missing_rejection_categories':CATEGORIES.copy()}
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+73 | …
+74 | …
+   |
+
+E501 Line too long (141 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:93:89
+   |
+91 | …e' in value:
+92 | …, 'oracle result')
+93 | …and isinstance(value['reason'],str) and bool(value['reason']), 'oracle applicability reason')
+   |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+94 | …
+95 | …'}, 'oracle result')
+   |
+
+E501 Line too long (216 > 88)
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:97:89
+   |
+95 | …
+96 | …
+97 | …lue['accepted'] else (value['action'] is None and isinstance(value['error'],str) and bool(value['error'])), 'oracle result contents')
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+E501 Line too long (111 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:105:89
+    |
+103 |     require(len(deterministic_gzip(payload))<=512*1024,'compressed size overflow')
+104 |     require(len(json.dumps(manifest).encode())<=64*1024,'manifest size overflow')
+105 |     require(manifest['schema_version']==1 and manifest['reference_commit']==PIN, 'manifest provenance version')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+106 |     require(manifest['source_sha256']=={p:sha(git_bytes(p)) for p in SOURCES}, 'stale source hash')
+107 |     for p, pinned in PINS.items():
+    |
+
+E501 Line too long (99 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:106:89
+    |
+104 |     require(len(json.dumps(manifest).encode())<=64*1024,'manifest size overflow')
+105 |     require(manifest['schema_version']==1 and manifest['reference_commit']==PIN, 'manifest provenance version')
+106 |     require(manifest['source_sha256']=={p:sha(git_bytes(p)) for p in SOURCES}, 'stale source hash')
+    |                                                                                         ^^^^^^^^^^^
+107 |     for p, pinned in PINS.items():
+108 |         require(manifest['source_sha256'][p]==pinned,'source differs from reviewed pin')
+    |
+
+E501 Line too long (96 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:109:89
+    |
+107 |     for p, pinned in PINS.items():
+108 |         require(manifest['source_sha256'][p]==pinned,'source differs from reviewed pin')
+109 |     require(manifest['recorder_sha256']==sha(Path(__file__).read_bytes()),'stale recorder hash')
+    |                                                                                         ^^^^^^^^
+110 |     require(manifest['harness_sha256']==sha((HERE/'reference_harness.rs').read_bytes()),'stale harness hash')
+111 |     require(manifest['trace_sha256']=={str(e):sha((ROOT/f'engine_rs/fixtures/episode-{e}.jsonl.gz').read_bytes()) for e in EPISODES},…
+    |
+
+E501 Line too long (109 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:110:89
+    |
+108 |         require(manifest['source_sha256'][p]==pinned,'source differs from reviewed pin')
+109 |     require(manifest['recorder_sha256']==sha(Path(__file__).read_bytes()),'stale recorder hash')
+110 |     require(manifest['harness_sha256']==sha((HERE/'reference_harness.rs').read_bytes()),'stale harness hash')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^
+111 |     require(manifest['trace_sha256']=={str(e):sha((ROOT/f'engine_rs/fixtures/episode-{e}.jsonl.gz').read_bytes()) for e in EPISODES},…
+112 |     require(manifest['cargo_lock_sha256']==sha(git_bytes('engine_rs/Cargo.lock')) and manifest['toolchain_sha256']==sha(git_bytes('ru…
+    |
+
+E501 Line too long (152 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:111:89
+    |
+109 | …le__).read_bytes()),'stale recorder hash')
+110 | …erence_harness.rs').read_bytes()),'stale harness hash')
+111 | …T/f'engine_rs/fixtures/episode-{e}.jsonl.gz').read_bytes()) for e in EPISODES},'stale trace hash')
+    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+112 | …es('engine_rs/Cargo.lock')) and manifest['toolchain_sha256']==sha(git_bytes('rust-toolchain.toml')),'stale build provenance')
+113 | …
+    |
+
+E501 Line too long (179 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:112:89
+    |
+110 | ….rs').read_bytes()),'stale harness hash')
+111 | …fixtures/episode-{e}.jsonl.gz').read_bytes()) for e in EPISODES},'stale trace hash')
+112 | …Cargo.lock')) and manifest['toolchain_sha256']==sha(git_bytes('rust-toolchain.toml')),'stale build provenance')
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+113 | …
+114 | …
+    |
+
+E501 Line too long (125 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:122:89
+    |
+120 |     header,*programs=rows
+121 |     exact(header,{'type','schema_version','reference_commit','slot_names','slot_widths','tables'},'header')
+122 |     require(header['type']=='header' and header['schema_version']==1 and header['reference_commit']==PIN,'header provenance')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+123 |     require(header['slot_names']==NAMES and header['slot_widths']==WIDTHS,'slot ABI')
+124 |     exact(header['tables'],TABLE_SHAPES,'tables')
+    |
+
+E501 Line too long (120 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:134:89
+    |
+132 |         source=row['source']
+133 |         exact(row,COMMON|EXTRAS[source],'program')
+134 |         require(row['type']=='program' and isinstance(row['id'],str) and row['id'] not in ids,'duplicate or invalid id')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+135 |         ids.add(row['id'])
+136 |         exact(row['shape'],{'actors','order_limit','hire_limit'},'shape')
+    |
+
+E501 Line too long (109 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:138:89
+    |
+136 | …     exact(row['shape'],{'actors','order_limit','hire_limit'},'shape')
+137 | …     a,o,h=(row['shape'][k] for k in ('actors','order_limit','hire_limit'))
+138 | …     require(all(type(v) is int for v in (a,o,h)) and 1<=a<=241 and 1<=o<=10 and 1<=h<=241,'shape bounds')
+    |                                                                                       ^^^^^^^^^^^^^^^^^^^^^
+139 | …     require(type(row['length']) is int and -1<=row['length']<=253,'length type/bounds')
+140 | …     require(isinstance(row['tokens'],list) and len(row['tokens'])<=3024 and all(type(v) is int and -32768<=v<=32767 for v in row['t…
+    |
+
+E501 Line too long (91 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:139:89
+    |
+137 | …     a,o,h=(row['shape'][k] for k in ('actors','order_limit','hire_limit'))
+138 | …     require(all(type(v) is int for v in (a,o,h)) and 1<=a<=241 and 1<=o<=10 and 1<=h<=241,'shape bounds')
+139 | …     require(type(row['length']) is int and -1<=row['length']<=253,'length type/bounds')
+    |                                                                                       ^^^
+140 | …     require(isinstance(row['tokens'],list) and len(row['tokens'])<=3024 and all(type(v) is int and -32768<=v<=32767 for v in row['t…
+141 | …     require(isinstance(row['padding_edits'],list),'padding edits')
+    |
+
+E501 Line too long (169 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:140:89
+    |
+138 | …241 and 1<=o<=10 and 1<=h<=241,'shape bounds')
+139 | …]<=253,'length type/bounds')
+140 | …ens'])<=3024 and all(type(v) is int and -32768<=v<=32767 for v in row['tokens']),'reference token domain')
+    |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+141 | …edits')
+142 | …
+    |
+
+E501 Line too long (119 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:143:89
+    |
+141 |         require(isinstance(row['padding_edits'],list),'padding edits')
+142 |         for edit in row['padding_edits']:
+143 |             require(isinstance(edit,list) and len(edit)==3 and all(type(v) is int for v in edit),'padding edit schema')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+144 |             f,s,v=edit
+145 |             require(max(0,row['length'])<=f<252 and 0<=s<12 and -32768<=v<=32767,'padding bounds')
+    |
+
+E501 Line too long (98 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:145:89
+    |
+143 |             require(isinstance(edit,list) and len(edit)==3 and all(type(v) is int for v in edit),'padding edit schema')
+144 |             f,s,v=edit
+145 |             require(max(0,row['length'])<=f<252 and 0<=s<12 and -32768<=v<=32767,'padding bounds')
+    |                                                                                         ^^^^^^^^^^
+146 |         for key in ('sampler','training_decoder','python_codec'):
+147 |             oracle_result(row[key])
+    |
+
+E501 Line too long (114 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:150:89
+    |
+148 |         exact(row['v4_expected'],{'accepted','action','reason'},'v4_expected')
+149 |         v4=row['v4_expected']
+150 |         require(type(v4['accepted']) is bool and isinstance(v4['reason'],str) and bool(v4['reason']),'v4 verdict')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+151 |         if v4['accepted']:
+152 |             require(len(row['tokens'])==row['length']*12 and a+1<=row['length']<=a+o+1,'accepted length')
+    |
+
+E501 Line too long (105 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:152:89
+    |
+150 |         require(type(v4['accepted']) is bool and isinstance(v4['reason'],str) and bool(v4['reason']),'v4 verdict')
+151 |         if v4['accepted']:
+152 |             require(len(row['tokens'])==row['length']*12 and a+1<=row['length']<=a+o+1,'accepted length')
+    |                                                                                         ^^^^^^^^^^^^^^^^^
+153 |             require(all(v==0 for _,_,v in row['padding_edits']),'accepted nonzero padding')
+154 |             for key in ('sampler','training_decoder','python_codec'):
+    |
+
+E501 Line too long (91 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:153:89
+    |
+151 |         if v4['accepted']:
+152 |             require(len(row['tokens'])==row['length']*12 and a+1<=row['length']<=a+o+1,'accepted length')
+153 |             require(all(v==0 for _,_,v in row['padding_edits']),'accepted nonzero padding')
+    |                                                                                         ^^^
+154 |             for key in ('sampler','training_decoder','python_codec'):
+155 |                 require(row[key].get('accepted') is True and row[key]['action']==v4['action'],'accepted expected JSON differs')
+    |
+
+E501 Line too long (127 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:155:89
+    |
+153 |             require(all(v==0 for _,_,v in row['padding_edits']),'accepted nonzero padding')
+154 |             for key in ('sampler','training_decoder','python_codec'):
+155 |                 require(row[key].get('accepted') is True and row[key]['action']==v4['action'],'accepted expected JSON differs')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+156 |         else:
+157 |             require(v4['action'] is None,'rejected v4 action')
+    |
+
+E501 Line too long (119 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:159:89
+    |
+157 |             require(v4['action'] is None,'rejected v4 action')
+158 |             if row['sampler'].get('accepted'):
+159 |                 require(source=='mutation' and row['category'].startswith('padding'),'unclassified sampler divergence')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+160 |         if source=='sampled':
+161 |             require(v4['accepted'],'scheduled sample rejected')
+    |
+
+E501 Line too long (98 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:167:89
+    |
+165 |             require((a,o,h)==SHAPES[j] and seed not in scheduled,'sample schedule')
+166 |             scheduled.add(seed)
+167 |             require(row['selection_mode']==('full_market' if i%2 else 'uniform'),'selection mode')
+    |                                                                                         ^^^^^^^^^^
+168 |             if i%2:
+169 |                 require(row['length']==a+o+1,'full-market quota')
+    |
+
+E501 Line too long (153 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:171:89
+    |
+169 | …et quota')
+170 | …
+171 | …(row['from_step']) is int and 0<=row['from_step']<=718 and row['seat'] in (0,1),'replay identity')
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+172 | …
+173 | …ion']==v4['action'],'raw replay identity')
+    |
+
+E501 Line too long (97 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:173:89
+    |
+171 | …     require(row['episode'] in EPISODES and type(row['from_step']) is int and 0<=row['from_step']<=718 and row['seat'] in (0,1),'rep…
+172 | …     if source=='replay':
+173 | …         require(v4['accepted'] and row['raw_action']==v4['action'],'raw replay identity')
+    |                                                                                   ^^^^^^^^^
+174 | …         strata[(row['episode'],row['from_step']//180)]+=1
+175 | …     else:
+    |
+
+E501 Line too long (111 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:176:89
+    |
+174 |                 strata[(row['episode'],row['from_step']//180)]+=1
+175 |             else:
+176 |                 require(not v4['accepted'] and row['python_codec'].get('accepted') is False,'replay rejection')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+177 |         if source in ('mutation','replay_rejected'):
+178 |             require(isinstance(row['category'],str) and bool(row['category']),'negative category')
+    |
+
+E501 Line too long (98 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:178:89
+    |
+176 |                 require(not v4['accepted'] and row['python_codec'].get('accepted') is False,'replay rejection')
+177 |         if source in ('mutation','replay_rejected'):
+178 |             require(isinstance(row['category'],str) and bool(row['category']),'negative category')
+    |                                                                                         ^^^^^^^^^^
+179 |     actual=counts(programs)
+180 |     require(actual==manifest['counts'],'manifest count mismatch')
+    |
+
+E501 Line too long (106 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:181:89
+    |
+179 |     actual=counts(programs)
+180 |     require(actual==manifest['counts'],'manifest count mismatch')
+181 |     require(actual['accepted']==320 and actual['sampled']==256 and actual['replay']==64,'accepted quotas')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^
+182 |     require(actual['dense']==64 and actual['dense_full_market']>=16 and actual['mutations']>=40,'dense/negative quota')
+183 |     require(len(scheduled)==256 and all(strata[e,s]==4 for e in EPISODES for s in range(4)),'schedule/replay strata quota')
+    |
+
+E501 Line too long (119 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:182:89
+    |
+180 |     require(actual==manifest['counts'],'manifest count mismatch')
+181 |     require(actual['accepted']==320 and actual['sampled']==256 and actual['replay']==64,'accepted quotas')
+182 |     require(actual['dense']==64 and actual['dense_full_market']>=16 and actual['mutations']>=40,'dense/negative quota')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+183 |     require(len(scheduled)==256 and all(strata[e,s]==4 for e in EPISODES for s in range(4)),'schedule/replay strata quota')
+    |
+
+E501 Line too long (123 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:183:89
+    |
+181 |     require(actual['accepted']==320 and actual['sampled']==256 and actual['replay']==64,'accepted quotas')
+182 |     require(actual['dense']==64 and actual['dense_full_market']>=16 and actual['mutations']>=40,'dense/negative quota')
+183 |     require(len(scheduled)==256 and all(strata[e,s]==4 for e in EPISODES for s in range(4)),'schedule/replay strata quota')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:227:5
+    |
+225 | def extract_tables(plan):
+226 |     options=plan.after
+227 |     first=lambda mask:mask.index(True)
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+228 |     unit=options([0])
+229 |     item=[options([0,1,0]) for _ in range(20)]
+    |
+help: Rewrite `first` as a `def`
+
+E501 Line too long (97 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:236:89
+    |
+234 |             present[kind]=options([0,kind,0,first(item[kind])])
+235 |     high=[options([0,6,0,1,p]) for p in range(2)]
+236 |     low=[[options([0,6,0,1,p,0 if zero or not p else 1]) for zero in range(2)] for p in range(2)]
+    |                                                                                         ^^^^^^^^^
+237 |     prefix=[0,1]+[0]*17
+238 |     market=options(prefix)
+    |
+
+E501 Line too long (130 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:244:89
+    |
+242 |         for digit,allowed in enumerate(quantities[kind]):
+243 |             if allowed:
+244 |                 require(options([*prefix,kind,first(market_item[kind]),digit])==quantities[kind],'reference market digits differ')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+245 |     return dict(zip(TABLE_SHAPES,[unit,item,present,high,low,market,market_item,quantities],strict=True))
+    |
+
+E501 Line too long (105 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:245:89
+    |
+243 |             if allowed:
+244 |                 require(options([*prefix,kind,first(market_item[kind]),digit])==quantities[kind],'reference market digits differ')
+245 |     return dict(zip(TABLE_SHAPES,[unit,item,present,high,low,market,market_item,quantities],strict=True))
+    |                                                                                         ^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (123 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:249:89
+    |
+248 | def scratch_prepare(reference):
+249 |     require(subprocess.check_output(['git','rev-parse','HEAD'],cwd=reference).decode().strip()==PIN,'wrong scratch commit')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+250 |     original=git_bytes('engine_rs/src/ffi.rs')
+251 |     append=(HERE/'reference_harness.rs').read_bytes()
+    |
+
+E501 Line too long (93 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:254:89
+    |
+252 |     require(sha(original)==PINS['engine_rs/src/ffi.rs'],'wrong original FFI blob')
+253 |     status=subprocess.check_output(['git','diff','--name-only','HEAD'],cwd=reference).decode().splitlines()
+254 |     require(set(status)<= {'engine_rs/src/ffi.rs'},'unauthorized scratch tracked difference')
+    |                                                                                         ^^^^^
+255 |     for path in SOURCES:
+256 |         data=(reference/path).read_bytes()
+    |
+
+E501 Line too long (144 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:257:89
+    |
+255 | …
+256 | …
+257 | … if path=='engine_rs/src/ffi.rs' else data==git_bytes(path),f'scratch source differs: {path}')
+    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+258 | …
+259 | …
+    |
+
+E501 Line too long (143 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:287:89
+    |
+285 | …True)
+286 | …ck=False)
+287 | …xit {result.returncode}; inspect missing-crate/compile evidence, no network fetch permitted')
+    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+288 | …_bytes().splitlines()]
+289 | …for r in rows]==[r['id'] for r in requests],'native response identity')
+    |
+
+E501 Line too long (121 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:289:89
+    |
+287 |     require(result.returncode==0,f'native oracle exit {result.returncode}; inspect missing-crate/compile evidence, no network fetch p…
+288 |     rows=[json.loads(line) for line in target.read_bytes().splitlines()]
+289 |     require(len(rows)==len(requests) and [r['id'] for r in rows]==[r['id'] for r in requests],'native response identity')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+290 |     return rows,cmd
+    |
+
+E501 Line too long (122 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:299:89
+    |
+297 | def legal(shape,seat=0):
+298 |     a,o,_=shape
+299 |     return {'observation':{'player':seat,'farms':[{'hands':[None]*(a-1)}]*2},'configuration':{'maxMarketOrdersPerTurn':o}}
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (89 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:317:89
+    |
+315 |     if len(tokens)%12:
+316 |         return na('incomplete candidate tokens cannot form Python frame dictionaries')
+317 |     frames=[dict(zip(NAMES,tokens[i:i+12],strict=True)) for i in range(0,len(tokens),12)]
+    |                                                                                         ^
+318 |     encoded={'schema':codec.SCHEMA,'layout':{'keys':['farmer','hands','market'],'hands_count':shape[0]-1},'frames':frames}
+319 |     try:
+    |
+
+E501 Line too long (315 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:326:89
+    |
+325 | …
+326 | …eue exceeds configured limit':'market queue limit','quantity must be an integer in 0..1023':'quantity range','target violates syntax mask: market_item':'market item syntax','target violates syntax mask: market_kind':'hire capacity'}
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+327 | …
+    |
+
+E501 Line too long (154 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:331:89
+    |
+330 | …
+331 | …rce,'shape':shape_value(shape),'tokens':tokens,'length':len(tokens)//12,'padding_edits':[],**extra}
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (93 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:339:89
+    |
+337 |     scan={}
+338 |     for episode in EPISODES:
+339 |         with gzip.open(ROOT/f'engine_rs/fixtures/episode-{episode}.jsonl.gz','rt') as stream:
+    |                                                                                         ^^^^^
+340 |             header=json.loads(next(stream))
+341 |             public=header['initial']['public']
+    |
+
+E501 Line too long (292 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:366:89
+    |
+364 | …
+365 | …ry=cat,**common)
+366 | …ion; no canonical token program'),training_decoder=na('reference codec rejected raw action; no canonical token program'),python_codec=rejected(reason),v4_expected={'accepted':False,'action':None,'reason':cat})
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+367 | …
+368 | …
+    |
+
+E501 Line too long (96 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:369:89
+    |
+367 |                             rejected_rows.append(row)
+368 |                         continue
+369 |                     if not isinstance(action,dict) or set(action)!= {'farmer','hands','market'}:
+    |                                                                                         ^^^^^^^^
+370 |                         canonical['incomplete action keys']+=1
+371 |                         continue
+    |
+
+E501 Line too long (89 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:378:89
+    |
+376 |                     if selected[stratum]>=4:
+377 |                         continue
+378 |                     tokens=[frame[name] for frame in encoded['frames'] for name in NAMES]
+    |                                                                                         ^
+379 |                     row=base_row(identity,'replay',shape,tokens,**common)
+380 |                     row['python_codec']=accepted(restored)
+    |
+
+E501 Line too long (97 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:384:89
+    |
+382 |                     selected[stratum]+=1
+383 |                 public=transition['expected']
+384 |             require([selected[i] for i in range(4)]==[4]*4,f'replay quota {episode}: {selected}')
+    |                                                                                         ^^^^^^^^^
+385 |             scan[str(episode)]={'candidates':candidates,'selected':dict(sorted(selected.items())),'codec_rejections':dict(sorted(reas…
+386 |     print('Replay scan:',json.dumps(scan,sort_keys=True),flush=True)
+    |
+
+E501 Line too long (98 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:397:89
+    |
+395 |         row['padding_edits']=[] if padding is None else padding
+396 |         rows.append(row)
+397 |     for i,(index,value) in enumerate([(0,1),(1,0),(1,19),(1,-1),(2,1),(3,1),(4,1),(11,1),(23,0)]):
+    |                                                                                         ^^^^^^^^^^
+398 |         tokens=base.copy();tokens[index]=value
+399 |         add(f'exact-{i}',tokens)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:398:27
+    |
+396 |         rows.append(row)
+397 |     for i,(index,value) in enumerate([(0,1),(1,0),(1,19),(1,-1),(2,1),(3,1),(4,1),(11,1),(23,0)]):
+398 |         tokens=base.copy();tokens[index]=value
+    |                           ^
+399 |         add(f'exact-{i}',tokens)
+400 |     for slot,width in enumerate(WIDTHS):
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:402:31
+    |
+400 |     for slot,width in enumerate(WIDTHS):
+401 |         for value in (-1,width):
+402 |             tokens=base.copy();tokens[slot]=value
+    |                               ^
+403 |             add(f'slot-{slot}-{value}',tokens)
+404 |     add('missing-stop',base[:-1])
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:406:23
+    |
+404 |     add('missing-stop',base[:-1])
+405 |     add('after-stop',base+[0]*11+[1])
+406 |     tokens=base.copy();tokens[1]=6;tokens[3]=1;tokens[4]=1
+    |                       ^
+407 |     add('unit-explicit-zero',tokens)
+408 |     for a,o,h,hires in [(1,10,1,1),(17,10,16,1),(240,10,241,2),(241,10,241,1)]:
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:406:35
+    |
+404 |     add('missing-stop',base[:-1])
+405 |     add('after-stop',base+[0]*11+[1])
+406 |     tokens=base.copy();tokens[1]=6;tokens[3]=1;tokens[4]=1
+    |                                   ^
+407 |     add('unit-explicit-zero',tokens)
+408 |     for a,o,h,hires in [(1,10,1,1),(17,10,16,1),(240,10,241,2),(241,10,241,1)]:
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:406:47
+    |
+404 |     add('missing-stop',base[:-1])
+405 |     add('after-stop',base+[0]*11+[1])
+406 |     tokens=base.copy();tokens[1]=6;tokens[3]=1;tokens[4]=1
+    |                                               ^
+407 |     add('unit-explicit-zero',tokens)
+408 |     for a,o,h,hires in [(1,10,1,1),(17,10,16,1),(240,10,241,2),(241,10,241,1)]:
+    |
+
+RUF017 Avoid quadratic list summation
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:409:16
+    |
+407 |     add('unit-explicit-zero',tokens)
+408 |     for a,o,h,hires in [(1,10,1,1),(17,10,16,1),(240,10,241,2),(241,10,241,1)]:
+409 |         tokens=sum(([actor,1]+[0]*10 for actor in range(a)),[])+([0]*7+[1]+[0]*4)*hires+[0]*11+[1]
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+410 |         add(f'hire-capacity-{a}-{h}',tokens,(a,o,h))
+411 |     for name,value in [('nonzero',1),('out-of-width',20),('negative',-1),('zero',0)]:
+    |
+help: Replace with `functools.reduce`
+
+E501 Line too long (98 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:409:89
+    |
+407 |     add('unit-explicit-zero',tokens)
+408 |     for a,o,h,hires in [(1,10,1,1),(17,10,16,1),(240,10,241,2),(241,10,241,1)]:
+409 |         tokens=sum(([actor,1]+[0]*10 for actor in range(a)),[])+([0]*7+[1]+[0]*4)*hires+[0]*11+[1]
+    |                                                                                         ^^^^^^^^^^
+410 |         add(f'hire-capacity-{a}-{h}',tokens,(a,o,h))
+411 |     for name,value in [('nonzero',1),('out-of-width',20),('negative',-1),('zero',0)]:
+    |
+
+E501 Line too long (100 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:422:89
+    |
+420 |     codec=importlib.util.module_from_spec(spec)
+421 |     spec.loader.exec_module(codec)
+422 |     require('torch' not in sys.modules and 'owl' not in sys.modules,'oracle imported model/package')
+    |                                                                                         ^^^^^^^^^^^^
+423 |     requests=[{'op':'plan','id':f'plan-{i}','shape':shape_value(s)} for i,s in enumerate(SHAPES)]
+424 |     plan_rows,plan_cmd=native(reference,requests,label+'-plans')
+    |
+
+E501 Line too long (97 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:423:89
+    |
+421 |     spec.loader.exec_module(codec)
+422 |     require('torch' not in sys.modules and 'owl' not in sys.modules,'oracle imported model/package')
+423 |     requests=[{'op':'plan','id':f'plan-{i}','shape':shape_value(s)} for i,s in enumerate(SHAPES)]
+    |                                                                                         ^^^^^^^^^
+424 |     plan_rows,plan_cmd=native(reference,requests,label+'-plans')
+425 |     plans=[]
+    |
+
+E501 Line too long (137 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:434:89
+    |
+432 | …
+433 | …2))
+434 | …{i}','sampled',shape,tokens,seed=seed,selection_mode='full_market' if i%2 else 'uniform'))
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+435 | …ec)
+436 | …
+    |
+
+E501 Line too long (169 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:449:89
+    |
+447 | …
+448 | …
+449 | …ce verdict covers prefix only' if padding_bad else ('sampler canonical prefix' if ok else row['category'])
+    |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+450 | …ion'] if ok else None,'reason':reason}
+451 | …
+    |
+
+E501 Line too long (101 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:450:89
+    |
+448 | …     ok=sampler['accepted'] and not padding_bad
+449 | …     reason='padding must be zero (v4.1 question 2); reference verdict covers prefix only' if padding_bad else ('sampler canonical p…
+450 | …     row['v4_expected']={'accepted':ok,'action':sampler['action'] if ok else None,'reason':reason}
+    |                                                                                       ^^^^^^^^^^^^^
+451 | …     if row['source'] in ('sampled','replay'):
+452 | …         require(ok and row['training_decoder']==sampler and row['python_codec']==sampler,f'accepted schedule decoder disagreement {…
+    |
+
+E501 Line too long (147 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:452:89
+    |
+450 | …ampler['action'] if ok else None,'reason':reason}
+451 | …
+452 | …sampler and row['python_codec']==sampler,f'accepted schedule decoder disagreement {row["id"]}')
+    |                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+453 | …rence_commit':PIN,'slot_names':NAMES,'slot_widths':WIDTHS,'tables':extract_tables(plans[0])}
+454 | …
+    |
+
+E501 Line too long (199 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:458:89
+    |
+456 | …
+457 | …
+458 | … name,cmd in {'cargo':['cargo','--version'],'rustc':['rustc','--version'],'python':[sys.executable,'--version']}.items()}
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+459 | …
+460 | …(r['category']==c for r in replay_rejected)]
+    |
+
+E501 Line too long (122 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:460:89
+    |
+458 |     manifest['tools']={name:subprocess.check_output(cmd,text=True).strip() for name,cmd in {'cargo':['cargo','--version'],'rustc':['r…
+459 |     manifest['replay_scan']=scan
+460 |     manifest['missing_rejection_categories']=[c for c in CATEGORIES if not any(r['category']==c for r in replay_rejected)]
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+461 |     manifest['disagreements']=[{'id':r['id'],'sampler':r['sampler'],'training_decoder':r['training_decoder'],'python_codec':r['python…
+462 |     validate_fixture(payload,manifest)
+    |
+
+E501 Line too long (354 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:461:89
+    |
+459 | …
+460 | …ategory']==c for r in replay_rejected)]
+461 | …er':r['training_decoder'],'python_codec':r['python_codec'],'v4_expected':r['v4_expected']} for r in rows if r['source']=='mutation' and (r['sampler']!=r['training_decoder'] or r['sampler']!=r['python_codec'] or r['sampler'].get('accepted')!=r['v4_expected']['accepted'])]
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+462 | …
+463 | …
+    |
+
+E501 Line too long (100 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:481:89
+    |
+479 |         args.output.write_bytes(compressed)
+480 |         args.manifest.write_text(json.dumps(manifest,indent=2)+'\n')
+481 |         require(sha(args.output.read_bytes())==manifest['compressed_sha256'],'written fixture hash')
+    |                                                                                         ^^^^^^^^^^^^
+482 |     else:
+483 |         require(args.fixture is not None,'verify requires --fixture')
+    |
+
+E501 Line too long (93 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:486:89
+    |
+484 |         previous=json.loads(args.manifest.read_text())
+485 |         validate_fixture(gzip.decompress(args.fixture.read_bytes()),previous)
+486 |         require(compressed==args.fixture.read_bytes(),'second native recording bytes differ')
+    |                                                                                         ^^^^^
+487 |         require(manifest==previous,'second native recording provenance/counts differ')
+488 |     print(json.dumps({'mode':args.mode,'counts':manifest['counts'],**output_metadata(payload),'missing_rejection_categories':manifest…
+    |
+
+PT018 Assertion should be broken down into multiple parts
+  --> tests/tools/test_record_grammar_reference.py:14:1
+   |
+12 | PATH = ROOT / 'ops/rebuild-2026-09-29/1.2/oracle/record_reference.py'
+13 | SPEC = importlib.util.spec_from_file_location('grammar_reference', PATH)
+14 | assert SPEC is not None and SPEC.loader is not None
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 | recorder = importlib.util.module_from_spec(SPEC)
+16 | SPEC.loader.exec_module(recorder)
+   |
+help: Break down assertion into multiple parts
+
+E501 Line too long (103 > 88)
+  --> tests/tools/test_record_grammar_reference.py:20:89
+   |
+19 | def table_shape(shape):
+20 |     return [False] * shape[0] if len(shape) == 1 else [table_shape(shape[1:]) for _ in range(shape[0])]
+   |                                                                                         ^^^^^^^^^^^^^^^
+   |
+
+RUF017 Avoid quadratic list summation
+  --> tests/tools/test_record_grammar_reference.py:33:22
+   |
+31 |         for i in range(32):
+32 |             actors, orders, hire = shape
+33 |             tokens = sum(([a, 1] + [0] * 10 for a in range(actors)), [])
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 |             count = orders if i % 2 else 0
+35 |             tokens += ([0] * 7 + [7] + [0] * 4) * count + [0] * 11 + [1]
+   |
+help: Replace with `functools.reduce`
+
+E501 Line too long (101 > 88)
+  --> tests/tools/test_record_grammar_reference.py:36:89
+   |
+34 |             count = orders if i % 2 else 0
+35 |             tokens += ([0] * 7 + [7] + [0] * 4) * count + [0] * 11 + [1]
+36 |             action = {'farmer': ['PASS'], 'hands': [['PASS']] * (actors - 1), 'market': [[]] * count}
+   |                                                                                         ^^^^^^^^^^^^^
+37 |             result = {'accepted': True, 'action': action, 'error': None}
+38 |             rows.append({
+   |
+
+E501 Line too long (106 > 88)
+  --> tests/tools/test_record_grammar_reference.py:43:89
+   |
+41 |                 'tokens': tokens, 'length': len(tokens) // 12, 'padding_edits': [],
+42 |                 'sampler': result, 'training_decoder': result, 'python_codec': result,
+43 |                 'v4_expected': {'accepted': True, 'action': action, 'reason': 'sampler canonical prefix'},
+   |                                                                                         ^^^^^^^^^^^^^^^^^^
+44 |                 'seed': 2026092900 + j * 32 + i,
+45 |                 'selection_mode': 'full_market' if i % 2 else 'uniform',
+   |
+
+E501 Line too long (95 > 88)
+  --> tests/tools/test_record_grammar_reference.py:53:89
+   |
+51 |                 del row['seed'], row['selection_mode']
+52 |                 row.update(id=f'replay-{e}-{s}-{i}', source='replay', episode=e,
+53 |                            from_step=180*s+i//2, seat=i%2, raw_action=row['sampler']['action'])
+   |                                                                                         ^^^^^^^
+54 |                 rows.append(row)
+55 |     for i in range(40):
+   |
+
+RUF005 Consider `[-1, *row['tokens'][1:]]` instead of concatenation
+  --> tests/tools/test_record_grammar_reference.py:58:85
+   |
+56 |         row = copy.deepcopy(rows[0])
+57 |         del row['seed'], row['selection_mode']
+58 |         row.update(id=f'mutation-{i}', source='mutation', category='syntax', tokens=[-1]+row['tokens'][1:])
+   |                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+59 |         result = {'accepted': False, 'action': None, 'error': 'invalid token'}
+60 |         row.update(sampler=result, training_decoder=result, python_codec=result,
+   |
+help: Replace with `[-1, *row['tokens'][1:]]`
+
+E501 Line too long (107 > 88)
+  --> tests/tools/test_record_grammar_reference.py:58:89
+   |
+56 |         row = copy.deepcopy(rows[0])
+57 |         del row['seed'], row['selection_mode']
+58 |         row.update(id=f'mutation-{i}', source='mutation', category='syntax', tokens=[-1]+row['tokens'][1:])
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^
+59 |         result = {'accepted': False, 'action': None, 'error': 'invalid token'}
+60 |         row.update(sampler=result, training_decoder=result, python_codec=result,
+   |
+
+E501 Line too long (125 > 88)
+  --> tests/tools/test_record_grammar_reference.py:77:89
+   |
+77 | @pytest.mark.parametrize('change', ['missing', 'extra', 'source', 'action', 'duplicate', 'dense', 'full', 'corrupt', 'size'])
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+78 | def test_fixture_rejects_corruption(change: str) -> None:
+79 |     payload, manifest = example()
+   |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/tools/test_record_grammar_reference.py:102:24
+    |
+100 |         payload = recorder.jsonl(records)
+101 |         manifest.update(recorder.output_metadata(payload))
+102 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+103 |         recorder.validate_fixture(payload, manifest)
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/tools/test_record_grammar_reference.py:119:24
+    |
+117 |     payload = recorder.jsonl(records)
+118 |     manifest.update(recorder.output_metadata(payload))
+119 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+120 |         recorder.validate_fixture(payload, manifest)
+    |
+
+Found 92 errors (1 fixed, 91 remaining).
+No fixes available (5 hidden fixes can be enabled with the `--unsafe-fixes` option).
+
+EXIT_CODE=1

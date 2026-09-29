@@ -1,0 +1,11 @@
+--- src/kaggriculture/grammar.rs
++++ src/kaggriculture/grammar.rs
+@@ -534,7 +534,7 @@
+         let current = state.ok_or_else(|| format!("frame {} slot {} value {value} follows terminal STOP", index / SLOTS, SLOT_NAMES[index % SLOTS]))?;
+         state = current.advance(value, plan)?;
+     }
+-    if state.is_some() { return Err("program lacks distinct final STOP".into()); }
++    
+     Ok(frames)
+ }
+ 

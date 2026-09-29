@@ -1,0 +1,57 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uvx --offline ruff check ops/rebuild-2026-09-29/1.2/oracle/record_reference.py tests/tools/test_record_grammar_reference.py
+I001 [*] Import block is un-sorted or un-formatted
+  --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:3:1
+   |
+ 1 |   """Record native reference verdicts without importing the rebuilt grammar."""
+ 2 |
+ 3 | / from __future__ import annotations
+ 4 | |
+ 5 | | import argparse
+ 6 | | import difflib
+ 7 | | import gzip
+ 8 | | import hashlib
+ 9 | | import importlib.util
+10 | | import io
+11 | | import json
+12 | | import os
+13 | | import random
+14 | | import struct
+15 | | import subprocess
+16 | | import sys
+17 | | from types import ModuleType
+18 | | from typing import Any
+19 | | from collections import Counter
+20 | | from collections.abc import Mapping
+21 | | from pathlib import Path
+   | |________________________^
+22 |
+23 |   PIN = "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0"
+   |
+help: Organize imports
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_record_grammar_reference.py:158:42
+    |
+156 |         payload = recorder.jsonl(records)
+157 |         manifest.update(recorder.output_metadata(payload))
+158 |     with pytest.raises(ValueError, match=".+"):
+    |                                          ^^^^
+159 |         recorder.validate_fixture(payload, manifest)
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_record_grammar_reference.py:179:42
+    |
+177 |     payload = recorder.jsonl(records)
+178 |     manifest.update(recorder.output_metadata(payload))
+179 |     with pytest.raises(ValueError, match=".+"):
+    |                                          ^^^^
+180 |         recorder.validate_fixture(payload, manifest)
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+Found 3 errors.
+[*] 1 fixable with the `--fix` option.
+
+EXIT_CODE=1
