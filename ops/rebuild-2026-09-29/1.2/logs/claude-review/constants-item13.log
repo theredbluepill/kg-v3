@@ -1,0 +1,25 @@
+$ cargo test --locked --lib kaggriculture::grammar::tests::grammar_constants -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: '12 => Ok(Self::Sheep),' -> '12 | 13 => Ok(Self::Sheep),'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test kaggriculture::grammar::tests::grammar_constants ... FAILED
+
+failures:
+
+---- kaggriculture::grammar::tests::grammar_constants stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_constants' (10226545) panicked at src/kaggriculture/grammar_tests.rs:59:9:
+assertion failed: ActionItem::try_from(i).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::grammar::tests::grammar_constants
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 165 filtered out; finished in 0.00s
+
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-grammar)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.36s
+     Running unittests src/lib.rs (target/debug/deps/rs-70d11de31c3178d2)
+error: test failed, to rerun pass `--lib`

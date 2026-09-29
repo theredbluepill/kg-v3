@@ -1,0 +1,25 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --locked --test grammar_kernel decoded_dense_241_and_hire_capacity -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: 'u16::from(self.hires) < self.shape.hire_limit' -> 'u16::from(self.hires) <= self.shape.hire_limit'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test decoded_dense_241_and_hire_capacity ... FAILED
+
+failures:
+
+---- decoded_dense_241_and_hire_capacity stdout ----
+
+thread 'decoded_dense_241_and_hire_capacity' (10229792) panicked at tests/grammar_kernel.rs:270:18:
+called `Result::unwrap_err()` on an `Ok` value: 243
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    decoded_dense_241_and_hire_capacity
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.61s
+
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+     Running tests/grammar_kernel.rs (engine_rs/target/debug/deps/grammar_kernel-88e2fbe693fab574)
+error: test failed, to rerun pass `--test grammar_kernel`

@@ -1,0 +1,74 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline python ops/rebuild-2026-09-29/1.2/oracle/record_reference.py record --reference-root /Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2 --output tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz --manifest tests/fixtures/kaggriculture/grammar-v4-reference.manifest.json
+Native command: ["cargo", "test", "--manifest-path", "/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2/engine_rs/Cargo.toml", "--offline", "--locked", "--lib", "ffi::task12_oracle::record_requests", "--", "--exact", "--nocapture", "--test-threads=1"]
+   Compiling autocfg v1.5.1
+   Compiling proc-macro2 v1.0.107
+   Compiling crossbeam-utils v0.8.23
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-epoch v0.9.21
+   Compiling serde_core v1.0.229
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling crossbeam-deque v0.8.8
+   Compiling rayon-core v1.13.0
+   Compiling zmij v1.0.23
+   Compiling syn v3.0.3
+   Compiling num-integer v0.1.47
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling equivalent v1.0.2
+   Compiling hashbrown v0.17.1
+   Compiling serde_derive v1.0.229
+   Compiling indexmap v2.14.0
+   Compiling num-bigint v0.4.8
+   Compiling either v1.18.0
+   Compiling itoa v1.0.18
+   Compiling memchr v2.8.3
+   Compiling rayon v1.12.0
+   Compiling num-rational v0.4.2
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.53s
+     Running unittests src/lib.rs (.codex-tmp/grammar-reference-build-1.2/debug/deps/kaggriculture_engine-226c6940f04d292f)
+
+running 1 test
+test ffi::task12_oracle::record_requests ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 120 filtered out; finished in 1.00s
+
+Replay scan: {"95324500": {"candidates": 1438, "canonical_layout_exclusions": {}, "codec_rejections": {}, "selected": {"0": 4, "1": 4, "2": 4, "3": 4}}, "95901360": {"candidates": 1438, "canonical_layout_exclusions": {}, "codec_rejections": {}, "selected": {"0": 4, "1": 4, "2": 4, "3": 4}}, "95921764": {"candidates": 1438, "canonical_layout_exclusions": {}, "codec_rejections": {}, "selected": {"0": 4, "1": 4, "2": 4, "3": 4}}, "95990191": {"candidates": 1438, "canonical_layout_exclusions": {}, "codec_rejections": {}, "selected": {"0": 4, "1": 4, "2": 4, "3": 4}}}
+Native command: ["cargo", "test", "--manifest-path", "/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2/engine_rs/Cargo.toml", "--offline", "--locked", "--lib", "ffi::task12_oracle::record_requests", "--", "--exact", "--nocapture", "--test-threads=1"]
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running unittests src/lib.rs (.codex-tmp/grammar-reference-build-1.2/debug/deps/kaggriculture_engine-226c6940f04d292f)
+
+running 1 test
+test ffi::task12_oracle::record_requests ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 120 filtered out; finished in 0.17s
+
+{
+  "mode": "record",
+  "counts": {
+    "accepted": 320,
+    "sampled": 256,
+    "replay": 64,
+    "dense": 64,
+    "dense_full_market": 22,
+    "full_market": 188,
+    "mutations": 44,
+    "replay_rejected": 0
+  },
+  "compressed_sha256": "fa26a81fa21189b5329f04af069c5b70491927d1a9d7200d443cfdd89ec6ebd3",
+  "uncompressed_sha256": "36d87a61d174959545a85fdf74eef10fc917502420c07b427a8d2a871547542e",
+  "compressed_bytes": 199448,
+  "uncompressed_bytes": 2901204,
+  "missing_rejection_categories": [
+    "unknown market command",
+    "unsupported unit command arguments",
+    "market item syntax",
+    "extra hand commands",
+    "market queue limit",
+    "quantity range",
+    "hire capacity"
+  ]
+}
+
+EXIT_CODE=0

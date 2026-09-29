@@ -190,9 +190,10 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 ### Task 1.2: Port the grammar kernel (C3)
 
-- [ ] `engine_rs/src/grammar.rs`, from `myolie_sampler.rs`: rename, type, drop what isn't needed; keep masks, transitions and canonical decoding.
-- [ ] Port the coupled-Gumbel HIRE enumeration (3 positions, 8 kinds, budgets 0/1/2/3/10) and the replay tests.
-- [ ] Oracle: decode ≥ 200 recorded reference programs, including dense 241-actor ones, identically.
+- [x] `src/kaggriculture/grammar.rs`, reviewed C3 port from `myolie_sampler.rs`: typed plan/cursor, direct factored tables, checked i64 canonical decode and strict encode. Drop the binary runtime graph. The authored standalone engine test temporarily includes this one source; retained kernel bytes remain pinned. See the reviewed `briefs/1.2.md`.
+- [ ] At the first production root → engine edge (1.3/1.4), move kernel acceptance/replay-state tests into a root integration test, delete `engine_rs/tests/grammar_kernel.rs` and its allowlist/manifest registration, and reopen L4 with the test-only float-fixture repair. Keep one integration route.
+- [x] Port the coupled-Gumbel HIRE enumeration (3 positions, 8 kinds, budgets 0/1/2/3/10) and the replay tests.
+- [x] Oracle: 320 recorded reference programs (256 synthetic, 64 real), including 64 dense 241-actor programs, agree exactly. Independent recording, strict codec, dense execution and replay-state evidence: `1.2/results.md`.
 
 ### Task 1.3: Structured observation encoder (C4)
 

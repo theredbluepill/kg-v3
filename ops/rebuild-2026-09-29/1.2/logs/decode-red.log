@@ -1,0 +1,41 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true cargo test --locked --lib grammar_ -- --test-threads=1
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-grammar)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.41s
+     Running unittests src/lib.rs (target/debug/deps/rs-70d11de31c3178d2)
+
+running 5 tests
+test kaggriculture::grammar::tests::grammar_constants ... ok
+test kaggriculture::grammar::tests::grammar_exact_commands ... FAILED
+test kaggriculture::grammar::tests::grammar_fixture_oracle ... FAILED
+test kaggriculture::grammar::tests::grammar_rejects_malformed_i64 ... FAILED
+test kaggriculture::grammar::tests::grammar_tables_match_reference_and_reachable_states ... ok
+
+failures:
+
+---- kaggriculture::grammar::tests::grammar_exact_commands stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_exact_commands' (10024716) panicked at src/kaggriculture/grammar_tests.rs:495:50:
+called `Result::unwrap()` on an `Err` value: "grammar decode not implemented: test-first stub"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- kaggriculture::grammar::tests::grammar_fixture_oracle stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_fixture_oracle' (10024717) panicked at src/kaggriculture/grammar_tests.rs:618:31:
+called `Result::unwrap()` on an `Err` value: "grammar decode not implemented: test-first stub"
+
+---- kaggriculture::grammar::tests::grammar_rejects_malformed_i64 stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_rejects_malformed_i64' (10024732) panicked at src/kaggriculture/grammar_tests.rs:515:17:
+grammar decode not implemented: test-first stub
+
+
+failures:
+    kaggriculture::grammar::tests::grammar_exact_commands
+    kaggriculture::grammar::tests::grammar_fixture_oracle
+    kaggriculture::grammar::tests::grammar_rejects_malformed_i64
+
+test result: FAILED. 2 passed; 3 failed; 0 ignored; 0 measured; 157 filtered out; finished in 1.00s
+
+error: test failed, to rerun pass `--lib`
+
+EXIT_CODE=101

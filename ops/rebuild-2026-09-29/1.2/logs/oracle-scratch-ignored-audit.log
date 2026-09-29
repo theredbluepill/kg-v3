@@ -1,0 +1,5 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true python3 -B -c 'from pathlib import Path; import subprocess; root=Path(".codex-tmp/grammar-reference-1.2"); untracked=subprocess.check_output(["git","ls-files","--others","--exclude-standard"],cwd=root,text=True); ignored=subprocess.check_output(["git","ls-files","--others","--ignored","--exclude-standard"],cwd=root,text=True); print("untracked",repr(untracked)); print("ignored",repr(ignored)); assert not untracked and not ignored'
+untracked ''
+ignored ''
+
+EXIT_CODE=0

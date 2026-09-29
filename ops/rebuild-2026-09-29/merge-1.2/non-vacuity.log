@@ -1,0 +1,53 @@
+# Scratch copy of the merge tree (rsync of /Users/poonszesen/kg-v3-merge3 without .git/ops/cookbook/target/.venv); tracked files untouched.
+# GIT_DIR points at the shared object store so the checker can read the pinned reference blobs.
+# m1 (Task 1.1 hardening): EDITABLE guard reverted to the pre-hardening '.rs and not lib.rs' condition.
+# m2 (Task 1.1b generated manifest): generated-trace SHA-256 comparison removed from verify_generated.
+# m3 (Task 1.2 grammar oracle): coupled-HIRE capacity guard in MarketKind support replaced by 'true'.
+
+== orig (tests/tools/test_check_engine_trim.py)
+79 passed in 2.08s
+
+== m1:
+434c434 <         if path not in EDITABLE: --- >         if path.endswith(".rs") and path != "engine_rs/src/lib.rs": 
+FAILED tests/tools/test_check_engine_trim.py::test_declared_license_edit_is_rejected
+1 failed, 78 passed in 2.17s
+
+== m2:
+342c342 <         _require(sha(data) == _digest(entry["sha256"], name), f"{name}: trace hash") --- >         _digest(entry["sha256"], name) 
+FAILED tests/tools/test_check_engine_trim.py::test_generated_manifest_drift_is_rejected[edited trace-trace hash]
+FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_edited_generated_trace
+2 failed, 77 passed in 2.07s
+scratch checker restored byte-for-byte
+
+== m4 (merge resolution): generated MANIFEST.json dropped from the merged fixed authored set:
+262d261 <             GENERATED_MANIFEST, 
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_accepts_two_tests_and_generated_manifest
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_authored_set[paths0-Task 1.2 authored set: missing=.*MANIFEST.json.*grammar_kernel.*replay_parity]
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_authored_set[paths3-Task 1.2 authored set: missing=.*generated/MANIFEST.json]
+FAILED tests/tools/test_check_engine_trim.py::test_committed_package_passes_check
+FAILED tests/tools/test_check_engine_trim.py::test_check_entry_point_passes_on_unmodified_copy
+FAILED tests/tools/test_check_engine_trim.py::test_declared_removal_of_trim_provenance_is_rejected
+FAILED tests/tools/test_check_engine_trim.py::test_later_provenance_append_is_accepted
+FAILED tests/tools/test_check_engine_trim.py::test_declared_extra_lockfile_change_is_rejected
+FAILED tests/tools/test_check_engine_trim.py::test_declared_eighth_lib_removal_is_rejected
+9 failed, 70 passed in 2.17s
+scratch checker restored byte-for-byte
+
+== orig (engine grammar_kernel, filter grammar_fixture_oracle)
+test grammar::tests::grammar_fixture_oracle ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.25s
+
+== m3:
+421c421 <                     token != 1 || self.shape.actors + u16::from(self.hires) < self.shape.hire_limit --- >                     true 
+test grammar::tests::grammar_fixture_oracle ... FAILED
+thread 'grammar::tests::grammar_fixture_oracle' (10363191) panicked at tests/../../src/kaggriculture/grammar_tests.rs:1116:13:
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.25s
+
+== m3, full grammar_kernel binary:
+test grammar::tests::grammar_coupled_hire_exact_distribution ... FAILED
+test grammar::tests::grammar_encode_rejects ... FAILED
+test grammar::tests::grammar_fixture_oracle ... FAILED
+test grammar::tests::grammar_tables_match_reference_and_reachable_states ... FAILED
+test decoded_dense_241_and_hire_capacity ... FAILED
+test result: FAILED. 13 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.33s
+scratch grammar restored byte-for-byte

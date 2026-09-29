@@ -1,0 +1,13 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true python3 -c 'import subprocess; commands=[["git","branch","--show-current"],["git","status","--short"],["git","log","-3","--oneline"],["git","rev-parse","kg/reference-2026-09-29"]]; [subprocess.run(c,check=True) for c in commands]'
+kg/rebuild-grammar
+ M ops/rebuild-2026-09-29/1.2/checks.json
+?? ops/rebuild-2026-09-29/1.2/logs/oracle-validator-red.log
+?? ops/rebuild-2026-09-29/1.2/logs/resumed-source-identity.log
+?? ops/rebuild-2026-09-29/1.2/oracle/
+?? tests/tools/test_record_grammar_reference.py
+cdd2617 Task 1.2 partial: grammar constants and two-test trim allowlist (Codex, usage limit)
+a88150c Add Task 1.2 grammar-kernel brief (Codex) with Claude review
+90ed86c Merge Task 1.1: vendored Kaggriculture rules kernel (Codex APPROVE at 5378763)
+65f0eac5bb00b18a9d3acce319c2a231cbd5dff0
+
+EXIT_CODE=0

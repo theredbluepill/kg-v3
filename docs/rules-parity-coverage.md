@@ -141,7 +141,9 @@ Task 1.1 retains a standalone `engine_rs` package pinned to reference commit
 `kaggle-environments==1.32.7`, Python engine SHA-256
 `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`.
 `engine_rs/TRIM_MANIFEST.json` accounts for all 125 reference files: 12 retained,
-113 excluded, plus the authored replay test and non-engine change inventory.
+113 excluded, plus exactly three authored files (the replay and grammar/kernel
+tests and the generated-trace `MANIFEST.json`) and the non-engine change
+inventory.
 `python scripts/check_engine_trim.py` checks hashes, exhaustive inventory,
 declared original-line edits, exact Cargo removals and append-only provenance.
 Independently of manifest declarations, only `lib.rs`, `Cargo.toml`,
@@ -200,9 +202,10 @@ selected opponent coverage returns when those opponents are imported.
 
 ### Kaggriculture Verification and Limits
 
-Task 1.1's offline engine tests passed **59/59 with none ignored** (69/69 after
-Task 1.1b); the retained root suite
-passes **155 with two ignored**. Receipts in `ops/rebuild-2026-09-29/1.1/` show the
+At completion of Task 1.1, offline engine tests passed **59/59 with none ignored**
+(69/69 after Task 1.1b, 87/87 after merging Task 1.2); the root suite passed
+**155 with two ignored** (164 with two ignored after Task 1.2). Receipts in
+`ops/rebuild-2026-09-29/1.1/` show the
 private-order regression fail with plain JSON equality, then pass with explicit
 key-order checks. Claude's review added the public-order and nested private-order
 regressions, which fail against the earlier field-specific check and pass with
@@ -223,7 +226,8 @@ raw failing checks are retained. They are tooling deviations from the reviewed
 brief, not changes to rules or weaker parity comparisons.
 The package has its own lockfile, no shared workspace and no root path dependency.
 This isolates its required `serde_json` arbitrary-precision/preserve-order
-features. Root manifest, lockfile and Rust sources stay unchanged. Reopen L4's
+features. Task 1.1 left root metadata and Rust sources unchanged; Task 1.2 adds
+the root grammar and promotes the existing Serde JSON dependency. Reopen L4's
 test-only `fixture_float` repair at the first compiled root consumer (potentially
 Task 1.3, certainly Task 1.4); selecting multiple packages together can unify
 features even with a newer Cargo resolver.
@@ -379,3 +383,66 @@ remain the only recorded competitive worlds. Framework behavior outside the
 interpreter (timeouts, agent errors, `INVALID` statuses) is not modeled. The
 sweep is a bounded sample: 40 games and 303 probes, not exhaustive input
 coverage. A larger pod sweep remains open.
+
+## Kaggriculture Native Grammar (Task 1.2)
+
+The root compiles the v4.1 typed grammar, strict JSON encoder and checked i64
+decoder in `src/kaggriculture/grammar.rs`. The authored engine integration test
+includes that same source and its shared tests under the engine's separate
+edition/feature graph. No retained kernel bytes change. The include is temporary:
+Tasks 1.3/1.4 retire it and move acceptance tests to root integration when adding
+the first production engine dependency, reopening L4 then.
+
+The independent fixture pins reference `65f0eac5` and all recorder inputs. It
+contains 320 scheduled accepted programs: 256 seeded synthetic programs and
+64 unmodified real replay seat actions. There are 64 synthetic 241-actor
+programs, of which 22 have ten orders and length 252 (16 forced by the schedule,
+six incidental). Full-market counts are 180 synthetic and eight real. All three
+reference decoders agree on accepted actions. The four traces contain 5,752
+candidate seat actions; every candidate passes complete-layout/codec admission,
+so the manifest explicitly records absent replay-rejection categories.
+
+The additional 44 controls contain 43 v4 rejections and one zero-padding
+acceptance. Eight records have classified oracle differences: four capacity
+cases accepted by the old training decoder, three nonzero-padding cases
+accepted by prefix-only decoders, and one incomplete-prefix case for which the
+training/Python decoders are inapplicable. Errors and each original verdict are
+preserved separately. The new grammar never supplies expected oracle actions.
+Two native reference recordings reproduce the fixture and manifest exactly.
+
+The shared grammar tests cover all 964 independent recorded table bits,
+reachable local support/transition classes, actor ordinals 1 through 241,
+shape affinity, 140 unit and 98 market cases, strict encoder round trips and
+nonmutation, signed i64 transport and padding failures, and terminal traversal
+of every accepted fixture. The coupled-HIRE test enumerates all 14³ races for
+each budget 0/1/2/3/10 against the actual Rust cursor law, within 1e-12. This
+enumerates support equivalence classes, not every A/O/H combination: A affects
+readiness, ordinal and capacity; O affects market queue availability.
+
+Kernel acceptance tests require exact JSON and compare direct execution with
+decoded execution. They cover both seats, command matrices, meaningful transfer
+effects, EMPTY/zero quantities, insufficient funds, explicit dense states via
+`Game::from_header`, actor order and the 240-to-241 HIRE boundary. Selected
+replay comparisons check 64 seat actions in their actual seeded replay states,
+including recursive public/private object order, outcomes and counters. These
+64 comparisons supplement the retained 2,876-transition replay suite; they are
+not a new full-season codec qualification.
+
+On the Task 1.2 branch (before Task 1.1b merged), full `just prepare` passed:
+root Rust **164 passed, two ignored**; engine **77 passed, none ignored** (41
+retained unit, nine RNG, nine replay, 18 shared grammar/kernel tests); Python
+**1,045 passed, three platform skips**; tooling pytest alone 87. Actual command
+results and fault-injection evidence are recorded in
+`ops/rebuild-2026-09-29/1.2/results.md`. After merging Task 1.2 with Task 1.1b's
+live parity and Task 2.3's heads, the engine suite passes **87, none ignored**
+(41 retained unit, nine RNG, 19 replay-parity, 18 shared grammar/kernel), the
+root suite **164 passed, two ignored**, Python **1,337 passed, four skipped**
+and tooling pytest alone 106; receipts are in
+`ops/rebuild-2026-09-29/merge-1.2/`. The trim checker's fixed authored set is
+now exactly the replay and grammar kernel tests plus the generated-trace
+manifest. The native `grammar_tables()` matches all 964 bits of the Python
+heads' `expected_grammar_tables` in a merge-time cross-check, but no Python
+binding exists yet, so the heads still use the Python stand-in.
+CPU grammar admission does not qualify
+native batch transactions, PyO3 buffer ownership, the model sampler/replay,
+CUDA/BF16 behavior or L6's distinct Inductor GEMM overflow fix.

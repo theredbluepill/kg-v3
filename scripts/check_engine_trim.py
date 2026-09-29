@@ -256,8 +256,12 @@ def _same_inventory(actual: Sequence[str], expected: Sequence[str], label: str) 
 def verify_task_authored(authored: Sequence[Authored]) -> None:
     _same_inventory(
         [entry["path"] for entry in authored],
-        ["engine_rs/tests/replay_parity.rs", GENERATED_MANIFEST],
-        "Task 1.1 authored set",
+        [
+            "engine_rs/tests/replay_parity.rs",
+            "engine_rs/tests/grammar_kernel.rs",
+            GENERATED_MANIFEST,
+        ],
+        "Task 1.2 authored set",
     )
 
 

@@ -1,0 +1,30 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true python3 ops/rebuild-2026-09-29/1.2/mutate_check.py kernel-buy-land src/kaggriculture/grammar.rs 'let kind = MarketKind::try_from(frame[Slot::MarketKind as usize])?;' 'let kind = MarketKind::try_from(frame[Slot::MarketKind as usize])?; let kind = if kind == MarketKind::BuyLand { MarketKind::Hire } else { kind };' -- cargo test --manifest-path engine_rs/Cargo.toml --offline --locked --test grammar_kernel decoded_programs_feed_kernel -- --test-threads=1
+before_sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+mutated_sha256 d28b789d5397f30ad407a0c686e8f95d2981e842ff23842a2a4e510deb7ea630
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.36s
+     Running tests/grammar_kernel.rs (engine_rs/target/debug/deps/grammar_kernel-88e2fbe693fab574)
+
+running 1 test
+test decoded_programs_feed_kernel ... FAILED
+
+failures:
+
+---- decoded_programs_feed_kernel stdout ----
+
+thread 'decoded_programs_feed_kernel' (10090239) panicked at tests/grammar_kernel.rs:149:9:
+assertion `left == right` failed
+  left: 2999.0
+ right: 2000.0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    decoded_programs_feed_kernel
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test grammar_kernel`
+restored_sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+EXIT_CODE=101

@@ -1,0 +1,102 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uvx --offline --from rust-just just rs-prepare
+uv run python scripts/check_engine_trim.py
+engine trim manifest: OK
+cargo fmt
+cargo fmt --manifest-path engine_rs/Cargo.toml --check
+Diff in /Users/poonszesen/kg-v3-grammar/engine_rs/tests/../../src/kaggriculture/grammar_tests.rs:3:
+ use std::path::PathBuf;
+ use std::process::Command;
+ 
+[31m-use serde_json::{json, Value};
+(B[m[32m+use serde_json::{Value, json};
+(B[m 
+ #[test]
+ fn grammar_constants() {
+Diff in /Users/poonszesen/kg-v3-grammar/engine_rs/tests/../../src/kaggriculture/grammar_tests.rs:875:
+         let mut tokens = base.clone();
+         tokens[1] = 6;
+         tokens[3] = item;
+[31m-        assert!(decode(&p, &tokens, length)
+(B[m[31m-            .unwrap_err()
+(B[m[31m-            .contains("unit_item"));
+(B[m[32m+        assert!(
+(B[m[32m+            decode(&p, &tokens, length)
+(B[m[32m+                .unwrap_err()
+(B[m[32m+                .contains("unit_item")
+(B[m[32m+        );
+(B[m     }
+     let mut zero = base.clone();
+     zero[1] = 6;
+Diff in /Users/poonszesen/kg-v3-grammar/engine_rs/tests/../../src/kaggriculture/grammar_tests.rs:884:
+     zero[3] = 1;
+     zero[4] = 1;
+[31m-    assert!(decode(&p, &zero, length)
+(B[m[31m-        .unwrap_err()
+(B[m[31m-        .contains("unit_quantity"));
+(B[m[32m+    assert!(
+(B[m[32m+        decode(&p, &zero, length)
+(B[m[32m+            .unwrap_err()
+(B[m[32m+            .contains("unit_quantity")
+(B[m[32m+    );
+(B[m     let mut after_stop = base.clone();
+     after_stop[35] = 1;
+     assert!(decode(&p, &after_stop, 3).unwrap_err().contains("STOP"));
+Diff in /Users/poonszesen/kg-v3-grammar/engine_rs/tests/../../src/kaggriculture/grammar_tests.rs:901:
+     );
+     assert_eq!(missing_sentinel, before);
+     for bad_length in [-1, 0, 1, 13, 253, i64::MIN, i64::MAX] {
+[31m-        assert!(decode(&p, &base, bad_length)
+(B[m[31m-            .unwrap_err()
+(B[m[31m-            .contains("length"));
+(B[m[32m+        assert!(
+(B[m[32m+            decode(&p, &base, bad_length)
+(B[m[32m+                .unwrap_err()
+(B[m[32m+                .contains("length")
+(B[m[32m+        );
+(B[m     }
+     for size in [3023, 3025] {
+[31m-        assert!(decode(&p, &vec![0; size], length)
+(B[m[31m-            .unwrap_err()
+(B[m[31m-            .contains("shape"));
+(B[m[32m+        assert!(
+(B[m[32m+            decode(&p, &vec![0; size], length)
+(B[m[32m+                .unwrap_err()
+(B[m[32m+                .contains("shape")
+(B[m[32m+        );
+(B[m     }
+     for frame in [2, 251] {
+         let mut tokens = base.clone();
+Diff in /Users/poonszesen/kg-v3-grammar/engine_rs/tests/../../src/kaggriculture/grammar_tests.rs:1492:
+             assert!((law.values().sum::<f64>() - 1.).abs() < 1e-12);
+         }
+         assert!(parallel.contains_key(&vec![7, 7, 7]));
+[31m-        assert!(parallel
+(B[m[31m-            .keys()
+(B[m[31m-            .all(|queue| queue.iter().filter(|&&k| k == 1).count() <= budget));
+(B[m[32m+        assert!(
+(B[m[32m+            parallel
+(B[m[32m+                .keys()
+(B[m[32m+                .all(|queue| queue.iter().filter(|&&k| k == 1).count() <= budget)
+(B[m[32m+        );
+(B[m         if budget < 3 {
+             assert!(corrected_none && corrected_empty);
+         }
+Diff in /Users/poonszesen/kg-v3-grammar/engine_rs/tests/../../src/kaggriculture/grammar_tests.rs:1516:
+     assert_eq!(closed.hires, 1);
+     let next = advance_prefix(closed, &p, &[0; 7]);
+     assert!(!next.allows(1, &p));
+[31m-    assert!(next
+(B[m[31m-        .advance(1, &p)
+(B[m[31m-        .unwrap_err()
+(B[m[31m-        .starts_with("hire capacity"));
+(B[m[32m+    assert!(
+(B[m[32m+        next.advance(1, &p)
+(B[m[32m+            .unwrap_err()
+(B[m[32m+            .starts_with("hire capacity")
+(B[m[32m+    );
+(B[m     let full = plan(241, 10, 241).unwrap();
+     assert!(!market_start(&full).allows(1, &full));
+ }
+error: recipe `rs-format` failed on line 40 with exit code 1
+
+EXIT_CODE=1

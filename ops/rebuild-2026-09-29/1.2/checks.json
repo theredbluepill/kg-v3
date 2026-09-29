@@ -1,0 +1,2078 @@
+[
+  {
+    "id": "constants-red",
+    "question": "Is the grammar compiled in the root module tree with the contract vocabulary?",
+    "inputs": "Section 5.1 constants test against absent module",
+    "expected_discriminator": "Rust unresolved module/symbol errors",
+    "stopping_condition": "One bounded compile attempt",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_constants",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/constants-red.log",
+    "exit_code": 101,
+    "elapsed_seconds": 15.81
+  },
+  {
+    "id": "checker-placeholder-format",
+    "question": "Is the authored placeholder formatted before its inventory hash is computed?",
+    "inputs": "engine_rs/tests/grammar_kernel.rs",
+    "expected_discriminator": "rustfmt exits 0; retained files are not selected",
+    "stopping_condition": "The one authored file is formatted",
+    "command": [
+      "rustfmt",
+      "--edition",
+      "2024",
+      "engine_rs/tests/grammar_kernel.rs"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/checker-placeholder-format.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.028
+  },
+  {
+    "id": "checker-placeholder-hash",
+    "question": "What is the actual SHA-256 of the formatted authored placeholder?",
+    "inputs": "engine_rs/tests/grammar_kernel.rs",
+    "expected_discriminator": "A SHA-256 and file path are printed with exit 0",
+    "stopping_condition": "Use the computed hash for the initial authored manifest entry",
+    "command": [
+      "shasum",
+      "-a",
+      "256",
+      "engine_rs/tests/grammar_kernel.rs"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/checker-placeholder-hash.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.017
+  },
+  {
+    "id": "constants-green",
+    "question": "Does the registered grammar expose the exact vocabulary?",
+    "inputs": "Section 5.1 constants and typed enums",
+    "expected_discriminator": "1 test passes",
+    "stopping_condition": "All selected assertions pass",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_constants",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/constants-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 5.629
+  },
+  {
+    "id": "checker-red",
+    "question": "Does the fixed Task 1.1 authored allowlist reject the intended Task 1.2 inventory while the new regressions express the required protections?",
+    "inputs": "New exact-two-test and copied-package omission/third/hash cases against unchanged checker",
+    "expected_discriminator": "Red: intended two-test inventory is rejected by the old one-test allowlist; all existing attacks remain tested",
+    "stopping_condition": "Capture and diagnose every failure before changing only the allowlist",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_check_engine_trim.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/checker-red.log",
+    "exit_code": 1,
+    "elapsed_seconds": 18.797
+  },
+  {
+    "id": "checker-green",
+    "question": "Does the exact two-path allowlist accept the intended tests while preserving all pin and authored-inventory protections?",
+    "inputs": "Checker allowlist and all 62 checker regressions; only two production lines changed",
+    "expected_discriminator": "All tests pass, including omissions/third-file/hash and existing retained-byte attacks",
+    "stopping_condition": "All 62 tests pass or diagnose the failure without weakening expectations",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_check_engine_trim.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/checker-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 2.08
+  },
+  {
+    "id": "checker-current-inventory",
+    "question": "Do current engine bytes and the declared two authored tests satisfy the pinned trim contract?",
+    "inputs": "Current engine_rs tree and pinned reference Git blobs",
+    "expected_discriminator": "engine trim manifest: OK with exit 0",
+    "stopping_condition": "The real current-tree checker passes without retained-source edits",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "scripts/check_engine_trim.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/checker-current-inventory.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.826
+  },
+  {
+    "id": "oracle-validator-red",
+    "question": "Do recorder tests detect missing validation and compression?",
+    "inputs": "Named validator tests against explicit error-returning stubs",
+    "expected_discriminator": "Ten failures identifying unimplemented validator",
+    "stopping_condition": "Capture initial pytest exit and failures before implementation",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_record_grammar_reference.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-validator-red.log",
+    "exit_code": 1,
+    "elapsed_seconds": 0.22
+  },
+  {
+    "id": "resumed-source-identity",
+    "question": "Does the resumed checkout retain the expected task branch and reference pin?",
+    "inputs": "Current Git read-only identities and committed partial work",
+    "expected_discriminator": "kg/rebuild-grammar; cdd2617 partial checkpoint; reference 65f0eac5",
+    "stopping_condition": "Read-only identity inventory captured",
+    "command": [
+      "python3",
+      "-c",
+      "import subprocess; commands=[[\"git\",\"branch\",\"--show-current\"],[\"git\",\"status\",\"--short\"],[\"git\",\"log\",\"-3\",\"--oneline\"],[\"git\",\"rev-parse\",\"kg/reference-2026-09-29\"]]; [subprocess.run(c,check=True) for c in commands]"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/resumed-source-identity.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.051
+  },
+  {
+    "id": "oracle-validator-green-first",
+    "question": "Do schema provenance quota mutation and gzip tests pass?",
+    "inputs": "Validator and synthetic complete-schedule fixture independent of new grammar",
+    "expected_discriminator": "10 passing tests",
+    "stopping_condition": "Exit after bounded tooling tests",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_record_grammar_reference.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-validator-green-first.log",
+    "exit_code": 0,
+    "elapsed_seconds": 2.663
+  },
+  {
+    "id": "oracle-python-format",
+    "question": "Are authored recorder and tests formatted and lintable before identity hashing?",
+    "inputs": "Recorder and tooling tests only",
+    "expected_discriminator": "Ruff formatting succeeds; remaining findings inspected",
+    "stopping_condition": "One formatter/lint pass",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "check",
+      "--fix",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "tests/tools/test_record_grammar_reference.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-python-format.log",
+    "exit_code": 1,
+    "elapsed_seconds": 0.126
+  },
+  {
+    "id": "oracle-python-format2",
+    "question": "Format authored Python before source identity hash",
+    "inputs": "Recorder tooling tests",
+    "expected_discriminator": "Formatted files",
+    "stopping_condition": "One formatter pass",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "format",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "tests/tools/test_record_grammar_reference.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-python-format2.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.033
+  },
+  {
+    "id": "oracle-harness-format",
+    "question": "Format authored append-only harness before scratch append and hash",
+    "inputs": "reference_harness.rs only",
+    "expected_discriminator": "Rustfmt success without reference edits",
+    "stopping_condition": "One formatting pass",
+    "command": [
+      "rustfmt",
+      "--edition",
+      "2024",
+      "ops/rebuild-2026-09-29/1.2/oracle/reference_harness.rs"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-harness-format.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.126
+  },
+  {
+    "id": "oracle-validator-green",
+    "question": "Do strict nested schemas and provenance mutation tests pass?",
+    "inputs": "18 validator tests and synthetic full schedule",
+    "expected_discriminator": "18 passes",
+    "stopping_condition": "Bounded pytest exit",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_record_grammar_reference.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-validator-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 5.008
+  },
+  {
+    "id": "oracle-lint-postformat",
+    "question": "Which substantive lint findings remain after formatting?",
+    "inputs": "Authored recorder tests",
+    "expected_discriminator": "Inspect remaining nonformat findings before source hashing",
+    "stopping_condition": "One lint pass",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "check",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "tests/tools/test_record_grammar_reference.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-lint-postformat.log",
+    "exit_code": 1,
+    "elapsed_seconds": 0.034
+  },
+  {
+    "id": "oracle-format-final",
+    "question": "Format type annotations and corrected lint findings",
+    "inputs": "Authored recorder and tests",
+    "expected_discriminator": "Formatting completes",
+    "stopping_condition": "One formatting pass",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "format",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "tests/tools/test_record_grammar_reference.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-format-final.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.12
+  },
+  {
+    "id": "oracle-lint-final",
+    "question": "Are recorder and tests lint clean before oracle recording?",
+    "inputs": "Authored recorder tests",
+    "expected_discriminator": "Ruff clean",
+    "stopping_condition": "One lint pass",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "check",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "tests/tools/test_record_grammar_reference.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-lint-final.log",
+    "exit_code": 1,
+    "elapsed_seconds": 0.046
+  },
+  {
+    "id": "oracle-record-first",
+    "question": "What do the two actual native reference decoders and Python codec admit and render?",
+    "inputs": "Pinned65f0eac5 sources; fixed320 corpus schedule; four traces;44 mutations",
+    "expected_discriminator": "320 scheduled accepted plus recorded negatives; bounded hashes and sizes",
+    "stopping_condition": "One full predetermined recording or first disagreement/dependency error",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "record",
+      "--reference-root",
+      "/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2",
+      "--output",
+      "tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz",
+      "--manifest",
+      "tests/fixtures/kaggriculture/grammar-v4-reference.manifest.json"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-record-first.log",
+    "exit_code": 0,
+    "elapsed_seconds": 29.273
+  },
+  {
+    "id": "oracle-scratch-bytecode-clean",
+    "question": "Did file-path reference codec import create an unauthorized scratch bytecode cache?",
+    "inputs": "Exact actor_codec CPython312 cache generated by first recording",
+    "expected_discriminator": "Remove only generated pyc and empty cache directory; no source mutation",
+    "stopping_condition": "Single named generated cache removal",
+    "command": [
+      "python3",
+      "-c",
+      "from pathlib import Path; p=Path(\".codex-tmp/grammar-reference-1.2/python/owl/kaggriculture/__pycache__/actor_codec.cpython-312.pyc\"); print(p, p.stat().st_size); p.unlink(); p.parent.rmdir()"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-scratch-bytecode-clean.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.02
+  },
+  {
+    "id": "oracle-lint-fix2",
+    "question": "Fix import sorting after type annotation and custody hardening",
+    "inputs": "Authored recorder and tests",
+    "expected_discriminator": "Ruff import fix; inspect substantive findings",
+    "stopping_condition": "One bounded lint pass",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "check",
+      "--fix",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "tests/tools/test_record_grammar_reference.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-lint-fix2.log",
+    "exit_code": 1,
+    "elapsed_seconds": 0.114
+  },
+  {
+    "id": "oracle-format-hardening",
+    "question": "Format strict summary validators before final reference identity",
+    "inputs": "Authored recorder only",
+    "expected_discriminator": "Formatter succeeds",
+    "stopping_condition": "One pass",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "format",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-format-hardening.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.034
+  },
+  {
+    "id": "oracle-validator-hardening",
+    "question": "Does strict nested summary validation retain original validator coverage?",
+    "inputs": "18 tests after custody hardening",
+    "expected_discriminator": "18 passes",
+    "stopping_condition": "Bounded pytest exit",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_record_grammar_reference.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-validator-hardening.log",
+    "exit_code": 0,
+    "elapsed_seconds": 5.055
+  },
+  {
+    "id": "oracle-format-tests-final",
+    "question": "Format final fixture and provenance regressions",
+    "inputs": "Recorder tests",
+    "expected_discriminator": "Formatter succeeds",
+    "stopping_condition": "One pass",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "format",
+      "tests/tools/test_record_grammar_reference.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-format-tests-final.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.106
+  },
+  {
+    "id": "oracle-lint-clean",
+    "question": "Are frozen recorder and tests lint clean?",
+    "inputs": "Recorder plus complete tests",
+    "expected_discriminator": "Ruff passes",
+    "stopping_condition": "One lint pass",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "check",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "tests/tools/test_record_grammar_reference.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-lint-clean.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.036
+  },
+  {
+    "id": "oracle-record-final",
+    "question": "Does final reference recorder produce fixed corpus and provenance?",
+    "inputs": "Pinned reference decoders;320 deterministic scheduled programs;44 mutations;5752 replay candidates",
+    "expected_discriminator": "320 agree; quota and strict schema/hash validation pass",
+    "stopping_condition": "One predetermined recording, no search for passing examples",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "record",
+      "--reference-root",
+      "/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2",
+      "--output",
+      "tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz",
+      "--manifest",
+      "tests/fixtures/kaggriculture/grammar-v4-reference.manifest.json"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-record-final.log",
+    "exit_code": 0,
+    "elapsed_seconds": 11.959
+  },
+  {
+    "id": "oracle-verify-final",
+    "question": "Does independent second native recording reproduce exact fixture bytes provenance and counts?",
+    "inputs": "Final recorder/harness, same pinned sources and fixed seeds, existing committed-target fixture",
+    "expected_discriminator": "Byte-exact gzip/raw outputs and manifest equality; existing output never replaced",
+    "stopping_condition": "One complete independent replay of all plan and decode requests",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "verify",
+      "--reference-root",
+      "/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2",
+      "--fixture",
+      "tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz",
+      "--manifest",
+      "tests/fixtures/kaggriculture/grammar-v4-reference.manifest.json"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-verify-final.log",
+    "exit_code": 0,
+    "elapsed_seconds": 12.175
+  },
+  {
+    "id": "oracle-tooling-final",
+    "question": "Do final strict schema provenance fixture mutation and deterministic gzip tests pass?",
+    "inputs": "Final native-generated fixture plus26 bounded tooling tests",
+    "expected_discriminator": "26 passes and deliberately mutated expected JSON rejected",
+    "stopping_condition": "One bounded pytest suite",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_record_grammar_reference.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-tooling-final.log",
+    "exit_code": 0,
+    "elapsed_seconds": 6.74
+  },
+  {
+    "id": "serde-promote-add",
+    "question": "Can existing locked serde_json become a normal dependency without new crates or numeric features?",
+    "inputs": "Root existing serde_json1.0.149 dev dependency",
+    "expected_discriminator": "Cargo promotes cached serde_json offline",
+    "stopping_condition": "Cargo metadata operation completes",
+    "command": [
+      "cargo",
+      "add",
+      "--offline",
+      "serde_json@1.0.149"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/serde-promote-add.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.076
+  },
+  {
+    "id": "serde-promote-remove-dev",
+    "question": "Does Cargo remove the duplicate dev declaration while retaining normal JSON dependency?",
+    "inputs": "Root Cargo after offline add",
+    "expected_discriminator": "Only dev serde_json declaration removed",
+    "stopping_condition": "Cargo metadata operation completes",
+    "command": [
+      "cargo",
+      "remove",
+      "--offline",
+      "--dev",
+      "serde_json"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/serde-promote-remove-dev.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.026
+  },
+  {
+    "id": "oracle-scratch-final-state",
+    "question": "Does scratch reference retain only authorized append and no import cache?",
+    "inputs": "Pinned scratch Git diff and exact codec cache path",
+    "expected_discriminator": "Only M engine_rs/src/ffi.rs; no bytecode; original prefix plus harness byte equality",
+    "stopping_condition": "One read-only custody audit",
+    "command": [
+      "python3",
+      "-c",
+      "import pathlib,subprocess; root=pathlib.Path(\".codex-tmp/grammar-reference-1.2\"); print(subprocess.check_output([\"git\",\"status\",\"--short\",\"--untracked-files=all\"],cwd=root,text=True)); before=pathlib.Path(\"ops/rebuild-2026-09-29/1.2/oracle/scratch/ffi.rs.before\").read_bytes(); append=pathlib.Path(\"ops/rebuild-2026-09-29/1.2/oracle/reference_harness.rs\").read_bytes(); assert (root/\"engine_rs/src/ffi.rs\").read_bytes()==before+append; assert not list((root/\"python/owl/kaggriculture\").glob(\"__pycache__/actor_codec.*.pyc\")); print(\"exact append and no codec bytecode: OK\")"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-scratch-final-state.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.168
+  },
+  {
+    "id": "oracle-sha256-final",
+    "question": "What are final source appendix and fixture SHA256 identities?",
+    "inputs": "Formatted recorder harness preserved append/original blob generated fixture and manifest",
+    "expected_discriminator": "Computed file hashes printed directly",
+    "stopping_condition": "One hash command",
+    "command": [
+      "shasum",
+      "-a",
+      "256",
+      "ops/rebuild-2026-09-29/1.2/oracle/record_reference.py",
+      "ops/rebuild-2026-09-29/1.2/oracle/reference_harness.rs",
+      "ops/rebuild-2026-09-29/1.2/oracle/scratch/ffi.rs.before",
+      "ops/rebuild-2026-09-29/1.2/oracle/scratch/append.patch",
+      "tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz",
+      "tests/fixtures/kaggriculture/grammar-v4-reference.manifest.json"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-sha256-final.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.024
+  },
+  {
+    "id": "oracle-validator-negative-control",
+    "question": "Do corruption tests fail specifically when validation silently accepts every fixture?",
+    "inputs": "Temporary no-op validate_fixture body; unchanged tests; byte-exact restoration in finally",
+    "expected_discriminator": "Mutation/rejection tests fail because ValueError was not raised",
+    "stopping_condition": "One pytest run; restore original source regardless of result",
+    "command": [
+      "python3",
+      "-c",
+      "from pathlib import Path; import subprocess,sys; p=Path(\"ops/rebuild-2026-09-29/1.2/oracle/record_reference.py\"); before=p.read_bytes(); s=before.decode(); marker=\"    exact(manifest, MANIFEST_KEYS, \\\"manifest\\\")\"; assert marker in s; p.write_text(s.replace(marker,\"    return\\n\"+marker,1)); result=None\ntry:\n result=subprocess.run([\"uv\",\"run\",\"--offline\",\"pytest\",\"tests/tools/test_record_grammar_reference.py\",\"-q\"],check=False)\nfinally:\n p.write_bytes(before); print(\"validator source restored byte-exactly\", flush=True)\nassert result is not None\nsys.exit(result.returncode)"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-validator-negative-control.log",
+    "exit_code": 1,
+    "elapsed_seconds": 24.816
+  },
+  {
+    "id": "oracle-validator-restored-green",
+    "question": "Does restored exact-source validator reject corruptions and admit recorded fixture?",
+    "inputs": "Original recorder restored after deliberate no-op control",
+    "expected_discriminator": "25 passes",
+    "stopping_condition": "One bounded pytest suite",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_record_grammar_reference.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-validator-restored-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 7.857
+  },
+  {
+    "id": "oracle-validator-explicit-error-control",
+    "question": "Does valid-fixture test reach and fail specifically at an explicit error-returning validator stub?",
+    "inputs": "Real helpers; temporary validate_fixture raises ValueError; one valid-fixture test",
+    "expected_discriminator": "One failure from named validator stub",
+    "stopping_condition": "One selected test; restore original source in finally",
+    "command": [
+      "python3",
+      "-c",
+      "from pathlib import Path; import subprocess,sys; p=Path(\"ops/rebuild-2026-09-29/1.2/oracle/record_reference.py\"); before=p.read_bytes(); s=before.decode(); marker=\"    exact(manifest, MANIFEST_KEYS, \\\"manifest\\\")\"; assert marker in s; p.write_text(s.replace(marker,\"    raise ValueError(\\\"explicit validator error stub control\\\")\\n\"+marker,1)); result=None\ntry:\n result=subprocess.run([\".venv/bin/pytest\",\"tests/tools/test_record_grammar_reference.py::test_fixture_validation_and_compression\",\"-q\"],check=False)\nfinally:\n p.write_bytes(before); print(\"validator source restored byte-exactly\", flush=True)\nassert result is not None\nsys.exit(result.returncode)"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-validator-explicit-error-control.log",
+    "exit_code": 1,
+    "elapsed_seconds": 0.342
+  },
+  {
+    "id": "oracle-validator-explicit-error-restored",
+    "question": "Do valid and mutation tests pass after exact original validator restoration?",
+    "inputs": "Final unchanged recorder and all25 tooling tests",
+    "expected_discriminator": "25 passes; original recorded source hash validates",
+    "stopping_condition": "One pytest suite using installed environment to avoid unrelated editable build",
+    "command": [
+      ".venv/bin/pytest",
+      "tests/tools/test_record_grammar_reference.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-validator-explicit-error-restored.log",
+    "exit_code": 0,
+    "elapsed_seconds": 7.813
+  },
+  {
+    "id": "transition-stub-hash",
+    "question": "Which explicit error-returning stubs does the transition red check use?",
+    "inputs": "Preserved grammar stub bytes before semantic implementation",
+    "expected_discriminator": "Exact source and preserved stub hashes agree",
+    "stopping_condition": "Two SHA-256 values captured before red",
+    "command": [
+      "shasum",
+      "-a",
+      "256",
+      "src/kaggriculture/grammar.rs",
+      "ops/rebuild-2026-09-29/1.2/controls/transitions-stub.rs.txt"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/transition-stub-hash.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.018
+  },
+  {
+    "id": "transitions-red",
+    "question": "Do table extraction and state transitions match reference bits and every reachable local condition?",
+    "inputs": "Section5.3 complete tests against explicit error-returning stubs",
+    "expected_discriminator": "Named test fails on grammar tables stub",
+    "stopping_condition": "One bounded test with saved failure",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_tables_match_reference_and_reachable_states",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/transitions-red.log",
+    "exit_code": 101,
+    "elapsed_seconds": 4.092
+  },
+  {
+    "id": "transitions-green",
+    "question": "Do implemented masks/transitions match all reference bits and reachable edges?",
+    "inputs": "Section5.3 tests and typed state/table implementation",
+    "expected_discriminator": "Exact equality including affinity,STOP,bounds and964bits",
+    "stopping_condition": "One named exhaustive bounded test passes",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_tables_match_reference_and_reachable_states",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/transitions-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 3.601
+  },
+  {
+    "id": "decode-red",
+    "question": "Does canonical decode preserve independent exact commands and reject malformed i64 buffers?",
+    "inputs": "Section5.4 command matrix,transport and fixture tests against explicit decoder Err stub",
+    "expected_discriminator": "Three new decoder tests fail; earlier constants/transitions stay green",
+    "stopping_condition": "Capture initial named failures before decoder implementation",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/decode-red.log",
+    "exit_code": 101,
+    "elapsed_seconds": 3.931
+  },
+  {
+    "id": "decode-green",
+    "question": "Does validate-first decoding match exact commands and every source-bound fixture verdict?",
+    "inputs": "Completed decode and section5.4 tests",
+    "expected_discriminator": "5 grammar tests pass, all320 scheduled programs plus44 controls classified",
+    "stopping_condition": "All selected grammar tests pass or diagnose discrepancy",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/decode-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 3.275
+  },
+  {
+    "id": "encode-red",
+    "question": "Can strict encoding reproduce independent frames and reject malformed JSON without output writes?",
+    "inputs": "Section5.4 roundtrip and rejection tests against explicit encode Err stub",
+    "expected_discriminator": "Both new encoder tests fail on stub",
+    "stopping_condition": "Capture red before writing encoder body",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_encode",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/encode-red.log",
+    "exit_code": 101,
+    "elapsed_seconds": 2.837
+  },
+  {
+    "id": "encode-green",
+    "question": "Does strict encoding roundtrip every admitted frame and raw replay action without normalization?",
+    "inputs": "Completed encoder with same State walk;238commands,321acceptedfixture rows,strictnegativeJSON",
+    "expected_discriminator": "Both encoder tests pass; failed encodes leave outputs unchanged",
+    "stopping_condition": "Exact token/action equality and every error category passes",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_encode",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/encode-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 2.602
+  },
+  {
+    "id": "hire-negative",
+    "question": "Does exact queue-law enumeration detect removal of the HIRE capacity guard?",
+    "inputs": "New section5.5 Rust-driven sequential law versus coupled races; temporary omitted guard",
+    "expected_discriminator": "Queue-key or mass mismatch; source restored byte-exactly in finally",
+    "stopping_condition": "One named negative-control failure",
+    "command": [
+      "python3",
+      "ops/rebuild-2026-09-29/1.2/mutate_check.py",
+      "hire-guard",
+      "src/kaggriculture/grammar.rs",
+      "token != 1 || self.shape.actors + u16::from(self.hires) < self.shape.hire_limit",
+      "true",
+      "--",
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_coupled_hire_exact_distribution",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/hire-negative.log",
+    "exit_code": 101,
+    "elapsed_seconds": 2.698
+  },
+  {
+    "id": "hire-green",
+    "question": "Does the coupled raw-HIRE correction exactly equal the real Rust sequential law?",
+    "inputs": "Restored capacity guard;3positions8kinds budgets0,1,2,3,10 plusA17H16",
+    "expected_discriminator": "Every queue mass and total within1e-12; HIRE closes only atslot11",
+    "stopping_condition": "Named exact enumeration passes",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_coupled_hire_exact_distribution",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/hire-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 1.24
+  },
+  {
+    "id": "replay-walk-negative",
+    "question": "Does the section 5.6 cursor replay detect corrupted rendering already implemented in 5.4?",
+    "inputs": "New named replay walk plus temporary PLANT to PASS renderer mutation; preserved source and patch",
+    "expected_discriminator": "Named test fails exact canonical action equality, not cursor walk; then restore byte exact",
+    "stopping_condition": "One targeted failure and unconditional restoration",
+    "command": [
+      "python3",
+      "ops/rebuild-2026-09-29/1.2/mutate_check.py",
+      "replay-render",
+      "src/kaggriculture/grammar.rs",
+      "let mut command = vec![Value::from(kind.as_str())];",
+      "let mut command = vec![Value::from(if kind == UnitKind::Plant { \"PASS\" } else { kind.as_str() })];",
+      "--",
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_replays_reference_program",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/replay-walk-negative.log",
+    "exit_code": 101,
+    "elapsed_seconds": 2.108
+  },
+  {
+    "id": "replay-walk-green",
+    "question": "Does every admitted fixture prefix walk to terminal only at its final token and render the recorded action?",
+    "inputs": "Restored grammar and new section5.6 test: mixed five-frame example and321 admitted fixture/control records",
+    "expected_discriminator": "1 named test passes including22 dense length252 programs",
+    "stopping_condition": "One named test finishes",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_replays_reference_program",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/replay-walk-green.log",
+    "exit_code": 101,
+    "elapsed_seconds": 3.887
+  },
+  {
+    "id": "replay-walk-negative-corrected",
+    "question": "After diagnosing CARE17 instead of pinned PLANT8 in the test input, does exact JSON detect renderer corruption?",
+    "inputs": "Corrected literal token8; unchanged expected PLANT action; temporary PLANT to PASS renderer mutation",
+    "expected_discriminator": "Failure at JSON equality after successful walk, then byte-exact restore",
+    "stopping_condition": "One targeted test ends and source restores",
+    "command": [
+      "python3",
+      "ops/rebuild-2026-09-29/1.2/mutate_check.py",
+      "replay-render-corrected",
+      "src/kaggriculture/grammar.rs",
+      "let mut command = vec![Value::from(kind.as_str())];",
+      "let mut command = vec![Value::from(if kind == UnitKind::Plant { \"PASS\" } else { kind.as_str() })];",
+      "--",
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_replays_reference_program",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/replay-walk-negative-corrected.log",
+    "exit_code": 101,
+    "elapsed_seconds": 2.297
+  },
+  {
+    "id": "replay-walk-green-corrected",
+    "question": "Does the corrected reference example and every recorded admitted program replay and render exactly?",
+    "inputs": "Restored renderer, PLANT token8 from pinned contract,321 fixture/control programs",
+    "expected_discriminator": "1 passed; terminal only at last token;22 dense full markets",
+    "stopping_condition": "Named test exits",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_replays_reference_program",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/replay-walk-green-corrected.log",
+    "exit_code": 0,
+    "elapsed_seconds": 2.134
+  },
+  {
+    "id": "missing-sentinel-negative",
+    "question": "Does the distinct missing-sentinel case reach and require final cursor validation?",
+    "inputs": "PASS plus complete HIRE at valid length2; temporary removal of final-state guard",
+    "expected_discriminator": "Malformed test fails unwrap_err on incorrectly accepted action; exactrestore",
+    "stopping_condition": "One targeted failure",
+    "command": [
+      "python3",
+      "ops/rebuild-2026-09-29/1.2/mutate_check.py",
+      "final-sentinel",
+      "src/kaggriculture/grammar.rs",
+      "if state.is_some() { return Err(\"program lacks distinct final STOP\".into()); }",
+      "",
+      "--",
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_rejects_malformed_i64",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/missing-sentinel-negative.log",
+    "exit_code": 101,
+    "elapsed_seconds": 2.114
+  },
+  {
+    "id": "oracle-readonly-final-audit",
+    "question": "Do final fixture provenance counts disagreements and scratch bytes match the frozen oracle receipt?",
+    "inputs": "Final recorder harness tooling-test bytes manifest gzip/raw corpus and pinned scratch worktree",
+    "expected_discriminator": "Strict validation hashes inventories and scratch only-append check pass; print final split facts",
+    "stopping_condition": "One read-only CPU-light audit; no Cargo or source writes",
+    "command": [
+      "python3",
+      "-B",
+      "-c",
+      "from pathlib import Path; import collections,gzip,hashlib,importlib.util,json,subprocess; p=Path(\"ops/rebuild-2026-09-29/1.2/oracle/record_reference.py\"); spec=importlib.util.spec_from_file_location(\"readonly_oracle_audit\",p); assert spec is not None and spec.loader is not None; m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); f=Path(\"tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz\"); mp=f.with_name(\"grammar-v4-reference.manifest.json\"); manifest=json.loads(mp.read_text()); payload=gzip.decompress(f.read_bytes()); m.validate_fixture(payload,manifest); rows=[json.loads(l) for l in payload.splitlines()][1:]; print(\"counts\",json.dumps(manifest[\"counts\"],sort_keys=True)); print(\"full_market_by_source\",json.dumps(dict(collections.Counter(r[\"source\"] for r in rows if r[\"source\"] in {\"sampled\",\"replay\"} and r[\"length\"]==r[\"shape\"][\"actors\"]+r[\"shape\"][\"order_limit\"]+1)),sort_keys=True)); print(\"manifest_bytes\",mp.stat().st_size); print(\"disagreement_ids\",json.dumps([d[\"id\"] for d in manifest[\"disagreements\"]])); print(\"hashes\",json.dumps({str(x):hashlib.sha256(x.read_bytes()).hexdigest() for x in [p,Path(\"ops/rebuild-2026-09-29/1.2/oracle/reference_harness.rs\"),Path(\"tests/tools/test_record_grammar_reference.py\"),f,mp]},sort_keys=True)); ref=Path(\".codex-tmp/grammar-reference-1.2\"); status=subprocess.check_output([\"git\",\"status\",\"--short\",\"--untracked-files=all\"],cwd=ref,text=True); print(\"scratch_status\",repr(status)); assert status==\" M engine_rs/src/ffi.rs\\n\"; original=Path(\"ops/rebuild-2026-09-29/1.2/oracle/scratch/ffi.rs.before\").read_bytes(); harness=Path(\"ops/rebuild-2026-09-29/1.2/oracle/reference_harness.rs\").read_bytes(); assert (ref/\"engine_rs/src/ffi.rs\").read_bytes()==original+harness; assert not list(ref.rglob(\"*.pyc\")); receipt=json.loads(Path(\"ops/rebuild-2026-09-29/1.2/checks.json\").read_text()); verified=[r for r in receipt if r[\"id\"]==\"oracle-verify-final\"]; assert len(verified)==1 and verified[0][\"exit_code\"]==0; print(\"independent native verify receipt: exit0; strict final provenance and exact append: OK\")"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-readonly-final-audit.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.711
+  },
+  {
+    "id": "oracle-scratch-ignored-audit",
+    "question": "Are any ignored or untracked files hiding additional scratch mutations?",
+    "inputs": "Pinned scratch untracked and ignored file inventories",
+    "expected_discriminator": "Both inventories empty",
+    "stopping_condition": "Read-only Git file inventory only",
+    "command": [
+      "python3",
+      "-B",
+      "-c",
+      "from pathlib import Path; import subprocess; root=Path(\".codex-tmp/grammar-reference-1.2\"); untracked=subprocess.check_output([\"git\",\"ls-files\",\"--others\",\"--exclude-standard\"],cwd=root,text=True); ignored=subprocess.check_output([\"git\",\"ls-files\",\"--others\",\"--ignored\",\"--exclude-standard\"],cwd=root,text=True); print(\"untracked\",repr(untracked)); print(\"ignored\",repr(ignored)); assert not untracked and not ignored"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/oracle-scratch-ignored-audit.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.042
+  },
+  {
+    "id": "missing-sentinel-green",
+    "question": "Does restored final-state guard reject valid-length program without STOP?",
+    "inputs": "PASS and HIRE complete frames, no sentinel; full malformed suite",
+    "expected_discriminator": "1 passed including final-cursor error and unchanged input",
+    "stopping_condition": "Named test exits",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_rejects_malformed_i64",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/missing-sentinel-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 1.549
+  },
+  {
+    "id": "authored-rust-format",
+    "question": "Are authored Rust sources formatted before both-edition checks and final hashes?",
+    "inputs": "Root grammar sources and new kernel integration test; pinned formatter exclusions",
+    "expected_discriminator": "Formatting exits0 without retained engine edits",
+    "stopping_condition": "Formatter completes",
+    "command": [
+      "cargo",
+      "fmt"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/authored-rust-format.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.149
+  },
+  {
+    "id": "kernel-initial",
+    "question": "Does an independently specified BUY_LAND program reach the pinned kernel with its expected bank effect on both seats?",
+    "inputs": "Section5.6 authored test; completed decoder from5.4; default seed73 game",
+    "expected_discriminator": "Initial complete-decoder test passes; pending negative renderer control must later fail bank equality",
+    "stopping_condition": "One named test completes with exit status retained",
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "engine_rs/Cargo.toml",
+      "--offline",
+      "--locked",
+      "--test",
+      "grammar_kernel",
+      "decoded_programs_feed_kernel",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/kernel-initial.log",
+    "exit_code": 0,
+    "elapsed_seconds": 8.264
+  },
+  {
+    "id": "ops-helpers-format",
+    "question": "Are authored receipt and negative-control helpers consistently formatted?",
+    "inputs": "Only run_check.py and mutate_check.py; frozen oracle tools unchanged",
+    "expected_discriminator": "Ruff formatting completes",
+    "stopping_condition": "Formatter exits",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "format",
+      "ops/rebuild-2026-09-29/1.2/run_check.py",
+      "ops/rebuild-2026-09-29/1.2/mutate_check.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/ops-helpers-format.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.093
+  },
+  {
+    "id": "kernel-renderer-red",
+    "question": "Does the economically meaningful kernel test detect BUY_LAND accidentally rendered as HIRE?",
+    "inputs": "Unique render_market negative mutation; decoded_programs_feed_kernel; seed73 both-seat test",
+    "expected_discriminator": "Named test fails bank equality: actual2999 expected2000; exact source bytes restored in finally",
+    "stopping_condition": "Single named negative control fails; saved before and patch permit audit",
+    "command": [
+      "python3",
+      "ops/rebuild-2026-09-29/1.2/mutate_check.py",
+      "kernel-buy-land",
+      "src/kaggriculture/grammar.rs",
+      "let kind = MarketKind::try_from(frame[Slot::MarketKind as usize])?;",
+      "let kind = MarketKind::try_from(frame[Slot::MarketKind as usize])?; let kind = if kind == MarketKind::BuyLand { MarketKind::Hire } else { kind };",
+      "--",
+      "cargo",
+      "test",
+      "--manifest-path",
+      "engine_rs/Cargo.toml",
+      "--offline",
+      "--locked",
+      "--test",
+      "grammar_kernel",
+      "decoded_programs_feed_kernel",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/kernel-renderer-red.log",
+    "exit_code": 101,
+    "elapsed_seconds": 0.846
+  },
+  {
+    "id": "ops-helpers-lint",
+    "question": "Do receipt helpers pass repository lint without changing frozen oracle code?",
+    "inputs": "run_check.py and mutate_check.py",
+    "expected_discriminator": "Zero Ruff diagnostics after scoped import-order fixes",
+    "stopping_condition": "One lint invocation exits",
+    "command": [
+      "uvx",
+      "--offline",
+      "ruff",
+      "check",
+      "--fix",
+      "ops/rebuild-2026-09-29/1.2/run_check.py",
+      "ops/rebuild-2026-09-29/1.2/mutate_check.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/ops-helpers-lint.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.099
+  },
+  {
+    "id": "kernel-green",
+    "question": "Do decoded canonical programs execute with dense capacity and actor ordering preserved, and do64 actual replay state replacements retain exact outcomes?",
+    "inputs": "Authored grammar_kernel;140unit98market cases per seat;256sampled records bothseats;64replay records;dense241/full10;240HIRE;richpoor;transfers;recursive key order",
+    "expected_discriminator": "All authored and same-source grammar tests pass; unchanged snapshot order/counters; exact241actors after hire",
+    "stopping_condition": "Entire standalone grammar_kernel test binary completes one thread with real exit/counts",
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "engine_rs/Cargo.toml",
+      "--offline",
+      "--locked",
+      "--test",
+      "grammar_kernel",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/kernel-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 14.498
+  },
+  {
+    "id": "kernel-format",
+    "question": "Is authored engine integration code formatted under edition2024 without editing retained sources?",
+    "inputs": "engine_rs/tests/grammar_kernel.rs only",
+    "expected_discriminator": "rustfmt exits0 and touches authoredtestonly",
+    "stopping_condition": "One explicit authored-file formatting invocation completes",
+    "command": [
+      "rustfmt",
+      "--edition",
+      "2024",
+      "engine_rs/tests/grammar_kernel.rs"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/kernel-format.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.043
+  },
+  {
+    "id": "kernel-clippy",
+    "question": "Does the same grammar source and authored engine glue satisfy warnings-as-errors under edition2024 while re-denying inherited library style allowances?",
+    "inputs": "Standalone engine alltargets; authoredtests deny too_many_arguments/collapsible_if/needless_range_loop",
+    "expected_discriminator": "Clippy exits0 with no authored allowances added",
+    "stopping_condition": "One offline locked alltarget Clippy invocation completes",
+    "command": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "engine_rs/Cargo.toml",
+      "--offline",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings",
+      "-A",
+      "clippy::too_many_arguments",
+      "-A",
+      "clippy::collapsible_if",
+      "-A",
+      "clippy::needless_range_loop"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/kernel-clippy.log",
+    "exit_code": 0,
+    "elapsed_seconds": 2.227
+  },
+  {
+    "id": "final-branch",
+    "question": "Is this the authorized implementation branch?",
+    "inputs": "Current checkout",
+    "expected_discriminator": "kg/rebuild-grammar",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "git",
+      "branch",
+      "--show-current"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-branch.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.008
+  },
+  {
+    "id": "final-reference-pin",
+    "question": "Is the oracle reference still pinned?",
+    "inputs": "Reference branch",
+    "expected_discriminator": "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "git",
+      "rev-parse",
+      "kg/reference-2026-09-29"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-reference-pin.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.007
+  },
+  {
+    "id": "root-serde-features",
+    "question": "Does the root remain isolated from engine numeric features?",
+    "inputs": "Root resolved serde_json graph",
+    "expected_discriminator": "No arbitrary_precision or preserve_order",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "cargo",
+      "tree",
+      "--offline",
+      "--locked",
+      "-e",
+      "features",
+      "-i",
+      "serde_json"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/root-serde-features.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.085
+  },
+  {
+    "id": "engine-serde-features",
+    "question": "Does the standalone kernel retain its numeric features?",
+    "inputs": "Separate engine graph",
+    "expected_discriminator": "arbitrary_precision and preserve_order retained",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "cargo",
+      "tree",
+      "--manifest-path",
+      "engine_rs/Cargo.toml",
+      "--offline",
+      "--locked",
+      "-e",
+      "features",
+      "-i",
+      "serde_json"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/engine-serde-features.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.121
+  },
+  {
+    "id": "final-kernel-hash",
+    "question": "What is the SHA-256 of the formatted authored engine test?",
+    "inputs": "Final formatted test bytes",
+    "expected_discriminator": "Computed hash, no invented value",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "shasum",
+      "-a",
+      "256",
+      "engine_rs/tests/grammar_kernel.rs"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-kernel-hash.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.021
+  },
+  {
+    "id": "register-final-kernel-hash",
+    "question": "Does manifest registration use the actual formatted-byte hash?",
+    "inputs": "Authored test and strict two-entry manifest",
+    "expected_discriminator": "Only second authored hash updated from hashlib",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "python3",
+      "-c",
+      "from pathlib import Path; import hashlib,json; p=Path('engine_rs/TRIM_MANIFEST.json'); m=json.loads(p.read_text()); row=next(r for r in m['authored'] if r['path']=='engine_rs/tests/grammar_kernel.rs'); row['sha256']=hashlib.sha256(Path(row['path']).read_bytes()).hexdigest(); print(row); p.write_text(json.dumps(m,indent=2)+'\\n')"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/register-final-kernel-hash.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.022
+  },
+  {
+    "id": "final-trim",
+    "question": "Are all retained bytes and exact authored inventory valid?",
+    "inputs": "Final manifest and kernel files",
+    "expected_discriminator": "engine trim manifest: OK",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "scripts/check_engine_trim.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-trim.log",
+    "exit_code": 0,
+    "elapsed_seconds": 19.417
+  },
+  {
+    "id": "final-tool-pytest",
+    "question": "Do checker and oracle tool regressions pass together?",
+    "inputs": "Both tooling suites",
+    "expected_discriminator": "87 passed",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_check_engine_trim.py",
+      "tests/tools/test_record_grammar_reference.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-tool-pytest.log",
+    "exit_code": 0,
+    "elapsed_seconds": 9.941
+  },
+  {
+    "id": "final-root-grammar",
+    "question": "Does the final compiled grammar pass all named tests?",
+    "inputs": "Formatted root source and frozen fixture",
+    "expected_discriminator": "9 passed",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-root-grammar.log",
+    "exit_code": 0,
+    "elapsed_seconds": 4.785
+  },
+  {
+    "id": "final-engine-grammar",
+    "question": "Does the final same-source engine integration pass?",
+    "inputs": "Separate package shared grammar and kernel tests",
+    "expected_discriminator": "18 passed",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "engine_rs/Cargo.toml",
+      "--locked",
+      "--test",
+      "grammar_kernel",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-engine-grammar.log",
+    "exit_code": 0,
+    "elapsed_seconds": 14.363
+  },
+  {
+    "id": "final-orbit-python",
+    "question": "Does adding the root module preserve retained Python/tooling behavior?",
+    "inputs": "Unchanged Orbit with reference extra request from brief",
+    "expected_discriminator": "All relevant tests pass; skips/deselections recorded",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "--extra",
+      "reference",
+      "pytest",
+      "tests/owl",
+      "tests/scripts",
+      "tests/tools",
+      "-m",
+      "not slow",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-orbit-python.log",
+    "exit_code": 2,
+    "elapsed_seconds": 0.062
+  },
+  {
+    "id": "final-orbit-python-existing-deps",
+    "question": "Do unchanged Orbit and tooling tests pass with this checkout's actual installed dependencies?",
+    "inputs": "Same brief test selection; undefined reference extra omitted, no dependency change",
+    "expected_discriminator": "All relevant tests pass; collect real skip/deselection counts",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/owl",
+      "tests/scripts",
+      "tests/tools",
+      "-m",
+      "not slow",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-orbit-python-existing-deps.log",
+    "exit_code": 0,
+    "elapsed_seconds": 40.22
+  },
+  {
+    "id": "final-root-cargo",
+    "question": "Does the whole root suite preserve Orbit parity?",
+    "inputs": "Root tests and cached Orbit fixtures",
+    "expected_discriminator": "All pass with only existing ignored tests",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "cargo",
+      "test",
+      "--locked"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-root-cargo.log",
+    "exit_code": 0,
+    "elapsed_seconds": 1.065
+  },
+  {
+    "id": "final-engine-cargo",
+    "question": "Does the full pinned engine and authored integration suite pass?",
+    "inputs": "All engine tests, retained replay traces and new oracle",
+    "expected_discriminator": "77 pass, none ignored",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "engine_rs/Cargo.toml",
+      "--locked"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-engine-cargo.log",
+    "exit_code": 0,
+    "elapsed_seconds": 12.079
+  },
+  {
+    "id": "rs-prepare-first",
+    "question": "Does the full Rust workflow pass in both isolated packages?",
+    "inputs": "Formatted sources, registered hashes, Clippy and all tests",
+    "expected_discriminator": "All stages exit0 without engine-byte changes",
+    "stopping_condition": "Command completes; diagnose any nonzero before proceeding",
+    "command": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "rs-prepare"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/rs-prepare-first.log",
+    "exit_code": 1,
+    "elapsed_seconds": 1.154
+  },
+  {
+    "id": "shared-format-root",
+    "question": "Do shared authored files use syntax that formats consistently under editions2021 and2024?",
+    "inputs": "Qualified JSON macros and local error/budget assertions; semantics unchanged",
+    "expected_discriminator": "Both formatters and full Rust preparation exit0 without extra exclusions",
+    "stopping_condition": "Complete command and diagnose nonzero",
+    "command": [
+      "cargo",
+      "fmt"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/shared-format-root.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.293
+  },
+  {
+    "id": "shared-format-engine-check",
+    "question": "Do shared authored files use syntax that formats consistently under editions2021 and2024?",
+    "inputs": "Qualified JSON macros and local error/budget assertions; semantics unchanged",
+    "expected_discriminator": "Both formatters and full Rust preparation exit0 without extra exclusions",
+    "stopping_condition": "Complete command and diagnose nonzero",
+    "command": [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "engine_rs/Cargo.toml",
+      "--check"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/shared-format-engine-check.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.059
+  },
+  {
+    "id": "rs-prepare-common-format",
+    "question": "Do shared authored files use syntax that formats consistently under editions2021 and2024?",
+    "inputs": "Qualified JSON macros and local error/budget assertions; semantics unchanged",
+    "expected_discriminator": "Both formatters and full Rust preparation exit0 without extra exclusions",
+    "stopping_condition": "Complete command and diagnose nonzero",
+    "command": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "rs-prepare"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/rs-prepare-common-format.log",
+    "exit_code": 0,
+    "elapsed_seconds": 37.227
+  },
+  {
+    "id": "py-prepare-final",
+    "question": "Does full Python preparation pass after authored tooling edits?",
+    "inputs": "Ruff format/lint,3.11 syntax,mypy,all fast tests,docs freshness",
+    "expected_discriminator": "All workflow stages exit0; no expectation/source drift",
+    "stopping_condition": "Command exits; diagnose failure before continuing",
+    "command": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "py-prepare"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/py-prepare-final.log",
+    "exit_code": 0,
+    "elapsed_seconds": 31.264
+  },
+  {
+    "id": "docs-fresh-final",
+    "question": "Do final mapped docs satisfy repository freshness?",
+    "inputs": "Changed code and updated RL/contract/parity/cookbook documentation",
+    "expected_discriminator": "Exit0 without DOCS_CURRENT bypass",
+    "stopping_condition": "Command exits; diagnose failure before continuing",
+    "command": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "docs-fresh"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/docs-fresh-final.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.094
+  },
+  {
+    "id": "trim-after-prepare",
+    "question": "Have preparation tools preserved final authored hashes and all pinned bytes?",
+    "inputs": "Current final manifest after both preparation targets",
+    "expected_discriminator": "engine trim manifest: OK",
+    "stopping_condition": "Command exits; diagnose failure before continuing",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "scripts/check_engine_trim.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/trim-after-prepare.log",
+    "exit_code": 0,
+    "elapsed_seconds": 1.006
+  },
+  {
+    "id": "prepare-final",
+    "question": "Does the complete requested preparation workflow pass before handoff?",
+    "inputs": "Offline two-job build,format,both-package Clippy/tests,Python fullsuite,docs lint/freshness",
+    "expected_discriminator": "Every stage passes, record actual denominators; no fallback if fullprepare succeeds",
+    "stopping_condition": "Command exits; diagnose failure before continuing",
+    "command": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "prepare"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/prepare-final.log",
+    "exit_code": 0,
+    "elapsed_seconds": 49.72
+  },
+  {
+    "id": "engine-bytes-guard",
+    "question": "Did any forbidden engine or deferred float-fixture bytes change?",
+    "inputs": "Exact section6 guard paths against HEAD",
+    "expected_discriminator": "Empty diff and exit0",
+    "stopping_condition": "Command ends; diagnose nonzero before handoff",
+    "command": [
+      "git",
+      "diff",
+      "--exit-code",
+      "--",
+      "engine_rs/src/lib.rs",
+      "engine_rs/src/py_random.rs",
+      "engine_rs/src/econ_attrib.rs",
+      "engine_rs/Cargo.toml",
+      "engine_rs/Cargo.lock",
+      "engine_rs/VENDORED_FROM.md",
+      "src/rules_engine/generation.rs"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/engine-bytes-guard.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.007
+  },
+  {
+    "id": "engine-bytes-from-task-start",
+    "question": "Do all retained bytes match pre-task a88150c including license/RNG/fixtures?",
+    "inputs": "Every retained manifest path plus L4 fixture from task start",
+    "expected_discriminator": "Empty diff and exit0",
+    "stopping_condition": "Command ends; diagnose nonzero before handoff",
+    "command": [
+      "python3",
+      "-c",
+      "import json,subprocess,sys; m=json.load(open('engine_rs/TRIM_MANIFEST.json')); paths=[r['path'] for r in m['retained']]+['src/rules_engine/generation.rs']; sys.exit(subprocess.run(['git','diff','--exit-code','a88150c','--',*paths],check=False).returncode)"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/engine-bytes-from-task-start.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.028
+  },
+  {
+    "id": "final-staging-guard",
+    "question": "Has Codex left Git staging untouched?",
+    "inputs": "Staged diff",
+    "expected_discriminator": "Empty staged diff exit0",
+    "stopping_condition": "Command ends; diagnose nonzero before handoff",
+    "command": [
+      "git",
+      "diff",
+      "--cached",
+      "--exit-code"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-staging-guard.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.008
+  },
+  {
+    "id": "final-docs-lint",
+    "question": "Are final verification-count documentation edits valid Markdown?",
+    "inputs": "Complete standard docs lint target",
+    "expected_discriminator": "Exit0",
+    "stopping_condition": "Command ends; diagnose nonzero before handoff",
+    "command": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "docs-lint"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-docs-lint.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.875
+  },
+  {
+    "id": "final-whitespace",
+    "question": "Does the final patch have whitespace errors?",
+    "inputs": "Working tree diff",
+    "expected_discriminator": "Empty diagnostics exit0",
+    "stopping_condition": "Command ends; diagnose nonzero before handoff",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-whitespace.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.013
+  },
+  {
+    "id": "final-status",
+    "question": "What files are left for Claude to review and commit?",
+    "inputs": "Unstaged current tree",
+    "expected_discriminator": "Only Task1.2 paths; raw status inventory captured",
+    "stopping_condition": "Command ends; diagnose nonzero before handoff",
+    "command": [
+      "git",
+      "status",
+      "--short",
+      "--untracked-files=all"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/final-status.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.01
+  }
+]

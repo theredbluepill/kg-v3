@@ -1,0 +1,27 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --locked --test grammar_kernel decoded_programs_feed_kernel -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: 'Self::BuyLand => "BUY_LAND",' -> 'Self::BuyLand => "HIRE",'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test decoded_programs_feed_kernel ... FAILED
+
+failures:
+
+---- decoded_programs_feed_kernel stdout ----
+
+thread 'decoded_programs_feed_kernel' (10229557) panicked at tests/grammar_kernel.rs:222:9:
+assertion `left == right` failed
+  left: 2999.0
+ right: 2000.0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    decoded_programs_feed_kernel
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.38s
+     Running tests/grammar_kernel.rs (engine_rs/target/debug/deps/grammar_kernel-88e2fbe693fab574)
+error: test failed, to rerun pass `--test grammar_kernel`

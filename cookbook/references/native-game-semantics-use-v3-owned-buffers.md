@@ -1,16 +1,113 @@
 ---
 type: "Reference"
 title: "Native game semantics use v3-owned buffers"
-description: "Preserve native semantics with checked compact masks and a fused transactional lifecycle, backed by CPU parity and bounded two-GPU PPO measurements."
+description: "Task 1.2 rebuilds the observation-local grammar and strict native codec; historical adapter and GPU evidence remains scoped to the reference branch."
 tags: ["kaggriculture-v3", "adaptation"]
 status: "verified-scoped"
-generated: {"by": "openai/codex", "at": "2026-09-28"}
-sources: [{"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/training.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/README.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/benchmark.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_codec.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/v3-port-checks.md"}, {"resource": "user-directive:2026-09-28:record-every-adaptation"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/V3_IMPORT.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/VENDORED_FROM.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/Cargo.toml"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/ffi.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_features.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_sampler.rs"}, {"resource": "repository:Cargo.toml"}, {"resource": "repository:src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/src/kaggriculture.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/types.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/native_bridge.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/actor_codec.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/gpu_sampling_grammar.py"}, {"resource": "repository:Cargo.lock"}, {"resource": "repository:python/owl/rs.pyi"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:src/rules_engine/generation.rs"}, {"resource": "repository:docs/rules-engine.md"}, {"resource": "repository:docs/rules-parity-coverage.md"}]
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+sources: [{"resource": "repository:ops/rebuild-2026-09-29/briefs/1.2.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/claude_review_mutations.py"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/checks.json"}, {"resource": "repository:ops/rebuild-2026-09-29/merge-1.2/results.md"}, {"resource": "repository:python/owl/kaggriculture/gpu_grammar.py"}, {"resource": "repository:src/kaggriculture/grammar.rs"}, {"resource": "repository:src/kaggriculture/grammar_tests.rs"}, {"resource": "repository:engine_rs/tests/grammar_kernel.rs"}, {"resource": "repository:engine_rs/TRIM_MANIFEST.json"}, {"resource": "repository:scripts/check_engine_trim.py"}, {"resource": "repository:tests/tools/test_check_engine_trim.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/training.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/README.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/benchmark.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_codec.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/v3-port-checks.md"}, {"resource": "user-directive:2026-09-28:record-every-adaptation"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/V3_IMPORT.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/VENDORED_FROM.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/Cargo.toml"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/ffi.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_features.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_sampler.rs"}, {"resource": "repository:Cargo.toml"}, {"resource": "repository:src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/src/kaggriculture.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/types.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/native_bridge.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/actor_codec.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/gpu_sampling_grammar.py"}, {"resource": "repository:Cargo.lock"}, {"resource": "repository:python/owl/rs.pyi"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:src/rules_engine/generation.rs"}, {"resource": "repository:docs/rules-engine.md"}, {"resource": "repository:docs/rules-parity-coverage.md"}]
 ---
 
 # Native game semantics use v3-owned buffers
 
-## Current entire-pipeline correction
+## Task 1.2 — current rebuild
+
+The existing-concept search covered grammar, HIRE, action codec, strict padding,
+reference disagreement and L4. This note owns those native semantics; no
+parallel concept is added. The reviewed brief, pinned reference sampler/codec,
+independently repeated native recording and direct kernel execution delimit the
+claim. Hash equality establishes custody, not semantic truth.
+
+`src/kaggriculture/grammar.rs` is the root's compiled, observation-local grammar:
+typed plans and cursors, eight factored tables totaling 964 booleans, checked i64
+transport, strict canonical JSON encode/decode and submitted-HIRE capacity.
+It preserves every actor ordinal, omitted unit quantity, market zero and EMPTY
+position. Padding must be zero and is then ignored; native length0 rejects.
+The encoder validates through the same cursor and leaves output untouched on
+error. No retained engine bytes changed and no second grammar was imported.
+
+Nine shared tests pass in both root and engine packages. They compare independent
+reference tables, every reachable support class, the 140-unit/98-market matrix,
+321 accepted fixture/control round trips and malformed transport, and enumerate
+the coupled-HIRE law through actual Rust masks. Initial error-stub failures and
+restored negative controls establish the tests' discriminators. Review caught a
+mistyped PLANT token in a new example and a missing final-sentinel guard case;
+the receipt records their diagnosis and corrected controls without weakening
+expected behavior.
+
+The fixture contains 320 scheduled accepted programs (256 synthetic, 64 real),
+64 dense programs including 22 at length252, plus 43 rejections and one accepted
+zero-padding control. The two native reference decoders and Python codec agree
+on all scheduled actions. Eight classified disagreements preserve the historical
+FFI capacity bypass, prefix-only padding admission and inapplicable incomplete
+prefix. All 5,752 trace candidates were scanned; no replay codec rejection
+category occurred. A second native recording exactly reproduces the fixture
+and manifest; expected actions never come from the new grammar.
+
+Nine authored kernel tests plus the shared nine pass. Both seats execute all
+256 synthetic programs and the 140/98 matrices; meaningful bank/inventory
+checks avoid acceptance-only evidence. Explicit `Game::from_header` states
+execute 241 actors with ten orders and a successful 240-to-241 HIRE; subsequent
+HIRE support is absent and overcapacity encode rejects. Distinct farmer/hand
+moves confirm actor order. Sixty-four selected real actions preserve exact
+public/private snapshots, recursive object order, outcomes and counters in
+actual seeded replay states. The retained full 2,876-transition parity suite
+has a separate denominator. Full `just prepare` passes with 164 root Rust tests
+(two existing ignores), 77 engine tests (none ignored), 1,045 Python tests
+(three platform skips), both Clippy/formatter graphs, mypy, doc lint/freshness
+and the trim checker. The receipt preserves the actual command logs.
+
+Adaptation inventory (one coherent native grammar change): `Cargo.toml`
+(promote existing Serde JSON through Cargo), `src/lib.rs`,
+`src/kaggriculture.rs`, `src/kaggriculture/grammar.rs`,
+`src/kaggriculture/grammar_tests.rs`, `engine_rs/tests/grammar_kernel.rs`,
+`engine_rs/TRIM_MANIFEST.json`, `scripts/check_engine_trim.py`,
+`tests/tools/test_check_engine_trim.py`,
+`tests/tools/test_record_grammar_reference.py`, the fixture and manifest in
+`tests/fixtures/kaggriculture/`, `docs/rl-api-specs.md`,
+`docs/rules-parity-coverage.md`, `docs/kaggriculture-contract.md`,
+`ops/rebuild-2026-09-29/plan.md`, this Reference/index/log, and the recorder,
+harness, source/control custody, declared checks, logs and result receipt in
+`ops/rebuild-2026-09-29/1.2/`. On the Task 1.2 branch the fixed authored engine
+allowlist contained exactly the replay and grammar integration tests; after the
+merge with Task 1.1b it is exactly those two tests plus the generated-trace
+`MANIFEST.json`. Its final hashes derive from formatted bytes. Contract v4.1 records all five Claude/Codex-agreed clarifications
+as clarifications, without semantic changes.
+
+Claude's implementation review (2026-09-29, at `75169be`) read every changed
+path and found no production defect. Twenty one-per-oracle source mutations,
+each restored byte-exactly, made every named shared grammar, kernel, trim-checker
+and recorder test fail at an assertion. A fresh `record_reference.py verify`
+reproduced the fixture hashes and counts. The brief's nonexistent `reference`
+Python extra was corrected. Encoder rejection categories remain checked only on
+synthetic inputs, because the traces contain no replay codec rejection.
+Evidence: `ops/rebuild-2026-09-29/1.2/results.md` (Claude review) and
+`ops/rebuild-2026-09-29/1.2/logs/claude-review/`.
+
+Future consequence: this codec/table source serves Tasks 1.3–1.5, 2.3 and BC/export.
+At the first production root → engine edge, retire the temporary engine test
+include and authored registration, move acceptance/replay tests to root
+integration and reopen L4's numeric-feature interaction. Task 2.3's reviewed
+v3 table shapes and post-STOP zero rule match this interface.
+
+Merge into the integration branch (after Task 1.1b live parity and Task 2.3
+heads): engine 87/87 (19 replay-parity, 18 grammar/kernel), root Rust 164 with
+two ignored, Python 1,337 passed with four skips, and the trim checker pass. A
+merge-time scratch cross-check found the native `grammar_tables()` equal to the
+Python heads' `expected_grammar_tables` on all 964 bits and accepted by
+`grammar_tables_from_arrays`. No PyO3 binding exists yet, so
+`native_grammar_tables` still raises and the heads use the Python stand-in; the
+binding stays with Task 1.4. Receipts: `ops/rebuild-2026-09-29/merge-1.2/`. CPU checks do not qualify the
+L6 GEMM fix, GPU sampling/replay, native batch transactions, buffer lifetime,
+model behavior or learning. No training, GPU, network or performance run occurred.
+
+## Historical reference-branch scope
+
+Everything below describes `kg/reference-2026-09-29` at `65f0eac5`, including
+files that share paths with the rebuilt tree. Its adapter, PPO and performance
+results do not qualify Task 1.2 or the clean-base integration.
+
+## Historical entire-pipeline correction
 
 The owner rejects PyO3 interface alignment alone as sufficient Isaiah reuse. The old decoder's bounded two-GPU baseline is retained in `ops/gpu-sps-2026-09-29/results.md`; native game semantics must support an efficient complete data/model/PPO path. `BatchedSlotMasks` now derives compact local mask tables from native plans for batched heads. The implementer reports exhaustive local-condition checks plus coupled-Gumbel queue enumeration for three positions/eight kinds/HIRE budgets 0,1,2,3,10, with canonical probabilities agreeing within 1e-12, and 22 environment/codec cases passing. The proof uses final prefix HIRE count=min(raw prefix count,budget), preserving first final NONE, EMPTY order consumption and marginalized post-STOP choices. This scopes the grammar claim; it is not replacement-model or GPU qualification.
 

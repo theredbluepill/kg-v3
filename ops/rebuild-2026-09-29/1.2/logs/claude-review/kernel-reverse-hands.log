@@ -1,0 +1,27 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --locked --test grammar_kernel decoded_actor_ordinals_match_engine_units -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: 'let hands = tokens[SLOTS..actors * SLOTS]\n        .chunks_exact(SLOTS)' -> 'let hands = tokens[SLOTS..actors * SLOTS]\n        .rchunks_exact(SLOTS)'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test decoded_actor_ordinals_match_engine_units ... FAILED
+
+failures:
+
+---- decoded_actor_ordinals_match_engine_units stdout ----
+
+thread 'decoded_actor_ordinals_match_engine_units' (10230047) panicked at tests/grammar_kernel.rs:202:5:
+assertion `left == right` failed: canonical action: actor ordinal
+  left: Object {"farmer": Array [String("NORTH")], "hands": Array [Array [String("WEST")], Array [String("EAST")], Array [String("SOUTH")]], "market": Array []}
+ right: Object {"farmer": Array [String("NORTH")], "hands": Array [Array [String("SOUTH")], Array [String("EAST")], Array [String("WEST")]], "market": Array []}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    decoded_actor_ordinals_match_engine_units
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.60s
+
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+     Running tests/grammar_kernel.rs (engine_rs/target/debug/deps/grammar_kernel-88e2fbe693fab574)
+error: test failed, to rerun pass `--test grammar_kernel`

@@ -1,0 +1,12 @@
+#[path = "/Users/poonszesen/kg-v3-merge3/src/kaggriculture/grammar.rs"]
+#[allow(dead_code)]
+mod grammar;
+fn main() {
+    let t = grammar::grammar_tables().unwrap();
+    println!("{}", serde_json::json!({
+        "unit_kind": t.unit_kind, "unit_item": t.unit_item,
+        "unit_quantity_present": t.unit_quantity_present, "unit_quantity_high": t.unit_quantity_high,
+        "unit_quantity_low": t.unit_quantity_low, "market_kind": t.market_kind,
+        "market_item": t.market_item, "market_quantity": t.market_quantity,
+    }));
+}

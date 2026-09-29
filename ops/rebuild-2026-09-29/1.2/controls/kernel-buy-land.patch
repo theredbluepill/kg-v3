@@ -1,0 +1,11 @@
+--- src/kaggriculture/grammar.rs
++++ src/kaggriculture/grammar.rs
+@@ -738,7 +738,7 @@
+ 
+ fn render_market(frame: &[i64]) -> Result<serde_json::Value, String> {
+     use serde_json::Value;
+-    let kind = MarketKind::try_from(frame[Slot::MarketKind as usize])?;
++    let kind = MarketKind::try_from(frame[Slot::MarketKind as usize])?; let kind = if kind == MarketKind::BuyLand { MarketKind::Hire } else { kind };
+     let mut command = if kind == MarketKind::Empty {
+         vec![]
+     } else {
