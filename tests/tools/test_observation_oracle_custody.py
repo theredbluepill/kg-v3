@@ -658,3 +658,14 @@ def test_regeneration_source_identity_is_captured_before_producer(
         identity["dirty_files"][str(recorder.relative_to(root))]
         == expected_recorder_sha
     )
+
+
+def test_missing_corpus_names_the_manifest_and_regeneration_command(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValueError, match="corpus missing") as caught:
+        oracle.validate_corpus(tmp_path)
+    message = str(caught.value)
+    assert "manifest.json" in message
+    assert "regenerate.py" in message
+    assert "R1" not in message

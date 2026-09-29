@@ -625,7 +625,9 @@ def validate_corpus(directory: Path, *, expected_records: int = 512) -> None:
     """Validate all declared bytes; tiny-test scope never bypasses final512 quotas."""
     require(
         (directory / "manifest.json").is_file(),
-        "qualified observation corpus missing; R1 coverage dependency unresolved",
+        "qualified observation corpus missing: "
+        f"{directory / 'manifest.json'} not found; regenerate it with `uv run python "
+        "scripts/kaggriculture_observation_oracle/regenerate.py --output <dir>`",
     )
     manifest = obj(
         parse((directory / "manifest.json").read_bytes()),
