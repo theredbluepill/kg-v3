@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Generic, TypeAlias
 
 import torch
 from torch import nn
+from typing_extensions import TypeVar
 
 from owl.rl import ActionBundle, ActionConfig, ObsBatch
 
@@ -15,6 +16,13 @@ if TYPE_CHECKING:
 InputLayer = nn.Module | nn.Parameter
 ModelActions: TypeAlias = ActionBundle
 ModelHiddenState: TypeAlias = object
+
+# PEP 696 defaults: a bare ``BaseModelAPI`` / ``ModelOutput`` keeps meaning the
+# Orbit types, so Isaiah's existing annotations are unchanged. Other games
+# parameterize them, e.g. ``BaseModelAPI[KaggricultureObsBatch, ...]``.
+ObsT = TypeVar("ObsT", default=ObsBatch)
+ActT = TypeVar("ActT", default=ActionBundle)
+ActSpecT = TypeVar("ActSpecT", default=ActionConfig)
 
 
 @dataclass
@@ -44,8 +52,8 @@ class ModelActionKLDivergences:
 
 
 @dataclass
-class ModelOutput:
-    actions: ModelActions
+class ModelOutput(Generic[ActT]):
+    actions: ActT
     log_probs: ModelActionLogProbs
     entropies: ModelActionEntropies
     values: torch.Tensor
@@ -72,36 +80,36 @@ class ModelTeacherEvaluation:
 
 
 @dataclass
-class ModelServingOutput:
-    actions: ModelActions
+class ModelServingOutput(Generic[ActT]):
+    actions: ActT
     values: torch.Tensor
     winner_probabilities: torch.Tensor
     next_hidden_state: ModelHiddenState | None = None
 
 
-class BaseModelAPI(nn.Module, ABC):
+class BaseModelAPI(nn.Module, ABC, Generic[ObsT, ActT, ActSpecT]):
     @property
-    def action_spec(self) -> ActionConfig:
+    def action_spec(self) -> ActSpecT:
         return self._action_spec
 
     @action_spec.setter
-    def action_spec(self, value: ActionConfig) -> None:
+    def action_spec(self, value: ActSpecT) -> None:
         self._action_spec = value
 
     @abstractmethod
     def forward(
         self,
-        obs: ObsBatch,
+        obs: ObsT,
         *,
         deterministic: bool = False,
         hidden_state: ModelHiddenState | None = None,
-    ) -> ModelOutput: ...
+    ) -> ModelOutput[ActT]: ...
 
     @abstractmethod
     def evaluate_actions(
         self,
-        obs: ObsBatch,
-        actions: ModelActions,
+        obs: ObsT,
+        actions: ActT,
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
@@ -110,16 +118,16 @@ class BaseModelAPI(nn.Module, ABC):
     @abstractmethod
     def compute_value(
         self,
-        obs: ObsBatch,
+        obs: ObsT,
         *,
         hidden_state: ModelHiddenState | None = None,
     ) -> torch.Tensor: ...
 
     def evaluate_action_kl(
         self,
-        obs: ObsBatch,
-        teacher: BaseModelAPI,
-        actions: ModelActions,
+        obs: ObsT,
+        teacher: BaseModelAPI[ObsT, ActT, ActSpecT],
+        actions: ActT,
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
@@ -130,9 +138,9 @@ class BaseModelAPI(nn.Module, ABC):
 
     def evaluate_actions_with_teacher(
         self,
-        obs: ObsBatch,
-        actions: ModelActions,
-        teacher: BaseModelAPI,
+        obs: ObsT,
+        actions: ActT,
+        teacher: BaseModelAPI[ObsT, ActT, ActSpecT],
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
@@ -145,8 +153,8 @@ class BaseModelAPI(nn.Module, ABC):
 
     def compute_teacher_distillation_targets(
         self,
-        obs: ObsBatch,
-        actions: ModelActions,
+        obs: ObsT,
+        actions: ActT,
         *,
         compute_action_kl: bool = True,
         compute_value: bool = True,
@@ -157,8 +165,8 @@ class BaseModelAPI(nn.Module, ABC):
 
     def evaluate_actions_with_cached_teacher(
         self,
-        obs: ObsBatch,
-        actions: ModelActions,
+        obs: ObsT,
+        actions: ActT,
         teacher_targets: CachedTeacherDistillationTargets,
         *,
         hidden_state: ModelHiddenState | None = None,
@@ -192,27 +200,32 @@ class BaseModelAPI(nn.Module, ABC):
         """
         return False
 
-    def count_non_masked_tokens(self, obs: ObsBatch) -> torch.Tensor:
+    def count_non_masked_tokens(self, obs: ObsT) -> torch.Tensor:
         """Return the number of unmasked model tokens represented by ``obs``.
 
         Models with learned or architecture-specific tokens should override this.
         The base implementation counts only unmasked observation entities.
         """
+        if not isinstance(obs, ObsBatch):
+            raise NotImplementedError(
+                f"{type(self).__name__} must override count_non_masked_tokens "
+                f"for {type(obs).__name__}"
+            )
         return obs.entity_mask.sum(dtype=torch.int64)
 
     def serve(
         self,
-        obs: ObsBatch,
+        obs: ObsT,
         *,
         deterministic: bool = False,
         hidden_state: ModelHiddenState | None = None,
-    ) -> ModelServingOutput:
+    ) -> ModelServingOutput[ActT]:
         output = self.forward(
             obs,
             deterministic=deterministic,
             hidden_state=hidden_state,
         )
-        return ModelServingOutput(
+        return ModelServingOutput[ActT](
             actions=output.actions,
             values=output.values,
             winner_probabilities=output.winner_probabilities,
