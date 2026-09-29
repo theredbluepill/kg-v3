@@ -355,6 +355,52 @@ def test_failed_validation_publishes_no_partial_fixture(tmp_path: Path) -> None:
     assert not target.with_suffix(".json").exists()
 
 
+def _fail_manifest_replacement(monkeypatch, target: Path) -> list[Path]:
+    """Fail only the manifest replacement, after the NPZ replacement succeeded."""
+    replace = recorder.os.replace
+    replaced: list[Path] = []
+
+    def flaky(source, destination) -> None:
+        if Path(destination) == target.with_suffix(".json"):
+            raise OSError("injected manifest replacement failure")
+        replace(source, destination)
+        replaced.append(Path(destination))
+
+    monkeypatch.setattr(recorder.os, "replace", flaky)
+    return replaced
+
+
+def test_failed_second_replacement_removes_fresh_partial_pair(
+    tmp_path: Path, monkeypatch
+) -> None:
+    manifest, arrays = example()
+    target = tmp_path / "oracle.npz"
+    replaced = _fail_manifest_replacement(monkeypatch, target)
+    with pytest.raises(OSError, match="injected manifest replacement failure"):
+        recorder.publish_fixture(target, manifest, arrays)
+    # The NPZ replacement really happened before the injected manifest failure.
+    assert replaced[0] == target
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_failed_second_replacement_restores_existing_pair(
+    tmp_path: Path, monkeypatch
+) -> None:
+    target = publish_example(tmp_path)
+    original = target.read_bytes(), target.with_suffix(".json").read_bytes()
+    manifest, arrays = example()
+    arrays["rewards"][0, 0, 0] = 1.0
+    manifest["arrays"] = recorder.metadata(arrays)
+    replaced = _fail_manifest_replacement(monkeypatch, target)
+    with pytest.raises(OSError, match="injected manifest replacement failure"):
+        recorder.publish_fixture(target, manifest, arrays)
+    assert replaced[0] == target
+    assert set(tmp_path.iterdir()) == {target, target.with_suffix(".json")}
+    assert (target.read_bytes(), target.with_suffix(".json").read_bytes()) == original
+    monkeypatch.undo()
+    recorder.load_fixture(target)
+
+
 def test_watchdog_charges_supervisor_and_children_and_kills_group(
     tmp_path: Path, monkeypatch
 ) -> None:

@@ -1,0 +1,11 @@
+--- src/kaggriculture/bindings.rs
++++ src/kaggriculture/bindings.rs.mutant
+@@ -337,7 +337,7 @@
+         "econ_ineffective_weight",
+         "econ_ineffective_cap",
+     ];
+-    if !value.is_exact_instance_of::<PyDict>() || value.len() != KEYS.len() {
++    if value.len() != KEYS.len() {
+         return Err(PyValueError::new_err(
+             "reward_config: expected plain dict with exactly the seven required keys",
+         ));

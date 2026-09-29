@@ -1,0 +1,652 @@
+FFFFFFFFF.................                                               [100%]
+=================================== FAILURES ===================================
+____ test_array_change_without_manifest_refresh_fails_hash_custody[lengths] ____
+
+field = 'lengths'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+        with pytest.raises(ValueError, match="array hash/shape custody differs"):
+>           recorder.validate_arrays(manifest, arrays)
+
+tests/tools/test_record_kaggriculture_env_reference.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:223: in validate_arrays
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'program offset inventory differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: program offset inventory differs
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+field = 'lengths'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+>       with pytest.raises(ValueError, match="array hash/shape custody differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'array hash/shape custody differs'
+E         Actual message: 'program offset inventory differs'
+
+tests/tools/test_record_kaggriculture_env_reference.py:134: AssertionError
+_ test_array_change_without_manifest_refresh_fails_hash_custody[program_offsets] _
+
+field = 'program_offsets'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+        with pytest.raises(ValueError, match="array hash/shape custody differs"):
+>           recorder.validate_arrays(manifest, arrays)
+
+tests/tools/test_record_kaggriculture_env_reference.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:223: in validate_arrays
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'program offset inventory differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: program offset inventory differs
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+field = 'program_offsets'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+>       with pytest.raises(ValueError, match="array hash/shape custody differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'array hash/shape custody differs'
+E         Actual message: 'program offset inventory differs'
+
+tests/tools/test_record_kaggriculture_env_reference.py:134: AssertionError
+_ test_array_change_without_manifest_refresh_fails_hash_custody[transition_indices] _
+
+field = 'transition_indices'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+        with pytest.raises(ValueError, match="array hash/shape custody differs"):
+>           recorder.validate_arrays(manifest, arrays)
+
+tests/tools/test_record_kaggriculture_env_reference.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:227: in validate_arrays
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'transition index inventory differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: transition index inventory differs
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+field = 'transition_indices'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+>       with pytest.raises(ValueError, match="array hash/shape custody differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'array hash/shape custody differs'
+E         Actual message: 'transition index inventory differs'
+
+tests/tools/test_record_kaggriculture_env_reference.py:134: AssertionError
+_ test_array_change_without_manifest_refresh_fails_hash_custody[terminal_steps] _
+
+field = 'terminal_steps'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+        with pytest.raises(ValueError, match="array hash/shape custody differs"):
+>           recorder.validate_arrays(manifest, arrays)
+
+tests/tools/test_record_kaggriculture_env_reference.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:236: in validate_arrays
+    require(bool(np.all(arrays["terminal_steps"] == STEPS)), "terminal steps differ")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'terminal steps differ'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: terminal steps differ
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+field = 'terminal_steps'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+>       with pytest.raises(ValueError, match="array hash/shape custody differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'array hash/shape custody differs'
+E         Actual message: 'terminal steps differ'
+
+tests/tools/test_record_kaggriculture_env_reference.py:134: AssertionError
+_ test_array_change_without_manifest_refresh_fails_hash_custody[autoreset_seed] _
+
+field = 'autoreset_seed'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+        with pytest.raises(ValueError, match="array hash/shape custody differs"):
+>           recorder.validate_arrays(manifest, arrays)
+
+tests/tools/test_record_kaggriculture_env_reference.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:231: in validate_arrays
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'seed consumption differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: seed consumption differs
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+field = 'autoreset_seed'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+>       with pytest.raises(ValueError, match="array hash/shape custody differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'array hash/shape custody differs'
+E         Actual message: 'seed consumption differs'
+
+tests/tools/test_record_kaggriculture_env_reference.py:134: AssertionError
+___ test_array_change_without_manifest_refresh_fails_hash_custody[next_seed] ___
+
+field = 'next_seed'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+        with pytest.raises(ValueError, match="array hash/shape custody differs"):
+>           recorder.validate_arrays(manifest, arrays)
+
+tests/tools/test_record_kaggriculture_env_reference.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:231: in validate_arrays
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'seed consumption differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: seed consumption differs
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+field = 'next_seed'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+>       with pytest.raises(ValueError, match="array hash/shape custody differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'array hash/shape custody differs'
+E         Actual message: 'seed consumption differs'
+
+tests/tools/test_record_kaggriculture_env_reference.py:134: AssertionError
+_ test_array_change_without_manifest_refresh_fails_hash_custody[terminal_econ] _
+
+field = 'terminal_econ'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+        with pytest.raises(ValueError, match="array hash/shape custody differs"):
+>           recorder.validate_arrays(manifest, arrays)
+
+tests/tools/test_record_kaggriculture_env_reference.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:241: in validate_arrays
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'terminal values differ'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: terminal values differ
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+field = 'terminal_econ'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+>       with pytest.raises(ValueError, match="array hash/shape custody differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'array hash/shape custody differs'
+E         Actual message: 'terminal values differ'
+
+tests/tools/test_record_kaggriculture_env_reference.py:134: AssertionError
+_ test_array_change_without_manifest_refresh_fails_hash_custody[terminal_banks] _
+
+field = 'terminal_banks'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+        with pytest.raises(ValueError, match="array hash/shape custody differs"):
+>           recorder.validate_arrays(manifest, arrays)
+
+tests/tools/test_record_kaggriculture_env_reference.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:241: in validate_arrays
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'terminal values differ'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: terminal values differ
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+field = 'terminal_banks'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+>       with pytest.raises(ValueError, match="array hash/shape custody differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'array hash/shape custody differs'
+E         Actual message: 'terminal values differ'
+
+tests/tools/test_record_kaggriculture_env_reference.py:134: AssertionError
+_____ test_array_change_without_manifest_refresh_fails_hash_custody[dones] _____
+
+field = 'dones'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+        with pytest.raises(ValueError, match="array hash/shape custody differs"):
+>           recorder.validate_arrays(manifest, arrays)
+
+tests/tools/test_record_kaggriculture_env_reference.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:237: in validate_arrays
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'terminal done schedule differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: terminal done schedule differs
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+field = 'dones'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+        manifest, arrays = example()
+        arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
+        if field == "dones":
+            arrays[field][0, 0, 0] = True
+>       with pytest.raises(ValueError, match="array hash/shape custody differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'array hash/shape custody differs'
+E         Actual message: 'terminal done schedule differs'
+
+tests/tools/test_record_kaggriculture_env_reference.py:134: AssertionError
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[lengths]
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[program_offsets]
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[transition_indices]
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[terminal_steps]
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[autoreset_seed]
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[next_seed]
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[terminal_econ]
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[terminal_banks]
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[dones]
+9 failed, 17 passed, 32 deselected in 1.68s

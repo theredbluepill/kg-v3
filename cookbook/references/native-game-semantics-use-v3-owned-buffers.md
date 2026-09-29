@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Native game semantics use v3-owned buffers"
-description: "Task 1.4 adds transactional native lifecycle, checked seed streams, rewards and codec/table bindings over the rebuilt grammar/encoder; the 16-game TrainingBatch oracle matches bit for bit and the release overflow proof passes on the pod, and each recorder semantic inventory, size-budget and archive-hash guard has its own killing test, while the Task 1.5 adapter and its CUDA fence stay unqualified."
+description: "Task 1.4 adds transactional native lifecycle, checked seed streams, rewards and codec/table bindings over the rebuilt grammar/encoder; the 16-game TrainingBatch oracle matches bit for bit and the release overflow proof passes on the pod, each recorder semantic inventory, size-budget and archive-hash guard has its own killing test, and a failed fixture-pair publication rolls back, while the Task 1.5 adapter and its CUDA fence stay unqualified."
 tags: ["kaggriculture-v3", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex; revised by anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -91,6 +91,8 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r1-fixes/guard-removal-mutations.json"
   - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r1-fixes/guard_removal_mutations.py"
   - resource: "repository:ops/rebuild-2026-09-29/codex/verify-env-r2/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/verify-env-r3/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/p3-rerecord/reference-recording-attempt.json"
   - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r2-fixes/size-hash-guard-mutations.json"
   - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r2-fixes/size_hash_guard_mutations.py"
 ---
@@ -203,7 +205,8 @@ run statement `claude-review/run-statement-pod-oracle.md`):
 - **Trajectory oracle.** The recorder compiled the exported reference and
   recorded all 16 games (seeds 17000–17015, 719 transitions each) in 32 s.
   Every coverage counter was positive in every game. The fixture is 310,365
-  bytes compressed (npz sha256 `494bbf2c…c976`, manifest `aa6cc641…28b7`).
+  bytes compressed (npz sha256 `494bbf2c…c976`, manifest `aa6cc641…28b7` at
+  that recording; the r3 fix below re-recorded the manifest).
   The native replay matches the reference TrainingBatch bit for bit on rewards,
   dones, banks, counters, seeds and terminal records over all 11,504
   transitions. The replay and custody suites pass 37 tests, on the pod and on
@@ -272,6 +275,32 @@ the expanded hash. Every one of these checks runs before `np.load`. Replacing
 each of the six size/hash `require` guards with a no-op fails at least one of
 these tests (`1.4/verify-r2-fixes/size-hash-guard-mutations.json`). The
 recorder bytes were restored (sha256 `156bee30…3499`).
+
+Codex's third verification of `1e63597`
+(`ops/rebuild-2026-09-29/codex/verify-env-r3/review.md`) confirmed the r2 fix
+and again found no production defect. It found one P3 in the recorder's final
+publication: after replacing the NPZ, a failure while replacing the JSON
+manifest left half a pair. A fresh output kept an NPZ with no manifest. An
+existing fixture lost its NPZ but kept its old manifest. The loader rejected
+both, so no false oracle could pass. The recorder now publishes the pair
+through `publish_pair`. It saves each target's prior bytes before replacing,
+and if a replacement raises, it restores every replaced target in reverse
+order. A target that did not exist before is removed. Two tests fail only the
+manifest replacement, after the NPZ replacement has happened. The fresh-output
+test leaves an empty directory. The existing-output test restores the exact
+prior bytes, and the pair still loads. Both tests fail against the previous
+recorder. This covers raised exceptions only. If the process is killed between
+the two replacements, a half pair can still remain, and the loader still
+rejects it.
+
+The recorder's own bytes are part of the fixture's source custody, so the fix
+required a new recording. It ran on the Mac under the recorder's 115 s /
+960 MiB watchdog with `CARGO_BUILD_JOBS=1`: 28.5 s, sampled peak 980 MB
+(`1.4/p3-rerecord/`). An earlier attempt ran before `ruff format`
+rewrapped one recorder line, which changed its hash, so it was redone. The NPZ is byte-identical to the pod recording
+(`494bbf2c…c976`). The only manifest change is `recorder_sha256`
+(`156bee30…3499` to `50766851…5d3`), giving manifest sha256
+`36dffed2…7732`. The recorder and replay suites pass 61 tests.
 
 Future consumers may rely on the checked native ABI and the recorded reference
 equivalence. Task 1.5 (the adapter, its pinned CUDA entry fence and the pod DMA

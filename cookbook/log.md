@@ -1,5 +1,24 @@
 # Change log
 
+## 2026-09-29 — Roll back a failed fixture-pair publication (Codex verify r3)
+
+Codex's third Task 1.4 verification confirmed the r2 fix, found no production
+defect and approved with one P3 edit.
+
+- **Recorder publication.** A failure while replacing the manifest, after the
+  NPZ was replaced, left half a pair. `publish_pair` now restores each replaced
+  target, or removes one that did not exist before, before re-raising. Two
+  tests inject that failure for a fresh output and for an existing one, and
+  both fail against the previous recorder. The fix does not cover a process
+  killed between the two replacements.
+- **Fixture.** The recorder hash is part of fixture custody, so the fixture was
+  re-recorded on the Mac within the recorder's watchdog. The NPZ is
+  byte-identical, and only `recorder_sha256` changed in the manifest.
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+records the evidence. Receipts: `ops/rebuild-2026-09-29/1.4/p3-rerecord/` and
+`ops/rebuild-2026-09-29/codex/verify-env-r3/`.
+
 ## 2026-09-29 — Test each recorder size budget and archive hash (Codex verify r2)
 
 Codex's second Task 1.4 verification confirmed both r1 fixes, found no

@@ -366,8 +366,46 @@ def publish_fixture(
             manifest["sources"] == source_identity(), "source drift before publication"
         )
         path.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(staged, path)
-        os.replace(staged.with_suffix(".json"), path.with_suffix(".json"))
+        publish_pair(
+            ((staged, path), (staged.with_suffix(".json"), path.with_suffix(".json"))),
+            Path(directory),
+        )
+
+
+def publish_pair(pair: tuple[tuple[Path, Path], ...], scratch: Path) -> None:
+    """Replace each target from its staged file, or leave every prior target.
+
+    If any replacement raises, each target already replaced gets its prior bytes
+    back (or is removed when it did not exist) before the error propagates, so
+    an exception never leaves a half-published fixture pair. Abrupt process
+    termination between replacements is outside this guarantee.
+    """
+    for _, target in pair:
+        require(
+            target.is_file() or not target.exists(),
+            f"fixture publication target is not a regular file: {target}",
+        )
+    prior = {
+        target: target.read_bytes() if target.is_file() else None for _, target in pair
+    }
+    replaced: list[Path] = []
+    try:
+        for staged, target in pair:
+            os.replace(staged, target)
+            replaced.append(target)
+    except BaseException:
+        for target in reversed(replaced):
+            restore_target(target, prior[target], scratch)
+        raise
+
+
+def restore_target(target: Path, prior: bytes | None, scratch: Path) -> None:
+    if prior is None:
+        target.unlink(missing_ok=True)
+        return
+    restore = scratch / ("restore-" + target.name)
+    restore.write_bytes(prior)
+    os.replace(restore, target)
 
 
 def load_fixture(path: Path = FIXTURE) -> tuple[dict[str, Any], dict[str, Array]]:

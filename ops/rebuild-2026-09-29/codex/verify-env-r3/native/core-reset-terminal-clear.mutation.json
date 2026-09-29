@@ -1,0 +1,51 @@
+{
+  "name": "reset-terminal-clear",
+  "path": "src/kaggriculture/env.rs",
+  "test": "reset_and_truncate_failures_preserve_every_published_byte",
+  "reason": "Clear selected live terminal records before staging can fail.",
+  "original_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "classification": "killed_assertion",
+  "mutant_sha256": "db6e95e6512e95f8d2216f20eeec61a9080d59a7fb8cb2504cc2d453bbc4bc76",
+  "diff": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r3/native/core-reset-terminal-clear.diff",
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r3/native/bounded.py",
+    "--seconds",
+    "115",
+    "--name",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r3/native/core-reset-terminal-clear",
+    "--",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--lib",
+    "reset_and_truncate_failures_preserve_every_published_byte",
+    "--",
+    "--test-threads=1"
+  ],
+  "runner_exit_status": 101,
+  "bounded_receipt": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r3/native/core-reset-terminal-clear.json",
+  "bounded": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "reset_and_truncate_failures_preserve_every_published_byte",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 3.863212042,
+    "sampled_process_group_peak_rss_bytes": 637632512,
+    "stop_reason": null,
+    "time_limit_seconds": 115.0,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "restored_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "restored_byte_exact": true,
+  "primary_unchanged": true
+}
