@@ -14,6 +14,7 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-source-audit.json"
   - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-results.md"
   - resource: "repository:ops/rebuild-2026-09-29/checks/5.1-brief-refresh/ref-admission-probe.log"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/brief-5.1-rereview.md"
   - resource: "repository:src/kaggriculture/mod.rs"
   - resource: "repository:src/kaggriculture/grammar.rs"
   - resource: "repository:docs/kaggriculture-contract.md"
@@ -58,12 +59,18 @@ work; it does not promote the old model, admission run or evaluation results.
   sets shard schema `kaggriculture-bc-shard-v1`, a custody manifest and
   data-pod placement. Three findings bind future preparation. First, the Rust
   `Config` is `serde(default)`, so the full configuration key set must be
-  checked before encoding. Second, the reference silently normalized absent
-  or null `hands`/`market` to `[]`, while the grammar requires the exact
-  keys, so that normalization is replicated and counted. Third, the new
-  grammar checks in a different order, which can move first-rejection
-  categories but not admission. The old flat features/context arrays cannot
-  be loaded as the new schema.
+  checked before encoding. Second, the reference's `raw.get(k) or []`
+  silently normalized every falsy `hands`/`market` value (absent, `null`,
+  `false`, zero, `""`, `{}`) to `[]`, while the grammar requires the exact
+  keys, so that rule is replicated and counted by kind; Codex's rereview
+  corrected the earlier absent-or-null-only claim with an in-memory probe of
+  the pinned reference codec. Third, the new grammar checks in a different
+  order, which can move first-rejection categories but not admission. The
+  old flat features/context arrays cannot be loaded as the new schema. After
+  that rereview, a run must come from a clean immutable checkout with
+  per-file source hashes rechecked before the manifest is published, and a
+  compact per-shard path/bytes/SHA-256 inventory is committed while NPZ bulk
+  stays external.
 - `ops/rebuild-2026-09-29/briefs/7.3-replay-export.md` distinguishes Kaggle
   episode JSON from native JSONL oracles. Export must retain the resolved seed,
   full config, action timing/order and completed state before auto-reset; seed

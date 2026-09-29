@@ -1,5 +1,23 @@
 # Change log
 
+## 2026-09-29 — Apply Codex's rereview to the Task 5.1 BC data brief
+
+Codex reread `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` at `bcefd02`
+(APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/brief-5.1-rereview.md`).
+All findings are applied. The reference's `raw.get(k) or []` normalized every
+falsy `hands`/`market` value, not only absent or `null`; preparation now
+reproduces that rule so admission stays comparable, counts it by field and
+kind, and tests the eight `false`/`0`/`""`/`{}` combinations. A HEAD plus
+dirty flag could not identify modified preparation or oracle code, so runs
+now require a clean immutable checkout on both routes, record per-file source
+hashes, and recheck them before publishing the manifest. A compact per-shard
+path/bytes/SHA-256 inventory is committed while NPZ bulk stays external, as
+the custody Decision requires. The differential oracle evaluates both
+reference seats before deriving the first rejection. Brief only, no code;
+slice incidence of the normalized kinds remains unknown. The
+[[references/rebuild-data-preparation-preserves-replay-identity|replay identity Reference]]
+records the corrected claim.
+
 ## 2026-09-29 — Refresh the Task 5.1 BC data brief against the merged encoder and grammar
 
 Stream D wrote `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` before Tasks 1.3
