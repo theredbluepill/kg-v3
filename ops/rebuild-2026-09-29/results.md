@@ -210,7 +210,7 @@ Evidence that the flash path ran:
 
 ## Model-only SPS ceiling (component) (2026-09-29, 06:45–06:49Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
 
-**Component measurement, not end-to-end SPS.** These numbers are an upper bound on env steps/s if the engine, host copies, GAE, logging and DDP cost nothing.
+**Component measurement, not end-to-end SPS.** These numbers are **conditional estimates for the specified A/B/C/D synthetic schedule**: model-only env steps/s if the engine, host copies, GAE, logging and DDP cost nothing. B (PPO-shaped loss) and C (teacher proxy) are surrogates, so their costs are not proven bounds on the eventual trainer. **Timing evidence only:** no finite-loss/gradient check and no sampling-versus-replay equality check were retained. At `e1458d2`, `configure_model_compile` (`model_compile="trunk"`) still rejects the Kaggriculture model; the probe compiled the trunk directly. (Revised after Codex review `codex/verify-sps-ceiling-r1.md`, APPROVE WITH EDITS.)
 
 - Pre-run statement: `run-statements/model-sps-ceiling.md`, committed in `ed61770` at 06:44:12Z. Launch was at 06:45:05Z.
 - Source: `e1458d2` (full model with heads).
@@ -225,29 +225,33 @@ Evidence that the flash path ran:
 | dense (709) | 25.41 ms | 326.6 ms | 1,690.6 ms | 22.04 ms | 8.56 s | 957 | ~1,913 |
 
 **Formulas.**
-- update wall = 64·t_A + t_C + 16·t_B + t_D, using medians over 20 CUDA-event iterations (p90 is within 0.5 %).
+- update wall = 64·t_A + t_C + 16·t_B + t_D, using medians over 20 CUDA-event iterations.
+- Variability: p90/median ≤ +0.14 % everywhere except sparse B (p90 148.678 ms vs 147.472 ms median, **+0.818 %**). Dense B has one tail sample of **545.106 ms** vs a 326.579 ms median (cause unknown; p90 327.007 ms). The weighted sum of component p90s is not a measured whole-update p90; no whole update was timed.
 - ceiling = 8,192 / update wall.
 - Two ranks give about 2× that, assuming the all-reduce is small. The all-reduce was not measured.
 
 **What dominates.**
-- The 16 train steps take about 60 % of update wall at every density.
-- Teacher precompute takes 20–22 % and rollout sampling takes 18–19 %.
+- The 16 train steps take about 60 % of the synthetic schedule's update wall at every density.
+- Teacher-proxy precompute takes 20–22 % and rollout sampling takes 18–19 %.
+- This is a share of the schedule only. It does not attribute B's cost to heads backward, Muon or any other sub-phase, and A − D is the incremental sampling-path cost, not isolated head kernels.
 
 **Engine budget.**
 - For the engine to cost no more than the model, which halves the ceiling, it must step 8,192 env steps in at most 3.9 s (sparse) to 8.6 s (dense) per rank. That is about 0.48–1.05 ms per env step.
-- To stay within 10 % of the ceiling, it gets 0.39–0.86 s, or 48–105 µs per env step.
+- To lose at most 10 % of the ceiling SPS, engine time E must satisfy 8,192/(M + E) ≥ 0.9 · 8,192/M, i.e. E ≤ M/9: 0.437 s (sparse), 0.518 s (mid), 0.952 s (dense) per update, or 53 / 63 / 116 µs per env step. (The earlier 0.1 × M figures, 0.39–0.86 s and 48–105 µs, are conservative.)
 - The 64 rollout steps run serially with the engine. Each batched engine step of 128 envs therefore competes with an 11–25 ms sampling forward.
 
 **Flash and chunks.**
 - `use_flash_attn` was True on every call.
-- Trunk chunks in C were 1, 2 and 3 for sparse, mid and dense, as predicted. There were 2 head chunks.
+- Trunk chunks in C were **counted** as 1, 2 and 3 for sparse, mid and dense, as predicted (sparse is under the **packed**-token bound, 3,637,248 × 512 < 2³¹). The 2 head chunks were **calculated from source** (`ceil(16,384 / 11,096)`), not counted.
 
 **Memory.**
-- Peak allocated memory was at most 40.3 GiB (B at dense), 42 % of 94.97 GiB.
-- Caching-allocator **reserved** memory reached 85.0 GiB (89.5 %) during dense C, because C ran after B in the same process. That is above the 85 % line on reserved memory, although live tensors stay under 34 %.
+- Peak allocated memory was at most **40.275 GiB** (B at dense), 42.4 % of 94.97 GiB, within the plan's 85 % rule, which is defined on `max_memory_allocated`. Complete-trainer memory fit is not qualified by this.
+- Caching-allocator **reserved** peak is a separate observation: **84.994 GiB (89.5 %)** during dense C. The explanation that C reused B's cached blocks (carryover/fragmentation) is a **hypothesis**; no allocator snapshot or phase-order control was run.
 
 **Compile.**
 - On a cold cache the first call took 20 s for A and 40 s for B.
 - With a warm cache it took 7–11 s.
 
-**Profiling.** `nsys` is absent on the pod and was not installed. In-step phase attribution is unresolved.
+**Profiling.** `nsys` absence on the pod is operator-reported (06:41:21Z pre-check; no command-output receipt retained). Nothing was installed and no timeline exists. In-step phase attribution is unresolved. Host/event median agreement cannot show the calls are intrinsically synchronous, because the timer calls `end.synchronize()` before reading the host clock.
+
+**Run conduct.** The prelaunch capture showed 563 MiB on both GPUs (0 % util, no compute processes), not 0 MiB, and launch followed one second later. The driver did not enforce the statement's first-failure stop or 45-minute aggregate limit (three independent 25-min timeouts, no `set -e`). All densities exited 0 in 227 s total, so neither gap affected the timings.
