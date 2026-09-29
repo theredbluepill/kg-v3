@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Add Isaiah's critic to the Kaggriculture model (Task 2.2)
+
+The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now covers the critic: an `OutputProjectionMLP` shared over the self and opponent critic-value tokens, a winner softmax, and value `2p(self) − 1` from each seat's own view, with Isaiah's output gain and Muon exclusion. `just py-prepare` gives 767 passed. This is on `kg/rebuild-model`, pending Codex verification.
+
 ## 2026-09-29 — Build the Kaggriculture encoder on Isaiah's layers (Task 2.1)
 
 The new [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] covers the contract types, the PEP 696 generic model base, and an encoder built entirely from Isaiah's classes, with one-hot stems, per-role tokens, a typed trunk config, his initialization, and the compiled-GEMM chunking guard. `just py-prepare` gives 762 passed. The work sits on branch `kg/rebuild-model`, pending Codex verification before merge.

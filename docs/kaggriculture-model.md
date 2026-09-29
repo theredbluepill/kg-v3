@@ -17,7 +17,7 @@ Reference: `StatelessTransformerV1` and upstream `docs/model-architecture.md` at
 | No hidden state | Every API rejects `hidden_state`; tested | same |
 | Initialization | `_init_module`, input gain 1, residual `1/sqrt(2·depth)`, token std `D^-0.5` | same |
 | Ladder | Width 256, 8 heads (head_dim 32), GELU, `mlp_ratio` 2.0; depth 8 for the owner's 6–10M budget | same ladder, deeper point |
-| Critic `OutputProjectionMLP` per critic-value token, winner softmax | — | → Task 2.2 |
+| Critic `OutputProjectionMLP` per critic-value token, winner softmax, value `2p − 1` | `critic_head` over (self, opponent) tokens from the seat's own view | same (game form: 2 players, both active) |
 | Actor `3D → D` input projection over [entity, player, plan]; action heads | — | → Task 2.3 (grammar heads are game-specific) |
 
 Encoder parameters: 5,312,768 (trunk 4,216,832). The full-model count, including heads, is checked against 6–10M in Task 2.3.

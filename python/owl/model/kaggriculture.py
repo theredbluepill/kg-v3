@@ -22,6 +22,7 @@ from torch import nn
 
 from owl.config import BaseConfig
 from owl.kaggriculture import types as kt
+from owl.model.actor.common import OutputProjectionMLP
 from owl.model.attn import use_flash_attn
 from owl.model.base import (
     BaseModelAPI,
@@ -31,6 +32,7 @@ from owl.model.base import (
     ModelOutput,
 )
 from owl.model.stateless_transformer_v1 import (
+    _CRITIC_HEAD_INIT_GAIN,
     ObservationInputStem,
     PackedSequence,
     StatelessTransformerV1Config,
@@ -170,6 +172,8 @@ class KaggricultureTransformer(
             TransformerBlock(trunk) for _ in range(config.depth)
         )
         self.final_norm = nn.LayerNorm(width)
+        # Isaiah's critic: one logit per critic-value token (self, opponent).
+        self.critic_head = OutputProjectionMLP(trunk, 1)
         self._compiled_transformer_trunk: (
             Callable[
                 [torch.Tensor, torch.Tensor | None, PackedSequence | None],
@@ -190,6 +194,7 @@ class KaggricultureTransformer(
             assert isinstance(module, TransformerBlock)
             _init_linear(module.attn.out, gain=residual_gain)
             _init_linear(module.mlp.down, gain=residual_gain)
+        _init_linear(self.critic_head.out, gain=_CRITIC_HEAD_INIT_GAIN)
 
     def get_input_layers(self) -> tuple[InputLayer, ...]:
         return (
@@ -206,8 +211,8 @@ class KaggricultureTransformer(
         )
 
     def get_output_layers(self) -> tuple[nn.Module, ...]:
-        # Critic and action-head output layers arrive with Tasks 2.2 and 2.3.
-        return ()
+        # Action-head output layers join with Task 2.3.
+        return (self.critic_head.out,)
 
     # --- encoder ---------------------------------------------------------------
 
@@ -430,6 +435,21 @@ class KaggricultureTransformer(
         *,
         hidden_state: ModelHiddenState | None = None,
     ) -> torch.Tensor:
-        del obs
+        """``win_loss`` value ``2 * p(self) - 1`` per seat, shape ``[env, seat]``."""
         self._require_stateless(hidden_state)
-        raise NotImplementedError("critic arrives with Task 2.2")
+        log_probs = self.winner_log_probabilities(obs)
+        return 2.0 * log_probs[..., 0].exp() - 1.0
+
+    def winner_log_probabilities(self, obs: kt.KaggricultureObsBatch) -> torch.Tensor:
+        """Winner distribution over (self, opponent) from each seat's own view.
+
+        Shape ``[env, seat, 2]``; index 0 is this seat winning.
+        """
+        encoded = self.encode_observations(obs)
+        return self._winner_log_probabilities(encoded).reshape(
+            *obs.still_playing.shape, kt.PLAYERS
+        )
+
+    def _winner_log_probabilities(self, encoded: KaggricultureEncoded) -> torch.Tensor:
+        logits = self.critic_head(encoded.critic_value_hidden).float().squeeze(-1)
+        return logits.log_softmax(dim=-1)

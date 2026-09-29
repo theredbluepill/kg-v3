@@ -204,8 +204,6 @@ def test_hidden_state_is_rejected_and_heads_are_deferred() -> None:
     ):
         with pytest.raises(ValueError, match="stateless"):
             call()
-    with pytest.raises(NotImplementedError, match=r"Task 2\.2"):
-        model.compute_value(obs)
     with pytest.raises(NotImplementedError, match=r"Task 2\.3"):
         model(obs)
 
@@ -364,3 +362,77 @@ def test_muon_groups_follow_isaiah_rule() -> None:
     ):
         assert id(token) not in muon_ids
     assert id(model.final_norm.weight) not in muon_ids
+
+
+# --- Task 2.2: critic ---------------------------------------------------------
+
+
+def test_critic_is_isaiah_output_projection_shared_across_players() -> None:
+    from owl.model.actor.common import OutputProjectionMLP
+
+    model = _tiny()
+    assert type(model.critic_head) is OutputProjectionMLP
+    assert model.critic_head.out.out_features == 1
+    assert model.get_output_layers() == (model.critic_head.out,)
+
+
+def test_values_are_two_p_self_minus_one_from_a_winner_softmax() -> None:
+    model = _tiny().eval()
+    obs = make_obs(envs=3)
+    with torch.inference_mode():
+        values = model.compute_value(obs)
+        log_probs = model.winner_log_probabilities(obs)
+    assert values.shape == (3, 2)
+    assert log_probs.shape == (3, 2, 2)
+    torch.testing.assert_close(log_probs.exp().sum(-1), torch.ones(3, 2))
+    torch.testing.assert_close(values, 2 * log_probs[..., 0].exp() - 1)
+    assert bool(((values > -1) & (values < 1)).all())
+
+
+def test_critic_logits_follow_player_token_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model = _tiny().eval()
+    obs = make_obs()
+    with torch.inference_mode():
+        enc = model.encode_observations(obs)
+        swapped = KaggricultureEncodedSwap(enc)
+        monkeypatch.setattr(model, "encode_observations", lambda _obs: swapped)
+        flipped = model.winner_log_probabilities(obs)
+        monkeypatch.undo()
+        base = model.winner_log_probabilities(obs)
+    torch.testing.assert_close(flipped, base.flip(-1))
+
+
+def KaggricultureEncodedSwap(enc: km.KaggricultureEncoded) -> km.KaggricultureEncoded:
+    from dataclasses import replace
+
+    return replace(enc, critic_value_hidden=enc.critic_value_hidden.flip(1))
+
+
+def test_critic_output_init_and_muon_group() -> None:
+    model = _tiny()
+    singular = torch.linalg.svdvals(model.critic_head.out.weight)
+    torch.testing.assert_close(singular, torch.ones_like(singular))
+    assert model.critic_head.out.bias is not None
+    assert torch.count_nonzero(model.critic_head.out.bias) == 0
+    optimizer = create_optimizer(model, MuonConfig())
+    muon_ids = {
+        id(p)
+        for inner in optimizer.optimizers
+        if isinstance(inner, torch.optim.Muon)
+        for group in inner.param_groups
+        for p in group["params"]
+    }
+    assert id(model.critic_head.out.weight) not in muon_ids
+    assert id(model.critic_head.up.weight) in muon_ids
+
+
+def test_values_are_seat_independent() -> None:
+    model = _tiny().eval()
+    obs = make_obs()
+    changed = make_obs()
+    changed.global_features[:, 1] += 2.0
+    with torch.inference_mode():
+        a, b = model.compute_value(obs), model.compute_value(changed)
+    torch.testing.assert_close(a[:, 0], b[:, 0])

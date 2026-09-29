@@ -41,4 +41,4 @@ sources: [{"resource": "repository:python/owl/model/kaggriculture.py"}, {"resour
 
 ## Limits
 
-The critic (2.2), action heads (2.3), shared factory registration and trainer integration are open. The full-model 6–10M budget is checked in 2.3.
+Task 2.2 adds Isaiah's critic: an `OutputProjectionMLP` over the two critic-value tokens, a winner softmax, value `2p(self) − 1`, output gain 1.0 excluded from Muon (5 more tests, 44 total). The action heads (2.3), shared factory registration and trainer integration are open. The full-model 6–10M budget is checked in 2.3.
