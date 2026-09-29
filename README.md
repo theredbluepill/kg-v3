@@ -343,6 +343,12 @@ samples from the weighted eval game set under
 ordinals are selected up front rather than taking the first games to finish.
 Each sampled eval game is written as its own JSONL file.
 
+Exceptions escaping the training logger session, including `KeyboardInterrupt`
+and `SystemExit`, close W&B with exit code 1; normal completion closes it with
+exit code 0. The distributed session prints and flushes a rank-tagged traceback
+to stderr before destroying the process group, so process-group teardown cannot
+delay that failure report.
+
 Training logs terminal environment metrics under `train/` when episodes finish
 during a rollout, including game length, per-player win rates, launch density,
 planet occupancy for 2-player and 4-player games, max-entity overflow counts,

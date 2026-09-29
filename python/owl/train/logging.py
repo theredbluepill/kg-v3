@@ -23,7 +23,7 @@ class MetricLogger:
     def set_summary(self, key: str, value: int | float) -> None:
         raise NotImplementedError
 
-    def close(self) -> None:
+    def close(self, *, exit_code: int = 0) -> None:
         raise NotImplementedError
 
 
@@ -42,7 +42,7 @@ class DebugLogger(MetricLogger):
     ) -> None:
         return None
 
-    def close(self) -> None:
+    def close(self, *, exit_code: int = 0) -> None:  # noqa: ARG002
         return None
 
 
@@ -82,8 +82,8 @@ class WandbLogger(MetricLogger):
             raise RuntimeError("wandb run is not initialized")
         run.summary[key] = value
 
-    def close(self) -> None:
-        self._run.finish()
+    def close(self, *, exit_code: int = 0) -> None:
+        self._run.finish(exit_code=exit_code)
 
 
 def create_logger(

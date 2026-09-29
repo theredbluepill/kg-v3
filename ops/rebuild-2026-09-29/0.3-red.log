@@ -1,0 +1,300 @@
+FFFFF.FFFF.                                                              [100%]
+=================================== FAILURES ===================================
+_____________________ test_wandb_logger_reports_exit_code ______________________
+
+    def test_wandb_logger_reports_exit_code() -> None:
+        finished: list[int] = []
+    
+        class _Run:
+            def finish(self, *, exit_code: int = 0) -> None:
+                finished.append(exit_code)
+    
+        logger = WandbLogger.__new__(WandbLogger)
+        logger._run = _Run()
+>       logger.close(exit_code=1)
+E       TypeError: WandbLogger.close() got an unexpected keyword argument 'exit_code'
+
+tests/owl/train/test_logging.py:13: TypeError
+_____________________ test_debug_logger_accepts_exit_code ______________________
+
+    def test_debug_logger_accepts_exit_code() -> None:
+        logger = DebugLogger()
+    
+>       logger.close(exit_code=1)
+E       TypeError: DebugLogger.close() got an unexpected keyword argument 'exit_code'
+
+tests/owl/train/test_logging.py:22: TypeError
+_____________ test_logger_session_marks_failed_runs[RuntimeError] ______________
+
+error_type = <class 'RuntimeError'>
+
+    @pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt, SystemExit])
+    def test_logger_session_marks_failed_runs(error_type: type[BaseException]) -> None:
+        closed: list[int] = []
+    
+        class _Logger(MetricLogger):
+            def close(self, *, exit_code: int = 0) -> None:
+                closed.append(exit_code)
+    
+        logger = _Logger()
+        error = error_type("boom")
+        with pytest.raises(error_type, match="boom") as exc_info:
+>           with run_ppo._logger_session(logger) as active_logger:
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'run_ppo' has no attribute '_logger_session'
+
+tests/scripts/test_run_ppo.py:2131: AttributeError
+___________ test_logger_session_marks_failed_runs[KeyboardInterrupt] ___________
+
+error_type = <class 'KeyboardInterrupt'>
+
+    @pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt, SystemExit])
+    def test_logger_session_marks_failed_runs(error_type: type[BaseException]) -> None:
+        closed: list[int] = []
+    
+        class _Logger(MetricLogger):
+            def close(self, *, exit_code: int = 0) -> None:
+                closed.append(exit_code)
+    
+        logger = _Logger()
+        error = error_type("boom")
+        with pytest.raises(error_type, match="boom") as exc_info:
+>           with run_ppo._logger_session(logger) as active_logger:
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'run_ppo' has no attribute '_logger_session'
+
+tests/scripts/test_run_ppo.py:2131: AttributeError
+______________ test_logger_session_marks_failed_runs[SystemExit] _______________
+
+error_type = <class 'SystemExit'>
+
+    @pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt, SystemExit])
+    def test_logger_session_marks_failed_runs(error_type: type[BaseException]) -> None:
+        closed: list[int] = []
+    
+        class _Logger(MetricLogger):
+            def close(self, *, exit_code: int = 0) -> None:
+                closed.append(exit_code)
+    
+        logger = _Logger()
+        error = error_type("boom")
+        with pytest.raises(error_type, match="boom") as exc_info:
+>           with run_ppo._logger_session(logger) as active_logger:
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'run_ppo' has no attribute '_logger_session'
+
+tests/scripts/test_run_ppo.py:2131: AttributeError
+_ test_run_training_session_closes_logger_and_skips_final_checkpoint_on_error __
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-338/test_run_training_session_clos0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1112d2030>
+
+    def test_run_training_session_closes_logger_and_skips_final_checkpoint_on_error(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cfg = _full_config()
+        trainer = _FakeTrainer()
+        logger = _FakeLogger()
+    
+        def raise_from_loop(**_kwargs: object) -> int:
+            raise RuntimeError("training failed")
+    
+        def create_fake_logger(*_args: object, **_kwargs: object) -> _FakeLogger:
+            return logger
+    
+        monkeypatch.setattr(run_ppo, "create_logger", create_fake_logger)
+        monkeypatch.setattr(run_ppo, "_run_training_loop", raise_from_loop)
+    
+        with pytest.raises(RuntimeError, match="training failed"):
+            run_ppo._run_training_session(
+                trainer=trainer,
+                run_dir=tmp_path,
+                cfg=cfg,
+                log_mode=LogMode.DEBUG,
+                env_steps_per_iteration=8,
+                max_env_steps=8,
+                max_runtime_seconds=None,
+                distributed=DistributedContext.single_process_cpu(),
+            )
+    
+        assert logger.closed
+>       assert logger.close_exit_codes == [1]
+E       assert [0] == [1]
+E         
+E         At index 0 diff: 0 != 1
+E         Use -v to get more diff
+
+tests/scripts/test_run_ppo.py:2239: AssertionError
+____ test_failed_session_prints_rank_traceback_before_cleanup[RuntimeError] ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111310350>
+capsys = <_pytest.capture.CaptureFixture object at 0x111310800>
+error_type = <class 'RuntimeError'>
+
+    @pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt, SystemExit])
+    def test_failed_session_prints_rank_traceback_before_cleanup(
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        error_type: type[BaseException],
+    ) -> None:
+        calls: list[tuple[str, object]] = []
+        monkeypatch.setenv("WORLD_SIZE", "2")
+        monkeypatch.setenv("LOCAL_RANK", "1")
+        monkeypatch.setenv("RANK", "5")
+        monkeypatch.setattr(distributed_module.torch.cuda, "is_available", lambda: True)
+        monkeypatch.setattr(
+            distributed_module.torch.cuda,
+            "set_device",
+            lambda device: calls.append(("set_device", device)),
+        )
+        monkeypatch.setattr(distributed_module.dist, "is_available", lambda: True)
+        monkeypatch.setattr(distributed_module.dist, "is_initialized", lambda: False)
+        monkeypatch.setattr(
+            distributed_module.dist,
+            "init_process_group",
+            lambda backend, device_id: calls.append((backend, device_id)),
+        )
+    
+        def destroy() -> None:
+            calls.append(("destroy", capsys.readouterr().err))
+    
+        monkeypatch.setattr(distributed_module.dist, "destroy_process_group", destroy)
+        error = error_type("boom")
+        with pytest.raises(error_type, match="boom") as exc_info:
+            with distributed_session():
+                raise error
+    
+        assert exc_info.value is error
+        assert len(calls) == 3
+        assert calls[:2] == [
+            ("set_device", torch.device("cuda:1")),
+            ("nccl", torch.device("cuda:1")),
+        ]
+        assert calls[2][0] == "destroy"
+        stderr = calls[2][1]
+        assert isinstance(stderr, str)
+>       assert stderr.startswith("[rank5] training failed:\n")
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x104e93118>('[rank5] training failed:\n')
+E        +    where <built-in method startswith of str object at 0x104e93118> = ''.startswith
+
+tests/owl/train/test_distributed.py:328: AssertionError
+_ test_failed_session_prints_rank_traceback_before_cleanup[KeyboardInterrupt] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111313d10>
+capsys = <_pytest.capture.CaptureFixture object at 0x111313b00>
+error_type = <class 'KeyboardInterrupt'>
+
+    @pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt, SystemExit])
+    def test_failed_session_prints_rank_traceback_before_cleanup(
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        error_type: type[BaseException],
+    ) -> None:
+        calls: list[tuple[str, object]] = []
+        monkeypatch.setenv("WORLD_SIZE", "2")
+        monkeypatch.setenv("LOCAL_RANK", "1")
+        monkeypatch.setenv("RANK", "5")
+        monkeypatch.setattr(distributed_module.torch.cuda, "is_available", lambda: True)
+        monkeypatch.setattr(
+            distributed_module.torch.cuda,
+            "set_device",
+            lambda device: calls.append(("set_device", device)),
+        )
+        monkeypatch.setattr(distributed_module.dist, "is_available", lambda: True)
+        monkeypatch.setattr(distributed_module.dist, "is_initialized", lambda: False)
+        monkeypatch.setattr(
+            distributed_module.dist,
+            "init_process_group",
+            lambda backend, device_id: calls.append((backend, device_id)),
+        )
+    
+        def destroy() -> None:
+            calls.append(("destroy", capsys.readouterr().err))
+    
+        monkeypatch.setattr(distributed_module.dist, "destroy_process_group", destroy)
+        error = error_type("boom")
+        with pytest.raises(error_type, match="boom") as exc_info:
+            with distributed_session():
+                raise error
+    
+        assert exc_info.value is error
+        assert len(calls) == 3
+        assert calls[:2] == [
+            ("set_device", torch.device("cuda:1")),
+            ("nccl", torch.device("cuda:1")),
+        ]
+        assert calls[2][0] == "destroy"
+        stderr = calls[2][1]
+        assert isinstance(stderr, str)
+>       assert stderr.startswith("[rank5] training failed:\n")
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x104e93118>('[rank5] training failed:\n')
+E        +    where <built-in method startswith of str object at 0x104e93118> = ''.startswith
+
+tests/owl/train/test_distributed.py:328: AssertionError
+_____ test_failed_session_prints_rank_traceback_before_cleanup[SystemExit] _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111360dd0>
+capsys = <_pytest.capture.CaptureFixture object at 0x111360e30>
+error_type = <class 'SystemExit'>
+
+    @pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt, SystemExit])
+    def test_failed_session_prints_rank_traceback_before_cleanup(
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        error_type: type[BaseException],
+    ) -> None:
+        calls: list[tuple[str, object]] = []
+        monkeypatch.setenv("WORLD_SIZE", "2")
+        monkeypatch.setenv("LOCAL_RANK", "1")
+        monkeypatch.setenv("RANK", "5")
+        monkeypatch.setattr(distributed_module.torch.cuda, "is_available", lambda: True)
+        monkeypatch.setattr(
+            distributed_module.torch.cuda,
+            "set_device",
+            lambda device: calls.append(("set_device", device)),
+        )
+        monkeypatch.setattr(distributed_module.dist, "is_available", lambda: True)
+        monkeypatch.setattr(distributed_module.dist, "is_initialized", lambda: False)
+        monkeypatch.setattr(
+            distributed_module.dist,
+            "init_process_group",
+            lambda backend, device_id: calls.append((backend, device_id)),
+        )
+    
+        def destroy() -> None:
+            calls.append(("destroy", capsys.readouterr().err))
+    
+        monkeypatch.setattr(distributed_module.dist, "destroy_process_group", destroy)
+        error = error_type("boom")
+        with pytest.raises(error_type, match="boom") as exc_info:
+            with distributed_session():
+                raise error
+    
+        assert exc_info.value is error
+        assert len(calls) == 3
+        assert calls[:2] == [
+            ("set_device", torch.device("cuda:1")),
+            ("nccl", torch.device("cuda:1")),
+        ]
+        assert calls[2][0] == "destroy"
+        stderr = calls[2][1]
+        assert isinstance(stderr, str)
+>       assert stderr.startswith("[rank5] training failed:\n")
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x104e93118>('[rank5] training failed:\n')
+E        +    where <built-in method startswith of str object at 0x104e93118> = ''.startswith
+
+tests/owl/train/test_distributed.py:328: AssertionError
+=========================== short test summary info ============================
+FAILED tests/owl/train/test_logging.py::test_wandb_logger_reports_exit_code
+FAILED tests/owl/train/test_logging.py::test_debug_logger_accepts_exit_code
+FAILED tests/scripts/test_run_ppo.py::test_logger_session_marks_failed_runs[RuntimeError]
+FAILED tests/scripts/test_run_ppo.py::test_logger_session_marks_failed_runs[KeyboardInterrupt]
+FAILED tests/scripts/test_run_ppo.py::test_logger_session_marks_failed_runs[SystemExit]
+FAILED tests/scripts/test_run_ppo.py::test_run_training_session_closes_logger_and_skips_final_checkpoint_on_error
+FAILED tests/owl/train/test_distributed.py::test_failed_session_prints_rank_traceback_before_cleanup[RuntimeError]
+FAILED tests/owl/train/test_distributed.py::test_failed_session_prints_rank_traceback_before_cleanup[KeyboardInterrupt]
+FAILED tests/owl/train/test_distributed.py::test_failed_session_prints_rank_traceback_before_cleanup[SystemExit]
+9 failed, 2 passed in 9.80s

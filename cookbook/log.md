@@ -1,5 +1,17 @@
 # Change log
 
+## 2026-09-29 — Rebuild failure status and traceback ordering on the clean base
+
+Task 0.3 implements the reference plan's logging fix under the
+[[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]]. The new
+[[references/failed-training-reports-status-before-distributed-cleanup|failure-reporting Reference]]
+records keyword-only logger exit codes, failed W&B finalization and rank-tagged
+stderr before process-group destruction. TDD goes from 9 failures/2 passes to
+11 passes; the Python suite and final py-prepare each pass 722 with 3 skips.
+Rust and full prepare retain 7 missing-fixture failures (148 passes, 2 ignored).
+The distributed test mocks clean-base CUDA/NCCL rather than importing the old
+CPU-DDP hook. No training, evaluation or network operation ran.
+
 ## 2026-09-29 — Plan the rebuild with explicit reference-branch dispositions
 
 Owner: “Please make plans adjusted to be work with clean base, and make sure we are utilizing the reference branch properly, without blindly copying.” `ops/rebuild-2026-09-29/plan.md` classifies every reference component as vendored-and-pinned (rules kernel only), port-after-review, rebuild-with-oracle, or reference-only. It maps 15 reference lessons to tasks, carries Isaiah's principles including the same layer topology, and splits the work between Claude and Codex with contract-first, cross-reviewed tasks. The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records the rule. No code has changed yet.

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import sys
+import traceback
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
@@ -110,6 +112,13 @@ def distributed_session() -> Iterator[DistributedContext]:
 
     try:
         yield DistributedContext.from_runtime()
+    except BaseException:
+        # Report before cleanup: destroy_process_group can wait on dead peers.
+        rank = os.environ.get("RANK", "0")
+        print(f"[rank{rank}] training failed:", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
+        sys.stderr.flush()
+        raise
     finally:
         if manage_process_group:
             dist.destroy_process_group()

@@ -1,6 +1,12 @@
 # References
 
-Since the [[../decisions/restart-the-port-from-isaiahs-clean-base|restart]], these References describe the implementation on branch `kg/reference-2026-09-29` (tag `kg-reference-2026-09-29`), not the current tree. Use them as reference for the rebuild.
+## Current rebuild
+
+- [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope and Rust parity blocked by missing fixtures.
+
+## Reference branch
+
+Since the [[../decisions/restart-the-port-from-isaiahs-clean-base|restart]], the following References describe the implementation on branch `kg/reference-2026-09-29` (tag `kg-reference-2026-09-29`), not the current tree. Use them as reference for the rebuild.
 
 - [[full-turn-intentions-coordinate-batched-action-heads|Full-turn intentions coordinate batched action heads]] — Optional U/A hypothesis; Isaiah and the current model already retain shared scratch/plan context. No demonstrated need or cost-benefit for a dedicated coordinator.
 - [[native-game-semantics-use-v3-owned-buffers|Native game semantics use v3-owned buffers]] — Preserve native semantics with checked compact masks and a fused transactional lifecycle, backed by CPU parity and bounded two-GPU PPO measurements. Explicit-state replay encoding also passes evolved-state feature parity for offline BC.
