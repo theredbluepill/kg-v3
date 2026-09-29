@@ -33,6 +33,8 @@ def _load_model_config_file(config_path: Path) -> ModelConfig:
             return StatelessTransformerV1Config.from_file(config_path)
         case "recurrent_transformer_v1":
             return RecurrentTransformerV1Config.from_file(config_path)
+        case "kaggriculture_transformer":
+            return KaggricultureTransformerConfig.from_file(config_path)
         case model_arch:
             raise ValueError(f"Unknown model_arch: {model_arch}")
 
@@ -42,12 +44,6 @@ def _load_model_config_file(config_path: Path) -> ModelConfig:
     sorted((_REPO_ROOT / "configs" / "model").glob("*.yaml")),
 )
 def test_model_config_files_load(config_path: Path) -> None:
-    with config_path.open(encoding="utf-8") as f:
-        model_arch = yaml.safe_load(f)["model_arch"]
-    if model_arch == "kaggriculture_transformer":
-        # Kaggriculture joins the shared ModelConfig union with its heads (Task 2.3).
-        _ = KaggricultureTransformerConfig.from_file(config_path)
-        return
     _ = _load_model_config_file(config_path)
 
 
@@ -115,6 +111,7 @@ def test_model_config_file_parameter_count(
     expected_params: int,
 ) -> None:
     config = _load_model_config_file(_REPO_ROOT / "configs" / "model" / filename)
+    assert not isinstance(config, KaggricultureTransformerConfig)
     action_spec: ActionConfig
     if isinstance(config.actor, ActorPureConfig):
         action_spec = ActionPureConfig()
