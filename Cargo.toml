@@ -34,3 +34,7 @@ serde_json = "1.0.149"
 
 [build-dependencies]
 pyo3-build-config = { version = "0.28.3", features = ["resolve-config"] }
+
+# Native candidate workers catch unwinds before publishing any batch state.
+[profile.release.package.kaggriculture-engine]
+overflow-checks = true

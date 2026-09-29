@@ -1,0 +1,11 @@
+--- src/kaggriculture/bindings.rs
++++ src/kaggriculture/bindings.rs.mutant
+@@ -101,7 +101,7 @@
+             array.shape()
+         )));
+     }
+-    if !array.is_c_contiguous() || !array.is_aligned() {
++    if !array.is_c_contiguous() {
+         return Err(PyValueError::new_err(format!(
+             "{name}: expected aligned C-contiguous storage"
+         )));

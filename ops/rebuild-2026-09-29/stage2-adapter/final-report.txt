@@ -1,0 +1,423 @@
+Task 1.5 Stage 2 receipt
+
+Base: 558ac3c2ffd475276c8221476c1a95f25229ddd8, branch
+kg/rebuild-adapter, this checkout only. No Git writes, dependencies, vendored
+engine edits, training, release build, GPU run or performance claim.
+
+All implementation items are done. All 2,230 collected Python cases have a
+successful bounded execution: 2,224 passed and six inherited/hardware skips.
+Rust passes 274 root tests with five existing ignores and 69 engine tests.
+The exact monolithic just prepare and just py-prepare commands do not finish
+inside the owner's Mac memory limit; therefore the requested final preparation
+condition is not reported as passed. See the budget receipts and verdict below.
+
+1. Changed and added files
+
+- README.md: replace stale missing-native claims with the actual Task 3.1 blockers and working seeded evaluation factory.
+- docs/rl-api-specs.md: Stage 2 binding, tests, strict tables, reward arithmetic, lifecycle and remaining pod/trainer scope.
+- docs/model-architecture.md: native table default, one construction load, device-buffer lifetime and actual startup blocker.
+- ops/rebuild-2026-09-29/briefs/1.5.md: append Stage 2 deviations and bounded-check limits; prior review history retained.
+- python/owl/kaggriculture/gpu_grammar.py: constants-first strict native loader, exact eight bool NumPy arrays, existing conversion helper, no fallback.
+- python/owl/kaggriculture/rewards.py: correct the independent oracle to literal native binary64 order at overflowing inner death sums; remove obsolete rescaling helper.
+- python/owl/model/kaggriculture.py: native grammar table default; explicit injection retained.
+- scripts/run_ppo.py: native seeded evaluation factory/env union; precise retained main stop and explicit unsupported policy-evaluation mapping stop.
+- src/kaggriculture/env_tests.rs: strengthening admission-table case.
+- tests/kaggriculture/test_native_env.py: the same strengthening native Python case.
+- tests/kaggriculture/test_env.py: real lifecycle, terminal diagnostics, 35 stable buffers, selected-row truncation and native rollback; fake tests retained.
+- tests/kaggriculture/test_env_cuda_fence.py: only hardware skip remains; legal native codec actions replace the fake-only invalid STOP helper; all 35 DMA checks/control remain.
+- tests/kaggriculture/test_codec.py: unskip corpus; add actual encode rejection atomicity and batch order/rows.
+- tests/kaggriculture/test_game.py: unskip factory seeds; verify 66 exact seeds/rank, sequential batches, disjoint ranks.
+- tests/kaggriculture/test_rewards.py: all 11 native admission cases, validated fixture schema/custody, three live extreme cases, corrected overflow expectation.
+- tests/kaggriculture/test_gpu_grammar.py: remove the native-table NotImplementedError skip path.
+- tests/kaggriculture/test_native_tables.py (new): equality, corrupt constants/keys/dtype/shape/layout, ordering/device forwarding, binding failures, native default called once and injected-table bypass.
+- tests/scripts/test_run_ppo.py: Kaggriculture factory/reproducible-world/independence/stop tests; Orbit assertions and all non-Kaggriculture definitions byte-unchanged.
+- ops/rebuild-2026-09-29/stage2-adapter/: command logs, resource/exit receipts, scratch mutation driver, declaration/protected-source checks, this report, full command ledger, regression coverage and source custody manifests. files.txt lists every artifact separately.
+
+env.py, codec.py, game.py, types.py, config.py, the formatted rs.pyi,
+all protected trainer files, engine bytes, dependencies, cookbook and Isaiah
+tests/owl/tests/tools are unchanged. Their merged code already called the
+actual native attributes correctly; stub-only types remain annotation-only.
+
+2. Checks and red/green evidence by requested item
+
+All checks inherit OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true
+UV_OFFLINE=true; uv/uvx are offline. Python test processes were serialized.
+Root bounded checks cap each command at 115 seconds and sampled process-group
+RSS at 960 MiB, logging actual SIGKILL (-9) and sampled peaks rather than a
+passing wrapper code. A shell receiving SystemExit(-9) reports 247; the ledger
+preserves the raw child code. Root/check memory excludes unrelated agents.
+
+1. Real adapter: existing runtime works upon unskip, so no artificial production
+   red is claimed. New real lifecycle tests also pass on the merged runtime.
+   Final test_env.py + DMA: 39 passed, one hardware skip. Construction/observe,
+   reset, native codec step, short terminal/autoreset, metrics/snapshots/seeds,
+   all 35 identity-stable outputs and late-env/seat invalid-action byte rollback
+   are checked. Selected and no-op truncation preserve all six transition bytes
+   and every unselected observation row, with terminal and nonterminal inputs.
+2. Unskips: initial combined run is 102 passed, one failure, one CUDA skip;
+   fixture KeyError exposes the provisional transition_* names. Correct the
+   test to the actual custody-validated NPZ keys. Expanded run is 128 passed,
+   one failure, one CUDA skip: at step 71 tiny W gives native [-.25,.25] versus
+   rescaling-oracle approximately [-9.999888e-13,9.999888e-13]. After the oracle
+   fix, rewards 42 passed, game 27 passed, codec 21 passed. Fixture: 11,504
+   recorded transitions, inherited one-f32-ULP oracle allowance unchanged. Live
+   extremes: three one-game/96-transition probes compare every reward exactly,
+   including terminal output and positive S/D/I coverage. Corpus: 321 accepted
+   programs and 43 rejected records, exact JSON/list order, lengths and rows;
+   rejected decode input and encode output bytes remain unchanged.
+3. Reward table: a scratch harness compiles the exact production reward module
+   and extracted Rust admission test without dependencies. Combined-rule mutant
+   passes the original ten cases (exit 0), fails the strengthening case (exit
+   101, one failed test), then byte-exact restored code passes (exit 0). Production
+   reward.rs was never changed. cargo test --locked --lib
+   reward_admission_predicate_cases: exit 0, one passed, 278 filtered out.
+4. Tables/default: before implementation, 22 failed/24 passed (exit 1), including
+   zero loader calls in the default-model spy. After implementation: 46 passed,
+   no skips (exit 0). Constants are checked before native arrays are requested;
+   no missing-binding fallback. Tiny model loads once and explicit injection
+   does not call the loader.
+5. Evaluation factory: initial focused red has nine failures/one pass; final
+   green has ten passes/97 deselected, no skips. Two intervening test-assumption
+   failures are preserved: empty farmer command is invalid, and initial boards
+   are seed-independent. Legal PASS/STOP and first-day RNG snapshots fix those
+   assumptions. Three two-transition evaluations check fresh seed tuples, changed
+   first-day worlds, exact repeat snapshots/final banks and independent instances.
+6. Trainer stop: same red/green selection covers exact fresh/resume startup
+   message before allocation. _PPORolloutBuffer accepts Orbit specs at
+   python/owl/train/ppo.py:251, constructs Orbit ObsBatch at 315 and action
+   storage at 402; canonical trainer uses it at 596. _map_action_bundle at
+   2075 handles Orbit variants only, and observation mask dispatch at 2115 lacks
+   Kaggriculture. scripts/run_ppo.py:1831 and 1906 still have Orbit evaluation
+   observation/action mapping. Keep the stop: no permitted Kaggriculture PPO
+   rollout can execute until Task 3.1. No rollout/trainer code was added.
+7. DMA: binding skip removed, hardware skip retained; actual native codec actions
+   are prepared before delayed H2D copies. The test drives real env.step, compares
+   all 35 outputs and removes _fence for its negative control. CPU fence spies
+   pass; actual DMA/control remains unexecuted on this Mac.
+8. Docs: status assertion first fails (exit 1), then passes after edits (exit 0).
+   Final README/API/model docs lint and docs-fresh pass. Brief history gains the
+   explicit deviations; cookbook stays untouched for Claude's review.
+
+The subreceipts native/results.md, tables/results.md, eval/results.md retain
+all intermediate lint/test corrections. Two independent cross-lane source reviews
+found no concrete implementation gap; they ran no extra tests.
+
+Full preparation and resource limits
+
+- just prepare: build, engine trim, formatting, Clippy, Python lint, docs lint
+  and mypy (69 files) pass; default Rust test parallelism reaches sampled
+  1,008,156,672 bytes and watchdog kills it (-9) after 41.147 s.
+- RUST_TEST_THREADS=1 just prepare: root Rust 274 passed/five ignored, engine
+  41+9+19=69 passed, all prior static phases pass. Python collects 2,230 cases,
+  then the in-process mypy typing test hits 1,007,960,064 bytes; killed (-9)
+  after 70.518 s. There is no test assertion failure.
+- just py-prepare: format/lint/mypy pass, then the same first Python test hits
+  1,008,943,104 bytes; killed (-9) after 8.884 s. This fallback command therefore
+  is also not reported as a completed preparation.
+- Whole Kaggriculture without the typing test also exceeds accumulated memory
+  (1,081,098,240 sampled bytes); a file-sized model-head run later hits
+  1,012,727,808, and a parity script run hits 1,009,238,016. All are killed by
+  the watchdog; no newly added skip or relaxed assertion hides these attempts.
+- Bounded completion: 57 successful test commands account for exactly every one
+  of the 2,230 collected cases: 2,224 passed, six skipped, zero failed.
+  Most files run with normal project fixtures. The pure typing and pure parity
+  files run with --noconftest because their tests use no project fixture and
+  never use Torch compilation; this avoids importing the unrelated global
+  Torch compile-state fixture. Their peaks are 795 MB and 699 MB. Model heads
+  run as 60 non-enumeration cases, budget 10 alone (one), and budgets 0–3 (four);
+  assertions/parameters are unchanged. regression-coverage.json gives the exact
+  successful command set and denominator; it is not a full shared-process run.
+- RUST_TEST_THREADS=1 just rs-prepare: exit 0, all Rust format/Clippy/tests,
+  trim and docs freshness; root 274 passed/five ignored, engine 69 passed,
+  51.227 s, sampled peak 466,354,176 bytes. cargo fmt --check also exits 0.
+- Final declaration custody: all seven ABI declarations are AST-identical and
+  unique; all eight fake signatures match. Protected-path comparison passes,
+  including 105 non-Kaggriculture definitions in test_run_ppo.py byte-identical.
+  Its mixed factory test's Orbit setup/assertions also remain unchanged.
+- Required missing-binding grep exits 1 with no output (the expected no-match
+  success condition); required Orbit test diff is empty; whitespace diff passes.
+
+Full command strings, raw exits, pass/fail/skip counts and log paths appear in
+commands.md and command-ledger.json; the appendix includes every verification
+invocation, including intermediate reds, budget terminations and the bounded
+replacement runs. Inspection/edit commands are not counted as tests.
+
+3. Remaining skipped tests
+
+In tests/kaggriculture:
+
+- test_env_cuda_fence.py::test_step_does_not_overwrite_pending_dma: CUDA is unavailable.
+- test_observe.py::test_native_writer_uses_real_schema_and_keeps_all_pointers[pinned-1]: pinned host memory requires CUDA.
+- test_observe.py::test_native_writer_uses_real_schema_and_keeps_all_pointers[pinned-2]: pinned host memory requires CUDA.
+
+In tests/scripts: none. No test carries the reason needs Task 1.4 binding.
+
+Other inherited full-suite skips: two tests/owl/model/test_attn.py FlashAttention
+CUDA tests and one tests/owl/test_int8_emulation.py x86 quantization test
+(unavailable qnnpack backend). These protected tests are unchanged.
+
+4. Deviations and cookbook review handoff
+
+The appended brief section is authoritative for the complete deviation list:
+existing real adapter/codec needed qualification rather than rewrites; fixture
+field names/custody are corrected; Python overflow rescaling is removed to match
+native order; the Rust/native strengthening tables are updated; merged stub is
+checked by AST; owner brings eval-factory adoption forward from 3.1/3.3; distinct
+seeds are observed through first-day RNG rather than identical initial boards;
+main and policy-eval mapping stops remain; the DMA test needs valid native actions;
+README is updated for its mapped runner contract; cookbook edits belong to Claude;
+full checks use bounded executions because monolithic commands exceed the cap.
+
+No ABI, config union, reward recipe, production Rust reward, native engine,
+observation/model state or policy conditioning changes. No opposite-game test
+body changes and no second trainer/collector.
+
+Claude must reconcile current reward Reference lines 38–39: the Stage 1 claim
+that rescaling avoids premature saturation is contradicted by the new live test.
+Revise that current claim, its opening/description as needed, native-buffer status,
+cookbook/references/index.md and cookbook/log.md during review. Existing owning
+records: native-game-semantics-use-v3-owned-buffers.md and
+reward-reuse-preserves-objective-and-critic-semantics.md. No new cookbook concept
+or unsupported empirical lesson is needed. This explicit handoff follows the
+owner's instruction not to edit any cookbook file in Stage 2.
+
+5. Open questions and residual risks
+
+- Blocked validation condition: literal monolithic just prepare/py-prepare
+  completion under this Mac cap. All assertions and check components pass in
+  bounded runs, but shared-process full preparation remains unverified here.
+- Task 3.1: native rollout storage, token/length transport, observation-mask
+  mapping, complete policy evaluation/replay adoption and canonical PPO smoke.
+  Existing first-minibatch alarm/multirank behavior requires integration proof.
+- Pod: run test_step_does_not_overwrite_pending_dma including fence-removal
+  control, the two pinned-observation tests, and the approved early two-rank
+  smoke only after Task 3.1 and dependent semantics/telemetry integrate.
+- Seed custody: rank streams are exact/disjoint; mixed evaluation starts are
+  reproducible. Evaluation seed bands do not promise global stream separation;
+  any training-only band restriction remains downstream factory policy.
+- No learning, policy-quality, GPU, BF16, compiled-path or throughput evidence
+  is inferred from these CPU unit checks. No source/API question remains for
+  the implemented Stage 2 boundary itself.
+
+
+COMPLETE VERIFICATION COMMAND LEDGER (per invocation, overlapping counts):
+rust-mutant-old-table-compile.log: rustc --edition=2021 --test /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/harness.rs -o /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/reward-tests
+  exit=0; not a test-count command; see log diagnostics
+rust-mutant-old-table.log: /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/reward-tests reward_admission_predicate_cases --exact --nocapture
+  exit=0; test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+rust-mutant-strengthening-red-compile.log: rustc --edition=2021 --test /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/harness.rs -o /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/reward-tests
+  exit=0; not a test-count command; see log diagnostics
+rust-mutant-strengthening-red.log: /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/reward-tests reward_admission_predicate_cases --exact --nocapture
+  exit=101; test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+rust-restored-strengthening-green-compile.log: rustc --edition=2021 --test /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/harness.rs -o /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/reward-tests
+  exit=0; not a test-count command; see log diagnostics
+rust-restored-strengthening-green.log: /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/reward-tests reward_admission_predicate_cases --exact --nocapture
+  exit=0; test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+reward-mutation-driver.log: python3 ops/rebuild-2026-09-29/stage2-adapter/check_reward_mutant.py
+  exit=0; test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s; test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s; test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+cargo-reward-green.log: cargo test --locked --lib reward_admission_predicate_cases
+  exit=0; test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 278 filtered out; finished in 0.00s
+abi-contract.log: python3 ops/rebuild-2026-09-29/stage2-adapter/check_contract.py
+  exit=1; not a test-count command; see log diagnostics
+docs-status-red.log: python3 ops/rebuild-2026-09-29/stage2-adapter/check_docs.py
+  exit=1; not a test-count command; see log diagnostics
+native-skip-marker.log: grep -rn 'needs Task 1.4 binding' tests python scripts
+  exit=1; not a test-count command; see log diagnostics
+docs-status-green.log: python3 ops/rebuild-2026-09-29/stage2-adapter/check_docs.py
+  exit=0; not a test-count command; see log diagnostics
+abi-contract-final.log: python3 ops/rebuild-2026-09-29/stage2-adapter/check_contract.py
+  exit=0; not a test-count command; see log diagnostics
+just-prepare.log: uvx --offline --from rust-just just prepare
+  exit=-9; budget terminated before a complete test summary
+just-prepare-serial.log: env RUST_TEST_THREADS=1 uvx --offline --from rust-just just prepare
+  exit=-9; test result: ok. 274 passed; 0 failed; 5 ignored; 0 measured; 0 filtered out; finished in 33.05s; test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s; test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s; test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.79s; test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+py-prepare.log: uvx --offline --from rust-just just py-prepare
+  exit=-9; budget terminated before a complete test summary
+kaggriculture-suite.log: uv run --offline pytest tests/kaggriculture --ignore=tests/kaggriculture/test_base_generics_typing.py -q -rs
+  exit=-9; budget terminated before a complete test summary
+typing-isolated.log: uv run --offline pytest --noconftest tests/kaggriculture/test_base_generics_typing.py -q -rs
+  exit=0; 1 passed in 6.81s
+batched/tests-kaggriculture-test_base_generics_typing.log: uv run --offline pytest tests/kaggriculture/test_base_generics_typing.py -q -rs --noconftest
+  exit=0; 1 passed in 6.57s
+batched/tests-kaggriculture-test_codec.log: uv run --offline pytest tests/kaggriculture/test_codec.py -q -rs
+  exit=0; 21 passed in 0.21s
+batched/tests-kaggriculture-test_compile_gemm_backends.log: uv run --offline pytest tests/kaggriculture/test_compile_gemm_backends.py -q -rs
+  exit=0; 55 passed in 0.49s
+batched/tests-kaggriculture-test_configs.log: uv run --offline pytest tests/kaggriculture/test_configs.py -q -rs
+  exit=0; 39 passed in 0.43s
+batched/tests-kaggriculture-test_env.log: uv run --offline pytest tests/kaggriculture/test_env.py -q -rs
+  exit=0; 39 passed in 0.13s
+batched/tests-kaggriculture-test_env_cuda_fence.log: uv run --offline pytest tests/kaggriculture/test_env_cuda_fence.py -q -rs
+  exit=0; 1 skipped in 0.01s
+batched/tests-kaggriculture-test_env_reference.log: uv run --offline pytest tests/kaggriculture/test_env_reference.py -q -rs
+  exit=0; 1 passed in 10.22s
+batched/tests-kaggriculture-test_evaluation.log: uv run --offline pytest tests/kaggriculture/test_evaluation.py -q -rs
+  exit=0; 13 passed in 0.01s
+batched/tests-kaggriculture-test_game.log: uv run --offline pytest tests/kaggriculture/test_game.py -q -rs
+  exit=0; 27 passed in 0.15s
+batched/tests-kaggriculture-test_gpu_grammar.log: uv run --offline pytest tests/kaggriculture/test_gpu_grammar.py -q -rs
+  exit=0; 24 passed in 0.02s
+batched/tests-kaggriculture-test_model_compile.log: uv run --offline pytest tests/kaggriculture/test_model_compile.py -q -rs
+  exit=0; 11 passed in 0.18s
+batched/tests-kaggriculture-test_model_encoder.log: uv run --offline pytest tests/kaggriculture/test_model_encoder.py -q -rs
+  exit=0; 43 passed in 0.96s
+batched/tests-kaggriculture-test_model_heads.log: uv run --offline pytest tests/kaggriculture/test_model_heads.py -q -rs
+  exit=-9; budget terminated before a complete test summary
+batched/tests-kaggriculture-test_model_registration.log: uv run --offline pytest tests/kaggriculture/test_model_registration.py -q -rs
+  exit=0; 7 passed in 0.05s
+batched/tests-kaggriculture-test_native_env.log: uv run --offline pytest tests/kaggriculture/test_native_env.py -q -rs
+  exit=0; 345 passed in 1.90s
+batched/tests-kaggriculture-test_native_grammar_bindings.log: uv run --offline pytest tests/kaggriculture/test_native_grammar_bindings.py -q -rs
+  exit=0; 43 passed in 0.23s
+batched/tests-kaggriculture-test_native_tables.log: uv run --offline pytest tests/kaggriculture/test_native_tables.py -q -rs
+  exit=0; 22 passed in 0.03s
+batched/tests-kaggriculture-test_observe.log: uv run --offline pytest tests/kaggriculture/test_observe.py -q -rs
+  exit=0; 55 passed, 2 skipped in 2.44s
+batched/tests-kaggriculture-test_rewards.log: uv run --offline pytest tests/kaggriculture/test_rewards.py -q -rs
+  exit=0; 42 passed in 0.47s
+batched/tests-kaggriculture-test_training_semantics.log: uv run --offline pytest tests/kaggriculture/test_training_semantics.py -q -rs
+  exit=0; 23 passed in 0.05s
+batched/tests-kaggriculture-test_types.log: uv run --offline pytest tests/kaggriculture/test_types.py -q -rs
+  exit=0; 126 passed in 0.43s
+batched/tests-owl-agent-test_agent.log: uv run --offline pytest tests/owl/agent/test_agent.py -q -rs
+  exit=0; 53 passed in 0.99s
+batched/tests-owl-agent-test_kaggle_engine_sanitization.log: uv run --offline pytest tests/owl/agent/test_kaggle_engine_sanitization.py -q -rs
+  exit=0; 4 passed in 0.57s
+batched/tests-owl-agent-test_kaggle_observation.log: uv run --offline pytest tests/owl/agent/test_kaggle_observation.py -q -rs
+  exit=0; 3 passed in 0.01s
+batched/tests-owl-model-test_attn.log: uv run --offline pytest tests/owl/model/test_attn.py -q -rs
+  exit=0; 5 passed, 2 skipped in 0.01s
+batched/tests-owl-model-test_model_config_files.log: uv run --offline pytest tests/owl/model/test_model_config_files.py -q -rs
+  exit=0; 47 passed in 0.21s
+batched/tests-owl-model-test_recurrent_transformer_v1.log: uv run --offline pytest tests/owl/model/test_recurrent_transformer_v1.py -q -rs
+  exit=0; 14 passed in 0.09s
+batched/tests-owl-model-test_stateless_transformer_v1.log: uv run --offline pytest tests/owl/model/test_stateless_transformer_v1.py -q -rs
+  exit=0; 126 passed in 0.68s
+batched/tests-owl-model-test_teacher_targets.log: uv run --offline pytest tests/owl/model/test_teacher_targets.py -q -rs
+  exit=0; 28 passed in 0.02s
+batched/tests-owl-test_checkpoint_quantization.log: uv run --offline pytest tests/owl/test_checkpoint_quantization.py -q -rs
+  exit=0; 44 passed in 0.04s
+batched/tests-owl-test_config.log: uv run --offline pytest tests/owl/test_config.py -q -rs
+  exit=0; 9 passed in 0.02s
+batched/tests-owl-test_int8_emulation.log: uv run --offline pytest tests/owl/test_int8_emulation.py -q -rs
+  exit=0; 3 passed, 1 skipped in 0.02s
+batched/tests-owl-test_replay.log: uv run --offline pytest tests/owl/test_replay.py -q -rs
+  exit=0; 3 passed in 0.01s
+batched/tests-owl-test_rl.log: uv run --offline pytest tests/owl/test_rl.py -q -rs
+  exit=0; 78 passed in 0.53s
+batched/tests-owl-train-test_advantages.log: uv run --offline pytest tests/owl/train/test_advantages.py -q -rs
+  exit=0; 14 passed in 0.02s
+batched/tests-owl-train-test_config.log: uv run --offline pytest tests/owl/train/test_config.py -q -rs
+  exit=0; 68 passed in 0.08s
+batched/tests-owl-train-test_distributed.log: uv run --offline pytest tests/owl/train/test_distributed.py -q -rs
+  exit=0; 19 passed in 0.02s
+batched/tests-owl-train-test_logging.log: uv run --offline pytest tests/owl/train/test_logging.py -q -rs
+  exit=0; 2 passed in 0.01s
+batched/tests-owl-train-test_loss.log: uv run --offline pytest tests/owl/train/test_loss.py -q -rs
+  exit=0; 13 passed in 0.03s
+batched/tests-owl-train-test_metrics.log: uv run --offline pytest tests/owl/train/test_metrics.py -q -rs
+  exit=0; 2 passed in 0.02s
+batched/tests-owl-train-test_optimizer.log: uv run --offline pytest tests/owl/train/test_optimizer.py -q -rs
+  exit=0; 11 passed in 0.03s
+batched/tests-owl-train-test_ppo.log: uv run --offline pytest tests/owl/train/test_ppo.py -q -rs
+  exit=0; 75 passed in 0.27s
+batched/tests-owl-train-test_ppo_observation_mapping.log: uv run --offline pytest tests/owl/train/test_ppo_observation_mapping.py -q -rs
+  exit=0; 171 passed in 0.09s
+batched/tests-scripts-test_benchmark_checkpoints.log: uv run --offline pytest tests/scripts/test_benchmark_checkpoints.py -q -rs
+  exit=0; 37 passed in 0.04s
+batched/tests-scripts-test_download_replays.log: uv run --offline pytest tests/scripts/test_download_replays.py -q -rs
+  exit=0; 4 passed in 0.01s
+batched/tests-scripts-test_extract_model_weights.log: uv run --offline pytest tests/scripts/test_extract_model_weights.py -q -rs
+  exit=0; 17 passed in 0.03s
+batched/tests-scripts-test_kaggriculture_parity.log: uv run --offline pytest tests/scripts/test_kaggriculture_parity.py -q -rs
+  exit=-9; budget terminated before a complete test summary
+batched/tests-scripts-test_kaggriculture_select_replays.log: uv run --offline pytest tests/scripts/test_kaggriculture_select_replays.py -q -rs
+  exit=0; 17 passed in 0.24s
+batched/tests-scripts-test_roundtrip_checkpoint_quantization.log: uv run --offline pytest tests/scripts/test_roundtrip_checkpoint_quantization.py -q -rs
+  exit=0; 18 passed in 0.04s
+batched/tests-scripts-test_run_ppo.log: uv run --offline pytest tests/scripts/test_run_ppo.py -q -rs
+  exit=0; 107 passed in 0.25s
+batched/tests-tools-test_check_engine_trim.log: uv run --offline pytest tests/tools/test_check_engine_trim.py -q -rs
+  exit=0; 79 passed in 2.73s
+batched/tests-tools-test_observation_oracle_custody.log: uv run --offline pytest tests/tools/test_observation_oracle_custody.py -q -rs
+  exit=0; 46 passed in 0.46s
+batched/tests-tools-test_record_grammar_reference.log: uv run --offline pytest tests/tools/test_record_grammar_reference.py -q -rs
+  exit=0; 25 passed in 9.56s
+batched/tests-tools-test_record_kaggriculture_env_reference.log: uv run --offline pytest tests/tools/test_record_kaggriculture_env_reference.py -q -rs
+  exit=0; 60 passed in 6.49s
+batched/tests-tools-test_replay_viewer.log: uv run --offline pytest tests/tools/test_replay_viewer.py -q -rs
+  exit=0; 2 passed in 0.05s
+heads-remaining.log: uv run --offline pytest tests/kaggriculture/test_model_heads.py -k 'not hire_coupling_enumeration_equals_replayed_density' -q -rs
+  exit=0; 60 passed, 5 deselected in 7.84s
+heads-budget10.log: uv run --offline pytest 'tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[10]' -q -rs
+  exit=0; 1 passed in 0.18s
+heads-budgets0to3.log: uv run --offline pytest 'tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[0]' 'tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[1]' 'tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[2]' 'tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[3]' -q -rs
+  exit=0; 4 passed in 0.73s
+parity-isolated.log: uv run --offline pytest --noconftest tests/scripts/test_kaggriculture_parity.py -q -rs
+  exit=0; 18 passed in 5.95s
+rs-prepare.log: env RUST_TEST_THREADS=1 uvx --offline --from rust-just just rs-prepare
+  exit=0; test result: ok. 274 passed; 0 failed; 5 ignored; 0 measured; 0 filtered out; finished in 30.53s; test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s; test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s; test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 17.57s; test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+cargo-fmt-check.log: cargo fmt --check
+  exit=0; not a test-count command; see log diagnostics
+final-docs-lint.log: uvx --offline pymarkdownlnt scan README.md docs/rl-api-specs.md docs/model-architecture.md
+  exit=0; not a test-count command; see log diagnostics
+final-docs-fresh.log: uvx --offline --from rust-just just docs-fresh
+  exit=0; not a test-count command; see log diagnostics
+final-abi-contract.log: python3 ops/rebuild-2026-09-29/stage2-adapter/check_contract.py
+  exit=0; not a test-count command; see log diagnostics
+final-missing-binding-grep.log: grep -rn 'needs Task 1.4 binding' tests python scripts
+  exit=1; not a test-count command; see log diagnostics
+final-orbit-diff.log: git diff --stat 558ac3c -- tests/owl tests/tools
+  exit=0; not a test-count command; see log diagnostics
+final-diff-check.log: git diff --check
+  exit=0; not a test-count command; see log diagnostics
+native/unskip-red.log: uv run --offline pytest tests/kaggriculture/test_env.py tests/kaggriculture/test_rewards.py tests/kaggriculture/test_game.py tests/kaggriculture/test_codec.py tests/kaggriculture/test_env_cuda_fence.py -q
+  exit=1; 1 failed, 102 passed, 1 skipped in 0.25s
+native/native-expanded-red.log: uv run --offline pytest tests/kaggriculture/test_env.py tests/kaggriculture/test_rewards.py tests/kaggriculture/test_game.py tests/kaggriculture/test_codec.py tests/kaggriculture/test_env_cuda_fence.py -q
+  exit=1; 1 failed, 128 passed, 1 skipped in 0.41s
+native/format-lint-0.log: uvx --offline ruff format python/owl/kaggriculture/rewards.py tests/kaggriculture/test_env.py tests/kaggriculture/test_rewards.py tests/kaggriculture/test_game.py tests/kaggriculture/test_codec.py tests/kaggriculture/test_env_cuda_fence.py
+  exit=0; not a test-count command; see log diagnostics
+native/format-lint-1.log: uvx --offline ruff check python/owl/kaggriculture/rewards.py tests/kaggriculture/test_env.py tests/kaggriculture/test_rewards.py tests/kaggriculture/test_game.py tests/kaggriculture/test_codec.py tests/kaggriculture/test_env_cuda_fence.py
+  exit=1; not a test-count command; see log diagnostics
+native/format-green.log: uvx --offline ruff format python/owl/kaggriculture/rewards.py tests/kaggriculture/test_env.py tests/kaggriculture/test_rewards.py tests/kaggriculture/test_game.py tests/kaggriculture/test_codec.py tests/kaggriculture/test_env_cuda_fence.py
+  exit=0; not a test-count command; see log diagnostics
+native/lint-green.log: uvx --offline ruff check python/owl/kaggriculture/rewards.py tests/kaggriculture/test_env.py tests/kaggriculture/test_rewards.py tests/kaggriculture/test_game.py tests/kaggriculture/test_codec.py tests/kaggriculture/test_env_cuda_fence.py
+  exit=0; not a test-count command; see log diagnostics
+native/env-green.log: uv run --offline pytest tests/kaggriculture/test_env.py tests/kaggriculture/test_env_cuda_fence.py -q
+  exit=0; 39 passed, 1 skipped in 0.09s
+native/rewards-green.log: uv run --offline pytest tests/kaggriculture/test_rewards.py -q
+  exit=0; 42 passed in 0.19s
+native/game-green.log: uv run --offline pytest tests/kaggriculture/test_game.py -q
+  exit=0; 27 passed in 0.05s
+native/codec-green.log: uv run --offline pytest tests/kaggriculture/test_codec.py -q
+  exit=0; 21 passed in 0.08s
+tables/format.log: uv run --offline ruff format python/owl/kaggriculture/gpu_grammar.py python/owl/model/kaggriculture.py tests/kaggriculture/test_native_tables.py tests/kaggriculture/test_gpu_grammar.py
+  exit=0; not a test-count command; see log diagnostics
+tables/green.log: uv run --offline pytest tests/kaggriculture/test_native_tables.py tests/kaggriculture/test_gpu_grammar.py -q
+  exit=0; 46 passed in 0.05s
+tables/lint.log: uv run --offline ruff check python/owl/kaggriculture/gpu_grammar.py python/owl/model/kaggriculture.py tests/kaggriculture/test_native_tables.py tests/kaggriculture/test_gpu_grammar.py
+  exit=0; not a test-count command; see log diagnostics
+tables/red.log: uv run --offline pytest tests/kaggriculture/test_native_tables.py tests/kaggriculture/test_gpu_grammar.py -q
+  exit=1; 22 failed, 24 passed in 0.12s
+eval/diff_check.log: git diff --check
+  exit=0; not a test-count command; see log diagnostics
+eval/format.log: uvx --offline ruff format scripts/run_ppo.py tests/scripts/test_run_ppo.py
+  exit=0; not a test-count command; see log diagnostics
+eval/green.log: uv run --offline pytest tests/scripts/test_run_ppo.py -k 'create_eval_env or kaggriculture_eval or kaggriculture_native_eval or policy_evaluation or main_loads_kaggriculture or resume_startup_checks' -q
+  exit=1; 1 failed, 9 passed, 97 deselected in 0.11s
+eval/green2.log: uv run --offline pytest tests/scripts/test_run_ppo.py -k 'create_eval_env or kaggriculture_eval or kaggriculture_native_eval or policy_evaluation or main_loads_kaggriculture or resume_startup_checks' -q
+  exit=1; 1 failed, 9 passed, 97 deselected in 0.21s
+eval/green3.log: uv run --offline pytest tests/scripts/test_run_ppo.py -k 'create_eval_env or kaggriculture_eval or kaggriculture_native_eval or policy_evaluation or main_loads_kaggriculture or resume_startup_checks' -q
+  exit=0; 10 passed, 97 deselected in 0.18s
+eval/lint.log: uvx --offline ruff check scripts/run_ppo.py tests/scripts/test_run_ppo.py
+  exit=1; not a test-count command; see log diagnostics
+eval/lint2.log: uvx --offline ruff check scripts/run_ppo.py tests/scripts/test_run_ppo.py
+  exit=0; not a test-count command; see log diagnostics
+eval/mypy.log: uv run --offline mypy scripts/run_ppo.py
+  exit=0; not a test-count command; see log diagnostics
+eval/red.log: uv run --offline pytest tests/scripts/test_run_ppo.py -k 'create_eval_env or kaggriculture_eval or kaggriculture_native_eval or policy_evaluation or main_loads_kaggriculture or resume_startup_checks' -q
+  exit=1; 9 failed, 1 passed, 97 deselected in 0.38s
+
+Nested successful preparation commands: see commands.md and rs-prepare.log; their exit codes and counts are enumerated there.
+
+VERDICT: STAGE2-INCOMPLETE — the required monolithic prepare/py-prepare commands exceed the Mac memory limit; all implementation items and bounded check components pass.

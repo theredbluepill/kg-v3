@@ -1,0 +1,169 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+________ test_allocation_rejects_invalid_env_count_before_allocating[0] ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11312e780>
+n_envs = 0
+
+    @pytest.mark.parametrize("n_envs", [0, -1, True, 1.0, "1"])
+    def test_allocation_rejects_invalid_env_count_before_allocating(monkeypatch, n_envs):
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        with pytest.raises(ValueError, match="n_envs must be a positive integer"):
+>           allocate_observation_buffers(n_envs, pin_memory=False)
+
+tests/kaggriculture/test_env.py:415: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:53: in allocate_observation_buffers
+    tile_kind=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:40: in _allocate
+    tensor = torch.empty(shape, dtype=dtype, device="cpu", pin_memory=pin_memory)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = ((0, 2, 200),)
+_kwargs = {'device': 'cpu', 'dtype': torch.int64, 'pin_memory': False}
+
+>       torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: allocated buffers
+
+tests/kaggriculture/test_env.py:412: Failed
+_______ test_allocation_rejects_invalid_env_count_before_allocating[-1] ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113149d30>
+n_envs = -1
+
+    @pytest.mark.parametrize("n_envs", [0, -1, True, 1.0, "1"])
+    def test_allocation_rejects_invalid_env_count_before_allocating(monkeypatch, n_envs):
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        with pytest.raises(ValueError, match="n_envs must be a positive integer"):
+>           allocate_observation_buffers(n_envs, pin_memory=False)
+
+tests/kaggriculture/test_env.py:415: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:53: in allocate_observation_buffers
+    tile_kind=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:40: in _allocate
+    tensor = torch.empty(shape, dtype=dtype, device="cpu", pin_memory=pin_memory)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = ((-1, 2, 200),)
+_kwargs = {'device': 'cpu', 'dtype': torch.int64, 'pin_memory': False}
+
+>       torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: allocated buffers
+
+tests/kaggriculture/test_env.py:412: Failed
+______ test_allocation_rejects_invalid_env_count_before_allocating[True] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11314a780>
+n_envs = True
+
+    @pytest.mark.parametrize("n_envs", [0, -1, True, 1.0, "1"])
+    def test_allocation_rejects_invalid_env_count_before_allocating(monkeypatch, n_envs):
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        with pytest.raises(ValueError, match="n_envs must be a positive integer"):
+>           allocate_observation_buffers(n_envs, pin_memory=False)
+
+tests/kaggriculture/test_env.py:415: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:53: in allocate_observation_buffers
+    tile_kind=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:40: in _allocate
+    tensor = torch.empty(shape, dtype=dtype, device="cpu", pin_memory=pin_memory)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = ((True, 2, 200),)
+_kwargs = {'device': 'cpu', 'dtype': torch.int64, 'pin_memory': False}
+
+>       torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: allocated buffers
+
+tests/kaggriculture/test_env.py:412: Failed
+_______ test_allocation_rejects_invalid_env_count_before_allocating[1.0] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11314b110>
+n_envs = 1.0
+
+    @pytest.mark.parametrize("n_envs", [0, -1, True, 1.0, "1"])
+    def test_allocation_rejects_invalid_env_count_before_allocating(monkeypatch, n_envs):
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        with pytest.raises(ValueError, match="n_envs must be a positive integer"):
+>           allocate_observation_buffers(n_envs, pin_memory=False)
+
+tests/kaggriculture/test_env.py:415: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:53: in allocate_observation_buffers
+    tile_kind=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:40: in _allocate
+    tensor = torch.empty(shape, dtype=dtype, device="cpu", pin_memory=pin_memory)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = ((1.0, 2, 200),)
+_kwargs = {'device': 'cpu', 'dtype': torch.int64, 'pin_memory': False}
+
+>       torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: allocated buffers
+
+tests/kaggriculture/test_env.py:412: Failed
+________ test_allocation_rejects_invalid_env_count_before_allocating[1] ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11312d0a0>
+n_envs = '1'
+
+    @pytest.mark.parametrize("n_envs", [0, -1, True, 1.0, "1"])
+    def test_allocation_rejects_invalid_env_count_before_allocating(monkeypatch, n_envs):
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        with pytest.raises(ValueError, match="n_envs must be a positive integer"):
+>           allocate_observation_buffers(n_envs, pin_memory=False)
+
+tests/kaggriculture/test_env.py:415: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:53: in allocate_observation_buffers
+    tile_kind=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:40: in _allocate
+    tensor = torch.empty(shape, dtype=dtype, device="cpu", pin_memory=pin_memory)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = (('1', 2, 200),)
+_kwargs = {'device': 'cpu', 'dtype': torch.int64, 'pin_memory': False}
+
+>       torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: allocated buffers
+
+tests/kaggriculture/test_env.py:412: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_env.py::test_allocation_rejects_invalid_env_count_before_allocating[0]
+FAILED tests/kaggriculture/test_env.py::test_allocation_rejects_invalid_env_count_before_allocating[-1]
+FAILED tests/kaggriculture/test_env.py::test_allocation_rejects_invalid_env_count_before_allocating[True]
+FAILED tests/kaggriculture/test_env.py::test_allocation_rejects_invalid_env_count_before_allocating[1.0]
+FAILED tests/kaggriculture/test_env.py::test_allocation_rejects_invalid_env_count_before_allocating[1]
+5 failed, 49 deselected in 0.09s

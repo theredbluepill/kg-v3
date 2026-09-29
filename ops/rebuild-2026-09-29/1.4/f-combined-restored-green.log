@@ -1,0 +1,126 @@
+........................................................................ [ 18%]
+........................................................................ [ 37%]
+........................................................................ [ 56%]
+........................................................................ [ 75%]
+........................................................................ [ 94%]
+....................F.                                                   [100%]
+=================================== FAILURES ===================================
+______ test_recorded_grammar_corpus_including_dense_and_rejection_classes ______
+
+    def test_recorded_grammar_corpus_including_dense_and_rejection_classes() -> None:
+        compressed = (FIXTURES / "grammar-v4-reference.jsonl.gz").read_bytes()
+        manifest = json.loads((FIXTURES / "grammar-v4-reference.manifest.json").read_text())
+        assert hashlib.sha256(compressed).hexdigest() == manifest["compressed_sha256"]
+        payload = gzip.decompress(compressed)
+        assert hashlib.sha256(payload).hexdigest() == manifest["uncompressed_sha256"]
+        rows = [json.loads(line) for line in payload.splitlines()]
+        assert rows[0]["type"] == "header"
+        assert rows[0]["slot_names"] == list(NAMES)
+        assert rows[0]["slot_widths"] == list(WIDTHS)
+        assert rows[0]["reference_commit"] == manifest["reference_commit"]
+        accepted = scheduled = dense = dense_full = 0
+        rejected: set[str] = set()
+        for row in rows[1:]:
+            assert row["type"] == "program"
+            assert row["source"] != "replay_rejected"
+            shape = row["shape"]
+            actors, orders, hire = (
+                shape["actors"],
+                shape["order_limit"],
+                shape["hire_limit"],
+            )
+            tokens = np.zeros((252, 12), dtype=np.int64)
+            tokens.reshape(-1)[: len(row["tokens"])] = row["tokens"]
+            for frame, slot, value in row["padding_edits"]:
+                tokens[frame, slot] = value
+            length = row["length"]
+            if row["v4_expected"]["accepted"]:
+                expected = row["v4_expected"]["action"]
+                actual = json.loads(
+                    rs.kaggriculture_decode(tokens, length, actors, orders, hire)
+                )
+                assert actual == expected, row["id"]
+                for source in ("sampler", "training_decoder", "python_codec"):
+                    assert row[source]["accepted"], (row["id"], source)
+                    assert actual == row[source]["action"], (row["id"], source)
+                out = np.full((252, 12), 91, dtype=np.int64)
+                assert (
+                    rs.kaggriculture_encode(json.dumps(expected), actors, orders, hire, out)
+                    == length
+                ), row["id"]
+                np.testing.assert_array_equal(out, tokens, err_msg=row["id"])
+                accepted += 1
+                if row["source"] in {"sampled", "replay"}:
+                    scheduled += 1
+                    dense += actors == 241
+                    dense_full += actors == 241 and length == 252
+            else:
+                with pytest.raises(
+                    ValueError, match=r"grammar|padding|STOP|length|vocabulary"
+                ):
+>                   rs.kaggriculture_decode(tokens, length, actors, orders, hire)
+E                   ValueError: hire capacity: frame 1 slot market_kind value 1
+
+tests/kaggriculture/test_native_grammar_bindings.py:262: ValueError
+
+During handling of the above exception, another exception occurred:
+
+    def test_recorded_grammar_corpus_including_dense_and_rejection_classes() -> None:
+        compressed = (FIXTURES / "grammar-v4-reference.jsonl.gz").read_bytes()
+        manifest = json.loads((FIXTURES / "grammar-v4-reference.manifest.json").read_text())
+        assert hashlib.sha256(compressed).hexdigest() == manifest["compressed_sha256"]
+        payload = gzip.decompress(compressed)
+        assert hashlib.sha256(payload).hexdigest() == manifest["uncompressed_sha256"]
+        rows = [json.loads(line) for line in payload.splitlines()]
+        assert rows[0]["type"] == "header"
+        assert rows[0]["slot_names"] == list(NAMES)
+        assert rows[0]["slot_widths"] == list(WIDTHS)
+        assert rows[0]["reference_commit"] == manifest["reference_commit"]
+        accepted = scheduled = dense = dense_full = 0
+        rejected: set[str] = set()
+        for row in rows[1:]:
+            assert row["type"] == "program"
+            assert row["source"] != "replay_rejected"
+            shape = row["shape"]
+            actors, orders, hire = (
+                shape["actors"],
+                shape["order_limit"],
+                shape["hire_limit"],
+            )
+            tokens = np.zeros((252, 12), dtype=np.int64)
+            tokens.reshape(-1)[: len(row["tokens"])] = row["tokens"]
+            for frame, slot, value in row["padding_edits"]:
+                tokens[frame, slot] = value
+            length = row["length"]
+            if row["v4_expected"]["accepted"]:
+                expected = row["v4_expected"]["action"]
+                actual = json.loads(
+                    rs.kaggriculture_decode(tokens, length, actors, orders, hire)
+                )
+                assert actual == expected, row["id"]
+                for source in ("sampler", "training_decoder", "python_codec"):
+                    assert row[source]["accepted"], (row["id"], source)
+                    assert actual == row[source]["action"], (row["id"], source)
+                out = np.full((252, 12), 91, dtype=np.int64)
+                assert (
+                    rs.kaggriculture_encode(json.dumps(expected), actors, orders, hire, out)
+                    == length
+                ), row["id"]
+                np.testing.assert_array_equal(out, tokens, err_msg=row["id"])
+                accepted += 1
+                if row["source"] in {"sampled", "replay"}:
+                    scheduled += 1
+                    dense += actors == 241
+                    dense_full += actors == 241 and length == 252
+            else:
+>               with pytest.raises(
+                    ValueError, match=r"grammar|padding|STOP|length|vocabulary"
+                ):
+E               AssertionError: Regex pattern did not match.
+E                 Expected regex: 'grammar|padding|STOP|length|vocabulary'
+E                 Actual message: 'hire capacity: frame 1 slot market_kind value 1'
+
+tests/kaggriculture/test_native_grammar_bindings.py:259: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_recorded_grammar_corpus_including_dense_and_rejection_classes
+1 failed, 381 passed in 2.17s

@@ -1,0 +1,23 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-independent/python/owl/rs.abi3.so
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_distinct_numpy_bases_with_shared_storage_are_rejected __________
+
+    def test_distinct_numpy_bases_with_shared_storage_are_rejected() -> None:
+        import torch
+    
+        env = make_env()
+        arrays = buffers(1)
+        storage = torch.zeros((1, 2, 200), dtype=torch.int64)
+        arrays["tile_kind"] = storage.numpy()
+        arrays["tile_crop"] = storage.view_as(storage).numpy()
+        assert arrays["tile_kind"].base is not arrays["tile_crop"].base
+        before = snapshot(arrays)
+>       with pytest.raises(ValueError, match="overlap"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:362: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_distinct_numpy_bases_with_shared_storage_are_rejected
+1 failed, 343 deselected in 0.05s

@@ -1,0 +1,3198 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFF                                               [100%]
+=================================== FAILURES ===================================
+____ test_array_change_without_manifest_refresh_fails_hash_custody[lengths] ____
+
+field = 'lengths'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_array_change_without_manifest_refresh_fails_hash_custody[program_offsets] _
+
+field = 'program_offsets'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_array_change_without_manifest_refresh_fails_hash_custody[transition_indices] _
+
+field = 'transition_indices'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_array_change_without_manifest_refresh_fails_hash_custody[terminal_steps] _
+
+field = 'terminal_steps'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_array_change_without_manifest_refresh_fails_hash_custody[autoreset_seed] _
+
+field = 'autoreset_seed'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+___ test_array_change_without_manifest_refresh_fails_hash_custody[next_seed] ___
+
+field = 'next_seed'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_array_change_without_manifest_refresh_fails_hash_custody[terminal_econ] _
+
+field = 'terminal_econ'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_array_change_without_manifest_refresh_fails_hash_custody[terminal_banks] _
+
+field = 'terminal_banks'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_____ test_array_change_without_manifest_refresh_fails_hash_custody[dones] _____
+
+field = 'dones'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "lengths",
+            "program_offsets",
+            "transition_indices",
+            "terminal_steps",
+            "autoreset_seed",
+            "next_seed",
+            "terminal_econ",
+            "terminal_banks",
+            "dones",
+        ],
+    )
+    def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[length_zero-program lengths outside 1..252] _
+
+corrupt = <function _length_zero at 0x1093e4b80>
+error = 'program lengths outside 1..252'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[length_too_long-program lengths outside 1..252] _
+
+corrupt = <function _length_too_long at 0x1093e4c20>
+error = 'program lengths outside 1..252'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[offset_shift-program offset inventory differs] _
+
+corrupt = <function _offset_shift at 0x1093e4cc0>
+error = 'program offset inventory differs'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[extra_token_row-packed token inventory differs] _
+
+corrupt = <function _extra_token_row at 0x1093e4d60>
+error = 'packed token inventory differs'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[transition_index-transition index inventory differs] _
+
+corrupt = <function _transition_index at 0x1093e4e00>
+error = 'transition index inventory differs'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[autoreset_seed-seed consumption differs] _
+
+corrupt = <function _autoreset_seed at 0x1093e4ea0>
+error = 'seed consumption differs'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[next_seed-seed consumption differs] _
+
+corrupt = <function _next_seed at 0x1093e4f40>
+error = 'seed consumption differs'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_step-terminal steps differ] _
+
+corrupt = <function _terminal_step at 0x1093e4fe0>
+error = 'terminal steps differ'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[early_done-terminal done schedule differs] _
+
+corrupt = <function _early_done at 0x1093e5080>
+error = 'terminal done schedule differs'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[missing_terminal_done-terminal done schedule differs] _
+
+corrupt = <function _missing_terminal_done at 0x1093e5120>
+error = 'terminal done schedule differs'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_econ-terminal values differ] _
+
+corrupt = <function _terminal_econ at 0x1093e51c0>
+error = 'terminal values differ'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_bank-terminal values differ] _
+
+corrupt = <function _terminal_bank at 0x1093e5260>
+error = 'terminal values differ'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_winner-terminal winner differs] _
+
+corrupt = <function _terminal_winner at 0x1093e5300>
+error = 'terminal winner differs'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[econ_continuity-economic transition continuity differs] _
+
+corrupt = <function _econ_continuity at 0x1093e53a0>
+error = 'economic transition continuity differs'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[bank_continuity-bank transition continuity differs] _
+
+corrupt = <function _bank_continuity at 0x1093e5440>
+error = 'bank transition continuity differs'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[nonfinite_reward-nonfinite rewards] _
+
+corrupt = <function _nonfinite_reward at 0x1093e54e0>
+error = 'nonfinite rewards'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[decreasing_econ-economic counters decrease] _
+
+corrupt = <function _decreasing_econ at 0x1093e5580>
+error = 'economic counters decrease'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+>       manifest, arrays = example()
+                           ^^^^^^^^^
+
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:50: in example
+    manifest = recorder.make_manifest(arrays, coverage, recorder.source_identity())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:131: in source_identity
+    "archive_sha256": sha(reference_archive()),
+                          ^^^^^^^^^^^^^^^^^^^
+.codex-tmp/verify-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:101: in reference_archive
+    return subprocess.check_output(
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml'],)
+kwargs = {'cwd': PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle'), 'stdout': -1}
+process = <Popen: returncode: 128 args: ['git', 'archive', '65f0eac5bb00b18a9d3acce319...>
+stdout = b'', stderr = None, retcode = 128
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'archive', '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0', 'engine_rs', 'python/owl/kaggriculture/actor_codec.py', 'rust-toolchain.toml']' returned non-zero exit status 128.
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: pathspec 'engine_rs' did not match any files
+=========================== short test summary info ============================
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[lengths]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[program_offsets]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[transition_indices]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[terminal_steps]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[autoreset_seed]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[next_seed]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[terminal_econ]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[terminal_banks]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_array_change_without_manifest_refresh_fails_hash_custody[dones]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[length_zero-program lengths outside 1..252]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[length_too_long-program lengths outside 1..252]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[offset_shift-program offset inventory differs]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[extra_token_row-packed token inventory differs]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[transition_index-transition index inventory differs]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[autoreset_seed-seed consumption differs]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[next_seed-seed consumption differs]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_step-terminal steps differ]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[early_done-terminal done schedule differs]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[missing_terminal_done-terminal done schedule differs]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_econ-terminal values differ]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_bank-terminal values differ]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_winner-terminal winner differs]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[econ_continuity-economic transition continuity differs]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[bank_continuity-bank transition continuity differs]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[nonfinite_reward-nonfinite rewards]
+FAILED .codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[decreasing_econ-economic counters decrease]
+26 failed, 27 deselected in 1.93s

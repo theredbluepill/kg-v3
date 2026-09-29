@@ -1,0 +1,51 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env)
+warning: fields `actors`, `orders`, and `steps` are never read
+  --> src/kaggriculture/env.rs:62:5
+   |
+58 | struct EnvSlot {
+   |        ------- fields in this struct
+...
+62 |     actors: [i64;2],
+   |     ^^^^^^
+63 |     orders: i64,
+   |     ^^^^^^
+64 |     steps: i64,
+   |     ^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `episode_steps`, `reward`, and `hire_limit` are never read
+   --> src/kaggriculture/env.rs:121:5
+    |
+119 | pub struct NativeEnv {
+    |            --------- fields in this struct
+120 |     config:Config,
+121 |     episode_steps:i64,
+    |     ^^^^^^^^^^^^^
+122 |     reward:RewardConfig,
+    |     ^^^^^^
+123 |     hire_limit:i64,
+    |     ^^^^^^^^^^
+
+warning: `owl` (lib test) generated 2 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.28s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 1 test
+test kaggriculture::bindings::detached_test::native_observe_releases_gil_with_controlled_latch ... 
+thread 'kaggriculture::bindings::detached_test::native_observe_releases_gil_with_controlled_latch' (11119614) panicked at src/kaggriculture/bindings.rs:760:22:
+called `Result::unwrap()` on an `Err` value: PyErr { type: <class 'TypeError'>, value: TypeError("KaggricultureEnv.observe() got an unexpected keyword argument 'action_mask.can_act'"), traceback: None }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'kaggriculture::bindings::detached_test::native_observe_releases_gil_with_controlled_latch' (11119614) panicked at src/kaggriculture/bindings.rs:763:16:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+FAILED
+
+failures:
+
+failures:
+    kaggriculture::bindings::detached_test::native_observe_releases_gil_with_controlled_latch
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 263 filtered out; finished in 5.01s
+
+error: test failed, to rerun pass `--lib`

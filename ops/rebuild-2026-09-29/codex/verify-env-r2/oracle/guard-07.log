@@ -1,0 +1,48 @@
+...................FF.....                                               [100%]
+=================================== FAILURES ===================================
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_econ-terminal values differ] _
+
+corrupt = <function _terminal_econ at 0x1074aa5c0>
+error = 'terminal values differ'
+
+>   ???
+E   Failed: DID NOT RAISE <class 'ValueError'>
+
+/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:251: Failed
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_bank-terminal values differ] _
+
+corrupt = <function _terminal_bank at 0x1074aa660>
+error = 'terminal values differ'
+
+>   ???
+
+/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:252: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/private/tmp/kg-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:246: in validate_arrays
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'terminal winner differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: terminal winner differs
+
+/private/tmp/kg-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+corrupt = <function _terminal_bank at 0x1074aa660>
+error = 'terminal values differ'
+
+>   ???
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'terminal\\ values\\ differ'
+E     Actual message: 'terminal winner differs'
+
+/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:251: AssertionError
+=========================== short test summary info ============================
+FAILED ../../../private/tmp/kg-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_econ-terminal values differ]
+FAILED ../../../private/tmp/kg-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[terminal_bank-terminal values differ]
+2 failed, 24 passed, 27 deselected in 1.05s

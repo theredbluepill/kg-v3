@@ -1,0 +1,28 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-independent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.44s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 1 test
+test kaggriculture::bindings::detached_test::native_observe_releases_gil_with_controlled_latch ... pyo3_runtime.PanicException: Python thread could not progress while real observe work held the test latch
+FAILED
+
+failures:
+
+---- kaggriculture::bindings::detached_test::native_observe_releases_gil_with_controlled_latch stdout ----
+
+thread 'kaggriculture::bindings::detached_test::native_observe_releases_gil_with_controlled_latch' (11709998) panicked at src/kaggriculture/bindings.rs:1037:13:
+Python thread could not progress while real observe work held the test latch
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+--- PyO3 is resuming a panic after fetching a PanicException from Python. ---
+Python stack trace below:
+
+thread 'kaggriculture::bindings::detached_test::native_observe_releases_gil_with_controlled_latch' (11709998) panicked at src/kaggriculture/bindings.rs:1166:16:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+
+
+failures:
+    kaggriculture::bindings::detached_test::native_observe_releases_gil_with_controlled_latch
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 278 filtered out; finished in 2.08s
+
+error: test failed, to rerun pass `--lib`

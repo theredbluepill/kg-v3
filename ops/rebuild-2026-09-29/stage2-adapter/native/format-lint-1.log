@@ -1,0 +1,94 @@
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_env.py:438:5
+    |
+436 |     assert len(arrays) == 35
+437 |     assert env.seed_state() == (45, (41, 43))
+438 |     assert not env.rewards.any() and not env.dones.any()
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+439 |     assert not env.transition_econ_before.any()
+440 |     assert not env.transition_econ_after.any()
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_env.py:472:5
+    |
+470 |         native_actions(env, market=[["BUY_PRODUCT", "WHEAT", 1]])
+471 |     )
+472 |     assert result is obs and rewards is env.rewards and dones is env.dones
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+473 |     assert not dones.any()
+474 |     assert all(value == [] for value in metrics.values())
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_env.py:479:5
+    |
+477 |     result, rewards, dones, metrics = env.step(native_actions(env))
+478 |     obs.check_contract()
+479 |     assert result is obs and rewards is env.rewards and dones is env.dones
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+480 |     assert dones.all()
+481 |     assert env.seed_state() == (49, (45, 47))
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_env.py:505:5
+    |
+503 |     obs.check_contract()
+504 |     assert env.seed_state() == (53, (49, 51))
+505 |     assert not env.rewards.any() and not env.dones.any()
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+506 |     assert not env.transition_econ_before.any()
+507 |     assert not env.transition_econ_after.any()
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_env.py:587:9
+    |
+585 |     for i, old in enumerate(terminals):
+586 |         current = env.terminal_metrics(i)
+587 |         assert old is not None and current is not None
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+588 |         for name, value in old.items():
+589 |             np.testing.assert_array_equal(current[name], value)
+    |
+help: Break down assertion into multiple parts
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/kaggriculture/test_rewards.py:3:1
+   |
+ 1 |   """Independent reward/config oracles for the Task 1.4 native ABI."""
+ 2 |
+ 3 | / from __future__ import annotations
+ 4 | |
+ 5 | | import json
+ 6 | |
+ 7 | | from typing import TYPE_CHECKING
+ 8 | |
+ 9 | | import numpy as np
+10 | | import pytest
+11 | | import torch
+12 | | from owl import rs
+13 | | from owl.kaggriculture.rewards import (
+14 | |     KaggricultureRewardConfig,
+15 | |     economic_penalty,
+16 | |     economic_rewards,
+17 | |     terminal_rewards,
+18 | |     transition_rewards,
+19 | | )
+20 | | from pydantic import ValidationError
+21 | |
+22 | | from .test_env_reference import _recorder
+23 | | from .test_native_env import buffers
+   | |____________________________________^
+24 |
+25 |   if TYPE_CHECKING:
+   |
+help: Organize imports
+
+Found 6 errors.
+[*] 1 fixable with the `--fix` option (5 hidden fixes can be enabled with the `--unsafe-fixes` option).

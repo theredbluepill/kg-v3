@@ -1,0 +1,23 @@
+COMMAND: rustc --edition=2021 --test /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/harness.rs -o /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/reward-tests
+CWD: /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7
+warning: methods `terminal_scale`, `penalty`, and `transition` are never used
+  --> /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/stage2-reward-1tz9leb7/reward.rs:48:12
+   |
+17 | impl RewardConfig {
+   | ----------------- methods in this implementation
+...
+48 |     pub fn terminal_scale(&self) -> f64 {
+   |            ^^^^^^^^^^^^^^
+...
+59 |     pub fn penalty(&self, c: &[i64; 32]) -> f64 {
+   |            ^^^^^^^
+...
+77 |     pub fn transition(
+   |            ^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: 1 warning emitted
+
+
+EXIT_CODE=0

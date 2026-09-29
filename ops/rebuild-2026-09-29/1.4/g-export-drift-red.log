@@ -1,0 +1,58 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_exported_source_drift_rechecked_before_publication[False] ________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-4/test_exported_source_drift_rec0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e9ac6b0>
+corrupt = False
+
+    @pytest.mark.parametrize("corrupt", [False, True])
+    def test_exported_source_drift_rechecked_before_publication(
+        tmp_path: Path, monkeypatch, corrupt: bool
+    ) -> None:
+        relative = "engine_rs/src/training.rs"
+        source = b"unchanged pinned TrainingBatch source"
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True)
+        path.write_bytes(source + b"unexpected edit" if corrupt else source)
+        monkeypatch.setattr(
+            recorder, "reference_sources", lambda: {relative: recorder.sha(source)}
+        )
+        if corrupt:
+            with pytest.raises(ValueError, match="export source drift"):
+                recorder.verify_export(tmp_path)
+        else:
+>           recorder.verify_export(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'env_reference' has no attribute 'verify_export'
+
+tests/tools/test_record_kaggriculture_env_reference.py:259: AttributeError
+________ test_exported_source_drift_rechecked_before_publication[True] _________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-4/test_exported_source_drift_rec1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e9c98e0>
+corrupt = True
+
+    @pytest.mark.parametrize("corrupt", [False, True])
+    def test_exported_source_drift_rechecked_before_publication(
+        tmp_path: Path, monkeypatch, corrupt: bool
+    ) -> None:
+        relative = "engine_rs/src/training.rs"
+        source = b"unchanged pinned TrainingBatch source"
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True)
+        path.write_bytes(source + b"unexpected edit" if corrupt else source)
+        monkeypatch.setattr(
+            recorder, "reference_sources", lambda: {relative: recorder.sha(source)}
+        )
+        if corrupt:
+            with pytest.raises(ValueError, match="export source drift"):
+>               recorder.verify_export(tmp_path)
+                ^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: module 'env_reference' has no attribute 'verify_export'
+
+tests/tools/test_record_kaggriculture_env_reference.py:257: AttributeError
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_exported_source_drift_rechecked_before_publication[False]
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_exported_source_drift_rechecked_before_publication[True]
+2 failed, 34 deselected in 0.02s
