@@ -67,13 +67,21 @@ rl:
   normalize_advantages: true
   # Kaggriculture replay export is Task 7.3.
   eval_replay_games: 8
+  # Teacher (Phase 4.4): scaling_6m's last-best teacher. The teacher is the
+  # last-best model, refreshed in place when the student wins >= 0.7 of the
+  # evaluation at each checkpoint_freq (20M global env steps). Its targets are
+  # precomputed once per update and cached for the whole rollout
+  # (418,643,968 B per rank, FP32; run_ppo prints it with the headroom).
+  # The teacher checkpoint is a required launch-time input, never a config
+  # value: --load-model-weights CHECKPOINT (the BC best) or
+  # -o rl.teacher_init=CHECKPOINT; run_ppo rejects a fresh launch without one.
   teacher_mode: last_best
   teacher_kl_coef: 0.005
   teacher_value_coef: 0.005
-  # A chunk size of the teacher precompute, not a batch: kept, as in Isaiah's
-  # per-rank configs (scaling_6m_halfbatch, winner_ce_6m_4x5090). Per rank the
-  # chunk is min(128, 32) = 32 envs, one whole chunk; the teacher coefficients
-  # are scaling_6m's, so the global teacher targets are unchanged.
+  # A chunk size of the teacher precompute, not a batch: kept at scaling_6m's
+  # 128, not divided by the world size, as in Isaiah's per-rank configs
+  # (scaling_3m, scaling_1p5m, winner_ce_6m_4x5090). Per rank the chunk is
+  # min(128, 32) = 32 envs: the whole rollout, 4,096 rows, in one precompute call.
   teacher_segments_per_minibatch: 128
   compile_mode: default
   dtype: bfloat16

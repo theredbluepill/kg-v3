@@ -697,6 +697,67 @@ def test_validate_args_rejects_load_model_weights_mode_without_checkpoint() -> N
         )
 
 
+def test_validate_args_rejects_wandb_mode_without_wandb_logging() -> None:
+    with pytest.raises(ValueError, match="--wandb-mode requires --log-mode wandb"):
+        run_ppo._validate_args(
+            Namespace(
+                max_env_steps=None,
+                max_runtime_hours=None,
+                output_dir=Path("runs"),
+                overrides=None,
+                load_model_weights=None,
+                load_model_weights_mode="model_only",
+                log_mode=LogMode.DEBUG,
+                wandb_mode="offline",
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    ("flags", "expected"), [([], "online"), (["--wandb-mode", "offline"], "offline")]
+)
+def test_parse_args_reads_the_wandb_mode(
+    monkeypatch: pytest.MonkeyPatch, flags: list[str], expected: str
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["run_ppo.py", "config.yaml", "runs", *flags])
+
+    assert run_ppo._parse_args().wandb_mode == expected
+
+
+def test_run_training_session_opens_an_offline_wandb_run_visibly(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    logger = _FakeLogger()
+    created: list[dict[str, object]] = []
+
+    def create_fake_logger(*args: object, **kwargs: object) -> _FakeLogger:
+        created.append({"args": args, **kwargs})
+        return logger
+
+    monkeypatch.setattr(run_ppo, "create_logger", create_fake_logger)
+
+    run_ppo._run_training_session(
+        trainer=_FakeTrainer(),
+        run_dir=tmp_path,
+        cfg=_full_config(),
+        log_mode=LogMode.WANDB,
+        wandb_mode="offline",
+        env_steps_per_iteration=8,
+        max_env_steps=8,
+        max_runtime_seconds=None,
+        distributed=DistributedContext.single_process_cpu(),
+    )
+
+    (call,) = created
+    assert call["args"] == (LogMode.WANDB, tmp_path, _full_config())
+    assert call["wandb_mode"] == "offline"
+    assert f"W&B offline: telemetry stays under {tmp_path / 'wandb'}" in (
+        capsys.readouterr().out
+    )
+
+
 def test_parse_cli_overrides_flattens_repeated_flags() -> None:
     assert run_ppo._parse_cli_overrides(
         [["rl.horizon=8"], ["env.n_envs=4", "model.depth=2"]]
@@ -3212,6 +3273,13 @@ def _patch_kaggriculture_startup(
     monkeypatch.setattr(run_ppo, "installed_compile_stack", lambda: _PROBED_STACK)
 
 
+def _teacher_source_argv(tmp_path: Path) -> list[str]:
+    """A placeholder teacher checkpoint: these launches stop before loading it."""
+    weights = tmp_path / "bc_best.pt"
+    weights.write_bytes(b"")
+    return ["--load-model-weights", str(weights)]
+
+
 _PROBED_STACK = InstalledCompileStack(
     torch="2.9.0+cu128",
     triton="3.5.0",
@@ -3225,7 +3293,11 @@ def test_main_rejects_an_unprobed_compile_stack_before_allocation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[str] = []
-    argv = [str(_CONFIGS / "kaggriculture_2rank.yaml"), str(tmp_path / "runs")]
+    argv = [
+        str(_CONFIGS / "kaggriculture_2rank.yaml"),
+        str(tmp_path / "runs"),
+        *_teacher_source_argv(tmp_path),
+    ]
     _patch_kaggriculture_startup(monkeypatch, argv, calls)
     monkeypatch.setattr(
         run_ppo,
@@ -3307,6 +3379,7 @@ def test_main_rejects_unserviceable_kaggriculture_workload_before_allocation(
     argv = [
         str(_CONFIGS / "kaggriculture_2rank.yaml"),
         str(tmp_path / "runs"),
+        *_teacher_source_argv(tmp_path),
         "-o",
         f"model.embed_dim={2**21}",
         f"model.n_heads={2**16}",
@@ -3322,11 +3395,11 @@ def test_main_rejects_unserviceable_kaggriculture_workload_before_allocation(
 
 
 @pytest.mark.parametrize(
-    ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+    ("name", "rollout_rows", "teacher_rows", "teacher_calls", "cache_bytes"),
     [
-        ("kaggriculture_2rank.yaml", 256, 16_384, 3),
-        ("kaggriculture_4rank.yaml", 128, 8_192, 2),
-        ("kaggriculture_8rank.yaml", 64, 4_096, 1),
+        ("kaggriculture_2rank.yaml", 256, 16_384, 3, 1_674_575_872),
+        ("kaggriculture_4rank.yaml", 128, 8_192, 2, 837_287_936),
+        ("kaggriculture_8rank.yaml", 64, 4_096, 1, 418_643_968),
     ],
 )
 def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
@@ -3337,9 +3410,14 @@ def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
     rollout_rows: int,
     teacher_rows: int,
     teacher_calls: int,
+    cache_bytes: int,
 ) -> None:
     calls: list[str] = []
-    argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+    argv = [
+        str(_CONFIGS / name),
+        str(tmp_path / "runs"),
+        *_teacher_source_argv(tmp_path),
+    ]
     _patch_kaggriculture_startup(monkeypatch, argv, calls)
 
     with pytest.raises(RuntimeError, match=_NOT_WIRED):
@@ -3362,6 +3440,135 @@ def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
         f"rows/call at full padding (>= {5_915 / teacher_rows:.4g}x headroom, "
         f"<= {teacher_calls} call(s))"
     ) in headroom[2]
+    assert headroom[2].endswith(
+        f"; teacher targets {cache_bytes} B per chunk, {cache_bytes} B cached for "
+        f"{teacher_rows} rollout rows"
+    )
+
+
+# --- Kaggriculture teacher checkpoint source (plan Task 4.4) ------------------
+
+_NO_TEACHER_SOURCE = "needs a teacher checkpoint at launch"
+
+
+def test_main_rejects_a_kaggriculture_launch_without_a_teacher_checkpoint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    calls: list[str] = []
+    argv = [str(_CONFIGS / "kaggriculture_2rank.yaml"), str(tmp_path / "runs")]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls)
+
+    with pytest.raises(ValueError, match=_NO_TEACHER_SOURCE) as raised:
+        run_ppo.main()
+
+    message = str(raised.value)
+    for remedy in (
+        "--load-model-weights CHECKPOINT",
+        "-o rl.teacher_init=CHECKPOINT",
+        "-o rl.teacher_mode=null",
+    ):
+        assert remedy in message
+    assert calls == []
+    assert not (tmp_path / "runs").exists()
+    assert _headroom_lines(capsys.readouterr().out) == []
+
+
+@pytest.mark.parametrize("name", ["kaggriculture.yaml", "kaggriculture_8rank.yaml"])
+def test_main_accepts_teacher_init_as_the_kaggriculture_teacher_source(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    name: str,
+) -> None:
+    teacher = tmp_path / "bc_best.pt"
+    teacher.write_bytes(b"")
+    calls: list[str] = []
+    argv = [
+        str(_CONFIGS / name),
+        str(tmp_path / "runs"),
+        "-o",
+        f"rl.teacher_init={teacher}",
+    ]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls)
+
+    with pytest.raises(RuntimeError, match=_NOT_WIRED):
+        run_ppo.main()
+
+    assert calls == []
+
+
+def test_main_rejects_a_missing_kaggriculture_teacher_init_checkpoint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    missing = tmp_path / "missing.pt"
+    calls: list[str] = []
+    argv = [
+        str(_CONFIGS / "kaggriculture_2rank.yaml"),
+        str(tmp_path / "runs"),
+        "-o",
+        f"rl.teacher_init={missing}",
+    ]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls)
+
+    with pytest.raises(ValueError, match="teacher_init checkpoint does not exist"):
+        run_ppo.main()
+
+    assert calls == []
+    assert not (tmp_path / "runs").exists()
+
+
+def test_main_runs_a_kaggriculture_launch_without_a_teacher_when_disabled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    calls: list[str] = []
+    argv = [
+        str(_CONFIGS / "kaggriculture_2rank.yaml"),
+        str(tmp_path / "runs"),
+        "-o",
+        "rl.teacher_mode=null",
+    ]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls)
+
+    with pytest.raises(RuntimeError, match=_NOT_WIRED):
+        run_ppo.main()
+
+    assert calls == []
+    headroom = _headroom_lines(capsys.readouterr().out)
+    assert [line.split(":")[0] for line in headroom] == [
+        "GEMM workload headroom rollout",
+        "GEMM workload headroom minibatch",
+        "GEMM workload headroom evaluation",
+    ]
+
+
+def test_teacher_source_check_leaves_orbit_and_resume_launches_to_isaiahs_rules(
+    tmp_path: Path,
+) -> None:
+    orbit = _full_config().model_copy(
+        update={
+            "rl": _full_config().rl.model_copy(update={"teacher_mode": "last_best"})
+        }
+    )
+    fresh = run_ppo.FreshLaunch(
+        config_path=tmp_path / "config.yaml", output_dir=tmp_path, overrides={}
+    )
+    # Isaiah's scratch Orbit launch keeps its teacher off until a promotion.
+    run_ppo._require_kaggriculture_teacher_source(orbit, fresh)
+    kaggriculture = FullConfig.from_file(_CONFIGS / "kaggriculture_2rank.yaml")
+    resume = run_ppo.ResumeLaunch(
+        config_path=tmp_path / "config.yaml",
+        run_dir=tmp_path,
+        checkpoint_path=tmp_path / "checkpoint_final.pt",
+        last_best_checkpoint_path=tmp_path / "checkpoint_last_best.pt",
+    )
+    # A resume restores the run's own last-best teacher.
+    run_ppo._require_kaggriculture_teacher_source(kaggriculture, resume)
+    with pytest.raises(ValueError, match=_NO_TEACHER_SOURCE):
+        run_ppo._require_kaggriculture_teacher_source(kaggriculture, fresh)
 
 
 def test_resume_startup_checks_the_runtime_adapted_workload(
