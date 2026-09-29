@@ -1056,15 +1056,21 @@ an explicit `reset`, then each terminal env's replacement), reads each game's
 consumed seed from `seed_state()` once that game exists, decodes the executed
 tokens with `kaggriculture_decode` against the pre-step observation, and for
 selected games captures the full snapshot after every transition, taking the
-terminal one from `terminal_snapshot(i)` before any later native call. It fails
-the game explicitly if a snapshot's banks differ from the published transition
-banks. The policy callback receives the buffers and each env's candidate seat;
+terminal one from `terminal_snapshot(i)` before any later native call. It
+aborts if a snapshot's banks differ from the published transition banks. Any
+abort (policy, decoder, native-step rejection or evidence check) first writes
+error custody for every active selected game through
+`ReplayRecorder.fail_active_games`, keeping only transitions recorded before
+the abort, then re-raises the original exception; a custody write that fails is
+attached to it as a note. The policy callback receives the buffers and each env's candidate seat;
 seeds and checkpoint identity never enter them. Tests run the lifecycle cases
 (construction, explicit reset, simultaneous terminal reset, before-reset
 terminal capture) and an eight-of-ten export at a tiny horizon; an ops receipt
 exports and byte-verifies eight default-horizon games. `run_ppo._evaluate_games`
-still stops at `_create_eval_env` for Kaggriculture: calling this seam from the
-trainer needs the Task 1.5 torch adapter and model token policy.
+still stops at `_create_eval_env` for Kaggriculture, whose error names this
+seam: calling it from the trainer needs the Task 1.5 torch adapter and model
+token policy, and an explicit skipped `test_run_ppo.py` acceptance test tracks
+the eight canonical exports.
 
 ### Native grammar boundary (Task 1.2)
 

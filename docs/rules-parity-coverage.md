@@ -471,7 +471,17 @@ terminal snapshot read after auto-reset, swapped seat actions, reversed ordinal
 order) each fail these tests. An ops receipt exports and byte-verifies eight
 default-horizon (719-transition) games on two envs.
 
-Limits: `_evaluate_games` still stops at `_create_eval_env` for Kaggriculture;
+Failed-evaluation custody (verify r2): after one committed transition, a
+selected-game decoder rejection and a real native batch transaction rejection
+(only an unselected env gets the invalid program) each write one error record
+per active selected game, holding exactly the committed transition, publish no
+episode and re-raise the original `ValueError`. When one error record cannot be
+published, the other game's record is still written and the failure is attached
+as a note to the original exception. Removing the abort handler, or letting a
+publication failure escape, fails these tests.
+
+Limits: `_evaluate_games` still stops at `_create_eval_env` for Kaggriculture
+(an explicit skipped acceptance test tracks its eight canonical exports);
 calling the seam from the trainer needs the Task 1.5 adapter and the model's token
 policy. No pod-scale evaluation or recorder-overhead measurement ran. The small
 framework configuration and four recorded worlds are bounded oracles, not

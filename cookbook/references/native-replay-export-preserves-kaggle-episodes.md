@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Native replay export preserves Kaggle episodes"
-description: "Task 7.3 seed replay and selected-game custody pass four independent official-fixture round trips, the real pinned-framework oracle and canonical-byte checks, with Kaggle reward representation and JSON number kinds compared strictly after Claude review. After verification r1 the recorder runs over the merged Task 1.4 native env (consumed seeds, before-reset terminal snapshots, eight default-horizon games byte-verified); run_ppo's evaluation call still awaits Task 1.5."
+description: "Task 7.3 seed replay and selected-game custody pass four independent official-fixture round trips, the real pinned-framework oracle and canonical-byte checks, with Kaggle reward representation and JSON number kinds compared strictly after Claude review. After verification r1 the recorder runs over the merged Task 1.4 native env (consumed seeds, before-reset terminal snapshots, eight default-horizon games byte-verified); after verification r2 any evaluation abort writes error custody for every active selected game and re-raises the original error. run_ppo's evaluation call still awaits Task 1.5."
 tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex", "at": "2026-09-29"}
@@ -45,6 +45,18 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/7.3/r1-fixes/eight-default-horizon.json"
   - resource: "repository:ops/rebuild-2026-09-29/7.3/r1-fixes/live-mutations.log"
   - resource: "repository:ops/rebuild-2026-09-29/7.3/r1-fixes/prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/independent-verifier-r2/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/independent-verifier-r2/error-custody/probe.py"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r2-fixes/error-custody-red.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r2-fixes/error-custody-green.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r2-fixes/error-custody-mutations.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r2-fixes/verifier-probe-rerun.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r2-fixes/eval-guard-red.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r2-fixes/eval-guard-green.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r2-fixes/prepare.log"
+  - resource: "repository:scripts/run_ppo.py"
+  - resource: "repository:README.md"
+  - resource: "repository:tests/scripts/test_run_ppo.py"
   - resource: "repository:ops/rebuild-2026-09-29/briefs/7.3-replay-export.md"
   - resource: "repository:ops/rebuild-2026-09-29/plan.md"
 ---
@@ -249,7 +261,9 @@ observation or timeout-policy change; the red is preserved rather than hidden.
 `native_evaluation.evaluate_native_games` is the live seam, but
 `run_ppo._evaluate_games` still stops at `_create_eval_env` for Kaggriculture:
 calling the seam from the trainer needs the Task 1.5 torch adapter and the
-model's token policy. Pod-scale evaluation and recorder overhead were not
+model's token policy. Reopen the canonical acceptance when `_create_eval_env`
+builds `KaggricultureEnv`; the skipped
+`test_kaggriculture_canonical_evaluation_exports_eight_replays` states it. Pod-scale evaluation and recorder overhead were not
 measured. The eight-game receipt used a deterministic diagnostic program, not
 a model, so it qualifies custody and round trip, not play.
 
@@ -321,3 +335,42 @@ byte-mode reverification of the published episode, in 37.88 seconds. Peak RSS wa
 holds its full per-transition snapshots until export. Final `just prepare`:
 2,196 Python passes / 11 skips, 289 root Rust passes / five ignored, 69 engine
 passes (`r1-fixes/prepare.log`).
+
+## Verification r2 corrections
+
+Independent verification r2 (`independent-verifier-r2/review.md`, REJECT)
+raised two P2 findings.
+
+- **P2, failed evaluations lost replay custody (fixed test-first).** Policy,
+  decoder and native-step exceptions escaped `evaluate_native_games` and left
+  selected games active, with no record on disk. The loop now catches any
+  exception and calls the new `ReplayRecorder.fail_active_games`, which writes
+  one `status: error` sidecar per active game. Each sidecar holds the
+  transitions recorded before the abort, its reason is
+  `evaluation aborted: <type>: <message>`, and no episode is published. The
+  original exception is then re-raised. A custody write that fails, such as an
+  occupied path, leaves that game active, does not stop the other games, and
+  is attached to the original exception as a note. The bank-mismatch check now
+  just raises and uses the same path. Three live tests cover a selected-decoder
+  rejection (two records), a real native batch-transaction rejection coming
+  from an unselected env (one record), and a publication failure. All three
+  were red first (`r2-fixes/error-custody-red.log`). Both source mutations
+  (handler removed; publication failure escapes) fail them
+  (`r2-fixes/error-custody-mutations.log`). The verifier's own probe, rerun on
+  the fixed source, gives the expected 2 and 1 records, with no active games
+  left (`r2-fixes/verifier-probe-rerun.json`). Limit: if the abort happens
+  while one committed native step's transitions are still being recorded,
+  tapes not yet updated leave that step out, and their error names the cause.
+- **P2, canonical evaluation integration (still open, dependency).** Completing
+  it needs the Task 1.5 adapter (`env.py`, `codec.py`, `rewards.py`, still in
+  progress on `kg/rebuild-adapter`) and a model token policy. Neither is on this
+  branch, so no trainer integration is claimed. The `_create_eval_env` error now
+  names `native_evaluation.evaluate_native_games` as the seam to drive (the test
+  was updated first, `r2-fixes/eval-guard-red.log`/`-green.log`). An explicit
+  skipped acceptance test records the reopening condition: eight complete,
+  byte-verified exports from one canonical `_evaluate_games` call. The README
+  evaluation paragraph now points to the seam as well.
+
+Final `just prepare` (`r2-fixes/prepare.log`): 2,199 Python passes / 12 skips
+(three new custody tests plus the new explicit skip), 289 root Rust passes /
+five ignored, 69 engine passes, trim manifest OK.

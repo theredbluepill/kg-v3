@@ -1605,9 +1605,12 @@ def _create_eval_env(
     """Build the evaluation env for the evaluation at ``env_steps``."""
     if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
         raise NotImplementedError(
-            "Kaggriculture evaluation needs the native environment (rebuild Tasks "
-            "1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, "
-            f"env_steps={env_steps})"
+            "Kaggriculture evaluation awaits the rebuild Task 1.5 adapter and a "
+            "model token policy: _evaluate_games must drive a KaggricultureEnv "
+            "seeded with _evaluation_seed(base_seed=<env seed>, "
+            f"env_steps={env_steps}) through "
+            "owl.kaggriculture.native_evaluation.evaluate_native_games, which "
+            "records the Task 7.3 replays"
         )
     # Isaiah's Orbit env samples its own games; it takes no seed.
     env_config = require_orbit_env(cfg.env, context=_TRAINER)

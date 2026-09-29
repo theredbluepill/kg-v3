@@ -67,6 +67,13 @@ def evaluate_native_games(
     explicit ``reset``'s; either way each game's seed is read from the env after
     it was consumed. ``configuration`` must be the overrides the env was built
     with. Returns results ordered by game ordinal.
+
+    Any exception (policy, decoder, native step, evidence check) first writes
+    error custody for every active selected game, holding the transitions
+    recorded before the abort, then re-raises the original exception. A failed
+    custody write is attached to it as a note, never raised in its place. An
+    abort while recording a committed step's transitions leaves that step out
+    of the tapes not yet recorded; their error names the cause.
     """
     n_envs = int(buffers["dones"].shape[0])
     if type(n_games) is not int or n_games < 1:
@@ -111,84 +118,105 @@ def evaluate_native_games(
                 captured_initial=json.loads(env.state_snapshot(env_index)),
             )
 
-    for env_index in range(n_envs):
-        begin(env_index)
-
-    results: dict[int, NativeGameResult] = {}
-    while len(results) < n_games:
-        tokens, lengths = policy(buffers, candidate_seats.copy())
-        recorded = [
-            env_index
-            for env_index, ordinal in enumerate(ordinals)
-            if ordinal is not None and ordinal in selected
-        ]
-        # Decode against the pre-step observation; the step overwrites it.
-        actions = {
-            env_index: [
-                json.loads(
-                    rs.kaggriculture_decode(
-                        np.ascontiguousarray(tokens[env_index, seat]),
-                        int(lengths[env_index, seat]),
-                        int(buffers["globals_int"][env_index, seat, 14]),
-                        int(buffers["order_limits"][env_index, seat]),
-                        hire_limit,
-                    )
-                )
-                for seat in range(2)
-            ]
-            for env_index in recorded
-        }
-        env.step(tokens, lengths, **buffers)
-        dones = buffers["dones"]
-        terminal: NDArray[np.bool_] = np.logical_and(dones[:, 0], dones[:, 1])
-        for env_index in recorded:
-            ordinal = ordinals[env_index]
-            if ordinal is None or recorder is None:
-                raise RuntimeError(f"env {env_index} lost its recorded game")
-            snapshot_json = (
-                env.terminal_snapshot(env_index)
-                if terminal[env_index]
-                else env.state_snapshot(env_index)
-            )
-            if snapshot_json is None:
-                raise RuntimeError(f"missing terminal snapshot for env {env_index}")
-            snapshot = json.loads(snapshot_json)
-            banks = [farm["money"] for farm in snapshot["public"]["farms"]]
-            if banks != buffers["transition_banks_after"][env_index].tolist():
-                message = (
-                    f"env {env_index} snapshot banks {banks} differ from the "
-                    "published transition banks"
-                )
-                recorder.fail_game(ordinal, error=message)
-                raise RuntimeError(message)
-            recorder.record_transition(
-                ordinal,
-                actions[env_index],
-                tokens=[
-                    {
-                        "tokens": tokens[env_index, seat].reshape(-1).tolist(),
-                        "length": int(lengths[env_index, seat]),
-                    }
-                    for seat in range(2)
-                ],
-                captured=snapshot,
-            )
-            if terminal[env_index]:
-                recorder.finish_game(ordinal, snapshot)
-        for env_index in np.flatnonzero(terminal).tolist():
-            ordinal = ordinals[env_index]
-            if ordinal is not None:
-                metrics = env.terminal_metrics(env_index)
-                if metrics is None:
-                    raise RuntimeError(f"missing terminal metrics for env {env_index}")
-                results[ordinal] = NativeGameResult(
-                    game_ordinal=ordinal,
-                    env_index=env_index,
-                    seed=seeds[env_index],
-                    candidate_seat=seat_assignments[ordinal],
-                    banks=(metrics["bank_0"], metrics["bank_1"]),
-                    winner=metrics["winner"],
-                    episode_steps=metrics["episode_steps"],
-                )
+    try:
+        for env_index in range(n_envs):
             begin(env_index)
+
+        results: dict[int, NativeGameResult] = {}
+        while len(results) < n_games:
+            tokens, lengths = policy(buffers, candidate_seats.copy())
+            recorded = [
+                env_index
+                for env_index, ordinal in enumerate(ordinals)
+                if ordinal is not None and ordinal in selected
+            ]
+            # Decode against the pre-step observation; the step overwrites it.
+            actions = {
+                env_index: [
+                    json.loads(
+                        rs.kaggriculture_decode(
+                            np.ascontiguousarray(tokens[env_index, seat]),
+                            int(lengths[env_index, seat]),
+                            int(buffers["globals_int"][env_index, seat, 14]),
+                            int(buffers["order_limits"][env_index, seat]),
+                            hire_limit,
+                        )
+                    )
+                    for seat in range(2)
+                ]
+                for env_index in recorded
+            }
+            env.step(tokens, lengths, **buffers)
+            dones = buffers["dones"]
+            terminal: NDArray[np.bool_] = np.logical_and(dones[:, 0], dones[:, 1])
+            for env_index in recorded:
+                ordinal = ordinals[env_index]
+                if ordinal is None or recorder is None:
+                    raise RuntimeError(f"env {env_index} lost its recorded game")
+                snapshot_json = (
+                    env.terminal_snapshot(env_index)
+                    if terminal[env_index]
+                    else env.state_snapshot(env_index)
+                )
+                if snapshot_json is None:
+                    raise RuntimeError(f"missing terminal snapshot for env {env_index}")
+                snapshot = json.loads(snapshot_json)
+                banks = [farm["money"] for farm in snapshot["public"]["farms"]]
+                if banks != buffers["transition_banks_after"][env_index].tolist():
+                    # The abort handler writes every active game's error custody.
+                    raise RuntimeError(
+                        f"env {env_index} snapshot banks {banks} differ from the "
+                        "published transition banks"
+                    )
+                recorder.record_transition(
+                    ordinal,
+                    actions[env_index],
+                    tokens=[
+                        {
+                            "tokens": tokens[env_index, seat].reshape(-1).tolist(),
+                            "length": int(lengths[env_index, seat]),
+                        }
+                        for seat in range(2)
+                    ],
+                    captured=snapshot,
+                )
+                if terminal[env_index]:
+                    recorder.finish_game(ordinal, snapshot)
+            for env_index in np.flatnonzero(terminal).tolist():
+                ordinal = ordinals[env_index]
+                if ordinal is not None:
+                    metrics = env.terminal_metrics(env_index)
+                    if metrics is None:
+                        raise RuntimeError(
+                            f"missing terminal metrics for env {env_index}"
+                        )
+                    results[ordinal] = NativeGameResult(
+                        game_ordinal=ordinal,
+                        env_index=env_index,
+                        seed=seeds[env_index],
+                        candidate_seat=seat_assignments[ordinal],
+                        banks=(metrics["bank_0"], metrics["bank_1"]),
+                        winner=metrics["winner"],
+                        episode_steps=metrics["episode_steps"],
+                    )
+                begin(env_index)
+    except BaseException as error:
+        if recorder is not None:
+            _publish_error_custody(recorder, error)
+        raise
     return [results[ordinal] for ordinal in range(n_games)]
+
+
+def _publish_error_custody(recorder: ReplayRecorder, error: BaseException) -> None:
+    """Persist every active selected game as error custody for an aborted run.
+
+    Each tape keeps only transitions the native env committed before the abort.
+    Publication failures are attached to ``error`` as notes so the caller still
+    sees the original decoder, native-step or evidence failure.
+    """
+    reason = f"evaluation aborted: {type(error).__name__}: {error}"
+    for game_ordinal, publication_error in recorder.fail_active_games(error=reason):
+        error.add_note(
+            f"error custody for game {game_ordinal} was not published: "
+            f"{type(publication_error).__name__}: {publication_error}"
+        )

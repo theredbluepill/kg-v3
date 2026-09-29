@@ -1,0 +1,28 @@
+extension: /Users/poonszesen/kg-v3-t73/.codex-tmp/replay-source-r2-2xozja2i/python/owl/rs.abi3.so
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+_________ test_every_successful_native_export_verifies[2-False-False] __________
+
+transitions = 2, complete = False, exports = False
+
+    @pytest.mark.parametrize(
+        ("transitions", "complete", "exports"),
+        [(2, True, True), (1, False, True), (2, False, False)],
+    )
+    def test_every_successful_native_export_verifies(
+        transitions: int, complete: bool, exports: bool
+    ) -> None:
+        # episodeSteps=3 reaches DONE after two transitions. A false completion
+        # claim on a DONE tape must fail export rather than emit unverifiable bytes.
+        header, tape = _native_replay_input()
+        tape = {"complete": complete, "transitions": tape["transitions"][:transitions]}
+        if not exports:
+>           with pytest.raises(
+                ValueError, match="reached DONE while completion not claimed"
+            ):
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:552: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_every_successful_native_export_verifies[2-False-False]
+1 failed, 2 passed in 0.42s

@@ -1,0 +1,51 @@
+{
+  "question": "Tiny live probes for failed-evaluation custody, without modifying sources.\n\nQuestion: after one committed native transition, does a decoder rejection or\nnative batch transaction rejection write explicit error custody for each active\nselected game? Expected: non-success sidecars containing exactly the committed\none-turn action tape, no successful episode, then the original failure raised.\nStop after one injected rejection in each case. No model or training is run.\n",
+  "source": "python/owl/kaggriculture/native_evaluation.py:119-141",
+  "expected": "error custody for every active selected game, then rethrow",
+  "results": [
+    {
+      "case": "selected_decoder_failure",
+      "selected_ordinals": [
+        0,
+        1
+      ],
+      "rejected_env": 0,
+      "policy_calls": 2,
+      "error_type": "ValueError",
+      "error_text": "length value 0 must be in 2..=12",
+      "native_committed_steps": [
+        1,
+        1
+      ],
+      "expected_error_custody_count": 2,
+      "actual_error_custody_count": 2,
+      "actual_files": [
+        "game_000000.custody.json",
+        "game_000001.custody.json"
+      ],
+      "active_ordinals_after_failure": [],
+      "committed_turns_retained_only_in_memory": {}
+    },
+    {
+      "case": "unselected_native_transaction_failure",
+      "selected_ordinals": [
+        1
+      ],
+      "rejected_env": 0,
+      "policy_calls": 2,
+      "error_type": "ValueError",
+      "error_text": "env=0 seat=0 length outside 1..=252",
+      "native_committed_steps": [
+        1,
+        1
+      ],
+      "expected_error_custody_count": 1,
+      "actual_error_custody_count": 1,
+      "actual_files": [
+        "game_000001.custody.json"
+      ],
+      "active_ordinals_after_failure": [],
+      "committed_turns_retained_only_in_memory": {}
+    }
+  ]
+}

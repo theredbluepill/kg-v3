@@ -1,0 +1,242 @@
+{
+  "target": "For each new replay oracle, a valid independent input passes and one materially altered scratch input fails at a localizable pointer; all altered inputs restored byte-for-byte. No tracked source mutation.",
+  "stopping_condition": "All 8 baselines and 12 mutation controls complete, each restoration hash equals baseline hash.",
+  "framework_hashes": {
+    "core.py": "0922c4599a1b6e0d8c3dadf06ae5297f98138d859d686f00daee6f36e6d45d0e",
+    "utils.py": "537b627b11784d424147ef57ebb0369b039bf83c9f891e81f10486b1f552334b",
+    "envs/kaggriculture/kaggriculture.py": "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e",
+    "envs/kaggriculture/kaggriculture.json": "a82c89c1a2315b93f39775d8e025471a01b738647c9772658368ee6b1b6f4867"
+  },
+  "fixture_hashes": {
+    "95324500": "47cdfa489b7a80edf8ec1361f2f55cd033c75824d624cd7c9e9daaa3137affd7",
+    "95901360": "e80653f445570a3778a3fb9026a66614b1ecaa2ea417cf8358d3f1850d725281",
+    "95921764": "bc3e01cd12ff70fd2f78bfbe7129d5caca468a6324c124c25c9efebc86fbd3f2",
+    "95990191": "4bf1a3b09c644719c8b36a619289844e52c3458d0e25dc0a0a1429bc6eaa0d1b"
+  },
+  "framework_runtime_seconds": 0.021410292014479637,
+  "framework_peak_rss_bytes": 198508544,
+  "seed": 1208925819614629174706195,
+  "baselines": [
+    {
+      "label": "pinned live framework",
+      "mode": "semantic",
+      "transitions": 9,
+      "captured": {
+        "initial": true,
+        "terminal": true,
+        "banks": 9,
+        "snapshots": 9
+      },
+      "seconds": 0.03824408299988136
+    },
+    {
+      "label": "native canonical byte round trip",
+      "mode": "byte",
+      "transitions": 9,
+      "captured": {
+        "initial": false,
+        "terminal": false,
+        "banks": 0,
+        "snapshots": 0
+      },
+      "seconds": 0.03085983300115913
+    },
+    {
+      "label": "captured evidence against independent framework",
+      "mode": "byte",
+      "transitions": 9,
+      "captured": {
+        "initial": true,
+        "terminal": true,
+        "banks": 9,
+        "snapshots": 9
+      },
+      "seconds": 0.03702870797133073
+    },
+    {
+      "label": "specification shared fields restored",
+      "mode": "semantic",
+      "transitions": 9,
+      "captured": {
+        "initial": false,
+        "terminal": false,
+        "banks": 0,
+        "snapshots": 0
+      },
+      "seconds": 0.03053524997085333
+    },
+    {
+      "label": "official fixture 95324500",
+      "mode": "semantic",
+      "transitions": 719,
+      "captured": {
+        "initial": true,
+        "terminal": true,
+        "banks": 719,
+        "snapshots": 719
+      },
+      "seconds": 12.310735875042155
+    },
+    {
+      "label": "official fixture 95901360",
+      "mode": "semantic",
+      "transitions": 719,
+      "captured": {
+        "initial": true,
+        "terminal": true,
+        "banks": 719,
+        "snapshots": 719
+      },
+      "seconds": 19.709153041010723
+    },
+    {
+      "label": "official fixture 95921764",
+      "mode": "semantic",
+      "transitions": 719,
+      "captured": {
+        "initial": true,
+        "terminal": true,
+        "banks": 719,
+        "snapshots": 719
+      },
+      "seconds": 16.932241583999712
+    },
+    {
+      "label": "official fixture 95990191",
+      "mode": "semantic",
+      "transitions": 719,
+      "captured": {
+        "initial": true,
+        "terminal": true,
+        "banks": 719,
+        "snapshots": 719
+      },
+      "seconds": 15.667670333001297
+    }
+  ],
+  "mutations": [
+    {
+      "label": "framework resolved seed incremented",
+      "expected_pointer": "/steps/3/0/observation/farms/0/tiles/0/1",
+      "error": "value differs: {\"kind\":\"WEED\"} != null at /steps/3/0/observation/farms/0/tiles/0/1 (transition Some(2))",
+      "seconds": 0.02584933303296566,
+      "original_sha256": "79cf4eb674ff95afb86605ad52ff36d42ee69319decf17b9304fbc42f8efb988",
+      "mutated_sha256": "287e26f292de90eac9d0db13a5aaf440400e49ef59c2de62b5c25fc14bb65ad2",
+      "restored_sha256": "79cf4eb674ff95afb86605ad52ff36d42ee69319decf17b9304fbc42f8efb988",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "framework ACTIVE reward integer to float",
+      "expected_pointer": "/steps/1/0/reward",
+      "error": "value differs: 0 != 0.0 at /steps/1/0/reward (transition Some(0))",
+      "seconds": 0.024428583041299134,
+      "original_sha256": "79cf4eb674ff95afb86605ad52ff36d42ee69319decf17b9304fbc42f8efb988",
+      "mutated_sha256": "c0c7277366d6af35876727c393ccada5360815438f10cb95367bc7be77d969b3",
+      "restored_sha256": "79cf4eb674ff95afb86605ad52ff36d42ee69319decf17b9304fbc42f8efb988",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "native float equivalent exponent bytes",
+      "expected_pointer": "/steps/0/0/observation/farms/0/money",
+      "error": "canonical number bytes differ at /steps/0/0/observation/farms/0/money (transition None)",
+      "seconds": 0.029971082985866815,
+      "original_sha256": "2a73dc66295632926dd80e62aa10296055b94767764c0c4c1702599c8a68c9e2",
+      "mutated_sha256": "8493ecf68d08b571c60f91b908c33f7c14d93634343d41292ec174f3aa9c5ea3",
+      "restored_sha256": "2a73dc66295632926dd80e62aa10296055b94767764c0c4c1702599c8a68c9e2",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "native float money to integer",
+      "expected_pointer": "/steps/0/0/observation/farms/0/money",
+      "error": "value differs: 3000.0 != 3000 at /steps/0/0/observation/farms/0/money (transition None)",
+      "seconds": 0.022226916975341737,
+      "original_sha256": "2a73dc66295632926dd80e62aa10296055b94767764c0c4c1702599c8a68c9e2",
+      "mutated_sha256": "6278efbd6645856a28c8a716e593d728604582f93ba39c91730dd9f49a846342",
+      "restored_sha256": "2a73dc66295632926dd80e62aa10296055b94767764c0c4c1702599c8a68c9e2",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "captured transition bank incremented",
+      "expected_pointer": "/captured/banks/1/0",
+      "error": "value differs: 2948.0 != 2949.0 at /captured/banks/1/0 (transition Some(1))",
+      "seconds": 0.031113041972275823,
+      "original_sha256": "7da0541e5ec2f7a239157ca96c738fbab8995cc3be51e4a886f00f3ecdd85c2d",
+      "mutated_sha256": "9845669f0930c96da3af1e643faead56fe8e2995411a892da3b67a1fe96e41bb",
+      "restored_sha256": "7da0541e5ec2f7a239157ca96c738fbab8995cc3be51e4a886f00f3ecdd85c2d",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "seat 0 private state leaked into seat 1",
+      "expected_pointer": "/steps/1/1/observation/private/shed/WHEAT",
+      "error": "value differs: 0 != 2 at /steps/1/1/observation/private/shed/WHEAT (transition Some(0))",
+      "seconds": 0.02351974998600781,
+      "original_sha256": "4f0a68987134f74adc291402cc0e578804baa7184ef91f025a4af7e6ce880541",
+      "mutated_sha256": "f9e5d15b38574cae846fdc51e1afcd7ba00c202c827ba7dcc4c78704e28b9483",
+      "restored_sha256": "4f0a68987134f74adc291402cc0e578804baa7184ef91f025a4af7e6ce880541",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "initial private seed key order reversed",
+      "expected_pointer": "/steps/0/0/observation/private/seeds",
+      "error": "object key order differs at /steps/0/0/observation/private/seeds (transition None)",
+      "seconds": 0.027307915966957808,
+      "original_sha256": "79cf4eb674ff95afb86605ad52ff36d42ee69319decf17b9304fbc42f8efb988",
+      "mutated_sha256": "8318d2a8a9f16fa4ab1441292e0a7386db0fa6081b5f081c7309976088fd3aca",
+      "restored_sha256": "79cf4eb674ff95afb86605ad52ff36d42ee69319decf17b9304fbc42f8efb988",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "official fixture 95324500 raw reward to shaped reward",
+      "expected_pointer": "/steps/719/0/reward",
+      "error": "value differs: 97126.0 != 0.8 at /steps/719/0/reward (transition Some(718))",
+      "seconds": 9.150475166039541,
+      "original_sha256": "4915164f29a3c73c865802c6c2f61d706c1e1a3c707f29e9f1073542488eb071",
+      "mutated_sha256": "928c026fc8bc72f280d4eb8c385ef1f059bb7ce1ade0b46ffc0e997003e2064d",
+      "restored_sha256": "4915164f29a3c73c865802c6c2f61d706c1e1a3c707f29e9f1073542488eb071",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "official fixture actor inventory order reversed",
+      "expected_pointer": "/steps/22/1/observation/private/inventories/3",
+      "error": "object key order differs at /steps/22/1/observation/private/inventories/3 (transition Some(21))",
+      "seconds": 10.69894887501141,
+      "original_sha256": "4915164f29a3c73c865802c6c2f61d706c1e1a3c707f29e9f1073542488eb071",
+      "mutated_sha256": "4e2b940a0d117142c8c6b5213f3193e91a300221bfe2e8ad5d86af5b753a840c",
+      "restored_sha256": "4915164f29a3c73c865802c6c2f61d706c1e1a3c707f29e9f1073542488eb071",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "official fixture 95901360 raw reward to shaped reward",
+      "expected_pointer": "/steps/719/0/reward",
+      "error": "value differs: 143344.0 != 0.8 at /steps/719/0/reward (transition Some(718))",
+      "seconds": 10.947253542020917,
+      "original_sha256": "16d560e7fcde2c7e1ccf038ba71ae6c5832020e31868f788642b3415c5f70f50",
+      "mutated_sha256": "222b266173193d9ea90861d1d59b8f9bd0024ae533fd44fc1a5c48a8c294c9a0",
+      "restored_sha256": "16d560e7fcde2c7e1ccf038ba71ae6c5832020e31868f788642b3415c5f70f50",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "official fixture 95921764 raw reward to shaped reward",
+      "expected_pointer": "/steps/719/0/reward",
+      "error": "value differs: 7843.0 != 0.8 at /steps/719/0/reward (transition Some(718))",
+      "seconds": 11.486112417012919,
+      "original_sha256": "891262b5d3eb330d10f6dded931367842caa195958a2d978c7418c988eaf91a9",
+      "mutated_sha256": "20c46eb61266904ce5e5ac84f47542cede4cfab57797b147e2e97738bffa75e5",
+      "restored_sha256": "891262b5d3eb330d10f6dded931367842caa195958a2d978c7418c988eaf91a9",
+      "restored_byte_identical": true
+    },
+    {
+      "label": "official fixture 95990191 raw reward to shaped reward",
+      "expected_pointer": "/steps/719/0/reward",
+      "error": "value differs: 87792.0 != 0.8 at /steps/719/0/reward (transition Some(718))",
+      "seconds": 9.65789837500779,
+      "original_sha256": "a9718a83e6701904dcc011f17cd1025e0f4f4ab81500e8f8c2ee4bf0affa83b5",
+      "mutated_sha256": "85d3ff6ea047245ce87302e5c9acda42a5ebbba2a3a07d2709a54e2b2d188629",
+      "restored_sha256": "a9718a83e6701904dcc011f17cd1025e0f4f4ab81500e8f8c2ee4bf0affa83b5",
+      "restored_byte_identical": true
+    }
+  ],
+  "baseline_count": 8,
+  "rejected_mutations": 12,
+  "seconds": 131.66997024999
+}

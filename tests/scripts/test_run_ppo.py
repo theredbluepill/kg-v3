@@ -3032,7 +3032,10 @@ def test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native(
             "pin_memory": False,
         }
     ]
-    with pytest.raises(NotImplementedError, match=r"Tasks 1\.4/1\.5"):
+    with pytest.raises(
+        NotImplementedError,
+        match=r"Task 1\.5 .*native_evaluation\.evaluate_native_games",
+    ):
         run_ppo._create_eval_env(
             _kaggriculture_eval_config(),
             n_envs=4,
@@ -3052,6 +3055,20 @@ def test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds() -> No
         "Unskip when owl.game.create_env builds KaggricultureEnv: two evaluations "
         "at different env_steps must start different games, and repeating one "
         "evaluation must reproduce its games and final banks exactly."
+    )
+
+
+@pytest.mark.skip(
+    reason=(
+        "Needs the Task 1.5 adapter and a model token policy so _evaluate_games "
+        "can call owl.kaggriculture.native_evaluation.evaluate_native_games."
+    )
+)
+def test_kaggriculture_canonical_evaluation_exports_eight_replays() -> None:
+    pytest.fail(
+        "Unskip when _create_eval_env builds KaggricultureEnv: one canonical "
+        "_evaluate_games call must write eight complete, byte-verified replay "
+        "episodes (Task 7.3) through the native evaluation seam."
     )
 
 

@@ -250,3 +250,117 @@ def test_native_evaluation_rejects_inconsistent_schedule() -> None:
             checkpoint_hashes=HASHES,
             versions=VERSIONS,
         )
+
+
+def _aborting_policy(
+    reject_env: int,
+) -> tuple[Any, list[int]]:
+    """``market_policy`` that submits an invalid length on its second call."""
+    calls = [0]
+
+    def policy(
+        arrays: dict[str, Any], candidate_seats: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        calls[0] += 1
+        tokens, lengths = market_policy(arrays, candidate_seats)
+        if calls[0] == 2:
+            lengths[reject_env, 0] = 0
+        return tokens, lengths
+
+    return policy, calls
+
+
+def _run_aborting(
+    tmp_path: Path, *, count: int, reject_selected: bool
+) -> tuple[
+    replay_export.ReplayRecorder, dict[str, Any], int, pytest.ExceptionInfo[Any]
+]:
+    """Two envs commit one transition, then the second policy call is rejected."""
+    configuration = {"episodeSteps": 4}
+    seats = [0, 0]
+    recorder = _recorder(tmp_path, 2, count, seats)
+    selected = sorted(recorder.selected_games)
+    reject_env = (
+        selected[0]
+        if reject_selected
+        else next(index for index in range(2) if index not in selected)
+    )
+    policy, calls = _aborting_policy(reject_env)
+    env = rs.KaggricultureEnv(
+        2, 91, 3, json.dumps(configuration), REWARD, 1, hire_limit=HIRE_LIMIT
+    )
+    arrays = buffers(2)
+    with pytest.raises(ValueError, match="length") as raised:
+        evaluate_native_games(
+            env,
+            arrays,
+            policy,
+            n_games=2,
+            seat_assignments=seats,
+            configuration=configuration,
+            hire_limit=HIRE_LIMIT,
+            recorder=recorder,
+            checkpoint_hashes=HASHES,
+            versions=VERSIONS,
+        )
+    assert calls[0] == 2
+    # Rollback leaves both envs at their one committed step.
+    assert arrays["globals_int"][:, 0, 0].tolist() == [1, 1]
+    return recorder, arrays, reject_env, raised
+
+
+def _assert_error_custody(
+    tmp_path: Path, recorder: replay_export.ReplayRecorder, error_text: str
+) -> None:
+    custody = _custody(tmp_path)
+    assert set(custody) == set(recorder.selected_games)
+    assert recorder.active_games == frozenset()
+    assert not list(tmp_path.glob("game_??????.json"))
+    for record in custody.values():
+        assert record["status"] == "error"
+        assert record["complete"] is False
+        assert record["action_tape"]["complete"] is False
+        assert error_text in record["error"]
+        # Exactly the committed transition, with its tokens and live snapshot.
+        transitions = record["action_tape"]["transitions"]
+        assert len(transitions) == 1
+        assert len(transitions[0]["tokens"]) == 2
+        assert len(record["captured"]["snapshots"]) == 1
+        assert "verification" not in record
+
+
+def test_selected_decoder_rejection_writes_error_custody_for_every_active_game(
+    tmp_path: Path,
+) -> None:
+    recorder, _, _, raised = _run_aborting(tmp_path, count=2, reject_selected=True)
+    assert "length value 0" in str(raised.value)
+    _assert_error_custody(tmp_path, recorder, str(raised.value))
+
+
+def test_native_transaction_rejection_writes_error_custody(tmp_path: Path) -> None:
+    # Only an unselected env receives the invalid program: selected decoding
+    # succeeds and the real native batch transaction rejects at env.step.
+    recorder, _, reject_env, raised = _run_aborting(
+        tmp_path, count=1, reject_selected=False
+    )
+    assert reject_env not in recorder.selected_games
+    assert f"env={reject_env} seat=0" in str(raised.value)
+    _assert_error_custody(tmp_path, recorder, str(raised.value))
+
+
+def test_error_custody_publication_failure_keeps_the_original_exception(
+    tmp_path: Path,
+) -> None:
+    # Occupy game 0's custody path so its error record cannot be published.
+    (tmp_path / "game_000000.custody.json").write_text("{}")
+    recorder, _, _, raised = _run_aborting(tmp_path, count=2, reject_selected=True)
+    assert "length value 0" in str(raised.value)
+    notes = "\n".join(raised.value.__notes__)
+    assert "game 0" in notes
+    assert "FileExistsError" in notes
+    # The other active game still gets its error custody.
+    assert (tmp_path / "game_000000.custody.json").read_text() == "{}"
+    record = json.loads((tmp_path / "game_000001.custody.json").read_text())
+    assert record["status"] == "error"
+    assert len(record["action_tape"]["transitions"]) == 1
+    assert recorder.active_games == frozenset({0})

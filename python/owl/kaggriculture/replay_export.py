@@ -424,6 +424,26 @@ class ReplayRecorder:
             return
         self._write(self._require_active(game_ordinal), status="error", reason=error)
 
+    @property
+    def active_games(self) -> frozenset[int]:
+        """Selected games started but not yet written as complete/partial/error."""
+        return frozenset(self._active)
+
+    def fail_active_games(self, *, error: str) -> list[tuple[int, Exception]]:
+        """Write error custody for every active game, e.g. when evaluation aborts.
+
+        Each game keeps only its committed transitions. A game whose record
+        cannot be published stays active; its ordinal and publication error are
+        returned so the caller can report them without masking the abort cause.
+        """
+        failures: list[tuple[int, Exception]] = []
+        for game_ordinal in sorted(self._active):
+            try:
+                self.fail_game(game_ordinal, error=error)
+            except Exception as publication_error:
+                failures.append((game_ordinal, publication_error))
+        return failures
+
     def _require_active(self, game_ordinal: int) -> _ActiveReplay:
         if game_ordinal not in self._active:
             raise ValueError(f"selected game {game_ordinal} is not active")

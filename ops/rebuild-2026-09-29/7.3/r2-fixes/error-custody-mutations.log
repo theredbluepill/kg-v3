@@ -1,0 +1,16 @@
+== mutation: abort handler publishes nothing
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_selected_decoder_rejection_writes_error_custody_for_every_active_game
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_native_transaction_rejection_writes_error_custody
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_error_custody_publication_failure_keeps_the_original_exception
+3 failed, 6 deselected in 0.40s
+== mutation: publication failure escapes and stops later games
+python/owl/kaggriculture/replay_export.py:499: FileExistsError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export_integration.py::test_error_custody_publication_failure_keeps_the_original_exception
+1 failed, 2 passed, 6 deselected in 0.35s
+== restored
+restored byte-identical: 24c3474bb2cc3bb87c102f944d0b16539ef61585e80ffb5c0a9d75400d732f69  python/owl/kaggriculture/native_evaluation.py
+6dd6c0e370f77fb5520abea71fdb65ce15d73a7c2f8035d6cacee74eca6d701c  python/owl/kaggriculture/replay_export.py
+== mutation: baseline restored
+...                                                                      [100%]
+3 passed, 6 deselected in 0.31s

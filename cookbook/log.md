@@ -1,5 +1,20 @@
 # Change log
 
+## 2026-09-29 — Fix Task 7.3 verification r2: error custody on evaluation abort
+
+Codex verification r2 of Task 7.3 (`ops/rebuild-2026-09-29/7.3/independent-verifier-r2/review.md`,
+REJECT) found two P2s. Policy, decoder or native-step failures escaped
+`evaluate_native_games` and wrote no custody for games already recording. Now
+every abort writes one error record per active selected game through
+`ReplayRecorder.fail_active_games` and re-raises the original exception. A
+custody write that fails is attached as a note. This is covered by three live
+tests, which were red first, and two mutations. The canonical `run_ppo`
+integration remains open: it depends on the Task 1.5 adapter and a model token
+policy. Its guard now names the seam, and a skipped acceptance test states the
+reopening condition. The [[references/native-replay-export-preserves-kaggle-episodes|replay-export
+Reference]] and its index line are revised. Receipts are in `ops/rebuild-2026-09-29/7.3/r2-fixes/`.
+`just prepare` passes: 2,199 Python / 12 skips, 289 root Rust / five ignored, 69 engine.
+
 ## 2026-09-29 — Fix Task 7.3 verification r1: completion claims, byte-guard test and live native export
 
 Codex verification r1 of Task 7.3 (`ops/rebuild-2026-09-29/codex/verify-7.3-r1.md`,

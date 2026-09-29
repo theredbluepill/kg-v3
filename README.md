@@ -399,8 +399,10 @@ from the candidate's seat. Each Kaggriculture evaluation is to seed its games
 with `_evaluation_seed(base_seed, env_steps)`, a reproducible seed that differs
 per evaluation step within a run (the seed ranges of different evaluations or
 runs are not guaranteed disjoint), in the non-negative int64 band
-`[2**62, 2**62 + 2**61)`; the native evaluation env that consumes it is pending rebuild Tasks 1.4/1.5, so a
-Kaggriculture config fails fast at evaluation until then. Orbit evaluation
+`[2**62, 2**62 + 2**61)`. The native env (Task 1.4) and its replay-recording
+seam `owl.kaggriculture.native_evaluation.evaluate_native_games` (Task 7.3)
+exist, but the trainer's call to them awaits the Task 1.5 adapter and a model
+token policy, so a Kaggriculture config fails fast at evaluation until then. Orbit evaluation
 environments stay unseeded.
 Set `rl.eval_replay_games` to a positive count to save random eval replay
 samples from the weighted eval game set under

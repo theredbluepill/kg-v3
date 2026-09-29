@@ -1,0 +1,42 @@
+extension: /Users/poonszesen/kg-v3-t73/.codex-tmp/replay-source-r2-2xozja2i/python/owl/rs.abi3.so
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_native_byte_round_trip_and_wide_seed ___________________
+
+framework_episode = {'configuration': {'actTimeout': 1, 'boardSize': 10, 'episodeSteps': 10, 'farmHandCostMult': 1, ...}, 'description': '...rket over one season.', 'id': 'ee267640-bc0c-11f1-a65a-eb89df17df0e', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    def test_native_byte_round_trip_and_wide_seed(
+        framework_episode: dict[str, Any],
+    ) -> None:
+        header, tape = _header_tape(framework_episode)
+        exported = rs.export_kaggriculture_episode(_dump(header), _dump(tape))
+        report = json.loads(rs.verify_kaggriculture_episode(exported))
+        assert report["ok"]
+        assert report["mode"] == "byte"
+        assert report["canonical_json"] == exported
+        assert json.loads(exported)["info"]["seed"] == SEED
+        mutated = json.loads(exported)
+        assert mutated["steps"][2][0]["action"] == tape["transitions"][1]["actions"][0]
+        assert mutated["steps"][2][0]["action"]["market"][0][-1] == 0
+        for seat in mutated["steps"][0]:
+            assert seat["observation"]["farms"][0]["money"] == 3000.0
+            seat["observation"]["farms"][0]["money"] = 3000
+        message = _reject(mutated, "native byte round trip float money spelled as integer")
+        assert "/steps/0/0/observation/farms/0/money" in message
+        # Same number kind, different spelling: only the canonical-byte guard sees it.
+        needle = '"money":3000.0'
+        assert needle in exported
+        respelled = exported.replace(needle, '"money":3.0e3', 1)
+        assert json.loads(respelled) == json.loads(exported)
+>       with pytest.raises(ValueError, match="canonical number bytes differ") as error:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export_oracles.py:365: Failed
+---------------------------- Captured stdout setup -----------------------------
+framework oracle: seed=1208925819614629174706195, 9 transitions, 0.014607s, peak RSS=197902336 bytes
+----------------------------- Captured stdout call -----------------------------
+mutation native byte round trip float money spelled as integer: value differs: 3000.0 != 3000 at /steps/0/0/observation/farms/0/money (transition None)
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_native_byte_round_trip_and_wide_seed
+1 failed in 0.72s

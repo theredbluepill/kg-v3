@@ -1,0 +1,113 @@
+Fs                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11303aa80>
+
+    def test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        built: list[dict[str, object]] = []
+    
+        def fake_vectorized_env(**kwargs: object) -> str:
+            built.append(kwargs)
+            return "orbit-env"
+    
+        monkeypatch.setattr(run_ppo, "VectorizedEnv", fake_vectorized_env)
+        cfg = _config_with_envs(2)
+        assert isinstance(cfg.env, EnvConfig)
+    
+        env = run_ppo._create_eval_env(
+            cfg, n_envs=4, device=torch.device("cpu"), env_steps=1000
+        )
+    
+        assert env == "orbit-env"
+        assert built == [
+            {
+                "n_envs": 4,
+                "obs_spec": cfg.env.obs_spec,
+                "action_spec": cfg.env.action_spec,
+                "two_player_weight": cfg.env.two_player_weight,
+                "reward_mode": cfg.env.reward_mode,
+                "pin_memory": False,
+            }
+        ]
+        with pytest.raises(
+            NotImplementedError,
+            match=r"Task 1\.5 .*native_evaluation\.evaluate_native_games",
+        ):
+>           run_ppo._create_eval_env(
+                _kaggriculture_eval_config(),
+                n_envs=4,
+                device=torch.device("cpu"),
+                env_steps=1000,
+            )
+
+tests/scripts/test_run_ppo.py:3039: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cfg = FullConfig(env=KaggricultureEnvConfig(n_envs=2, obs_spec=KaggricultureObsConfig(obs_spec='kaggriculture', schema_versi...e-no-cudagraphs', dtype='float32', truncation_step=None, truncation_prob=0.0), runtime=RuntimeConfig(n_runtime_gpus=1))
+
+    def _create_eval_env(
+        cfg: FullConfig,
+        *,
+        n_envs: int,
+        device: torch.device,
+        env_steps: int,
+    ) -> VectorizedEnv:
+        """Build the evaluation env for the evaluation at ``env_steps``."""
+        if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+>           raise NotImplementedError(
+                "Kaggriculture evaluation needs the native environment (rebuild Tasks "
+                "1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, "
+                f"env_steps={env_steps})"
+            )
+E           NotImplementedError: Kaggriculture evaluation needs the native environment (rebuild Tasks 1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, env_steps=1000)
+
+scripts/run_ppo.py:1607: NotImplementedError
+
+During handling of the above exception, another exception occurred:
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11303aa80>
+
+    def test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        built: list[dict[str, object]] = []
+    
+        def fake_vectorized_env(**kwargs: object) -> str:
+            built.append(kwargs)
+            return "orbit-env"
+    
+        monkeypatch.setattr(run_ppo, "VectorizedEnv", fake_vectorized_env)
+        cfg = _config_with_envs(2)
+        assert isinstance(cfg.env, EnvConfig)
+    
+        env = run_ppo._create_eval_env(
+            cfg, n_envs=4, device=torch.device("cpu"), env_steps=1000
+        )
+    
+        assert env == "orbit-env"
+        assert built == [
+            {
+                "n_envs": 4,
+                "obs_spec": cfg.env.obs_spec,
+                "action_spec": cfg.env.action_spec,
+                "two_player_weight": cfg.env.two_player_weight,
+                "reward_mode": cfg.env.reward_mode,
+                "pin_memory": False,
+            }
+        ]
+>       with pytest.raises(
+            NotImplementedError,
+            match=r"Task 1\.5 .*native_evaluation\.evaluate_native_games",
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'Task 1\\.5 .*native_evaluation\\.evaluate_native_games'
+E         Actual message: 'Kaggriculture evaluation needs the native environment (rebuild Tasks 1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, env_steps=1000)'
+
+tests/scripts/test_run_ppo.py:3035: AssertionError
+=========================== short test summary info ============================
+SKIPPED [1] tests/scripts/test_run_ppo.py:3061: Needs the Task 1.5 adapter and a model token policy so _evaluate_games can call owl.kaggriculture.native_evaluation.evaluate_native_games.
+FAILED tests/scripts/test_run_ppo.py::test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native
+1 failed, 1 skipped, 102 deselected in 0.16s
