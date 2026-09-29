@@ -1,0 +1,180 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_kl_matches_a_brute_force_oracle_over_the_admissible_values[base] _____
+
+case = 'base'
+
+    @pytest.mark.parametrize("case", ["base", "hire"])
+    def test_kl_matches_a_brute_force_oracle_over_the_admissible_values(case: str) -> None:
+        if case == "base":
+            student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+            obs, actions = _base_case()
+        else:
+            student, teacher, obs = _small_hire_case()
+            actions = _sampled(student, obs)
+            hires = (actions.tokens[..., 7] == HIRE).sum(-1).reshape(-1)
+            budget = 5 - obs.actor_mask[..., : kt.MAX_ACTORS].sum(-1).reshape(-1)
+            assert bool((hires == budget).all()), (hires, budget)
+        with torch.no_grad():
+            kl = _teacher_kl(student, teacher, obs, actions)
+        tokens = actions.tokens.reshape(-1, F, K)
+        layout = _layout(obs, actions)
+        tables = student.actor.tables()
+        hire_limit = student.action_spec.hire_limit
+        sites: list[tuple[int, int, int, list[int]]] = []  # row, frame, slot, values
+        for row in range(tokens.shape[0]):
+            counts = int(layout["counts"][row])
+            if not bool(layout["live"][row]):
+                continue
+            for frame in range(counts):
+                for slot in ka.UNIT_POLICY_SLOTS:
+                    values = _admissible(
+                        tables,
+                        slot,
+                        tokens[row],
+                        frame,
+                        position=None,
+                        counts=counts,
+                        limit=int(layout["limits"][row]),
+                        hire_limit=hire_limit,
+                    )
+                    sites.append((row, frame, slot, values))
+            for position in range(int(layout["stop"][row]) + 1):
+                for slot in ka.MARKET_POLICY_SLOTS:
+                    values = _admissible(
+                        tables,
+                        slot,
+                        tokens[row],
+                        counts + position,
+                        position=position,
+                        counts=counts,
+                        limit=int(layout["limits"][row]),
+                        hire_limit=hire_limit,
+                    )
+                    sites.append((row, counts + position, slot, values))
+        rows: list[int] = []
+        variants: list[torch.Tensor] = []
+        for row, frame, slot, values in sites:
+            for value in values:
+                variant = tokens[row].clone()
+                variant[frame, slot] = value
+                rows.append(row)
+                variants.append(variant)
+        stacked = torch.stack(variants)
+        teacher_logp = _variant_log_probs(teacher, obs, rows, stacked)
+        student_logp = _variant_log_probs(student, obs, rows, stacked)
+        start = 0
+        checked_hire_block = False
+        for row, frame, slot, values in sites:
+            stop = start + len(values)
+            at = torch.arange(start, stop)
+            log_t = teacher_logp[at, frame, slot].double()
+            log_s = student_logp[at, frame, slot].double()
+            # The Python admissible set is the model's whole support.
+            assert float(log_t.exp().sum()) == pytest.approx(1.0, abs=1e-5)
+            assert float(log_s.exp().sum()) == pytest.approx(1.0, abs=1e-5)
+            oracle = float((log_t.exp() * (log_t - log_s)).sum())
+>           assert float(kl[row, frame, slot]) == pytest.approx(oracle, abs=1e-6), (
+                row,
+                frame,
+                slot,
+            )
+E           AssertionError: (0, 0, 1)
+E           assert 0.1062839925289154 == 9.40336596328931e-05 ± 1.0e-06
+E             
+E             comparison failed
+E             Obtained: 0.1062839925289154
+E             Expected: 9.40336596328931e-05 ± 1.0e-06
+
+tests/kaggriculture/test_teacher.py:383: AssertionError
+____ test_kl_matches_a_brute_force_oracle_over_the_admissible_values[hire] _____
+
+case = 'hire'
+
+    @pytest.mark.parametrize("case", ["base", "hire"])
+    def test_kl_matches_a_brute_force_oracle_over_the_admissible_values(case: str) -> None:
+        if case == "base":
+            student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+            obs, actions = _base_case()
+        else:
+            student, teacher, obs = _small_hire_case()
+            actions = _sampled(student, obs)
+            hires = (actions.tokens[..., 7] == HIRE).sum(-1).reshape(-1)
+            budget = 5 - obs.actor_mask[..., : kt.MAX_ACTORS].sum(-1).reshape(-1)
+            assert bool((hires == budget).all()), (hires, budget)
+        with torch.no_grad():
+            kl = _teacher_kl(student, teacher, obs, actions)
+        tokens = actions.tokens.reshape(-1, F, K)
+        layout = _layout(obs, actions)
+        tables = student.actor.tables()
+        hire_limit = student.action_spec.hire_limit
+        sites: list[tuple[int, int, int, list[int]]] = []  # row, frame, slot, values
+        for row in range(tokens.shape[0]):
+            counts = int(layout["counts"][row])
+            if not bool(layout["live"][row]):
+                continue
+            for frame in range(counts):
+                for slot in ka.UNIT_POLICY_SLOTS:
+                    values = _admissible(
+                        tables,
+                        slot,
+                        tokens[row],
+                        frame,
+                        position=None,
+                        counts=counts,
+                        limit=int(layout["limits"][row]),
+                        hire_limit=hire_limit,
+                    )
+                    sites.append((row, frame, slot, values))
+            for position in range(int(layout["stop"][row]) + 1):
+                for slot in ka.MARKET_POLICY_SLOTS:
+                    values = _admissible(
+                        tables,
+                        slot,
+                        tokens[row],
+                        counts + position,
+                        position=position,
+                        counts=counts,
+                        limit=int(layout["limits"][row]),
+                        hire_limit=hire_limit,
+                    )
+                    sites.append((row, counts + position, slot, values))
+        rows: list[int] = []
+        variants: list[torch.Tensor] = []
+        for row, frame, slot, values in sites:
+            for value in values:
+                variant = tokens[row].clone()
+                variant[frame, slot] = value
+                rows.append(row)
+                variants.append(variant)
+        stacked = torch.stack(variants)
+        teacher_logp = _variant_log_probs(teacher, obs, rows, stacked)
+        student_logp = _variant_log_probs(student, obs, rows, stacked)
+        start = 0
+        checked_hire_block = False
+        for row, frame, slot, values in sites:
+            stop = start + len(values)
+            at = torch.arange(start, stop)
+            log_t = teacher_logp[at, frame, slot].double()
+            log_s = student_logp[at, frame, slot].double()
+            # The Python admissible set is the model's whole support.
+            assert float(log_t.exp().sum()) == pytest.approx(1.0, abs=1e-5)
+            assert float(log_s.exp().sum()) == pytest.approx(1.0, abs=1e-5)
+            oracle = float((log_t.exp() * (log_t - log_s)).sum())
+>           assert float(kl[row, frame, slot]) == pytest.approx(oracle, abs=1e-6), (
+                row,
+                frame,
+                slot,
+            )
+E           AssertionError: (0, 0, 1)
+E           assert 0.10613563656806946 == 8.87140428018...e-05 ± 1.0e-06
+E             
+E             comparison failed
+E             Obtained: 0.10613563656806946
+E             Expected: 8.871404280188892e-05 ± 1.0e-06
+
+tests/kaggriculture/test_teacher.py:383: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_kl_matches_a_brute_force_oracle_over_the_admissible_values[base]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_matches_a_brute_force_oracle_over_the_admissible_values[hire]
+2 failed in 0.74s

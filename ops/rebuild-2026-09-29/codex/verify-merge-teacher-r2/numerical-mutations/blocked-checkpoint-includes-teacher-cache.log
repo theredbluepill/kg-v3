@@ -1,0 +1,69 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache ___
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-teacher/.codex-tmp/pytest-of-poonszesen/pytest-4/test_trainer_checkpoint_after_0')
+
+    def test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache(
+        tmp_path: Path,
+    ) -> None:
+        """T19b: after an iteration fills the teacher cache, checkpoints omit it."""
+        import scripts.run_ppo as run_ppo
+    
+        student, teacher = _tiny(), _tiny(seed=6)
+>       trainer = ppo.PPOTrainer(
+            env=_FakeKaggricultureEnv(),
+            model=student,
+            optimizer=torch.optim.AdamW(student.parameters(), lr=0.0),
+            config=ppo.PPOConfig(
+                horizon=4,
+                segments_per_minibatch=1,
+                teacher_mode="last_best",
+                teacher_segments_per_minibatch=1,
+            ),
+            device=torch.device("cpu"),
+            teacher_model=teacher,
+            teacher_active=True,
+        )
+
+tests/kaggriculture/test_teacher.py:1693: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:565: in __init__
+    self._obs = _obs_to_device(
+python/owl/train/ppo.py:2259: in _obs_to_device
+    return _map_observation(
+python/owl/train/ppo.py:2120: in _map_observation
+    field: _map_observation_value(getattr(obs, field), fn, field=field)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = KaggricultureActionMask(can_act=tensor([[[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  Tr...       [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]]))
+fn = <function _obs_to_device.<locals>.<lambda> at 0x112c58cc0>
+
+    def _map_observation_value(
+        value: object,
+        fn: Callable[[torch.Tensor], torch.Tensor],
+        *,
+        field: str,
+    ) -> object:
+        if value is None:
+            return None
+        if isinstance(value, torch.Tensor):
+            return fn(value)
+        if isinstance(
+            value,
+            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+        ):
+            return _map_action_mask(value, fn)
+>       raise TypeError(
+            f"observation field {field!r} has unsupported type {type(value).__name__}; "
+            "expected a tensor, an action mask or None"
+        )
+E       TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+
+python/owl/train/ppo.py:2141: TypeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache
+1 failed in 0.14s

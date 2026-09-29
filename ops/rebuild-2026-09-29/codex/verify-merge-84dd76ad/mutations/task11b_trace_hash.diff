@@ -1,0 +1,11 @@
+--- merged
++++ task11b_trace_hash
+@@ -339,7 +339,7 @@
+         listed.append(name)
+         _require(name in traces, f"{name}: listed generated trace is missing")
+         data = traces[name]
+-        _require(sha(data) == _digest(entry["sha256"], name), f"{name}: trace hash")
++        _digest(entry["sha256"], name)
+         _require(_integer(entry["bytes"], name) == len(data), f"{name}: trace size")
+         for key in ("seed", "policy_seed", "transitions", "rejected"):
+             _integer(entry[key], f"{name}: {key}")

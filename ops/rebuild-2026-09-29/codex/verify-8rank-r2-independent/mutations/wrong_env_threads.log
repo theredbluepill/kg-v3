@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_ranked_configs_differ_only_in_per_rank_shapes ______________
+
+    def test_ranked_configs_differ_only_in_per_rank_shapes() -> None:
+        two, four, eight = (_sections(name) for name in _RANKED)
+        assert (two.env.n_envs, two.rl.segments_per_minibatch) == (128, 8)
+        assert (four.env.n_envs, four.rl.segments_per_minibatch) == (64, 4)
+        assert (eight.env.n_envs, eight.rl.segments_per_minibatch) == (32, 2)
+        assert two.model.force_flash_attn
+        assert (two.env.native_threads, two.env.pin_memory) == (2, True)
+        for other in (four, eight):
+>           assert two.env.model_copy(update={"n_envs": 0}) == other.env.model_copy(
+                update={"n_envs": 0}
+            )
+E           assert Kaggriculture...ive_threads=2) == Kaggriculture...ive_threads=3)
+E             
+E             Use -v to get more diff
+
+tests/kaggriculture/test_configs.py:211: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes
+1 failed, 49 deselected in 0.05s

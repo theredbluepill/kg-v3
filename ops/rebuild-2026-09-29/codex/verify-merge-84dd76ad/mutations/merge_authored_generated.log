@@ -1,0 +1,498 @@
+.FF..F............................................FF.......FFFF......... [ 91%]
+.......                                                                  [100%]
+=================================== FAILURES ===================================
+____ test_task_authored_inventory_accepts_two_tests_and_generated_manifest _____
+
+    def test_task_authored_inventory_accepts_two_tests_and_generated_manifest() -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"x"), "reason": "authored"}
+            for path in (
+                "engine_rs/tests/replay_parity.rs",
+                "engine_rs/tests/grammar_kernel.rs",
+                checker.GENERATED_MANIFEST,
+            )
+        ]
+>       checker.verify_task_authored(authored)
+
+tests/tools/test_check_engine_trim.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:257: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:253: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']
+
+scripts/check_engine_trim.py:114: ValueError
+_ test_task_authored_inventory_requires_exact_authored_set[paths0-Task 1.2 authored set: missing=.*MANIFEST.json.*grammar_kernel.*replay_parity] _
+
+paths = []
+message = 'Task 1.2 authored set: missing=.*MANIFEST.json.*grammar_kernel.*replay_parity'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            (
+                [],
+                r"Task 1.2 authored set: missing=.*MANIFEST.json.*grammar_kernel"
+                r".*replay_parity",
+            ),
+            (
+                ["engine_rs/tests/replay_parity.rs", checker.GENERATED_MANIFEST],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs", checker.GENERATED_MANIFEST],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                ["engine_rs/tests/replay_parity.rs", "engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*generated/MANIFEST.json",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    checker.GENERATED_MANIFEST,
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_authored_set(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+        with pytest.raises(ValueError, match=message):
+>           checker.verify_task_authored(authored)
+
+tests/tools/test_check_engine_trim.py:118: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:257: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:253: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.2 authored set: missing=['engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/replay_parity.rs']; extra=[]"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.2 authored set: missing=['engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/replay_parity.rs']; extra=[]
+
+scripts/check_engine_trim.py:114: ValueError
+
+During handling of the above exception, another exception occurred:
+
+paths = []
+message = 'Task 1.2 authored set: missing=.*MANIFEST.json.*grammar_kernel.*replay_parity'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            (
+                [],
+                r"Task 1.2 authored set: missing=.*MANIFEST.json.*grammar_kernel"
+                r".*replay_parity",
+            ),
+            (
+                ["engine_rs/tests/replay_parity.rs", checker.GENERATED_MANIFEST],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs", checker.GENERATED_MANIFEST],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                ["engine_rs/tests/replay_parity.rs", "engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*generated/MANIFEST.json",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    checker.GENERATED_MANIFEST,
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_authored_set(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'Task 1.2 authored set: missing=.*MANIFEST.json.*grammar_kernel.*replay_parity'
+E         Actual message: "Task 1.2 authored set: missing=['engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/replay_parity.rs']; extra=[]"
+
+tests/tools/test_check_engine_trim.py:117: AssertionError
+_ test_task_authored_inventory_requires_exact_authored_set[paths3-Task 1.2 authored set: missing=.*generated/MANIFEST.json] _
+
+paths = ['engine_rs/tests/replay_parity.rs', 'engine_rs/tests/grammar_kernel.rs']
+message = 'Task 1.2 authored set: missing=.*generated/MANIFEST.json'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            (
+                [],
+                r"Task 1.2 authored set: missing=.*MANIFEST.json.*grammar_kernel"
+                r".*replay_parity",
+            ),
+            (
+                ["engine_rs/tests/replay_parity.rs", checker.GENERATED_MANIFEST],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs", checker.GENERATED_MANIFEST],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                ["engine_rs/tests/replay_parity.rs", "engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*generated/MANIFEST.json",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    checker.GENERATED_MANIFEST,
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_authored_set(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:117: Failed
+_____________________ test_committed_package_passes_check ______________________
+
+    def test_committed_package_passes_check() -> None:
+>       checker.check(_REPO)
+
+tests/tools/test_check_engine_trim.py:363: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:476: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:512: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:257: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:253: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']
+
+scripts/check_engine_trim.py:114: ValueError
+_______________ test_check_entry_point_passes_on_unmodified_copy _______________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-merge3/.codex-tmp/pytest-of-poonszesen/pytest-5/test_check_entry_point_passes_0')
+
+    def test_check_entry_point_passes_on_unmodified_copy(trimmed: Path) -> None:
+>       checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:367: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:476: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:512: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:257: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:253: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']
+
+scripts/check_engine_trim.py:114: ValueError
+_____________ test_declared_removal_of_trim_provenance_is_rejected _____________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-merge3/.codex-tmp/pytest-of-poonszesen/pytest-5/test_declared_removal_of_trim_0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_removal_of_trim_provenance_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        original = reference[_VENDORED]
+        lines = len(original.decode("utf-8").splitlines())
+        _declare(trimmed, _VENDORED, original, [])
+        with pytest.raises(
+            ValueError, match=re.escape("VENDORED_FROM.md: Task 1.1 trim appendix")
+        ):
+>           checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:440: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:476: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:512: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:257: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:253: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']
+
+scripts/check_engine_trim.py:114: ValueError
+
+During handling of the above exception, another exception occurred:
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-merge3/.codex-tmp/pytest-of-poonszesen/pytest-5/test_declared_removal_of_trim_0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_removal_of_trim_provenance_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        original = reference[_VENDORED]
+        lines = len(original.decode("utf-8").splitlines())
+        _declare(trimmed, _VENDORED, original, [])
+>       with pytest.raises(
+            ValueError, match=re.escape("VENDORED_FROM.md: Task 1.1 trim appendix")
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'VENDORED_FROM\\.md:\\ Task\\ 1\\.1\\ trim\\ appendix'
+E         Actual message: "Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']"
+
+tests/tools/test_check_engine_trim.py:437: AssertionError
+___________________ test_later_provenance_append_is_accepted ___________________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-merge3/.codex-tmp/pytest-of-poonszesen/pytest-5/test_later_provenance_append_i0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_later_provenance_append_is_accepted(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        original = reference[_VENDORED]
+        current = (trimmed / _VENDORED).read_bytes()
+        appended = current + b"\n## Later task\n\nMore provenance.\n"
+        lines = len(original.decode("utf-8").splitlines())
+        _declare(
+            trimmed,
+            _VENDORED,
+            appended,
+            [
+                {
+                    "start_line": lines + 1,
+                    "delete_lines": 0,
+                    "insert": appended[len(original) :].decode("utf-8"),
+                    "reason": "append-only provenance",
+                }
+            ],
+        )
+>       checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:486: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:476: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:512: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:257: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:253: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']
+
+scripts/check_engine_trim.py:114: ValueError
+_______________ test_declared_extra_lockfile_change_is_rejected ________________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-merge3/.codex-tmp/pytest-of-poonszesen/pytest-5/test_declared_extra_lockfile_c0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_extra_lockfile_change_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        current = (trimmed / _LOCK).read_bytes()
+        changed = current.replace(b'version = "1.0.229"', b'version = "1.0.230"', 1)
+        assert changed != current
+        _declare(trimmed, _LOCK, changed, _whole_file_edit(reference[_LOCK], changed))
+        with pytest.raises(
+            ValueError, match=re.escape("Cargo.lock: Rayon closure removal only")
+        ):
+>           checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:499: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:476: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:512: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:257: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:253: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']
+
+scripts/check_engine_trim.py:114: ValueError
+
+During handling of the above exception, another exception occurred:
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-merge3/.codex-tmp/pytest-of-poonszesen/pytest-5/test_declared_extra_lockfile_c0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_extra_lockfile_change_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        current = (trimmed / _LOCK).read_bytes()
+        changed = current.replace(b'version = "1.0.229"', b'version = "1.0.230"', 1)
+        assert changed != current
+        _declare(trimmed, _LOCK, changed, _whole_file_edit(reference[_LOCK], changed))
+>       with pytest.raises(
+            ValueError, match=re.escape("Cargo.lock: Rayon closure removal only")
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'Cargo\\.lock:\\ Rayon\\ closure\\ removal\\ only'
+E         Actual message: "Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']"
+
+tests/tools/test_check_engine_trim.py:496: AssertionError
+_________________ test_declared_eighth_lib_removal_is_rejected _________________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-merge3/.codex-tmp/pytest-of-poonszesen/pytest-5/test_declared_eighth_lib_remov0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_eighth_lib_removal_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        path = "engine_rs/src/lib.rs"
+        original = reference[path]
+        lines = original.splitlines(keepends=True)
+        removed = {19, 21, 22, 23, 24, 25, 27, 20}
+        changed = b"".join(
+            line for number, line in enumerate(lines, 1) if number not in removed
+        )
+        _declare(trimmed, path, changed, _whole_file_edit(original, changed))
+        with pytest.raises(ValueError, match=re.escape("lib.rs: exact seven removals")):
+>           checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:514: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:476: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:512: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:257: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:253: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']
+
+scripts/check_engine_trim.py:114: ValueError
+
+During handling of the above exception, another exception occurred:
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-merge3/.codex-tmp/pytest-of-poonszesen/pytest-5/test_declared_eighth_lib_remov0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_eighth_lib_removal_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        path = "engine_rs/src/lib.rs"
+        original = reference[path]
+        lines = original.splitlines(keepends=True)
+        removed = {19, 21, 22, 23, 24, 25, 27, 20}
+        changed = b"".join(
+            line for number, line in enumerate(lines, 1) if number not in removed
+        )
+        _declare(trimmed, path, changed, _whole_file_edit(original, changed))
+>       with pytest.raises(ValueError, match=re.escape("lib.rs: exact seven removals")):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'lib\\.rs:\\ exact\\ seven\\ removals'
+E         Actual message: "Task 1.2 authored set: missing=[]; extra=['engine_rs/fixtures/generated/MANIFEST.json']"
+
+tests/tools/test_check_engine_trim.py:513: AssertionError
+=============================== warnings summary ===============================
+../../../../Users/poonszesen/kg-v3-merge3/.venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:475
+  /Users/poonszesen/kg-v3-merge3/.venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:475: PytestCacheWarning: could not create cache path /dev/.pytest_cache/v/cache/nodeids: [Errno 1] Operation not permitted: '/dev/pytest-cache-files-mpk40ta0'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+../../../../Users/poonszesen/kg-v3-merge3/.venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:429
+  /Users/poonszesen/kg-v3-merge3/.venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:429: PytestCacheWarning: could not create cache path /dev/.pytest_cache/v/cache/lastfailed: [Errno 1] Operation not permitted: '/dev/pytest-cache-files-ae6jsrjx'
+    config.cache.set("cache/lastfailed", self.lastfailed)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../dev::test_task_authored_inventory_accepts_two_tests_and_generated_manifest
+FAILED ../../../../dev::test_task_authored_inventory_requires_exact_authored_set[paths0-Task 1.2 authored set: missing=.*MANIFEST.json.*grammar_kernel.*replay_parity]
+FAILED ../../../../dev::test_task_authored_inventory_requires_exact_authored_set[paths3-Task 1.2 authored set: missing=.*generated/MANIFEST.json]
+FAILED ../../../../dev::test_committed_package_passes_check - ValueError: Tas...
+FAILED ../../../../dev::test_check_entry_point_passes_on_unmodified_copy - Va...
+FAILED ../../../../dev::test_declared_removal_of_trim_provenance_is_rejected
+FAILED ../../../../dev::test_later_provenance_append_is_accepted - ValueError...
+FAILED ../../../../dev::test_declared_extra_lockfile_change_is_rejected - Ass...
+FAILED ../../../../dev::test_declared_eighth_lib_removal_is_rejected - Assert...
+9 failed, 70 passed, 2 warnings in 2.32s

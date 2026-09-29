@@ -1,0 +1,1410 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-observe
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ec62-809e-7bd0-9c77-1b926a1afca4
+--------
+user
+You are Codex. READ-ONLY confirmation on branch kg/rebuild-observe. Your r2 report (ops/rebuild-2026-09-29/codex/verify-1.3-r2.md in the main repo) was APPROVE WITH EDITS with one P3: scripts/kaggriculture_observation_oracle/regenerate.py blamed a missing corpus on the resolved R1 quota blocker; report the missing manifest and the regeneration command and add a regression test. Verify commit dc6b200 does exactly that (and that the Rust-side missing-fixture message in src/kaggriculture/oracle_corpus.rs from your r1 P3 is no longer stale), with nothing else changed. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll compare `dc6b200` with its parent and the r2 finding, check both missing-fixture messages, and verify the regression without changing files. I’ll stop once the fix and commit scope are confirmed.
+
+exec
+/bin/zsh -lc "cat cookbook/index.md && sed -n '1,100p' cookbook/log.md && sed -n '1,180p' cookbook/references/structured-observations-preserve-legal-state-and-order.md && rg --files -g AGENTS.md -g '*verify-1.3-r2*' -g '*verify-1.3-r1*' -g '*observation*oracle*' -g '*oracle*test*'" in /Users/poonszesen/kg-v3-observe
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References describe branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]]
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Fix Task 1.3 verification round 1: retire the grammar bridge and guard pinned cases
+
+Codex's independent verification of `7b5eacd` found no encoder semantic defect but rejected on four findings. All four are fixed test-first:
+- The in-process pinned-memory probe could kill pytest on macOS (SIGSEGV). Pinned cases now run only with CUDA, as in the starter, and assert pinning.
+- The contract v4.1 grammar bridge is retired. Nine kernel tests moved to root `src/kaggriculture/grammar_kernel_tests.rs`; the engine file and its trim registration are removed; a decode mutation fails the root route.
+- Coverage docs now point to current receipts.
+- The missing-oracle error no longer asserts the obsolete quota diagnosis.
+
+`just prepare` passes: 254 root Rust (four ignored), 69 engine, 1,437 Python (six skipped). The [[references/structured-observations-preserve-legal-state-and-order|observation Reference]] carries the evidence. Optimized timing remains open.
+
+## 2026-09-29 — Qualify the structured observation oracle after Claude's R1 correction
+
+Claude reviewed Codex's incomplete Task 1.3 and merged integration, which brought the Task 2.1 schema and the Task 1.2 grammar. Claude then adopted seeded policy `observation-corpus-v2`: HIRE entries during hours 0–7, stopping at 16 hands. This makes R1's unchanged quota of more than 16 actors reachable, with 6 qualifying states.
+
+Results:
+- The frozen 512-state oracle (782 KB compressed) matches bitwise at all 8,176 offsets and reproduces byte for byte.
+- The real `check_contract()` accepts all 512 records.
+- Three restored mutations fail their oracles.
+- Two defects are fixed: the Mac pinned-memory probe, and the watchdog charging pre-existing caller RSS.
+- `just prepare` passes.
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation Reference]] carries the evidence. Optimized timing and the grammar-bridge retirement remain open.
+
+## 2026-09-29 — Implement structured native observations and record qualification blocks
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] now records the full native encoder, exact caller-buffer binding,
+source-bound oracle tooling and reconstruction controls. All 16 reconstruction
+mutations fail and restore; 43 custody and 55 native boundary checks pass. The
+snapshot counter fails with two acquisitions and passes with one. Full corpus
+qualification remains blocked by the unchanged R1 actor quota, actual-schema
+collection by Task 2.1, and optimized timing by the 1-GB Mac build limit. Final
+command outcomes and the pod handoff remain explicit in the linked receipt:
+233 root Rust passes/one corpus failure/four ignored, 59 engine passes and
+1,056 broad fast Python passes/three platform skips. Preparation gates retain
+the corpus and missing-schema failures; lint, typing and trim checks pass.
+
+## 2026-09-29 — Complete native observation fields and diagnostic validation
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] adds ordered shops, exact markets, live-row masks and complete-row
+checks. The 54-test B–F suite and Clippy pass; 72 corruptions are rejected.
+Late second-environment failure preserves both published rows, serial/two-worker
+results agree and reused dense buffers clear correctly. Corpus, Python binding,
+shared-schema admission and optimized timing remain unqualified.
+
+## 2026-09-29 — Preserve all actors and own private insertion order
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] adds exact actor/storage counts and ranks, public player facts and
+both-seat privacy controls. Twelve new semantic failures become passes; the
+combined B–E module passes 46 tests. Reversing actor/shed ranks fails two tests,
+then restoration and Clippy pass. Market/mask completion and corpus/schema
+qualification remain pending.
+
+## 2026-09-29 — Admit strict engine-shaped tiles before publication
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] adds all seven tile tensors and strict key/type/sentinel admission.
+Nine semantic failures become ten passing tile tests; the independent scan covers
+2,880 official states and 576,000 tiles. Transposing cell coordinates fails the
+asymmetric fixture; restoration and Clippy pass. Actors, markets, corpus and
+shared-schema qualification remain pending.
+
+## 2026-09-29 — Bind observation config and preserve exact hire costs
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] adds Task C's checked config, single-snapshot wrapper and exact
+Fibonacci cost prefix. All 24 B/C tests and Clippy pass; a rival-count mutation
+fails two hire tests and restoration passes. The pinned integer type lacks the
+brief's proposed Display API, so exact serialization is used only at config
+admission. Complete encoding, corpus and shared-schema checks remain pending.
+
+## 2026-09-29 — Add checked structured observation storage
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] records Task B's 29 named buffers, checked sizes, safe serial/Rayon
+views and atomic equal-capacity publication. Eleven boundary tests and Clippy
+pass; disabling a length check produces the expected failure and restoring it
+passes. State encoding and Python admission remain unfinished.
+
+## 2026-09-29 — Integrate root numeric features and expose an observation-corpus limit
+
+The [[references/structured-observations-preserve-legal-state-and-order|in-progress
+observation Reference]] records Task A: the decimal regression passes before
+feature unification, fails afterward, then passes with the test-only Number
+repair. Root tests: 157 passed, two ignored; trim checker OK. The prescribed R1
+corpus cannot supply four non-synthetic >16-actor states: the official selection
+has none and the seeded policy cannot hire that many before daily reset. Quotas
+remain unchanged. Task I still awaits the shared-schema merge; no completion or
+performance claim is made. Independent Task A review also prompted relabelling
+the restart Decision's no-root-dependency paragraph as the historical Task 1.1
+checkpoint.
+
+## 2026-09-29 — Point the grammar-table dependency at the Task 1.4 binding
+
+After the Task 1.2 merge (Codex APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1.md`), the Rust grammar tables exist and match the Python stand-in (964 bits, no mismatches). The [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|grammar-heads Reference]], its index line and `docs/model-architecture.md` now name the Task 1.4 Python binding as the remaining dependency, including for brief item 11 (recorded reference programs), which also needs model integration.
+
+---
+type: "Reference"
+title: "Structured observations preserve legal state and order"
+description: "Checked native observations and caller-owned buffers match a frozen 512-state pinned-reference oracle bitwise and pass the real Task 2.1 schema; optimized phase timing remains a pod handoff."
+tags: ["kaggriculture-v3", "adaptation", "observation"]
+status: "oracle-qualified-timing-pending"
+generated: {"by": "openai/codex; revised by anthropic/claude", "at": "2026-09-29"}
+sources:
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/1.3.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/progress.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/task-a.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/task-b.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/task-c.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/task-d.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/task-e.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/task-f.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/task-g.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/task-h.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/task-i.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/task-j.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/timing.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/g-input-generation.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/g-input-audit.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/g-recorder-compile.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/r1-blocker.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/claude-review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/independent-7b5eacd/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/r1-fixes/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.3/retire_grammar_bridge.py"
+  - resource: "repository:tests/fixtures/kaggriculture/observation-v3/manifest.json"
+  - resource: "repository:Cargo.toml"
+  - resource: "repository:Cargo.lock"
+  - resource: "repository:src/lib.rs"
+  - resource: "repository:src/kaggriculture/mod.rs"
+  - resource: "repository:src/kaggriculture/buffers.rs"
+  - resource: "repository:src/kaggriculture/config.rs"
+  - resource: "repository:src/kaggriculture/observe.rs"
+  - resource: "repository:src/kaggriculture/tests.rs"
+  - resource: "repository:src/kaggriculture/oracle_corpus.rs"
+  - resource: "repository:src/kaggriculture/grammar_kernel_tests.rs"
+  - resource: "repository:engine_rs/TRIM_MANIFEST.json"
+  - resource: "repository:scripts/check_engine_trim.py"
+  - resource: "repository:tests/tools/test_check_engine_trim.py"
+  - resource: "repository:src/rules_engine/generation.rs"
+  - resource: "repository:python/owl/rs.pyi"
+  - resource: "repository:scripts/kaggriculture_observation_oracle/record.rs"
+  - resource: "repository:scripts/kaggriculture_observation_oracle/regenerate.py"
+  - resource: "repository:tests/tools/test_observation_oracle_custody.py"
+  - resource: "repository:tests/kaggriculture/test_observe.py"
+  - resource: "repository:docs/rl-api-specs.md"
+  - resource: "repository:docs/rules-engine.md"
+  - resource: "repository:docs/rules-parity-coverage.md"
+  - resource: "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_features.rs"
+---
+
+# Structured observations preserve legal state and order
+
+The root native encoder and its explicit-header Python binding implement the
+reviewed contract v4, observation schema 3. A frozen oracle of 512 states and
+1,024 seat rows, recorded by the pinned reference `encode_invest`, matches the
+tensor-only reconstruction bitwise at all 8,176 offsets. The merged Task 2.1
+`check_contract()` accepts every emitted test batch and all 512 records.
+
+One qualification remains open. The optimized timing build exceeded the Mac
+memory limit, so phase costs are unmeasured and handed to the pod. Seeded corpus
+states come from Claude's reviewed R1 policy correction, `observation-corpus-v2`;
+the quota itself is unchanged.
+
+## Boundary and adaptation inventory
+
+- `Cargo.toml`, `Cargo.lock`: offline Cargo-managed root dependencies on the
+  unchanged kernel, ordered arbitrary-precision JSON and exact integer costs.
+- `src/rules_engine/generation.rs`: test-only Number decoding repairs L4 feature
+  unification. Production Orbit generation and parity tolerances are unchanged.
+- `src/lib.rs`, `src/kaggriculture/mod.rs`, `python/owl/rs.pyi`: register the
+  exact 29-argument writer in the existing extension, with typed fallible NumPy
+  borrowing and matching Python signature.
+- `src/kaggriculture/config.rs`, `observe.rs`: bind immutable checked config to
+  the game; validate exact counts, constructor-shaped tiles and finite derived
+  values before writing both legal seat views from one public snapshot. Exact
+  BigInt Fibonacci costs use each farm's own public hire count. Pinned PyInt has
+  no Display API, so constructor-only exact integer serialization plus checked
+  parsing supplies the required conversion; no live-state serialization is used.
+- `src/kaggriculture/buffers.rs`: 29 named typed buffers, checked lengths and byte
+  products, reusable storage, safe serial/Rayon views and equal-capacity publish.
+  The Python boundary checks complete shapes, native dtype, C layout, alignment,
+  writable borrows and disjoint byte intervals before making mutable slices.
+  Every environment is prepared before any output write; no replacement output
+  arrays are allocated. Borrow guards stay alive across detached native work.
+- `src/kaggriculture/tests.rs`: hand-derived values, private noninterference with
+  positive own-seat controls, exact insertion ranks, huge counts, atomic failure,
+  serial/two-worker equality, reuse, snapshot counter and optimized timing test.
+- `src/kaggriculture/oracle_corpus.rs`: test-only deterministic input recipes,
+  legacy-domain admission, tensor-only 8,176-offset reconstruction and streaming
+  bitwise comparison. Legacy limits do not constrain the production encoder.
+- `scripts/kaggriculture_observation_oracle/{record.rs,regenerate.py}`: the
+  recorder calls the actual pinned reference feature function in a verified
+  temporary export; custody validates source identity, record/seat hashes,
+  quotas, order and sizes. Source identity is fixed before execution and checked
+  before installation; the exported recorder bytes must match that identity.
+- `tests/tools/test_observation_oracle_custody.py`: corruption, source drift,
+  exported-recorder integrity, lossless byte-plane and resource-guard controls.
+- `tests/kaggriculture/test_observe.py`: direct imports of the real schema, all
+  named buffers, pointer/layout/alias/rollback assertions and streamed corpus
+  acceptance. There is no substitute schema or missing-dependency skip.
+- `docs/rl-api-specs.md`, `docs/rules-engine.md`, `docs/rules-parity-coverage.md`:
+  current interface, L4 repair, observation coverage and qualification limits.
+  The restart Decision and its index label root isolation as the historical
+  Task 1.1 checkpoint. This note, references index and log record the adaptation.
+- `ops/rebuild-2026-09-29/1.3/`: plans separated from actual red/green, mutations,
+  source hashes, bounded command logs, independent native smoke, quota audit and
+  timing receipts. The pre-closeout dirty note and checksum are preserved there.
+
+All new implementation is in the root crate. No vendored bytes, model, grammar,
+reward, policy or PPO implementation is changed. No Git write, training, GPU or
+network run was performed.
+
+## Independent evidence and its limits
+
+The L4 decimal test passed before dependency unification, failed afterward with
+`invalid type: map, expected f64`, then passed with Number conversion. The 54
+B–F tests cover native fields and boundaries; the independent tile scan reads
+2,880 official states / 576,000 tiles. Eight producer controls, eight legacy
+reconstruction/stream controls and five added-fact tests pass. Hand expectations
+cover every legacy offset and all reviewed boundaries, including the last actor
+and inventory element. Sixteen temporary H mutations fail, then restoration
+passes. Earlier length, coordinate, rank and rival-hire mutations also fail and
+are restored. The snapshot mutation observes two acquisitions against one;
+restoration passes with unchanged output allocations.
+
+The custody suite passed 43 tests at Codex's handoff and passes 45 after Claude's
+watchdog fix. Nine source-custody regressions fail before the capture/recheck
+repair and pass afterward.
+
+Codex's handoff (`results.md`) stopped at two failures. The first was R1: the v1
+seeded policy reaches at most 9 actors, because it hires on at most two of every
+eight turns and end_of_day clears hands, so zero states met the quota of four.
+The second was that the Task 2.1 schema had not merged.
+
+Claude merged integration, which brought the schema and the Task 1.2 grammar,
+moved the grammar declaration into `src/kaggriculture/mod.rs`, and adopted
+policy v2. Policy v2 appends HIRE entries during hours 0–7, up to `min(M,4)`
+entries, and stops at 16 hands. Actual generation yields 6 qualifying states
+(4 without the stop). Every other quota passes; zero reordered non-synthetic
+sheds relies only on the reviewed dense d30/d31 exception.
+
+`regenerate.py` built and ran the pinned reference crate in 43 seconds. The raw
+reference is 33,488,896 bytes, and both files total 781,743 bytes compressed,
+within the 8 MiB budget. A second regeneration at a later commit reproduced both
+compressed files byte for byte.
+
+Three mutations show the checks discriminate, and each was restored:
+- An encoder market-channel swap fails the comparison at offset 889.
+- A one-byte reference corruption fails custody.
+- Reversed shed ranks fail the real-schema corpus test.
+
+Codex's independent verification of `7b5eacd` found no encoder semantic defect
+but rejected on four findings, all fixed test-first (`r1-fixes/results.md`).
+The in-process pinned-memory probe could kill pytest (SIGSEGV) on macOS, so the
+pinned cases now run only where CUDA is available, as in the starter, and then
+assert every buffer is pinned. The contract v4.1 grammar bridge is retired (see
+below). Coverage docs point to current receipts, and the missing-oracle error
+no longer asserts the obsolete R1 quota diagnosis.
+
+After those fixes `just prepare` passes:
+- root Rust: 254 passed, four ignored
+- engine: 69 passed
+- Python: 1,437 passed, six skipped (two are the CUDA-guarded pinned cases)
+
+Claude's earlier review also fixed the watchdog, which had charged the caller's
+pre-existing memory (pytest with torch, over 1 GB) to child commands. Receipts
+are in `claude-review.md` and `r1-fixes/`.
+
+The fat-LTO release build stops after 53.81 seconds at sampled aggregate RSS
+1,052,393,472 bytes. No test body or phase costs are measured. `timing.json`
+contains the exact pod handoff command; debug costs are not substituted. The
+snapshot still clones both private inventories internally. Stable output storage
+is not a zero-copy or end-to-end throughput claim.
+
+AGENTS.md
+ops/rebuild-2026-09-29/1.2/logs/oracle-format-tests-final.log
+tests/tools/test_observation_oracle_custody.py
+
+exec
+/bin/zsh -lc 'git status --short && git branch --show-current && git rev-parse HEAD && git worktree list && git show --stat --oneline --decorate --no-renames dc6b200 && git diff-tree --no-commit-id --name-status -r dc6b200' in /Users/poonszesen/kg-v3-observe
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+?? ops/rebuild-2026-09-29/1.3/codex-verify-engine-serial.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-engine-serial.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-engine.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-engine.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-kaggriculture-nosync.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-kaggriculture-nosync.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-kaggriculture.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-kaggriculture.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-mutant.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-mutant.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-mutation.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-mutation.py
+?? ops/rebuild-2026-09-29/1.3/codex-verify-observe-custody-unpinned.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-observe-custody-unpinned.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-agent-test_agent.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-agent-test_agent.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-agent-test_kaggle_engine_sanitization.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-agent-test_kaggle_engine_sanitization.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-agent-test_kaggle_observation.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-agent-test_kaggle_observation.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-model-test_attn.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-model-test_attn.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-model-test_model_config_files.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-model-test_model_config_files.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-model-test_recurrent_transformer_v1.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-model-test_recurrent_transformer_v1.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-model-test_stateless_transformer_v1.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-model-test_stateless_transformer_v1.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-model-test_teacher_targets.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-model-test_teacher_targets.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-shards.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-shards.py
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-test_checkpoint_quantization.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-test_checkpoint_quantization.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-test_config.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-test_config.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-test_int8_emulation.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-test_int8_emulation.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-test_replay.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-test_replay.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-test_rl.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-test_rl.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_advantages.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_advantages.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_config.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_config.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_distributed.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_distributed.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_logging.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_logging.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_loss.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_loss.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_metrics.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_metrics.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_optimizer.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_optimizer.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_ppo.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_ppo.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_ppo_observation_mapping.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-orbit-train-test_ppo_observation_mapping.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-pinned-repro.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-pinned-repro.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-python-build.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-python-build.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-python-shards.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-python-shards.py
+?? ops/rebuild-2026-09-29/1.3/codex-verify-restored-root.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-restored-root.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-review.md
+?? ops/rebuild-2026-09-29/1.3/codex-verify-root.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-root.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_base_generics_typing.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_base_generics_typing.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_gpu_grammar.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_gpu_grammar.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_model_encoder.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_model_encoder.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_model_heads.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_model_heads.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_observe.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_observe.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_types.json
+?? ops/rebuild-2026-09-29/1.3/codex-verify-shard-test_types.log
+?? ops/rebuild-2026-09-29/1.3/codex-verify-summary.json
+?? ops/rebuild-2026-09-29/1.3/independent-8247ee2/
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+kg/rebuild-observe
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+dc6b2005516327dbe7b5bfd05ef8da4c3b0c6f05
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+/Users/poonszesen/kg-v3                                            a78f609 [kg/rebuild-model]
+/Users/poonszesen/kg-v3-aten                                       b2ef2bd [kg/rebuild-aten]
+/Users/poonszesen/kg-v3-codex                                      5378763 [kg/rebuild-codex]
+/Users/poonszesen/kg-v3-codex-data                                 9d54a8b [kg/rebuild-codex-data]
+/Users/poonszesen/kg-v3-configs                                    71cebdb [kg/rebuild-configs]
+/Users/poonszesen/kg-v3-deps                                       c452f66 [kg/rebuild-deps]
+/Users/poonszesen/kg-v3-envbriefs                                  bb0f7e4 [kg/rebuild-env-briefs]
+/Users/poonszesen/kg-v3-gpuchecks                                  a78f609 [kg/rebuild-gpu-checks]
+/Users/poonszesen/kg-v3-grammar                                    7877c46 [kg/rebuild-grammar]
+/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2   65f0eac (detached HEAD)
+/Users/poonszesen/kg-v3-heads                                      88f95f6 [kg/rebuild-heads]
+/Users/poonszesen/kg-v3-int                                        f4ecd90 [kg/isaiah-gap-closure]
+/Users/poonszesen/kg-v3-merge3                                     f464c3d [kg/merge-grammar]
+/Users/poonszesen/kg-v3-merge4                                     f4ecd90 [kg/merge-trainer-lanes]
+/Users/poonszesen/kg-v3-observe                                    dc6b200 [kg/rebuild-observe]
+/Users/poonszesen/kg-v3-parity                                     16e56b6 [kg/rebuild-parity]
+/Users/poonszesen/kg-v3-semantics                                  530b8cc [kg/rebuild-semantics]
+/Users/poonszesen/kg-v3-trainer-model                              8fde43c [kg/rebuild-trainer-model]
+/Users/poonszesen/kg-v3-verify-b                                   94f778d (detached HEAD)
+/Users/poonszesen/kg-v3/.claude/worktrees/agent-a6b402c3efeaea928  62899de [worktree-agent-a6b402c3efeaea928]
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+dc6b200 (HEAD -> kg/rebuild-observe) Name the missing manifest and regeneration command in the corpus error
+ scripts/kaggriculture_observation_oracle/regenerate.py |  4 +++-
+ tests/tools/test_observation_oracle_custody.py         | 11 +++++++++++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+M	scripts/kaggriculture_observation_oracle/regenerate.py
+M	tests/tools/test_observation_oracle_custody.py
+
+exec
+/bin/zsh -lc "sed -n '1,190p' tests/tools/test_observation_oracle_custody.py && sed -n '1,160p' scripts/kaggriculture_observation_oracle/regenerate.py && rg -n -C 5 'manifest|quota|missing|not.*exist' src/kaggriculture/oracle_corpus.rs && rg -n -C 4 'def validate|regenerate|ArgumentParser|__main__' scripts/kaggriculture_observation_oracle/regenerate.py && rg -n 'pytest|pythonpath|filterwarnings|addopts' pyproject.toml && rg --files -g conftest.py -g '*python*' .venv/bin" in /Users/poonszesen/kg-v3-observe
+ succeeded in 0ms:
+from __future__ import annotations
+
+import copy
+import gzip
+import hashlib
+import importlib.util
+import io
+import json
+import os
+import signal
+import struct
+import subprocess
+import sys
+import tarfile
+import time
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+ROOT = Path(__file__).parents[2]
+SPEC = importlib.util.spec_from_file_location(
+    "observation_oracle",
+    ROOT / "scripts/kaggriculture_observation_oracle/regenerate.py",
+)
+assert SPEC is not None
+assert SPEC.loader is not None
+oracle = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(oracle)
+
+
+def sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def encoded(value: object) -> bytes:
+    return json.dumps(value, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def fixture(directory: Path) -> tuple[dict[str, Any], list[dict[str, Any]], bytes]:
+    with gzip.open(ROOT / "engine_rs/fixtures/episode-95324500.jsonl.gz", "rt") as f:
+        original = json.loads(next(f))
+        transition = json.loads(next(f))
+    header = {
+        key: original[key]
+        for key in (
+            "format",
+            "seed",
+            "configuration",
+            "shop_schedule",
+            "rng_schedule",
+            "initial",
+            "terminal_banks",
+            "transitions",
+        )
+    }
+    header.update(shop_schedule=[], rng_schedule=[], terminal_banks=[], transitions=0)
+    second = copy.deepcopy(header)
+    second["initial"] = {
+        "public": transition["expected"],
+        "privates": transition["privates"],
+    }
+    rows = [
+        {
+            "record_id": f"official:95324500:{i}",
+            "source": {"kind": "official", "episode": 95324500, "step": i},
+            "header": h,
+        }
+        for i, h in enumerate((header, second))
+    ]
+    features = b"".join(struct.pack("<f", i + 0.25) * 8176 for i in range(4))
+    identity = {
+        "root_commit": "a" * 40,
+        "dirty_files": {"src/kaggriculture/oracle_corpus.rs": "b" * 64},
+        "engine": {k: "b" * 64 for k in ("trim_manifest", "lib", "lock")},
+        "reference_commit": "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0",
+        "feature_sha256": (
+            "24a7d09f9ddf8196aed7e5dc3b18d7590562370d697c8407f95b4cc8b4f9a6ab"
+        ),
+        "recorder_sha256": "b" * 64,
+        "driver_sha256": "b" * 64,
+        "producer_sha256": "b" * 64,
+        "versions": {k: "test" for k in ("rustc", "cargo", "python")},
+        "argv": [["tiny-fixture"]],
+        "official_fixtures": {
+            str(k): "b" * 64 for k in (95324500, 95901360, 95921764, 95990191)
+        },
+    }
+    manifest = {
+        "format": "kaggriculture-observation-oracle-f32le-gzip-v1",
+        "schema_version": 1,
+        "observation_schema": 3,
+        "contract_version": 4,
+        "source_identity": identity,
+        "profiles": oracle.PROFILES,
+        "policy": "observation-corpus-v2",
+        "seed_runs": [],
+        "source_counts": {"official": 2, "seeded": 0, "dense": 0},
+        "records": [
+            {
+                "record_id": r["record_id"],
+                "source": r["source"],
+                "header_sha256": sha(encoded(r["header"])),
+                "seat_sha256": [
+                    sha(features[(2 * i + s) * 32704 : (2 * i + s + 1) * 32704])
+                    for s in range(2)
+                ],
+            }
+            for i, r in enumerate(rows)
+        ],
+        "files": {},
+        "reference_shape": [2, 2, 8176],
+        "dtype": "<f4",
+        "coverage": oracle.count_coverage(rows),
+    }
+    install(directory, manifest, rows, features)
+    return manifest, rows, features
+
+
+def install(
+    directory: Path,
+    manifest: dict[str, Any],
+    rows: list[dict[str, Any]],
+    features: bytes,
+) -> None:
+    directory.mkdir(exist_ok=True)
+    for name, raw in (
+        ("states.jsonl.gz", b"".join(encoded(r) + b"\n" for r in rows)),
+        ("reference.f32le.gz", features),
+    ):
+        compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+        (directory / name).write_bytes(compressed)
+        manifest["files"][name] = {
+            "compressed_size": len(compressed),
+            "expanded_size": len(raw),
+            "compressed_sha256": sha(compressed),
+            "expanded_sha256": sha(raw),
+        }
+    (directory / "manifest.json").write_bytes(encoded(manifest))
+
+
+def test_two_record_fixture_validates(tmp_path: Path) -> None:
+    fixture(tmp_path)
+    oracle.validate_corpus(tmp_path, expected_records=2)
+
+
+@pytest.mark.parametrize(
+    "damage",
+    [
+        "byte",
+        "header_order",
+        "duplicate",
+        "missing",
+        "seat_swap",
+        "length",
+        "version",
+        "unknown",
+        "source",
+        "duplicate_json_key",
+        "coverage",
+    ],
+)
+def test_custody_rejects_corruption_even_with_rehashed_files(
+    tmp_path: Path, damage: str
+) -> None:
+    manifest, rows, features = fixture(tmp_path)
+    if damage == "byte":
+        features = bytes([features[0] ^ 1]) + features[1:]
+    elif damage == "header_order":
+        inv = rows[0]["header"]["initial"]["privates"][0]["shed"]
+        key = next(iter(inv))
+        inv[key] = inv.pop(key)
+    elif damage == "duplicate":
+        rows[1]["record_id"] = rows[0]["record_id"]
+        manifest["records"][1]["record_id"] = rows[0]["record_id"]
+    elif damage == "missing":
+        rows.pop()
+    elif damage == "seat_swap":
+        features = features[32704:65408] + features[:32704] + features[65408:]
+    elif damage == "length":
+        features = features[:-4]
+    elif damage == "version":
+        manifest["schema_version"] = 2
+    elif damage == "unknown":
+        manifest["unreviewed"] = True
+    elif damage == "source":
+        rows[0]["source"]["kind"] = "borrowed"
+    elif damage == "coverage":
+        manifest["coverage"]["non_synthetic"]["actor_gt16_states"] += 4
+    install(tmp_path, manifest, rows, features)
+"""Record the pinned reference encoder; validate custody without rebuilding it.
+
+The Rust input producer owns gameplay and the recipe. This driver only validates
+metadata, counts coverage, moves bytes, and invokes the original reference crate.
+"""
+
+from __future__ import annotations
+
+import argparse
+import contextlib
+import copy
+import ctypes
+import gzip
+import hashlib
+import io
+import json
+import os
+import re
+import shutil
+import signal
+import subprocess
+import sys
+import tarfile
+import tempfile
+import time
+from collections.abc import Iterable, Iterator
+from pathlib import Path
+from typing import Any, BinaryIO
+
+ROOT = Path(__file__).resolve().parents[2]
+PIN = "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0"
+FEATURE_SHA = "24a7d09f9ddf8196aed7e5dc3b18d7590562370d697c8407f95b4cc8b4f9a6ab"
+FORMAT = "kaggriculture-observation-oracle-f32le-gzip-v1"
+SHUFFLED_FORMAT = "kaggriculture-observation-oracle-f32le-byteplanes-gzip-v1"
+FEATURES = 8176
+SEAT_BYTES = FEATURES * 4
+EPISODES = (95324500, 95901360, 95921764, 95990191)
+OFFICIAL_STEPS = [*range(32), *range(344, 376), *range(687, 719)]
+PROFILES = [
+    [96, 24, 10, 1, 100, 3, 4, 24, 3000, 0.005],
+    [96, 12, 4, 3, 64, 2, 3, 12, 7500, 0.0],
+    [96, 8, 3, 0, 17, 1, 2, 8, 12345, 0.02],
+    [96, 6, 1, 7, 256, 5, 7, 9, 40000, 0.01],
+    [96, 30, 8, 2, 500, 4, 5, 30, 9000, 0.125],
+    [96, 16, 5, 5, 33, 2, 4, 16, 100000, 1.0],
+]
+ITEMS = [
+    "WHEAT",
+    "CARROT",
+    "TOMATO",
+    "STRAWBERRY",
+    "MELON",
+    "EGG",
+    "MILK",
+    "WOOL",
+    "FERTILIZER",
+    "GOOSE",
+    "COW",
+    "SHEEP",
+]
+COVERAGE_TAGS = [
+    "records",
+    *[f"tile_{s}" for s in ("EMPTY", "LOCKED", "WEED", "PLANT", "COOP", "PASTURE")],
+    *[f"crop_{s}" for s in ITEMS[:5]],
+    *[f"animal_{s}" for s in ITEMS[9:]],
+    "fert_current",
+    "fert_expired",
+    "unwatered",
+    "unfed",
+    "actor_gt16_states",
+    "reordered_inventories",
+    "reordered_sheds",
+    "shops_ge4_states",
+    "both_hires_nonzero_states",
+]
+MAX_COMPRESSED = 8 * 1024**2
+MAX_EXPANDED = 128 * 1024**2
+MAX_ROW = 2 * 1024**2
+# A shared Unix deadline spans Mac Python 3.9/3.11 process clock differences.
+# Convert once to this process's monotonic clock, leaving five seconds to clean up.
+RUN_DEADLINE = (
+    time.monotonic()
+    + min(
+        115.0,
+        float(os.environ.get("KG_BOUNDED_DEADLINE_UNIX", time.time() + 115))
+        - time.time(),
+    )
+    - 5
+)
+COMMAND_RECEIPTS: list[dict[str, Any]] = []
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ValueError(message)
+
+
+def obj(value: Any, keys: Iterable[str], label: str) -> dict[str, Any]:
+    expected = tuple(keys)
+    require(
+        isinstance(value, dict) and set(value) == set(expected),
+        f"{label}: exact schema keys {list(expected)} required",
+    )
+    return value
+
+
+def integer(value: Any, label: str, minimum: int = 0) -> int:
+    require(
+        type(value) is int and value >= minimum,
+        f"{label}: integer >= {minimum} required",
+    )
+    return value
+
+
+def digest(value: Any, label: str) -> str:
+    require(
+        isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None,
+        f"{label}: SHA-256 required",
+    )
+    return value
+
+
+def sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def hash_file(path: Path) -> str:
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        require(key not in result, f"duplicate JSON key {key!r}")
+        result[key] = value
+    return result
+
+
+def parse(raw: str | bytes) -> Any:
+    def reject(value: str) -> None:
+        raise ValueError(f"nonfinite JSON number: {value}")
+
+    return json.loads(raw, object_pairs_hook=_pairs, parse_constant=reject)
+
+
+def json_bytes(value: Any) -> bytes:
+    return json.dumps(
+        value, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode()
+
+
+def header_bytes(raw: bytes) -> bytes:
+    """Retain Rust's number spelling and nested key order, rather than re-encoding."""
+    text = raw.decode()
+    decoder = json.JSONDecoder()
+    at = text.index("{") + 1
+    while True:
+        while text[at].isspace() or text[at] == ",":
+            at += 1
+311-        3
+312-    );
+313-}
+314-
+315-#[test]
+316:fn producer_strict_record_and_quota_guard_reject_bad_inputs() {
+317-    let header = native_header(Config::default(), 42).unwrap();
+318-    let mut row = json!({"record_id":"dense:0","source":{"kind":"dense","case":0},"header":header});
+319-    assert!(serde_json::from_value::<OracleRecord>(row.clone()).is_ok());
+320-    row["extra"] = json!(1);
+321-    assert!(serde_json::from_value::<OracleRecord>(row.clone()).is_err());
+322-    row.as_object_mut().unwrap().shift_remove("extra");
+323-    row["header"]["extra"] = json!(1);
+324-    assert!(serde_json::from_value::<OracleRecord>(row).is_err());
+325:    assert!(quota_error(
+326-        &json!({"non_synthetic":{"actor_gt16_states":0},"dense":{},"shed_order_exception":false})
+327-    )
+328-    .is_err());
+329-}
+330-
+--
+847-    result?;
+848-    require(output.status.success(), "shasum failed")?;
+849-    let hash = String::from_utf8(output.stdout)?
+850-        .split_whitespace()
+851-        .next()
+852:        .ok_or("missing SHA-256")?
+853-        .to_owned();
+854-    require(
+855-        hash.len() == 64 && hash.bytes().all(|byte| byte.is_ascii_hexdigit()),
+856-        "invalid shasum output",
+857-    )?;
+858-    Ok(hash)
+859-}
+860-
+861-fn verify_fixture_hash(episode: u64) -> CorpusResult<PathBuf> {
+862-    let relative = format!("engine_rs/fixtures/episode-{episode}.jsonl.gz");
+863:    let manifest: Value =
+864-        serde_json::from_reader(File::open(root().join("engine_rs/TRIM_MANIFEST.json"))?)?;
+865:    let retained = manifest["retained"]
+866-        .as_array()
+867:        .ok_or("trim manifest retained list")?;
+868-    let entry = retained
+869-        .iter()
+870-        .find(|entry| entry["path"] == relative)
+871:        .ok_or("fixture missing from trim manifest")?;
+872:    let expected = entry["sha256"].as_str().ok_or("fixture SHA-256 missing")?;
+873-    let path = root().join(&relative);
+874-    let output = Command::new("shasum")
+875-        .args(["-a", "256"])
+876-        .arg(&path)
+877-        .output()?;
+--
+1042-    require(
+1043-        snapshot.public.farms.len() == expected_farms.len(),
+1044-        "official farm count mismatch",
+1045-    )?;
+1046-    for (actual, expected) in snapshot.public.farms.iter().zip(expected_farms) {
+1047:        let money = expected["money"].as_f64().ok_or("official money missing")?;
+1048-        require(
+1049-            actual.money.to_bits() == money.to_bits(),
+1050-            format!("{context}: money bits differ"),
+1051-        )?;
+1052-    }
+--
+1219-            let kind = if tile.is_null() {
+1220-                "EMPTY"
+1221-            } else if tile == "LOCKED" {
+1222-                "LOCKED"
+1223-            } else {
+1224:                tile["kind"].as_str().ok_or("coverage tile kind missing")?
+1225-            };
+1226-            increment(coverage, &format!("tile_{kind}"))?;
+1227-            if kind == "PLANT" {
+1228-                increment(
+1229-                    coverage,
+1230-                    &format!(
+1231-                        "crop_{}",
+1232:                        tile["crop"].as_str().ok_or("coverage crop missing")?
+1233-                    ),
+1234-                )?;
+1235-                let fert = tile["fertilized_until_day"]
+1236-                    .as_i64()
+1237:                    .ok_or("coverage fertilizer deadline missing")?;
+1238-                if i128::from(fert) >= public.day as i128 {
+1239-                    increment(coverage, "fert_current")?;
+1240-                }
+1241-                if fert >= 0 && i128::from(fert) < public.day as i128 {
+1242-                    increment(coverage, "fert_expired")?;
+1243-                }
+1244-                if tile["consecutive_unwatered"]
+1245-                    .as_i64()
+1246:                    .ok_or("coverage unwatered missing")?
+1247-                    > 0
+1248-                {
+1249-                    increment(coverage, "unwatered")?;
+1250-                }
+1251-            }
+1252-            if let Some(animal) = tile.get("animal") {
+1253-                increment(
+1254-                    coverage,
+1255-                    &format!(
+1256-                        "animal_{}",
+1257:                        animal.as_str().ok_or("coverage animal missing")?
+1258-                    ),
+1259-                )?;
+1260-                if tile["consecutive_unfed"]
+1261-                    .as_i64()
+1262:                    .ok_or("coverage unfed missing")?
+1263-                    > 0
+1264-                {
+1265-                    increment(coverage, "unfed")?;
+1266-                }
+1267-            }
+1268-        }
+1269-    }
+1270-    Ok(())
+1271-}
+1272-
+1273:fn quota_error(coverage: &Value) -> CorpusResult<()> {
+1274-    let non = coverage["non_synthetic"]
+1275-        .as_object()
+1276:        .ok_or("non-synthetic coverage missing")?;
+1277-    let mut failures = Vec::new();
+1278-    for tag in COVERAGE_TAGS {
+1279-        let minimum = match tag {
+1280-            "records" => 480,
+1281-            "tile_EMPTY"
+--
+1291-            _ => 4,
+1292-        };
+1293-        let count = non
+1294-            .get(tag)
+1295-            .and_then(Value::as_u64)
+1296:            .ok_or_else(|| format!("coverage count missing: {tag}"))?;
+1297-        if count < minimum {
+1298-            failures.push(format!("{tag}={count} < {minimum}"));
+1299-        }
+1300-    }
+1301-    require(
+1302-        failures.is_empty(),
+1303-        format!(
+1304:            "R1 non-synthetic coverage quotas failed: {}",
+1305-            failures.join(", ")
+1306-        ),
+1307-    )
+1308-}
+1309-
+1310-fn produce_all(directory: &Path) -> CorpusResult<()> {
+1311-    for name in [
+1312:        "manifest.json",
+1313-        "states.jsonl.gz",
+1314-        "reference.f32le.gz",
+1315-        "states.jsonl",
+1316-        "generation.json",
+1317-    ] {
+--
+1385-    // Retain actual coverage and seed hashes even when the fixed R1 recipe fails.
+1386-    require(
+1387-        records == 512,
+1388-        format!("corpus contains {records} records, expected 512"),
+1389-    )?;
+1390:    quota_error(&coverage)
+1391-}
+1392-
+1393-#[test]
+1394-#[ignore = "explicit bounded oracle generation; R1 coverage failure blocks final publication"]
+1395-fn generate_observation_oracle_inputs() {
+--
+2176-        ReferenceFeatures::open(&scratch.directory.join("absent"), "unknown-format", 20).is_err()
+2177-    );
+2178-}
+2179-
+2180-fn compare_corpus_streams(directory: &Path) -> CorpusResult<()> {
+2181:    let manifest_path = directory.join("manifest.json");
+2182-    require(
+2183:        manifest_path.is_file(),
+2184-        format!(
+2185:            "observation oracle fixture missing: {} not found; regenerate it with \
+2186-             scripts/kaggriculture_observation_oracle/regenerate.py --output {}",
+2187:            manifest_path.display(),
+2188-            directory.display()
+2189-        ),
+2190-    )?;
+2191:    // Admission checks hashes, exact record/source identity, all coverage quotas,
+2192-    // record order and per-seat byte blocks before any tensor comparison. The
+2193-    // existing environment is reused: nested editable Cargo builds are forbidden.
+2194-    let validation = Command::new("uv")
+2195-        .current_dir(root())
+2196-        .args([
+--
+2206-        .status()?;
+2207-    require(
+2208-        validation.success(),
+2209-        "source-bound observation oracle custody validation failed",
+2210-    )?;
+2211:    let manifest: Value = serde_json::from_reader(File::open(manifest_path)?)?;
+2212-    require(
+2213:        manifest["reference_shape"] == json!([512, 2, LEGACY_FEATURES]),
+2214-        "reference shape differs from [512,2,8176]",
+2215-    )?;
+2216:    let format = manifest["format"]
+2217-        .as_str()
+2218:        .ok_or("missing reference format")?;
+2219-    let mut states = GzipReader::open(&directory.join("states.jsonl.gz"))?;
+2220-    let mut features =
+2221-        ReferenceFeatures::open(&directory.join("reference.f32le.gz"), format, 33_488_896)?;
+2222-    let mut output = super::ObsStaging::new(1)?;
+2223-    for record_index in 0..512 {
+2224-        let record: OracleRecord =
+2225-            serde_json::from_value(read_json_line(&mut states, "oracle state")?)?;
+2226-        require(
+2227:            manifest["records"][record_index]["record_id"] == record.record_id,
+2228:            format!("record order differs from admitted manifest at {record_index}"),
+2229-        )?;
+2230-        validate_legacy_domain(&record.header)?;
+2231-        let game = super::ObservationGame::from_header(&record.header)?;
+2232-        let mut buffers = output.buffers_mut();
+2233-        let mut env = buffers
+2234-            .envs_mut()
+2235-            .next()
+2236:            .ok_or("missing output environment")?;
+2237-        super::encode_env(&game, &mut env)?;
+2238-        for (seat, row) in env.seats.iter().enumerate() {
+2239-            super::check_row(row)?;
+2240-            let mut bytes = [0_u8; LEGACY_FEATURES * 4];
+2241-            features.read_exact(&mut bytes).map_err(|error| {
+--
+2256-    states.finish()?;
+2257-    features.finish()
+2258-}
+2259-
+2260-#[test]
+2261:fn missing_observation_oracle_names_files_and_regeneration_only() {
+2262-    let scratch = FeatureScratch::new().unwrap();
+2263-    let message = compare_corpus_streams(&scratch.directory)
+2264-        .unwrap_err()
+2265-        .to_string();
+2266:    assert!(message.contains("manifest.json"), "{message}");
+2267-    assert!(message.contains("regenerate.py"), "{message}");
+2268:    // Absent files are not coverage evidence; no quota diagnosis is asserted.
+2269:    assert!(!message.contains("quota"), "{message}");
+2270-    assert!(!message.contains("0 < 4"), "{message}");
+2271-}
+2272-
+2273-#[test]
+2274-fn compare_observation_oracle() {
+366-    )
+367-    return coverage
+368-
+369-
+370:def validate_dense_pair(first: dict[str, Any], second: dict[str, Any]) -> None:
+371-    expected = copy.deepcopy(first)
+372-    private = expected["initial"]["privates"][0]
+373-    for mapping in (private["inventories"][0], private["shed"]):
+374-        require(len(mapping) > 1, "dense d30/d31 needs nontrivial rank change")
+--
+620-        f"{path.name}: expanded size/hash mismatch",
+621-    )
+622-
+623-
+624:def validate_corpus(directory: Path, *, expected_records: int = 512) -> None:
+625-    """Validate all declared bytes; tiny-test scope never bypasses final512 quotas."""
+626-    require(
+627-        (directory / "manifest.json").is_file(),
+628-        "qualified observation corpus missing: "
+629:        f"{directory / 'manifest.json'} not found; regenerate it with `uv run python "
+630:        "scripts/kaggriculture_observation_oracle/regenerate.py --output <dir>`",
+631-    )
+632-    manifest = obj(
+633-        parse((directory / "manifest.json").read_bytes()),
+634-        (
+--
+918-    )
+919-    return hashes
+920-
+921-
+922:def validate_inputs(path: Path, generation: dict[str, Any]) -> None:
+923-    """Recount the producer's actual stream before spending on a reference build."""
+924-    coverage = empty_coverage()
+925-    sources = []
+926-    ids: set[str] = set()
+--
+968-    "src/kaggriculture/observe.rs",
+969-    "src/kaggriculture/tests.rs",
+970-    "src/kaggriculture/oracle_corpus.rs",
+971-    "scripts/kaggriculture_observation_oracle/record.rs",
+972:    "scripts/kaggriculture_observation_oracle/regenerate.py",
+973-)
+974-ENGINE_PATHS = (
+975-    ("trim_manifest", "engine_rs/TRIM_MANIFEST.json"),
+976-    ("lib", "engine_rs/src/lib.rs"),
+--
+1002-            f"source bytes changed during regeneration: {path}",
+1003-        )
+1004-
+1005-
+1006:def regenerate(output: Path, reference: str) -> None:
+1007-    require(reference == PIN, "only the reviewed reference commit is supported")
+1008-    require(
+1009-        not output.exists(),
+1010-        "output directory already exists; refusing fixture replacement",
+--
+1128-                "reference_commit": PIN,
+1129-                "feature_sha256": FEATURE_SHA,
+1130-                "recorder_sha256": recorder_sha,
+1131-                "driver_sha256": source_hashes[
+1132:                    "scripts/kaggriculture_observation_oracle/regenerate.py"
+1133-                ],
+1134-                "producer_sha256": source_hashes["src/kaggriculture/oracle_corpus.rs"],
+1135-                "versions": {
+1136-                    "rustc": run(["rustc", "--version"]).decode().strip(),
+--
+1188-            staged.rename(output)
+1189-
+1190-
+1191-def main() -> None:
+1192:    parser = argparse.ArgumentParser(description=__doc__)
+1193-    parser.add_argument("--reference", default=PIN)
+1194-    parser.add_argument("--output", type=Path, required=True)
+1195-    parser.add_argument("--check", action="store_true")
+1196-    args = parser.parse_args()
+1197-    if args.check:
+1198-        validate_corpus(args.output)
+1199-        print("observation oracle custody: OK (512 states, 1,024 seats)")
+1200-    else:
+1201:        regenerate(args.output, args.reference)
+1202-
+1203-
+1204:if __name__ == "__main__":
+1205-    main()
+26:    "pytest>=9.0.3",
+130:[tool.pytest.ini_options]
+131:addopts = "-ra"
+.venv/bin/python-grpc-tools-protoc
+
+exec
+/bin/zsh -lc 'cat /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-1.3-r2.md && git show --format=fuller --no-ext-diff --no-renames dc6b200 && git diff --exit-code HEAD -- scripts/kaggriculture_observation_oracle/regenerate.py tests/tools/test_observation_oracle_custody.py src/kaggriculture/oracle_corpus.rs && git diff --check dc6b200''^ dc6b200' in /Users/poonszesen/kg-v3-observe
+ succeeded in 0ms:
+Verified the three-dot diff at `8247ee2`. No encoder semantic defect found.
+
+**P3 — stale diagnostic:** [regenerate.py:628](/Users/poonszesen/kg-v3-observe/scripts/kaggriculture_observation_oracle/regenerate.py:628) attributes a missing corpus to the resolved R1 quota blocker. Fix: report the missing manifest and regeneration command, add a regression, and reconcile the related cookbook claim.
+
+| Check | Result |
+|---|---|
+| Engine Rust | 69 passed |
+| Root Rust, including Orbit | 254 passed, 4 ignored |
+| Kaggriculture Python | 311 passed, 3 skipped |
+| Orbit Python | 787 passed, 3 skipped |
+| Custody/trim Python | 124 passed |
+| Trim checker and restored `rs-prepare` | Passed |
+
+Python coverage completed in bounded batches after the combined run exceeded 1 GB.
+
+The 512-state oracle passes. Swapping production market channels failed at offset 889; restoration was byte-for-byte and subsequent checks passed. Vendored bytes remain unchanged.
+
+Optimized timing and CUDA paths remain unqualified. All 1,500 tracked files match their starting bytes.
+
+[Full verification report](/Users/poonszesen/kg-v3-observe/ops/rebuild-2026-09-29/1.3/independent-8247ee2/review.md)
+
+VERDICT: APPROVE WITH EDITSgit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+commit dc6b2005516327dbe7b5bfd05ef8da4c3b0c6f05
+Author:     Season <seasonluke@gmail.com>
+AuthorDate: Tue Sep 29 16:57:53 2026 +0800
+Commit:     Season <seasonluke@gmail.com>
+CommitDate: Tue Sep 29 16:57:53 2026 +0800
+
+    Name the missing manifest and regeneration command in the corpus error
+    
+    Task 1.3 verify r2 P3: the diagnostic still blamed the resolved R1 quota
+    blocker. Regression test first (failed, then passes).
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+diff --git a/scripts/kaggriculture_observation_oracle/regenerate.py b/scripts/kaggriculture_observation_oracle/regenerate.py
+index 7f701c4..c6efa5c 100644
+--- a/scripts/kaggriculture_observation_oracle/regenerate.py
++++ b/scripts/kaggriculture_observation_oracle/regenerate.py
+@@ -625,7 +625,9 @@ def validate_corpus(directory: Path, *, expected_records: int = 512) -> None:
+     """Validate all declared bytes; tiny-test scope never bypasses final512 quotas."""
+     require(
+         (directory / "manifest.json").is_file(),
+-        "qualified observation corpus missing; R1 coverage dependency unresolved",
++        "qualified observation corpus missing: "
++        f"{directory / 'manifest.json'} not found; regenerate it with `uv run python "
++        "scripts/kaggriculture_observation_oracle/regenerate.py --output <dir>`",
+     )
+     manifest = obj(
+         parse((directory / "manifest.json").read_bytes()),
+diff --git a/tests/tools/test_observation_oracle_custody.py b/tests/tools/test_observation_oracle_custody.py
+index 21391c6..6097976 100644
+--- a/tests/tools/test_observation_oracle_custody.py
++++ b/tests/tools/test_observation_oracle_custody.py
+@@ -658,3 +658,14 @@ def test_regeneration_source_identity_is_captured_before_producer(
+         identity["dirty_files"][str(recorder.relative_to(root))]
+         == expected_recorder_sha
+     )
++
++
++def test_missing_corpus_names_the_manifest_and_regeneration_command(
++    tmp_path: Path,
++) -> None:
++    with pytest.raises(ValueError, match="corpus missing") as caught:
++        oracle.validate_corpus(tmp_path)
++    message = str(caught.value)
++    assert "manifest.json" in message
++    assert "regenerate.py" in message
++    assert "R1" not in message
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+
+codex
+The commit changes only the Python diagnostic and its new regression test. The Rust message already names the missing manifest and regeneration command, with no quota diagnosis. I’ll now run the Python regression without filesystem writes and check that it rejects the parent version.
+
+exec
+/bin/zsh -lc ".venv/bin/python -B -c 'import importlib.util
+import subprocess
+import types
+from pathlib import Path
+
+root = Path.cwd()
+test_path = root / '\\''tests/tools/test_observation_oracle_custody.py'\\''
+spec = importlib.util.spec_from_file_location('\\''custody_review'\\'', test_path)
+assert spec is not None and spec.loader is not None
+tests = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(tests)
+regression = tests.test_missing_corpus_names_the_manifest_and_regeneration_command
+current_oracle = tests.oracle
+
+# Run the committed test body without pytest'\\''s disk-writing tmp_path fixture.
+for directory in (root / '\\''scripts/kaggriculture_observation_oracle'\\'', root / '\\''__readonly_missing_corpus_dc6b200__'\\''):
+    assert not (directory / '\\''manifest.json'\\'').exists()
+    regression(directory)
+    try:
+        current_oracle.validate_corpus(directory)
+    except ValueError as error:
+        message = str(error)
+        assert str(directory / '\\''manifest.json'\\'') in message
+        assert '\\''uv run python scripts/kaggriculture_observation_oracle/regenerate.py --output <dir>'\\'' in message
+        assert '\\''quota'\\'' not in message and '\\''R1'\\'' not in message
+    else:
+        raise AssertionError('\\''Missing corpus was accepted'\\'')
+print('\\''PASS: committed regression and exact diagnostic checks for existing and absent directories'\\'')
+
+parent_source = subprocess.check_output([
+    '\\''git'\\'', '\\''show'\\'', '\\''dc6b200"'^:scripts/kaggriculture_observation_oracle/regenerate.py'"'\\''
+], text=True)
+parent_oracle = types.ModuleType('\\''parent_oracle'\\'')
+parent_oracle.__file__ = str(root / '\\''scripts/kaggriculture_observation_oracle/regenerate.py'\\'')
+exec(compile(parent_source, parent_oracle.__file__, '\\''exec'\\''), parent_oracle.__dict__)
+tests.oracle = parent_oracle
+try:
+    regression(root / '\\''scripts/kaggriculture_observation_oracle'\\'')
+except AssertionError:
+    print('\\''PASS: same committed regression rejects the parent diagnostic (in-memory negative control)'\\'')
+else:
+    raise AssertionError('\\''Regression failed to reject parent version'\\'')
+finally:
+    tests.oracle = current_oracle
+
+current_oracle.validate_corpus(root / '\\''tests/fixtures/kaggriculture/observation-v3'\\'')
+print('\\''PASS: current 512-state, 1,024-seat corpus custody validation (read-only)'\\'')
+'" in /Users/poonszesen/kg-v3-observe
+ exited 1 in 44ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+Traceback (most recent call last):
+  File "<string>", line 46, in <module>
+  File "/Users/poonszesen/kg-v3-observe/scripts/kaggriculture_observation_oracle/regenerate.py", line 699, in validate_corpus
+    with tempfile.TemporaryDirectory(prefix="obs-check-") as tmp:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/tempfile.py", line 886, in __init__
+    self.name = mkdtemp(suffix, prefix, dir)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/tempfile.py", line 373, in mkdtemp
+    prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/tempfile.py", line 126, in _sanitize_params
+    dir = gettempdir()
+          ^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/tempfile.py", line 315, in gettempdir
+    return _os.fsdecode(_gettempdir())
+                        ^^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/tempfile.py", line 308, in _gettempdir
+    tempdir = _get_default_tempdir()
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/tempfile.py", line 223, in _get_default_tempdir
+    raise FileNotFoundError(_errno.ENOENT,
+FileNotFoundError: [Errno 2] No usable temporary directory found in ['/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/', '/tmp', '/var/tmp', '/usr/tmp', '/Users/poonszesen/kg-v3-observe']
+PASS: committed regression and exact diagnostic checks for existing and absent directories
+PASS: same committed regression rejects the parent diagnostic (in-memory negative control)
+
+exec
+/bin/zsh -lc 'git rev-parse dc6b200''^ && git diff --exit-code && git diff --cached --exit-code && git diff --check dc6b200''^ dc6b200 && git diff --numstat dc6b200''^ dc6b200 && git diff --exit-code dc6b200''^ dc6b200 -- src/kaggriculture/oracle_corpus.rs && nl -ba tests/tools/test_observation_oracle_custody.py | tail -n 16 && sed -n '"'2180,2190p' src/kaggriculture/oracle_corpus.rs" in /Users/poonszesen/kg-v3-observe
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+8247ee28e2bdd04bf30e535005619e4585478b12
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+3	1	scripts/kaggriculture_observation_oracle/regenerate.py
+11	0	tests/tools/test_observation_oracle_custody.py
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+   656	    assert identity["recorder_sha256"] == expected_recorder_sha
+   657	    assert (
+   658	        identity["dirty_files"][str(recorder.relative_to(root))]
+   659	        == expected_recorder_sha
+   660	    )
+   661	
+   662	
+   663	def test_missing_corpus_names_the_manifest_and_regeneration_command(
+   664	    tmp_path: Path,
+   665	) -> None:
+   666	    with pytest.raises(ValueError, match="corpus missing") as caught:
+   667	        oracle.validate_corpus(tmp_path)
+   668	    message = str(caught.value)
+   669	    assert "manifest.json" in message
+   670	    assert "regenerate.py" in message
+   671	    assert "R1" not in message
+fn compare_corpus_streams(directory: &Path) -> CorpusResult<()> {
+    let manifest_path = directory.join("manifest.json");
+    require(
+        manifest_path.is_file(),
+        format!(
+            "observation oracle fixture missing: {} not found; regenerate it with \
+             scripts/kaggriculture_observation_oracle/regenerate.py --output {}",
+            manifest_path.display(),
+            directory.display()
+        ),
+    )?;
+
+exec
+/bin/zsh -lc ".venv/bin/python -B -c 'import importlib.util
+import subprocess
+import types
+from pathlib import Path
+root = Path.cwd()
+spec = importlib.util.spec_from_file_location('\\''custody_review'\\'', root / '\\''tests/tools/test_observation_oracle_custody.py'\\'')
+assert spec is not None and spec.loader is not None
+tests = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(tests)
+regression = tests.test_missing_corpus_names_the_manifest_and_regeneration_command
+current = tests.oracle
+for directory in (root / '\\''scripts/kaggriculture_observation_oracle'\\'', root / '\\''__readonly_missing_corpus_dc6b200__'\\''):
+    assert not (directory / '\\''manifest.json'\\'').exists()
+    regression(directory)
+    try:
+        current.validate_corpus(directory)
+    except ValueError as error:
+        message = str(error)
+        assert str(directory / '\\''manifest.json'\\'') in message
+        assert '\\''uv run python scripts/kaggriculture_observation_oracle/regenerate.py --output <dir>'\\'' in message
+        assert '\\''quota'\\'' not in message and '\\''R1'\\'' not in message
+    else:
+        raise AssertionError('\\''Missing corpus was accepted'\\'')
+print('\\''PASS: committed regression and exact path/command checks, existing and absent directories'\\'')
+source = subprocess.check_output(['\\''git'\\'', '\\''show'\\'', '\\''dc6b200"'^:scripts/kaggriculture_observation_oracle/regenerate.py'"'\\''], text=True)
+parent = types.ModuleType('\\''parent_oracle'\\'')
+parent.__file__ = current.__file__
+exec(compile(source, parent.__file__, '\\''exec'\\''), parent.__dict__)
+tests.oracle = parent
+try:
+    regression(root / '\\''scripts/kaggriculture_observation_oracle'\\'')
+except AssertionError:
+    print('\\''PASS: committed regression rejects parent diagnostic, using in-memory source'\\'')
+else:
+    raise AssertionError('\\''Regression did not reject parent diagnostic'\\'')
+finally:
+    tests.oracle = current
+'" in /Users/poonszesen/kg-v3-observe
+ succeeded in 26ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+PASS: committed regression and exact path/command checks, existing and absent directories
+PASS: committed regression rejects parent diagnostic, using in-memory source
+
+codex
+Confirmed `dc6b200` on `kg/rebuild-observe`. No findings.
+
+- The commit changes exactly two files: the Python diagnostic and its regression test—14 insertions, 1 deletion.
+- [Python diagnostic](/Users/poonszesen/kg-v3-observe/scripts/kaggriculture_observation_oracle/regenerate.py:628) names the missing manifest path and regeneration command, without blaming R1.
+- [Regression](/Users/poonszesen/kg-v3-observe/tests/tools/test_observation_oracle_custody.py:663) passes when executed without temporary-file writes and rejects the parent version in memory.
+- [Rust diagnostic](/Users/poonszesen/kg-v3-observe/src/kaggriculture/oracle_corpus.rs:2180) remains unchanged and correctly names the missing manifest and regeneration command, without the stale quota claim.
+
+`git diff --check` passes. No files changed during review. Full corpus revalidation was blocked because it requires temporary writes; no Rust rebuild was performed.
+
+VERDICT: APPROVE
+hook: Stop
+hook: Stop Completed
+tokens used
+54,075
+Confirmed `dc6b200` on `kg/rebuild-observe`. No findings.
+
+- The commit changes exactly two files: the Python diagnostic and its regression test—14 insertions, 1 deletion.
+- [Python diagnostic](/Users/poonszesen/kg-v3-observe/scripts/kaggriculture_observation_oracle/regenerate.py:628) names the missing manifest path and regeneration command, without blaming R1.
+- [Regression](/Users/poonszesen/kg-v3-observe/tests/tools/test_observation_oracle_custody.py:663) passes when executed without temporary-file writes and rejects the parent version in memory.
+- [Rust diagnostic](/Users/poonszesen/kg-v3-observe/src/kaggriculture/oracle_corpus.rs:2180) remains unchanged and correctly names the missing manifest and regeneration command, without the stale quota claim.
+
+`git diff --check` passes. No files changed during review. Full corpus revalidation was blocked because it requires temporary writes; no Rust rebuild was performed.
+
+VERDICT: APPROVE

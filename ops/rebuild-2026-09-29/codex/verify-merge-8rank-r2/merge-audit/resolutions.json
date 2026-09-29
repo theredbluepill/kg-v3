@@ -1,0 +1,57 @@
+{
+  "log_integration_headings": 113,
+  "log_integration_missing_headings": [],
+  "log_integration_changed_blocks": [],
+  "log_branch_headings": 92,
+  "log_branch_missing_headings": [],
+  "log_branch_changed_blocks": [],
+  "log_duplicate_headings": [],
+  "log_new_headings": [
+    "2026-09-29 \u2014 Credit the GPU chunk timing in the configs Reference",
+    "2026-09-29 \u2014 Merge the 8-rank config and Phase 6.3b plan onto the integration"
+  ],
+  "multi_gpu_sources": {
+    "integration": 11,
+    "branch": 23,
+    "head": 24,
+    "exact_ordered_union": true,
+    "duplicates": 0
+  },
+  "multi_gpu_integration_body_prefix_unchanged": true,
+  "multi_gpu_branch_section_unchanged": true,
+  "references_index_removed_lines": [
+    "- [[kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|Kaggriculture configs follow Isaiah's scaling_6m recipe]] \u2014 Task 3.4: 2-rank 128/8 and 4-rank 64/4 configs deliberately keep scaling_6m's global batch, optimizer, PPO, teacher and compile settings; they load through the real FullConfig with a typed KaggricultureEnvConfig; run_ppo startup checks every forward against the model's GEMM chunking before allocation, prints bounded headroom, then stops explicitly because no Kaggriculture env is wired yet."
+  ],
+  "references_index_added_lines": [
+    "- [[kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|Kaggriculture configs follow Isaiah's scaling_6m recipe]] \u2014 Task 3.4: 2-rank 128/8, 4-rank 64/4 and 8-rank 32/2 configs deliberately keep scaling_6m's global batch, optimizer, PPO, teacher and compile settings; they load through the real FullConfig with a typed KaggricultureEnvConfig; run_ppo startup checks every forward against the model's GEMM chunking before allocation, prints bounded headroom, then stops explicitly because no Kaggriculture env is wired yet."
+  ],
+  "auto_merge_reproduction": {
+    "README.md": {
+      "exit_code": 0,
+      "exact_current_match": true,
+      "sha256": "f09d71bd050c7146bad8866a675a039652cf4fd0ac47200f3a3a564af9651b5f"
+    },
+    "cookbook/decisions/index.md": {
+      "exit_code": 0,
+      "exact_current_match": true,
+      "sha256": "0f1d581374a8f1f321f8fc3e577a71fc21e3d0f96eb39de179db5a49ef9031f1"
+    },
+    "docs/model-architecture.md": {
+      "exit_code": 0,
+      "exact_current_match": true,
+      "sha256": "89847630a118ad01a7f28be79ca5fd1a33b4c65a8aec3e62caa5ec84bc5d7b25"
+    },
+    "ops/rebuild-2026-09-29/plan.md": {
+      "exit_code": 0,
+      "exact_current_match": true,
+      "sha256": "45534c50edc265d829137c6bf0253d55d2112e7d91ebfcf9c9e34adb87b5fb9a"
+    }
+  },
+  "branch_config_and_test_blobs_exact": {
+    "configs/kaggriculture_2rank.yaml": true,
+    "configs/kaggriculture_4rank.yaml": true,
+    "configs/kaggriculture_8rank.yaml": true,
+    "tests/kaggriculture/test_configs.py": true,
+    "tests/scripts/test_run_ppo.py": true
+  }
+}

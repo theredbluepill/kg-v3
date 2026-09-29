@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_combined_path_rejects_foreign_or_mismatched_teachers ___________
+tests/kaggriculture/test_teacher.py:1117: in test_combined_path_rejects_foreign_or_mismatched_teachers
+    combined(obs, actions, _tiny(hire_limit=5, seed=6))
+python/owl/model/kaggriculture.py:818: in evaluate_actions_with_teacher
+    raise ValueError(
+E   ValueError: teacher grammar GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=5) differs from the student's GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241)
+
+During handling of the above exception, another exception occurred:
+tests/kaggriculture/test_teacher.py:1116: in test_combined_path_rejects_foreign_or_mismatched_teachers
+    with pytest.raises(ValueError, match="action_spec"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'action_spec'
+E     Actual message: "teacher grammar GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=5) differs from the student's GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241)"
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_combined_path_rejects_foreign_or_mismatched_teachers
+1 failed in 0.13s

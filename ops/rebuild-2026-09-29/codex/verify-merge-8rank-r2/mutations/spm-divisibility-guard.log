@@ -1,0 +1,53 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_isaiah_per_rank_shape_fails_loudly_when_not_divisible[32-segments_per_minibatch=16 is not divisible by world size 32] _
+
+world_size = 32
+match = 'segments_per_minibatch=16 is not divisible by world size 32'
+
+    @pytest.mark.parametrize(
+        ("world_size", "match"),
+        [
+            (3, "n_envs=256 is not divisible by world size 3"),
+            (32, "segments_per_minibatch=16 is not divisible by world size 32"),
+        ],
+    )
+    def test_isaiah_per_rank_shape_fails_loudly_when_not_divisible(
+        world_size: int, match: str
+    ) -> None:
+        with pytest.raises(ValueError, match=match):
+>           _isaiah_per_rank_shape(_scaling_6m(), world_size)
+
+tests/kaggriculture/test_configs.py:167: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+scaling = FullConfig(env=EnvConfig(n_envs=256, obs_spec=EntityBasedExtV2Config(max_entities=320, obs_spec='entity_based_ext_v2')...-no-cudagraphs', dtype='bfloat16', truncation_step=None, truncation_prob=0.0), runtime=RuntimeConfig(n_runtime_gpus=1))
+world_size = 32
+
+    def _isaiah_per_rank_shape(scaling: FullConfig, world_size: int) -> _PerRankShape:
+        """Isaiah's multi-GPU rule: divide the global shapes by the world size.
+    
+        Fails loudly when a global quantity does not divide into whole per-rank
+        shapes, or when the per-rank envs do not split into whole minibatches or
+        whole teacher-precompute chunks.
+        """
+        rl = scaling.rl
+        for name, value in (
+            ("n_envs", scaling.env.n_envs),
+            ("segments_per_minibatch", rl.segments_per_minibatch),
+        ):
+            if name != 'segments_per_minibatch' and value % world_size != 0:
+                raise ValueError(
+                    f"scaling_6m {name}={value} is not divisible by world size {world_size}"
+                )
+        n_envs = scaling.env.n_envs // world_size
+        spm = rl.segments_per_minibatch // world_size
+        per_step = spm * rl.gradient_accumulation_steps
+>       if n_envs % per_step != 0:
+           ^^^^^^^^^^^^^^^^^
+E       ZeroDivisionError: integer modulo by zero
+
+tests/kaggriculture/test_configs.py:102: ZeroDivisionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_fails_loudly_when_not_divisible[32-segments_per_minibatch=16 is not divisible by world size 32]
+1 failed, 1 passed in 0.05s

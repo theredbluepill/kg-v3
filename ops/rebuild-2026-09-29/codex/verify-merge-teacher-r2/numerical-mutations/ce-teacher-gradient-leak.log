@@ -1,0 +1,46 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_value_cross_entropy_is_the_live_seat_mean ________________
+
+    def test_value_cross_entropy_is_the_live_seat_mean() -> None:
+        model = _tiny()
+        teacher = torch.tensor(
+            [
+                [[0.8, 0.2], [0.3, 0.7]],
+                [[0.6, 0.4], [0.5, 0.5]],
+                [[0.9, 0.1], [0.1, 0.9]],
+            ]
+        )
+        student_log = torch.log(
+            torch.tensor(
+                [
+                    [[0.5, 0.5], [0.4, 0.6]],
+                    [[0.7, 0.3], [0.5, 0.5]],
+                    [[0.2, 0.8], [0.6, 0.4]],
+                ]
+            )
+        )
+        live = torch.tensor([[True, True], [True, False], [False, False]])
+        ce = model.teacher_value_cross_entropy(student_log, teacher, value_mask=live)
+        per_seat = -(teacher * student_log).sum(-1)
+        assert ce.shape == (3,)
+        torch.testing.assert_close(ce[0], per_seat[0].mean())  # mean, not sum
+        assert float(ce[0]) != pytest.approx(float(per_seat[0].sum()))
+        torch.testing.assert_close(ce[1], per_seat[1, 0])  # the non-live seat is out
+        assert float(ce[2]) == 0.0
+        state_weight = ppo._value_state_weight(live.float(), dtype=torch.float32)
+        assert state_weight.tolist() == [1.0, 1.0, 0.0]
+        # No gradient flows to the teacher distribution.
+        teacher_grad = teacher.clone().requires_grad_(True)
+        student_grad = student_log.clone().requires_grad_(True)
+        model.teacher_value_cross_entropy(
+            student_grad, teacher_grad, value_mask=live
+        ).sum().backward()
+>       assert teacher_grad.grad is None
+E       assert tensor([[[0.3466, 0.3466],\n         [0.4581, 0.2554]],\n\n        [[0.3567, 1.2040],\n         [0.0000, 0.0000]],\n\n        [[0.0000, 0.0000],\n         [0.0000, 0.0000]]]) is None
+E        +  where tensor([[[0.3466, 0.3466],\n         [0.4581, 0.2554]],\n\n        [[0.3567, 1.2040],\n         [0.0000, 0.0000]],\n\n        [[0.0000, 0.0000],\n         [0.0000, 0.0000]]]) = tensor([[[0.8000, 0.2000],\n         [0.3000, 0.7000]],\n\n        [[0.6000, 0.4000],\n         [0.5000, 0.5000]],\n\n        [[0.9000, 0.1000],\n         [0.1000, 0.9000]]], requires_grad=True).grad
+
+tests/kaggriculture/test_teacher.py:999: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_value_cross_entropy_is_the_live_seat_mean
+1 failed in 0.12s

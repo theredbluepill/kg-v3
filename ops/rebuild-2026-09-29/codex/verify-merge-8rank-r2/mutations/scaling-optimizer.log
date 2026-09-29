@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_8rank.yaml] _
+
+name = 'kaggriculture_8rank.yaml'
+
+    @pytest.mark.parametrize("name", _RANKED)
+    def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
+        scaling = _scaling_6m()
+        ours = _sections(name)
+>       assert ours.optimizer == scaling.optimizer
+E       assert MuonConfig(op...n_ratio=0.01)) == MuonConfig(op...n_ratio=0.01))
+E         
+E         Use -v to get more diff
+
+tests/kaggriculture/test_configs.py:190: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_8rank.yaml]
+1 failed in 0.05s

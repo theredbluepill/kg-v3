@@ -1,0 +1,4 @@
+You are Codex, the INDEPENDENT VERIFIER. Worktree: branch kg/rebuild-deps. Leave no tracked modification.
+Your previous verdict (ops/rebuild-2026-09-29/codex/verify-deps.md in the main repo, at fb65e1f) was APPROVE WITH EDITS: correct the cookbook's "other 50 lockfile changes" count (you counted 55 other changed dependency names), and you noted that click is shared with W&B and that the 2 ignored Rust tests are action-angle audits rather than parity tests.
+Verify commit fb65e1f..04e39bb makes those corrections accurately, keeps the committed evidence in ops/deps-independent-verification-fb65e1f/ compact and truthful, and changes no code, pyproject.toml or uv.lock. Run: uv lock --check; uvx --from rust-just just docs-lint (or the equivalent docs check); git diff --stat fb65e1f..04e39bb.
+End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.

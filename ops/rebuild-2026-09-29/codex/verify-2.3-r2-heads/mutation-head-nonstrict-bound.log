@@ -1,0 +1,63 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+________________ test_head_rows_per_chunk_follows_the_limit[-1] ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f0c24e0>
+offset = -1
+
+    @pytest.mark.parametrize("offset", [-1, 0, 1])
+    def test_head_rows_per_chunk_follows_the_limit(
+        monkeypatch: pytest.MonkeyPatch, offset: int
+    ) -> None:
+        config = _tiny().config
+        per_row = F * km.head_gemm_width(config)
+        monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", 5 * per_row + offset)
+        assert km.head_rows_per_chunk(config) == (5 if offset > 0 else 4)
+        monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", per_row)
+>       with pytest.raises(ValueError, match="compiled-gemm-template-overflows"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_model_heads.py:957: Failed
+________________ test_head_rows_per_chunk_follows_the_limit[0] _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f0c3b90>
+offset = 0
+
+    @pytest.mark.parametrize("offset", [-1, 0, 1])
+    def test_head_rows_per_chunk_follows_the_limit(
+        monkeypatch: pytest.MonkeyPatch, offset: int
+    ) -> None:
+        config = _tiny().config
+        per_row = F * km.head_gemm_width(config)
+        monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", 5 * per_row + offset)
+>       assert km.head_rows_per_chunk(config) == (5 if offset > 0 else 4)
+E       AssertionError: assert 5 == 4
+E        +  where 5 = <function head_rows_per_chunk at 0x10c96ee80>(KaggricultureTransformerConfig(model_arch='kaggriculture_transformer', embed_dim=16, depth=1, n_heads=2, mlp_ratio=2.0, activation='gelu', n_scratch_tokens=1, force_flash_attn=False))
+E        +    where <function head_rows_per_chunk at 0x10c96ee80> = km.head_rows_per_chunk
+
+tests/kaggriculture/test_model_heads.py:955: AssertionError
+________________ test_head_rows_per_chunk_follows_the_limit[1] _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f0c2870>
+offset = 1
+
+    @pytest.mark.parametrize("offset", [-1, 0, 1])
+    def test_head_rows_per_chunk_follows_the_limit(
+        monkeypatch: pytest.MonkeyPatch, offset: int
+    ) -> None:
+        config = _tiny().config
+        per_row = F * km.head_gemm_width(config)
+        monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", 5 * per_row + offset)
+        assert km.head_rows_per_chunk(config) == (5 if offset > 0 else 4)
+        monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", per_row)
+>       with pytest.raises(ValueError, match="compiled-gemm-template-overflows"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_model_heads.py:957: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_model_heads.py::test_head_rows_per_chunk_follows_the_limit[-1]
+FAILED tests/kaggriculture/test_model_heads.py::test_head_rows_per_chunk_follows_the_limit[0]
+FAILED tests/kaggriculture/test_model_heads.py::test_head_rows_per_chunk_follows_the_limit[1]
+3 failed in 0.45s

@@ -1,0 +1,45 @@
+[
+  {
+    "command": "cargo test --manifest-path engine_rs/Cargo.toml --locked --offline",
+    "exit_code": 0,
+    "summaries": [
+      "test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+      "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+      "test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.19s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+    ],
+    "receipt": "engine.log"
+  },
+  {
+    "command": "cargo test",
+    "exit_code": 0,
+    "summaries": [
+      "test result: ok. 254 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 9.93s"
+    ],
+    "receipt": "root.log"
+  },
+  {
+    "command": "uv run python scripts/check_engine_trim.py",
+    "exit_code": 0,
+    "summaries": [
+      "engine trim manifest: OK"
+    ],
+    "receipt": "trim.log"
+  },
+  {
+    "command": "OMP_NUM_THREADS=2 uv run pytest tests/kaggriculture tests/owl tests/scripts tests/tools -m 'not slow' -q",
+    "exit_code": 0,
+    "summaries": [
+      "1673 passed, 11 skipped in 46.23s"
+    ],
+    "receipt": "pytest.log"
+  },
+  {
+    "command": "uv run mypy python/owl scripts",
+    "exit_code": 0,
+    "summaries": [
+      "Success: no issues found in 63 source files"
+    ],
+    "receipt": "mypy.log"
+  }
+]

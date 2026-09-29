@@ -1,0 +1,64 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________________ test_value_cross_entropy_is_the_live_seat_mean ________________
+
+    def test_value_cross_entropy_is_the_live_seat_mean() -> None:
+        model = _tiny()
+        teacher = torch.tensor(
+            [
+                [[0.8, 0.2], [0.3, 0.7]],
+                [[0.6, 0.4], [0.5, 0.5]],
+                [[0.9, 0.1], [0.1, 0.9]],
+            ]
+        )
+        student_log = torch.log(
+            torch.tensor(
+                [
+                    [[0.5, 0.5], [0.4, 0.6]],
+                    [[0.7, 0.3], [0.5, 0.5]],
+                    [[0.2, 0.8], [0.6, 0.4]],
+                ]
+            )
+        )
+        live = torch.tensor([[True, True], [True, False], [False, False]])
+        ce = model.teacher_value_cross_entropy(student_log, teacher, value_mask=live)
+        per_seat = -(teacher * student_log).sum(-1)
+        assert ce.shape == (3,)
+>       torch.testing.assert_close(ce[0], per_seat[0].mean())  # mean, not sum
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Scalars are not close!
+E       
+E       Expected 0.6628061532974243 but got 1.3256123065948486.
+E       Absolute difference: 0.6628061532974243 (up to 1e-05 allowed)
+E       Relative difference: 1.0 (up to 1.3e-06 allowed)
+
+tests/kaggriculture/test_teacher.py:987: AssertionError
+______ test_a_copied_teacher_gives_zero_kl_and_the_student_winner_entropy ______
+
+    def test_a_copied_teacher_gives_zero_kl_and_the_student_winner_entropy() -> None:
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        teacher.load_state_dict(student.state_dict())
+        obs, actions = _segment_major(student)
+        with torch.no_grad():
+            evaluation = _cached(student, teacher, obs, actions)
+        assert evaluation.action_kl is not None
+        zeros = torch.zeros_like(evaluation.action_kl.event)
+        assert torch.equal(evaluation.action_kl.event, zeros)
+        log_q = evaluation.student_winner_log_probabilities
+        entropy = -(log_q.exp() * log_q).sum(-1)
+        live = obs.still_playing.to(entropy.dtype)
+        expected = (entropy * live).sum(-1) / live.sum(-1).clamp_min(1.0)
+>       torch.testing.assert_close(
+            _value_ce(student, evaluation, obs), expected, rtol=0, atol=1e-6
+        )
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 5 / 6 (83.3%)
+E       Greatest absolute difference: 0.6919652223587036 at index (0, 1) (up to 1e-06 allowed)
+E       Greatest relative difference: 1.0 at index (0, 0) (up to 0 allowed)
+
+tests/kaggriculture/test_teacher.py:960: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_value_cross_entropy_is_the_live_seat_mean
+FAILED tests/kaggriculture/test_teacher.py::test_a_copied_teacher_gives_zero_kl_and_the_student_winner_entropy
+2 failed in 0.25s

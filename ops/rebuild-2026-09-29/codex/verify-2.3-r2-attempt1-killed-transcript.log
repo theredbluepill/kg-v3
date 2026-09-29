@@ -1,0 +1,358 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-heads
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /Users/poonszesen/.cache/uv, /Users/poonszesen/.local/share/uv, /Users/poonszesen/kg-v3-heads/.codex-tmp]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ebc7-9643-7643-9c89-4144c388a974
+--------
+user
+You are Codex, the INDEPENDENT VERIFIER of Task 2.3 (grammar action heads) on this worktree, branch kg/rebuild-heads. Leave no tracked modification. Verify git diff 0e989a1..HEAD against the approved brief ops/rebuild-2026-09-29/briefs/2.3-action-heads.md (v3; you reviewed it in ops/rebuild-2026-09-29/codex/brief-2.3-*.md), contract v4 and the reference oracle (git show kg/reference-2026-09-29:python/owl/model/kaggriculture.py, python/owl/kaggriculture/gpu_sampling_grammar.py, engine_rs/src/myolie_sampler.rs, tests/kaggriculture/test_model.py). Check: mask tables and supports; runtime context equations; coupled-Gumbel semantics (raw vs final HIRE counts, same scores, NONE/EMPTY correction); STOP density; replay validation (safe indexing BEFORE kernels, three flag groups, full canonical equality, one host sync outside the compiled core); event/entropy layouts; brief §9 overflow guards (width = max over in/out features of compiled Linear layers, packed-path chunking with order/bound/equality tests, head-extent chunking at rows x 252 x max(3D, D, widths) < 2^31, heads eager in production); Isaiah topology/init/Muon membership; statelessness and seat isolation; 6-10M budget with only depth adjusted; tests non-vacuous (try at least two mutations, restore byte-for-byte). Also confirm every finding of the previous round (/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-2.3-r1.md) is resolved. Run: uv run pytest tests/kaggriculture -q; uv run pytest tests/owl tests/scripts tests/tools -m 'not slow' -q; uv run mypy python/owl scripts; report counts. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT, with findings (severity, file:line, fix).
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll verify the diff against the approved brief, contract, reference oracle, and prior findings. I’ll run the requested checks and at least two mutation probes, restore the source byte-for-byte, and confirm no tracked changes remain before giving the verdict.
+exec
+/bin/zsh -lc "cat cookbook/index.md; sed -n '1,42p' cookbook/log.md; cat ops/rebuild-2026-09-29/briefs/2.3-action-heads.md" in /Users/poonszesen/kg-v3-heads
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References describe branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]]
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Close Codex's Task 2.3 verification edit on the heads branch
+
+Codex verified `0e989a1..5ec3af1` (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify-2.3-r1.md`, evidence in `ops/rebuild-2026-09-29/codex/verify-2.3-heads/`). No functional defect. One wording correction: `forward` is not host-sync-free, because packed trunk dispatch sizes its packing on the host and oversized packed batches transfer per-row token counts. The `forward` docstring, `docs/model-architecture.md` and the [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|heads Reference]] now say sampling adds no policy-validation host synchronization. The Reference also records Codex's checks and its source-inspection-only limit on market-noise independence. No code behavior changed.
+
+## 2026-09-29 — Add the Kaggriculture grammar action heads (Task 2.3)
+
+The new [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|heads Reference]] records Task 2.3 as the approved brief v3 specifies. It covers Isaiah's `3D → D` actor input projection; a `KaggricultureGrammarActor` with nine `OutputProjectionMLP` slot heads and prefix embeddings; typed `GrammarTables`, with synthetic expected tables and a named native hook for Task 1.2; exact coupled-Gumbel HIRE sampling; and same-path replay with support, length and canonical flags checked in one host transfer. It also covers the §9 overflow guards (trunk width by enumeration, packed chunking, head-extent chunking). The preset has 6,252,223 parameters, inside the 6–10M budget at depth 8. `tests/kaggriculture`: 256 passed, 1 skipped (waiting on Task 1.2). `just py-prepare`: 979 passed, 4 skipped. Four deliberate mutations failed their tests and were restored byte-for-byte. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now says the packed path chunks instead of raising. On `kg/rebuild-heads`, pending Codex verification.
+
+## 2026-09-29 — Close Codex's lane B re-verification edits on the model branch
+
+Codex re-verified `4fdb526` (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify2-lane-B-r1b.md`). Three edits: `check_contract` now rejects −1 on the `tiles_int` count channels (yield, unwatered, unfed) while keeping the day/deadline sentinels; the contract-valid fixture uses the engine's `farmHandCostMult × fib(hires_today)` next-hire cost and rejects a zero configured order limit; the critic tests assert hand-computed, nonuniform winner probabilities and changed-seat responsiveness, and fail when critic logits are forced to zero (3 failures, source restored). `just py-prepare`: 884 passed, 3 skipped. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder reference]] is unchanged: its claims were already scoped to these checks.
+
+## 2026-09-29 — Close Codex's Task 2.1 verification findings on the model branch
+
+Codex's [verification](../ops/rebuild-2026-09-29/codex/verify-stream-b-2.1.md) approved Task 2.1 with edits. `check_contract` now requires leading dims exactly `[E, 2]` and per-field bounds (non-negative counts, ranks, globals and order limits; −1 tile sentinels and signed `market_int` still pass). The synthetic fixture now writes each seat's legal view of one game. New tests cover packed dispatch, distinct-mask chunk slices, marker-checked offsets, the mypy generics probe, and initialization, API and Muon membership, each seen failing against the old code or a deliberate one-line mutation (the compile-key and SiLU checks were not mutation-tested). The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] records the checks: `tests/kaggriculture` 155 passed, `just py-prepare` 878 passed, 3 skipped.
+
+## 2026-09-29 — Add Isaiah's critic to the Kaggriculture model (Task 2.2)
+
+The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now covers the critic: an `OutputProjectionMLP` shared over the self and opponent critic-value tokens, a winner softmax, and value `2p(self) − 1` from each seat's own view, with Isaiah's output gain and Muon exclusion. `just py-prepare` gives 767 passed. This is on `kg/rebuild-model`, pending Codex verification.
+
+## 2026-09-29 — Build the Kaggriculture encoder on Isaiah's layers (Task 2.1)
+
+The new [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] covers the contract types, the PEP 696 generic model base, and an encoder built entirely from Isaiah's classes, with one-hot stems, per-role tokens, a typed trunk config, his initialization, and the compiled-GEMM chunking guard. `just py-prepare` gives 762 passed. The work sits on branch `kg/rebuild-model`, pending Codex verification before merge.
+
+## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
+
+Owner decisions:
+- “6-10M ok as long as topologies aligned with isaiah”, recorded in the [[decisions/the-policy-is-stateless-and-observation-only|stateless Decision]]: Isaiah's ladder width and ratios, with depth reaching the budget.
+- “let's stick with 2.9”, and fit to RTX 6000 rather than Isaiah's B200s, recorded in the [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]]: global config unchanged, per-rank shapes and spm/accumulation fitted by memory smoke, ≤ 85% peak.
+
+The Kaggriculture contract reaches v4 (Codex accept-with-edits applied), with a companion section in `docs/rl-api-specs.md`.
+
+## 2026-09-29 — Rebuild failure status and traceback ordering on the clean base
+
+Task 0.3 implements the reference plan's logging fix under the
+[[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]]. The new
+[[references/failed-training-reports-status-before-distributed-cleanup|failure-reporting Reference]]
+records keyword-only logger exit codes, failed W&B finalization and rank-tagged
+stderr before process-group destruction. TDD goes from 9 failures/2 passes to
+11 passes; the Python suite and final py-prepare each pass 722 with 3 skips.
+# Brief — Task 2.3: Kaggriculture grammar action heads (Claude), v3
+
+Plan: Task 2.3; contract v4 "Action"; C11 (rebuilt, using the reference's batched heads as design and test oracle); I0b; L6. Reviewer: Codex. Real mask tables come from the native grammar (Task 1.2, Codex). Until it lands, the heads are developed against a typed table interface with small synthetic tables, and the integration test waits for 1.2.
+
+This v3 replaces v1 and v2 as the operative text. Review history: `codex/brief-2.3-review.md` (v1, REVISE), `codex/brief-2.3-rereview.md` (v2, REVISE) and `codex/brief-2.3-r3.md` (v3, APPROVE WITH EDITS; its one wording edit is applied). Reference line numbers refer to `kg/reference-2026-09-29`.
+
+## 1. Topology (Isaiah's actor blocks; the heads are the only game-specific part)
+
+- **`actor_input_proj: nn.Linear(3D, D)`** over `[entity ‖ self player ‖ plan]`, following Isaiah's `source_actor_input_proj` pattern. For unit frames the entity is `own_actor_hidden[:, a]`; for market frames it is the plan hidden (there is no market entity), as in the reference. **Muon-eligible**, as in Isaiah's model.
+- **`actor: KaggricultureGrammarActor(nn.Module)`** holds everything game-specific:
+  - `source_norm: LayerNorm` (Isaiah's actor normalizes its input)
+  - `market_position: nn.Embedding(11, D)` (queue position)
+  - `slot_embeddings: nn.ModuleDict` for within-frame prefix conditioning: `unit_kind 20`, `unit_item 16`, `unit_quantity_present 2`, `unit_quantity_high 32`, `market_kind 8`, `market_item 16`, `market_quantity_high 32`
+  - `heads: nn.ModuleDict` of `OutputProjectionMLP(trunk_cfg, width)` for the 9 sampled slots: `unit_kind`, `unit_item`, `unit_quantity_present`, `unit_quantity_high`, `unit_quantity`, `market_kind`, `market_item`, `market_quantity_high`, `market_quantity`
+- **Implicit slots:**
+  - slot 0 `unit_actor`: the unit-frame actor ordinal; zero in market, STOP, padding and inactive frames
+  - slot 2 `unit_target`: reserved, always 0
+  - slot 11 `stop`: set on the STOP frame only
+
+  All three have zero density.
+- **Conditioning:** `hidden_stage = base + prefix / sqrt(stage + 1)`, where `prefix` sums the embeddings of the slots already chosen in the frame (the reference factorization, rebuilt).
+- **Initialization and optimizer wiring (explicit):**
+  - `get_input_layers` returns `market_position.weight` and each slot embedding's `.weight` as parameters. `reset_parameters` initializes them as Isaiah's token parameters (normal, std `D^-0.5`). Isaiah's `_init_input_layer` only handles `nn.Linear` / `nn.Parameter`, so the weights are passed, not the `nn.Embedding` modules.
+  - `reset_parameters` is extended beyond the current critic-only output reset: every actor `head.out` goes through `_init_linear(..., gain=_ACTOR_HEAD_INIT_GAIN = 0.01)`, giving orthogonal weights and zero bias. Every `head.out` is also returned by `get_output_layers`.
+  - `actor_input_proj.weight` and every head's `.up.weight` stay Muon-eligible. The embeddings, `head.out`, norms and biases go to AdamW.
+
+## 2. Grammar tables and masks
+
+`GrammarTables` (typed; built by `python/owl/kaggriculture/gpu_grammar.py`, ported from `gpu_sampling_grammar.py` (C7) and extracted from the native plans (C3, Task 1.2)). `δ0(W)` is a width-`W` mask admitting only 0.
+
+| Slot | Stored table | Effective mask |
+|---|---|---|
+| 1 `unit_kind` | `unit_kind [20]` | `where(unit_live[..., None], unit_kind, δ0(20))` |
+| 3 `unit_item` | `unit_item [20,16]` | `unit_item[kind]` |
+| 4 `unit_quantity_present` | `unit_quantity_present [20,2]` | `unit_quantity_present[kind]` |
+| 5 `unit_quantity_high` | `unit_quantity_high [2,32]` | `unit_quantity_high[present]` |
+| 6 `unit_quantity` | `unit_quantity_low [2,2,32]` | `unit_quantity_low[present, (high == 0).long()]` |
+| 7 `market_kind` | `market_kind [8]` | `where(available[..., None], market_kind, δ0(8))`, then HIRE removed where capacity is exhausted |
+| 8 `market_item` | `market_item [8,16]` | `market_item[kind]` |
+| 9 `market_quantity_high` | `market_quantity [8,32]` | `market_quantity[kind]` |
+| 10 `market_quantity` | `market_quantity [8,32]` | `market_quantity[kind]` |
+
+Expected supports (from `myolie_sampler.rs:147–258` `State::allows`/`advance` and reference `kaggriculture.py:578–675`; the implementer re-derives them, and a test compares every table with the native plans):
+
+- **Unit kind:** `1..18`.
+- **Unit item:** `1..12` for kinds 6/7, `1..5` for kind 8, otherwise `{0}`.
+- **Unit quantity:**
+  - Only kinds 6/7 allow `present = 1`.
+  - Absent quantity forces both digits to 0.
+  - Present quantity excludes low digit 0 only when the high digit is 0.
+- **Market item:** `1..5`, `{1, 9}`, `10..12` and `1..9` for kinds 3, 4, 5, 6; otherwise `{0}`.
+- **Market quantity digits:** `0..31` for kinds 3–6, otherwise `{0}`. The extractor asserts that the high- and low-digit supports are equal. Rust moves kinds 4–6 into their quantity-bearing state after slot 8.
+
+## 3. Runtime grammar context and frame placement
+
+The actor receives `actor_counts [B]` (own actors per row), `order_limits [B]`, `hire_limit` (config; default **241**) and `live [B]` (`still_playing`).
+
+```text
+unit_live[b,f]     = live[b] & (f < actor_counts[b])
+available[b,p]     = live[b] & (p < order_limits[b])        p = 0..10
+market_frame[b,p]  = actor_counts[b] + p
+market_live[b,p]   = live[b] & (p <= first_final_NONE[b])
+lengths[b]         = where(live[b], actor_counts[b] + s[b] + 1, 0)   s = STOP position
+```
+
+- Unavailable positions force `NONE`, including the sentinel at `p == order_limits`.
+- Padded unit frames use singleton-zero support.
+- Inactive rows produce all-zero tokens, length 0, and zero log-probs and entropies.
+- **HIRE capacity** counts *submitted* HIREs whether or not they would execute: HIRE is allowed at position `p` iff `actor_counts + exclusive_prefix_HIREs(p) < hire_limit`.
+
+## 4. Sampling (coupled Gumbel, exact categorical)
+
+- **Categorical draws:** exact Gumbel-max (no multinomial). Log-probs and entropies come from masked `log_softmax` over the effective mask.
+- **Market kind:**
+  - Draw **eight independent Gumbels per market position**, independent across positions.
+  - `raw_kind = argmax(scores)` over the initial mask.
+  - The **exclusive raw-HIRE prefix count** gives `can_hire`. Where capacity is exhausted, HIRE is masked and the argmax is re-taken over the **same perturbed scores** (no redraw); the corrected outcome can be `NONE` or `EMPTY`.
+  - Density evaluation uses the **exclusive final-HIRE prefix count** of the final kinds.
+- **STOP:**
+  - STOP is the first final `NONE`, which **keeps its kind probability** in slot 7.
+  - The forced sentinel at `p == order_limits` has zero density.
+  - Later positions are marginalized: zero log-prob and entropy.
+  - `EMPTY` consumes an order.
+
+## 5. Replay validation (`evaluate_actions`), after the reference `_decode` (`kaggriculture.py:747–783`)
+
+`evaluate_actions` must reject malformed programs itself, because PPO and BC replay never call native `step`. Native admission on `step` (Task 1.4) still exists as a separate guard.
+
+1. **Before any policy kernel:** check that `tokens` and `lengths` shapes are `[E,2,252,12]` / `[E,2]` and that both are `int64` (a Python-side check, no device sync).
+2. **Safe indexing:**
+   - Every replay-derived gather, table lookup and embedding index uses a clamped temporary index. The original value's validity goes into device flags.
+   - Repaired values are never admitted or returned. A host check after the kernels cannot undo an out-of-range access, so indices must be safe before execution.
+3. **Three device flag groups**, all computed in the tensor core:
+   - **support:** every chosen value is inside its prefix-dependent effective mask (§2 and §3).
+   - **length:** `lengths` equals the reconstructed `where(live, actor_counts + s + 1, 0)`.
+   - **canonical equality:** the reconstructed canonical token tensor equals the supplied tensor **element for element**. This covers:
+     - actor ordinals
+     - the reserved target
+     - unit fields in market frames and market fields in unit frames
+     - STOP bits
+     - every padding element
+     - all-zero tokens for inactive rows
+4. **One synchronization:**
+   - Aggregate the flags into one compact vector, then make one host transfer and branch.
+   - This runs outside the compiled tensor core and before the result returns to loss computation, as the reference `_check_flags:121–126` did.
+   - The error message names the failing group.
+   - `valid` stays on an explicitly typed internal policy result. `ModelOutput` gets no validity field.
+5. **Sampling path:** `forward` makes **no** host sync; validity there is guaranteed by construction and checked in tests. Removing that sync is a throughput choice, not the L6 corruption remedy. L6 is handled by the dispatch guard (2.1), Task 3.6's first-minibatch log-ratio alarm and Phase 6 qualification.
+
+## 6. Outputs
+
+- `KaggricultureActions(tokens [E,2,252,12], lengths [E,2])`.
+- **Log-probs:**
+  - `ModelActionLogProbs.event [E,2,252,12]`: per-frame, per-slot densities, zero for slots 0, 2 and 11.
+  - `per_player_entity = event.sum(-1)`
+  - `launch = zeros_like(per_player_entity)`
+- **Entropies** mirror the log-prob layout:
+  - `entropies.event` has the same shape.
+  - Its sum over slots gives `per_player_entity`.
+  - `components[name] = event[..., slot]`.
+- `ModelOutput` includes the critic values (2.2).
+- `evaluate_actions` replays the tokens teacher-forced through the same code path as sampling.
+
+## 7. Tests (tiny CPU; synthetic tables until 1.2)
+
+1. **Replay invariant (L6 regression shape):**
+   - Freeze the weights, sample once, and save tokens, lengths and per-slot log-probs and entropies, with their frame sums.
+   - Re-evaluate the saved actions:
+     - (a) as the same batch
+     - (b) split into minibatches of different sizes
+     - (c) permuted, re-batched, then restored to the original order
+   - Every result must match the **saved** values to ≤ 1e-5 (FP32 eager). A second `forward` is never the reference.
+   - Cases: dense (241 actors, 10 orders), HIRE capacity, STOP at every position, and mixed actor counts, order limits and inactive rows within one batch.
+2. **Masks against the native plans:**
+   - Every table row matches the native plans.
+   - Quantity cases:
+     - omitted unit quantity
+     - rejected explicit unit zero
+     - values `1`, `31`, `32`, `1023`
+     - accepted market zero
+3. **Gumbel exactness:** empirical frequencies of 20k draws match the masked softmax for one slot (chi-square bound).
+4. **HIRE coupling by enumeration** (3 positions, 8 kinds, budgets 0/1/2/3/10):
+   - The test drives the **actual** sampler and replay implementation.
+   - The enumerated joint probability of every final program equals the replayed density, and the total sums to 1 within 1e-9.
+   - Correction outcomes include both `NONE` and `EMPTY`.
+5. **STOP and marginalization:**
+   - Post-STOP positions contribute 0 log-prob and entropy.
+   - The first final `NONE` keeps its slot-7 density; the forced sentinel has zero density.
+   - `lengths` counts every frame including STOP.
+6. **Malformed-program rejection:** one test per flag group, each raising with the group named:
+   - out-of-support value
+   - wrong length
+   - non-canonical actor ordinal, reserved target, cross-kind field, STOP bit or padding
+   - nonzero inactive row
+   - out-of-range index (no device fault)
+   - wrong dtype or shape
+7. **Compiled density and gradient:** the reference CPU `backend="eager", fullgraph=True` density/gradient test (`tests/kaggriculture/test_model.py:483–505`), with host validation outside the captured core. Plus a finite-difference check of the `evaluate_actions` log-prob with respect to one head weight.
+8. **Seat isolation and statelessness** through the heads.
+9. **Topology and initialization:**
+   - `actor_input_proj` is `Linear(3D, D)` and Muon-eligible.
+   - The heads are `OutputProjectionMLP`, with `.up` in Muon and `.out` in AdamW.
+   - The embeddings live only under `actor.` and are listed by `get_input_layers` with std ≈ `D^-0.5` after reset.
+   - Every `head.out` has singular values = 0.01 and zero bias after `reset_parameters`.
+10. **Budget:** the full preset has between 6,000,000 and 10,000,000 parameters (owner decision).
+11. **Integration (after 1.2):** masks from the native grammar tables decode the recorded reference programs identically (oracle), and the replay invariant holds with the real tables.
+
+## 8. Out of scope and handoffs
+
+- Shared factory registration: Task 3.1.
+- Teacher distributions: Phase 4.
+- Production compiler/BF16 rollout-versus-minibatch equality and chunk-boundary checks: **Phase 6** GPU qualification. The eager test in §7.1 does not qualify the historical L6 failure; Task 3.6's pre-update log-ratio alarm is the in-run guard.
+
+## 9. Overflow guards (added from the GEMM-limit audit, `gemm-overflow-limits-audit-and-probe` workflow)
+
+The torch 2.9 audit found that the max-autotune mm/addmm Triton template forms its A-load and output-store offsets in int32. The limit is therefore `M × max(K, N_out, any fused-epilogue row stride) < 2^31`, not `M × K` alone. The following are in scope for this task because they share `kaggriculture.py`:
+
+1. **Trunk guard semantics (2.1 fix):**
+   - Rename or redefine `gemm_kmax` as the maximum over `max(in_features, out_features)` of every `nn.Linear` inside the compiled region.
+   - Add a test that enumerates `model.blocks` Linear layers and asserts equality, so a future `mlp_ratio`, SwiGLU or fused-QKV change cannot silently exceed the guard.
+   - Correct the docstrings ("inner dim" → "max GEMM operand/output width").
+2. **The packed path chunks instead of raising (2.1 fix):**
+   - `_run_trunk` splits rows at row boundaries so that every chunk's packed tokens × width < 2^31.
+   - Each chunk is packed, run through the trunk and unpacked, then the chunks are concatenated in order.
+   - Raise only if a single row cannot fit.
+   - Tests: CPU-mocked packed dispatch showing distinct per-chunk inputs, order, the strict bound, and equality with the unchunked result. This removes the predicted fail-fast at teacher-precompute chunks of 16,384 rows.
+3. **Head-extent guard (new):**
+   - The heads run **eager** in production. The production compiled region stays the trunk only (Task 3.1 must keep it that way and test it).
+   - The actor nevertheless chunks rows so that `rows × MAX_FRAMES × max(3D, D, widest head) < 2^31` (about 11,095 rows at D = 256), whether compiled or not. This way a future compile of the head core cannot silently corrupt teacher targets.
+   - Tests: a boundary test at the chunk limit ± 1, and equality of chunked vs unchunked log-probs, entropies and flags.
+   - The `backend="eager", fullgraph=True` test in §7.7 is a CPU graph-compatibility check only; it is not a production compile mode.
+4. **Workload arithmetic** is recorded in the model docs: rollout 256 rows (23× headroom), minibatch 1,024 rows (5.8×), teacher chunk (now chunked).
+   - A startup workload assertion over config shapes belongs to Task 3.4 (configs) and is out of scope here; this task adds a note to the plan's Task 3.4.
+
+exec
+/bin/zsh -lc "cat /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-2.3-r1.md; rg --files -g AGENTS.md -g '*contract*' -g 'brief-2.3-*' -g 'test*head*' -g '*grammar*'" in /Users/poonszesen/kg-v3-heads
+ succeeded in 0ms:
+One **low-severity documentation finding**: [kaggriculture.py:525](/Users/poonszesen/kg-v3-heads/python/owl/model/kaggriculture.py:525) and [model-architecture.md:744](/Users/poonszesen/kg-v3-heads/docs/model-architecture.md:744) claim forward has no host synchronization. Packed chunk planning transfers row counts at line 484. **Fix:** say “sampling adds no policy-validation host synchronization,” including the cookbook’s matching claim.
+
+No functional defects found across the requested grammar, replay, overflow, topology, initialization, optimizer, isolation, and budget checks.
+
+- Kaggriculture: **256 passed, 1 skipped**
+- Starter regressions: **723 passed, 3 skipped**
+- Requested mypy: **52 files clean**
+- Full suite after restoration: **979 passed, 4 skipped**
+- Three mutations caught: unsafe indexing **5 failures**, partial canonical equality **2**, inclusive HIRE prefix **3**
+
+All **286 tracked files** remain byte-for-byte unchanged. Native integration and CUDA/BF16 qualification remain pending as explicitly scoped. `just` was unavailable; its checks passed when invoked directly.
+
+[Full verification report and evidence](/Users/poonszesen/kg-v3-heads/ops/rebuild-2026-09-29/codex/verify-2.3-heads/report.md)
+
+VERDICT: APPROVE WITH EDITSAGENTS.md
+ops/rebuild-2026-09-29/codex/brief-2.3-rereview-transcript.log
+ops/rebuild-2026-09-29/codex/brief-2.3-rereview-prompt.md
+ops/rebuild-2026-09-29/codex/brief-2.3-review-prompt.md
+ops/rebuild-2026-09-29/codex/brief-2.3-r3.md
+ops/rebuild-2026-09-29/codex/brief-2.3-review-transcript.log
+ops/rebuild-2026-09-29/codex/brief-2.3-rereview.md
+ops/rebuild-2026-09-29/codex/brief-2.3-review.md
+ops/rebuild-2026-09-29/codex/brief-2.3-r3-prompt.md
+ops/rebuild-2026-09-29/codex/brief-2.3-r3-transcript.log
+docs/kaggriculture-contract.md
+python/owl/kaggriculture/gpu_grammar.py
+cookbook/references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection.md
+cookbook/references/explicit-game-tokens-and-grammar-replace-orbit-heads.md
+tests/kaggriculture/test_model_heads.py
+tests/kaggriculture/test_gpu_grammar.py
+
+exec
+/bin/zsh -lc 'git status --short && git branch --show-current && git rev-parse HEAD && git diff --stat 0e989a1..HEAD' in /Users/poonszesen/kg-v3-heads
+ succeeded in 0ms:
+?? ops/rebuild-2026-09-29/codex/verify-2.3-heads/kaggriculture_actor.original.py
+kg/rebuild-heads
+88f95f64df2164f4198335e6719a2075dee6d567
+ cookbook/log.md                                    |    8 +
+ cookbook/references/index.md                       |    3 +-
+ ...lture-encoder-reuses-isaiah-stateless-layers.md |   12 +-
+ ...ar-heads-sit-behind-isaiahs-actor-projection.md |   73 ++
+ docs/kaggriculture-model.md                        |   11 +-
+ docs/model-architecture.md                         |   14 +-
+ docs/rl-api-specs.md                               |    1 +
+ .../codex/verify-2.3-heads/environment.json        |    9 +
+ .../codex/verify-2.3-heads/kaggriculture.log       |    7 +
+ .../mutation-inclusive-raw-hire.log                |  150 +++
+ .../mutation-partial-canonical.log                 |  118 +++
+ .../mutation-unsafe-replay-index.log               |  329 +++++++
+ .../codex/verify-2.3-heads/mutations.json          |   21 +
+ .../codex/verify-2.3-heads/mypy.log                |    1 +
+ .../codex/verify-2.3-heads/prepare-docs.log        |    1 +
+ .../codex/verify-2.3-heads/prepare-format.log      |    1 +
+ .../codex/verify-2.3-heads/prepare-lint.log        |    1 +
+ .../codex/verify-2.3-heads/prepare-static.log      |    1 +
+ .../verify-2.3-heads/prepare-tests-restored.log    |   20 +
+ .../codex/verify-2.3-heads/py-prepare.log          |    1 +
+ .../codex/verify-2.3-heads/regressions.log         |   16 +
+ .../codex/verify-2.3-heads/report.md               |   66 ++
+ .../codex/verify-2.3-heads/restoration-final.json  |    6 +
+ .../codex/verify-2.3-heads/tracked-before.json     |  288 ++++++
+ .../codex/verify-2.3-r1-prompt.md                  |    1 +
+ ops/rebuild-2026-09-29/codex/verify-2.3-r1.md      |   15 +
+ python/owl/kaggriculture/gpu_grammar.py            |  244 +++++
+ python/owl/model/kaggriculture.py                  |  353 ++++++-
+ python/owl/model/kaggriculture_actor.py            |  482 ++++++++++
+ tests/kaggriculture/test_gpu_grammar.py            |  174 ++++
+ tests/kaggriculture/test_model_encoder.py          |  157 ++-
+ tests/kaggriculture/test_model_heads.py            | 1017 ++++++++++++++++++++
+ 32 files changed, 3525 insertions(+), 76 deletions(-)
+

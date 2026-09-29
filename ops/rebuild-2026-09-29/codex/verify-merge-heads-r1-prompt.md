@@ -1,0 +1,6 @@
+You are Codex. READ-ONLY verification of a merge on branch kg/merge-heads (HEAD 053840f): integration 99732ea + Task 2.3 heads (88f95f6, which you approved in verify-2.3-r2) + the GEMM-limit evidence on kg/rebuild-model (432abe0, which you approved in verify-gemm-limits-r3). Conflicts were only cookbook/log.md (both sides kept) and cookbook/references/index.md (resolution: the bc-bootstrap, encoder and grammar-heads lines from the heads side, the compiled-gemm line from 432abe0). Check:
+- no code, test or doc content was lost relative to either parent (compare git diff 88f95f6 053840f and git diff 432abe0 053840f for unexpected removals);
+- the index description of each note matches that note's current frontmatter description;
+- the cookbook notes are mutually consistent after the merge — in particular the encoder and grammar-heads References (from 2.3) must not contradict the revised compiled-GEMM Reference (input-side measured limit; M x max(in,out) as the training design bound; production compliance unproven);
+- log entries are not duplicated.
+Do not run heavy tests (a full `just prepare` passed: Rust 155/2 ignored, engine 69, Python 1304 passed / 4 skipped). End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT, with findings.

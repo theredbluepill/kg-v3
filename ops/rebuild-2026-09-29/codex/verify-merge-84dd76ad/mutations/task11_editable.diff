@@ -1,0 +1,11 @@
+--- merged
++++ task11_editable
+@@ -431,7 +431,7 @@
+             actual == _reconstruct(original, retained["edits"], path),
+             f"{path}: undeclared edit",
+         )
+-        if path not in EDITABLE:
++        if path.endswith(".rs") and path != "engine_rs/src/lib.rs":
+             _require(not retained["edits"], f"{path}: retained file must be unchanged")
+     for authored in manifest["authored"]:
+         path = authored["path"]

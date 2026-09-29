@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_the_model_supports_both_cached_distillation_paths ____________
+
+    def test_the_model_supports_both_cached_distillation_paths() -> None:
+        model = _tiny()
+        assert model.supports_cached_teacher_distillation()
+        assert model.supports_cached_value_distillation()
+        # No teacher target or cache is ever a checkpoint entry.
+        keys = set(model.state_dict())
+>       assert not any("table_" in key or "teacher" in key for key in keys)
+E       assert not True
+E        +  where True = any(<generator object test_the_model_supports_both_cached_distillation_paths.<locals>.<genexpr> at 0x10edc5ff0>)
+
+tests/kaggriculture/test_teacher.py:1335: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_the_model_supports_both_cached_distillation_paths
+1 failed in 0.11s

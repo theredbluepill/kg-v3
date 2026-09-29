@@ -1,0 +1,46 @@
+[
+  {
+    "name": "blocked-trainer-cache-metric-zero",
+    "file": "python/owl/train/ppo.py",
+    "test": "tests/kaggriculture/test_teacher.py::test_trainer_precomputes_once_and_logs_teacher_metrics",
+    "exit_code": 1,
+    "classification": "BLOCKED",
+    "expected_first_blocker": "unsupported type KaggricultureActionMask",
+    "summary": "1 failed in 0.15s",
+    "restored": true,
+    "sha256": "0af32d177a1db5cfabaac1872d35c330492b015a213e344fc408acf2cafce75f"
+  },
+  {
+    "name": "blocked-checkpoint-includes-teacher-cache",
+    "file": "python/owl/train/ppo.py",
+    "test": "tests/kaggriculture/test_teacher.py::test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache",
+    "exit_code": 1,
+    "classification": "BLOCKED",
+    "expected_first_blocker": "unsupported type KaggricultureActionMask",
+    "summary": "1 failed in 0.14s",
+    "restored": true,
+    "sha256": "0af32d177a1db5cfabaac1872d35c330492b015a213e344fc408acf2cafce75f"
+  },
+  {
+    "name": "blocked-resume-activates-student",
+    "file": "scripts/run_ppo.py",
+    "test": "tests/kaggriculture/test_teacher.py::test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best",
+    "exit_code": 1,
+    "classification": "BLOCKED",
+    "expected_first_blocker": "run_ppo cannot run Kaggriculture yet",
+    "summary": "1 failed in 0.13s",
+    "restored": true,
+    "sha256": "1f3f5054a47d1028fd4f0675002ebb1530fb1666a5891a0786e31708ad4fc682"
+  },
+  {
+    "name": "blocked-fresh-launch-disables-teacher",
+    "file": "scripts/run_ppo.py",
+    "test": "tests/kaggriculture/test_teacher.py::test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher",
+    "exit_code": 1,
+    "classification": "BLOCKED",
+    "expected_first_blocker": "run_ppo cannot run Kaggriculture yet",
+    "summary": "1 failed in 0.13s",
+    "restored": true,
+    "sha256": "1f3f5054a47d1028fd4f0675002ebb1530fb1666a5891a0786e31708ad4fc682"
+  }
+]

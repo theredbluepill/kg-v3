@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________
+tests/kaggriculture/test_teacher.py:1078: in test_cached_admission_rejects_bad_targets_before_any_kernel
+    evaluate(obs, actions, bad, **flags)
+python/owl/model/kaggriculture.py:727: in evaluate_actions_with_cached_teacher
+    self._admit_cached_slot_logits(teacher_targets, lead)
+python/owl/model/kaggriculture.py:780: in _admit_cached_slot_logits
+    flat[slot] = logits.reshape(rows, frames, width)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: shape '[12, 241, 16]' is invalid for input of size 23136
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel
+1 failed in 0.20s

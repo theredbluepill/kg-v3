@@ -1,0 +1,607 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-phasemap
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ecdb-7e98-7a40-91f4-125b518ada3c
+--------
+user
+You are Codex. READ-ONLY confirmation on branch kg/rebuild-phase-map (this worktree). Your r1 report (ops/rebuild-2026-09-29/codex/verify-phase-map-r1.md in /Users/poonszesen/kg-v3) was APPROVE WITH EDITS with three findings (plan.md Task 3.6 0.05-nat wording; phase-status.md claim that no branch commits Codex reports; plan.md 0.2 eager-first item). Mark each RESOLVED/PARTIAL/UNRESOLVED in commit adcb4e7 and check nothing else changed. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll compare `adcb4e7` with the r1 report, check each finding, and verify the diff contains only those corrections. I’ll keep this read-only.
+
+exec
+/bin/zsh -lc 'cat ops/rebuild-2026-09-29/codex/verify-phase-map-r1.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+Reviewed `8550535` against integration `b8747b6`, read-only. Three documentation edits are needed:
+
+1. **P2 — Unsupported BF16 claim.** The newly checked [plan item at line 265](/Users/poonszesen/kg-v3-phasemap/ops/rebuild-2026-09-29/plan.md:265) calls `0.05` nats “well above BF16 replay noise.” The tracker and [supporting Reference](/Users/poonszesen/kg-v3-phasemap/cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md:91) explicitly say GPU/BF16 tolerance is unmeasured. Keep the implementation checked; replace that parenthetical with the qualification gap.
+
+2. **P3 — Incorrect report-custody claim.** [Tracker line 10](/Users/poonszesen/kg-v3-phasemap/ops/rebuild-2026-09-29/phase-status.md:10), repeated at line 135, says no branch commits the Codex reports. Integration already contains **six cited reports byte-for-byte**, including both contract reviews, Task 0.3’s report, and the three Task 3.4 reviews. The teacher branch contains additional reports. Narrow this to the reports actually untracked.
+
+3. **P3 — Checked diagnostic sequence differs from receipts.** [Plan line 172](/Users/poonszesen/kg-v3-phasemap/ops/rebuild-2026-09-29/plan.md:172) checks an eager-first reproduction sequence. The receipts document a blocking **compiled** reproduction followed by a synthetic compiled-versus-eager probe. Rewrite the checked item to reflect that sequence. The root-cause result remains supported; no rerun is needed.
+
+Verification completed:
+
+- Checked **30+ rows**, spanning contract, engine, model, trainer, teacher, BC, GPU evidence, packaging and cross-cutting work. Sampled states, commit ancestry, verdicts and receipt paths match the dated snapshot.
+- All **44 cited Codex reports** exist and match the stated verdicts.
+- All **15 fully checked plan tasks** have merged work. Partial Tasks 3.1 and 5.1 remain unchecked; teacher and FlashAttention approvals remain explicitly unmerged.
+- All **18 index entries and descriptions** survive byte-for-byte, exactly once. Current-tree versus historical placement is supported, and branch-only notes remain unlinked.
+- The cookbook pointer and regrouping log claims are consistent.
+- Later task-branch movement was treated separately from the 19:00 snapshot.
+- `git diff --check` passes; the worktree remains clean. No files changed or runtime suites rerun.
+
+VERDICT: APPROVE WITH EDITS
+exec
+/bin/zsh -lc "cat cookbook/index.md && sed -n '1,65p' cookbook/log.md && cat cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md" in /Users/poonszesen/kg-v3-phasemap
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References describe branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]], grouped by rebuild phase
+- Phase tracker (working artifact, task state per phase): `ops/rebuild-2026-09-29/phase-status.md`
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Group the References index by rebuild phase and add a phase tracker
+
+The owner asked whether a phase-based cookbook record existed. None did. Notes
+are concept-scoped, and phase state lived only in `plan.md` checkboxes, receipts
+and the untracked pause checkpoint. The
+[[references/index|References index]] is now grouped by phase (0/1 engine,
+2 model, 3 trainer, 4 teacher, 5/7 data preparation, 6 GPU evidence,
+cross-cutting). Its "Reference branch (historical)" section keeps only the five
+notes that describe `kg/reference-2026-09-29`. Four current-tree notes (native
+semantics, compiled GEMM, encoder, grammar heads) and the starter-history note
+moved out of that section. Entry text is unchanged. Task state stays out of the
+cookbook: `ops/rebuild-2026-09-29/phase-status.md` is a dated working tracker,
+built from three surveys and rechecked with `git merge-base --is-ancestor`
+against `b8747b6`. It lists notes that exist only on unmerged branches, which
+are not linked yet. `plan.md` now ticks only tasks merged into integration and
+marks 4.1–4.3 and 6.0 as approved, not merged.
+
+## 2026-09-29 — Capture every engine build input in observation-oracle custody
+
+Codex verification r1 of the Task 1.3 merge (`e197528`, REJECT) found that the
+oracle source snapshot omitted the live engine `Cargo.toml` and `py_random.rs`,
+so edits to either during regeneration survived every recheck. `regenerate.py`
+now captures and rechecks those and `econ_attrib.rs`, recorded in
+`dirty_files`, and fails on any undeclared engine module. Seven new custody
+tests failed first and pass after the repair (53 total). The committed corpus
+predates the repair; its gap is stated in the
+[[references/structured-observations-preserve-legal-state-and-order|observation Reference]]
+and `docs/rules-parity-coverage.md`. Receipts:
+`ops/rebuild-2026-09-29/merge-1.3/verify-r1-fix/`.
+
+## 2026-09-29 — Merge Task 1.3 structured observations onto the trainer-lane integration
+
+Task 1.3 (Codex APPROVE at `dc6b200`) forked from `f464c3d`, after the Task 1.2
+merge, and later merged an older integration (`78ab94f`). Only this log and
+`docs/rules-parity-coverage.md` conflicted: both sides' log entries are kept,
+integration first, and the coverage page keeps the trainer-lane counts as
+history beside Task 1.3's grammar-bridge retirement and the merged counts. The
+retirement of `engine_rs/tests/grammar_kernel.rs` and the root engine dependency
+are kept; `engine_rs/TRIM_MANIFEST.json` equals Task 1.3's because the
+integration side left it unchanged since the fork, and the trim checker passes.
+The [[references/structured-observations-preserve-legal-state-and-order|observation Reference]]
+index line moves under "Current rebuild". Full `just prepare`: engine 69, root
+Rust 254 with four ignored, Python 1,618 passed with seven skips; receipt
+`ops/rebuild-2026-09-29/merge-1.3/prepare.log`.
+
+## 2026-09-29 — Serialize the GEMM-backend claim and scope old probe limits
+
+Codex verification r2 of the cuBLAS-only wiring
+(`ops/rebuild-2026-09-29/codex/verify-aten-r2.md`, APPROVE WITH EDITS) found
+two P3s. A concurrent Orbit claim could land while a Kaggriculture claim read
+its stack and then be silently overwritten; `claim_gemm_backends` in
+`python/owl/model/compile_gemm.py` now holds a lock around check and write, and
+a new test in `tests/kaggriculture/test_compile_gemm_backends.py` reproduces
+the race (it failed before the lock). The
+[[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]
+Limits now scope "triton not captured" and "real flash-attn untested" to the
+earlier overflow probe and credit the A/B's triton 3.5.0 and flash-attn 2.8.3;
+the backward-above-bound and GPU-wiring gaps stay. The
+[[decisions/kaggriculture-compiles-gemms-with-cublas-only|Decision]] records
+the lock and the r2 check.
+
+## 2026-09-29 — Claim cuBLAS-only GEMMs at every public compile entry
+
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+
+exec
+/bin/zsh -lc 'pwd && git status --short && git branch --show-current && git rev-parse HEAD && git show --stat --oneline --decorate adcb4e7 && git diff adcb4e7''^ adcb4e7 --' in /Users/poonszesen/kg-v3-phasemap
+ succeeded in 0ms:
+/Users/poonszesen/kg-v3-phasemap
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+kg/rebuild-phase-map
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+adcb4e7656cdf7f0a8aa126adb5faaf851274d74
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+adcb4e7 (HEAD -> kg/rebuild-phase-map) Apply Codex's phase-map verification r1 edits
+ ops/rebuild-2026-09-29/phase-status.md | 4 ++--
+ ops/rebuild-2026-09-29/plan.md         | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+diff --git a/ops/rebuild-2026-09-29/phase-status.md b/ops/rebuild-2026-09-29/phase-status.md
+index 3fbbe32..95d61cf 100644
+--- a/ops/rebuild-2026-09-29/phase-status.md
++++ b/ops/rebuild-2026-09-29/phase-status.md
+@@ -7,7 +7,7 @@ This is a working artifact, not a durable cookbook claim. Update it at each land
+ ## Path conventions
+ 
+ - **Bare paths** are tracked on integration at `b8747b6`, relative to the repository root. `rebuild/` is short for `ops/rebuild-2026-09-29/`.
+-- **`codex/…`** is `/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/…`. Those Codex reports are untracked in the main worktree (`kg/rebuild-model`) and are not committed on any branch.
++- **`codex/…`** is `/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/…`. That is the main worktree (`kg/rebuild-model`) copy. Six cited reports are also tracked on integration at `b8747b6`, byte-identical to that copy: `task-0.1-review.md`, `task-0.1-rereview.md`, `task-0.3-report.md` and `verify-3.4-r1.md`/`-r2.md`/`-r3.md`. `kg/merge-teacher` additionally tracks `brief-4-review.md` and `verify-merge-teacher-r1.md`. Every other cited `codex/…` report is untracked on every branch.
+ - **`<branch>:<path>`** is a path tracked on that branch, not on integration.
+ - **Absolute paths** are uncommitted files in the named worktree.
+ - **"Merged"** means the commit is an ancestor of `b8747b6`. Each was checked with `git merge-base --is-ancestor <sha> b8747b6` at 19:00 HKT.
+@@ -132,7 +132,7 @@ Live processes at 19:00 HKT (`ps`): Codex `codex exec resume` for Task 1.4 (PID
+ | Stream C (3.1, 3.6, Phase 4 prep) | merged | `62899de`, merged by `07568e0` | `codex/verify2-lane-C-r2.md` APPROVE | `rebuild/stream-c-*.log`, `rebuild/4-prep-*.log` | `cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md` | — |
+ | Stream D (selection, 5.1/7.1/7.3 briefs) | merged | `9d54a8b`, merged by `1177a5b` | `codex/verify2-lane-D-r1.md` APPROVE | `rebuild/checks/` | `cookbook/references/rebuild-data-preparation-preserves-replay-identity.md` | — |
+ | Cookbook refresh and codex exec workflow | approved, not merged | `kg/rebuild-model` `bcd9627` … `8093d51` | `codex/verify-cookbook-refresh-r3.md` APPROVE (`8093d51`) | `kg/rebuild-model:cookbook/log.md` | `kg/rebuild-model:cookbook/workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict.md` | The evidence merge has not started. The main worktree has uncommitted cookbook edits (architecture image). |
+-| Codex report custody | open | — | — | `codex/` (untracked) | — | No branch tracks the Codex reports. |
++| Codex report custody | open | — | — | `codex/` (main worktree) | — | Integration tracks six cited reports (Task 0.1 review/rereview, Task 0.3 report, Task 3.4 r1–r3); `kg/merge-teacher` adds two. The other cited reports are untracked. |
+ 
+ ## Notes not yet on integration
+ 
+diff --git a/ops/rebuild-2026-09-29/plan.md b/ops/rebuild-2026-09-29/plan.md
+index 9d8d340..b4df656 100644
+--- a/ops/rebuild-2026-09-29/plan.md
++++ b/ops/rebuild-2026-09-29/plan.md
+@@ -169,7 +169,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
+ **Owner:** Codex writes `ops/rebuild-2026-09-29/cuda_repro.py`; Claude runs it. It uses the reference branch checkout on the pod and the BC best checkpoint (SHA-256 `ffd7d9e4…`, identical to its pre-PPO copy; confirm the path on the pod before running).
+ 
+ - [x] Run statement. Question: which hypothesis holds — H1, a dense-state index overflow in compiled kernels; H2, an async copy from reused native buffers; or H3, some other kernel?
+-- [x] Run in order, stopping at the first informative result: `CUDA_LAUNCH_BLOCKING=1` eager, then compiled, then compiled with synchronous host→device copies, then `compute-sanitizer --tool memcheck`. Budget: ≤ 2 GPU-hours.
++- [x] Reproduce and localize: a `CUDA_LAUNCH_BLOCKING=1` run of the crashed run's own **compiled** config (fault after 3 iterations in an Inductor Triton GEMM template), then a synthetic compiled-versus-eager probe (`int32_probe.py`) across the 2²¹-row boundary. The planned eager-first order, synchronous-copy run and `compute-sanitizer` step were not needed once the blocking run named the kernel. Budget: ≤ 2 GPU-hours.
+ - [x] Record the root cause (or "not reproduced", with the conditions tried) in `ops/rebuild-2026-09-29/results.md`, and turn it into a design requirement for 1.4 (buffers) and 2.3 (index validation).
+ 
+ ### Task 0.3: Report failed runs as failed
+@@ -262,7 +262,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
+ 
+ ### Task 3.6: First-minibatch log-ratio alarm (L6)
+ 
+-- [x] In `PPOTrainer._update`, before the first optimizer step of each update, compute the mean log-ratio of the first minibatch. If |mean| > 0.05 nats (well above BF16 replay noise), raise with the rollout batch shape and token count. Test with a model whose sampling and replay paths are deliberately made to disagree.
++- [x] In `PPOTrainer._update`, before the first optimizer step of each update, compute the mean log-ratio of the first minibatch. If |mean| > 0.05 nats (the plan's value; GPU/BF16 replay noise is unmeasured, so this threshold is not yet qualified), raise with the rollout batch shape and token count. Test with a model whose sampling and replay paths are deliberately made to disagree.
+ 
+ ### Task 3.5: Bounded local functional check
+ 
+
+exec
+/bin/zsh -lc "rg -n '0\\.05|BF16|eager|compiled|blocking|int32_probe|compute-sanitizer|synchronous' cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md ops/rebuild-2026-09-29/results.md ops/rebuild-2026-09-29/plan.md" in /Users/poonszesen/kg-v3-phasemap
+ succeeded in 0ms:
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:4:description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. At `1ddc71d` the rebuilt trunk guard was measured correct at L−1 and rejected L; the packed path now chunks instead of rejecting (CPU-tested). Task 3.1 registers the model and dispatches the guarded trunk compile (CPU-tested). A measured A/B found ATEN-only (cuBLAS) GEMM backends correct above the bound, with no Triton GEMM template, at +4.5–6.5 % model-only update wall; compiled Kaggriculture regions now require that setting (CPU-tested), and the guards stay. Production compliance is unproven."
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:8:sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/cuda-repro-blocking.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/ppo-from-bc-2026-09-29/train.log"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/train.log"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.log"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/driver.jsonl"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/gemm-limits-2026-09-29/"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/kernel_analysis.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md"}, {"resource": "repository:python/owl/train/utils.py"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-3.1-rest-r2.md"}, {"resource": "rebuild-model-branch:9bdd82d:ops/rebuild-2026-09-29/results.md#L259-L303"}, {"resource": "rebuild-model-branch:9bdd82d:ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md"}, {"resource": "local-untracked:kg-v3/ops/rebuild-2026-09-29/codex/verify-aten-ab-r2.md"}, {"resource": "repository:python/owl/model/kaggriculture.py"}, {"resource": "repository:tests/kaggriculture/test_compile_gemm_backends.py"}]
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:17:A controlled probe confirmed the threshold. It used a synthetic BF16 MLP (256→1024, GELU, 1024→256) with `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. At M = 2,088,960 the compiled output matches eager within BF16 noise (max diff 0.0078). At M = 2,105,344 it faults. Environment: torch 2.9.0+cu128, RTX PRO 6000 Blackwell, driver 595.91.07. Hashes and logs are in `ops/rebuild-2026-09-29/results.md`.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:22:- The bug is in compiler-generated code, so it is invisible in the model source. It can reappear for any compiled GEMM whose `rows × input width` exceeds 2³¹: rollouts, evaluation, BC, and other models with larger batches. In training, backward reads forward outputs as inputs, so the forward output width counts too (below).
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:26:A second bounded probe compared compiled output against eager at every point. It covered synthetic compiled Linears and MLPs, plus the real `KaggricultureTransformer` trunk from `kg/rebuild-model` @ `1ddc71d`, compiled directly through its own `compile_transformer_trunk`. Precision matched `run_ppo`: fp32 parameters under bf16 autocast, `max-autotune-no-cudagraphs`, `dynamic=True`, compiled small first. Codex verified the evidence and requested edits, applied here. The table, the generated-code attribution and the source citations are in `ops/rebuild-2026-09-29/results.md`, "GEMM limits at our shapes".
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:48:- **Remedy in force: cuBLAS-only compiled GEMMs.** An A/B on the same pod changed one setting, `max_autotune_gemm_backends` from `"ATEN,TRITON,CPP"` to `"ATEN"` (branch `kg/rebuild-model` at `9bdd82d`, `ops/rebuild-2026-09-29/results.md` lines 259–303; Codex r2 APPROVE).
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:54:- **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:56:  - Outside the trunk: the stems run eager (the full stem is 371→512→256) and have no guard of their own. Task 2.3 implements the heads and the 768-wide `actor_input_proj`; they run eager in production and chunk rows so `rows × 252 × max(3D, D, widest head) < 2^31` (11,096 rows at D = 256). Compiled, `actor_input_proj` alone would exceed L_in at 2,796,203 rows × frames. None of this is measured on the GPU.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:75:- **Tolerances:** the checks detect the reported corruption. They do not prove BF16 equivalence for arbitrary inputs.
+cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md:40:[[compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]], and the historical
+cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md:53:- `PPOConfig.first_minibatch_logratio_limit` defaults to `0.05` nats. It must be finite and positive; `None` disables it.
+cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md:91:- **The 0.05-nat threshold is unmeasured.** It is the plan's value; BF16/compiled replay noise on GPU has not been measured here. Under `per_player` it bounds the summed joint action, so coherent small per-entity noise over many entities could trip it; Codex's synthetic probe gives 0.0723 nats from 241 entities at 0.0003 each. Real false positives have been neither shown nor excluded. The multi-rank reduction is tested with fake ranks only, not real processes. Signed cancellation across samples or ranks can hide drift. The check adds one host sync per update.
+cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md:96:Reopen the threshold when the Phase 6 GPU smoke records first-minibatch log-ratios under BF16 and compile in each clip mode used, and reopen the mapping dispatch when Task 1.5 defines the Kaggriculture batch and mask types.
+ops/rebuild-2026-09-29/plan.md:9:**Tech Stack:** Rust (PyO3/maturin, rayon), Python 3.12, PyTorch 2.9 (BF16, Inductor, FlashAttention), pydantic configs, pytest, cargo, W&B, torchrun/NCCL on RunPod RTX PRO 6000, Codex CLI 0.158 (`codex exec`).
+ops/rebuild-2026-09-29/plan.md:32:- **Compiler limit:** the L6 bound is independent of GPU type; rows × tokens × inner dim < 2³¹ on every compiled GEMM (guard and chunking in 2.1).
+ops/rebuild-2026-09-29/plan.md:85:| L6 | **Resolved (Task 0.2):** the CUDA illegal memory access is a Torch 2.9 Inductor max-autotune GEMM template overflowing 32-bit offsets above 2^21 rows, which silently corrupted rollout activations before faulting (cookbook `references/compiled-gemm-template-overflows-above-2-21-rows`) | 2.1 guard, 3.4 cadence, 3.6 alarm |
+ops/rebuild-2026-09-29/plan.md:109:| I8 | Throughput defaults: compiled GAE/loss, trunk `max-autotune-no-cudagraphs`, BF16, TF32, forced FlashAttention | Verified active in Phase 6 | 3.4, 6.x |
+ops/rebuild-2026-09-29/plan.md:171:- [x] Run statement. Question: which hypothesis holds — H1, a dense-state index overflow in compiled kernels; H2, an async copy from reused native buffers; or H3, some other kernel?
+ops/rebuild-2026-09-29/plan.md:172:- [x] Reproduce and localize: a `CUDA_LAUNCH_BLOCKING=1` run of the crashed run's own **compiled** config (fault after 3 iterations in an Inductor Triton GEMM template), then a synthetic compiled-versus-eager probe (`int32_probe.py`) across the 2²¹-row boundary. The planned eager-first order, synchronous-copy run and `compute-sanitizer` step were not needed once the blocking run named the kernel. Budget: ≤ 2 GPU-hours.
+ops/rebuild-2026-09-29/plan.md:222:- [x] L6 guard: the compiled trunk fails fast (or chunks) when `rows × tokens × max_inner_dim ≥ 2^31`; boundary test with a stub trunk.
+ops/rebuild-2026-09-29/plan.md:265:- [x] In `PPOTrainer._update`, before the first optimizer step of each update, compute the mean log-ratio of the first minibatch. If |mean| > 0.05 nats (the plan's value; GPU/BF16 replay noise is unmeasured, so this threshold is not yet qualified), raise with the rollout batch shape and token count. Test with a model whose sampling and replay paths are deliberately made to disagree.
+ops/rebuild-2026-09-29/plan.md:285:- [ ] Rebuild `train_bc.py` (R) on the new model, reusing Isaiah's optimizer factory, BF16 and compile. Two-rank RTX PRO 6000. Keep the best checkpoint by held-out NLL and stop on sustained held-out degradation (L9). Run statement first. Record the checkpoint SHA-256, the NLL curve and the stopping step.
+ops/rebuild-2026-09-29/plan.md:289:- [ ] **6.0 FlashAttention on the pod (blocking for 6.1–6.4):** (approved, not merged: 78df33c) the GEMM-limit probe found that the pod venv has **no `flash-attn` package**, and the pod's run config had `force_flash_attn: false` (`results.md`, "GEMM limits at our shapes"). Install or build flash-attn 2.8.3 on the pod with `uv sync --extra flash-attn`, and set `force_flash_attn: true`. Verify that the real FlashAttention varlen path runs (import, kernel in use, compiled vs eager on the packed trunk) before any qualification or throughput claim.
+ops/rebuild-2026-09-29/results.md:7:Run statement: `run-statements/cuda-repro-blocking.md`. Launched 2026-09-29T03:34:45Z with `CUDA_LAUNCH_BLOCKING=1`, reusing the crashed run's own config and the BC best checkpoint (`ffd7d9e4…`), 2 ranks.
+ops/rebuild-2026-09-29/results.md:9:**Observation while running (iteration 1, before any fault):** the first PPO update on BC-policy rollouts shows `policy/logratio_mean −3.77`, `approx_kl 3.43`, `ratio_mean 0.66`, `logratio_abs_max 12.08`, and a KL stop after 2 optimizer steps. At the first minibatch the weights haven't changed, so replayed log-probs should equal rollout log-probs (log-ratio 0). A mean of −3.77 nats means the reference model's **sampling path and evaluation path disagree** on the states the BC policy reaches. Rollout was 4,878 env steps/s even with blocking launches; evaluation: 128 games, win rate 8.6% vs the BC incumbent.
+ops/rebuild-2026-09-29/results.md:15:- **Reproduced:** the blocking run faulted after 3 iterations on both ranks (`exit=1`, 7m43s wall), matching the original crash. With blocking launches, both tracebacks end in the same compiled kernel, `triton_tem_fused__to_copy_addmm_gelu_t_view_9`. This is an Inductor **max-autotune Triton GEMM template** in the transformer trunk MLP (`M = ks0·ks1` = batch rows × tokens, K = 1024, N = 256), called from `KaggricultureTransformer._run_trunk`. It is not the model's own indexing, not the async copies (H2), and not attention.
+ops/rebuild-2026-09-29/results.md:17:- **Controlled confirmation (`int32_probe.py`, sha256 `78dd05d3…`; log `ea88948b…`):** a synthetic MLP (256→1024, GELU, 1024→256), BF16, `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. At M = 2,088,960 (< 2²¹) max |compiled − eager| = 0.0078 (BF16 noise). At M = 2,105,344 (> 2²¹): **CUDA illegal memory access**. torch 2.9.0+cu128, RTX PRO 6000 Blackwell, driver 595.91.07.
+ops/rebuild-2026-09-29/results.md:24:2. **Guard (Task 2.1):** the model's compiled trunk path fails fast when `rows × tokens × max_inner_dim ≥ 2³¹`, or chunks the forward, with a test at the boundary. This protects evaluation, BC and any future larger batch.
+ops/rebuild-2026-09-29/results.md:30:The unchanged probe under the pod's system torch 2.8.0+cu128 on GPU 0 gives max |compiled − eager| = 0.0078 both below (M = 2,088,960) and above (M = 2,105,344) the threshold: **no overflow in torch 2.8** for this template. (The "out of resource" autotune lines are candidate configs exceeding sm_120 shared memory, which autotune discards.) Log: pod `runs/cuda-repro-2026-09-29/int32_probe_torch28.log`.
+ops/rebuild-2026-09-29/results.md:38:**Scope: production compliance is unproven.** The probe compiled the trunk directly through the model's own `compile_transformer_trunk`. The production wiring does not reach it yet:
+ops/rebuild-2026-09-29/results.md:41:- `forward`/`evaluate_actions` and the teacher APIs are unfinished. `actor_input_proj` and the nine action heads are **not implemented yet**; they are absent, not eager.
+ops/rebuild-2026-09-29/results.md:59:- `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. For `lin_4096_16`, the logs show the warm compile specialized M: the recompile guard reads "expected 4096". Dynamic-M graphs come from the first recompile.
+ops/rebuild-2026-09-29/results.md:60:- Every point is compared against the eager (cuBLAS) forward, so silent corruption is measured, not just faults.
+ops/rebuild-2026-09-29/results.md:75:- These tolerances detect the corruption reported here. They do not prove BF16 equivalence for arbitrary inputs.
+ops/rebuild-2026-09-29/results.md:94:  - 4096→16: the graph recompiled at hint 520,192 (`inductor_cache/lin_4096_16/rv/…`) has `ks0: i32` with A-load `xindex = idx_n + 4096*idx_m`. It ran correctly at L_in and faulted at L_in+1.
+ops/rebuild-2026-09-29/results.md:118:- **Design bound for training: M × max(in, out) over every Linear in a compiled region.** Backward consumes forward outputs as GEMM inputs: dX = dY·W reads dY at the forward *output* width. Under the measured input-side rule, a backward GEMM can therefore wrap at M × (forward output width) even when the forward's input side is safe. Weight-gradient GEMMs reduce over M and index offsets up to M × width.
+ops/rebuild-2026-09-29/results.md:126:  - Rollout, 256 rows: 181,504 tokens, 23.1086× headroom. Compiled vs eager was measured at this shape, dense and sparse.
+ops/rebuild-2026-09-29/results.md:134:  - The heads are not implemented yet. If the head core is ever compiled, the planned `actor_input_proj` (768 in) exceeds L_in at M = 2,796,203 rows × frames.
+ops/rebuild-2026-09-29/results.md:135:  - Stems are eager today. `ObservationInputStem` is 371→512→256 (`stateless_transformer_v1.py:2750`), so a compiled full stem would include a 512-wide projection, with the same L as the trunk.
+ops/rebuild-2026-09-29/results.md:136:  - The audit's 371/376 figures are conditional stride bounds, not observed kernel limits: ⌊2³¹/371⌋ = 5,788,365, and ⌊2³¹/376⌋ = **5,711,392**, if BF16 alignment padding rounds 371 to 376 (`fx_passes/pad_mm.py:69–71,121–130`). That padding is conditional (line 728). No 376 stride was generated for these eager stems.
+
+exec
+/bin/zsh -lc "git show -s --format='%H%n%P%n%s' adcb4e7 && git diff --check 8550535 adcb4e7 && git diff --name-status 8550535 adcb4e7 && git for-each-ref --format='%(refname:short)' refs/heads refs/remotes && nl -ba ops/rebuild-2026-09-29/phase-status.md" in /Users/poonszesen/kg-v3-phasemap
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+adcb4e7656cdf7f0a8aa126adb5faaf851274d74
+8550535ae54bbd62a52b78cd610c4d19f905eb24
+Apply Codex's phase-map verification r1 edits
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+M	ops/rebuild-2026-09-29/phase-status.md
+M	ops/rebuild-2026-09-29/plan.md
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+kg/isaiah-gap-closure
+kg/merge-1-3
+kg/merge-1.1b
+kg/merge-evidence
+kg/merge-grammar
+kg/merge-heads
+kg/merge-teacher
+kg/merge-trainer-lanes
+kg/rebuild-7-1
+kg/rebuild-7-4-brief
+kg/rebuild-8rank
+kg/rebuild-adapter
+kg/rebuild-aten
+kg/rebuild-codex
+kg/rebuild-codex-data
+kg/rebuild-configs
+kg/rebuild-deps
+kg/rebuild-env
+kg/rebuild-env-briefs
+kg/rebuild-gpu-checks
+kg/rebuild-grammar
+kg/rebuild-heads
+kg/rebuild-model
+kg/rebuild-observe
+kg/rebuild-parity
+kg/rebuild-phase-map
+kg/rebuild-semantics
+kg/rebuild-trainer-model
+kg/rebuild-value-gap
+kg/reference-2026-09-29
+main
+worktree-agent-a6b402c3efeaea928
+origin/main
+upstream
+upstream/main
+     1	# Rebuild phase status
+     2	
+     3	**As of 2026-09-29 19:00 HKT (11:00Z).** Integration branch `kg/isaiah-gap-closure` at `b8747b6`.
+     4	
+     5	This is a working artifact, not a durable cookbook claim. Update it at each landing: a merge, a Codex verdict, or a state change. When a row changes, re-check it against git and the cited report. Don't copy a row into a cookbook note without re-checking it. The cookbook stays organised by concept (`cookbook/references/`, `cookbook/decisions/`). This file is the one place that maps those notes and receipts onto the plan's phases (`ops/rebuild-2026-09-29/plan.md`).
+     6	
+     7	## Path conventions
+     8	
+     9	- **Bare paths** are tracked on integration at `b8747b6`, relative to the repository root. `rebuild/` is short for `ops/rebuild-2026-09-29/`.
+    10	- **`codex/…`** is `/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/…`. That is the main worktree (`kg/rebuild-model`) copy. Six cited reports are also tracked on integration at `b8747b6`, byte-identical to that copy: `task-0.1-review.md`, `task-0.1-rereview.md`, `task-0.3-report.md` and `verify-3.4-r1.md`/`-r2.md`/`-r3.md`. `kg/merge-teacher` additionally tracks `brief-4-review.md` and `verify-merge-teacher-r1.md`. Every other cited `codex/…` report is untracked on every branch.
+    11	- **`<branch>:<path>`** is a path tracked on that branch, not on integration.
+    12	- **Absolute paths** are uncommitted files in the named worktree.
+    13	- **"Merged"** means the commit is an ancestor of `b8747b6`. Each was checked with `git merge-base --is-ancestor <sha> b8747b6` at 19:00 HKT.
+    14	
+    15	State values: **merged**, **approved, not merged** (Codex APPROVE, not on integration), **in review**, **in progress**, **blocked**, **not started**.
+    16	
+    17	## Summary
+    18	
+    19	The done count only includes plan tasks whose work is merged into integration. Tasks without a plan checkbox (1.1b, 6.3b and the pod evidence runs) are listed in their phase's table but are not counted.
+    20	
+    21	| Phase | Done / total | State | Next landing |
+    22	|---|---|---|---|
+    23	| 0 Contract and diagnostics | 3 / 3 | merged | None. Contract v4 has no Codex re-review (see 0.1). |
+    24	| 1 Engine and native env | 3 / 5 (plus 1.1b, merged) | in progress | 1.4 native env (Codex running), then 1.5 stage 2 |
+    25	| 2 Model | 5 / 5 | merged | None. CUDA/BF16 is unqualified and waits on Phase 6. |
+    26	| 3 Trainer | 4 / 6 | blocked on 1.4/1.5 | 3.1's Kaggriculture rollout/mask mapping, then 3.5 |
+    27	| 4 Teacher | 0 / 4 | approved, not merged (4.1–4.3) | Teacher merge `kg/merge-teacher` `2390c8e` (merge verify r2 running), then 4.4 |
+    28	| 5 BC | 0 / 2 | blocked | 5.1 `prepare.py` waits on the 1.4/1.5 explicit-state constructor |
+    29	| 6 GPU verification | 0 / 5 | 6.0 approved, not merged; evidence runs partly merged | Merge the `kg/rebuild-model` evidence; then 6.1 after 1.4/1.5/3.5/5.2 |
+    30	| 7 Evaluation and packaging | 0 / 5 | 7.1 blocked, 7.4 brief in review | 7.4 brief revision; 7.1 needs an engine-API decision |
+    31	| 8 Docs and closeout | 0 / 2 | not started | Needs the earlier phases |
+    32	
+    33	Live processes at 19:00 HKT (`ps`): Codex `codex exec resume` for Task 1.4 (PID 55836, started 18:36) and the Codex teacher merge verification r2 in `/Users/poonszesen/kg-v3-m-teacher` (PID 89983, started 18:57). The Task 7.1 Codex run (PID 67210) has exited, and its report is `codex/task-7.1-impl-report.md`.
+    34	
+    35	## Phase 0 — Contract and diagnostics
+    36	
+    37	| Task | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
+    38	|---|---|---|---|---|---|---|
+    39	| 0.1 Contract | merged | Committed directly on integration as `08b0092`; v4.1 clarification `cdd2617`. `docs/kaggriculture-contract.md:3` reads "Status: v4.1, accepted". | `codex/task-0.1-review.md` (no VERDICT line, "Draft v1 needs revision"); `codex/task-0.1-rereview.md` ACCEPT WITH EDITS. No report reviews v4. | `docs/kaggriculture-contract.md` "Review and changes" (lines 271–296) | No dedicated note. `08b0092` edited `cookbook/decisions/start-multi-gpu-qualification-with-two-ranks.md` and `cookbook/decisions/the-policy-is-stateless-and-observation-only.md`. | No Codex re-review of Claude's v4 edits. |
+    40	| 0.2 CUDA crash repro | merged | Committed directly on integration as `ba9ab8d` | No 0.2 report. The follow-up GEMM-limit reviews are listed under Phase 6. | `rebuild/results.md` "Task 0.2" (lines 5–32); `rebuild/run-statements/cuda-repro-blocking.md` | `cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md` | The plan names `cuda_repro.py`, which is absent; the receipt cites `int32_probe.py`. Staying on torch 2.9 (`results.md:28-32`). Production compliance is unproven. |
+    41	| 0.3 Failed-run reporting | merged | `kg/rebuild-codex` `47f4d12`, merged by `ab0de01` | Codex implemented it (`codex/task-0.3-report.md`, no VERDICT). Claude's review is in `rebuild/0.3-results.md:107-111`. | `rebuild/0.3-results.md`, `rebuild/0.3-*.log`, `rebuild/0.3-sha256.txt`, `rebuild/briefs/0.3.md` | `cookbook/references/failed-training-reports-status-before-distributed-cleanup.md` | Offline unit tests only; no live W&B or distributed failure run. |
+    42	
+    43	## Phase 1 — Engine and native environment
+    44	
+    45	| Task | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
+    46	|---|---|---|---|---|---|---|
+    47	| 1.1 Rules kernel | merged | `kg/rebuild-codex` `5378763`, merged by `90ed86c` | `codex/verify-1.1-r1.md` APPROVE WITH EDITS; `codex/verify-1.1-r2.md` APPROVE at `5378763` | `rebuild/1.1/results.md`, `rebuild/briefs/1.1-rules-kernel.md`, `rebuild/briefs/1.1-review-claude.md` | `cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md` (section "Task 1.1") | Trace `rng_schedule`/`shop_schedule` headers are not compared (`1.1/results.md:201`). Covers four pinned worlds. L4 was repaired later, in 1.3. |
+    48	| 1.1b Live parity (owner request, no plan checkbox) | merged | `kg/rebuild-parity` `16e56b6`, merged by `8209193`; fix-ups `7529e01`, `99732ea` | `codex/verify-1.1b-r1.md`, `codex/verify-1.1b-r2.md` APPROVE WITH EDITS; `codex/verify-1.1b-r3.md` APPROVE at `16e56b6`. Merge verify: `codex/verify-merge-1.1b-r3.md` APPROVE. | `rebuild/1.1b/results.md`, `rebuild/merge-1.1b/` | `cookbook/references/live-differential-parity-checks-the-rust-kernel.md` | Divergences D1 (Unicode digits) and D2 (unhashable items) are kept as expected failures. The pod-scale sweep is still open. |
+    49	| 1.2 Grammar kernel | merged | `kg/rebuild-grammar` `7877c46`, merged by `84dd76a`; fix-ups `195bf7a`, `f464c3d` | `codex/verify-1.2-r1.md` APPROVE. Merge verify: `codex/verify-merge-1.2-r3.md` APPROVE at `f464c3d`. | `rebuild/1.2/results.md`, `rebuild/merge-1.2/results.md`, `rebuild/briefs/1.2.md` | `cookbook/references/native-game-semantics-use-v3-owned-buffers.md` | The PyO3 grammar-table binding and the skipped native-table equality test belong to 1.4. No GPU validation. |
+    50	| 1.3 Observation encoder | merged | `kg/rebuild-observe` `dc6b200`, merged by `e197528`; custody fix `b8747b6` | `codex/verify-1.3-r1.md` REJECT; `codex/verify-1.3-r3.md` APPROVE at `dc6b200`. Merge: `codex/verify-merge-1-3-r1.md` REJECT; `codex/verify-merge-1-3-r2.md` APPROVE (`b8747b6`). | `rebuild/1.3/results.md` (its header "incomplete" is stale), `rebuild/merge-1.3/`, `rebuild/briefs/1.3.md` | `cookbook/references/structured-observations-preserve-legal-state-and-order.md` (status `oracle-qualified-timing-pending`) | Optimized timing hit the Mac memory stop and is handed to the pod. |
+    51	| 1.4 Native env | in progress | `kg/rebuild-env` `8d98ea8` ("partial"), worktree `/Users/poonszesen/kg-v3-env` with uncommitted edits. Brief merged by `60d5cdd`. | Brief: `codex/confirm-briefs-1.4-1.5-r2.md` APPROVE at `bb0f7e4`. Implementation: no verdict yet (Codex PID 55836 running). | `/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/1.4/progress.md` (uncommitted); `rebuild/briefs/1.4.md` | None yet | Release overflow proof is "PENDING (pod)". The ≥16-game oracle is unconfirmed. The `rs.pyi` stub must end byte-identical across 1.4 and 1.5. |
+    52	| 1.5 Python adapter | in progress | `kg/rebuild-adapter` `43354c8` (stage 1), worktree `/Users/poonszesen/kg-v3-adapter` with Claude's uncommitted review | `codex/task-1.5-s1-report.md` STAGE1-COMPLETE (the implementer's status, not a review). No Codex verify. | `kg/rebuild-adapter:ops/rebuild-2026-09-29/stage1-adapter/results.md`; `rebuild/briefs/1.5.md` | `kg/rebuild-adapter` edits `native-game-semantics-use-v3-owned-buffers.md` and `reward-reuse-preserves-objective-and-critic-semantics.md` | Stage 2 is blocked on the 1.4 binding. Native reward, codec replay and DMA-fence tests are skipped. |
+    53	
+    54	## Phase 2 — Model
+    55	
+    56	| Task | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
+    57	|---|---|---|---|---|---|---|
+    58	| 2.1 Encoder | merged | Lane B `94f778d`, merged by `31e1e6c` | `codex/verify2-lane-B-r2.md` APPROVE at `94f778d`; `codex/verify-merge-heads-r2.md` APPROVE at `e1458d2` | `rebuild/briefs/2.1-encoder.md` | `cookbook/references/kaggriculture-encoder-reuses-isaiah-stateless-layers.md` | CPU only. The semantic zero-fill and privacy rules are asserted only on a synthetic fixture. |
+    59	| 2.2 Critic | merged | Lane B `94f778d`, merged by `31e1e6c`; masked softmax `4cac1a1`, merged by `a19a5ff` | `codex/verify2-lane-B-r2.md` APPROVE | `rebuild/briefs/2.2-critic.md`, `rebuild/trainer-model/critic-red.log` | Encoder note Limits; `cookbook/references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic.md` | No GPU run. Reopen the no-raise critic choice if a real row can have `still_playing=False`. |
+    60	| 2.3 Grammar heads | merged | `kg/rebuild-heads` `88f95f6`, merged by `1210b54`; reconciled in `e1458d2` | `codex/verify-2.3-r2.md` APPROVE; `codex/verify-merge-heads-r2.md` APPROVE at `e1458d2` | `rebuild/briefs/2.3-action-heads.md`, `rebuild/codex/verify-2.3-heads/` | `cookbook/references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection.md` | Synthetic grammar tables until the 1.4 binding. CUDA/BF16 is pending. |
+    61	| 2.4 Model size | merged | Owner answer recorded in `08b0092` | None (owner decision) | `cookbook/decisions/the-policy-is-stateless-and-observation-only.md` "Model size" (quote plus `user-directive:2026-09-29:model-size-6-10m`) | Same Decision | The plan's "Open question for the owner" (`plan.md:310`) is still listed, though answered. |
+    62	| 2.5 Model docs | merged | `docs/kaggriculture-model.md` added in `f161fc3`; parameter count in `a57111f`/`4f2bcd7` | No separate 2.5 review; covered by the lane-B and 2.3 verifies above | `docs/kaggriculture-model.md:30` (6,252,223 parameters) | — | — |
+    63	
+    64	## Phase 3 — Trainer
+    65	
+    66	| Task | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
+    67	|---|---|---|---|---|---|---|
+    68	| 3.1 Schema-generic seams | merged | Stream C `62899de`, merged by `07568e0` | `codex/verify2-lane-C-r2.md` APPROVE | `rebuild/3.1-*.log`, `rebuild/stream-c-*.log` | `cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md` | Proven on Orbit types only. |
+    69	| 3.1 Model side | merged | `kg/rebuild-trainer-model` `4cac1a1`, merged by `a19a5ff` | `codex/verify-3.1-rest-r3.md` APPROVE; `codex/verify-merge-trainer-lanes-r2.md` APPROVE at `f4ecd90` | `rebuild/trainer-model/`, `rebuild/codex/verify-3.1-rest/`, `rebuild/merge-trainer-lanes/` | `cookbook/references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic.md` | No real `torch.compile`/CUDA run. |
+    70	| 3.1 Kaggriculture rollout and mask mapping | blocked | None | None | `kg/merge-teacher:ops/rebuild-2026-09-29/merge-teacher/skip-probe.log` (TypeError: no `KaggricultureActionMask` mapping) | The gap is stated in the model-joins and configs notes | Waits on the 1.5 types and the 1.4 env. `run_ppo` keeps its explicit Kaggriculture stop. The plan's 3.1 checkbox stays open for this. |
+    71	| 3.2 Game semantics | merged | `kg/rebuild-semantics` `530b8cc`, merged by `d1f8d59` | `codex/verify-3.2-3.3-r2.md` APPROVE | `rebuild/3.2-3.3-*.log`, `rebuild/codex/verify-3.2-3.3-independent/` | `cookbook/references/evaluation-and-truncation-follow-the-kaggriculture-objective.md` | Kaggriculture `_apply_truncation` is untested (needs the mask mapping). |
+    72	| 3.3 Evaluation | merged | Same as 3.2 | `codex/verify-3.2-3.3-r2.md` APPROVE | Same as 3.2 | Same as 3.2 | `_create_eval_env` rejects Kaggriculture. The native seed test is skipped. |
+    73	| 3.4 Configs | merged | `kg/rebuild-configs` `71cebdb`, merged by `e7ce331` | `codex/verify-3.4-r1.md`, `codex/verify-3.4-r2.md` REJECT; `codex/verify-3.4-r3.md` APPROVE WITH EDITS; `codex/confirm-3.4.md` APPROVE | `rebuild/configs-r2/`, `rebuild/codex/verify-3.4*/` | `cookbook/references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe.md`; `cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md`; `cookbook/decisions/kaggriculture-compiles-gemms-with-cublas-only.md` | Launch stops after the workload check. The spm 8 / accum 1 split needs the 6.1 smoke. |
+    74	| 3.5 Local functional check | blocked | None (only the CPU configs from `e7ce331`) | None | None | None | Needs 1.4 and the 3.1 Kaggriculture seam. |
+    75	| 3.6 Replay-drift alarm | merged | Stream C `62899de`, merged by `07568e0` | `codex/verify2-lane-C-r2.md` APPROVE | `rebuild/3.6-*.log` | `cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md` | The 0.05-nat threshold is unmeasured on GPU/BF16. Codex's probe gave 0.0723 nats from coherent noise. |
+    76	
+    77	## Phase 4 — Teacher
+    78	
+    79	| Task | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
+    80	|---|---|---|---|---|---|---|
+    81	| 4.1 Per-slot KL | approved, not merged | `kg/rebuild-trainer-model` `e584a0d` (phase tip `8fde43c`). The merge is staged on `kg/merge-teacher` as `a424d8c`, with follow-up `2390c8e`. | Brief: `codex/brief-4-review.md` REVISE (v1); no v2 re-review found. Code: `codex/verify-4-teacher-r2.md` APPROVE (covers 4.1–4.3). Merge: `codex/verify-merge-teacher-r1.md` APPROVE WITH EDITS (one P3); r2 is running (PID 89983). | `kg/merge-teacher:ops/rebuild-2026-09-29/briefs/4-teacher.md`, `kg/merge-teacher:ops/rebuild-2026-09-29/trainer-model/4.1-*.log` | `kg/merge-teacher:cookbook/references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce.md` (not on integration) | CPU only, with synthetic grammar tables. |
+    82	| 4.2 Targets and cache | approved, not merged | `a90b820` (tip `8fde43c`); staged as above | As 4.1 | `kg/merge-teacher:ops/rebuild-2026-09-29/trainer-model/4.2-*.log` | As 4.1 | Cache bytes (102,208 B per seat row) are computed, not measured on GPU. |
+    83	| 4.3 Model methods and wiring | approved, not merged | `b94b8dc` plus r1 fixes `8fde43c`; staged as above | `codex/verify-4-teacher-r1.md` APPROVE WITH EDITS; `codex/verify-4-teacher-r2.md` APPROVE | `kg/merge-teacher:ops/rebuild-2026-09-29/trainer-model/4.3-*.log`, `kg/merge-teacher:ops/rebuild-2026-09-29/merge-teacher/skip-probe.log` | As 4.1 | T18 and T19b are skipped or bypassed until the 3.1 Kaggriculture seam exists. Phase 4 is not complete until they run unbypassed. |
+    84	| 4.4 Teacher configs | not started | None | `codex/verify-4-teacher-r2.md` lists it as outstanding | None | None | Unblocked once the teacher merge lands. |
+    85	
+    86	## Phase 5 — BC
+    87	
+    88	| Task | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
+    89	|---|---|---|---|---|---|---|
+    90	| 5.1 Data preparation | blocked (selection half merged) | `kg/rebuild-codex-data` `9d54a8b`, merged by `1177a5b` (selection only) | `codex/verify2-lane-D-r1.md` APPROVE | `rebuild/briefs/5.1-bc-data.md`, `rebuild/checks/` | `cookbook/references/rebuild-data-preparation-preserves-replay-identity.md` | `prepare.py` is not built; it needs the 1.4/1.5 explicit-state constructor. The 158,772 / 22,416 counts are not reproduced. |
+    91	| 5.2 BC training | not started | None | None | None | Historical only: `cookbook/references/bc-bootstrap-uses-native-replay-features-and-current-heads.md` | Needs 5.1, 1.5 and 3.5. |
+    92	
+    93	## Phase 6 — GPU verification and pod evidence
+    94	
+    95	| Task | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
+    96	|---|---|---|---|---|---|---|
+    97	| 6.0 flash-attn on the pod | approved, not merged | `kg/rebuild-model` `4fd40c7`, `78df33c`, `bcd9627` | `codex/verify-flash-attn-r2.md` APPROVE (`78df33c`) | `kg/rebuild-model:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/`; `kg/rebuild-model:ops/rebuild-2026-09-29/results.md` "Phase 6.0" | `kg/rebuild-model:cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md` | Forward path only. Trunk numerics are not qualified. |
+    98	| Evidence: GEMM limits | merged | `kg/rebuild-model` up to `432abe0`, merged by `053840f` | `codex/verify-gemm-limits-r3.md` APPROVE (`432abe0`) | `rebuild/gemm-limits-2026-09-29/`, `rebuild/run-statements/gemm-limits-probe.md`, `rebuild/results.md` (line 34) | `cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md` | Triton version and torch git identity were not captured at probe time. |
+    99	| Evidence: model-only SPS ceiling | approved, not merged | `kg/rebuild-model` `ed61770`, `cb4af49`, `ddf1fb2`, `5247daa` | `codex/verify-sps-ceiling-r2.md` APPROVE (`ddf1fb2`) | `kg/rebuild-model:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/` | `kg/rebuild-model:cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md` | Component estimates only. End-to-end SPS is unmeasured. |
+   100	| Evidence: ATEN-only GEMM A/B | approved, not merged | `kg/rebuild-model` `9904121`, `8fcfada`, `9bdd82d` | `codex/verify-aten-ab-r2.md` APPROVE (`9bdd82d`) | `kg/rebuild-model:ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/` | `cookbook/decisions/kaggriculture-compiles-gemms-with-cublas-only.md` (on integration; its A/B source is on `kg/rebuild-model`) | Component timing only. The real-trunk backward above the bound is unmeasured. |
+   101	| Evidence: GPU checks bundle | approved, not merged | `kg/rebuild-gpu-checks` `24380f3` | `codex/verify-gpu-bundle-r3.md` APPROVE (`24380f3`) | `kg/rebuild-gpu-checks:ops/rebuild-2026-09-29/gpu-checks-2026-09-29/` | None on any branch | Needs a cookbook record. The channel-229 outlier is unexplained. The F3 cleanup fix has not run on the pod. |
+   102	| Evidence: value-gap diagnostic | in progress | `kg/rebuild-value-gap` `c9b6cde` (attempt 2 recorded, Amendment 2 before relaunch) | None yet | `kg/rebuild-value-gap:ops/rebuild-2026-09-29/run-statements/value-gap-diagnostic.md` | None | No result yet. Attempt 1 hit an fp32 Inductor compile error; attempt 2 was an fp32 eager OOM at 1,024 rows (per `c9b6cde`). |
+   103	| 6.1 Memory smoke, 2 ranks | not started | None | None | None | Target in `cookbook/decisions/start-multi-gpu-qualification-with-two-ranks.md` | Blocked on 1.4/1.5, 3.5, 5.2 and the evidence and teacher merges. |
+   104	| 6.2 Complete-work run, 2 ranks | not started | None | None | None | None | Depends on 6.1 and 5.2. |
+   105	| 6.3 Four ranks | not started | `configs/kaggriculture_4rank.yaml` exists; no run | None | None | None | Depends on 6.2. |
+   106	| 6.3b 8-rank qualification (no plan checkbox on integration) | approved, not merged | `kg/rebuild-8rank` `7ad45fc` | `codex/verify-8rank-r2.md` APPROVE | `kg/rebuild-8rank:ops/rebuild-2026-09-29/8rank/` | `kg/rebuild-8rank` edits three integration notes (unmerged) | No 8-GPU run. It needs a stated live price and owner approval. |
+   107	| 6.4 Orbit end-to-end | not started | None | None | None | None | No run statement. |
+   108	
+   109	## Phase 7 — Evaluation and packaging
+   110	
+   111	| Task | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
+   112	|---|---|---|---|---|---|---|
+   113	| 7.1 Opponents | blocked | `kg/rebuild-7-1` at `b8747b6`, no commits. Uncommitted work is in `/Users/poonszesen/kg-v3-t71`. | `codex/task-7.1-impl-report.md`: "Stopped at your explicit API-boundary condition. Task 7.1 remains unimplemented." | `/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/7.1/results.md` (uncommitted); `rebuild/briefs/7.1-opponents.md` | Uncommitted draft `frozen-engine-api-blocks-standalone-opponent-import.md` in `/Users/poonszesen/kg-v3-t71` | Byte-exact controllers need private engine items (`fib`, `Game.config`, missing `Game` accessors). No opponent is qualified. |
+   114	| 7.2 Panel script | not started | None | None | None | Contract: `cookbook/decisions/evaluation-preserves-generality-and-evidence.md` | Depends on 7.1 and 6.2. |
+   115	| 7.3 Replay export | not started (brief only) | Brief merged in `1177a5b` | Covered only by `codex/verify2-lane-D-r1.md` | `rebuild/briefs/7.3-replay-export.md` | Referenced from `rebuild-data-preparation-preserves-replay-identity.md` | Needs the 1.4 env. |
+   116	| 7.4 Packaging | in review | `kg/rebuild-7-4-brief` `2ac7ddb` (applies the review) | `codex/brief-7.4-review.md` REVISE (one P1, six P2) on `eccdd12`; no re-review yet | `kg/rebuild-7-4-brief:ops/rebuild-2026-09-29/briefs/7.4-packaging.md` | `kg/rebuild-7-4-brief:cookbook/references/kaggle-packaging-reuses-the-starter-submission-path.md` | No implementation. No submission is authorized; the owner decides. |
+   117	| 7.5 Parity docs | not started | Kaggriculture sections already in `docs/rules-parity-coverage.md` from 1.1/1.1b/1.3 | None | None | `cookbook/references/live-differential-parity-checks-the-rust-kernel.md` | Needs a closing pass after 7.1, 7.3 and 7.4. |
+   118	
+   119	## Phase 8 — Docs and closeout
+   120	
+   121	| Task | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
+   122	|---|---|---|---|---|---|---|
+   123	| 8.1 References and rl-api-specs | not started | This tracker and the phase-grouped `cookbook/references/index.md` are a partial step (`kg/rebuild-phase-map`) | None | None | See "Notes not yet on integration" | The rl-api-specs differences are unchecked. |
+   124	| 8.2 Closeout | not started | None | None | None | None | Needs every earlier phase. |
+   125	
+   126	## Cross-cutting
+   127	
+   128	| Item | State | Branch / commit | Codex verdict | Receipts | Cookbook | Gaps |
+   129	|---|---|---|---|---|---|---|
+   130	| kaggle-environments 1.32.7 pin | merged | `kg/rebuild-deps` `c452f66`, merged by `69397da` | `codex/verify-deps-r3.md` APPROVE | `ops/deps-independent-verification-fb65e1f/` | `cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md` | None open in r3. |
+   131	| cuBLAS-only compiled GEMMs | merged | `b2ef2bd`, `3b735c0`, `b51b0c0` on the integration first-parent line | `codex/verify-aten-r3.md` APPROVE (`b51b0c0`) | `rebuild/aten-wiring/` | `cookbook/decisions/kaggriculture-compiles-gemms-with-cublas-only.md` | CPU-tested enforcement. The cited A/B evidence is not on integration. |
+   132	| Stream C (3.1, 3.6, Phase 4 prep) | merged | `62899de`, merged by `07568e0` | `codex/verify2-lane-C-r2.md` APPROVE | `rebuild/stream-c-*.log`, `rebuild/4-prep-*.log` | `cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md` | — |
+   133	| Stream D (selection, 5.1/7.1/7.3 briefs) | merged | `9d54a8b`, merged by `1177a5b` | `codex/verify2-lane-D-r1.md` APPROVE | `rebuild/checks/` | `cookbook/references/rebuild-data-preparation-preserves-replay-identity.md` | — |
+   134	| Cookbook refresh and codex exec workflow | approved, not merged | `kg/rebuild-model` `bcd9627` … `8093d51` | `codex/verify-cookbook-refresh-r3.md` APPROVE (`8093d51`) | `kg/rebuild-model:cookbook/log.md` | `kg/rebuild-model:cookbook/workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict.md` | The evidence merge has not started. The main worktree has uncommitted cookbook edits (architecture image). |
+   135	| Codex report custody | open | — | — | `codex/` (main worktree) | — | Integration tracks six cited reports (Task 0.1 review/rereview, Task 0.3 report, Task 3.4 r1–r3); `kg/merge-teacher` adds two. The other cited reports are untracked. |
+   136	
+   137	## Notes not yet on integration
+   138	
+   139	These notes are not linked from `cookbook/references/index.md` on this branch. Link each one when its branch merges. Found with `git cat-file -e <branch>:<path>` at 19:00 HKT.
+   140	
+   141	| Note | Branches |
+   142	|---|---|
+   143	| `cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md` | `kg/rebuild-model`, `kg/rebuild-gpu-checks`, `kg/rebuild-value-gap` |
+   144	| `cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md` | `kg/rebuild-model`, `kg/rebuild-gpu-checks`, `kg/rebuild-value-gap` |
+   145	| `cookbook/workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict.md` | `kg/rebuild-model`, `kg/rebuild-gpu-checks`, `kg/rebuild-value-gap` |
+   146	| `cookbook/references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce.md` | `kg/merge-teacher`, `kg/rebuild-trainer-model` |
+   147	| `cookbook/references/kaggle-packaging-reuses-the-starter-submission-path.md` | `kg/rebuild-7-4-brief` |
+   148	| `cookbook/references/frozen-engine-api-blocks-standalone-opponent-import.md` | Uncommitted in `/Users/poonszesen/kg-v3-t71` |
+   149	
+   150	`kg/rebuild-model` (`8093d51`) predates the Phase 1 merges. Its copies of `native-game-semantics-use-v3-owned-buffers.md`, `failed-training-reports-status-before-distributed-cleanup.md`, `compiled-gemm-template-overflows-above-2-21-rows.md`, `cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md` and `cookbook/references/index.md` differ from integration (`git diff --stat kg/isaiah-gap-closure kg/rebuild-model -- cookbook`). The evidence merge must reconcile them, and it must also keep this branch's phase grouping of the index.
+
+exec
+/bin/zsh -lc "python3 -B -c 'import json
+import pathlib
+import re
+import subprocess
+
+def git(*args):
+    return subprocess.run(['\\''git'\\'', *args], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
+
+prefix = '\\''ops/rebuild-2026-09-29/codex/'\\''
+tracker = git('\\''show'\\'', '\\''8550535:ops/rebuild-2026-09-29/phase-status.md'\\'').decode()
+cited = set(re.findall(r'\\''codex/([A-Za-z0-9_.-]+\\.md)'\\'', tracker))
+refs = git('\\''for-each-ref'\\'', '\\''--format=%(refname)'\\'', '\\''refs/heads'\\'', '\\''refs/remotes'\\'').decode().splitlines()
+refs += ['\\''b8747b6'\\'', '\\''2390c8e'\\'']
+by_ref = {}
+for ref in refs:
+    paths = git('\\''ls-tree'\\'', '\\''-r'\\'', '\\''--name-only'\\'', ref, '\\''--'\\'', prefix).decode().splitlines()
+    by_ref[ref] = sorted(cited.intersection(p[len(prefix):] for p in paths))
+expected = {'\\''task-0.1-review.md'\\'', '\\''task-0.1-rereview.md'\\'', '\\''task-0.3-report.md'\\'', '\\''verify-3.4-r1.md'\\'', '\\''verify-3.4-r2.md'\\'', '\\''verify-3.4-r3.md'\\''}
+extra = {'\\''brief-4-review.md'\\'', '\\''verify-merge-teacher-r1.md'\\''}
+actual_union = set().union(*(set(v) for v in by_ref.values()))
+main = pathlib.Path('\\''/Users/poonszesen/kg-v3'\\'') / prefix
+identical = {name: git('\\''show'\\'', '\\''b8747b6:'\\'' + prefix + name) == (main / name).read_bytes() for name in sorted(expected)}
+print(json.dumps({
+ '\\''cited_report_count'\\'': len(cited),
+ '\\''refs_scanned'\\'': len(refs) - 2,
+ '\\''integration_cited_reports'\\'': by_ref['\\''b8747b6'\\''],
+ '\\''integration_exact_expected_set'\\'': set(by_ref['\\''b8747b6'\\'']) == expected,
+ '\\''integration_byte_identical_main'\\'': identical,
+ '\\''teacher_snapshot_extra'\\'': sorted(set(by_ref['\\''2390c8e'\\'']) - expected),
+ '\\''teacher_current_extra'\\'': sorted(set(by_ref['\\''refs/heads/kg/merge-teacher'\\'']) - expected),
+ '\\''unexpected_cited_reports_on_any_ref'\\'': sorted(actual_union - expected - extra),
+ '\\''cited_reports_absent_all_scanned_refs'\\'': len(cited - actual_union),
+ '\\''missing_main_copies'\\'': sorted(n for n in cited if not (main/n).is_file())
+}, indent=2))'" in /Users/poonszesen/kg-v3-phasemap
+ succeeded in 215ms:
+python3: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+{
+  "cited_report_count": 44,
+  "refs_scanned": 35,
+  "integration_cited_reports": [
+    "task-0.1-rereview.md",
+    "task-0.1-review.md",
+    "task-0.3-report.md",
+    "verify-3.4-r1.md",
+    "verify-3.4-r2.md",
+    "verify-3.4-r3.md"
+  ],
+  "integration_exact_expected_set": true,
+  "integration_byte_identical_main": {
+    "task-0.1-rereview.md": true,
+    "task-0.1-review.md": true,
+    "task-0.3-report.md": true,
+    "verify-3.4-r1.md": true,
+    "verify-3.4-r2.md": true,
+    "verify-3.4-r3.md": true
+  },
+  "teacher_snapshot_extra": [
+    "brief-4-review.md",
+    "verify-merge-teacher-r1.md"
+  ],
+  "teacher_current_extra": [
+    "brief-4-review.md",
+    "verify-merge-teacher-r1.md"
+  ],
+  "unexpected_cited_reports_on_any_ref": [],
+  "cited_reports_absent_all_scanned_refs": 36,
+  "missing_main_copies": []
+}
+
+codex
+All three edits match the supporting evidence. The custody check confirms six cited reports on integration, two additional reports on the teacher branch, and the remaining 36 absent from all 35 local and remote branch refs. The commit changes only the four expected lines in the two requested files.
+
+exec
+/bin/zsh -lc 'git diff --check 8550535 adcb4e7 && git diff --numstat 8550535 adcb4e7 && git status --porcelain=v1 --untracked-files=all && git rev-parse HEAD && git branch --show-current' in /Users/poonszesen/kg-v3-phasemap
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+2	2	ops/rebuild-2026-09-29/phase-status.md
+2	2	ops/rebuild-2026-09-29/plan.md
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+adcb4e7656cdf7f0a8aa126adb5faaf851274d74
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+kg/rebuild-phase-map
+
+codex
+Read-only confirmation of `adcb4e7` on `kg/rebuild-phase-map`:
+
+- **RESOLVED — Task 3.6:** [plan.md:265](/Users/poonszesen/kg-v3-phasemap/ops/rebuild-2026-09-29/plan.md:265) now explicitly identifies GPU/BF16 replay noise as unmeasured and the 0.05-nat threshold as unqualified.
+- **RESOLVED — Report custody:** [phase-status.md:10](/Users/poonszesen/kg-v3-phasemap/ops/rebuild-2026-09-29/phase-status.md:10) and line 135 correctly distinguish six integration reports, two additional teacher-branch reports, and 36 untracked reports. Verified across 35 branch refs; the six integration copies are byte-identical.
+- **RESOLVED — Task 0.2:** [plan.md:172](/Users/poonszesen/kg-v3-phasemap/ops/rebuild-2026-09-29/plan.md:172) now matches the receipts: blocking compiled reproduction, then the synthetic compiled-versus-eager probe.
+
+Nothing else changed from reviewed commit `8550535`: exactly four line replacements across these two files. `git diff --check` passes; worktree clean. No files modified or runtime suites rerun.
+
+VERDICT: APPROVE
+hook: Stop
+hook: Stop Completed
+tokens used
+38,105
+Read-only confirmation of `adcb4e7` on `kg/rebuild-phase-map`:
+
+- **RESOLVED — Task 3.6:** [plan.md:265](/Users/poonszesen/kg-v3-phasemap/ops/rebuild-2026-09-29/plan.md:265) now explicitly identifies GPU/BF16 replay noise as unmeasured and the 0.05-nat threshold as unqualified.
+- **RESOLVED — Report custody:** [phase-status.md:10](/Users/poonszesen/kg-v3-phasemap/ops/rebuild-2026-09-29/phase-status.md:10) and line 135 correctly distinguish six integration reports, two additional teacher-branch reports, and 36 untracked reports. Verified across 35 branch refs; the six integration copies are byte-identical.
+- **RESOLVED — Task 0.2:** [plan.md:172](/Users/poonszesen/kg-v3-phasemap/ops/rebuild-2026-09-29/plan.md:172) now matches the receipts: blocking compiled reproduction, then the synthetic compiled-versus-eager probe.
+
+Nothing else changed from reviewed commit `8550535`: exactly four line replacements across these two files. `git diff --check` passes; worktree clean. No files modified or runtime suites rerun.
+
+VERDICT: APPROVE

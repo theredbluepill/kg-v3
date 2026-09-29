@@ -1,0 +1,471 @@
+[
+  {
+    "mutant": "concat_empty",
+    "file": "python/owl/model/kaggriculture_teacher.py",
+    "function": "concat",
+    "replaced": "not chunks",
+    "replacement": "False",
+    "tests": [
+      "test_concat_validates_every_chunk_symmetrically"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_______________ test_concat_validates_every_chunk_symmetrically ________________\ntests/kaggriculture/test_teacher.py:732: in test_concat_validates_every_chunk_symmetrically\n    concat([])\npython/owl/model/kaggriculture_teacher.py:108: in concat\n    first = chunks[0]\n            ^^^^^^^^^\nE   IndexError: list index out of range\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_concat_validates_every_chunk_symmetrically\n1 failed in 0.26s\n"
+  },
+  {
+    "mutant": "concat_slot_presence",
+    "file": "python/owl/model/kaggriculture_teacher.py",
+    "function": "concat",
+    "replaced": "(chunk.slot_logits is None) != (first.slot_logits is None)",
+    "replacement": "False",
+    "tests": [
+      "test_concat_validates_every_chunk_symmetrically"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_______________ test_concat_validates_every_chunk_symmetrically ________________\ntests/kaggriculture/test_teacher.py:717: in test_concat_validates_every_chunk_symmetrically\n    concat([first, second])\npython/owl/model/kaggriculture_teacher.py:142: in concat\n    slot: torch.cat([_present(c.slot_logits)[slot] for c in chunks])\n                     ^^^^^^^^^^^^^^^^^^^^^^^\npython/owl/model/kaggriculture_teacher.py:168: in _present\n    raise ValueError(\"a validated teacher target chunk is missing a field\")\nE   ValueError: a validated teacher target chunk is missing a field\n\nDuring handling of the above exception, another exception occurred:\ntests/kaggriculture/test_teacher.py:716: in test_concat_validates_every_chunk_symmetrically\n    with pytest.raises(ValueError, match=field):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: Regex pattern did not match.\nE     Expected regex: 'slot_logits'\nE     Actual message: 'a validated teacher target chunk is missing a field'\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_concat_validates_every_chunk_symmetrically\n1 failed in 0.21s\n"
+  },
+  {
+    "mutant": "concat_slot_keys",
+    "file": "python/owl/model/kaggriculture_teacher.py",
+    "function": "concat",
+    "replaced": "chunk.slot_logits is not None\n                and first.slot_logits is not None\n                and set(chunk.slot_logits) != set(first.slot_logits)",
+    "replacement": "False",
+    "tests": [
+      "test_concat_validates_every_chunk_symmetrically"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_______________ test_concat_validates_every_chunk_symmetrically ________________\ntests/kaggriculture/test_teacher.py:724: in test_concat_validates_every_chunk_symmetrically\n    concat(pair)\npython/owl/model/kaggriculture_teacher.py:140: in concat\n    slot: torch.cat([_present(c.slot_logits)[slot] for c in chunks])\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   KeyError: 7\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_concat_validates_every_chunk_symmetrically\n1 failed in 0.21s\n"
+  },
+  {
+    "mutant": "concat_winner_presence",
+    "file": "python/owl/model/kaggriculture_teacher.py",
+    "function": "concat",
+    "replaced": "(chunk.winner_probabilities is None) != (\n                first.winner_probabilities is None\n            )",
+    "replacement": "False",
+    "tests": [
+      "test_concat_validates_every_chunk_symmetrically"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_______________ test_concat_validates_every_chunk_symmetrically ________________\ntests/kaggriculture/test_teacher.py:717: in test_concat_validates_every_chunk_symmetrically\n    concat([first, second])\npython/owl/model/kaggriculture_teacher.py:146: in concat\n    [_present(c.winner_probabilities) for c in chunks]\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\npython/owl/model/kaggriculture_teacher.py:166: in _present\n    raise ValueError(\"a validated teacher target chunk is missing a field\")\nE   ValueError: a validated teacher target chunk is missing a field\n\nDuring handling of the above exception, another exception occurred:\ntests/kaggriculture/test_teacher.py:716: in test_concat_validates_every_chunk_symmetrically\n    with pytest.raises(ValueError, match=field):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: Regex pattern did not match.\nE     Expected regex: 'winner_probabilities'\nE     Actual message: 'a validated teacher target chunk is missing a field'\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_concat_validates_every_chunk_symmetrically\n1 failed in 0.22s\n"
+  },
+  {
+    "mutant": "concat_grammar",
+    "file": "python/owl/model/kaggriculture_teacher.py",
+    "function": "concat",
+    "replaced": "chunk.grammar != first.grammar",
+    "replacement": "False",
+    "tests": [
+      "test_concat_validates_every_chunk_symmetrically"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_______________ test_concat_validates_every_chunk_symmetrically ________________\ntests/kaggriculture/test_teacher.py:729: in test_concat_validates_every_chunk_symmetrically\n    with pytest.raises(ValueError, match=\"grammar\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_concat_validates_every_chunk_symmetrically\n1 failed in 0.23s\n"
+  },
+  {
+    "mutant": "cache_type",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_cached_teacher",
+    "replaced": "not isinstance(teacher_targets, KaggricultureTeacherTargets)",
+    "replacement": "False",
+    "tests": [
+      "test_cached_admission_rejects_bad_targets_before_any_kernel"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________\ntests/kaggriculture/test_teacher.py:1027: in test_cached_admission_rejects_bad_targets_before_any_kernel\n    evaluate(obs, actions, isaiah_targets)\npython/owl/model/kaggriculture.py:727: in evaluate_actions_with_cached_teacher\n    self._admit_cached_slot_logits(teacher_targets, lead)\npython/owl/model/kaggriculture.py:750: in _admit_cached_slot_logits\n    slot_logits = targets.slot_logits\n                  ^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'CachedTeacherDistillationTargets' object has no attribute 'slot_logits'\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel\n1 failed in 0.20s\n"
+  },
+  {
+    "mutant": "cache_value_presence",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_cached_teacher",
+    "replaced": "teacher_winner is None",
+    "replacement": "False",
+    "tests": [
+      "test_cached_admission_rejects_bad_targets_before_any_kernel"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________\ntests/kaggriculture/test_teacher.py:1078: in test_cached_admission_rejects_bad_targets_before_any_kernel\n    evaluate(obs, actions, bad, **flags)\npython/owl/model/kaggriculture.py:736: in evaluate_actions_with_cached_teacher\n    if tuple(teacher_winner.shape) != (*lead, kt.PLAYERS):\n             ^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'shape'\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel\n1 failed in 0.19s\n"
+  },
+  {
+    "mutant": "cache_value_shape",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_cached_teacher",
+    "replaced": "tuple(teacher_winner.shape) != (*lead, kt.PLAYERS)",
+    "replacement": "False",
+    "tests": [
+      "test_cached_admission_rejects_bad_targets_before_any_kernel"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________\ntests/kaggriculture/test_teacher.py:1077: in test_cached_admission_rejects_bad_targets_before_any_kernel\n    with pytest.raises(ValueError, match=match):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel\n1 failed in 0.20s\n"
+  },
+  {
+    "mutant": "cache_slot_presence",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_admit_cached_slot_logits",
+    "replaced": "slot_logits is None",
+    "replacement": "False",
+    "tests": [
+      "test_cached_admission_rejects_bad_targets_before_any_kernel"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________\ntests/kaggriculture/test_teacher.py:1078: in test_cached_admission_rejects_bad_targets_before_any_kernel\n    evaluate(obs, actions, bad, **flags)\npython/owl/model/kaggriculture.py:727: in evaluate_actions_with_cached_teacher\n    self._admit_cached_slot_logits(teacher_targets, lead)\npython/owl/model/kaggriculture.py:760: in _admit_cached_slot_logits\n    if set(slot_logits) != set(POLICY_SLOTS):\n       ^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not iterable\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel\n1 failed in 0.18s\n"
+  },
+  {
+    "mutant": "cache_grammar",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_admit_cached_slot_logits",
+    "replaced": "targets.grammar != self.grammar_signature()",
+    "replacement": "False",
+    "tests": [
+      "test_cached_admission_rejects_bad_targets_before_any_kernel",
+      "test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "FF                                                                       [100%]\n=================================== FAILURES ===================================\n_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________\ntests/kaggriculture/test_teacher.py:1077: in test_cached_admission_rejects_bad_targets_before_any_kernel\n    with pytest.raises(ValueError, match=match):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n___ test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature ____\ntests/kaggriculture/test_teacher.py:1157: in test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature\n    with pytest.raises(ValueError, match=\"grammar\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel\nFAILED tests/kaggriculture/test_teacher.py::test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature\n2 failed in 0.26s\n"
+  },
+  {
+    "mutant": "cache_slot_keys",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_admit_cached_slot_logits",
+    "replaced": "set(slot_logits) != set(POLICY_SLOTS)",
+    "replacement": "False",
+    "tests": [
+      "test_cached_admission_rejects_bad_targets_before_any_kernel"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________\ntests/kaggriculture/test_teacher.py:1078: in test_cached_admission_rejects_bad_targets_before_any_kernel\n    evaluate(obs, actions, bad, **flags)\npython/owl/model/kaggriculture.py:727: in evaluate_actions_with_cached_teacher\n    self._admit_cached_slot_logits(teacher_targets, lead)\npython/owl/model/kaggriculture.py:768: in _admit_cached_slot_logits\n    logits = slot_logits[slot]\n             ^^^^^^^^^^^^^^^^^\nE   KeyError: 9\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel\n1 failed in 0.20s\n"
+  },
+  {
+    "mutant": "cache_slot_dtype",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_admit_cached_slot_logits",
+    "replaced": "logits.dtype not in (torch.float32, torch.float64)",
+    "replacement": "False",
+    "tests": [
+      "test_cached_admission_rejects_bad_targets_before_any_kernel"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________\ntests/kaggriculture/test_teacher.py:1077: in test_cached_admission_rejects_bad_targets_before_any_kernel\n    with pytest.raises(ValueError, match=match):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel\n1 failed in 0.22s\n"
+  },
+  {
+    "mutant": "cache_slot_shape",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_admit_cached_slot_logits",
+    "replaced": "tuple(logits.shape) != (*lead, frames, width)",
+    "replacement": "False",
+    "tests": [
+      "test_cached_admission_rejects_bad_targets_before_any_kernel"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________\ntests/kaggriculture/test_teacher.py:1078: in test_cached_admission_rejects_bad_targets_before_any_kernel\n    evaluate(obs, actions, bad, **flags)\npython/owl/model/kaggriculture.py:727: in evaluate_actions_with_cached_teacher\n    self._admit_cached_slot_logits(teacher_targets, lead)\npython/owl/model/kaggriculture.py:780: in _admit_cached_slot_logits\n    flat[slot] = logits.reshape(rows, frames, width)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: shape '[12, 241, 16]' is invalid for input of size 23136\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel\n1 failed in 0.20s\n"
+  },
+  {
+    "mutant": "stateless_hidden_state",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_require_stateless",
+    "replaced": "hidden_state is not None",
+    "replacement": "False",
+    "tests": [
+      "test_cached_admission_rejects_bad_targets_before_any_kernel"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________\ntests/kaggriculture/test_teacher.py:1079: in test_cached_admission_rejects_bad_targets_before_any_kernel\n    with pytest.raises(ValueError, match=\"hidden_state\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel\n1 failed in 0.21s\n"
+  },
+  {
+    "mutant": "stateless_dones",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_require_stateless_replay",
+    "replaced": "dones is not None",
+    "replacement": "False",
+    "tests": [
+      "test_cached_admission_rejects_bad_targets_before_any_kernel"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________\ntests/kaggriculture/test_teacher.py:1081: in test_cached_admission_rejects_bad_targets_before_any_kernel\n    with pytest.raises(ValueError, match=\"dones\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel\n1 failed in 0.21s\n"
+  },
+  {
+    "mutant": "combined_type",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_teacher",
+    "replaced": "not isinstance(teacher, KaggricultureTransformer)",
+    "replacement": "False",
+    "tests": [
+      "test_combined_path_rejects_foreign_or_mismatched_teachers"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________ test_combined_path_rejects_foreign_or_mismatched_teachers ___________\ntests/kaggriculture/test_teacher.py:1115: in test_combined_path_rejects_foreign_or_mismatched_teachers\n    combined(obs, actions, orbit)\npython/owl/model/kaggriculture.py:813: in evaluate_actions_with_teacher\n    raise ValueError(\nE   ValueError: teacher action_spec action_spec='pure' max_per_planet_launches=1 min_fleet_size=6 must match the student's action_spec='kaggriculture' hire_limit=241\n\nDuring handling of the above exception, another exception occurred:\ntests/kaggriculture/test_teacher.py:1114: in test_combined_path_rejects_foreign_or_mismatched_teachers\n    with pytest.raises(ValueError, match=\"KaggricultureTransformer\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: Regex pattern did not match.\nE     Expected regex: 'KaggricultureTransformer'\nE     Actual message: \"teacher action_spec action_spec='pure' max_per_planet_launches=1 min_fleet_size=6 must match the student's action_spec='kaggriculture' hire_limit=241\"\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_combined_path_rejects_foreign_or_mismatched_teachers\n1 failed in 0.12s\n"
+  },
+  {
+    "mutant": "combined_action_spec",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_teacher",
+    "replaced": "teacher.action_spec != self.action_spec",
+    "replacement": "False",
+    "tests": [
+      "test_combined_path_rejects_foreign_or_mismatched_teachers"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________ test_combined_path_rejects_foreign_or_mismatched_teachers ___________\ntests/kaggriculture/test_teacher.py:1117: in test_combined_path_rejects_foreign_or_mismatched_teachers\n    combined(obs, actions, _tiny(hire_limit=5, seed=6))\npython/owl/model/kaggriculture.py:818: in evaluate_actions_with_teacher\n    raise ValueError(\nE   ValueError: teacher grammar GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=5) differs from the student's GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241)\n\nDuring handling of the above exception, another exception occurred:\ntests/kaggriculture/test_teacher.py:1116: in test_combined_path_rejects_foreign_or_mismatched_teachers\n    with pytest.raises(ValueError, match=\"action_spec\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: Regex pattern did not match.\nE     Expected regex: 'action_spec'\nE     Actual message: \"teacher grammar GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=5) differs from the student's GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241)\"\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_combined_path_rejects_foreign_or_mismatched_teachers\n1 failed in 0.13s\n"
+  },
+  {
+    "mutant": "combined_grammar_signature",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_teacher",
+    "replaced": "teacher.grammar_signature() != self.grammar_signature()",
+    "replacement": "False",
+    "tests": [
+      "test_combined_path_rejects_foreign_or_mismatched_teachers"
+    ],
+    "exit_code": 0,
+    "result": "SURVIVED",
+    "tail": ".                                                                        [100%]\n1 passed in 0.12s\n"
+  },
+  {
+    "mutant": "combined_tables",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_teacher",
+    "replaced": "not torch.equal(teacher_tables[name], table)",
+    "replacement": "False",
+    "tests": [
+      "test_combined_path_rejects_foreign_or_mismatched_teachers"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________ test_combined_path_rejects_foreign_or_mismatched_teachers ___________\ntests/kaggriculture/test_teacher.py:1133: in test_combined_path_rejects_foreign_or_mismatched_teachers\n    combined(obs, actions, edited)\npython/owl/model/kaggriculture.py:844: in evaluate_actions_with_teacher\n    check_replay_flags(teacher_result.valid)\npython/owl/model/kaggriculture_actor.py:551: in check_replay_flags\n    raise GrammarReplayError(\nE   owl.model.kaggriculture_actor.GrammarReplayError: evaluate_actions rejected the supplied program; failing groups: support \u2014 support (first row 1: env 0, seat 1): a chosen value is outside its prefix-dependent grammar mask\n\nDuring handling of the above exception, another exception occurred:\ntests/kaggriculture/test_teacher.py:1132: in test_combined_path_rejects_foreign_or_mismatched_teachers\n    with pytest.raises(ValueError, match=\"table market_kind\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: Regex pattern did not match.\nE     Expected regex: 'table market_kind'\nE     Actual message: 'evaluate_actions rejected the supplied program; failing groups: support \u2014 support (first row 1: env 0, seat 1): a chosen value is outside its prefix-dependent grammar mask'\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_combined_path_rejects_foreign_or_mismatched_teachers\n1 failed in 0.16s\n"
+  },
+  {
+    "mutant": "teacher_replay",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "compute_teacher_distillation_targets",
+    "replaced": "check_replay_flags(result.valid)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_targets_reject_programs_the_teacher_grammar_does_not_admit"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___ test_teacher_targets_reject_programs_the_teacher_grammar_does_not_admit ____\ntests/kaggriculture/test_teacher.py:651: in test_teacher_targets_reject_programs_the_teacher_grammar_does_not_admit\n    with pytest.raises(ka.GrammarReplayError, match=\"length\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'owl.model.kaggriculture_actor.GrammarReplayError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_teacher_targets_reject_programs_the_teacher_grammar_does_not_admit\n1 failed in 0.12s\n"
+  },
+  {
+    "mutant": "orbit_foreign_targets",
+    "file": "python/owl/model/stateless_transformer_v1.py",
+    "function": "evaluate_actions_with_cached_teacher",
+    "replaced": "not isinstance(teacher_targets, CachedTeacherDistillationTargets)",
+    "replacement": "False",
+    "tests": [
+      "test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_____ test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel _____\ntests/kaggriculture/test_teacher.py:864: in test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel\n    student.evaluate_actions_with_cached_teacher(obs, actions, foreign)\npython/owl/model/stateless_transformer_v1.py:1345: in evaluate_actions_with_cached_teacher\n    if teacher_targets.action_params is None:\n       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'KaggricultureTeacherTargets' object has no attribute 'action_params'\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel\n1 failed in 0.29s\n"
+  },
+  {
+    "mutant": "obs_kaggriculture_equality",
+    "file": "scripts/run_ppo.py",
+    "function": "_teacher_obs_spec_for_student",
+    "replaced": "teacher_obs_spec != student_obs_spec",
+    "replacement": "False",
+    "tests": [
+      "test_teacher_obs_spec_dispatch_covers_kaggriculture"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_____________ test_teacher_obs_spec_dispatch_covers_kaggriculture ______________\ntests/kaggriculture/test_teacher.py:1420: in test_teacher_obs_spec_dispatch_covers_kaggriculture\n    with pytest.raises(ValueError, match=\"obs_spec must match\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_teacher_obs_spec_dispatch_covers_kaggriculture\n1 failed in 0.12s\n"
+  },
+  {
+    "mutant": "obs_cross_game",
+    "file": "scripts/run_ppo.py",
+    "function": "_teacher_obs_spec_for_student",
+    "replaced": "not isinstance(teacher_obs_spec, EntityBasedBaseConfig) or not isinstance(\n        student_obs_spec, EntityBasedBaseConfig\n    )",
+    "replacement": "False",
+    "tests": [
+      "test_teacher_obs_spec_dispatch_covers_kaggriculture"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_____________ test_teacher_obs_spec_dispatch_covers_kaggriculture ______________\ntests/kaggriculture/test_teacher.py:1429: in test_teacher_obs_spec_dispatch_covers_kaggriculture\n    run_ppo._teacher_obs_spec_for_student(\nscripts/run_ppo.py:1050: in _teacher_obs_spec_for_student\n    \"max_entities\": student_obs_spec.max_entities,\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../../../.venv/lib/python3.12/site-packages/pydantic/main.py:1042: in __getattr__\n    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')\nE   AttributeError: 'KaggricultureObsConfig' object has no attribute 'max_entities'\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_teacher_obs_spec_dispatch_covers_kaggriculture\n1 failed in 0.15s\n"
+  },
+  {
+    "mutant": "wrapper_cached_stateless",
+    "file": "python/owl/train/ppo.py",
+    "function": "_model_evaluate_actions_with_cached_teacher",
+    "replaced": "hidden_state is None",
+    "replacement": "False",
+    "tests": [
+      "test_ppo_teacher_wrappers_dispatch_statelessly"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________________ test_ppo_teacher_wrappers_dispatch_statelessly ________________\ntests/kaggriculture/test_teacher.py:1176: in test_ppo_teacher_wrappers_dispatch_statelessly\n    cached = ppo._model_evaluate_actions_with_cached_teacher(\npython/owl/train/ppo.py:2833: in _model_evaluate_actions_with_cached_teacher\n    return model.evaluate_actions_with_cached_teacher(\npython/owl/model/kaggriculture.py:718: in evaluate_actions_with_cached_teacher\n    self._require_stateless_replay(hidden_state, dones)\npython/owl/model/kaggriculture.py:592: in _require_stateless_replay\n    raise ValueError(\nE   ValueError: KaggricultureTransformer is stateless; dones must be None\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_ppo_teacher_wrappers_dispatch_statelessly\n1 failed in 0.23s\n"
+  },
+  {
+    "mutant": "wrapper_combined_stateless",
+    "file": "python/owl/train/ppo.py",
+    "function": "_model_evaluate_actions_with_teacher",
+    "replaced": "hidden_state is None",
+    "replacement": "False",
+    "tests": [
+      "test_ppo_teacher_wrappers_dispatch_statelessly"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________________ test_ppo_teacher_wrappers_dispatch_statelessly ________________\ntests/kaggriculture/test_teacher.py:1186: in test_ppo_teacher_wrappers_dispatch_statelessly\n    combined = ppo._model_evaluate_actions_with_teacher(\npython/owl/train/ppo.py:2802: in _model_evaluate_actions_with_teacher\n    return model.evaluate_actions_with_teacher(\npython/owl/model/kaggriculture.py:806: in evaluate_actions_with_teacher\n    self._require_stateless_replay(hidden_state, dones)\npython/owl/model/kaggriculture.py:592: in _require_stateless_replay\n    raise ValueError(\nE   ValueError: KaggricultureTransformer is stateless; dones must be None\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_teacher.py::test_ppo_teacher_wrappers_dispatch_statelessly\n1 failed in 0.24s\n"
+  },
+  {
+    "mutant": "ce_shape",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "teacher_value_cross_entropy",
+    "replaced": "tuple(tensor.shape) != expected",
+    "replacement": "False",
+    "tests": [
+      "test_value_ce_shape_guard"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "FF                                                                       [100%]\n=================================== FAILURES ===================================\n______________________ test_value_ce_shape_guard[student] ______________________\ntests/kaggriculture/test_verifier_guard_supplement.py:25: in test_value_ce_shape_guard\n    with pytest.raises(ValueError, match=\"must have shape\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n______________________ test_value_ce_shape_guard[teacher] ______________________\ntests/kaggriculture/test_verifier_guard_supplement.py:25: in test_value_ce_shape_guard\n    with pytest.raises(ValueError, match=\"must have shape\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_value_ce_shape_guard[student]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_value_ce_shape_guard[teacher]\n2 failed in 0.02s\n"
+  },
+  {
+    "mutant": "precompute_layout",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "compute_teacher_distillation_targets",
+    "replaced": "_check_action_layout(actions, obs.still_playing.shape)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_paths_validate_action_layout_before_encoding"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "============= FAILURES ===================================\n_ test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-precompute] _\ntests/kaggriculture/test_verifier_guard_supplement.py:45: in test_teacher_paths_validate_action_layout_before_encoding\n    student.compute_teacher_distillation_targets(obs, bad)\npython/owl/model/kaggriculture.py:666: in compute_teacher_distillation_targets\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n_ test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-precompute] _\ntests/kaggriculture/test_verifier_guard_supplement.py:45: in test_teacher_paths_validate_action_layout_before_encoding\n    student.compute_teacher_distillation_targets(obs, bad)\npython/owl/model/kaggriculture.py:666: in compute_teacher_distillation_targets\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n_ test_teacher_paths_validate_action_layout_before_encoding[dtype-precompute] __\ntests/kaggriculture/test_verifier_guard_supplement.py:45: in test_teacher_paths_validate_action_layout_before_encoding\n    student.compute_teacher_distillation_targets(obs, bad)\npython/owl/model/kaggriculture.py:666: in compute_teacher_distillation_targets\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-precompute]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-precompute]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[dtype-precompute]\n3 failed, 6 passed in 0.13s\n"
+  },
+  {
+    "mutant": "cached_layout",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_cached_teacher",
+    "replaced": "_check_action_layout(actions, lead)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_paths_validate_action_layout_before_encoding"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "=========== FAILURES ===================================\n_ test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-cache] _\ntests/kaggriculture/test_verifier_guard_supplement.py:47: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_cached_teacher(obs, bad, targets)\npython/owl/model/kaggriculture.py:741: in evaluate_actions_with_cached_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n_ test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-cache] _\ntests/kaggriculture/test_verifier_guard_supplement.py:47: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_cached_teacher(obs, bad, targets)\npython/owl/model/kaggriculture.py:741: in evaluate_actions_with_cached_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n____ test_teacher_paths_validate_action_layout_before_encoding[dtype-cache] ____\ntests/kaggriculture/test_verifier_guard_supplement.py:47: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_cached_teacher(obs, bad, targets)\npython/owl/model/kaggriculture.py:741: in evaluate_actions_with_cached_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-cache]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-cache]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[dtype-cache]\n3 failed, 6 passed in 0.13s\n"
+  },
+  {
+    "mutant": "combined_layout",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_teacher",
+    "replaced": "_check_action_layout(actions, lead)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_paths_validate_action_layout_before_encoding"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "%]\n=================================== FAILURES ===================================\n_ test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-combined] _\ntests/kaggriculture/test_verifier_guard_supplement.py:49: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_teacher(obs, bad, teacher)\npython/owl/model/kaggriculture.py:830: in evaluate_actions_with_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n_ test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-combined] _\ntests/kaggriculture/test_verifier_guard_supplement.py:49: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_teacher(obs, bad, teacher)\npython/owl/model/kaggriculture.py:830: in evaluate_actions_with_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n__ test_teacher_paths_validate_action_layout_before_encoding[dtype-combined] ___\ntests/kaggriculture/test_verifier_guard_supplement.py:49: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_teacher(obs, bad, teacher)\npython/owl/model/kaggriculture.py:830: in evaluate_actions_with_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-combined]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-combined]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[dtype-combined]\n3 failed, 6 passed in 0.13s\n"
+  },
+  {
+    "mutant": "cached_stateless_call",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_cached_teacher",
+    "replaced": "self._require_stateless_replay(hidden_state, dones)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_paths_reject_temporal_inputs"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F.F.                                                                     [100%]\n=================================== FAILURES ===================================\n________ test_teacher_paths_reject_temporal_inputs[hidden_state-cache] _________\ntests/kaggriculture/test_verifier_guard_supplement.py:62: in test_teacher_paths_reject_temporal_inputs\n    student.evaluate_actions_with_cached_teacher(obs, actions, targets, **{field:value})\npython/owl/model/kaggriculture.py:741: in evaluate_actions_with_cached_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n____________ test_teacher_paths_reject_temporal_inputs[dones-cache] ____________\ntests/kaggriculture/test_verifier_guard_supplement.py:62: in test_teacher_paths_reject_temporal_inputs\n    student.evaluate_actions_with_cached_teacher(obs, actions, targets, **{field:value})\npython/owl/model/kaggriculture.py:741: in evaluate_actions_with_cached_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_reject_temporal_inputs[hidden_state-cache]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_reject_temporal_inputs[dones-cache]\n2 failed, 2 passed in 0.07s\n"
+  },
+  {
+    "mutant": "combined_stateless_call",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_teacher",
+    "replaced": "self._require_stateless_replay(hidden_state, dones)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_paths_reject_temporal_inputs"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": ".F.F                                                                     [100%]\n=================================== FAILURES ===================================\n_______ test_teacher_paths_reject_temporal_inputs[hidden_state-combined] _______\ntests/kaggriculture/test_verifier_guard_supplement.py:64: in test_teacher_paths_reject_temporal_inputs\n    student.evaluate_actions_with_teacher(obs, actions, teacher, **{field:value})\npython/owl/model/kaggriculture.py:830: in evaluate_actions_with_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n__________ test_teacher_paths_reject_temporal_inputs[dones-combined] ___________\ntests/kaggriculture/test_verifier_guard_supplement.py:64: in test_teacher_paths_reject_temporal_inputs\n    student.evaluate_actions_with_teacher(obs, actions, teacher, **{field:value})\npython/owl/model/kaggriculture.py:830: in evaluate_actions_with_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_reject_temporal_inputs[hidden_state-combined]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_reject_temporal_inputs[dones-combined]\n2 failed, 2 passed in 0.07s\n"
+  },
+  {
+    "mutant": "cached_student_replay",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_teacher_evaluation",
+    "replaced": "check_replay_flags(result.valid)",
+    "replacement": "pass",
+    "tests": [
+      "test_cached_path_admits_student_replay"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n____________________ test_cached_path_admits_student_replay ____________________\ntests/kaggriculture/test_verifier_guard_supplement.py:73: in test_cached_path_admits_student_replay\n    with pytest.raises(ka.GrammarReplayError, match=\"length\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'owl.model.kaggriculture_actor.GrammarReplayError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_cached_path_admits_student_replay\n1 failed in 0.03s\n"
+  },
+  {
+    "mutant": "combined_teacher_replay",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_teacher",
+    "replaced": "check_replay_flags(teacher_result.valid)",
+    "replacement": "pass",
+    "tests": [
+      "test_combined_path_admits_teacher_before_student_replay"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___________ test_combined_path_admits_teacher_before_student_replay ____________\ntests/kaggriculture/test_verifier_guard_supplement.py:86: in test_combined_path_admits_teacher_before_student_replay\n    student.evaluate_actions_with_teacher(obs, bad, teacher)\npython/owl/model/kaggriculture.py:852: in evaluate_actions_with_teacher\n    return self._teacher_evaluation(\npython/owl/model/kaggriculture.py:865: in _teacher_evaluation\n    result = self._policy(\ntests/kaggriculture/test_verifier_guard_supplement.py:83: in no_student_policy\n    raise AssertionError(\"invalid teacher replay reached student policy\")\nE   AssertionError: invalid teacher replay reached student policy\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_combined_path_admits_teacher_before_student_replay\n1 failed in 0.03s\n"
+  },
+  {
+    "mutant": "policy_core_field_presence",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_require",
+    "replaced": "value is None",
+    "replacement": "False",
+    "tests": [
+      "test_requested_policy_core_field_presence"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________________ test_requested_policy_core_field_presence ___________________\ntests/kaggriculture/test_verifier_guard_supplement.py:90: in test_requested_policy_core_field_presence\n    with pytest.raises(RuntimeError, match=\"requested policy-core output\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'RuntimeError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_requested_policy_core_field_presence\n1 failed in 0.01s\n"
+  },
+  {
+    "mutant": "concat_internal_presence",
+    "file": "python/owl/model/kaggriculture_teacher.py",
+    "function": "_present",
+    "replaced": "value is None",
+    "replacement": "False",
+    "tests": [
+      "test_validated_chunk_field_presence"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_____________________ test_validated_chunk_field_presence ______________________\ntests/kaggriculture/test_verifier_guard_supplement.py:95: in test_validated_chunk_field_presence\n    with pytest.raises(ValueError, match=\"missing a field\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_validated_chunk_field_presence\n1 failed in 0.01s\n"
+  },
+  {
+    "mutant": "slot_frames_invalid_slot",
+    "file": "python/owl/model/kaggriculture_teacher.py",
+    "function": "slot_frames",
+    "replaced": "raise ValueError(f\"slot {slot} is not a policy slot {POLICY_SLOTS}\")",
+    "replacement": "return 0",
+    "tests": [
+      "test_invalid_slot_frames_rejected"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n____________________ test_invalid_slot_frames_rejected[12] _____________________\ntests/kaggriculture/test_verifier_slot_frames.py:6: in test_invalid_slot_frames_rejected\n    with pytest.raises(ValueError, match=\"not a policy slot\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_slot_frames.py::test_invalid_slot_frames_rejected[-1]\nFAILED tests/kaggriculture/test_verifier_slot_frames.py::test_invalid_slot_frames_rejected[0]\nFAILED tests/kaggriculture/test_verifier_slot_frames.py::test_invalid_slot_frames_rejected[2]\nFAILED tests/kaggriculture/test_verifier_slot_frames.py::test_invalid_slot_frames_rejected[11]\nFAILED tests/kaggriculture/test_verifier_slot_frames.py::test_invalid_slot_frames_rejected[12]\n5 failed in 0.01s\n"
+  }
+]

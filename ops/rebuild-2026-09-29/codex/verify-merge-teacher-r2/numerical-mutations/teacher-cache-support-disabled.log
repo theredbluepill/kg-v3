@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_the_model_supports_both_cached_distillation_paths ____________
+
+    def test_the_model_supports_both_cached_distillation_paths() -> None:
+        model = _tiny()
+>       assert model.supports_cached_teacher_distillation()
+E       assert False
+E        +  where False = supports_cached_teacher_distillation()
+E        +    where supports_cached_teacher_distillation = KaggricultureTransformer(\n  (tile_proj): ObservationInputStem(\n    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)\n        (out): Linear(in_features=16, out_features=32, bias=True)\n      )\n    )\n  )\n).supports_cached_teacher_distillation
+
+tests/kaggriculture/test_teacher.py:1331: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_the_model_supports_both_cached_distillation_paths
+1 failed in 0.11s

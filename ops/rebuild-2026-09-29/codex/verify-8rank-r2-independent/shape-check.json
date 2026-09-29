@@ -1,0 +1,18 @@
+{
+  "per_rank": {
+    "n_envs": 32,
+    "horizon": 64,
+    "segments_per_minibatch": 2,
+    "teacher_segments_per_minibatch": 128
+  },
+  "global_envs": 256,
+  "optimizer_steps": 16,
+  "global_segments_per_step": 16,
+  "transitions_per_iteration": 16384,
+  "workload_lines": [
+    "GEMM workload headroom rollout: 64 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 92.42x headroom, <= 1 call(s)); heads 11096 rows/call (173.4x headroom, 1 call(s))",
+    "GEMM workload headroom minibatch: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))",
+    "GEMM workload headroom teacher_chunk: 4096 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 1.444x headroom, <= 1 call(s)); heads 11096 rows/call (2.709x headroom, 1 call(s))",
+    "GEMM workload headroom evaluation: 64 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 92.42x headroom, <= 1 call(s)); heads 11096 rows/call (173.4x headroom, 1 call(s))"
+  ]
+}

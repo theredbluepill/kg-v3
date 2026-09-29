@@ -1,0 +1,16 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_cache_bytes_per_row_follow_the_contract_widths ______________
+
+    def test_cache_bytes_per_row_follow_the_contract_widths() -> None:
+        unit = sum(kt.SLOT_WIDTHS[s] for s in ka.UNIT_POLICY_SLOTS)
+        market = sum(kt.SLOT_WIDTHS[s] for s in ka.MARKET_POLICY_SLOTS)
+        assert (unit, market) == (102, 88)
+>       assert kt_teacher.TEACHER_TARGET_BYTES_PER_ROW == 102_208
+E       assert 102200 == 102208
+E        +  where 102200 = kt_teacher.TEACHER_TARGET_BYTES_PER_ROW
+
+tests/kaggriculture/test_teacher.py:798: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_cache_bytes_per_row_follow_the_contract_widths
+1 failed in 0.11s

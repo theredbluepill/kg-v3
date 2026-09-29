@@ -1,0 +1,1301 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-merge2
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ebdd-3458-7d73-91ba-b319184d8c63
+--------
+user
+You are Codex. READ-ONLY confirmation on branch kg/merge-heads. Your r1 report (ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md in the main repo) was APPROVE WITH EDITS with three documentation edits: (1) stale output-store overflow explanation in docs/model-architecture.md and python/owl/model/kaggriculture.py; (2) the compiled-GEMM Reference describing the heads/actor_input_proj as unimplemented; (3) the Reference, its frontmatter and the references index conflating the historical 'rejects L' measurement with the current packed chunking. Verify commit e1458d2 resolves each accurately (current code: trunk_gemm_width, packed_row_chunks, head_rows_per_chunk in python/owl/model/kaggriculture*.py), introduces no new overclaim (GPU behaviour of chunking is unmeasured; production compliance unproven), and changes no code behaviour (comment-only change in kaggriculture.py). End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll check `e1458d2` against the r1 findings and current chunking code, then verify that the Python change is comment-only and the documentation preserves the GPU and production limits.
+
+exec
+/bin/zsh -lc 'cat ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md' in /Users/poonszesen/kg-v3-merge2
+ exited 1 in 0ms:
+cat: ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md: No such file or directory
+
+exec
+/bin/zsh -lc 'cat cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md && cat cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md' in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+---
+type: "Reference"
+title: "Compiled GEMM template overflows above 2^21 rows"
+description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. At `1ddc71d` the rebuilt trunk guard was measured correct at L−1 and rejected L; the packed path now chunks instead of rejecting (CPU-tested). Production compliance is unproven."
+tags: ["kaggriculture-v3", "cuda", "compile"]
+status: "verified-scoped"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/cuda-repro-blocking.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/ppo-from-bc-2026-09-29/train.log"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/train.log"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.log"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/driver.jsonl"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/gemm-limits-2026-09-29/"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/kernel_analysis.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md"}]
+---
+
+# Compiled GEMM template overflows above 2^21 rows
+
+## What was observed
+
+The reference branch's PPO run from the BC checkpoint crashed with a CUDA illegal memory access after 3 iterations. Rerunning the exact setup with `CUDA_LAUNCH_BLOCKING=1` reproduced it on both ranks. Both tracebacks end in the Inductor **max-autotune Triton GEMM template** `triton_tem_fused__to_copy_addmm_gelu_t_view_9`, the transformer trunk's MLP with `M` = batch rows × tokens, K = 1024, N = 256. The kernel declares `INDEX_DTYPE = tl.int64`, which the mm template does not use, and forms the input-side offset `xindex = k + 1024*idx_m` in 32-bit arithmetic. Once `M > 2^21`, that offset passes 2³¹ and wraps. Here K = 1024 is the input width of the MLP down-projection.
+
+A controlled probe confirmed the threshold. It used a synthetic BF16 MLP (256→1024, GELU, 1024→256) with `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. At M = 2,088,960 the compiled output matches eager within BF16 noise (max diff 0.0078). At M = 2,105,344 it faults. Environment: torch 2.9.0+cu128, RTX PRO 6000 Blackwell, driver 595.91.07. Hashes and logs are in `ops/rebuild-2026-09-29/results.md`.
+
+## Why it matters
+
+- Below the fault, wrapped offsets land in valid memory and **silently corrupt** activations. In the reference run, rollout forwards (8,192 rows × more than 256 padded tokens) exceeded the threshold, while training minibatches (128 rows) did not. That produced the first-update log-ratio mean of −3.77 before any weight change. The earlier "BC→PPO deterioration" was infrastructure corruption, not evidence against the BC policy.
+- The bug is in compiler-generated code, so it is invisible in the model source. It can reappear for any compiled GEMM whose `rows × input width` exceeds 2³¹: rollouts, evaluation, BC, and other models with larger batches. In training, backward reads forward outputs as inputs, so the forward output width counts too (below).
+
+## Measured limits at the rebuild's shapes (2026-09-29)
+
+A second bounded probe compared compiled output against eager at every point. It covered synthetic compiled Linears and MLPs, plus the real `KaggricultureTransformer` trunk from `kg/rebuild-model` @ `1ddc71d`, compiled directly through its own `compile_transformer_trunk`. Precision matched `run_ppo`: fp32 parameters under bf16 autocast, `max-autotune-no-cudagraphs`, `dynamic=True`, compiled small first. Codex verified the evidence and requested edits, applied here. The table, the generated-code attribution and the source citations are in `ops/rebuild-2026-09-29/results.md`, "GEMM limits at our shapes".
+
+Measured (L_in = floor(2³¹ / K) for GEMM input width K, e.g. 2,796,202 for K = 768; trunk L = 2³¹/512 = 4,194,304):
+- **The overflow is input-side at these shapes.** Input-wide GEMMs (4096→16, 768→256) were correct at L_in and failed at L_in+1. Output-wide GEMMs (16→4096, 256→512, 256→256) stayed correct up to M·N = 2³². The corrected kernel summaries show why:
+  - Every failing graph whose kernel can be attributed from the retained code launches the template with a 32-bit size argument (`ks0: i32`) and an A-load of `K*idx_m`. The 768→256 and 512→256 failures happened during autotuning, so their failing candidate kernel is not localized.
+  - Graphs whose output exceeds int32 get `ks0: i64` and stayed correct.
+  - In the real trunk, the corrupting kernel is the 512→256 MLP down-projection. Above L it kept `ks0: i32`, while the 256→512 up-projection had been promoted.
+
+  The earlier universal rule, "overflow iff M·max(K, N) > 2³¹", is withdrawn.
+- **In the real trunk the corruption is silent.** With the guard patched off:
+  - 2 tokens were wrong at L+1 = 4,194,305 packed tokens, and 4,665 at 4,198,400.
+  - The padded path was wrong on half its tokens at 8.39M, with no fault.
+- **Above the bound, nothing is reliable.** Whether a given M corrupts, faults or happens to be correct depends on the recompile hint and on autotune's backend choice. For example, cuBLAS won for a lone 512→256, and the trunk was correct again at 8.39M tokens after an i64 recompile. Recompilation is not a safety guarantee.
+- **The guard, measured endpoints:** with the guard on, `_run_trunk` is correct at L−1 = 4,194,303 packed tokens. It raises at L with zero trunk calls, and chunks the padded path into calls of 4,193,735 tokens, which are also correct.
+
+Inferred, not measured:
+- **Unguarded trunk at exactly L.** It was not run, so whether the guard's rejection at equality is stricter than necessary is unknown.
+- **Real-trunk backward.** It was not run at any size. The synthetic MLP backward faulted while compiling at L+1, which does not localize a backward-kernel threshold.
+- **Mechanism.** The source path and the generated code agree that the emitted `INDEX_DTYPE` follows an all-buffer storage-size check while the template's size-arg dtype is chosen separately from the output numel (`SIMDKernelFeatures([], output_numel)`), and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
+
+## Consequences
+
+- **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
+  - For the trunk that width is 512, computed by `trunk_gemm_width` (formerly `gemm_kmax`) from the actual Linear layers.
+  - Outside the trunk: the stems run eager (the full stem is 371→512→256) and have no guard of their own. Task 2.3 implements the heads and the 768-wide `actor_input_proj`; they run eager in production and chunk rows so `rows × 252 × max(3D, D, widest head) < 2^31` (11,096 rows at D = 256). Compiled, `actor_input_proj` alone would exceed L_in at 2,796,203 rows × frames. None of this is measured on the GPU.
+- **Production compliance is unproven.** Kaggriculture is not yet in `ModelConfig` or the model factory, and `configure_model_compile` rejects it for `model_compile="trunk"`. Integrated rollout, PPO recompute, evaluation, BC and teacher workloads stay unverified until Task 3.1 and Phase 6.
+- **Size margins against 2³¹/width, not against observed faults.** A passing test above the bound is not evidence of safety.
+- **Workload margins against the trunk L:**
+  - Rollout at 256 rows: 23.1× headroom, forward measured correct.
+  - PPO minibatch at 1,024 rows: 5.78×, arithmetic only.
+  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. At the probed commit `1ddc71d` the packed guard would have raised, not corrupted. Since Task 2.3 the packed path chunks at row boundaries, so a teacher chunk of this size runs in several trunk calls (CPU-tested; not measured on the GPU).
+- **Log-ratio alarm:** treat a non-zero log-ratio at the first minibatch (before any optimizer step) as a correctness failure and abort, recording the batch shape.
+- **Upgrades:** don't upgrade torch or drivers as a remedy without a separate measured decision. Rerun both probes after any upgrade.
+
+## Limits
+
+- **Stack:** measured on torch 2.9.0+cu128, driver 595.91.07, RTX PRO 6000 Blackwell (sm_120). Triton 3.5.0 is the lockfile pin; its installed version was not captured.
+- **Templates:** `mm`/`addmm` templates with fused prologues and epilogues, dynamic shapes. Unmeasured:
+  - the real trunk's backward;
+  - the unguarded trunk at exactly L;
+  - `bmm`, persistent-TMA and decompose-K paths (decompose-K is on by default and can apply to weight-gradient GEMMs);
+  - static-shape compiles;
+  - other versions.
+- **Tolerances:** the checks detect the reported corruption. They do not prove BF16 equivalence for arbitrary inputs.
+- **FlashAttention:** the packed-path runs used torch's ATen varlen flash shim, because the pod venv has no `flash-attn`; the pod's run config also had `force_flash_attn: false`. The real flash-attn kernel is untested, and Phase 6 must install and verify it.
+- **Other versions:** torch 2.8 showed no overflow at width 1024 (Task 0.2).
+
+exec
+/bin/zsh -lc 'git status --short --branch' in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+## kg/merge-heads
+
+exec
+/bin/zsh -lc 'git show --stat --oneline --decorate e1458d2 && git worktree list' in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+e1458d2 (HEAD -> kg/merge-heads) Reconcile overflow notes after merging the heads and GEMM evidence
+ cookbook/log.md                                                   | 7 +++++++
+ .../compiled-gemm-template-overflows-above-2-21-rows.md           | 8 ++++----
+ cookbook/references/index.md                                      | 2 +-
+ docs/model-architecture.md                                        | 2 +-
+ python/owl/model/kaggriculture.py                                 | 8 ++++----
+ 5 files changed, 17 insertions(+), 10 deletions(-)
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+/Users/poonszesen/kg-v3                                            4fd40c7 [kg/rebuild-model]
+/Users/poonszesen/kg-v3-codex                                      5378763 [kg/rebuild-codex]
+/Users/poonszesen/kg-v3-codex-data                                 9d54a8b [kg/rebuild-codex-data]
+/Users/poonszesen/kg-v3-deps                                       c452f66 [kg/rebuild-deps]
+/Users/poonszesen/kg-v3-grammar                                    75169be [kg/rebuild-grammar]
+/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2   65f0eac (detached HEAD)
+/Users/poonszesen/kg-v3-heads                                      88f95f6 [kg/rebuild-heads]
+/Users/poonszesen/kg-v3-int                                        99732ea [kg/isaiah-gap-closure]
+/Users/poonszesen/kg-v3-merge2                                     e1458d2 [kg/merge-heads]
+/Users/poonszesen/kg-v3-observe                                    32e2cdd [kg/rebuild-observe]
+/Users/poonszesen/kg-v3-parity                                     16e56b6 [kg/rebuild-parity]
+/Users/poonszesen/kg-v3-verify-b                                   94f778d (detached HEAD)
+/Users/poonszesen/kg-v3/.claude/worktrees/agent-a6b402c3efeaea928  62899de [worktree-agent-a6b402c3efeaea928]
+
+exec
+/bin/zsh -lc 'cat /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md' in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+No unexpected code, test, or documentation loss found at `053840f`. Three documentation edits remain:
+
+1. **Stale overflow explanation.** [model-architecture.md:748](/Users/poonszesen/kg-v3-merge2/docs/model-architecture.md:748) and [kaggriculture.py:65](/Users/poonszesen/kg-v3-merge2/python/owl/model/kaggriculture.py:65) still attribute the bound to output-store overflow. Align these with the revised evidence: measured input-side overflow, with strict `M × max(in,out) < 2³¹` retained as the training design bound because backward reads forward outputs.
+
+2. **Heads incorrectly described as unimplemented.** The [compiled-GEMM Reference:50](/Users/poonszesen/kg-v3-merge2/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:50) says heads/`actor_input_proj` are absent and nothing enforces the bound outside the trunk. Task 2.3 implements both and head chunking. Update these current-state claims; keep production compliance explicitly unproven.
+
+3. **Historical rejection conflated with current chunking.** The [compiled-GEMM Reference:56](/Users/poonszesen/kg-v3-merge2/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:56) says teacher precompute would raise, whereas the merged packed path chunks at row boundaries. Preserve the measured rejection evidence scoped to `1ddc71d`, but qualify “rejects L” in the note’s frontmatter and [index:21](/Users/poonszesen/kg-v3-merge2/cookbook/references/index.md:21), and update the current consequence.
+
+Verification otherwise passes:
+
+- Both requested diffs and parent-blob comparisons show no unexpected losses; architecture documentation retains both parents’ changes.
+- Index summaries match frontmatter semantically, though not verbatim; the GEMM scope issue above is shared by both.
+- All **67 log entries** are unique; entries from integration and both source commits remain unchanged.
+
+No files changed or tests run. Production compliance remains correctly unproven.
+
+**VERDICT: APPROVE WITH EDITS**
+exec
+/bin/zsh -lc "rg -n 'trunk_gemm_width|packed_row_chunks|head_rows_per_chunk|2\\*\\*31|_run_trunk|actor_input_proj|compile_transformer_trunk' python/owl/model/kaggriculture*.py tests/kaggriculture docs/model-architecture.md cookbook/references/index.md" in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+docs/model-architecture.md:748:- **Compiled-GEMM guard:** Torch 2.9 Inductor `mm`/`addmm` templates can form the A-load offset in int32; the pod probe measured corruption at `rows × input width > 2^31` (output-wide GEMMs stayed correct). Because backward reads forward outputs as inputs, every compiled region keeps the strict design bound `rows × max(in_features, out_features) < 2^31` (cookbook `references/compiled-gemm-template-overflows-above-2-21-rows`). `trunk_gemm_width` is the maximum of `max(in_features, out_features)` over every `nn.Linear` in a `TransformerBlock` (512 at the preset); a test enumerates the blocks' Linear layers against it. The padded path chunks complete rows (`rows_per_chunk`, 5,915 rows at 709 tokens). The packed path runs unchunked while the padded bound fits; otherwise it splits rows at row boundaries (`packed_row_chunks`) so each chunk's packed tokens × width stays below 2^31, and raises only if a single row cannot fit.
+docs/model-architecture.md:750:- **Actor input:** `actor_input_proj = nn.Linear(3D, D)` over `[entity ‖ self player ‖ plan]`, as Isaiah's `source_actor_input_proj`. Unit frames use `own_actor_hidden[:, a]` as the entity; the market queue has no entity, so the plan hidden stands in (`[plan ‖ player ‖ plan]`).
+docs/model-architecture.md:756:  - **Head-extent guard:** the heads run eager in production (`compile_transformer_trunk` compiles the trunk only). The actor still chunks rows so `rows × 252 × max(3D, D, widest head) < 2^31` (`head_rows_per_chunk`, 11,096 rows at D = 256), so a future compiled head core cannot silently corrupt outputs.
+docs/model-architecture.md:758:- **Muon:** stem inputs, token parameters, slot and position embeddings, `critic_head.out` and every head `.out` are excluded, as in `StatelessTransformerV1`; stem outputs, trunk matrices, `actor_input_proj.weight`, `critic_head.up` and every head `.up` use Muon.
+python/owl/model/kaggriculture.py:66:# (measured: corruption once rows x input width > 2**31). Backward reads forward
+python/owl/model/kaggriculture.py:67:# outputs as inputs, so compiled regions keep rows x max(in, out) < 2**31
+python/owl/model/kaggriculture.py:69:_GEMM_ELEMENT_LIMIT = 2**31
+python/owl/model/kaggriculture.py:138:def trunk_gemm_width(config: KaggricultureTransformerConfig) -> int:
+python/owl/model/kaggriculture.py:154:def packed_row_chunks(row_tokens: list[int], *, width: int) -> list[tuple[int, int]]:
+python/owl/model/kaggriculture.py:155:    """Split rows at row boundaries so each chunk's packed tokens x width < 2**31.
+python/owl/model/kaggriculture.py:164:                f"row {row} packs {tokens} tokens x {width}, at or above the 2**31 "
+python/owl/model/kaggriculture.py:186:def head_rows_per_chunk(config: KaggricultureTransformerConfig) -> int:
+python/owl/model/kaggriculture.py:187:    """Largest row count with rows x MAX_FRAMES x head width < 2**31.
+python/owl/model/kaggriculture.py:196:            f"the 2**31 GEMM limit; see {_OVERFLOW_REFERENCE}"
+python/owl/model/kaggriculture.py:251:        self.actor_input_proj = nn.Linear(3 * width, width)
+python/owl/model/kaggriculture.py:324:        x = self._run_trunk(x, token_mask)
+python/owl/model/kaggriculture.py:435:    def _run_trunk(self, x: torch.Tensor, token_mask: torch.Tensor) -> torch.Tensor:
+python/owl/model/kaggriculture.py:447:        width = trunk_gemm_width(self.config)
+python/owl/model/kaggriculture.py:454:                f"2**31 GEMM limit; see {_OVERFLOW_REFERENCE}"
+python/owl/model/kaggriculture.py:486:        for start, stop in packed_row_chunks(row_tokens, width=width):
+python/owl/model/kaggriculture.py:503:    def compile_transformer_trunk(self, *, mode: str) -> int:
+python/owl/model/kaggriculture.py:609:        chunk = head_rows_per_chunk(self.config)
+python/owl/model/kaggriculture.py:645:        unit_input = self.actor_input_proj(
+python/owl/model/kaggriculture.py:656:        market_input = self.actor_input_proj(torch.cat((plan, player, plan), dim=-1))
+python/owl/model/kaggriculture_actor.py:245:        of the model's ``actor_input_proj``. Tensor-only; no host sync.
+tests/kaggriculture/test_model_encoder.py:415:    assert rows * tokens * width < 2**31
+tests/kaggriculture/test_model_encoder.py:416:    assert (rows + 1) * tokens * width >= 2**31
+tests/kaggriculture/test_model_encoder.py:430:def test_trunk_gemm_width_matches_every_block_linear(
+tests/kaggriculture/test_model_encoder.py:438:    assert km.trunk_gemm_width(model.config) == enumerated
+tests/kaggriculture/test_model_encoder.py:441:def test_preset_trunk_gemm_width() -> None:
+tests/kaggriculture/test_model_encoder.py:442:    assert km.trunk_gemm_width(_preset()) == 512
+tests/kaggriculture/test_model_encoder.py:458:    tokens, width = x_full.shape[1], km.trunk_gemm_width(model.config)
+tests/kaggriculture/test_model_encoder.py:475:    monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", 2**31)
+tests/kaggriculture/test_model_encoder.py:518:    assert model.compile_transformer_trunk(mode="max-autotune-no-cudagraphs") == 1
+tests/kaggriculture/test_model_encoder.py:609:    width = km.trunk_gemm_width(model.config)
+tests/kaggriculture/test_model_encoder.py:646:    width = km.trunk_gemm_width(model.config)
+tests/kaggriculture/test_model_encoder.py:655:    bounds = km.packed_row_chunks(row_tokens, width=width)
+tests/kaggriculture/test_model_encoder.py:669:def test_packed_row_chunks_rejects_only_an_unfittable_row(
+tests/kaggriculture/test_model_encoder.py:673:    assert km.packed_row_chunks([3, 3, 3, 3], width=10) == [(0, 3), (3, 4)]
+tests/kaggriculture/test_model_encoder.py:674:    assert km.packed_row_chunks([9, 9], width=10) == [(0, 1), (1, 2)]
+tests/kaggriculture/test_model_encoder.py:675:    assert km.packed_row_chunks([], width=10) == []
+tests/kaggriculture/test_model_encoder.py:677:        km.packed_row_chunks([3, 10, 3], width=10)
+tests/kaggriculture/test_model_encoder.py:697:    model.compile_transformer_trunk(mode="max-autotune-no-cudagraphs")
+tests/kaggriculture/test_model_encoder.py:711:    assert model.compile_transformer_trunk(mode="default") == 1  # lazy; not run
+tests/kaggriculture/test_model_heads.py:823:    proj = model.actor_input_proj
+tests/kaggriculture/test_model_heads.py:858:    assert id(model.actor_input_proj.weight) in muon
+tests/kaggriculture/test_model_heads.py:859:    assert id(model.actor_input_proj.bias) in adamw
+tests/kaggriculture/test_model_heads.py:897:    proj = _singular_values(model.actor_input_proj)
+tests/kaggriculture/test_model_heads.py:929:        p.numel() for p in model.actor_input_proj.parameters()
+tests/kaggriculture/test_model_heads.py:937:def test_head_rows_per_chunk_boundary_at_the_preset() -> None:
+tests/kaggriculture/test_model_heads.py:941:    rows = km.head_rows_per_chunk(config)
+tests/kaggriculture/test_model_heads.py:943:    assert rows * F * width < 2**31 <= (rows + 1) * F * width
+tests/kaggriculture/test_model_heads.py:949:def test_head_rows_per_chunk_follows_the_limit(
+tests/kaggriculture/test_model_heads.py:955:    assert km.head_rows_per_chunk(config) == (5 if offset > 0 else 4)
+tests/kaggriculture/test_model_heads.py:958:        km.head_rows_per_chunk(config)
+tests/kaggriculture/test_model_heads.py:983:    monkeypatch.setattr(km, "head_rows_per_chunk", lambda _config: chunk)
+tests/kaggriculture/test_model_heads.py:1016:    assert model.compile_transformer_trunk(mode="max-autotune-no-cudagraphs") == 1
+
+exec
+/bin/zsh -lc 'git show --format=fuller --no-ext-diff e1458d2' in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+commit e1458d2a717d9d731a367cbb78b98616ee6649f4
+Author:     Season <seasonluke@gmail.com>
+AuthorDate: Tue Sep 29 14:32:10 2026 +0800
+Commit:     Season <seasonluke@gmail.com>
+CommitDate: Tue Sep 29 14:32:10 2026 +0800
+
+    Reconcile overflow notes after merging the heads and GEMM evidence
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+diff --git a/cookbook/log.md b/cookbook/log.md
+index 5205751..6fd7955 100644
+--- a/cookbook/log.md
++++ b/cookbook/log.md
+@@ -1,5 +1,12 @@
+ # Change log
+ 
++## 2026-09-29 — Reconcile overflow notes after merging the heads and GEMM evidence
++
++Codex verified the staged merge of Task 2.3 and the GEMM-limit evidence (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md`).
++- The overflow comment in `python/owl/model/kaggriculture.py` and `docs/model-architecture.md` now cites the measured input-side limit, with `rows × max(in, out) < 2^31` as the training design bound.
++- The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] now records that the Task 2.3 heads exist and chunk.
++- The Reference scopes the "rejects L" measurement to `1ddc71d`, because the packed path now chunks instead (CPU-tested). Its index line matches.
++
+ ## 2026-09-29 — Merge live parity with the hardened rules-kernel checker
+ 
+ Task 1.1b (Codex APPROVE at `16e56b6`) and Task 1.1's verification hardening
+diff --git a/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md b/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md
+index 888cf51..a55cb2e 100644
+--- a/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md
++++ b/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md
+@@ -1,7 +1,7 @@
+ ---
+ type: "Reference"
+ title: "Compiled GEMM template overflows above 2^21 rows"
+-description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. The rebuilt trunk guard is measured correct at L−1 and rejects L; production compliance is unproven."
++description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. At `1ddc71d` the rebuilt trunk guard was measured correct at L−1 and rejected L; the packed path now chunks instead of rejecting (CPU-tested). Production compliance is unproven."
+ tags: ["kaggriculture-v3", "cuda", "compile"]
+ status: "verified-scoped"
+ generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+@@ -46,14 +46,14 @@ Inferred, not measured:
+ ## Consequences
+ 
+ - **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
+-  - For the trunk that width is 512, which is `gemm_kmax`.
+-  - Nothing enforces the bound outside the trunk. The stems are eager today, but the full stem is 371→512→256. The heads and the planned 768-wide `actor_input_proj` are not implemented yet; compiled, `actor_input_proj` would exceed L_in at 2,796,203 rows × frames.
++  - For the trunk that width is 512, computed by `trunk_gemm_width` (formerly `gemm_kmax`) from the actual Linear layers.
++  - Outside the trunk: the stems run eager (the full stem is 371→512→256) and have no guard of their own. Task 2.3 implements the heads and the 768-wide `actor_input_proj`; they run eager in production and chunk rows so `rows × 252 × max(3D, D, widest head) < 2^31` (11,096 rows at D = 256). Compiled, `actor_input_proj` alone would exceed L_in at 2,796,203 rows × frames. None of this is measured on the GPU.
+ - **Production compliance is unproven.** Kaggriculture is not yet in `ModelConfig` or the model factory, and `configure_model_compile` rejects it for `model_compile="trunk"`. Integrated rollout, PPO recompute, evaluation, BC and teacher workloads stay unverified until Task 3.1 and Phase 6.
+ - **Size margins against 2³¹/width, not against observed faults.** A passing test above the bound is not evidence of safety.
+ - **Workload margins against the trunk L:**
+   - Rollout at 256 rows: 23.1× headroom, forward measured correct.
+   - PPO minibatch at 1,024 rows: 5.78×, arithmetic only.
+-  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. It needs `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunking. The guard would raise, not corrupt.
++  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. At the probed commit `1ddc71d` the packed guard would have raised, not corrupted. Since Task 2.3 the packed path chunks at row boundaries, so a teacher chunk of this size runs in several trunk calls (CPU-tested; not measured on the GPU).
+ - **Log-ratio alarm:** treat a non-zero log-ratio at the first minibatch (before any optimizer step) as a correctness failure and abort, recording the batch shape.
+ - **Upgrades:** don't upgrade torch or drivers as a remedy without a separate measured decision. Rerun both probes after any upgrade.
+ 
+diff --git a/cookbook/references/index.md b/cookbook/references/index.md
+index 7dde08a..9ca647a 100644
+--- a/cookbook/references/index.md
++++ b/cookbook/references/index.md
+@@ -18,6 +18,6 @@ Since the [[../decisions/restart-the-port-from-isaiahs-clean-base|restart]], the
+ - [[explicit-game-tokens-and-grammar-replace-orbit-heads|Explicit game tokens and grammar replace Orbit heads]] — Restored player token and entity/player/plan batched heads pass local checks; checkpoint schema changes explicitly, while prior GPU results retain their old-model scope.
+ - [[reward-reuse-preserves-objective-and-critic-semantics|Reward reuse preserves objective and critic semantics]] — Current GPU econ coefficient0.2, observed nonzero reward with no claimed learning benefit, and exact v2 W/L/D, bank-margin and capped-economic formulas with v3 critic/bootstrap compatibility limits.
+ - [[bc-bootstrap-uses-native-replay-features-and-current-heads|Native replay BC bootstrap]] — Market-disabled controls preserve3000 bank; exact admitted replay actions and Rust features support separate current-model BC, with episode holdout, two-rank smoke, observed overfitting and incomplete quality validation; automatic PPO disabled; BC stopped early for a separately requested PPO experiment, which then failed with a CUDA illegal memory access later traced to a compiler GEMM overflow; the planned architecture alignment schedules one BC rerun. Source review corrects omitted-unit handling: Python None is rejected, not encoded as NONE.
+-- [[compiled-gemm-template-overflows-above-2-21-rows|Compiled GEMM template overflows above 2^21 rows]] — Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × input width exceeds 2^31 with an int32 size argument (measured at widths 4096/768/512, silent in the real trunk; output-wide GEMMs stayed correct to 2^32); design bound M × max(in, out) for training; trunk guard correct at L−1 and rejects L; production compliance unproven.
++- [[compiled-gemm-template-overflows-above-2-21-rows|Compiled GEMM template overflows above 2^21 rows]] — Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × input width exceeds 2^31 with an int32 size argument (measured at widths 4096/768/512, silent in the real trunk; output-wide GEMMs stayed correct to 2^32); design bound M × max(in, out) for training; trunk guard measured correct at L−1 and rejecting L at `1ddc71d` (the packed path now chunks, CPU-tested); production compliance unproven.
+ - [[kaggriculture-encoder-reuses-isaiah-stateless-layers|Kaggriculture encoder reuses Isaiah's stateless layers]] — The rebuilt encoder uses Isaiah's StatelessTransformerV1 classes, token roles, packing, compile hook and initialization; only stem input widths are game-specific, and guards chunk both the padded and packed compiled GEMMs below 2^31. Describes the current tree.
+ - [[kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|Kaggriculture grammar heads sit behind Isaiah's actor projection]] — Task 2.3 adds the 3D→D actor projection and batched grammar heads with exact coupled-Gumbel HIRE sampling, same-path replay with support/length/canonical flags and one host check, head GEMM-extent chunking, and a 6,252,223-parameter preset; synthetic grammar tables stand in until Task 1.2. Describes the current tree.
+diff --git a/docs/model-architecture.md b/docs/model-architecture.md
+index 195b8f8..ca207f5 100644
+--- a/docs/model-architecture.md
++++ b/docs/model-architecture.md
+@@ -745,7 +745,7 @@ not penalized. Per-action KL portions are logged as components such as
+ - **Input encoding:** one stem per entity group, fed float channels concatenated with one-hot categorical fields: tiles (133 inputs), actors (371), shops (16, type plus slot), market (11), player features (44) and globals (15). There are no embedding tables. Player tokens are `player_tokens + player_feature_proj(player_features)` (self, opponent), and the global token is `global_proj(global_features)`.
+ - **Sequence** per seat row (`B = 2 × envs`, each seat encoded independently), `705 + n_scratch_tokens` tokens: own actors (241), rival actors (241), tiles (200), shops (8), market (9), players (2), global (1), board scratch (n), actor plan (1), critic value (2). Masks: `actor_mask`, `shop_mask`, `still_playing` on player/plan/critic tokens, and all-true for the rest.
+ - **Trunk:** `TransformerBlock × depth` and `final_norm`. The preset sits on the 6m ladder (width 256, 8 heads, GELU, `mlp_ratio` 2.0), with depth 8 for the 6–10M budget; SwiGLU is rejected.
+-- **Compiled-GEMM guard:** Torch 2.9 Inductor `mm`/`addmm` templates form A-load and output-store offsets in int32, so every compiled GEMM needs `rows × max(K, N_out, fused-epilogue row stride) < 2^31` (cookbook `references/compiled-gemm-template-overflows-above-2-21-rows`). `trunk_gemm_width` is the maximum of `max(in_features, out_features)` over every `nn.Linear` in a `TransformerBlock` (512 at the preset); a test enumerates the blocks' Linear layers against it. The padded path chunks complete rows (`rows_per_chunk`, 5,915 rows at 709 tokens). The packed path runs unchunked while the padded bound fits; otherwise it splits rows at row boundaries (`packed_row_chunks`) so each chunk's packed tokens × width stays below 2^31, and raises only if a single row cannot fit.
++- **Compiled-GEMM guard:** Torch 2.9 Inductor `mm`/`addmm` templates can form the A-load offset in int32; the pod probe measured corruption at `rows × input width > 2^31` (output-wide GEMMs stayed correct). Because backward reads forward outputs as inputs, every compiled region keeps the strict design bound `rows × max(in_features, out_features) < 2^31` (cookbook `references/compiled-gemm-template-overflows-above-2-21-rows`). `trunk_gemm_width` is the maximum of `max(in_features, out_features)` over every `nn.Linear` in a `TransformerBlock` (512 at the preset); a test enumerates the blocks' Linear layers against it. The padded path chunks complete rows (`rows_per_chunk`, 5,915 rows at 709 tokens). The packed path runs unchunked while the padded bound fits; otherwise it splits rows at row boundaries (`packed_row_chunks`) so each chunk's packed tokens × width stays below 2^31, and raises only if a single row cannot fit.
+ - **Critic:** `critic_head = OutputProjectionMLP(trunk_config, 1)`, applied to the two critic-value tokens (self, opponent), gives one logit per player and a softmax winner distribution. `compute_value` returns `2·p(self) − 1` per seat (`win_loss`), and `winner_log_probabilities` returns `[env, seat, 2]`. Its output layer uses Isaiah's critic gain 1.0.
+ - **Actor input:** `actor_input_proj = nn.Linear(3D, D)` over `[entity ‖ self player ‖ plan]`, as Isaiah's `source_actor_input_proj`. Unit frames use `own_actor_hidden[:, a]` as the entity; the market queue has no entity, so the plan hidden stands in (`[plan ‖ player ‖ plan]`).
+ - **Grammar heads** (`KaggricultureGrammarActor`, `python/owl/model/kaggriculture_actor.py`): `source_norm`, `market_position: Embedding(11, D)`, prefix `slot_embeddings` (unit kind/item/quantity-present/quantity-high, market kind/item/quantity-high) and one `OutputProjectionMLP` per sampled slot (`unit_kind`, `unit_item`, `unit_quantity_present`, `unit_quantity_high`, `unit_quantity`, `market_kind`, `market_item`, `market_quantity_high`, `market_quantity`). All 241 unit frames and 11 market positions (10 queue slots plus the forced sentinel) are decided in parallel. Only the fixed within-frame stages are unrolled, with `hidden_stage = base + prefix / sqrt(stage + 1)`. The prefix resets for every observation; there is no GRU and no frame loop.
+diff --git a/python/owl/model/kaggriculture.py b/python/owl/model/kaggriculture.py
+index 7cb3660..5cd58ed 100644
+--- a/python/owl/model/kaggriculture.py
++++ b/python/owl/model/kaggriculture.py
+@@ -62,10 +62,10 @@ KAGGRICULTURE_TRANSFORMER: Literal["kaggriculture_transformer"] = (
+     "kaggriculture_transformer"
+ )
+ 
+-# Compiled mm/addmm templates in torch 2.9 form A-load and output-store offsets
+-# in int32, so every compiled GEMM needs rows x max(K, N_out, fused-epilogue row
+-# stride) < 2**31 (cookbook reference
+-# compiled-gemm-template-overflows-above-2-21-rows).
++# Compiled mm/addmm templates in torch 2.9 can form the A-load offset in int32
++# (measured: corruption once rows x input width > 2**31). Backward reads forward
++# outputs as inputs, so compiled regions keep rows x max(in, out) < 2**31
++# (cookbook reference compiled-gemm-template-overflows-above-2-21-rows).
+ _GEMM_ELEMENT_LIMIT = 2**31
+ _OVERFLOW_REFERENCE = (
+     "cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md"
+
+exec
+/bin/zsh -lc "rg -n 'rejects L|rejected L|raises at L|chunks|unimplemented|Production compliance|output.store|2³¹|GEMM limits' ops/rebuild-2026-09-29/results.md cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md && rg --files -g AGENTS.md -g '*compile*' python/owl/model tests/kaggriculture" in /Users/poonszesen/kg-v3-merge2
+ exited 1 in 0ms:
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:4:description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. At `1ddc71d` the rebuilt trunk guard was measured correct at L−1 and rejected L; the packed path now chunks instead of rejecting (CPU-tested). Production compliance is unproven."
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:15:The reference branch's PPO run from the BC checkpoint crashed with a CUDA illegal memory access after 3 iterations. Rerunning the exact setup with `CUDA_LAUNCH_BLOCKING=1` reproduced it on both ranks. Both tracebacks end in the Inductor **max-autotune Triton GEMM template** `triton_tem_fused__to_copy_addmm_gelu_t_view_9`, the transformer trunk's MLP with `M` = batch rows × tokens, K = 1024, N = 256. The kernel declares `INDEX_DTYPE = tl.int64`, which the mm template does not use, and forms the input-side offset `xindex = k + 1024*idx_m` in 32-bit arithmetic. Once `M > 2^21`, that offset passes 2³¹ and wraps. Here K = 1024 is the input width of the MLP down-projection.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:22:- The bug is in compiler-generated code, so it is invisible in the model source. It can reappear for any compiled GEMM whose `rows × input width` exceeds 2³¹: rollouts, evaluation, BC, and other models with larger batches. In training, backward reads forward outputs as inputs, so the forward output width counts too (below).
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:26:A second bounded probe compared compiled output against eager at every point. It covered synthetic compiled Linears and MLPs, plus the real `KaggricultureTransformer` trunk from `kg/rebuild-model` @ `1ddc71d`, compiled directly through its own `compile_transformer_trunk`. Precision matched `run_ppo`: fp32 parameters under bf16 autocast, `max-autotune-no-cudagraphs`, `dynamic=True`, compiled small first. Codex verified the evidence and requested edits, applied here. The table, the generated-code attribution and the source citations are in `ops/rebuild-2026-09-29/results.md`, "GEMM limits at our shapes".
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:28:Measured (L_in = floor(2³¹ / K) for GEMM input width K, e.g. 2,796,202 for K = 768; trunk L = 2³¹/512 = 4,194,304):
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:34:  The earlier universal rule, "overflow iff M·max(K, N) > 2³¹", is withdrawn.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:39:- **The guard, measured endpoints:** with the guard on, `_run_trunk` is correct at L−1 = 4,194,303 packed tokens. It raises at L with zero trunk calls, and chunks the padded path into calls of 4,193,735 tokens, which are also correct.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:48:- **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:51:- **Production compliance is unproven.** Kaggriculture is not yet in `ModelConfig` or the model factory, and `configure_model_compile` rejects it for `model_compile="trunk"`. Integrated rollout, PPO recompute, evaluation, BC and teacher workloads stay unverified until Task 3.1 and Phase 6.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:52:- **Size margins against 2³¹/width, not against observed faults.** A passing test above the bound is not evidence of safety.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:56:  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. At the probed commit `1ddc71d` the packed guard would have raised, not corrupted. Since Task 2.3 the packed path chunks at row boundaries, so a teacher chunk of this size runs in several trunk calls (CPU-tested; not measured on the GPU).
+ops/rebuild-2026-09-29/results.md:16:- **Mechanism:** the kernel declares `INDEX_DTYPE = tl.int64` but computes `rm = pid_m*BLOCK_M + arange` and `xindex = k + 1024*idx_m` in int32. Once M > 2²¹ = 2,097,152, `1024·idx_m` passes 2³¹ and wraps. Wrapped addresses first land in valid memory (silent corruption), then eventually outside it (fault). The generated source is `/tmp/torchinductor_root/2e/c2ezrgfnyc…py` on the pod.
+ops/rebuild-2026-09-29/results.md:24:2. **Guard (Task 2.1):** the model's compiled trunk path fails fast when `rows × tokens × max_inner_dim ≥ 2³¹`, or chunks the forward, with a test at the boundary. This protects evaluation, BC and any future larger batch.
+ops/rebuild-2026-09-29/results.md:32:**Owner decision: stay on torch 2.9** (Isaiah's pin, with its locked flash-attn 2.8.3 / triton 3.5.0). The 2.9 overflow is handled by the design requirements above: Isaiah's cadence keeps rows far below the threshold, the trunk chunks and guards, and the first-minibatch log-ratio alarm catches silent corruption. Torch 2.8 remains a measured fallback if 2.9 ever needs replacing.
+ops/rebuild-2026-09-29/results.md:34:## GEMM limits at our shapes (2026-09-29, 05:23–05:32Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+ops/rebuild-2026-09-29/results.md:71:- **L_in** = ⌊2³¹ / GEMM input width K⌋; **L_out** = ⌊2³¹ / output width N⌋.
+ops/rebuild-2026-09-29/results.md:72:- For the trunk, L = 2³¹ / 512 = 4,194,304 is the design bound (below). M = token rows: padded rows × 709, or packed tokens.
+ops/rebuild-2026-09-29/results.md:85:| Linear 768→256 (planned `actor_input_proj`) | 2,796,202 / 8,388,608 | 2,796,202 = L_in (2³¹/768 = 2,796,202⅔) | 2,796,203 = L_in+1: fault in autotune benchmarking at the new shape (`lin_768_256.attempt0.log:91`) | fault |
+ops/rebuild-2026-09-29/results.md:95:  - The recompile at hint 528,384, where M·4096 > 2³¹ (`…/mp/…`), still has `ks0: i32`. It declares `INDEX_DTYPE = tl.int64`, which the standard mm template does not consume. It faulted at 528,384 and at 1,048,576.
+ops/rebuild-2026-09-29/results.md:97:- **The trunk's corrupting kernel is the MLP down-projection.** In the packed bypass's first recompile above L (`trunk_packed_bypass/ar/…`), the down-projection `…addmm_gelu_t_9` (A-load `512*idx_m`, store `256*idx_m`) kept `ks0: i32`. The up-projection `…add_addmm_native_layer_norm_t_7` (A-load `256*idx_m`, store `512*idx_m`) got `ks0: i64`. The padded bypass shows the same split (`trunk_padded_bypass/2b/…`). The recompile at 8,388,888 tokens, where M·256 > 2³¹ as well (`trunk_packed_bypass/jg/…`), has `ks0: i64` in every template and was correct. (The first draft called `…native_layer_norm_t_7` the down-projection; that was wrong.)
+ops/rebuild-2026-09-29/results.md:102:1. **Real trunk forward, guard on:** correct at L−1 = 4,194,303 packed tokens. The guard rejects L with zero trunk calls. The padded path chunks to 4,193,735 tokens per call, and the chunks are correct.
+ops/rebuild-2026-09-29/results.md:104:3. **Single GEMMs:** input-wide GEMMs (4096→16, 768→256) were correct at L_in and failed at L_in+1. Output-wide GEMMs (16→4096, 256→512, 256→256) stayed correct up to M·N = 2³² or 2·L. **The measured overflow at these shapes is input-side: the A-load, M·K.** The audit's universal "overflow iff M·max(K, N) > 2³¹" rule is **withdrawn**.
+ops/rebuild-2026-09-29/results.md:113:With an i64 `ks0`, the chain `M → grid_m → group_size → pid_m` (`kernel/mm.py:81–89`) starts from a 64-bit value. That plausibly promotes `idx_m`, and with it the A-load offset. With an i32 `ks0`, `K·idx_m` wraps once M·K > 2³¹. This matches every failing and passing graph whose kernel can be attributed from the retained generated code. The 768→256 and 512→256 failures happened during autotuning and do not identify the failing candidate kernel; that localization gap remains. **Triton IR promotion is unverified**, because no lowered IR was captured. Rematerializing `rm` does not by itself establish int32.
+ops/rebuild-2026-09-29/results.md:116:- **The unguarded real trunk at exactly L** was not run. The synthetic single GEMMs were correct at exactly L_in, so the guard's `≥ 2³¹` rejection may be stricter than necessary. For the real trunk that is unmeasured, so the guard is a conservative admission rule, not a measured edge.
+ops/rebuild-2026-09-29/results.md:119:  - For the trunk, every Linear has max(in, out) ≤ 512, so `gemm_kmax = 512` is that design bound. It is justified by the input-side rule plus backward, not by any output-store overflow.
+ops/rebuild-2026-09-29/results.md:124:Where our workloads sit, as rows × 709 tokens against L = 4,194,304 (2³¹/512):
+ops/rebuild-2026-09-29/results.md:136:  - The audit's 371/376 figures are conditional stride bounds, not observed kernel limits: ⌊2³¹/371⌋ = 5,788,365, and ⌊2³¹/376⌋ = **5,711,392**, if BF16 alignment padding rounds 371 to 376 (`fx_passes/pad_mm.py:69–71,121–130`). That padding is conditional (line 728). No 376 stride was generated for these eager stems.
+
+codex
+The diff addresses all three r1 findings, and the Reference still explicitly limits the evidence to CPU-tested chunking and unproven production compliance. I’m checking the chunk-size formulas and compile path, plus comparing Python tokens to confirm there is no executable change.
+
+exec
+/bin/zsh -lc "sed -n '1,160p' cookbook/references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection.md && sed -n '34,65p' ops/rebuild-2026-09-29/results.md && sed -n '116,142p' ops/rebuild-2026-09-29/results.md" in /Users/poonszesen/kg-v3-merge2
+exec
+/bin/zsh -lc "sed -n '120,210p' python/owl/model/kaggriculture.py && sed -n '425,525p' python/owl/model/kaggriculture.py && sed -n '590,680p' python/owl/model/kaggriculture.py" in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+    global_hidden: torch.Tensor
+    board_hidden: torch.Tensor
+    actor_plan_hidden: torch.Tensor
+    critic_value_hidden: torch.Tensor
+
+
+def sequence_length(config: KaggricultureTransformerConfig) -> int:
+    """Tokens per seat row: entities, players, global, board, plan, critic."""
+    return (
+        _ENTITY_TOKENS
+        + kt.PLAYERS
+        + 1
+        + config.n_scratch_tokens
+        + _PLAN_TOKENS
+        + kt.PLAYERS
+    )
+
+
+def trunk_gemm_width(config: KaggricultureTransformerConfig) -> int:
+    """Max GEMM operand/output width in the compiled trunk.
+
+    The maximum of ``max(in_features, out_features)`` over every ``nn.Linear``
+    in a ``TransformerBlock``: ``D -> D`` attention projections and the
+    ``D -> H -> D`` MLP (``H = int(D * mlp_ratio)``). A test enumerates the
+    blocks' Linear layers so a new block layout cannot silently exceed it.
+    """
+    return max(config.embed_dim, int(config.embed_dim * config.mlp_ratio))
+
+
+def rows_per_chunk(*, tokens: int, width: int) -> int:
+    """Largest padded row count whose GEMMs stay below the overflow limit."""
+    return (_GEMM_ELEMENT_LIMIT - 1) // (tokens * width)
+
+
+def packed_row_chunks(row_tokens: list[int], *, width: int) -> list[tuple[int, int]]:
+    """Split rows at row boundaries so each chunk's packed tokens x width < 2**31.
+
+    Greedy in row order; raises only when a single row cannot fit.
+    """
+    chunks: list[tuple[int, int]] = []
+    start, packed = 0, 0
+    for row, tokens in enumerate(row_tokens):
+        if tokens * width >= _GEMM_ELEMENT_LIMIT:
+            raise ValueError(
+                f"row {row} packs {tokens} tokens x {width}, at or above the 2**31 "
+                f"GEMM limit; see {_OVERFLOW_REFERENCE}"
+            )
+        if (packed + tokens) * width >= _GEMM_ELEMENT_LIMIT:
+            chunks.append((start, row))
+            start, packed = row, 0
+        packed += tokens
+    if row_tokens:
+        chunks.append((start, len(row_tokens)))
+    return chunks
+
+
+def head_gemm_width(config: KaggricultureTransformerConfig) -> int:
+    """Max GEMM operand/output width in the action heads.
+
+    ``3D -> D`` input projection, ``D -> D`` head ``up`` and ``D -> width``
+    head ``out``.
+    """
+    widest_head = max(kt.SLOT_WIDTHS[slot] for slot in POLICY_SLOTS)
+    return max(3 * config.embed_dim, config.embed_dim, widest_head)
+
+
+def head_rows_per_chunk(config: KaggricultureTransformerConfig) -> int:
+    """Largest row count with rows x MAX_FRAMES x head width < 2**31.
+
+    The heads run eager in production; the chunking keeps a future compile of
+    the head core from silently corrupting outputs (about 11,096 rows at D=256).
+    """
+    rows = (_GEMM_ELEMENT_LIMIT - 1) // (kt.MAX_FRAMES * head_gemm_width(config))
+    if rows <= 0:
+        raise ValueError(
+            f"one row of {kt.MAX_FRAMES} frames x {head_gemm_width(config)} reaches "
+            f"the 2**31 GEMM limit; see {_OVERFLOW_REFERENCE}"
+        )
+    return rows
+
+
+def _one_hot(index: torch.Tensor, classes: int, like: torch.Tensor) -> torch.Tensor:
+    return F.one_hot(index, classes).to(dtype=like.dtype)
+
+
+class KaggricultureTransformer(
+    BaseModelAPI[
+        kt.KaggricultureObsBatch,
+        kt.KaggricultureActions,
+        kt.KaggricultureActionConfig,
+    ]
+                    dtype=torch.bool,
+                    device=device,
+                ),
+                playing,
+                playing.expand(rows, kt.PLAYERS),
+            ),
+            dim=1,
+        )
+        return x, token_mask
+
+    def _run_trunk(self, x: torch.Tensor, token_mask: torch.Tensor) -> torch.Tensor:
+        """Isaiah's dispatch, guarded against the compiled-GEMM overflow."""
+        should_use_flash = use_flash_attn(x)
+        if (
+            _requires_flash_attn(x, force_flash_attn=self.config.force_flash_attn)
+            and not should_use_flash
+        ):
+            raise RuntimeError(
+                "force_flash_attn=True requires CUDA fp16/bf16 tensors "
+                "and the flash-attn package"
+            )
+        trunk = self._compiled_transformer_trunk or self._forward_transformer_trunk
+        width = trunk_gemm_width(self.config)
+        if should_use_flash:
+            return self._run_packed_trunk(trunk, x, token_mask, width)
+        chunk = rows_per_chunk(tokens=x.shape[1], width=width)
+        if chunk <= 0:
+            raise ValueError(
+                f"a single padded row of {x.shape[1]} tokens x {width} reaches the "
+                f"2**31 GEMM limit; see {_OVERFLOW_REFERENCE}"
+            )
+        if x.shape[0] <= chunk:
+            return trunk(x, token_mask, None)
+        return torch.cat(
+            [
+                trunk(x[start : start + chunk], token_mask[start : start + chunk], None)
+                for start in range(0, x.shape[0], chunk)
+            ],
+            dim=0,
+        )
+
+    @staticmethod
+    def _run_packed_trunk(
+        trunk: Callable[
+            [torch.Tensor, torch.Tensor | None, PackedSequence | None], torch.Tensor
+        ],
+        x: torch.Tensor,
+        token_mask: torch.Tensor,
+        width: int,
+    ) -> torch.Tensor:
+        """Packed dispatch, chunked at row boundaries below the GEMM limit.
+
+        The padded bound needs no sync; only a batch whose padded size could
+        overflow transfers its per-row token counts to plan the chunks.
+        """
+        rows, tokens = x.shape[:2]
+        if rows * tokens * width < _GEMM_ELEMENT_LIMIT:
+            packed_x, packed = pack_sequence(x, token_mask, max_seqlen=tokens)
+            return unpack_sequence(trunk(packed_x, None, packed), packed)
+        row_tokens = [int(n) for n in token_mask.sum(dim=1).tolist()]
+        outputs = []
+        for start, stop in packed_row_chunks(row_tokens, width=width):
+            packed_x, packed = pack_sequence(
+                x[start:stop], token_mask[start:stop], max_seqlen=tokens
+            )
+            outputs.append(unpack_sequence(trunk(packed_x, None, packed), packed))
+        return torch.cat(outputs, dim=0)
+
+    def _forward_transformer_trunk(
+        self,
+        x: torch.Tensor,
+        token_mask: torch.Tensor | None,
+        packed: PackedSequence | None,
+    ) -> torch.Tensor:
+        for block in self.blocks:
+            x = block(x, token_mask, packed)
+        return self.final_norm(x)
+
+    def compile_transformer_trunk(self, *, mode: str) -> int:
+        self._compiled_transformer_trunk = torch.compile(
+            self._forward_transformer_trunk, mode=mode, dynamic=True
+        )
+        return 1
+
+    # --- policy / value API (Tasks 2.2 and 2.3) --------------------------------
+
+    @staticmethod
+    def _require_stateless(hidden_state: ModelHiddenState | None) -> None:
+        if hidden_state is not None:
+            raise ValueError(
+                "KaggricultureTransformer is stateless; hidden_state must be None"
+            )
+
+    def forward(
+        self,
+        obs: kt.KaggricultureObsBatch,
+        *,
+        deterministic: bool = False,
+        hidden_state: ModelHiddenState | None = None,
+    ) -> ModelOutput[kt.KaggricultureActions]:
+        """Sample one grammar program per seat row.
+            live=obs.still_playing.reshape(-1),
+        )
+
+    def _policy(
+        self,
+        encoded: KaggricultureEncoded,
+        context: GrammarContext,
+        actions: kt.KaggricultureActions | None,
+        *,
+        deterministic: bool,
+    ) -> GrammarPolicyResult:
+        """Run the heads in row chunks below the head GEMM-extent limit."""
+        rows = context.live.shape[0]
+        tokens = (
+            None
+            if actions is None
+            else actions.tokens.reshape(rows, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        )
+        lengths = None if actions is None else actions.lengths.reshape(rows)
+        chunk = head_rows_per_chunk(self.config)
+        results = [
+            self._policy_chunk(
+                encoded,
+                context,
+                tokens,
+                lengths,
+                slice(start, min(start + chunk, rows)),
+                deterministic=deterministic,
+            )
+            for start in range(0, max(rows, 1), chunk)
+        ]
+        if len(results) == 1:
+            return results[0]
+        return GrammarPolicyResult(
+            tokens=torch.cat([r.tokens for r in results]),
+            lengths=torch.cat([r.lengths for r in results]),
+            log_probs=torch.cat([r.log_probs for r in results]),
+            entropies=torch.cat([r.entropies for r in results]),
+            valid=torch.cat([r.valid for r in results]),
+        )
+
+    def _policy_chunk(
+        self,
+        encoded: KaggricultureEncoded,
+        context: GrammarContext,
+        tokens: torch.Tensor | None,
+        lengths: torch.Tensor | None,
+        rows: slice,
+        *,
+        deterministic: bool,
+    ) -> GrammarPolicyResult:
+        entity = encoded.own_actor_hidden[rows]
+        player = encoded.player_hidden[rows, 0]  # this seat's own player token
+        plan = encoded.actor_plan_hidden[rows, 0]
+        actors = entity.shape[1]
+        unit_input = self.actor_input_proj(
+            torch.cat(
+                (
+                    entity,
+                    player[:, None, :].expand(-1, actors, -1),
+                    plan[:, None, :].expand(-1, actors, -1),
+                ),
+                dim=-1,
+            )
+        )
+        # No market entity exists: the plan hidden stands in for it.
+        market_input = self.actor_input_proj(torch.cat((plan, player, plan), dim=-1))
+        core = self._compiled_actor_core or self.actor.policy_core
+        return core(
+            unit_input,
+            market_input,
+            context.actor_counts[rows],
+            context.order_limits[rows],
+            context.live[rows],
+            self.action_spec.hire_limit,
+            None if tokens is None else tokens[rows],
+            None if lengths is None else lengths[rows],
+            deterministic,
+        )
+
+    @staticmethod
+    def _policy_outputs(
+        result: GrammarPolicyResult, obs: kt.KaggricultureObsBatch
+    ) -> tuple[kt.KaggricultureActions, ModelActionLogProbs, ModelActionEntropies]:
+        lead = tuple(obs.still_playing.shape)
+        shape = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        event = result.log_probs.reshape(shape)
+        entropy = result.entropies.reshape(shape)
+        frame_log_probs = event.sum(dim=-1)
+        frame_entropies = entropy.sum(dim=-1)
+        return (
+
+ succeeded in 0ms:
+---
+type: "Reference"
+title: "Kaggriculture grammar heads sit behind Isaiah's actor projection"
+description: "Task 2.3 adds Isaiah's 3D→D actor input projection and batched grammar heads with exact coupled-Gumbel HIRE sampling, same-path replay with support/length/canonical flags and one host check, head GEMM-extent chunking, and a 6,252,223-parameter preset; synthetic grammar tables stand in until Task 1.2."
+tags: ["kaggriculture-v3", "model", "adaptation"]
+status: "verified-scoped"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources: [{"resource": "repository:python/owl/model/kaggriculture_actor.py"}, {"resource": "repository:python/owl/model/kaggriculture.py"}, {"resource": "repository:python/owl/kaggriculture/gpu_grammar.py"}, {"resource": "repository:tests/kaggriculture/test_model_heads.py"}, {"resource": "repository:tests/kaggriculture/test_gpu_grammar.py"}, {"resource": "repository:tests/kaggriculture/test_model_encoder.py"}, {"resource": "repository:docs/model-architecture.md"}, {"resource": "repository:docs/kaggriculture-model.md"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/2.3-action-heads.md"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/brief-2.3-r3.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/gpu_sampling_grammar.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_sampler.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_model.py"}]
+---
+
+# Kaggriculture grammar heads sit behind Isaiah's actor projection
+
+## What changed (rebuild Task 2.3, brief v3)
+
+- **Topology.** `actor_input_proj = nn.Linear(3D, D)` over `[entity ‖ self player ‖ plan]`, as Isaiah's `source_actor_input_proj`. The market queue has no entity, so it uses `[plan ‖ player ‖ plan]`. `KaggricultureGrammarActor` (`python/owl/model/kaggriculture_actor.py`) holds everything game-specific:
+  - `source_norm`
+  - `market_position` (11 = 10 queue slots plus the forced sentinel)
+  - seven prefix `slot_embeddings`
+  - nine `OutputProjectionMLP` heads, one per sampled slot
+
+  Stage input is `base + prefix / sqrt(stage + 1)`, and the prefix resets for every observation. The reference model was a design and test oracle only: it had a `prefix_norm` and a factorized `frame_input`, and neither was taken.
+- **Tables.** `GrammarTables` (`python/owl/kaggriculture/gpu_grammar.py`) holds the eight Task 1.2 tables, with validation.
+  - `expected_grammar_tables()` re-derives them from the brief's support rules.
+  - `native_grammar_tables()` is the named hook for the Task 1.2/1.4 binding. It raises `NotImplementedError` until then.
+  - The model defaults to the expected tables and keeps them as non-persistent buffers, so they never enter checkpoints.
+- **Sampling.** Exact Gumbel-max throughout. `couple_market_kinds` implements the HIRE correction: the raw-HIRE prefix masks HIRE where capacity is exhausted, and the argmax is re-taken over the same perturbed scores. Densities use the final-HIRE prefix. STOP is the first final NONE, which keeps its slot-7 density; the sentinel has zero density.
+- **Replay.** `evaluate_actions` runs the same core, teacher-forced.
+  - Python shape and dtype checks run before any kernel.
+  - Every replay-derived index is clamped to a temporary value, and its validity goes into the flags.
+  - Three flag groups: support, length and canonical equality.
+  - `check_replay_flags` makes one compact host transfer and raises `GrammarReplayError`, naming the groups and the first failing row.
+  - Sampling adds no policy-validation host synchronization: `forward` never runs the replay check. The encode is not sync-free: packed trunk dispatch sizes its packing on the host (Isaiah's `build_packed_sequence`), and an oversized packed batch transfers per-row token counts to plan chunks. (Corrected after Codex's Task 2.3 verification, `ops/rebuild-2026-09-29/codex/verify-2.3-r1.md`.)
+- **Outputs.** `event [E,2,252,12]`, `per_player_entity = event.sum(-1)`, zero `launch`, per-slot entropy `components`, and critic values from the same encode.
+- **Initialization and optimizer.** The embedding `.weight`s are in `get_input_layers` (std `D^-0.5`). Every `head.out` is in `get_output_layers` with gain 0.01; `reset_parameters` now follows Isaiah's output-layer loop. `actor_input_proj` and every head `.up` go to Muon.
+- **Overflow guards (brief §9):**
+  - `trunk_gemm_width`: the max of `max(in, out)` over every trunk Linear, enumerated by a test.
+  - The packed trunk path chunks at row boundaries (`packed_row_chunks`) instead of raising.
+  - `head_rows_per_chunk` keeps `rows × 252 × max(3D, D, widest head) < 2^31` (11,096 rows at D = 256).
+  - The heads stay eager in production.
+- **Size.** 6,252,223 parameters at the preset: encoder 5,312,768, critic 66,049, heads 873,406. That is inside the owner's 6–10M budget, so the depth stays 8.
+
+## Checks
+
+- `OMP_NUM_THREADS=2 uv run pytest tests/kaggriculture -q`: 256 passed, 1 skipped (the native-table comparison, which waits for Task 1.2).
+- `just py-prepare`: Ruff and mypy clean, 979 passed with 4 skips. Docs freshness passes with the mapped docs updated.
+- Brief §7 items 1–10 have tests:
+  1. saved-sample replay (whole, split, permuted) for the dense, HIRE-capacity, STOP-at-every-position and mixed/inactive cases, to ≤ 1e-5
+  2. every table row, plus the quantity cases, through both the tables and replay
+  3. Gumbel chi-square over 20k draws
+  4. enumeration of the actual `couple_market_kinds` against the replayed densities at budgets 0/1/2/3/10 (FP64, 1e-9, NONE and EMPTY corrections)
+  5. STOP and marginalization
+  6. every malformed group, including out-of-range indices with no fault
+  7. an `eager`/`fullgraph=True` captured core, plus an FP64 finite difference
+  8. seat isolation and statelessness
+  9. topology, initialization and Muon membership
+  10. the budget
+
+  Item 11 is skipped with its reason.
+- Deliberate mutations, each restored byte-for-byte (SHA-256 checked):
+  - a batch-mean term in the market input fails the replay invariant (4 cases)
+  - an inclusive raw-HIRE prefix fails the enumeration (3 budgets)
+  - dropping the actor-ordinal slot from canonical equality fails 2 canonical cases
+  - dropping the head outputs from `get_output_layers` fails the Muon and initialization tests
+- Codex's independent verification of `0e989a1..5ec3af1` (`ops/rebuild-2026-09-29/codex/verify-2.3-heads/report.md`) found no functional defect and approved with one wording edit, applied above. It reran `tests/kaggriculture` (256 passed, 1 skipped) and the full non-slow suite (979 passed, 4 skipped), and three further mutations (raw replay index, partial canonical equality, inclusive raw-HIRE prefix) each failed their tests. Market-position noise independence inside `policy_core` is established by source inspection, not by a dedicated test.
+- Everything ran on CPU at tiny shapes. BF16, CUDA and a real compile are not qualified here; that is Phase 6.
+
+## Limits and reopening conditions
+
+- The masks come from synthetic tables until Task 1.2/1.4 exposes `kaggriculture_grammar_tables`. Then implement `native_grammar_tables`, switch the model default, and let `test_native_tables_match_expected_tables` run. Brief item 11 (recorded reference programs) also waits for 1.2.
+- The actor count is the own `actor_mask` sum, which assumes own actors fill slots `0..n-1` in frame order, as the contract and fixture do. `can_act` is not read by the heads.
+- The prefix embeddings (std `D^-0.5`) are added to a LayerNorm-scaled base with no second norm, as the brief specifies. At initialization the prefix signal is about `1/sqrt(D)` of the base. Whether this conditions strongly enough is untested; reopen if per-slot KL or BC accuracy shows weak item/quantity conditioning on kind.
+- The unit input materializes `[rows, 241, 3D]`, which is about 0.8 GB FP32 at 1,024 rows. The reference's factorized projection is mathematically equivalent if memory binds (Phase 6).
+- Trainer integration, factory registration (Task 3.1) and the startup workload assertion (Task 3.4) remain open.
+## GEMM limits at our shapes (2026-09-29, 05:23–05:32Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+
+Revised after Codex verification (`codex/verify-gemm-limits-r1.md`, APPROVE WITH EDITS). The first draft overstated three things: it called the trunk bounds "measured exact", stated a universal `M·max(K, N)` overflow rule, and cited generated-kernel summaries from a buggy analyzer. This text replaces it.
+
+**Scope: production compliance is unproven.** The probe compiled the trunk directly through the model's own `compile_transformer_trunk`. The production wiring does not reach it yet:
+- Kaggriculture is absent from `ModelConfig` (`python/owl/model/config.py`) and the model factory (`python/owl/model/factory.py`).
+- `configure_model_compile` (`python/owl/train/utils.py:84`, called from `scripts/run_ppo.py:171`) rejects this model for `model_compile="trunk"`.
+- `forward`/`evaluate_actions` and the teacher APIs are unfinished. `actor_input_proj` and the nine action heads are **not implemented yet**; they are absent, not eager.
+
+What this run supports: the overflow is real at our widths, and the current encoder's `_run_trunk` admission bound is enforced. Integrated Kaggriculture rollout, PPO recompute, evaluation, BC and teacher workloads remain **unverified** until Task 3.1 wires the model into the trainer and Phase 6 runs them on the pod.
+
+**Anomaly: no FlashAttention on the pod.** The pod venv has **no `flash-attn` package**, and the pod's run config had `force_flash_attn: false`. That config lives on the pod and was not copied here. The model preset (`configs/model/kaggriculture.yaml`) and Isaiah's recipe (plan I8) require `force_flash_attn: true` with flash-attn 2.8.3. Consequences:
+- The packed path in this probe ran on a shim: torch's own varlen `aten._flash_attention_forward` in place of `flash_attn_varlen_func`. The shim was checked against per-sequence SDPA: max |Δ| 0.0022 in the pre-launch smoke check, and 0.00225955 in-run (`pod-run/trunk_packed.jsonl:1`). Every GEMM, the pack/unpack and the guard are branch code, but the packed results say nothing about the real flash-attn kernel.
+- **Phase 6 must install or build flash-attn 2.8.3 on the pod (`uv sync --extra flash-attn`) and verify that the real FlashAttention path ran before any qualification or throughput claim** (plan, Phase 6).
+
+Run statement: `run-statements/gemm-limits-probe.md`. Driver wall time: 514 s, within the 45-minute budget. Inputs:
+- Probes: `gemm-limits-2026-09-29/probe/`, sha256 `0a7af363…` (linear), `5ce3f09a…` (trunk), `aa42c12b…` (driver).
+- Model source: `kg/rebuild-model` @ `1ddc71d`; `kaggriculture.py` sha256 `92f4df61…`, byte-identical to the current tree (Codex).
+- The source tar's sha256 `47293ba8…` is the output of `git archive --prefix=gemm-limits-src-1ddc71d/ 1ddc71d python/owl`. Without `--prefix`, the same pathspec gives `29cfaafe…`, which is the hash Codex reproduced from the run statement's command. Both hashes were reproduced locally with git 2.50.1. The run statement had omitted the prefix and is now corrected. The tree IDs and model-file hash match either way.
+- Stack: torch 2.9.0+cu128 (runtime records), sm_120 (generated metadata), RTX PRO 6000 Blackwell, driver 595.91.07.
+- **Triton version not captured:** 3.5.0 is the `uv.lock` pin (`uv.lock:4227`), but the process records do not emit Triton's installed version. The pod's torch git identity was not captured either.
+- The Rust-extension symlink and the missing flash-attn are disclosed deviations. This run is not a full production-path check.
+
+Setup, matching `run_ppo`'s precision:
+- fp32 parameters under `torch.autocast(bfloat16)`, TF32 on.
+- `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. For `lin_4096_16`, the logs show the warm compile specialized M: the recompile guard reads "expected 4096". Dynamic-M graphs come from the first recompile.
+- Every point is compared against the eager (cuBLAS) forward, so silent corruption is measured, not just faults.
+- Each case runs in a fresh process, and the driver restarts after a fault.
+
+**Custody:**
+- Logs, JSONL, generated kernels: `gemm-limits-2026-09-29/pod-run/`; the pod copy is at `/workspace/kg-v3/runs/gemm-limits-2026-09-29/`.
+- `pod-run/sha256.txt` has 14 entries, all re-verified by Codex. It covers the 13 JSONL files and the *first* `kernel_analysis.json` (`c295ce49…`), which is superseded and kept only on the pod.
+- **The unguarded real trunk at exactly L** was not run. The synthetic single GEMMs were correct at exactly L_in, so the guard's `≥ 2³¹` rejection may be stricter than necessary. For the real trunk that is unmeasured, so the guard is a conservative admission rule, not a measured edge.
+- **Real-trunk backward** was not measured at any size. The synthetic MLP backward was tested only at L−4,096 (correct), L+1 and 2L. Its L+1 failure happened during compilation, so no backward-kernel threshold is localized.
+- **Design bound for training: M × max(in, out) over every Linear in a compiled region.** Backward consumes forward outputs as GEMM inputs: dX = dY·W reads dY at the forward *output* width. Under the measured input-side rule, a backward GEMM can therefore wrap at M × (forward output width) even when the forward's input side is safe. Weight-gradient GEMMs reduce over M and index offsets up to M × width.
+  - For the trunk, every Linear has max(in, out) ≤ 512, so `gemm_kmax = 512` is that design bound. It is justified by the input-side rule plus backward, not by any output-store overflow.
+  - Decompose-K is **enabled by default**: 10 splits, threshold 32 (`config.py:1434–1442`). It is allowed when K ≥ 32M and K ≥ 32N, subject to more conditions (`utils.py:1825–1840`), which weight-gradient GEMMs can meet. Unmeasured.
+- **Other templates:** outside mm/addmm, pointwise and reduction kernels have their own safeguards (`codegen/simd_kernel_features.py:133–150`, `codegen/simd.py:1435–1442`, `codegen/triton.py:4451–4459,4480–4481`). Forcing non-template `ks*` arguments to int64 applies only when `use_block_ptr=False` (`codegen/triton_utils.py:141–147`).
+- `bmm` stays unmeasured. `kernel/bmm.py:85–110` uses raw batch program ids and stride-dependent offsets without `INDEX_DTYPE` casts, and the MM rule does not establish its batch indexing. Static-shape compiles and persistent TMA (disabled by default) are also unmeasured.
+
+Where our workloads sit, as rows × 709 tokens against L = 4,194,304 (2³¹/512):
+- **Measured correct (forward):**
+  - Rollout, 256 rows: 181,504 tokens, 23.1086× headroom. Compiled vs eager was measured at this shape, dense and sparse.
+- **Arithmetic only:**
+  - PPO minibatch, 1,024 rows (spm 8 × horizon 64 × 2): 726,016 tokens, 5.77715×. Its backward sits under the design bound; that is inferred, not measured.
+- **Over the limit as planned:**
+  - Teacher precompute, 128 segments × 64 × 2 = 16,384 rows. A mean of **256** tokens per row already reaches L (16,384 × 256 = 2²²) and triggers the guard, so the safe mean is **strictly below 256**.
+  - At the worst case of 709 tokens per row, 46 segments give 4,174,592 tokens (under L) and 47 give 4,265,344 (over). So `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunk.
+  - The packed guard would **raise**, not corrupt.
+- **Uncovered by the trunk guard:**
+  - The heads are not implemented yet. If the head core is ever compiled, the planned `actor_input_proj` (768 in) exceeds L_in at M = 2,796,203 rows × frames.
+  - Stems are eager today. `ObservationInputStem` is 371→512→256 (`stateless_transformer_v1.py:2750`), so a compiled full stem would include a 512-wide projection, with the same L as the trunk.
+  - The audit's 371/376 figures are conditional stride bounds, not observed kernel limits: ⌊2³¹/371⌋ = 5,788,365, and ⌊2³¹/376⌋ = **5,711,392**, if BF16 alignment padding rounds 371 to 376 (`fx_passes/pad_mm.py:69–71,121–130`). That padding is conditional (line 728). No 376 stride was generated for these eager stems.
+
+**Open and handoffs:**
+- Real-trunk backward and the unguarded real trunk at L: not measured.
+- flash-attn: absent on the pod. Install and verify it in Phase 6 (above).
+- bmm, persistent TMA, decompose-K, static compiles, and other torch/Triton versions: unchecked.
+- **For Task 2.3:** the comment at `python/owl/model/kaggriculture.py:53` should distinguish the observed overflow *above* the bound from the conservative rejection *at* equality. It is part of the docstring correction in brief §9 item 1 and out of scope for this evidence commit.
+
+exec
+/bin/zsh -lc "sed -n '405,445p' tests/kaggriculture/test_model_encoder.py && sed -n '595,680p' tests/kaggriculture/test_model_encoder.py && sed -n '930,1025p' tests/kaggriculture/test_model_heads.py && rg -n 'MAX_FRAMES|HEAD_SIZES|Kaggriculture|ModelConfig|def configure_model_compile' python/owl/model/kaggriculture_actor.py python/owl/model/__init__.py python/owl/config.py python/owl/train" in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+    assert not torch.allclose(a[1], b[1])  # seat 1 row responds
+
+
+# --- L6 guard and dispatch ----------------------------------------------------
+
+
+def test_rows_per_chunk_boundary() -> None:
+    width = 512
+    tokens = 709
+    rows = km.rows_per_chunk(tokens=tokens, width=width)
+    assert rows * tokens * width < 2**31
+    assert (rows + 1) * tokens * width >= 2**31
+    assert km.rows_per_chunk(tokens=2**21, width=1024) == 0
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {},
+        {"mlp_ratio": 0.5},
+        {"mlp_ratio": 4.0},
+        {"activation": "silu"},
+        {"embed_dim": 24, "n_heads": 3, "mlp_ratio": 1.5},
+    ],
+)
+def test_trunk_gemm_width_matches_every_block_linear(
+    overrides: dict[str, Any],
+) -> None:
+    """Guard width = max(in, out) over every Linear in the compiled trunk."""
+    model = _tiny(**overrides)
+    linears = [m for m in model.blocks.modules() if isinstance(m, nn.Linear)]
+    assert linears
+    enumerated = max(max(m.in_features, m.out_features) for m in linears)
+    assert km.trunk_gemm_width(model.config) == enumerated
+
+
+def test_preset_trunk_gemm_width() -> None:
+    assert km.trunk_gemm_width(_preset()) == 512
+
+
+@pytest.mark.parametrize(("chunk", "sizes"), [(2, [2, 2, 2]), (4, [4, 2])])
+    expected = (x_full + 1.0).masked_fill(~mask_full.unsqueeze(-1), 0.0)
+    torch.testing.assert_close(enc.hidden, expected)
+    assert torch.equal(enc.token_mask, mask_full)
+
+
+@pytest.mark.parametrize(("offset", "packs"), [(1, 1), (0, 2), (-1, 2)])
+def test_packed_path_chunks_at_the_overflow_boundary(
+    monkeypatch: pytest.MonkeyPatch, offset: int, packs: int
+) -> None:
+    """At or above the limit the packed path splits rows instead of raising."""
+    model = _tiny().eval()
+    obs = make_obs(envs=1, own_actors=3, rival_actors=1)
+    with torch.inference_mode():
+        _, mask_full = model._assemble_tokens(obs)
+    width = km.trunk_gemm_width(model.config)
+    row_tokens = [int(n) for n in mask_full.sum(dim=1)]
+    elements = sum(row_tokens) * width
+    spy = _mock_flash(monkeypatch, model)
+    monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", elements + offset)
+    with torch.inference_mode():
+        model.encode_observations(obs)
+    assert len(spy.pack_calls) == packs
+    assert len(spy.trunk_calls) == packs
+    assert spy.unpack_calls == packs
+    for _, packed_rows, _ in spy.pack_calls:
+        assert packed_rows * width < km._GEMM_ELEMENT_LIMIT  # strict bound
+    if packs == 2:
+        assert [rows for _, rows, _ in spy.pack_calls] == row_tokens
+
+
+def test_packed_chunks_are_distinct_ordered_and_match_unchunked(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model = _tiny().eval()
+    obs = make_obs(envs=3, own_actors=(1, 2, 3), rival_actors=(4, 5, 6))
+    with torch.inference_mode():
+        x_full, mask_full = model._assemble_tokens(obs)
+    spy = _mock_flash(monkeypatch, model)
+    seen: list[torch.Tensor] = []
+    trunk = model._forward_transformer_trunk
+
+    def record(
+        x: torch.Tensor, mask: torch.Tensor | None, packed: PackedSequence | None
+    ) -> torch.Tensor:
+        seen.append(x.clone())
+        return trunk(x, mask, packed)
+
+    monkeypatch.setattr(model, "_forward_transformer_trunk", record)
+    with torch.inference_mode():
+        whole = model.encode_observations(obs).hidden
+    assert len(seen) == 1
+    width = km.trunk_gemm_width(model.config)
+    row_tokens = [int(n) for n in mask_full.sum(dim=1)]
+    # Room for exactly two rows of the first pair: forces several chunks.
+    monkeypatch.setattr(
+        km, "_GEMM_ELEMENT_LIMIT", (row_tokens[0] + row_tokens[1]) * width + 1
+    )
+    seen.clear()
+    with torch.inference_mode():
+        chunked = model.encode_observations(obs).hidden
+    bounds = km.packed_row_chunks(row_tokens, width=width)
+    assert len(bounds) > 1
+    assert [x.shape[0] for x in seen] == [sum(row_tokens[a:b]) for a, b in bounds]
+    for (start, stop), x in zip(bounds, seen, strict=True):
+        expected = x_full[start:stop][mask_full[start:stop]]
+        torch.testing.assert_close(x, expected)
+        assert x.shape[0] * width < km._GEMM_ELEMENT_LIMIT
+    assert bounds[0][0] == 0
+    assert bounds[-1][1] == len(row_tokens)
+    assert all(a[1] == b[0] for a, b in itertools.pairwise(bounds))
+    torch.testing.assert_close(chunked, whole)
+    assert spy.unpack_calls == 1 + len(bounds)
+
+
+def test_packed_row_chunks_rejects_only_an_unfittable_row(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", 100)
+    assert km.packed_row_chunks([3, 3, 3, 3], width=10) == [(0, 3), (3, 4)]
+    assert km.packed_row_chunks([9, 9], width=10) == [(0, 1), (1, 2)]
+    assert km.packed_row_chunks([], width=10) == []
+    with pytest.raises(ValueError, match="compiled-gemm-template-overflows"):
+        km.packed_row_chunks([3, 10, 3], width=10)
+
+
+def test_compiled_trunk_serves_packed_dispatch(monkeypatch: pytest.MonkeyPatch) -> None:
+    )
+    assert heads == 873_406
+
+
+# --- §9.3 head-extent guard -----------------------------------------------------------
+
+
+def test_head_rows_per_chunk_boundary_at_the_preset() -> None:
+    config = km.KaggricultureTransformerConfig()
+    width = km.head_gemm_width(config)
+    assert width == 3 * 256
+    rows = km.head_rows_per_chunk(config)
+    assert rows == 11_096
+    assert rows * F * width < 2**31 <= (rows + 1) * F * width
+    small = km.KaggricultureTransformerConfig(embed_dim=4, n_heads=1)
+    assert km.head_gemm_width(small) == 32  # the widest head dominates
+
+
+@pytest.mark.parametrize("offset", [-1, 0, 1])
+def test_head_rows_per_chunk_follows_the_limit(
+    monkeypatch: pytest.MonkeyPatch, offset: int
+) -> None:
+    config = _tiny().config
+    per_row = F * km.head_gemm_width(config)
+    monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", 5 * per_row + offset)
+    assert km.head_rows_per_chunk(config) == (5 if offset > 0 else 4)
+    monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", per_row)
+    with pytest.raises(ValueError, match="compiled-gemm-template-overflows"):
+        km.head_rows_per_chunk(config)
+
+
+@pytest.mark.parametrize(("chunk", "calls"), [(7, [6]), (6, [6]), (5, [5, 1])])
+def test_head_chunking_dispatches_ordered_slices_and_matches_unchunked(
+    monkeypatch: pytest.MonkeyPatch, chunk: int, calls: list[int]
+) -> None:
+    """Chunk limit ±1 around a 6-row batch; chunked equals unchunked."""
+    model = _tiny().eval()
+    obs = make_obs(envs=3, own_actors=(1, 4, 2), rival_actors=(3, 1, 5), order_limit=3)
+    torch.manual_seed(2)
+    with torch.no_grad():
+        sampled = model(obs)
+        whole = model.evaluate_actions(obs, sampled.actions)
+        encoded = model.encode_observations(obs)
+        whole_result = model._policy(
+            encoded, model._grammar_context(obs), sampled.actions, deterministic=False
+        )
+        whole_greedy = model(obs, deterministic=True)
+    seen: list[tuple[torch.Tensor, torch.Tensor]] = []
+
+    def spy(*args: Any) -> ka.GrammarPolicyResult:
+        seen.append((args[0].clone(), args[2].clone()))
+        return model.actor.policy_core(*args)
+
+    monkeypatch.setattr(km, "head_rows_per_chunk", lambda _config: chunk)
+    model._compiled_actor_core = spy
+    with torch.no_grad():
+        chunked = model.evaluate_actions(obs, sampled.actions)
+        chunked_result = model._policy(
+            encoded, model._grammar_context(obs), sampled.actions, deterministic=False
+        )
+        chunked_greedy = model(obs, deterministic=True)
+    assert [x.shape[0] for x, _ in seen[: len(calls)]] == calls
+    counts = model._grammar_context(obs).actor_counts
+    start = 0
+    for (_, chunk_counts), size in zip(seen[: len(calls)], calls, strict=True):
+        assert torch.equal(chunk_counts, counts[start : start + size])
+        start += size
+    torch.testing.assert_close(chunked.log_probs.event, whole.log_probs.event)
+    torch.testing.assert_close(chunked.entropies.event, whole.entropies.event)
+    assert torch.equal(chunked_result.valid, whole_result.valid)
+    assert torch.equal(chunked_result.tokens, whole_result.tokens)
+    assert torch.equal(chunked_greedy.actions.tokens, whole_greedy.actions.tokens)
+    # A malformed row is still rejected, with the flags merged across chunks.
+    bad = kt.KaggricultureActions(
+        tokens=sampled.actions.tokens.clone(), lengths=sampled.actions.lengths.clone()
+    )
+    bad.lengths[2, 1] += 1
+    with pytest.raises(ka.GrammarReplayError) as error, torch.no_grad():
+        model.evaluate_actions(obs, bad)
+    assert error.value.groups == ("length",)
+    assert error.value.first_rows == (5,)
+
+
+def test_trunk_compile_leaves_the_heads_eager(monkeypatch: pytest.MonkeyPatch) -> None:
+    model = _tiny()
+    monkeypatch.setattr(torch, "compile", lambda fn, **_: fn)
+    assert model.compile_transformer_trunk(mode="max-autotune-no-cudagraphs") == 1
+    assert model._compiled_actor_core is None
+python/owl/model/__init__.py:14:from owl.model.config import ModelConfig
+python/owl/model/__init__.py:65:    "ModelConfig",
+python/owl/model/kaggriculture_actor.py:1:"""Kaggriculture grammar action heads (rebuild Task 2.3).
+python/owl/model/kaggriculture_actor.py:3:``KaggricultureGrammarActor`` holds the only game-specific actor parts on top of
+python/owl/model/kaggriculture_actor.py:144:class KaggricultureGrammarActor(nn.Module):
+python/owl/model/kaggriculture_actor.py:397:        pad = (0, 0, 0, kt.MAX_FRAMES - actors)
+python/owl/train/config.py:6:from owl.model import ActorDiscreteTargetBinsConfig, ModelConfig
+python/owl/train/config.py:19:    model: ModelConfig
+python/owl/train/utils.py:70:def configure_model_compile(model: BaseModelAPI, cfg: ModelCompileConfig) -> int:
+
+exec
+/bin/zsh -lc "cat python/owl/model/config.py && cat python/owl/model/factory.py && sed -n '65,105p' python/owl/train/utils.py && git show 1ddc71d:python/owl/model/kaggriculture.py | sed -n '295,360p'" in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+from __future__ import annotations
+
+from typing import Annotated, TypeAlias
+
+from pydantic import Field
+
+from owl.model.recurrent_transformer_v1 import RecurrentTransformerV1Config
+from owl.model.stateless_transformer_v1 import StatelessTransformerV1Config
+
+ModelConfig: TypeAlias = Annotated[
+    StatelessTransformerV1Config | RecurrentTransformerV1Config,
+    Field(discriminator="model_arch"),
+]
+from __future__ import annotations
+
+from typing import assert_never
+
+from owl.model.base import BaseModelAPI
+from owl.model.config import ModelConfig
+from owl.model.recurrent_transformer_v1 import RecurrentTransformerV1
+from owl.model.stateless_transformer_v1 import StatelessTransformerV1
+from owl.rl import ActionConfig, ObsConfig
+
+
+def create_model(
+    config: ModelConfig,
+    *,
+    obs_spec: ObsConfig,
+    action_spec: ActionConfig,
+) -> BaseModelAPI:
+    match config.model_arch:
+        case "stateless_transformer_v1":
+            return StatelessTransformerV1(
+                config,
+                obs_spec=obs_spec,
+                action_spec=action_spec,
+            )
+        case "recurrent_transformer_v1":
+            return RecurrentTransformerV1(
+                config,
+                obs_spec=obs_spec,
+                action_spec=action_spec,
+            )
+        case _:
+            assert_never(config)
+            return nullcontext()
+        case _:
+            assert_never(cfg.dtype)
+
+
+def configure_model_compile(model: BaseModelAPI, cfg: ModelCompileConfig) -> int:
+    match cfg.model_compile:
+        case "none":
+            return 0
+        case "mlp":
+            return _compile_transformer_mlp_modules(
+                model,
+                mode=cfg.model_compile_mode,
+            )
+        case "trunk":
+            if isinstance(model, RecurrentTransformerV1):
+                raise RuntimeError(
+                    "rl.model_compile='trunk' does not support recurrent_transformer_v1"
+                )
+            if not isinstance(model, StatelessTransformerV1):
+                raise RuntimeError(
+                    "rl.model_compile='trunk' requires stateless_transformer_v1"
+                )
+            return model.compile_transformer_trunk(mode=cfg.model_compile_mode)
+        case _:
+            assert_never(cfg.model_compile)
+
+
+def _compile_transformer_mlp_modules(
+    model: BaseModelAPI,
+    *,
+    mode: ModelCompileMode,
+) -> int:
+    compiled = 0
+    for name, module in model.named_modules():
+        if not _is_transformer_mlp_module_name(name):
+            continue
+        module.compile(mode=mode, dynamic=True)
+        compiled += 1
+    if compiled == 0:
+        raise RuntimeError(
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+            dim=-1,
+        )
+        market_float = obs.market_float.reshape(rows, kt.PRODUCT_COUNT, -1)
+        market_in = torch.cat(
+            (
+                market_float,
+                _one_hot(
+                    obs.market_product.reshape(rows, -1), kt.PRODUCT_COUNT, market_float
+                ),
+            ),
+            dim=-1,
+        )
+        global_x = self.global_proj(obs.global_features.reshape(rows, -1)).unsqueeze(1)
+        dtype = global_x.dtype
+        players = _expand_tokens(self.player_tokens, rows, dtype=dtype) + (
+            self.player_feature_proj(obs.player_features.reshape(rows, kt.PLAYERS, -1))
+        )
+        x = torch.cat(
+            (
+                self.actor_proj(actor_in),
+                self.tile_proj(tile_in),
+                self.shop_proj(shop_in),
+                self.market_proj(market_in),
+                players,
+                global_x,
+                _expand_tokens(self.board_tokens, rows, dtype=dtype),
+                _expand_tokens(self.actor_plan_tokens, rows, dtype=dtype),
+                _expand_tokens(self.critic_value_tokens, rows, dtype=dtype),
+            ),
+            dim=1,
+        )
+        playing = obs.still_playing.reshape(rows, 1)
+        device = x.device
+        token_mask = torch.cat(
+            (
+                obs.actor_mask.reshape(rows, -1),
+                torch.ones((rows, kt.TILES), dtype=torch.bool, device=device),
+                obs.shop_mask.reshape(rows, -1),
+                torch.ones((rows, kt.PRODUCT_COUNT), dtype=torch.bool, device=device),
+                playing.expand(rows, kt.PLAYERS),
+                torch.ones(
+                    (rows, 1 + self.config.n_scratch_tokens),
+                    dtype=torch.bool,
+                    device=device,
+                ),
+                playing,
+                playing.expand(rows, kt.PLAYERS),
+            ),
+            dim=1,
+        )
+        return x, token_mask
+
+    def _run_trunk(self, x: torch.Tensor, token_mask: torch.Tensor) -> torch.Tensor:
+        """Isaiah's dispatch, guarded against the compiled-GEMM overflow."""
+        should_use_flash = use_flash_attn(x)
+        if (
+            _requires_flash_attn(x, force_flash_attn=self.config.force_flash_attn)
+            and not should_use_flash
+        ):
+            raise RuntimeError(
+                "force_flash_attn=True requires CUDA fp16/bf16 tensors "
+                "and the flash-attn package"
+            )
+        trunk = self._compiled_transformer_trunk or self._forward_transformer_trunk
+        kmax = gemm_kmax(self.config)
+        if should_use_flash:
+
+exec
+/bin/zsh -lc "git status --short --branch && rg -n 'MAX_FRAMES =|UNIT_FRAMES =|MARKET_FRAMES =|MAX_ACTORS =|_compiled_actor_core|compile_actor' python/owl/kaggriculture/types.py python/owl/model/kaggriculture*.py" in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+## kg/merge-heads
+python/owl/kaggriculture/types.py:22:MAX_ACTORS = 241
+python/owl/kaggriculture/types.py:25:MAX_FRAMES = 252
+python/owl/model/kaggriculture.py:264:        self._compiled_actor_core: Callable[..., GrammarPolicyResult] | None = None
+python/owl/model/kaggriculture.py:657:        core = self._compiled_actor_core or self.actor.policy_core
+
+exec
+/bin/zsh -lc "python3 -B -c 'import ast
+import io
+import subprocess
+import tokenize
+
+commit = \"e1458d2\"
+path = \"python/owl/model/kaggriculture.py\"
+def git(*args):
+    return subprocess.check_output([\"git\", *args], text=True)
+before = git(\"show\", f\"{commit}"'^:{path}")
+after = git("show", f"{commit}:{path}")
+skip = {tokenize.COMMENT, tokenize.NL, tokenize.ENCODING}
+def tokens(source):
+    return [(t.type, t.string) for t in tokenize.generate_tokens(io.StringIO(source).readline) if t.type not in skip]
+assert tokens(before) == tokens(after)
+assert ast.dump(ast.parse(before), include_attributes=False) == ast.dump(ast.parse(after), include_attributes=False)
+print("PASS: parent/commit Python non-comment tokens and AST are identical")
+changed = git("diff-tree", "--no-commit-id", "--name-only", "-r", commit).splitlines()
+assert changed == ["cookbook/log.md", "cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md", "cookbook/references/index.md", "docs/model-architecture.md", path]
+print("PASS: only four Markdown files and the comment-only Python file changed")
+assert git("rev-parse", f"{commit}''^").strip().startswith("053840f")
+print("PASS: parent is reviewed merge 053840f")
+head_rows = (2**31 - 1) // (252 * 768)
+padded_rows = (2**31 - 1) // (709 * 512)
+assert head_rows == 11096 and padded_rows == 5915
+assert head_rows * 252 * 768 < 2**31 <= (head_rows + 1) * 252 * 768
+print(f"PASS: documented strict-bound arithmetic: heads={head_rows}, padded trunk={padded_rows}")
+subprocess.run(["git", "diff", "--check", f"{commit}''^", commit], check=True)
+print("PASS: git diff --check")
+'"'" in /Users/poonszesen/kg-v3-merge2
+ succeeded in 0ms:
+python3: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+PASS: parent/commit Python non-comment tokens and AST are identical
+PASS: only four Markdown files and the comment-only Python file changed
+PASS: parent is reviewed merge 053840f
+PASS: documented strict-bound arithmetic: heads=11096, padded trunk=5915
+PASS: git diff --check
+
+codex
+Confirmed `e1458d2` on clean branch `kg/merge-heads`. All three r1 findings are resolved:
+
+1. [Architecture wording](/Users/poonszesen/kg-v3-merge2/docs/model-architecture.md:748) and the Python comment now distinguish measured input-side overflow from the strict training design bound justified by backward.
+2. The [Reference](/Users/poonszesen/kg-v3-merge2/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:48) correctly describes implemented heads, `actor_input_proj`, and chunking. The documented widths and 11,096-row head limit match the code.
+3. Historical rejection is scoped to `1ddc71d` in the Reference, frontmatter and index; current packed chunking is explicitly CPU-tested, with GPU behavior unmeasured.
+
+No new overclaim found; production compliance remains explicitly unproven.
+
+The Python change is comment-only: non-comment tokens and AST are identical to the parent. `git diff --check` passes. No files changed; no test suite or GPU workload run.
+
+**VERDICT: APPROVE**
+hook: Stop
+hook: Stop Completed
+tokens used
+48,788
+Confirmed `e1458d2` on clean branch `kg/merge-heads`. All three r1 findings are resolved:
+
+1. [Architecture wording](/Users/poonszesen/kg-v3-merge2/docs/model-architecture.md:748) and the Python comment now distinguish measured input-side overflow from the strict training design bound justified by backward.
+2. The [Reference](/Users/poonszesen/kg-v3-merge2/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:48) correctly describes implemented heads, `actor_input_proj`, and chunking. The documented widths and 11,096-row head limit match the code.
+3. Historical rejection is scoped to `1ddc71d` in the Reference, frontmatter and index; current packed chunking is explicitly CPU-tested, with GPU behavior unmeasured.
+
+No new overclaim found; production compliance remains explicitly unproven.
+
+The Python change is comment-only: non-comment tokens and AST are identical to the parent. `git diff --check` passes. No files changed; no test suite or GPU workload run.
+
+**VERDICT: APPROVE**

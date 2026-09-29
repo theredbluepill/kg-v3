@@ -1,0 +1,990 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-deps
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /Users/poonszesen/.cache/uv, /Users/poonszesen/.local/share/uv, /Users/poonszesen/.cargo, /Users/poonszesen/kg-v3-deps/.codex-tmp]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0eba5-2ddb-7c12-89a8-72981b81d156
+--------
+user
+You are Codex, the INDEPENDENT VERIFIER. Worktree: branch kg/rebuild-deps. Leave no tracked modification.
+Your previous verdict (ops/rebuild-2026-09-29/codex/verify-deps.md in the main repo, at fb65e1f) was APPROVE WITH EDITS: correct the cookbook's "other 50 lockfile changes" count (you counted 55 other changed dependency names), and you noted that click is shared with W&B and that the 2 ignored Rust tests are action-angle audits rather than parity tests.
+Verify commit fb65e1f..04e39bb makes those corrections accurately, keeps the committed evidence in ops/deps-independent-verification-fb65e1f/ compact and truthful, and changes no code, pyproject.toml or uv.lock. Run: uv lock --check; uvx --from rust-just just docs-lint (or the equivalent docs check); git diff --stat fb65e1f..04e39bb.
+End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll check the corrections and committed evidence, run the requested lock and documentation checks, and verify that the worktree has no tracked changes. I’ll stop with a verdict once those checks are complete.
+exec
+/bin/zsh -lc "cat cookbook/index.md && sed -n '1,50p' cookbook/log.md && cat cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md && rg -n 'docs-lint|docs-check|docs-fresh' justfile && rg --files -g AGENTS.md -g '*verify-deps*' -g '*deps-independent*'" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References describe branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]]
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Correct the kaggle-environments pin record after Codex verification
+
+Codex verified `fb65e1f` (APPROVE WITH EDITS): lock reproduced byte-for-byte, `just prepare` green, engine hash matches. The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] now states 55 other changed dependencies (not 50), notes that `click` is shared with W&B, and names the 2 ignored Rust tests as action-angle audits rather than parity tests. Evidence: `ops/deps-independent-verification-fb65e1f/verification.md`.
+
+## 2026-09-29 — Pin kaggle-environments 1.32.7
+
+Owner: “Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture … we will have to update it.” The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records the pin: 1.32.7 via uv, the git source removed, its engine hash matching the Rust kernel, and Isaiah's torch/triton/flash-attn pins unchanged. `just prepare` passes: Rust 155/2 ignored, Python 722/3 skipped. A contract Markdown lint fix is included.
+
+## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
+
+Owner decisions:
+- “6-10M ok as long as topologies aligned with isaiah”, recorded in the [[decisions/the-policy-is-stateless-and-observation-only|stateless Decision]]: Isaiah's ladder width and ratios, with depth reaching the budget.
+- “let's stick with 2.9”, and fit to RTX 6000 rather than Isaiah's B200s, recorded in the [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]]: global config unchanged, per-rank shapes and spm/accumulation fitted by memory smoke, ≤ 85% peak.
+
+The Kaggriculture contract reaches v4 (Codex accept-with-edits applied), with a companion section in `docs/rl-api-specs.md`.
+
+## 2026-09-29 — Rebuild failure status and traceback ordering on the clean base
+
+Task 0.3 implements the reference plan's logging fix under the
+[[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]]. The new
+[[references/failed-training-reports-status-before-distributed-cleanup|failure-reporting Reference]]
+records keyword-only logger exit codes, failed W&B finalization and rank-tagged
+stderr before process-group destruction. TDD goes from 9 failures/2 passes to
+11 passes; the Python suite and final py-prepare each pass 722 with 3 skips.
+The 7 Rust failures were missing generated Orbit fixtures in the fresh worktree; with them copied in, Claude's rerun gives 155 passed, 2 ignored.
+The distributed test mocks clean-base CUDA/NCCL rather than importing the old
+CPU-DDP hook. No training, evaluation or network operation ran.
+
+## 2026-09-29 — Trace the CUDA illegal memory access to a compiler GEMM overflow
+
+A blocking rerun of the reference PPO-from-BC setup on pod `w7ia3zvxqsvs3g` reproduced the fault after 3 iterations. It points both ranks at an Inductor max-autotune Triton GEMM template in the trunk MLP, whose 32-bit offsets wrap once rows × inner dim exceeds 2^31. A controlled probe matched eager at 2,088,960 rows and faulted at 2,105,344. The new [[references/compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]] records the mechanism, and why the reference's first-update log-ratio (−3.77) and BC→PPO deterioration came from silent corruption. It adds the rebuild requirements: a trunk-size guard and a first-minibatch log-ratio alarm. The BC, PPO and restart notes no longer call the fault unresolved.
+
+## 2026-09-29 — Plan the rebuild with explicit reference-branch dispositions
+
+Owner: “Please make plans adjusted to be work with clean base, and make sure we are utilizing the reference branch properly, without blindly copying.” `ops/rebuild-2026-09-29/plan.md` classifies every reference component as vendored-and-pinned (rules kernel only), port-after-review, rebuild-with-oracle, or reference-only. It maps 15 reference lessons to tasks, carries Isaiah's principles including the same layer topology, and splits the work between Claude and Codex with contract-first, cross-reviewed tasks. The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records the rule. No code has changed yet.
+
+## 2026-09-29 — Restart the port from Isaiah's clean base
+
+Owner: “restore to starting points 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again … I want you & codex started from a clean state. Carry the cookbooks with you with .claude/.codex setup.”
+- Local `main` and `kg/isaiah-gap-closure` are reset to `32b3ec9`; `origin` is unchanged.
+- The prior port is kept as branch `kg/reference-2026-09-29` and tag `kg-reference-2026-09-29` (`65f0eac`).
+- The cookbook, `.claude/`, `.codex/`, `AGENTS.md`, the Base, `ops/pre-commit`, `ops/cookbook-setup-checks.md` and `.gitignore` carry over.
+- 88 sources whose files no longer exist now point at the reference branch.
+
+The new [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records the owner directives: same layer topology with only game I/O differing (also in the [[decisions/the-policy-is-stateless-and-observation-only|stateless Decision]]), a required BC rerun, 2/4-rank RTX PRO 6000 verification (also in the [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]]), and working with Codex. References now describe the reference branch until rebuilt.
+
+## 2026-09-29 — Remove contradictions and trim operational history
+
+---
+type: "Decision"
+title: "Restart the port from Isaiah's clean base"
+description: "Main and the working branch restart from Isaiah's 32b3ec9; the prior port is a reference branch for grammar, tokens and the Rust engine; the cookbook and Claude/Codex setup carry over; the model keeps Isaiah's layer topology; one BC rerun and RTX PRO 6000 verification follow."
+tags: ["kaggriculture-v3", "decisions"]
+status: "adopted"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+decider: "Owner: restore kg/isaiah-gap-closure and main to 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again from a clean state with Codex, keeping a reference branch and carrying the cookbook with the .claude/.codex setup."
+sources: [{"resource": "user-directive:2026-09-29:update-kaggle-environments-1-32-7"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:uv.lock"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}]
+---
+
+# Restart the port from Isaiah's clean base
+
+The owner directs, on 2026-09-29:
+
+> also for kg/isaiah gap closeure and main branch can you restore to starting points 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again? For grammar/tokens/game rust engine, you can have a reference branch from this current branch snapshot to refer on, I want you & codex started from a clean state. Carry the cookbooks with you with .claude/.codex setup.
+
+and, just before it:
+
+> Yes, we have different games, so we had different action heads, etc., these kind of things, but the model layers/ topologies should remain. We are just playign different games.
+
+> Also an extra BC is for sure required. Yo ucan use 2/4-rank RTX 6000 to verify your work. Work with codex as well.
+
+## What was done
+
+- Local `main` and `kg/isaiah-gap-closure` were reset to Isaiah's `32b3ec9`. The remote was not changed: `origin/main` is still `0d01234`, and nothing was pushed.
+- Branch `kg/reference-2026-09-29` and annotated tag `kg-reference-2026-09-29` (both at `65f0eac`) hold the whole prior port: the initial adaptation `0d01234`, `a2bf23c`, and the cookbook cleanup `65f0eac`. Consult it for the grammar and action codec, observation tokens, the vendored Rust engine (`engine_rs/`), native bindings (`src/kaggriculture.rs`), rewards, BC data preparation, and run evidence under `ops/`.
+- Carried onto the working branch: `cookbook/`, `.claude/`, `.codex/`, `AGENTS.md` (with the `CLAUDE.md` symlink), `kaggriculture-v3.base`, `ops/pre-commit` (Git uses `core.hooksPath=ops`), `ops/cookbook-setup-checks.md`, and `.gitignore` (the starter's rules plus bulk and credential exclusions).
+- Local run artifacts under `ops/` and `runs/`, which Git ignores, stay on disk; nothing was deleted.
+
+## Consequences
+
+- **References describe the reference branch, not the current tree.** Sources whose files no longer exist are re-pointed as `reference-branch:kg/reference-2026-09-29/<path>`. Sources for files that still exist (Isaiah's own files) stay `repository:` so the first-edit gate still surfaces them. Until the rebuild, those notes describe the reference branch's adapted versions of those files.
+- Owner Decisions remain in force.
+- **Same layer topology:** the rebuilt model uses Isaiah's `StatelessTransformerV1` layer classes, arrangement and roles: observation stems, learned per-role tokens, trunk blocks, critic head and actor input projection. Only the game I/O differs: input channel widths, categorical encodings fed to the stems, and the action heads. See the [[the-policy-is-stateless-and-observation-only|stateless Decision]].
+- **One BC rerun is required** on the rebuilt model, using the reference branch's BC data pipeline.
+- **Verification hardware:** 2- and 4-rank RTX PRO 6000 runs are authorized for verification. Read the live price first and write a run statement before each run; see the [[start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]].
+- **Codex collaboration:** Claude and Codex both start from this clean state and work in separate worktrees, cross-reviewing each other's changes.
+- The previous gap-closure plan (`reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md`) feeds a rebuild plan. Its principles table and task designs stay valid; its file-level steps assumed the old code.
+
+## Using the reference branch — implementation interpretation
+
+The owner asks to use the reference branch "properly, without blindly copying". The rebuild plan (`ops/rebuild-2026-09-29/plan.md`) gives every reference component exactly one disposition:
+- **Vendor, trimmed and hash-pinned:** only the rules kernel (`lib.rs`, `py_random.rs`, `econ_attrib.rs`), because it must match Kaggle's Python engine exactly.
+- **Port after review:** the native grammar, rewards, device mask tables and benchmark harness.
+- **Rebuild, with the reference as test oracle:** the observation encoding (named per-entity tensors instead of the flat v2 vector sliced at fixed offsets), the environment bindings, the codec, the model, the trainer seams, the configs and BC training.
+- **Reference only:** scripted bots until evaluation needs a few of them, the v2 experiments, and the run receipts.
+
+Lessons from the reference (raw-bank winners, truncation reward, seed streams, the CUDA fault (since traced to a compiler GEMM overflow), cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
+
+## kaggle-environments 1.32.7 — owner, 2026-09-29
+
+> Found that Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture, while 1.32.7 (already cached locally) has it. this we will have to update it.
+
+Source: `user-directive:2026-09-29:update-kaggle-environments-1-32-7`. Isaiah's project took `kaggle-environments` from git HEAD, locked at 1.29.0, which has no Kaggriculture environment. It is now pinned to `==1.32.7` via `uv remove` + `uv add`, which also removes the git source override. 1.32.7's `envs/kaggriculture/kaggriculture.py` has SHA-256 `bc8a5487…`, the engine the vendored Rust kernel targets.
+
+Isaiah's critical pins are unchanged: torch 2.9.0, triton 3.5.0, flash-attn 2.8.3, numpy, pydantic, wandb, mypy. The other 55 changed dependency names (plus the `owl` requirement record) are kaggle-environments' own dependency tree (e.g. jax 0.10 → 0.11.2; `click` is shared with W&B, whose live telemetry was not exercised). Checks with 1.32.7: `just prepare` passes, with Rust 155 passed / 2 ignored (expensive action-angle audits; Orbit replay and generation parity pass) and Python 722 passed / 3 skipped. Codex independently reproduced the lock byte-for-byte from the recorded `uv remove` + `uv add` (`ops/deps-independent-verification-fb65e1f/`).
+9:docs-lint:
+13:docs-fresh:
+34:py-prepare: py-format py-lint py-static py-test docs-fresh
+46:rs-prepare: rs-format rs-lint rs-test docs-fresh
+132:_prepare_base: build rs-format py-format rs-lint py-lint docs-lint py-static rs-test py-test-full
+134:prepare: _prepare_base docs-fresh
+AGENTS.md
+
+exec
+/bin/zsh -lc 'git status --short --branch && git rev-parse HEAD && git log --oneline fb65e1f..04e39bb && git diff --stat fb65e1f..04e39bb && git diff --name-status fb65e1f..04e39bb' in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+## kg/rebuild-deps
+04e39bbb78a5fba3e3bd3b2c2e6f9c1b573086ae
+04e39bb Correct the kaggle-environments pin record after Codex verification
+ .../restart-the-port-from-isaiahs-clean-base.md    |     2 +-
+ cookbook/log.md                                    |     4 +
+ .../core.py.diff                                   |    48 +
+ .../generate-reference.log                         |     1 +
+ .../lock-delta.json                                | 25634 +++++++++++++++++++
+ .../orbit_wars.py.diff                             |    41 +
+ .../prepare.log                                    |   256 +
+ .../utils.py.diff                                  |    80 +
+ .../uv-add.log                                     |     2 +
+ .../uv-remove.log                                  |     2 +
+ .../verification.md                                |   100 +
+ 11 files changed, 26169 insertions(+), 1 deletion(-)
+M	cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md
+M	cookbook/log.md
+A	ops/deps-independent-verification-fb65e1f/core.py.diff
+A	ops/deps-independent-verification-fb65e1f/generate-reference.log
+A	ops/deps-independent-verification-fb65e1f/lock-delta.json
+A	ops/deps-independent-verification-fb65e1f/orbit_wars.py.diff
+A	ops/deps-independent-verification-fb65e1f/prepare.log
+A	ops/deps-independent-verification-fb65e1f/utils.py.diff
+A	ops/deps-independent-verification-fb65e1f/uv-add.log
+A	ops/deps-independent-verification-fb65e1f/uv-remove.log
+A	ops/deps-independent-verification-fb65e1f/verification.md
+
+exec
+/bin/zsh -lc "git diff fb65e1f..04e39bb -- cookbook && cat ops/deps-independent-verification-fb65e1f/verification.md && cat justfile && git worktree list && du -h ops/deps-independent-verification-fb65e1f/* && sed -n '1,90p' ops/deps-independent-verification-fb65e1f/lock-delta.json" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+diff --git a/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md b/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md
+index 372f85e..228394d 100644
+--- a/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md
++++ b/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md
+@@ -54,4 +54,4 @@ Lessons from the reference (raw-bank winners, truncation reward, seed streams, t
+ 
+ Source: `user-directive:2026-09-29:update-kaggle-environments-1-32-7`. Isaiah's project took `kaggle-environments` from git HEAD, locked at 1.29.0, which has no Kaggriculture environment. It is now pinned to `==1.32.7` via `uv remove` + `uv add`, which also removes the git source override. 1.32.7's `envs/kaggriculture/kaggriculture.py` has SHA-256 `bc8a5487…`, the engine the vendored Rust kernel targets.
+ 
+-Isaiah's critical pins are unchanged: torch 2.9.0, triton 3.5.0, flash-attn 2.8.3, numpy, pydantic, wandb, mypy. The other 50 lockfile changes are kaggle-environments' own dependency tree (e.g. jax 0.10 → 0.11.2). Checks with 1.32.7: `just prepare` passes, with Rust 155 passed / 2 ignored (Orbit replay and generation parity) and Python 722 passed / 3 skipped.
++Isaiah's critical pins are unchanged: torch 2.9.0, triton 3.5.0, flash-attn 2.8.3, numpy, pydantic, wandb, mypy. The other 55 changed dependency names (plus the `owl` requirement record) are kaggle-environments' own dependency tree (e.g. jax 0.10 → 0.11.2; `click` is shared with W&B, whose live telemetry was not exercised). Checks with 1.32.7: `just prepare` passes, with Rust 155 passed / 2 ignored (expensive action-angle audits; Orbit replay and generation parity pass) and Python 722 passed / 3 skipped. Codex independently reproduced the lock byte-for-byte from the recorded `uv remove` + `uv add` (`ops/deps-independent-verification-fb65e1f/`).
+diff --git a/cookbook/log.md b/cookbook/log.md
+index 5325d87..e57c32d 100644
+--- a/cookbook/log.md
++++ b/cookbook/log.md
+@@ -1,5 +1,9 @@
+ # Change log
+ 
++## 2026-09-29 — Correct the kaggle-environments pin record after Codex verification
++
++Codex verified `fb65e1f` (APPROVE WITH EDITS): lock reproduced byte-for-byte, `just prepare` green, engine hash matches. The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] now states 55 other changed dependencies (not 50), notes that `click` is shared with W&B, and names the 2 ignored Rust tests as action-angle audits rather than parity tests. Evidence: `ops/deps-independent-verification-fb65e1f/verification.md`.
++
+ ## 2026-09-29 — Pin kaggle-environments 1.32.7
+ 
+ Owner: “Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture … we will have to update it.” The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records the pin: 1.32.7 via uv, the git source removed, its engine hash matching the Rust kernel, and Isaiah's torch/triton/flash-attn pins unchanged. `just prepare` passes: Rust 155/2 ignored, Python 722/3 skipped. A contract Markdown lint fix is included.
+# Independent verification of fb65e1f
+
+Verdict: APPROVE WITH EDITS. Low-severity documentation correction only; no implementation/test blocker found. No tracked files modified.
+
+## Finding
+
+P3: cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:57 says “other 50 lockfile changes”. Exact inventory is 57 changed package names: kaggle-environments, owl metadata, and 55 other dependency names. The latter consist of 49 changed version sets, 3 dependency-only records, 1 added package and 2 removed packages. Some dependencies are shared: click also belongs to W&B. Correct the count and avoid implying isolation from training telemetry.
+
+## Commands and evidence
+
+- Checkout: kg/rebuild-deps at fb65e1fad5e0b772623eaf7e660cdc62cdfda02e.
+- uv 0.10.9; uv lock --check exited 0 (181 resolved packages).
+- Historical uv invocation is stated in the commit and cookbook. Independently replayed uv remove --offline --no-sync kaggle-environments then uv add --offline --no-sync kaggle-environments==1.32.7 on copied parent files: both pyproject.toml and uv.lock reproduce byte-for-byte. This corroborates, rather than proves, the historical command execution.
+- Installed kaggle-environments 1.32.7 Kaggriculture engine SHA-256: bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e, equal to kg/reference-2026-09-29:engine_rs/Cargo.toml package.metadata.kaggriculture.python-engine-sha256.
+- CARGO_BUILD_JOBS=3 uvx --from rust-just just prepare exited 0: Rust 155 passed / 2 ignored; Python 722 passed / 3 skipped. Mypy passed 48 source files; formatting, lint and doc freshness passed. See prepare.log.
+- Orbit replay parity passed: 75930761, 2 seats, 103 transitions; 75926553, 4 seats, 222 transitions (325 total). All six generation fixture tests passed. No parity bypass environment variables were set. Two ignored Rust cases are expensive action-angle audits, not parity tests.
+- Python skips: two FlashAttention CUDA tests and one unavailable x86 quantized-backend test on macOS ARM64/Python 3.12.13. No CUDA runtime qualification claim.
+- uv run --locked python scripts/generate_reference_fixtures.py --outfile ops/deps-independent-verification-fb65e1f/reference_generation.current.json exited 0. Parsed output matches provided generation fixture except absolute reference_file path.
+- docs/kaggriculture-contract.md diff is exactly one inserted blank line at 173; no wording change.
+- git diff --exit-code and git diff --cached --exit-code both exited 0. Pre-existing .codex-tmp/ remains untracked; this receipt directory is untracked.
+
+## Critical packages
+
+Parent lock is byte-identical to Isaiah 32b3ec900ad406eedd965f53a1a0f4490d31c589. Complete critical package records remain unchanged: torch 2.9.0, 2.9.0+cpu, 2.9.0+cu128; triton 3.5.0; flash-attn 2.8.3; numpy 2.4.4; pydantic 2.13.3; wandb 0.26.1; maturin 1.13.1; mypy 1.20.2.
+
+## Behavioral scope
+
+- click 8.3.3 -> 8.5.0 is shared with W&B; possible training telemetry/CLI impact is not ruled out by unchanged wandb version. Live W&B was not exercised.
+- JAX/Flax/Optax/Orbax/SciPy, OpenSpiel, Transformers/Hugging Face and LLM SDK changes can affect Kaggle reference/agent tooling. No direct canonical PPO import of the other changed packages was identified; no numerical regression was observed in the requested local suite.
+- Installed Orbit source differs from old locked git source only by extracting episode-seed resolution into utils.resolve_episode_seed. Shared core adds lazy environment registration; utils also changes HTML payload insertion. Current generation fixtures match; supplied historical replay parity passes. See source diff artifacts. These checks do not exhaustively qualify all upstream environments or renderer behavior.
+
+## Exhaustive package delta
+
+Old: 176 records / 174 names. New: 181 records / 173 names. Top-level lock metadata is unchanged. Registry source remains PyPI for all changed third-party records other than kaggle-environments, which changes from git commit 6458c3191c2c4b37b6ad7530bd027df4b35369e4 to PyPI. New-version records include their generated artifact URLs/hashes/sizes/timestamps; exact before/after data is in lock-delta.json.
+
+| Package | Before | After | Changed fields |
+|---|---|---|---|
+| absl-py | 2.4.0 | 2.5.0 | sdist, version, wheels |
+| aiohappyeyeballs | 2.6.1 | 2.7.1 | sdist, version, wheels |
+| aiohttp | 3.13.5 | 3.14.3 | dependencies, sdist, version, wheels |
+| annotated-doc | 0.0.4 | 0.0.5 | sdist, version, wheels |
+| anyio | 4.13.0 | 4.14.2, 4.15.1 | record set (see JSON) |
+| cffi | 2.0.0 | 2.1.1 | sdist, version, wheels |
+| chex | 0.1.91 | 0.1.92 | dependencies, sdist, version, wheels |
+| click | 8.3.3 | 8.5.0 | dependencies, sdist, version, wheels |
+| contourpy | 1.3.3 | 1.3.3, 1.4.0 | record set (see JSON) |
+| cryptography | 48.0.0 | 50.0.1 | sdist, version, wheels |
+| flax | 0.12.7 | 0.12.10, 0.12.8 | record set (see JSON) |
+| fonttools | 4.62.1 | 4.66.0 | sdist, version, wheels |
+| google-auth | 2.50.0 | 2.59.0 | sdist, version, wheels |
+| grpcio | 1.80.0 | absent | record set (see JSON) |
+| grpcio-tools | 1.80.0 | absent | record set (see JSON) |
+| gymnax | 0.0.8 | 0.0.8 | dependencies |
+| hf-xet | 1.4.3 | 1.6.0 | sdist, version, wheels |
+| httpx | 0.28.1 | 0.28.1 | dependencies |
+| huggingface-hub | 1.13.0 | 1.33.0 | dependencies, sdist, version, wheels |
+| humanize | 4.15.0 | 4.16.0 | sdist, version, wheels |
+| importlib-metadata | 9.0.0 | 8.9.0 | sdist, version, wheels |
+| jax | 0.10.0 | 0.10.2, 0.11.2 | record set (see JSON) |
+| jaxlib | 0.10.0 | 0.10.2, 0.11.2 | record set (see JSON) |
+| jiter | 0.14.0 | 0.17.0 | sdist, version, wheels |
+| kaggle-environments | 1.29.0 | 1.32.7 | dependencies, sdist, source, version, wheels |
+| kiwisolver | 1.5.0 | 1.5.1 | sdist, version, wheels |
+| litellm | 1.82.4 | 1.93.2 | sdist, version, wheels |
+| matplotlib | 3.10.9 | 3.11.2 | dependencies, sdist, version, wheels |
+| ml-dtypes | 0.5.4 | 0.6.0 | sdist, version, wheels |
+| msgpack | 1.1.2 | 1.2.3 | sdist, version, wheels |
+| multidict | 6.7.1 | 6.9.1 | sdist, version, wheels |
+| open-spiel | 1.6.13 | 2.0.1 | dependencies, sdist, version, wheels |
+| openai | 2.34.0 | 2.54.0 | dependencies, sdist, version, wheels |
+| optax | 0.2.8 | 0.2.8 | dependencies |
+| orbax-checkpoint | 0.11.37 | 0.12.6 | dependencies, sdist, version, wheels |
+| owl | 0.1.0 | 0.1.0 | metadata |
+| pandas | 3.0.2 | 3.0.6 | sdist, version, wheels |
+| pillow | 12.2.0 | 12.3.0 | sdist, version, wheels |
+| prometheus-client | absent | 0.26.0 | record set (see JSON) |
+| propcache | 0.4.1 | 0.5.4 | sdist, version, wheels |
+| pyasn1 | 0.6.3 | 0.6.4 | sdist, version, wheels |
+| pyjson5 | 2.0.0 | 2.0.1 | sdist, version, wheels |
+| pyparsing | 3.3.2 | 3.3.3 | sdist, version, wheels |
+| python-dotenv | 1.2.2 | 1.2.3 | sdist, version, wheels |
+| regex | 2026.4.4 | 2026.9.29 | sdist, version, wheels |
+| safetensors | 0.7.0 | 0.8.0 | sdist, version, wheels |
+| scipy | 1.17.1 | 1.17.1, 1.18.1 | record set (see JSON) |
+| simplejson | 4.1.1 | 4.1.2 | sdist, version, wheels |
+| tensorstore | 0.1.82 | 0.1.85 | sdist, version, wheels |
+| tiktoken | 0.12.0 | 0.14.0 | sdist, version, wheels |
+| tokenizers | 0.22.2 | 0.23.2 | sdist, version, wheels |
+| transformers | 5.8.0 | 5.17.0 | sdist, version, wheels |
+| typer | 0.25.1 | 0.27.2 | dependencies, sdist, version, wheels |
+| tzdata | 2026.2 | 2026.4 | sdist, version, wheels |
+| werkzeug | 3.1.8 | 3.1.9 | sdist, version, wheels |
+| yarl | 1.23.0 | 1.25.1 | sdist, version, wheels |
+| zipp | 3.23.1 | 4.1.0 | sdist, version, wheels |
+
+Marker splits: anyio uses 4.14.2 on Python <3.15 and 4.15.1 on >=3.15. On Python 3.11 / >=3.12 respectively: contourpy 1.3.3 / 1.4.0; flax 0.12.8 / 0.12.10; jax and jaxlib 0.10.2 / 0.11.2; scipy 1.17.1 / 1.18.1. gymnax and optax only gain the corresponding Flax/JAX dependency references; httpx only gains split anyio references; owl replaces git requirement metadata with ==1.32.7.
+
+Dependency-edge details: aiohttp adds conditional typing-extensions; huggingface-hub replaces typer with click; click drops colorama; typer replaces click with Windows colorama; orbax-checkpoint replaces grpcio-tools with prometheus-client, removing the unused grpcio/grpcio-tools records. Remaining edge changes select the split Python-version records listed above. No hidden artifact-only package changes were found. Retained contourpy 1.3.3 and scipy 1.17.1 artifacts remain unchanged.
+
+Independent graph audit: W&B's dependency closure intersects the changed set at click; Torch's closure does not intersect it. Kaggle's environment registration imports many environment modules, so the changed numerical/LLM dependencies can affect Kaggle package startup even without direct imports from the PPO implementation.
+docs := "docs/"
+py_src := "python/"
+py_scripts := "scripts/"
+py_tests := "tests/"
+all_py_code := f"{{py_src}} {{py_scripts}} {{py_tests}}"
+all_rs_code := "src/"
+
+[group: 'docs']
+docs-lint:
+	uvx pymarkdownlnt scan *.md
+	uvx pymarkdownlnt scan --recurse {{all_py_code}} {{all_rs_code}} {{docs}}
+[group: 'docs']
+docs-fresh:
+	uv run python scripts/check_doc_freshness.py
+
+[group: 'python']
+py-format:
+    uvx ruff check {{all_py_code}} --select I --fix
+    uvx ruff format {{all_py_code}}
+[group: 'python']
+py-lint:
+    uv run python scripts/check_python_311_syntax.py
+    uvx ruff check {{all_py_code}}
+[group: 'python']
+py-static:
+    uv run mypy {{py_src}} {{py_scripts}}
+[group: 'python']
+py-test:
+    uv run pytest {{py_tests}} -m "not slow"
+[group: 'python']
+py-test-full:
+    uv run pytest {{py_tests}}
+[group: 'python']
+py-prepare: py-format py-lint py-static py-test docs-fresh
+
+[group: 'rust']
+rs-format:
+    cargo fmt
+[group: 'rust']
+rs-lint:
+    cargo clippy --all-targets -- -D warnings
+[group: 'rust']
+rs-test:
+	cargo test
+[group: 'rust']
+rs-prepare: rs-format rs-lint rs-test docs-fresh
+
+[group: 'build']
+build:
+	uv run maturin develop
+[group: 'build']
+build-release:
+	uv run maturin develop --release
+[group: 'build']
+kaggle-image: prepare
+	docker buildx build \
+	  --platform linux/amd64 \
+	  -f Dockerfile.kaggle \
+	  --output type=docker,name=orbit-wars:kaggle,compression=zstd,compression-level=1 \
+	  .
+[group: 'build']
+kaggle-submission model submission="submission" quantization="fp32" *extra_args: prepare kaggle-image
+	#!/usr/bin/env bash
+	set -euo pipefail
+	submission="{{submission}}"
+	quantization="{{quantization}}"
+	lora_quantization=""
+	extra_args=({{extra_args}})
+	if [[ -z "$submission" || "$submission" == *"/"* || "$submission" == "." || "$submission" == ".." ]]; then
+	  echo "Submission name must be a non-empty file name, not a path: $submission" >&2
+	  exit 2
+	fi
+	model_abs="$(cd "$(dirname "{{model}}")" && pwd)/$(basename "{{model}}")"
+	fallback_model_abs=""
+	while [[ ${#extra_args[@]} -gt 0 ]]; do
+	  case "${extra_args[0]}" in
+	    --fallback-checkpoint)
+	      if [[ ${#extra_args[@]} -lt 2 ]]; then
+	        echo "--fallback-checkpoint requires a path argument" >&2
+	        exit 2
+	      fi
+	      fallback_model_abs="$(cd "$(dirname "${extra_args[1]}")" && pwd)/$(basename "${extra_args[1]}")"
+	      extra_args=("${extra_args[@]:2}")
+	      ;;
+	    --lora-quantization)
+	      if [[ ${#extra_args[@]} -lt 2 ]]; then
+	        echo "--lora-quantization requires a format argument" >&2
+	        exit 2
+	      fi
+	      lora_quantization="${extra_args[1]}"
+	      extra_args=("${extra_args[@]:2}")
+	      ;;
+	    *)
+	      echo "Unexpected kaggle-submission argument: ${extra_args[0]}" >&2
+	      exit 2
+	      ;;
+	  esac
+	done
+	if [[ "$submission" == *.tar.gz ]]; then
+	  output="artifacts/${submission}"
+	else
+	  output="artifacts/${submission}.tar.gz"
+	fi
+	output_abs="$(mkdir -p "$(dirname "$output")" && cd "$(dirname "$output")" && pwd)/$(basename "$output")"
+	submission_args=()
+	docker_args=(-v "$(dirname "$model_abs"):/model:ro")
+	if [[ -n "$fallback_model_abs" ]]; then
+	  submission_args+=(--fallback-checkpoint "/fallback-model/$(basename "$fallback_model_abs")")
+	  docker_args+=(-v "$(dirname "$fallback_model_abs"):/fallback-model:ro")
+	fi
+	if [[ "$quantization" != "fp32" ]]; then
+	  submission_args+=(--quantization "$quantization")
+	fi
+	if [[ -n "$lora_quantization" ]]; then
+	  submission_args+=(--lora-quantization "$lora_quantization")
+	fi
+	docker run --rm \
+	  "${docker_args[@]}" \
+	  -v "$(dirname "$output_abs"):/artifacts" \
+	  orbit-wars:kaggle "${submission_args[@]}" "/model/$(basename "$model_abs")" "/artifacts/$(basename "$output_abs")"
+	artifact_limit_bytes=$((100 * 1024 * 1024))
+	artifact_bytes="$(wc -c < "$output_abs" | tr -d '[:space:]')"
+	if (( artifact_bytes > artifact_limit_bytes )); then
+	  warning="WARNING: Kaggle submission artifact exceeds 100MiB: $output_abs is ${artifact_bytes} bytes"
+	  if [[ -t 2 ]]; then
+	    printf '\033[31m%s\033[0m\n' "$warning" >&2
+	  else
+	    printf '%s\n' "$warning" >&2
+	  fi
+	fi
+
+_prepare_base: build rs-format py-format rs-lint py-lint docs-lint py-static rs-test py-test-full
+[group: 'ci']
+prepare: _prepare_base docs-fresh
+[group: 'ci']
+prepare-rl: prepare build-release
+[group: 'ci']
+prepare-container: _prepare_base build-release
+
+[group: 'misc']
+audit-selected-target-angles:
+    cargo test --lib rl::action_spec::tests::audit_selected_target_angle_quality -- --ignored --nocapture
+
+[group: 'misc']
+clean:
+    cargo clean
+    rm -rf .mypy_cache .pytest_cache .ruff_cache .venv/
+    rm -f python/owl/rs*.so
+    rm -f tests/fixtures/**/*.{json,jsonl}
+/Users/poonszesen/kg-v3                                            6dd2f68 [kg/rebuild-model]
+/Users/poonszesen/kg-v3-codex                                      5378763 [kg/rebuild-codex]
+/Users/poonszesen/kg-v3-codex-data                                 9d54a8b [kg/rebuild-codex-data]
+/Users/poonszesen/kg-v3-deps                                       04e39bb [kg/rebuild-deps]
+/Users/poonszesen/kg-v3-grammar                                    cdd2617 [kg/rebuild-grammar]
+/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2   65f0eac (detached HEAD)
+/Users/poonszesen/kg-v3-int                                        90ed86c [kg/isaiah-gap-closure]
+/Users/poonszesen/kg-v3-observe                                    32e2cdd [kg/rebuild-observe]
+/Users/poonszesen/kg-v3-parity                                     25ec814 [kg/rebuild-parity]
+/Users/poonszesen/kg-v3-verify-b                                   94f778d (detached HEAD)
+/Users/poonszesen/kg-v3/.claude/worktrees/agent-a6b402c3efeaea928  62899de [worktree-agent-a6b402c3efeaea928]
+4.0K	ops/deps-independent-verification-fb65e1f/core.py.diff
+4.0K	ops/deps-independent-verification-fb65e1f/generate-reference.log
+1.5M	ops/deps-independent-verification-fb65e1f/lock-delta.json
+4.0K	ops/deps-independent-verification-fb65e1f/orbit_wars.py.diff
+ 20K	ops/deps-independent-verification-fb65e1f/prepare.log
+4.0K	ops/deps-independent-verification-fb65e1f/utils.py.diff
+4.0K	ops/deps-independent-verification-fb65e1f/uv-add.log
+4.0K	ops/deps-independent-verification-fb65e1f/uv-remove.log
+ 12K	ops/deps-independent-verification-fb65e1f/verification.md
+{
+  "base": "fb65e1f^",
+  "target": "fb65e1fad5e0b772623eaf7e660cdc62cdfda02e",
+  "top_level": {},
+  "packages": {
+    "absl-py": {
+      "before": [
+        {
+          "name": "absl-py",
+          "version": "2.4.0",
+          "source": {
+            "registry": "https://pypi.org/simple"
+          },
+          "sdist": {
+            "url": "https://files.pythonhosted.org/packages/64/c7/8de93764ad66968d19329a7e0c147a2bb3c7054c554d4a119111b8f9440f/absl_py-2.4.0.tar.gz",
+            "hash": "sha256:8c6af82722b35cf71e0f4d1d47dcaebfff286e27110a99fc359349b247dfb5d4",
+            "size": 116543,
+            "upload-time": "2026-01-28T10:17:05.322Z"
+          },
+          "wheels": [
+            {
+              "url": "https://files.pythonhosted.org/packages/18/a6/907a406bb7d359e6a63f99c313846d9eec4f7e6f7437809e03aa00fa3074/absl_py-2.4.0-py3-none-any.whl",
+              "hash": "sha256:88476fd881ca8aab94ffa78b7b6c632a782ab3ba1cd19c9bd423abc4fb4cd28d",
+              "size": 135750,
+              "upload-time": "2026-01-28T10:17:04.19Z"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "absl-py",
+          "version": "2.5.0",
+          "source": {
+            "registry": "https://pypi.org/simple"
+          },
+          "sdist": {
+            "url": "https://files.pythonhosted.org/packages/d0/4f/d79676ab82f2e42fc3611618139f13a9c4c31d0cff4b486982047679a802/absl_py-2.5.0.tar.gz",
+            "hash": "sha256:0c996f25c0490700fadabe6351630f6111534fa0ae252cc6d2014ea3b141135f",
+            "size": 118119,
+            "upload-time": "2026-07-03T10:57:48.157Z"
+          },
+          "wheels": [
+            {
+              "url": "https://files.pythonhosted.org/packages/58/0a/a10b45aab35b175aded078a462dc8d0c698f5b13946e7cb0869097b78bb6/absl_py-2.5.0-py3-none-any.whl",
+              "hash": "sha256:0f17b89f2a4eaaedc4f28c622998aa690564b3012a396a4ffad0821007fe03ba",
+              "size": 137410,
+              "upload-time": "2026-07-03T10:57:46.735Z"
+            }
+          ]
+        }
+      ]
+    },
+    "aiohappyeyeballs": {
+      "before": [
+        {
+          "name": "aiohappyeyeballs",
+          "version": "2.6.1",
+          "source": {
+            "registry": "https://pypi.org/simple"
+          },
+          "sdist": {
+            "url": "https://files.pythonhosted.org/packages/26/30/f84a107a9c4331c14b2b586036f40965c128aa4fee4dda5d3d51cb14ad54/aiohappyeyeballs-2.6.1.tar.gz",
+            "hash": "sha256:c3f9d0113123803ccadfdf3f0faa505bc78e6a72d1cc4806cbd719826e943558",
+            "size": 22760,
+            "upload-time": "2025-03-12T01:42:48.764Z"
+          },
+          "wheels": [
+            {
+              "url": "https://files.pythonhosted.org/packages/0f/15/5bf3b99495fb160b63f95972b81750f18f7f4e02ad051373b669d17d44f2/aiohappyeyeballs-2.6.1-py3-none-any.whl",
+              "hash": "sha256:f349ba8f4b75cb25c99c5c2d84e997e485204d2902a9597802b0371f09331fb8",
+              "size": 15265,
+              "upload-time": "2025-03-12T01:42:47.083Z"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "aiohappyeyeballs",
+          "version": "2.7.1",
+          "source": {
+            "registry": "https://pypi.org/simple"
+          },
+          "sdist": {
+            "url": "https://files.pythonhosted.org/packages/ce/f4/eec0465c2f67b2664688d0240b3212d5196fd89e741df67ddb81f8d35658/aiohappyeyeballs-2.7.1.tar.gz",
+            "hash": "sha256:065665c041c42a5938ed220bdcd7230f22527fbec085e1853d2402c8a3615d9d",
+            "size": 24757,
+            "upload-time": "2026-07-01T17:11:55.501Z"
+          },
+
+exec
+/bin/zsh -lc 'uv lock --check' in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+Resolved 181 packages in 8ms
+
+exec
+/bin/zsh -lc 'uvx --from rust-just just docs-lint' in /Users/poonszesen/kg-v3-deps
+ exited 2 in 12319ms:
+error: Request failed after 3 retries in 12.4s
+  Caused by: Failed to fetch: `https://pypi.org/simple/rust-just/`
+  Caused by: error sending request for url (https://pypi.org/simple/rust-just/)
+  Caused by: client error (Connect)
+  Caused by: dns error
+  Caused by: failed to lookup address information: nodename nor servname provided, or not known
+
+exec
+/bin/zsh -lc "cat /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-deps.md && sed -n '1,60p' ops/deps-independent-verification-fb65e1f/prepare.log && tail -35 ops/deps-independent-verification-fb65e1f/prepare.log && cat ops/deps-independent-verification-fb65e1f/uv-remove.log ops/deps-independent-verification-fb65e1f/uv-add.log ops/deps-independent-verification-fb65e1f/generate-reference.log && git diff --exit-code fb65e1f..04e39bb -- pyproject.toml uv.lock python scripts src tests Cargo.toml Cargo.lock" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+**VERDICT: APPROVE WITH EDITS** — one documentation correction; no implementation or test blocker found.
+
+- **Low/P3:** [Cookbook line 57](/Users/poonszesen/kg-v3-deps/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:57) says “other 50 lockfile changes.” There are **55 other changed dependency names**, plus `kaggle-environments` and `owl` metadata. Correct this count.
+- **Informational:** `click` also serves W&B, so its upgrade could affect training telemetry. Numerical/LLM dependency upgrades can affect Kaggle imports and Python tooling. No regression was observed; live W&B and CUDA execution were not tested.
+
+Verification results:
+
+| Check | Result |
+|---|---|
+| Branch/commit | `kg/rebuild-deps`, `fb65e1fad5e0b772623eaf7e660cdc62cdfda02e` |
+| Pin/source | `kaggle-environments==1.32.7`; Git override removed |
+| `uv lock --check` | PASS, 181 package records |
+| uv provenance | Replaying the documented `uv remove` + `uv add` on copied parent files reproduced both files **byte-for-byte**; corroborates the recorded command history |
+| Requested `CARGO_BUILD_JOBS=3 uvx --from rust-just just prepare` | PASS: Rust **155 passed / 2 ignored**; Python **722 passed / 3 skipped** |
+| Orbit parity | Replay: **325 transitions**, episodes `75930761` (103, two players) and `75926553` (222, four players). All **six generation-fixture tests passed** |
+| Current generation fixture | Regenerated data matches supplied fixture except its absolute source path |
+| Contract change | Exactly **one blank line**, no wording changes |
+| Tracked modifications | **None**; staged and unstaged diffs empty |
+
+The two ignored Rust tests are expensive action-angle audits, **not parity tests**. Python skips cover two unavailable CUDA FlashAttention tests and one unavailable quantized backend.
+
+Installed Kaggriculture SHA-256 exactly matches the reference branch’s `engine_rs/Cargo.toml` metadata:
+
+```text
+bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e
+```
+
+Isaiah’s complete critical lock records remain unchanged: torch **2.9.0 / +cpu / +cu128**, triton **3.5.0**, flash-attn **2.8.3**, numpy **2.4.4**, pydantic **2.13.3**, wandb **0.26.1**, maturin **1.13.1**, mypy **1.20.2**.
+
+Every other dependency change follows. Paired versions marked † select Python **3.11 / ≥3.12**; ‡ selects **<3.15 / ≥3.15**.
+
+| Package | Before → after |
+|---|---|
+| absl-py | 2.4.0 → 2.5.0 |
+| aiohappyeyeballs | 2.6.1 → 2.7.1 |
+| aiohttp | 3.13.5 → 3.14.3 |
+| annotated-doc | 0.0.4 → 0.0.5 |
+| anyio | 4.13.0 → 4.14.2 / 4.15.1 ‡ |
+| cffi | 2.0.0 → 2.1.1 |
+| chex | 0.1.91 → 0.1.92 |
+| click | 8.3.3 → 8.5.0 |
+| contourpy | 1.3.3 → 1.3.3 / 1.4.0 † |
+| cryptography | 48.0.0 → 50.0.1 |
+| flax | 0.12.7 → 0.12.8 / 0.12.10 † |
+| fonttools | 4.62.1 → 4.66.0 |
+| google-auth | 2.50.0 → 2.59.0 |
+| grpcio | 1.80.0 → removed |
+| grpcio-tools | 1.80.0 → removed |
+| gymnax | 0.0.8 unchanged; dependency references split |
+| hf-xet | 1.4.3 → 1.6.0 |
+| httpx | 0.28.1 unchanged; anyio references split |
+| huggingface-hub | 1.13.0 → 1.33.0 |
+| humanize | 4.15.0 → 4.16.0 |
+| importlib-metadata | 9.0.0 → 8.9.0 |
+| jax | 0.10.0 → 0.10.2 / 0.11.2 † |
+| jaxlib | 0.10.0 → 0.10.2 / 0.11.2 † |
+| jiter | 0.14.0 → 0.17.0 |
+| kiwisolver | 1.5.0 → 1.5.1 |
+| litellm | 1.82.4 → 1.93.2 |
+| matplotlib | 3.10.9 → 3.11.2 |
+| ml-dtypes | 0.5.4 → 0.6.0 |
+| msgpack | 1.1.2 → 1.2.3 |
+| multidict | 6.7.1 → 6.9.1 |
+| open-spiel | 1.6.13 → 2.0.1 |
+| openai | 2.34.0 → 2.54.0 |
+| optax | 0.2.8 unchanged; JAX references split |
+| orbax-checkpoint | 0.11.37 → 0.12.6 |
+| pandas | 3.0.2 → 3.0.6 |
+| pillow | 12.2.0 → 12.3.0 |
+| prometheus-client | added 0.26.0 |
+| propcache | 0.4.1 → 0.5.4 |
+| pyasn1 | 0.6.3 → 0.6.4 |
+| pyjson5 | 2.0.0 → 2.0.1 |
+| pyparsing | 3.3.2 → 3.3.3 |
+| python-dotenv | 1.2.2 → 1.2.3 |
+| regex | 2026.4.4 → 2026.9.29 |
+| safetensors | 0.7.0 → 0.8.0 |
+| scipy | 1.17.1 → 1.17.1 / 1.18.1 † |
+| simplejson | 4.1.1 → 4.1.2 |
+| tensorstore | 0.1.82 → 0.1.85 |
+| tiktoken | 0.12.0 → 0.14.0 |
+| tokenizers | 0.22.2 → 0.23.2 |
+| transformers | 5.8.0 → 5.17.0 |
+| typer | 0.25.1 → 0.27.2 |
+| tzdata | 2026.2 → 2026.4 |
+| werkzeug | 3.1.8 → 3.1.9 |
+| yarl | 1.23.0 → 1.25.1 |
+| zipp | 3.23.1 → 4.1.0 |
+
+All belong to Kaggle’s old/new dependency closure. Additional structural changes: `owl` records the new exact requirement; artifact hashes follow upgraded versions; top-level lock metadata is unchanged. Dependency edges also change for aiohttp, huggingface-hub, click, typer and orbax-checkpoint; the [complete audit](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/verification.md) and [exact lock delta](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/lock-delta.json) enumerate these.
+
+Orbit’s upstream source extracts seed resolution into a shared helper; shared utilities also change registration/rendering. The passing parity checks support the tested rules surface. [Preparation log](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/prepare.log).uv run maturin develop
+📦 Including license file `LICENSE`
+🍹 Building a mixed python/rust project
+🔗 Found pyo3 bindings with abi3 support
+🐍 Found CPython 3.12 at /Users/poonszesen/kg-v3-deps/.venv/bin/python
+📡 Using build options features from pyproject.toml
+Audited 8 packages in 18ms
+Resolved 44 packages in 8ms
+Audited 44 packages in 0.54ms
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-deps)
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 12:38:23.806 xcodebuild[5313:9750059]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 12:38:23.965 xcodebuild[5313:9750058] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 12:38:24.289 xcodebuild[5314:9750064]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 12:38:24.405 xcodebuild[5314:9750063] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: `owl` (lib) generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.13s
+📦 Built wheel for abi3 Python ≥ 3.11 to /Users/poonszesen/kg-v3-deps/.codex-tmp/.tmpmVXOFF/owl-0.1.0-cp311-abi3-macosx_11_0_arm64.whl
+✏️ Setting installed package as editable
+🛠 Installed owl-0.1.0
+cargo fmt
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+79 files left unchanged
+cargo clippy --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s
+uv run python scripts/check_python_311_syntax.py
+Uninstalled 1 package in 0.51ms
+Installed 1 package in 1ms
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uvx pymarkdownlnt scan *.md
+uvx pymarkdownlnt scan --recurse python/ scripts/ tests/ src/ docs/
+uv run mypy python/ scripts/
+Success: no issues found in 48 source files
+cargo test
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/rs-70d11de31c3178d2)
+
+running 157 tests
+test rl::action_spec::tests::adversarial_selected_target_angle_search ... ignored, expensive adversarial selected-angle search; run with --ignored --nocapture
+test rl::action_spec::tests::audit_selected_target_angle_quality ... ignored, expensive selected-angle quality audit; run with --ignored --nocapture
+test rl::action_spec::tests::cached_orbit_path_matches_step_zero_swept_phase ... ok
+test rl::action_spec::tests::anything_goes_submits_sun_crossing_static_target ... ok
+test rl::action_spec::tests::discrete_comet_target_with_exhausted_path_is_no_op ... ok
+test rl::action_spec::tests::anything_goes_target_bins_submit_sun_crossing_static_target ... ok
+test rl::action_spec::tests::discrete_comet_target_without_intercept_is_no_op ... ok
+test rl::action_spec::tests::discrete_orbiting_target_hits_in_simulator ... ok
+test rl::action_spec::tests::discrete_static_target_arc_subtracts_dynamic_blocker ... ok
+test rl::action_spec::tests::discrete_comet_target_arc_subtracts_static_blocker ... ok
+test rl::action_spec::tests::discrete_comet_target_arc_subtracts_dynamic_blocker ... ok
+test rl::action_spec::tests::discrete_target_bins_decode_target_and_fleet_bin ... ok
+test rl::action_spec::tests::discrete_comet_target_hits_in_simulator ... ok
+test rl::action_spec::tests::discrete_static_target_tangent_fallback_hits_in_simulator ... ok
+test rl::action_spec::tests::discrete_target_bins_mask_keeps_only_higher_duplicate_bins ... ok
+test rl::action_spec::tests::discrete_target_bins_zero_bin_decodes_as_no_launch ... ok
+test rl::action_spec::tests::discrete_targets_mask_rejects_sun_blocked_static_targets ... ok
+...............................                                          [ 34%]
+tests/owl/test_checkpoint_quantization.py .............................. [ 38%]
+..............                                                           [ 40%]
+tests/owl/test_config.py .........                                       [ 42%]
+tests/owl/test_int8_emulation.py ...s                                    [ 42%]
+tests/owl/test_replay.py ...                                             [ 43%]
+tests/owl/test_rl.py ................................................... [ 50%]
+...........................                                              [ 53%]
+tests/owl/train/test_advantages.py ..............                        [ 55%]
+tests/owl/train/test_config.py ......................................... [ 61%]
+........................                                                 [ 64%]
+tests/owl/train/test_distributed.py ...................                  [ 67%]
+tests/owl/train/test_logging.py ..                                       [ 67%]
+tests/owl/train/test_loss.py .............                               [ 69%]
+tests/owl/train/test_metrics.py ..                                       [ 69%]
+tests/owl/train/test_optimizer.py ...........                            [ 71%]
+tests/owl/train/test_ppo.py ............................................ [ 77%]
+..........                                                               [ 78%]
+tests/scripts/test_benchmark_checkpoints.py ............................ [ 82%]
+.........                                                                [ 83%]
+tests/scripts/test_download_replays.py ....                              [ 84%]
+tests/scripts/test_extract_model_weights.py .................            [ 86%]
+tests/scripts/test_roundtrip_checkpoint_quantization.py ................ [ 88%]
+..                                                                       [ 89%]
+tests/scripts/test_run_ppo.py .......................................... [ 94%]
+...................................                                      [ 99%]
+tests/tools/test_replay_viewer.py ..                                     [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/owl/model/test_attn.py:60: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/model/test_attn.py:80: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/test_int8_emulation.py:15: x86 torch quantized backend is unavailable: qnnpack
+======================== 722 passed, 3 skipped in 5.06s ========================
+uv run python scripts/check_doc_freshness.py
+No doc updates required
+Using CPython 3.12.13
+Resolved 86 packages in 32ms
+Using CPython 3.12.13
+Resolved 181 packages in 113ms
+Reference generation fixture written to: ops/deps-independent-verification-fb65e1f/reference_generation.current.json
+
+exec
+/bin/zsh -lc "rg -n 'restart-the-port|pin|dependenc' cookbook/decisions/index.md && git ls-tree -lr 04e39bb ops/deps-independent-verification-fb65e1f && git diff --check fb65e1f..04e39bb" in /Users/poonszesen/kg-v3-deps
+ exited 2 in 0ms:
+3:- [[restart-the-port-from-isaiahs-clean-base|Restart the port from Isaiah's clean base]] — Main and the working branch restart from Isaiah's 32b3ec9; the prior port is a reference branch for grammar, tokens and the Rust engine; the cookbook and Claude/Codex setup carry over; the model keeps Isaiah's layer topology; one BC rerun and RTX PRO 6000 verification follow.
+100644 blob fa0e33d2883fb26f4282c4dd03aa2f1ec1feec16    1581	ops/deps-independent-verification-fb65e1f/core.py.diff
+100644 blob fc12baf11597eca2cbb1e9c8f9f9a96b45c57226     117	ops/deps-independent-verification-fb65e1f/generate-reference.log
+100644 blob b2e64e33a25e726e75d6e4a9d877b5c26741b0ba 1577537	ops/deps-independent-verification-fb65e1f/lock-delta.json
+100644 blob b7a8fc03ffd5f972ed12b43c414df84434ec20a4    1868	ops/deps-independent-verification-fb65e1f/orbit_wars.py.diff
+100644 blob 2bf9161002b6691e390dd7d2b6c103e3347b24da   20433	ops/deps-independent-verification-fb65e1f/prepare.log
+100644 blob 8a9b6081855ec2955094194294ea6172e0ba5e7e    2976	ops/deps-independent-verification-fb65e1f/utils.py.diff
+100644 blob 88b1d93bc105183035948419bb13baaf140757b5      53	ops/deps-independent-verification-fb65e1f/uv-add.log
+100644 blob 2795257e9a131c3696c52463bb0381b890b7f27b      51	ops/deps-independent-verification-fb65e1f/uv-remove.log
+100644 blob 4f5914e16a77ed7f65735c6769849895ac208d83    8749	ops/deps-independent-verification-fb65e1f/verification.md
+ops/deps-independent-verification-fb65e1f/core.py.diff:6: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/core.py.diff:10: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/core.py.diff:37: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/core.py.diff:38: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/core.py.diff:43: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/orbit_wars.py.diff:9: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/orbit_wars.py.diff:40: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/utils.py.diff:5: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/utils.py.diff:12: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/utils.py.diff:14: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/utils.py.diff:17: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/utils.py.diff:18: trailing whitespace.
++ 
+ops/deps-independent-verification-fb65e1f/utils.py.diff:61: trailing whitespace.
++ 
+
+codex
+The three corrections match the previous verdict, and the commit changes no code, `pyproject.toml`, or `uv.lock`. `uv lock --check` passed. The evidence includes a 1.58 MB JSON file duplicating lockfile records, which appears excessive for the requested compact receipt. The docs command hit a DNS failure; I’m retrying with cached tools offline.
+exec
+/bin/zsh -lc "git status --porcelain=v1 && git diff --exit-code && git diff --cached --exit-code && nl -ba ops/deps-independent-verification-fb65e1f/verification.md | sed -n '1,42p' && nl -ba ops/deps-independent-verification-fb65e1f/lock-delta.json | sed -n '1,35p' && rg -n -C 3 'ignore = \"expensive|fn adversarial_selected_target_angle_search|fn audit_selected_target_angle_quality' src/rl/action_spec.rs" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+     1	# Independent verification of fb65e1f
+     2	
+     3	Verdict: APPROVE WITH EDITS. Low-severity documentation correction only; no implementation/test blocker found. No tracked files modified.
+     4	
+     5	## Finding
+     6	
+     7	P3: cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:57 says “other 50 lockfile changes”. Exact inventory is 57 changed package names: kaggle-environments, owl metadata, and 55 other dependency names. The latter consist of 49 changed version sets, 3 dependency-only records, 1 added package and 2 removed packages. Some dependencies are shared: click also belongs to W&B. Correct the count and avoid implying isolation from training telemetry.
+     8	
+     9	## Commands and evidence
+    10	
+    11	- Checkout: kg/rebuild-deps at fb65e1fad5e0b772623eaf7e660cdc62cdfda02e.
+    12	- uv 0.10.9; uv lock --check exited 0 (181 resolved packages).
+    13	- Historical uv invocation is stated in the commit and cookbook. Independently replayed uv remove --offline --no-sync kaggle-environments then uv add --offline --no-sync kaggle-environments==1.32.7 on copied parent files: both pyproject.toml and uv.lock reproduce byte-for-byte. This corroborates, rather than proves, the historical command execution.
+    14	- Installed kaggle-environments 1.32.7 Kaggriculture engine SHA-256: bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e, equal to kg/reference-2026-09-29:engine_rs/Cargo.toml package.metadata.kaggriculture.python-engine-sha256.
+    15	- CARGO_BUILD_JOBS=3 uvx --from rust-just just prepare exited 0: Rust 155 passed / 2 ignored; Python 722 passed / 3 skipped. Mypy passed 48 source files; formatting, lint and doc freshness passed. See prepare.log.
+    16	- Orbit replay parity passed: 75930761, 2 seats, 103 transitions; 75926553, 4 seats, 222 transitions (325 total). All six generation fixture tests passed. No parity bypass environment variables were set. Two ignored Rust cases are expensive action-angle audits, not parity tests.
+    17	- Python skips: two FlashAttention CUDA tests and one unavailable x86 quantized-backend test on macOS ARM64/Python 3.12.13. No CUDA runtime qualification claim.
+    18	- uv run --locked python scripts/generate_reference_fixtures.py --outfile ops/deps-independent-verification-fb65e1f/reference_generation.current.json exited 0. Parsed output matches provided generation fixture except absolute reference_file path.
+    19	- docs/kaggriculture-contract.md diff is exactly one inserted blank line at 173; no wording change.
+    20	- git diff --exit-code and git diff --cached --exit-code both exited 0. Pre-existing .codex-tmp/ remains untracked; this receipt directory is untracked.
+    21	
+    22	## Critical packages
+    23	
+    24	Parent lock is byte-identical to Isaiah 32b3ec900ad406eedd965f53a1a0f4490d31c589. Complete critical package records remain unchanged: torch 2.9.0, 2.9.0+cpu, 2.9.0+cu128; triton 3.5.0; flash-attn 2.8.3; numpy 2.4.4; pydantic 2.13.3; wandb 0.26.1; maturin 1.13.1; mypy 1.20.2.
+    25	
+    26	## Behavioral scope
+    27	
+    28	- click 8.3.3 -> 8.5.0 is shared with W&B; possible training telemetry/CLI impact is not ruled out by unchanged wandb version. Live W&B was not exercised.
+    29	- JAX/Flax/Optax/Orbax/SciPy, OpenSpiel, Transformers/Hugging Face and LLM SDK changes can affect Kaggle reference/agent tooling. No direct canonical PPO import of the other changed packages was identified; no numerical regression was observed in the requested local suite.
+    30	- Installed Orbit source differs from old locked git source only by extracting episode-seed resolution into utils.resolve_episode_seed. Shared core adds lazy environment registration; utils also changes HTML payload insertion. Current generation fixtures match; supplied historical replay parity passes. See source diff artifacts. These checks do not exhaustively qualify all upstream environments or renderer behavior.
+    31	
+    32	## Exhaustive package delta
+    33	
+    34	Old: 176 records / 174 names. New: 181 records / 173 names. Top-level lock metadata is unchanged. Registry source remains PyPI for all changed third-party records other than kaggle-environments, which changes from git commit 6458c3191c2c4b37b6ad7530bd027df4b35369e4 to PyPI. New-version records include their generated artifact URLs/hashes/sizes/timestamps; exact before/after data is in lock-delta.json.
+    35	
+    36	| Package | Before | After | Changed fields |
+    37	|---|---|---|---|
+    38	| absl-py | 2.4.0 | 2.5.0 | sdist, version, wheels |
+    39	| aiohappyeyeballs | 2.6.1 | 2.7.1 | sdist, version, wheels |
+    40	| aiohttp | 3.13.5 | 3.14.3 | dependencies, sdist, version, wheels |
+    41	| annotated-doc | 0.0.4 | 0.0.5 | sdist, version, wheels |
+    42	| anyio | 4.13.0 | 4.14.2, 4.15.1 | record set (see JSON) |
+     1	{
+     2	  "base": "fb65e1f^",
+     3	  "target": "fb65e1fad5e0b772623eaf7e660cdc62cdfda02e",
+     4	  "top_level": {},
+     5	  "packages": {
+     6	    "absl-py": {
+     7	      "before": [
+     8	        {
+     9	          "name": "absl-py",
+    10	          "version": "2.4.0",
+    11	          "source": {
+    12	            "registry": "https://pypi.org/simple"
+    13	          },
+    14	          "sdist": {
+    15	            "url": "https://files.pythonhosted.org/packages/64/c7/8de93764ad66968d19329a7e0c147a2bb3c7054c554d4a119111b8f9440f/absl_py-2.4.0.tar.gz",
+    16	            "hash": "sha256:8c6af82722b35cf71e0f4d1d47dcaebfff286e27110a99fc359349b247dfb5d4",
+    17	            "size": 116543,
+    18	            "upload-time": "2026-01-28T10:17:05.322Z"
+    19	          },
+    20	          "wheels": [
+    21	            {
+    22	              "url": "https://files.pythonhosted.org/packages/18/a6/907a406bb7d359e6a63f99c313846d9eec4f7e6f7437809e03aa00fa3074/absl_py-2.4.0-py3-none-any.whl",
+    23	              "hash": "sha256:88476fd881ca8aab94ffa78b7b6c632a782ab3ba1cd19c9bd423abc4fb4cd28d",
+    24	              "size": 135750,
+    25	              "upload-time": "2026-01-28T10:17:04.19Z"
+    26	            }
+    27	          ]
+    28	        }
+    29	      ],
+    30	      "after": [
+    31	        {
+    32	          "name": "absl-py",
+    33	          "version": "2.5.0",
+    34	          "source": {
+    35	            "registry": "https://pypi.org/simple"
+3701-    }
+3702-
+3703-    #[test]
+3704:    #[ignore = "expensive selected-angle quality audit; run with --ignored --nocapture"]
+3705:    fn audit_selected_target_angle_quality() {
+3706-        let mut stats = AngleAuditStats::default();
+3707-        for state in challenging_audit_states() {
+3708-            audit_state_pairs(&mut stats, &state, 100, 64);
+--
+3795-    }
+3796-
+3797-    #[test]
+3798:    #[ignore = "expensive adversarial selected-angle search; run with --ignored --nocapture"]
+3799:    fn adversarial_selected_target_angle_search() {
+3800-        let mut cases = 0_usize;
+3801-        let mut brute_arrivals = 0_usize;
+3802-        let mut solver_misses = 0_usize;
+
+exec
+/bin/zsh -lc 'UV_OFFLINE=1 uvx --from rust-just just docs-lint' in /Users/poonszesen/kg-v3-deps
+ succeeded in 934ms:
+uvx pymarkdownlnt scan *.md
+uvx pymarkdownlnt scan --recurse python/ scripts/ tests/ src/ docs/
+
+exec
+/bin/zsh -lc 'git diff --stat fb65e1f..04e39bb && git status --short --branch && git diff --quiet && git diff --cached --quiet' in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+ .../restart-the-port-from-isaiahs-clean-base.md    |     2 +-
+ cookbook/log.md                                    |     4 +
+ .../core.py.diff                                   |    48 +
+ .../generate-reference.log                         |     1 +
+ .../lock-delta.json                                | 25634 +++++++++++++++++++
+ .../orbit_wars.py.diff                             |    41 +
+ .../prepare.log                                    |   256 +
+ .../utils.py.diff                                  |    80 +
+ .../uv-add.log                                     |     2 +
+ .../uv-remove.log                                  |     2 +
+ .../verification.md                                |   100 +
+ 11 files changed, 26169 insertions(+), 1 deletion(-)
+## kg/rebuild-deps
+
+collab: Wait
+collab: Wait
+codex
+One remaining **P3 edit**: [lock-delta.json](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/lock-delta.json:1) is **1,577,537 bytes / 25,634 lines**, duplicating records recoverable from Git. Replace it with a compact package-change summary and commit/blob references or hashes.
+
+Everything else checks out:
+
+- All three corrections are accurate: **55 other dependency names**, `click` shared with W&B, and two ignored action-angle audits.
+- The JSON exactly matches the historical lockfile delta; the receipt agrees with the previous verdict and recorded test output.
+- No code, `pyproject.toml`, or `uv.lock` changes.
+- `uv lock --check`: **PASS**.
+- Documentation lint: **PASS** using `UV_OFFLINE=1 uvx --from rust-just just docs-lint`; the initial online invocation failed on DNS.
+- Requested diff stat: **11 files changed, 26,169 insertions, 1 deletion**.
+- Worktree remains clean; no tracked modifications made.
+
+**VERDICT: APPROVE WITH EDITS**
+hook: Stop
+hook: Stop Completed
+tokens used
+37,253
+One remaining **P3 edit**: [lock-delta.json](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/lock-delta.json:1) is **1,577,537 bytes / 25,634 lines**, duplicating records recoverable from Git. Replace it with a compact package-change summary and commit/blob references or hashes.
+
+Everything else checks out:
+
+- All three corrections are accurate: **55 other dependency names**, `click` shared with W&B, and two ignored action-angle audits.
+- The JSON exactly matches the historical lockfile delta; the receipt agrees with the previous verdict and recorded test output.
+- No code, `pyproject.toml`, or `uv.lock` changes.
+- `uv lock --check`: **PASS**.
+- Documentation lint: **PASS** using `UV_OFFLINE=1 uvx --from rust-just just docs-lint`; the initial online invocation failed on DNS.
+- Requested diff stat: **11 files changed, 26,169 insertions, 1 deletion**.
+- Worktree remains clean; no tracked modifications made.
+
+**VERDICT: APPROVE WITH EDITS**

@@ -1,0 +1,50 @@
+{
+  "log": {
+    "integration": 68,
+    "task12": 55,
+    "task12_unique": [
+      "2026-09-29 \u2014 Claude review of the Task 1.2 grammar with per-oracle mutation controls",
+      "2026-09-29 \u2014 Rebuild the native grammar under the reviewed Task 1.2 contract"
+    ],
+    "merge": 71,
+    "exact_order": "new merge entry; two unique Task1.2 entries in their original order; full integration sequence in original order",
+    "duplicate_headings": []
+  },
+  "old_replay_test_bodies_changed": [],
+  "live_parity_sections_byte_equivalent": true,
+  "authored_exact_set_cases": {
+    "HEAD^1": [
+      {
+        "name": "test_task_authored_inventory_requires_exact_replay_test",
+        "cases": 2
+      }
+    ],
+    "HEAD^2": [
+      {
+        "name": "test_task_authored_inventory_requires_exact_two_tests",
+        "cases": 4
+      }
+    ],
+    "HEAD": [
+      {
+        "name": "test_task_authored_inventory_requires_exact_authored_set",
+        "cases": 5
+      }
+    ]
+  },
+  "checks_claimed_in_committed_prepare_log": {
+    "root": "164 passed; 2 ignored",
+    "engine": "41+18+9+19=87 passed; 0 ignored",
+    "python": "1337 passed; 4 skipped"
+  },
+  "finding": {
+    "priority": "P3",
+    "issue": "Remaining current heads docs still say synthetic tables stand in until Task1.2 after Task1.2 has landed. Native grammar and coverage correctly state binding remains Task1.4. Reconcile current index/heads Reference description/model architecture wording with that boundary.",
+    "locations": [
+      "cookbook/references/index.md:23",
+      "cookbook/references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection.md:4",
+      "docs/model-architecture.md:752"
+    ],
+    "scope": "Documentation-only; binding absence remains explicit and correct; no production change needed."
+  }
+}

@@ -1,0 +1,1 @@
+You are Codex. READ-ONLY re-review of ops/rebuild-2026-09-29/briefs/1.4.md and 1.5.md on branch kg/rebuild-env-briefs after Claude's review edits (see the 'Claude review' sections). Check correctness against Isaiah's src/rl, the contract, the 1.2/1.3 briefs and plan lessons L3/L6; implementability; test oracles. End with VERDICT: APPROVE / APPROVE WITH EDITS / REVISE.

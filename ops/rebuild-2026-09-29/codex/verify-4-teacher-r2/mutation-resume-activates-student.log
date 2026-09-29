@@ -1,0 +1,36 @@
+Command: uv run pytest tests/kaggriculture/test_zz_codex_teacher_r2.py::test_resume -q
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________________________ test_resume __________________________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-trainer-model/.codex-tmp/pytest-of-poonszesen/pytest-12/test_resume0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c781490>
+
+    def test_resume(tmp_path, monkeypatch):
+>       t.test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best(tmp_path, monkeypatch)
+
+tests/kaggriculture/test_zz_codex_teacher_r2.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:1651: in test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best
+    _assert_active_last_best_teacher(trainer, session, source=last_best)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+trainer = <tests.kaggriculture.test_teacher._run_ppo_main.<locals>.FakeTrainer object at 0x10f05fb00>
+session = {'cfg': FullConfig(env=EnvConfig(n_envs=2, obs_spec=KaggricultureObsConfig(obs_spec='kaggriculture', schema_version=3)...t(device=device(type='cpu'), rank=0, local_rank=0, world_size=1, initialized=False), 'env_steps_per_iteration': 8, ...}
+
+    def _assert_active_last_best_teacher(
+        trainer: Any, session: dict[str, Any], *, source: Any
+    ) -> Any:
+        """One active ``set_teacher_model`` call with the session's last-best model."""
+        assert trainer.teacher_model is None
+        assert not trainer.teacher_active
+        assert len(trainer.teacher_updates) == 1
+        teacher, active = trainer.teacher_updates[0]
+        assert active
+>       assert teacher is session["last_best_model"]
+E       assert KaggricultureTransformer(\n  (tile_proj): ObservationInputStem(\n    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)\n        (out): Linear(in_features=16, out_features=32, bias=True)\n      )\n    )\n  )\n) is KaggricultureTransformer(\n  (tile_proj): ObservationInputStem(\n    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)\n        (out): Linear(in_features=16, out_features=32, bias=True)\n      )\n    )\n  )\n)
+
+tests/kaggriculture/test_teacher.py:1610: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_zz_codex_teacher_r2.py::test_resume - assert ...
+1 failed in 0.36s

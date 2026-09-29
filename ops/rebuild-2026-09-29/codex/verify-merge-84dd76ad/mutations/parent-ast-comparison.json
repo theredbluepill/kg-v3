@@ -1,0 +1,61 @@
+{
+  "scripts/check_engine_trim.py": {
+    "integration": {
+      "removed": [],
+      "added": [],
+      "changed": [
+        "verify_task_authored"
+      ]
+    },
+    "task12": {
+      "removed": [],
+      "added": [
+        "engine_pin",
+        "split_generated",
+        "verify_generated"
+      ],
+      "changed": [
+        "main",
+        "verify_task",
+        "verify_task_authored"
+      ]
+    }
+  },
+  "tests/tools/test_check_engine_trim.py": {
+    "integration": {
+      "removed": [
+        "test_task_authored_inventory_accepts_replay_test_and_generated_manifest",
+        "test_task_authored_inventory_requires_exact_replay_test"
+      ],
+      "added": [
+        "test_check_rejects_omitted_authored_test",
+        "test_check_rejects_self_declared_third_authored_source",
+        "test_check_rejects_wrong_authored_hash",
+        "test_task_authored_inventory_accepts_two_tests_and_generated_manifest",
+        "test_task_authored_inventory_requires_exact_authored_set"
+      ],
+      "changed": [
+        "fixture"
+      ]
+    },
+    "task12": {
+      "removed": [
+        "test_task_authored_inventory_accepts_exact_two_tests",
+        "test_task_authored_inventory_requires_exact_two_tests"
+      ],
+      "added": [
+        "_verify_generated",
+        "generated_fixture",
+        "test_check_rejects_edited_generated_trace",
+        "test_check_rejects_unlisted_generated_trace",
+        "test_engine_pin_reads_cargo_metadata",
+        "test_generated_manifest_drift_is_rejected",
+        "test_generated_manifest_pins_every_trace",
+        "test_generated_traces_are_split_from_engine_inventory",
+        "test_task_authored_inventory_accepts_two_tests_and_generated_manifest",
+        "test_task_authored_inventory_requires_exact_authored_set"
+      ],
+      "changed": []
+    }
+  }
+}

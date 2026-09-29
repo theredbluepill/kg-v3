@@ -1,0 +1,607 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-merge
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ebd5-97c6-7311-a99d-0610ec916922
+--------
+user
+You are Codex. READ-ONLY confirmation on branch kg/merge-1.1b. Your r2 report (ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2.md in the main repo) had one P3: cookbook/log.md:9 placed EDITABLE after generated-manifest validation, but it runs inside generic verify() (scripts/check_engine_trim.py:430). Verify commit 99732ea moves EDITABLE into the generic-checks clause, the sentence now matches verify_task's actual order, and nothing else changed. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll check commit `99732ea` against its parent and the checker’s execution order, then confirm whether the wording fix is the only change.
+exec
+/bin/zsh -lc "sed -n '1,220p' cookbook/references/live-differential-parity-checks-the-rust-kernel.md && sed -n '1,100p' cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md && rg -n 'def verify|EDITABLE|generated' scripts/check_engine_trim.py" in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+---
+type: "Reference"
+title: "Live differential parity checks the Rust kernel"
+description: "Task 1.1b replays traces generated live from Kaggle's hash-pinned kaggriculture engine through the vendored Rust kernel: 8 committed games and a 40-game local sweep agree; 303 input probes find two malformed-input divergence classes (Unicode digits, unhashable items), kept as minimal expected failures and classified only from their observed mismatch."
+tags: ["kaggriculture-v3", "adaptation", "parity", "rules-engine"]
+status: "verified-scoped"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources:
+  - resource: "user-directive:2026-09-29:add-a-parity-check-with-kaggle-environments"
+  - resource: "external:pypi:kaggle-environments==1.32.7"
+  - resource: "repository:scripts/kaggriculture_parity/generate_traces.py"
+  - resource: "repository:scripts/kaggriculture_parity/sweep.py"
+  - resource: "repository:engine_rs/tests/replay_parity.rs"
+  - resource: "repository:engine_rs/fixtures/generated/MANIFEST.json"
+  - resource: "repository:engine_rs/TRIM_MANIFEST.json"
+  - resource: "repository:scripts/check_engine_trim.py"
+  - resource: "repository:tests/scripts/test_kaggriculture_parity.py"
+  - resource: "repository:tests/tools/test_check_engine_trim.py"
+  - resource: "repository:docs/rules-parity-coverage.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.1b/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.1b/sweep-summary.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.1b/verify-r1/sweep-summary.json"
+---
+
+# Live differential parity checks the Rust kernel
+
+The owner asked, on 2026-09-29: “can you add a parity check after your rust
+engine, with kaggle envcironments? thanks a lot”. Task 1.1 had replayed only
+four recorded official episodes; its limits named “a fresh differential run
+against Python” as missing. This Reference records the check that fills it and
+what it found. It serves the
+[[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]],
+whose Task 1.1 rules kernel it exercises. Searches for parity, differential,
+kaggle_environments, generated traces and malformed input found no existing
+concept beyond that Decision and the coverage document.
+
+## Mechanism
+
+- **Oracle.** `generate_traces.py` runs `kaggle_environments.make("kaggriculture")`
+  itself, only when the installed package is 1.32.7 and the engine file's
+  SHA-256 equals the `engine_rs/Cargo.toml` pin. Task 1.1b left the project
+  lock at 1.29.0, which has no Kaggriculture environment, and ran the generator
+  in `uv run --isolated --no-project --with kaggle-environments==1.32.7`. The
+  owner's separate 1.32.7 project pin merged with Task 1.1b, so the project
+  environment now also passes the guard (a Python test asserts it); the sweep
+  keeps the isolated environment.
+- **Format.** Traces use the official `kaggriculture-re-parity-v1` records. They
+  add a `rejected` record for steps on which Python's interpreter raises, where
+  Kaggle's `env.step` keeps its state. Rust must error without mutating state:
+  public and private values and key order, statuses, rewards and completion.
+- **Inputs.** The inputs come from seeded random, edge-case, Kaggle built-in and
+  mixed-seat policies across default, free-hire (250 actors), rich (market-loop
+  escape) and custom configurations. There are also 303 one-command probes;
+  scripted actions, including a `null` whole action, are submitted exactly.
+- **Comparator.** `replay_parity.rs` compares official, committed-generated and
+  `KAGG_PARITY_TRACES` traces using the same code. It reports the first line,
+  step, kind and field path, with expected and actual values.
+- **Classification.** The sweep names a known class only when the observed
+  mismatch has that class's signature: D2 needs Python's unhashable
+  `TypeError` and Rust acceptance on that line; D1 needs a Rust recheck, with
+  that line's Unicode digits spelled in ASCII, to pass the line. Otherwise the
+  divergence is new and the sweep exits 1.
+- **Custody.** `engine_rs/fixtures/generated/MANIFEST.json` pins 15 traces
+  (665,021 bytes); `check_engine_trim.py` validates it, and `TRIM_MANIFEST.json`
+  pins the manifest.
+
+## Findings
+
+On this version (commits `33e1428`, `8ca378b`), 8 committed games (3,960
+transitions) and a 40-game sweep (21,824 transitions) agree completely. That
+includes 180 steps Python rejects and Rust also rejects without state change.
+Of the 303 probes, 266 agree. The other 37 divergences fall into two classes, both
+on malformed input:
+
+- **D1:** Python `int()` accepts non-ASCII decimal digit strings (`"٣"`,
+  `"３"`); Rust errors on them as unit counts and drops them as market
+  quantities.
+- **D2:** Python raises `TypeError` when an array or object reaches a dict
+  lookup: a unit verb, a PLANT crop (also for missing hands), a PICKUP/PLACE
+  item, or a BUY_SEED/BUY_ANIMAL item. Rust treats these as no-ops.
+
+The vendored kernel bytes are pinned, so nothing was repaired. Seven minimal
+repros, one-step games whose first action carries only the divergent field, are
+expected-failure fixtures with explicit reasons. Rust asserts the
+exact divergence, so a change in either engine fails the test. Full-game
+policies exclude D1/D2 inputs by default; with them restored, 8 of 12 games
+diverge, all classified D1/D2. The model's grammar emits only ASCII names and
+integers, so neither class is reachable from policy actions. An adapter that
+accepts external actions would need explicit handling.
+
+## Verification and limits
+
+Checks run on this branch are recorded in `ops/rebuild-2026-09-29/1.1b/results.md`:
+69/69 engine tests (19 replay-parity), the trim checker, the Python tests (including live
+byte-identical regeneration of the committed set), perturbation tests, and
+`just prepare`. Codex verification (`verify-1.1b-r1`) approved with edits; the
+fixes (confirmed classification, exact null probe, full-state rollback check,
+minimal repros, corrected wording) and their checks are recorded in the same
+receipt, with the rerun sweep in `ops/rebuild-2026-09-29/1.1b/verify-r1/`.
+After merging with Task 1.1's checker hardening, `verify_task` splits generated
+traces from the trim inventory before the fixed Task 1.1 checks, and two
+`check()`-level tests reject an edited or unlisted generated trace; receipts
+are in `ops/rebuild-2026-09-29/merge-1.1b/`.
+Generated games use weak policies (most random seats go
+bankrupt); only the four official episodes are competitive worlds. Kaggle
+framework behavior outside the interpreter is not modeled. The 40-game, 303-probe
+sweep is a bounded sample, and a pod-scale sweep remains open. Reopen D1/D2 if
+the adapter must accept untrusted actions or if the pinned engine changes.
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+3:Generated parity traces under ``engine_rs/fixtures/generated`` are pinned
+25:EDITABLE = frozenset(
+50:GENERATED_DIR = "engine_rs/fixtures/generated"
+256:def verify_task_authored(authored: Sequence[Authored]) -> None:
+274:def split_generated(
+277:    """Separate generated traces (pinned by their manifest) from engine files."""
+280:    generated: dict[str, bytes] = {}
+283:            generated[path.removeprefix(prefix)] = data
+286:    return engine, generated
+289:def verify_generated(
+292:    """Validate the generated-trace manifest against the files; return trace count."""
+303:        "generated manifest",
+306:        _integer(raw["schema_version"], "generated schema_version") == 1,
+307:        "generated schema_version must be 1",
+309:    _require(raw["format"] == TRACE_FORMAT, f"generated format must be {TRACE_FORMAT}")
+312:        "generated traces must name their generator",
+316:        f"generated traces must target the Cargo engine pin {pin}",
+320:    for value in _array(raw["traces"], "generated traces"):
+321:        _require(isinstance(value, dict), "generated trace: expected object")
+326:            "generated trace: probe and expected_divergence go together",
+328:        entry = _object(entry, (*TRACE_KEYS, *sorted(optional)), "generated trace")
+329:        name = _string(entry["path"], "generated trace path")
+332:            f"{name!r}: generated trace names are plain *.jsonl.gz files",
+334:        _require(name not in listed, f"duplicate generated trace: {name}")
+336:        _require(name in traces, f"{name}: listed generated trace is missing")
+356:    _same_inventory(sorted(traces), listed, "generated trace inventory")
+359:        f"generated traces use {total:,} B; budget is {GENERATED_BUDGET_BYTES:,} B",
+392:def verify(
+430:        if path not in EDITABLE:
+476:def verify_task(
+482:    current, generated = split_generated(current)
+484:    generated_count = verify_generated(
+486:        generated,
+489:    _require(generated_count >= 6, "expected the committed generated trace set")
+
+exec
+/bin/zsh -lc 'git status --short --branch && git show --format=fuller --stat 99732ea && git diff 99732ea''^ 99732ea -- && git worktree list' in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+## kg/merge-1.1b
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+commit 99732ea5f2824782bde328ce9d5c086bf3e9c21a
+Author:     Season <seasonluke@gmail.com>
+AuthorDate: Tue Sep 29 14:23:53 2026 +0800
+Commit:     Season <seasonluke@gmail.com>
+CommitDate: Tue Sep 29 14:23:53 2026 +0800
+
+    Place the EDITABLE check with the generic checks in the 1.1b merge log
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+ cookbook/log.md | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+diff --git a/cookbook/log.md b/cookbook/log.md
+index 695eab4..84f55bc 100644
+--- a/cookbook/log.md
++++ b/cookbook/log.md
+@@ -5,9 +5,9 @@
+ Task 1.1b (Codex APPROVE at `16e56b6`) and Task 1.1's verification hardening
+ edited `scripts/check_engine_trim.py` independently. The merge keeps both
+ contracts: `verify_task` separates generated traces, runs the generic manifest
+-checks, then validates the generated manifest (engine pin, budget, at least six
+-traces), then applies the fixed Task 1.1 checks (`EDITABLE`, Rayon lockfile
+-derivation, pinned appendix hash). Two new `check()`-level tests reject an edited or unlisted generated
++checks (including the `EDITABLE` set), then validates the generated manifest
++(engine pin, budget, at least six traces), then applies the fixed Task 1.1
++checks (Rayon lockfile derivation, pinned appendix hash). Two new `check()`-level tests reject an edited or unlisted generated
+ trace. The base's owner 1.32.7 project pin made one Task 1.1b test premise
+ stale; it now asserts that the project environment passes the engine guard and
+ that a mismatched pin exits before writing. The
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+/Users/poonszesen/kg-v3                                            432abe0 [kg/rebuild-model]
+/Users/poonszesen/kg-v3-codex                                      5378763 [kg/rebuild-codex]
+/Users/poonszesen/kg-v3-codex-data                                 9d54a8b [kg/rebuild-codex-data]
+/Users/poonszesen/kg-v3-deps                                       c452f66 [kg/rebuild-deps]
+/Users/poonszesen/kg-v3-grammar                                    75169be [kg/rebuild-grammar]
+/Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2   65f0eac (detached HEAD)
+/Users/poonszesen/kg-v3-heads                                      88f95f6 [kg/rebuild-heads]
+/Users/poonszesen/kg-v3-int                                        69397da [kg/isaiah-gap-closure]
+/Users/poonszesen/kg-v3-merge                                      99732ea [kg/merge-1.1b]
+/Users/poonszesen/kg-v3-observe                                    32e2cdd [kg/rebuild-observe]
+/Users/poonszesen/kg-v3-parity                                     16e56b6 [kg/rebuild-parity]
+/Users/poonszesen/kg-v3-verify-b                                   94f778d (detached HEAD)
+/Users/poonszesen/kg-v3/.claude/worktrees/agent-a6b402c3efeaea928  62899de [worktree-agent-a6b402c3efeaea928]
+
+exec
+/bin/zsh -lc "sed -n '1,220p' /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2.md" in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+One P3 remains in `7529e01`:
+
+- [cookbook/log.md:9](/Users/poonszesen/kg-v3-merge/cookbook/log.md:9) still places `EDITABLE` after generated-manifest validation. It actually executes inside generic `verify()` at [check_engine_trim.py:430](/Users/poonszesen/kg-v3-merge/scripts/check_engine_trim.py:430). Move `EDITABLE` into the generic-checks clause. The overall sequence is otherwise corrected.
+
+The added report, scripts, and captured receipt outputs match r1. Full byte identity of the cargo and mutation logs cannot be independently established: the original transcript retained only excerpts or summaries.
+
+The commit changes only that log paragraph and adds 11 receipt files. No code or tests changed. Worktree is clean; this review made no modifications.
+
+VERDICT: APPROVE WITH EDITS
+exec
+/bin/zsh -lc "nl -ba scripts/check_engine_trim.py | sed -n '392,530p'
+nl -ba cookbook/log.md | sed -n '1,22p'
+git diff --check 99732ea"'^ 99732ea
+git diff --name-status 99732ea''^ 99732ea' in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+   392	def verify(
+   393	    value: object, originals: Mapping[str, bytes], current: Mapping[str, bytes]
+   394	) -> None:
+   395	    manifest = parse_manifest(value)
+   396	    entries = [*manifest["retained"], *manifest["excluded"], *manifest["authored"]]
+   397	    seen: set[str] = set()
+   398	    for entry in [*entries, *manifest["non_engine_changes"]]:
+   399	        path = entry["path"]
+   400	        _require(path not in seen, f"duplicate: {path}")
+   401	        seen.add(path)
+   402	    _same_inventory(
+   403	        [entry["path"] for entry in [*manifest["retained"], *manifest["excluded"]]],
+   404	        list(originals),
+   405	        "reference inventory",
+   406	    )
+   407	    _same_inventory(
+   408	        [entry["path"] for entry in [*manifest["retained"], *manifest["authored"]]],
+   409	        list(current),
+   410	        "current inventory",
+   411	    )
+   412	    for excluded in manifest["excluded"]:
+   413	        path = excluded["path"]
+   414	        _require(
+   415	            sha(originals[path]) == excluded["reference_sha256"],
+   416	            f"{path}: reference hash",
+   417	        )
+   418	        _require(path not in current, f"{path}: excluded file present")
+   419	    for retained in manifest["retained"]:
+   420	        path = retained["path"]
+   421	        original, actual = originals[path], current[path]
+   422	        _require(
+   423	            sha(original) == retained["reference_sha256"], f"{path}: reference hash"
+   424	        )
+   425	        _require(sha(actual) == retained["sha256"], f"{path}: current hash")
+   426	        _require(
+   427	            actual == _reconstruct(original, retained["edits"], path),
+   428	            f"{path}: undeclared edit",
+   429	        )
+   430	        if path not in EDITABLE:
+   431	            _require(not retained["edits"], f"{path}: retained file must be unchanged")
+   432	    for authored in manifest["authored"]:
+   433	        path = authored["path"]
+   434	        _require(sha(current[path]) == authored["sha256"], f"{path}: authored hash")
+   435	
+   436	
+   437	def _current_files(root: Path) -> dict[str, bytes]:
+   438	    current: dict[str, bytes] = {}
+   439	
+   440	    def walk(directory: Path) -> None:
+   441	        _require(not directory.is_symlink(), f"{directory}: symlink")
+   442	        for child in sorted(directory.iterdir()):
+   443	            relative = child.relative_to(root).as_posix()
+   444	            if relative in ("engine_rs/target", "engine_rs/TRIM_MANIFEST.json"):
+   445	                continue
+   446	            _require(not child.is_symlink(), f"{relative}: symlink")
+   447	            if child.is_dir():
+   448	                walk(child)
+   449	            else:
+   450	                _require(child.is_file(), f"{relative}: not a regular file")
+   451	                current[relative] = child.read_bytes()
+   452	
+   453	    walk(root / "engine_rs")
+   454	    return current
+   455	
+   456	
+   457	def reference_files(root: Path) -> dict[str, bytes]:
+   458	    """Read every pinned-reference ``engine_rs`` blob from the Git object store."""
+   459	
+   460	    def git(*args: str) -> bytes:
+   461	        # check_output has no Node-style 1 MiB limit; the largest blob is 5,099,830 B.
+   462	        return subprocess.check_output(["git", *args], cwd=root)
+   463	
+   464	    paths = git("ls-tree", "-r", "--name-only", PIN, "engine_rs").decode().splitlines()
+   465	    return {path: git("show", f"{PIN}:{path}") for path in paths}
+   466	
+   467	
+   468	def check(root: Path) -> None:
+   469	    root = root.resolve()
+   470	    manifest_path = root / "engine_rs/TRIM_MANIFEST.json"
+   471	    _require(not manifest_path.is_symlink(), f"{manifest_path}: symlink")
+   472	    value = json.loads(manifest_path.read_text(encoding="utf-8"))
+   473	    verify_task(value, reference_files(root), _current_files(root))
+   474	
+   475	
+   476	def verify_task(
+   477	    value: object, originals: Mapping[str, bytes], current: Mapping[str, bytes]
+   478	) -> None:
+   479	    """Apply the generic manifest checks plus the fixed Task 1.1 trim contract."""
+   480	    manifest = parse_manifest(value)
+   481	    # Generated traces are pinned by their own manifest, not the trim inventory.
+   482	    current, generated = split_generated(current)
+   483	    verify(manifest, originals, current)
+   484	    generated_count = verify_generated(
+   485	        current[GENERATED_MANIFEST],
+   486	        generated,
+   487	        engine_pin(current["engine_rs/Cargo.toml"]),
+   488	    )
+   489	    _require(generated_count >= 6, "expected the committed generated trace set")
+   490	    retained = [
+   491	        "Cargo.toml",
+   492	        "Cargo.lock",
+   493	        "LICENSE",
+   494	        "VENDORED_FROM.md",
+   495	        "src/lib.rs",
+   496	        "src/py_random.rs",
+   497	        "src/econ_attrib.rs",
+   498	        "tests/py_random.rs",
+   499	        *[
+   500	            f"fixtures/episode-{episode}.jsonl.gz"
+   501	            for episode in (95324500, 95901360, 95921764, 95990191)
+   502	        ],
+   503	    ]
+   504	    _same_inventory(
+   505	        [entry["path"] for entry in manifest["retained"]],
+   506	        [f"engine_rs/{path}" for path in retained],
+   507	        "Task 1.1 retained set",
+   508	    )
+   509	    verify_task_authored(manifest["authored"])
+   510	    _require(
+   511	        "justfile" in {entry["path"] for entry in manifest["non_engine_changes"]},
+   512	        "Task 1.1 non_engine_changes must include justfile",
+   513	    )
+   514	    removed = {19, 21, 22, 23, 24, 25, 27}
+   515	    original_lines = originals["engine_rs/src/lib.rs"].splitlines(keepends=True)
+   516	    expected_lib = b"".join(
+   517	        line
+   518	        for number, line in enumerate(original_lines, start=1)
+   519	        if number not in removed
+   520	    )
+   521	    _require(
+   522	        current["engine_rs/src/lib.rs"] == expected_lib, "lib.rs: exact seven removals"
+   523	    )
+   524	    _require(sha(expected_lib) == LIB_SHA256, "lib.rs: expected trim SHA-256")
+   525	    cargo = (
+   526	        originals["engine_rs/Cargo.toml"]
+   527	        .replace(b'crate-type = ["rlib", "cdylib"]\n', b"")
+   528	        .replace(b'[[bin]]\nname = "re_engine"\npath = "src/main.rs"\n\n', b"")
+   529	        .replace(b'rayon = "1.12.0"\n', b"")
+   530	    )
+     1	# Change log
+     2	
+     3	## 2026-09-29 — Merge live parity with the hardened rules-kernel checker
+     4	
+     5	Task 1.1b (Codex APPROVE at `16e56b6`) and Task 1.1's verification hardening
+     6	edited `scripts/check_engine_trim.py` independently. The merge keeps both
+     7	contracts: `verify_task` separates generated traces, runs the generic manifest
+     8	checks (including the `EDITABLE` set), then validates the generated manifest
+     9	(engine pin, budget, at least six traces), then applies the fixed Task 1.1
+    10	checks (Rayon lockfile derivation, pinned appendix hash). Two new `check()`-level tests reject an edited or unlisted generated
+    11	trace. The base's owner 1.32.7 project pin made one Task 1.1b test premise
+    12	stale; it now asserts that the project environment passes the engine guard and
+    13	that a mismatched pin exits before writing. The
+    14	[[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]]
+    15	and coverage document say so. Engine 69/69; `just prepare` passes with Python
+    16	1,209 passed and 3 skipped. On a scratch copy, reverting `EDITABLE` or removing
+    17	the trace-hash check fails its regressions. Receipts are in
+    18	`ops/rebuild-2026-09-29/merge-1.1b/`.
+    19	
+    20	## 2026-09-29 — Correct live-parity test totals after Codex re-verification
+    21	
+    22	Codex re-verified Task 1.1b at `25ec814` (APPROVE WITH EDITS, no blocking findings; every round-one finding resolved). The [[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]] and `docs/rules-parity-coverage.md` now state the current totals, 69 engine tests including 19 replay-parity tests, rather than 66 and 16. The compact verification evidence is in `ops/rebuild-2026-09-29/1.1b/verify-r2/`.
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+M	cookbook/log.md
+
+exec
+/bin/zsh -lc "sed -n '289,363p' scripts/check_engine_trim.py
+sed -n '530,570p' scripts/check_engine_trim.py
+git rev-parse HEAD HEAD"'^
+git status --porcelain' in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+def verify_generated(
+    manifest_bytes: bytes, traces: Mapping[str, bytes], pin: tuple[str, str]
+) -> int:
+    """Validate the generated-trace manifest against the files; return trace count."""
+    raw = _object(
+        json.loads(manifest_bytes.decode("utf-8")),
+        (
+            "schema_version",
+            "format",
+            "generator",
+            "kaggle_environments_version",
+            "python_engine_sha256",
+            "traces",
+        ),
+        "generated manifest",
+    )
+    _require(
+        _integer(raw["schema_version"], "generated schema_version") == 1,
+        "generated schema_version must be 1",
+    )
+    _require(raw["format"] == TRACE_FORMAT, f"generated format must be {TRACE_FORMAT}")
+    _require(
+        raw["generator"] == "scripts/kaggriculture_parity/generate_traces.py",
+        "generated traces must name their generator",
+    )
+    _require(
+        (raw["kaggle_environments_version"], raw["python_engine_sha256"]) == pin,
+        f"generated traces must target the Cargo engine pin {pin}",
+    )
+    listed: list[str] = []
+    total = 0
+    for value in _array(raw["traces"], "generated traces"):
+        _require(isinstance(value, dict), "generated trace: expected object")
+        entry = cast(dict[str, object], value)
+        optional = {"probe", "expected_divergence"} & set(entry)
+        _require(
+            optional in (set(), {"probe", "expected_divergence"}),
+            "generated trace: probe and expected_divergence go together",
+        )
+        entry = _object(entry, (*TRACE_KEYS, *sorted(optional)), "generated trace")
+        name = _string(entry["path"], "generated trace path")
+        _require(
+            re.fullmatch(r"[a-z0-9][a-z0-9.-]*\.jsonl\.gz", name) is not None,
+            f"{name!r}: generated trace names are plain *.jsonl.gz files",
+        )
+        _require(name not in listed, f"duplicate generated trace: {name}")
+        listed.append(name)
+        _require(name in traces, f"{name}: listed generated trace is missing")
+        data = traces[name]
+        _require(sha(data) == _digest(entry["sha256"], name), f"{name}: trace hash")
+        _require(_integer(entry["bytes"], name) == len(data), f"{name}: trace size")
+        for key in ("seed", "policy_seed", "transitions", "rejected"):
+            _integer(entry[key], f"{name}: {key}")
+        _require(_integer(entry["transitions"], name) > 0, f"{name}: needs transitions")
+        policies = _array(entry["policies"], f"{name}: policies")
+        _require(
+            len(policies) == 2 and all(isinstance(p, str) for p in policies),
+            f"{name}: policies must name both seats",
+        )
+        _string(entry["config_variant"], f"{name}: config_variant")
+        if optional:
+            _string(entry["probe"], f"{name}: probe")
+            divergence = _object(
+                entry["expected_divergence"], DIVERGENCE_KEYS, f"{name}: divergence"
+            )
+            _reason(divergence["reason"], f"{name}: expected_divergence")
+        total += len(data)
+    _same_inventory(sorted(traces), listed, "generated trace inventory")
+    _require(
+        total <= GENERATED_BUDGET_BYTES,
+        f"generated traces use {total:,} B; budget is {GENERATED_BUDGET_BYTES:,} B",
+    )
+    return len(listed)
+
+
+    )
+    _require(
+        current["engine_rs/Cargo.toml"] == cargo,
+        "Cargo.toml: target/dependency removals only",
+    )
+    _require(
+        current["engine_rs/Cargo.lock"]
+        == _expected_lock(originals["engine_rs/Cargo.lock"]),
+        "Cargo.lock: Rayon closure removal only",
+    )
+    _verify_provenance(
+        originals["engine_rs/VENDORED_FROM.md"], current["engine_rs/VENDORED_FROM.md"]
+    )
+
+
+def _expected_lock(original: bytes) -> bytes:
+    """Derive the trimmed lockfile: drop the Rayon closure and the Rayon edge."""
+    separator = b"\n\n[[package]]\n"
+    header, *packages = original.split(separator)
+    names = [package.split(b"\n", 1)[0] for package in packages]
+    pruned = {f'name = "{name}"'.encode() for name in RAYON_CLOSURE}
+    _require(pruned <= set(names), "Cargo.lock: reference lacks the Rayon closure")
+    kept = [
+        package
+        for package, name in zip(packages, names, strict=True)
+        if name not in pruned
+    ]
+    lock = separator.join([header, *kept])
+    edge = b'\n "rayon",\n'
+    _require(lock.count(edge) == 1, "Cargo.lock: expected one Rayon dependency edge")
+    return lock.replace(edge, b"\n")
+
+
+def _verify_provenance(original: bytes, current: bytes) -> None:
+    """Historical bytes stay intact and the exact Task 1.1 appendix follows them."""
+    _require(current.startswith(original), "VENDORED_FROM.md: append-only provenance")
+    tail = current[len(original) :]
+    end = tail.find(b"\n## ", 1)
+    section = tail if end < 0 else tail[:end]
+    _require(
+        tail.startswith(TRIM_APPENDIX_HEADING) and sha(section) == TRIM_APPENDIX_SHA256,
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+99732ea5f2824782bde328ce9d5c086bf3e9c21a
+7529e01633a7905dd94ebe33b1b3156dff1e5b6c
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+
+codex
+Confirmed on `kg/merge-1.1b` at `99732ea`:
+
+- [cookbook/log.md:8](/Users/poonszesen/kg-v3-merge/cookbook/log.md:8) now places `EDITABLE` within generic checks.
+- The sentence matches `verify_task`: split traces → generic `verify()` (including `EDITABLE`) → generated-manifest validation → fixed Task 1.1 checks.
+- Compared with parent `7529e01`, only this wording and line wrapping changed. No other files changed.
+
+`git diff --check` passes; worktree is clean. Review was read-only.
+
+VERDICT: APPROVE
+hook: Stop
+hook: Stop Completed
+tokens used
+25,480
+Confirmed on `kg/merge-1.1b` at `99732ea`:
+
+- [cookbook/log.md:8](/Users/poonszesen/kg-v3-merge/cookbook/log.md:8) now places `EDITABLE` within generic checks.
+- The sentence matches `verify_task`: split traces → generic `verify()` (including `EDITABLE`) → generated-manifest validation → fixed Task 1.1 checks.
+- Compared with parent `7529e01`, only this wording and line wrapping changed. No other files changed.
+
+`git diff --check` passes; worktree is clean. Review was read-only.
+
+VERDICT: APPROVE

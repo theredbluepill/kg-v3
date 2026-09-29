@@ -1,0 +1,1221 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ec0d-994e-7312-a21a-0b381c322635
+--------
+user
+You are Codex. READ-ONLY confirmation. Your r1 report ops/rebuild-2026-09-29/codex/verify-aten-ab-r1.md was APPROVE WITH EDITS (scope 'immune' narrowly incl. FlexAttention/static/bmm/backward; label the fusion explanation as inference; variability 0.534% p90 and 2.14% max; dense/default wall 8.561 s; memory 'approximately unchanged' with dense D 0.950 -> 0.862 GiB). Verify commit 9bdd82d applies each accurately in ops/rebuild-2026-09-29/results.md and ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md, that MANIFEST.sha256 verifies, and that raw results/logs are unchanged. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll compare commit `9bdd82d` with the r1 findings, verify the manifest, and check that the raw results and logs are unchanged. This will be read-only.
+
+exec
+/bin/zsh -lc 'cat ops/rebuild-2026-09-29/codex/verify-aten-ab-r1.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+The A/B supports ATEN-only as a workaround for the observed GEMM-template failure on this stack. I found no blocking correctness or run-conduct issue. Reporting needs these edits:
+
+1. **Keep “immune” narrowly scoped.** [results.md:261](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:261) should describe exclusion of the identified GEMM template paths, rather than imply universal compiled-kernel safety. FlexAttention generates its own Triton templates independently of this setting; static-shape correctness, `bmm` numerics, and real-trunk backward above the bound remain unmeasured.
+
+2. **Label the slowdown explanation as inference.** The “because” attribution to lost fusion in [README.md:71](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:71) and [results.md:292](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:292) exceeds the evidence. Generated code supports “consistent with lost fusion”; component totals without a timeline do not establish its contribution.
+
+3. **Correct the numerical summaries.** [README.md:70](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:70) understates the largest maximum: dense/default/D is **2.1362%** above its median, not ≤1.95%. Largest p90 deviation is **0.533924%**—use “about 0.53%” or “within 0.54%.” Dense/default derived wall is **8.561475 s**, rounding to **8.561 s**.
+
+4. **Qualify memory and correct the orchestrator’s kernel count.** “Allocated memory unchanged” should be “overall peak approximately unchanged”: dense D falls **0.950041→0.862261 GiB**, while dense B stays approximately 40.27 GiB. See [README.md:72](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:72). The trunk has **24 `bias_addmm` + 24 `mm` calls per wrapper**, totaling 48+48 across two wrappers; the repository table already reports this correctly.
+
+The installed `.venv` source is Torch **2.9.0**, git **`0fabc3ba…`**, matching the pod’s recorded source revision. The requested exclusions are confirmed:
+
+| Path | Installed-source evidence |
+|---|---|
+| Backend filter | [utils.py:1628](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/utils.py:1628) parses the list; [utils.py:1664](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/utils.py:1664) requires `TRITON`. |
+| `mm`, persistent-TMA, decompose-K, contiguous choices | All sit inside the gate beginning at [mm.py:760](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/mm.py:760). |
+| `addmm`, persistent-TMA, contiguous choices | Gated at [mm.py:997](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/mm.py:997). Decompose-K is added by `tuned_mm`. |
+| `bmm` Triton template | Gated at [bmm.py:211](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/bmm.py:211). |
+| ATEN/cuBLAS path | ATEN remains admitted at [utils.py:2112](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/utils.py:2112); [mm.py:581](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/mm.py:581) documents `bias_addmm`’s cuBLASLt dispatch. |
+| FlexAttention exception | Its forward and backward templates are appended independently at [flex_attention.py:348](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/flex/flex_attention.py:348) and [line 776](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/flex/flex_attention.py:776). |
+
+These specific GEMM gates apply to static and dynamic shapes; that source conclusion does not establish static-shape numerical qualification.
+
+Verification also confirmed:
+
+- Commit `9904121` records the statement and scripts at **07:06:00Z**, before the **07:06:29Z** launch. Script bytes, receipt hashes and all **69 manifest entries** agree.
+- Prelaunch receipts satisfy the idle rule. The driver implements first-failed-stage stopping, the 44-minute remaining-budget timeout, and the outer 45-minute timeout. Recorded completion is **503.9 s**, exit 0.
+- The trunk guard is genuinely bypassed, with one full packed call per target. Comparisons cover every valid token/channel; synthetic forward and dX cover every element. Parameter gradients use the declared **tensorwise** `max|Δ|/max|ref|` metric. Both controls reproduce the failure.
+- Revision-2 analyzer and census reports agree: ATEN caches contain zero template definitions/launch sites and retain other Triton fusions. **Generated caches remain pod-only**, so this review checked the analyzer and retained reports, not a fresh recount of those files.
+- All **320 timing samples** reproduce the saved statistics. Conditional totals are **4.666633→4.969930 s (+6.4993%)** and **8.561475→8.943540 s (+4.4626%)**. The reported rounded SPS values are correct.
+
+Adopting ATEN-only as an infrastructure workaround is supported. Production qualification and removing guards everywhere are not established by this probe. No files changed or GPU work launched.
+
+**VERDICT: APPROVE WITH EDITS**
+exec
+/bin/zsh -lc "rg -n 'ATen|aten|immune|fusion|variab|0\\.534|2\\.14|8\\.561|approximately|0\\.950|0\\.862' ops/rebuild-2026-09-29/results.md ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md cookbook; rg --files -g AGENTS.md -g MANIFEST.sha256 ops" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:5:- Pre-run statement: `../run-statements/aten-gemm-ab.md`, committed with the scripts in `9904121` at 07:06:00Z. Launch at 07:06:29Z; driver 07:06:31Z–07:14:55Z (**503.9 s**, exit 0; `pod/launch.out`, `pod/driver.jsonl`).
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:23:Tolerances as in the earlier probe (single GEMMs: `|Δ| ≤ 0.02 + 0.02|ref|` per element; trunk: a valid token is wrong if any channel exceeds 0.25). Raw: `pod/aten_*.jsonl`, `pod/ctl_default_*.jsonl`, logs `pod/*.log`.
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:27:The Triton pointwise kernels' own int32 protection engaged as designed: each ATEN stage recompiled on a `can_use_32bit_indexing` guard (`simd.py:1440`), e.g. `512*x.size()[0] <= 2147483647` in the trunk (`pod/aten_trunk_packed_bypass.log:13`), and the recompiled graphs were correct.
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:35:| aten_trunk_packed_bypass | 2 | 48 `bias_addmm`, 48 `mm` | **0 / 0** |
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:36:| aten_lin_768_256 | 2 | 2 `bias_addmm` | **0 / 0** |
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:37:| aten_lin_512_256 | 2 | 2 `bias_addmm` | **0 / 0** |
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:38:| aten_mlpbwd_256_512_256 | 6 | 4 `bias_addmm`, 8 `mm` | **0 / 0** |
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:39:| bench_aten (A/B/C/D incl. B's trunk backward) | 4 | 57 `bias_addmm`, 135 `mm` | **0 / 0** |
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:44:- **ATEN-only: every GEMM is an extern cuBLAS call and no Triton mm template exists**, including the trunk backward graph of the bench's B (`bench_aten/ke/…`: 96 `mm`, 0 templates).
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:45:- **Other fusions stay Triton.** The ATEN trunk forward wrappers still define 4 pointwise + 5 persistent-reduction Triton kernels each; the B backward wrapper 3 pointwise + 4 persistent-reduction + 8 reduction kernels (`post-run/wrapper_kernel_counts.txt`).
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:67:| dense | 8.561 s | 8.944 s | **+4.5 %** | 957 → 916 |
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:70:- Variability: every p90 is within about 0.53 % of its median (largest 0.534 %, ATEN dense D); every max sample (`cuda_event_ms`) is within 2.14 % of its median (largest: default dense D); no tail sample like the earlier 545 ms dense-B outlier occurred.
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:72:- Overall peak `max_memory_allocated` is approximately unchanged (dense B 40.27 vs 40.28 GiB); dense D drops 0.950 → 0.862 GiB.
+ops/rebuild-2026-09-29/results.md:46:- The packed path in this probe ran on a shim: torch's own varlen `aten._flash_attention_forward` in place of `flash_attn_varlen_func`. The shim was checked against per-sequence SDPA: max |Δ| 0.0022 in the pre-launch smoke check, and 0.00225955 in-run (`pod-run/trunk_packed.jsonl:1`). Every GEMM, the pack/unpack and the guard are branch code, but the packed results say nothing about the real flash-attn kernel.
+ops/rebuild-2026-09-29/results.md:263:- Pre-run statement: `run-statements/aten-gemm-ab.md`, committed with the scripts in `9904121` at 07:06:00Z. Driver 07:06:31Z–07:14:55Z, 503.9 s, exit 0; no first-failure stop fired.
+ops/rebuild-2026-09-29/results.md:267:- Evidence, custody and limits: `aten-gemm-ab-2026-09-29/README.md`.
+ops/rebuild-2026-09-29/results.md:279:- Pointwise and reduction fusions stay Triton (for example, 4 pointwise and 5 persistent-reduction kernels per trunk-forward wrapper).
+ops/rebuild-2026-09-29/results.md:288:| dense (709) | 25.39 → 29.11 ms | 326.7 → 332.7 ms | 1,687.4 → 1,731.7 ms | 21.97 → 25.75 ms | 8.561 → 8.944 s | **+4.5 %** | 957 → 916 |
+ops/rebuild-2026-09-29/results.md:291:- Every p90 is within about 0.53 % of its median (largest 0.534 %).
+ops/rebuild-2026-09-29/results.md:292:- The cost is concentrated in the small no-grad calls (A +15–18 %, D +17–26 %). This is consistent with lost prologue/epilogue fusion (casts, bias+GELU, residual+LayerNorm), an inference from the generated code; there is no timeline. B and C lose 1.8–4.7 %.
+ops/rebuild-2026-09-29/results.md:293:- Overall allocated peak is approximately unchanged (dense B about 40.27 GiB in both arms; dense D drops 0.950 → 0.862 GiB). Cold compile is faster (mid B first call: 39.6 s → 26.0 s).
+cookbook/log.md:139:The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO Reference]] records the agent’s premature stall inference during4,096-game root-only evaluation. A full524,288-step PPO update and checkpoint succeeded; the interruption traceback shows native env.step and no OOM. Sparse progress output did not prove a hang. Resume uses the same current/optimizer/incumbent pair and W&B ID with approximately18 minutes remaining; no production code or promotion criterion is changed.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:70:- **FlashAttention:** the packed-path runs used torch's ATen varlen flash shim, because the pod venv has no `flash-attn`; the pod's run config also had `force_flash_attn: false`. The real flash-attn kernel is untested, and Phase 6 must install and verify it.
+cookbook/references/explicit-game-tokens-and-grammar-replace-orbit-heads.md:87:verify finite nonzero policy gradients, compare factored and concatenated
+cookbook/references/full-turn-intentions-coordinate-batched-action-heads.md:8:sources: [{"resource": "user-question:2026-09-29:coordination-necessity-and-retained-plan-tokens"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/coordination-design-2026-09-29/isaiah-comparison.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/coordination-design-2026-09-29/pre-necessity-review/manifest.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/model/kaggriculture.yaml"}, {"resource": "external:https://github.com/IsaiahPressman/kaggle-orbit-wars/blob/32b3ec900ad406eedd965f53a1a0f4490d31c589/python/owl/model/stateless_transformer_v1.py"}, {"resource": "user-directive:2026-09-29:prepare-complete-efficient-coordination-design"}, {"resource": "reference-branch:kg/reference-2026-09-29/docs/coordination-system-design.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/coordination-design-2026-09-29/plan.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/coordination-design-2026-09-29/engine-audit.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/coordination-design-2026-09-29/probability-audit.mjs"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/coordination-design-2026-09-29/probability-audit.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/coordination-design-2026-09-29/parameter-envelope.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/coordination-design-2026-09-29/source-manifest.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/coordination-design-2026-09-29/source-excerpts.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_features.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "repository:python/owl/train/ppo.py"}, {"resource": "external:https://arxiv.org/pdf/1707.06347"}, {"resource": "external:https://diffusion-ppo.github.io/"}, {"resource": "external:https://proceedings.neurips.cc/paper/2019/hash/f816dc0acface7498e10496222e9db10-Abstract.html"}]
+cookbook/references/full-turn-intentions-coordinate-batched-action-heads.md:84:native execution boundary. There is no Python worker/frame scan. Extra latent
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/MANIFEST.sha256
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/MANIFEST.sha256
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/MANIFEST.sha256
+
+exec
+/bin/zsh -lc 'git status --short; git show --no-renames --format=fuller --stat 9bdd82d' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+?? .claude/worktrees/
+?? ops/rebuild-2026-09-29/codex/briefs-1.4-1.5-prompt.md
+?? ops/rebuild-2026-09-29/codex/briefs-1.4-1.5-transcript.log
+?? ops/rebuild-2026-09-29/codex/stream-d-report.md
+?? ops/rebuild-2026-09-29/codex/stream-d-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.1-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-resume-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-resume-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt1-usage-limit-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt2-killed-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-receipt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-attempt1-killed-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-stream-b-2.1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-c-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-stream-c-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-c.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1.md
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+commit 9bdd82de7f197a0b8e3ef0ed244c9c91cb7a783b
+Author:     Season <seasonluke@gmail.com>
+AuthorDate: Tue Sep 29 15:25:01 2026 +0800
+Commit:     Season <seasonluke@gmail.com>
+CommitDate: Tue Sep 29 15:25:01 2026 +0800
+
+    Apply Codex's edits to the ATEN-only GEMM A/B receipts
+    
+    Scope the result to the identified GEMM template paths, label the fusion
+    explanation as inference, and correct variability, wall and memory figures.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+ .../aten-gemm-ab-2026-09-29/MANIFEST.sha256        |  2 +-
+ .../aten-gemm-ab-2026-09-29/README.md              |  8 ++---
+ .../aten-gemm-ab-2026-09-29/codex-verify-r1.md     | 34 ++++++++++++++++++++++
+ ops/rebuild-2026-09-29/results.md                  | 10 +++----
+ 4 files changed, 44 insertions(+), 10 deletions(-)
+
+exec
+/bin/zsh -lc "cat cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md; cat ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md; sed -n '250,310p' ops/rebuild-2026-09-29/results.md; cat ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/MANIFEST.sha256" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+---
+type: "Reference"
+title: "Compiled GEMM template overflows above 2^21 rows"
+description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. The rebuilt trunk guard is measured correct at L−1 and rejects L; production compliance is unproven."
+tags: ["kaggriculture-v3", "cuda", "compile"]
+status: "verified-scoped"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/cuda-repro-blocking.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/ppo-from-bc-2026-09-29/train.log"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/train.log"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.log"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/driver.jsonl"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/gemm-limits-2026-09-29/"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/kernel_analysis.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md"}]
+---
+
+# Compiled GEMM template overflows above 2^21 rows
+
+## What was observed
+
+The reference branch's PPO run from the BC checkpoint crashed with a CUDA illegal memory access after 3 iterations. Rerunning the exact setup with `CUDA_LAUNCH_BLOCKING=1` reproduced it on both ranks. Both tracebacks end in the Inductor **max-autotune Triton GEMM template** `triton_tem_fused__to_copy_addmm_gelu_t_view_9`, the transformer trunk's MLP with `M` = batch rows × tokens, K = 1024, N = 256. The kernel declares `INDEX_DTYPE = tl.int64`, which the mm template does not use, and forms the input-side offset `xindex = k + 1024*idx_m` in 32-bit arithmetic. Once `M > 2^21`, that offset passes 2³¹ and wraps. Here K = 1024 is the input width of the MLP down-projection.
+
+A controlled probe confirmed the threshold. It used a synthetic BF16 MLP (256→1024, GELU, 1024→256) with `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. At M = 2,088,960 the compiled output matches eager within BF16 noise (max diff 0.0078). At M = 2,105,344 it faults. Environment: torch 2.9.0+cu128, RTX PRO 6000 Blackwell, driver 595.91.07. Hashes and logs are in `ops/rebuild-2026-09-29/results.md`.
+
+## Why it matters
+
+- Below the fault, wrapped offsets land in valid memory and **silently corrupt** activations. In the reference run, rollout forwards (8,192 rows × more than 256 padded tokens) exceeded the threshold, while training minibatches (128 rows) did not. That produced the first-update log-ratio mean of −3.77 before any weight change. The earlier "BC→PPO deterioration" was infrastructure corruption, not evidence against the BC policy.
+- The bug is in compiler-generated code, so it is invisible in the model source. It can reappear for any compiled GEMM whose `rows × input width` exceeds 2³¹: rollouts, evaluation, BC, and other models with larger batches. In training, backward reads forward outputs as inputs, so the forward output width counts too (below).
+
+## Measured limits at the rebuild's shapes (2026-09-29)
+
+A second bounded probe compared compiled output against eager at every point. It covered synthetic compiled Linears and MLPs, plus the real `KaggricultureTransformer` trunk from `kg/rebuild-model` @ `1ddc71d`, compiled directly through its own `compile_transformer_trunk`. Precision matched `run_ppo`: fp32 parameters under bf16 autocast, `max-autotune-no-cudagraphs`, `dynamic=True`, compiled small first. Codex verified the evidence and requested edits, applied here. The table, the generated-code attribution and the source citations are in `ops/rebuild-2026-09-29/results.md`, "GEMM limits at our shapes".
+
+Measured (L_in = floor(2³¹ / K) for GEMM input width K, e.g. 2,796,202 for K = 768; trunk L = 2³¹/512 = 4,194,304):
+- **The overflow is input-side at these shapes.** Input-wide GEMMs (4096→16, 768→256) were correct at L_in and failed at L_in+1. Output-wide GEMMs (16→4096, 256→512, 256→256) stayed correct up to M·N = 2³². The corrected kernel summaries show why:
+  - Every failing graph whose kernel can be attributed from the retained code launches the template with a 32-bit size argument (`ks0: i32`) and an A-load of `K*idx_m`. The 768→256 and 512→256 failures happened during autotuning, so their failing candidate kernel is not localized.
+  - Graphs whose output exceeds int32 get `ks0: i64` and stayed correct.
+  - In the real trunk, the corrupting kernel is the 512→256 MLP down-projection. Above L it kept `ks0: i32`, while the 256→512 up-projection had been promoted.
+
+  The earlier universal rule, "overflow iff M·max(K, N) > 2³¹", is withdrawn.
+- **In the real trunk the corruption is silent.** With the guard patched off:
+  - 2 tokens were wrong at L+1 = 4,194,305 packed tokens, and 4,665 at 4,198,400.
+  - The padded path was wrong on half its tokens at 8.39M, with no fault.
+- **Above the bound, nothing is reliable.** Whether a given M corrupts, faults or happens to be correct depends on the recompile hint and on autotune's backend choice. For example, cuBLAS won for a lone 512→256, and the trunk was correct again at 8.39M tokens after an i64 recompile. Recompilation is not a safety guarantee.
+- **The guard, measured endpoints:** with the guard on, `_run_trunk` is correct at L−1 = 4,194,303 packed tokens. It raises at L with zero trunk calls, and chunks the padded path into calls of 4,193,735 tokens, which are also correct.
+
+Inferred, not measured:
+- **Unguarded trunk at exactly L.** It was not run, so whether the guard's rejection at equality is stricter than necessary is unknown.
+- **Real-trunk backward.** It was not run at any size. The synthetic MLP backward faulted while compiling at L+1, which does not localize a backward-kernel threshold.
+- **Mechanism.** The source path and the generated code agree that the emitted `INDEX_DTYPE` follows an all-buffer storage-size check while the template's size-arg dtype is chosen separately from the output numel (`SIMDKernelFeatures([], output_numel)`), and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
+
+## Consequences
+
+- **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
+  - For the trunk that width is 512, which is `gemm_kmax`.
+  - Nothing enforces the bound outside the trunk. The stems are eager today, but the full stem is 371→512→256. The heads and the planned 768-wide `actor_input_proj` are not implemented yet; compiled, `actor_input_proj` would exceed L_in at 2,796,203 rows × frames.
+- **Production compliance is unproven.** Kaggriculture is not yet in `ModelConfig` or the model factory, and `configure_model_compile` rejects it for `model_compile="trunk"`. Integrated rollout, PPO recompute, evaluation, BC and teacher workloads stay unverified until Task 3.1 and Phase 6.
+- **Size margins against 2³¹/width, not against observed faults.** A passing test above the bound is not evidence of safety.
+- **Workload margins against the trunk L:**
+  - Rollout at 256 rows: 23.1× headroom, forward measured correct.
+  - PPO minibatch at 1,024 rows: 5.78×, arithmetic only.
+  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. It needs `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunking. The guard would raise, not corrupt.
+- **Log-ratio alarm:** treat a non-zero log-ratio at the first minibatch (before any optimizer step) as a correctness failure and abort, recording the batch shape.
+- **Upgrades:** don't upgrade torch or drivers as a remedy without a separate measured decision. Rerun both probes after any upgrade.
+
+## Limits
+
+- **Stack:** measured on torch 2.9.0+cu128, driver 595.91.07, RTX PRO 6000 Blackwell (sm_120). Triton 3.5.0 is the lockfile pin; its installed version was not captured.
+- **Templates:** `mm`/`addmm` templates with fused prologues and epilogues, dynamic shapes. Unmeasured:
+  - the real trunk's backward;
+  - the unguarded trunk at exactly L;
+  - `bmm`, persistent-TMA and decompose-K paths (decompose-K is on by default and can apply to weight-gradient GEMMs);
+  - static-shape compiles;
+  - other versions.
+- **Tolerances:** the checks detect the reported corruption. They do not prove BF16 equivalence for arbitrary inputs.
+- **FlashAttention:** the packed-path runs used torch's ATen varlen flash shim, because the pod venv has no `flash-attn`; the pod's run config also had `force_flash_attn: false`. The real flash-attn kernel is untested, and Phase 6 must install and verify it.
+- **Other versions:** torch 2.8 showed no overflow at width 1024 (Task 0.2).
+# ATEN-only GEMM backend A/B, 2026-09-29 07:06–07:15Z (pod `w7ia3zvxqsvs3g`, GPU 0 only)
+
+**Infrastructure diagnostic.** One Inductor setting changed: `torch._inductor.config.max_autotune_gemm_backends` from torch 2.9.0's default `"ATEN,TRITON,CPP"` to `"ATEN"`. No model, loss, reward or learning code changed. The timing half is a **component measurement conditional on the A/B/C/D synthetic schedule** of the SPS-ceiling probe, not end-to-end SPS.
+
+- Pre-run statement: `../run-statements/aten-gemm-ab.md`, committed with the scripts in `9904121` at 07:06:00Z. Launch at 07:06:29Z; driver 07:06:31Z–07:14:55Z (**503.9 s**, exit 0; `pod/launch.out`, `pod/driver.jsonl`).
+- Source: pod checkout `/workspace/kg-v3-rebuild` at `e1458d2a717d9d731a367cbb78b98616ee6649f4` (tree `16b79ba5…`), equal to `/Users/poonszesen/kg-v3-int` HEAD; `git status --porcelain` empty before and after (`pod/receipts/git_pre.txt`, `git_post.txt`); the run dir is gitignored (`.gitignore:27:runs/`). No bundle, no install.
+- Stack (`pod/receipts/versions.txt`): torch 2.9.0+cu128 (git `0fabc3ba…`), triton 3.5.0, flash-attn 2.8.3, CUDA runtime 12.8, driver 595.91.07, RTX PRO 6000 Blackwell Server Edition. Default `max_autotune_gemm_backends` = `'ATEN,TRITON,CPP'`; `TORCHINDUCTOR_*`/`TRITON_*` env unset.
+- Scripts: `scripts/` (sha256 in `pod/receipts/scripts.sha256`, identical to the committed copies). `probe_linear.py`, `bench_model_sps.py` and `analyze_kernels.py` (rev 2) are byte-identical to the earlier runs (`0a7af363…`, `4a7ede9a…`, `ee26698a…`). Every stage ran through `gemm_backend_wrap.py`, whose per-stage record (`pod/*.backend.json`) shows the value at start and end: `ATEN` for ATEN stages, `ATEN,TRITON,CPP` for default stages.
+- Idle rule: GPU 0 no compute processes and 0 % utilization. Prelaunch capture (07:06:31Z) **0 MiB, 0 %, P8, no processes** on both GPUs; gate passed after 0 s (`pod/receipts/idle_nvidia_smi_prelaunch.txt`). Post (07:14:56Z): 0 MiB, 0 %, no processes; again at 07:16:29Z after the copy (`post-run/idle_after_copy.txt`). The pod was left running and idle.
+- nsys: absent (`pod/receipts/nsys_check.txt`: `which nsys` rc 1, no `/usr/local/cuda*/bin/nsys`, no `/opt/nvidia/nsight-systems*`). Timing is CUDA-event totals only.
+
+## 1. Correctness above the bound, ATEN-only (guard bypassed)
+
+All four stages passed; the driver's first-failure stop never fired.
+
+| Stage (ATEN-only) | Points | Result (vs eager) | Default backends, earlier probe / this run's control |
+|---|---|---|---|
+| Real trunk, packed, real flash-attn, guard bypassed (`_GEMM_ELEMENT_LIMIT = 2**62`) | 4,194,305 (L+1); 4,198,400; 4,194,444 (5,916 dense rows); 8,387,470 (11,830 dense rows) packed tokens, one trunk call each | **0** tokens with \|Δ\| > 0.25, 0 non-finite; max \|Δ\| 0.1565 / 0.1638 / 0.1657 / 0.1699 (warm 0.1033) | 2 / 4,665 (1.19M non-finite) / 236 wrong tokens; 8,387,470 illegal memory access. **Control this run:** 2 and 4,665 wrong (max 45.95, 1,194,240 non-finite), identical counts |
+| Linear 768→256 | 2,796,203 (L_in+1) | 0 bad rows, max \|Δ\| **0.0** | fault in autotune benchmarking. **Control this run:** illegal memory access in `select_algorithm.py` autotune at 2,796,203 (rc 1) |
+| Linear 512→256 | 4,198,401; 8,388,608 (2·L_in) | 0 bad rows, max \|Δ\| 0.0 at both | 8,388,608 faulted in autotune (earlier probe) |
+| MLP 256→512→256, forward + backward | 4,194,305 (L+1) | fwd 0 bad rows (max 0.000488), dX 0 bad rows (max 0.0), grad rel max: up.weight 0.0, up.bias 0.00229, down.weight 0.0, down.bias 0.00260 (threshold 0.05) | fault **while compiling** at L+1 (earlier probe) |
+
+Tolerances as in the earlier probe (single GEMMs: `|Δ| ≤ 0.02 + 0.02|ref|` per element; trunk: a valid token is wrong if any channel exceeds 0.25). Raw: `pod/aten_*.jsonl`, `pod/ctl_default_*.jsonl`, logs `pod/*.log`.
+
+The single-Linear results are bit-identical to eager (max |Δ| 0.0) because the compiled graph now calls the same cuBLAS `bias_addmm` that eager `F.linear` uses; that is the mechanism, not an independent test of cuBLAS. Every ATEN autotune log line reports `"num_choices": 2, "num_triton_choices": 0` (`bias_addmm` vs `addmm`).
+
+The Triton pointwise kernels' own int32 protection engaged as designed: each ATEN stage recompiled on a `can_use_32bit_indexing` guard (`simd.py:1440`), e.g. `512*x.size()[0] <= 2147483647` in the trunk (`pod/aten_trunk_packed_bypass.log:13`), and the recompiled graphs were correct.
+
+## 2. Generated-code evidence
+
+`pod/kernel_analysis.{txt,json}` (analyzer rev 2, unchanged) and `pod/template_census.{txt,json}` (`scripts/check_templates.py`), both run on the pod over every per-stage cache; `post-run/wrapper_kernel_counts.txt` counts Triton kernel definitions per wrapper.
+
+| Cache | Wrappers | extern GEMM calls | `triton_tem_` defs / launches |
+|---|---|---|---|
+| aten_trunk_packed_bypass | 2 | 48 `bias_addmm`, 48 `mm` | **0 / 0** |
+| aten_lin_768_256 | 2 | 2 `bias_addmm` | **0 / 0** |
+| aten_lin_512_256 | 2 | 2 `bias_addmm` | **0 / 0** |
+| aten_mlpbwd_256_512_256 | 6 | 4 `bias_addmm`, 8 `mm` | **0 / 0** |
+| bench_aten (A/B/C/D incl. B's trunk backward) | 4 | 57 `bias_addmm`, 135 `mm` | **0 / 0** |
+| bench_default | 12 | 64 `mm` | 25 / 128 |
+| ctl_default_trunk_packed_bypass | 6 | 0 | 24 / 96 |
+| ctl_default_lin_768_256 | 2 | 1 `bias_addmm` | 2 / 1 |
+
+- **ATEN-only: every GEMM is an extern cuBLAS call and no Triton mm template exists**, including the trunk backward graph of the bench's B (`bench_aten/ke/…`: 96 `mm`, 0 templates).
+- **Other fusions stay Triton.** The ATEN trunk forward wrappers still define 4 pointwise + 5 persistent-reduction Triton kernels each; the B backward wrapper 3 pointwise + 4 persistent-reduction + 8 reduction kernels (`post-run/wrapper_kernel_counts.txt`).
+- **Default backends in the same run still produce the vulnerable class**: e.g. `bench_default/lu/…` launches `triton_tem_fused__to_copy_addmm_gelu_t_9` (A-load `512*idx_m`, `ks0: i32`) and the backward `bench_default/yd/…` launches `triton_tem_fused_mm_3/_11` with `ks0: i32`. This is the analyzer's positive control.
+- **Decompose-K, persistent-TMA, contiguous-subgraph templates:** 0 marker files in every cache. This census is **not positive-controlled** for them (the default caches have 0 as well, so these templates were not selected here either). Their absence under ATEN-only rests on source gating: in the installed `kernel/mm.py`, `tuned_mm` (760–783) and `tuned_addmm` (997–1029) add them only inside `use_triton_template(...)`, which requires `"TRITON"` in `max_autotune_gemm_backends` (`utils.py:1640–1665`), plus the logged `num_triton_choices: 0`.
+
+## 3. Timing A/B (component, conditional on the synthetic schedule)
+
+Same unchanged bench, same iteration counts (first call, 5 warmup, 20 CUDA-event iterations), process order mid-default, mid-ATEN, dense-default, dense-ATEN; one cold cache per setting (mid cold, dense warm for both). All four passed their checks (`use_flash_attn` true on every call; trunk chunks A/B/D 1, C 2 at mid and 3 at dense). Summary: `ab_summary.json` (from `summarize_ab.py`).
+
+| density | workload | default median / p90 (ms) | ATEN median / p90 (ms) | ATEN / default (median) |
+|---|---|---|---|---|
+| mid (303 tok) | A fwd 256 | 12.904 / 12.926 | 15.228 / 15.235 | 1.180 |
+| | B train 1,024 | 177.815 / 177.998 | 186.177 / 186.401 | 1.047 |
+| | C teacher-proxy 16,384 | 986.390 / 986.567 | 1,004.654 / 1,004.973 | 1.019 |
+| | D value 256 | 9.373 / 9.378 | 11.838 / 11.847 | 1.263 |
+| dense (709 tok) | A | 25.389 / 25.394 | 29.106 / 29.118 | 1.146 |
+| | B | 326.702 / 327.109 | 332.705 / 332.927 | 1.018 |
+| | C | 1,687.409 / 1,687.614 | 1,731.732 / 1,732.191 | 1.026 |
+| | D | 21.965 / 21.977 | 25.753 / 25.891 | 1.173 |
+
+| density | update wall default | update wall ATEN | relative cost | ceiling SPS/rank default → ATEN |
+|---|---|---|---|---|
+| mid | 4.667 s | 4.970 s | **+6.5 %** | 1,755 → 1,648 |
+| dense | 8.561 s | 8.944 s | **+4.5 %** | 957 → 916 |
+
+- update wall = 64·t_A + t_C + 16·t_B + t_D (medians); ceiling = 8,192 / wall. The default arm reproduces the SPS-ceiling run (mid 4.662 s, dense 8.564 s there).
+- Variability: every p90 is within about 0.53 % of its median (largest 0.534 %, ATEN dense D); every max sample (`cuda_event_ms`) is within 2.14 % of its median (largest: default dense D); no tail sample like the earlier 545 ms dense-B outlier occurred.
+- Where the cost sits: small-batch no-grad calls lose most (A +14.6–18.0 %, D +17.3–26.3 %), consistent with cuBLAS not absorbing Inductor's fused prologues/epilogues (casts, bias + GELU, residual + LayerNorm), which then become separate Triton kernels. This is an inference from the generated code, not a timeline measurement. The large calls lose little (B +1.8–4.7 %, C +1.9–2.6 %). Attribution beyond these totals needs a timeline; none exists.
+- Overall peak `max_memory_allocated` is approximately unchanged (dense B 40.27 vs 40.28 GiB); dense D drops 0.950 → 0.862 GiB.
+- First call (compile/autotune), cold mid: A 20.8 s → 15.9 s, B 39.6 s → 26.0 s (fewer autotune candidates); warm dense similar (A 8.2/8.4 s, B 10.0/9.8 s).
+
+## Limits
+
+- **One stack and these shapes:** torch 2.9.0+cu128, triton 3.5.0, driver 595.91.07, sm_120. Largest tested GEMM input 8,388,608 × 512 = 2³² elements; beyond that is untested. cuBLAS 64-bit indexing is the vendor library's behavior, measured here only to 2³².
+- **Real-trunk backward above the bound was not element-compared.** The bench's B ran the trunk backward only below the bound (1,024 rows), with no numerical check; above the bound, backward correctness rests on the synthetic MLP (correct at L+1) plus kernel evidence (no templates in the ATEN backward graph).
+- **Non-GEMM Triton kernels remain.** Pointwise/reduction kernels are protected by Inductor's own 32-bit-indexing guards, which recompiled here and were correct at the tested sizes; that is not a general proof. `bmm` was not exercised (attention runs in flash-attn); it is gated by the same backend list (`kernel/bmm.py:200–211`), unmeasured.
+- **Decompose-K / TMA absence** is source-gated plus zero-marker, not positive-controlled.
+- **Timing is component-only**, conditional on the synthetic A/B/C/D schedule (uniform densities, tiled batches, surrogate B and C, no finite-loss or replay-equality check, heads eager). No nsys timeline; one run per arm; no repeat to measure run-to-run spread of the A/B difference.
+- **Process-global setting.** `max_autotune_gemm_backends` applies to every `torch.compile` in the process (including a compiled Isaiah model in the same process). `configure_model_compile` still rejects this model at `e1458d2`; the compiled path is not reachable from `run_ppo` config yet.
+- **No change in this repo's code.** Adoption would need a wired setting and a test; nothing was implemented here.
+
+## Large files kept on the pod only (not copied, > 1 MB)
+
+- `inductor_cache/` (269,569,900 B) and `triton_cache/` (194,098,115 B): 11,432 files. Per-file manifest `receipts/compile_caches.sha256` (2,142,259 B, 11,432 lines, sha256 `0df334497dbcab41c7600d238b5bf7bc691e7cfdb991a046848111baceac77a9`).
+
+Local manifest: `MANIFEST.sha256`.
+
+**Compile.**
+- On a cold cache the first call took 20 s for A and 40 s for B.
+- With a warm cache it took 7–11 s.
+
+**Profiling.** `nsys` absence on the pod is operator-reported (06:41:21Z pre-check; no command-output receipt retained). Nothing was installed and no timeline exists. In-step phase attribution is unresolved. Host/event median agreement cannot show the calls are intrinsically synchronous, because the timer calls `end.synchronize()` before reading the host clock.
+
+**Run conduct.** The prelaunch capture showed 563 MiB on both GPUs (0 % util, no compute processes), not 0 MiB, and launch followed one second later. The driver did not enforce the statement's first-failure stop or 45-minute aggregate limit (three independent 25-min timeouts, no `set -e`). All densities exited 0 in 227 s total, so neither gap affected the timings.
+
+## ATEN-only GEMM A/B (2026-09-29, 07:06–07:15Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+
+**Infrastructure diagnostic, not a learning change.** One setting changed: `torch._inductor.config.max_autotune_gemm_backends` from torch 2.9.0's default `"ATEN,TRITON,CPP"` to `"ATEN"`, so every compiled mm/addmm lowers to extern cuBLAS instead of Inductor's Triton mm templates. **Scope:** this excludes only the identified GEMM template paths (mm, addmm, bmm, decompose-K, persistent-TMA). It is not general immunity: FlexAttention generates its own Triton templates independently of this setting (torch `flex_attention.py:348, 776`; unused here), and static-shape compiles, bmm numerics and the real-trunk backward above the bound were not measured. The timing half is a **component measurement conditional on the A/B/C/D synthetic schedule** ("Model-only SPS ceiling (component)" above), not end-to-end SPS.
+
+- Pre-run statement: `run-statements/aten-gemm-ab.md`, committed with the scripts in `9904121` at 07:06:00Z. Driver 07:06:31Z–07:14:55Z, 503.9 s, exit 0; no first-failure stop fired.
+- Source: `e1458d2` (integration HEAD, unchanged); the pod checkout's porcelain was empty before and after.
+- Stack: torch 2.9.0+cu128, triton 3.5.0, **real flash-attn 2.8.3**, driver 595.91.07.
+- Idle gate passed at 0 MiB / 0 % / no processes. The pod was left running and idle.
+- Evidence, custody and limits: `aten-gemm-ab-2026-09-29/README.md`.
+
+**Correctness above the int32 bound (guard bypassed, compared element-wise to eager):** every case that failed under default backends was correct under ATEN-only.
+- Real trunk, packed, at 4,194,305 / 4,198,400 / 4,194,444 / 8,387,470 tokens: 0 wrong tokens, max |Δ| ≤ 0.1699.
+- Linear 768→256 at 2,796,203 rows and Linear 512→256 at 4,198,401 and 8,388,608 rows: 0 bad rows, max |Δ| 0.0 (the same cuBLAS call as eager).
+- MLP 256→512→256 forward and backward at 4,194,305 rows: forward and dX clean; parameter-gradient relative max ≤ 0.0026.
+
+The default-backend controls in the same run reproduced the failure: the trunk had 2 and 4,665 wrong tokens (the second with 1,194,240 non-finite values), identical to the earlier probe, and Linear 768→256 hit an illegal memory access during autotuning. The A/B therefore discriminates.
+
+**Kernel evidence** comes from the analyzer (rev 2, unchanged) and a template census:
+- Every ATEN-only cache has **zero `triton_tem_` definitions or launches**. GEMMs are `extern_kernels.bias_addmm`/`mm`, including the trunk backward graph of the bench's B (96 `mm`).
+- Every ATEN autotune line logs `num_triton_choices: 0`.
+- Pointwise and reduction fusions stay Triton (for example, 4 pointwise and 5 persistent-reduction kernels per trunk-forward wrapper).
+- In the same run, the default caches launch the vulnerable templates (`…addmm_gelu_t_9`, A-load `512*idx_m`, `ks0: i32`; backward `triton_tem_fused_mm_*`, `ks0: i32`).
+- Decompose-K and persistent-TMA text is absent everywhere, but the default caches had none either. Their exclusion under ATEN rests on source gating: `kernel/mm.py` adds them only inside `use_triton_template`, which requires `TRITON` in the backend list.
+
+**Timing cost (medians, CUDA events, 20 iterations, same order and counts):**
+
+| density | A fwd 256 | B train 1,024 | C teacher-proxy 16,384 | D value 256 | update wall default → ATEN | cost | ceiling SPS/rank |
+|---|---|---|---|---|---|---|---|
+| mid (303) | 12.90 → 15.23 ms | 177.8 → 186.2 ms | 986.4 → 1,004.7 ms | 9.37 → 11.84 ms | 4.667 → 4.970 s | **+6.5 %** | 1,755 → 1,648 |
+| dense (709) | 25.39 → 29.11 ms | 326.7 → 332.7 ms | 1,687.4 → 1,731.7 ms | 21.97 → 25.75 ms | 8.561 → 8.944 s | **+4.5 %** | 957 → 916 |
+
+- The default arm reproduces the earlier ceiling run (4.662 s and 8.564 s).
+- Every p90 is within about 0.53 % of its median (largest 0.534 %).
+- The cost is concentrated in the small no-grad calls (A +15–18 %, D +17–26 %). This is consistent with lost prologue/epilogue fusion (casts, bias+GELU, residual+LayerNorm), an inference from the generated code; there is no timeline. B and C lose 1.8–4.7 %.
+- Overall allocated peak is approximately unchanged (dense B about 40.27 GiB in both arms; dense D drops 0.950 → 0.862 GiB). Cold compile is faster (mid B first call: 39.6 s → 26.0 s).
+
+**Limits:**
+- One stack; inputs up to 2³² elements (8,388,608 × 512).
+- The real-trunk backward was not element-compared above the bound. That rests on the synthetic MLP backward plus kernel evidence.
+- Non-GEMM Triton kernels rely on Inductor's own 32-bit-indexing guards (they recompiled here and were correct).
+- bmm was not exercised.
+- No nsys timeline, and one run per arm.
+- The setting is process-global.
+- The compiled path is still not reachable from `run_ppo` config at `e1458d2`.
+- Nothing was wired into repo code.
+b9bccbbb8be43cb32ec7922e3dc070b02fd9eb62542c62a8d13230bbc6aeb720  ./ab_summary.json
+ee26698a8535f32ded6e846a30233a5f461e1c005597fdf8a75a8440d719e953  ./pod/analyze_kernels.py
+fcb57b953f9872e412cecfd841a71eddead1d7b17feacc03e93340303ff8dd64  ./pod/aten_lin_512_256.backend.json
+4f2b8b917dd629fcaef4cd242166e266fcb5b7c2c4015a1ece4379189a79c21d  ./pod/aten_lin_512_256.jsonl
+38ec9f4cf3bbbd6eda659b4cce4e9a2e70678f5a2eddb4ee73ada8b23896feeb  ./pod/aten_lin_512_256.log
+1f4bf8dc50b09906fd8f7b6dd4423eb29d18ecfecdf45582819ff07b02dc7930  ./pod/aten_lin_768_256.backend.json
+0549c9a8722743f7f1ac126271a6cf76454d3fab7d8180a56c724a7541376d49  ./pod/aten_lin_768_256.jsonl
+a8a5cf0a5f7ebd9c8b2014b4facbc8b0ef0ac548be67513840150b63edb0a89e  ./pod/aten_lin_768_256.log
+c86df642741bccce1053d50344e7d9781b3ba3dc9285aef50e628c9d778639f4  ./pod/aten_mlpbwd_256_512_256.backend.json
+2a356d6cdd27aebc14f6b7c70efa5d9e7a263a1101aa9b8ac9164d902942c3a3  ./pod/aten_mlpbwd_256_512_256.jsonl
+b6a7f5433af39ef79bd2035c44547e22c77fabafe75d3e565e2d953bd0b5cf8c  ./pod/aten_mlpbwd_256_512_256.log
+4afe51f9f86bad413b4e534cd29db5f06b9b582db81cfdb76945afba374dbfcc  ./pod/aten_trunk_packed_bypass.backend.json
+defed7fa4dd46ba46028a358dc172ed06c428bc52782515b87d5add8dae1e8d1  ./pod/aten_trunk_packed_bypass.jsonl
+653d0b9206ba45167d66e9e783d59d196f17c23efe0bd6612fa18fcda24ba4a9  ./pod/aten_trunk_packed_bypass.log
+3096a1a8e41a7c64eea028d9fc10aa44f59939714d86431226b47ad92aba490e  ./pod/bench_aten/results_dense.json
+9218ca74e9aa19b4eff007873f921fbb1cd223c429f4ae9e62a4fa606c9d9a80  ./pod/bench_aten/results_mid.json
+def2c5677decb5d67c450c0b0e6453a9625bf9e20814e21e6d461e06a6f49a21  ./pod/bench_default/results_dense.json
+3e2797a84055712af2d5d91f51df31c41077457f3867e00c0c7f7c7342bc5072  ./pod/bench_default/results_mid.json
+a8accb01ef37899c5912b45d8753f0977a65f9c52ddc56d48592d4f40b72f3ff  ./pod/bench_dense_aten.backend.json
+f35d19dcbf7da36019c91bdc2336b30d78e5dd6364f4b03c34b370b4e06bd7d7  ./pod/bench_dense_aten.log
+291af8e8f77871e276595a1ce7cd85bc498e590e31f9b442231f6bb576765017  ./pod/bench_dense_default.backend.json
+c6d301557a8dcae8b709ed06b0fb98af9ddf8ab69971f6cf05bf01896a039a82  ./pod/bench_dense_default.log
+3cd8819de35d3f16a6ba5bd8cb1cd9b1dbdacac3455d3cf9e5f68c9f670aecea  ./pod/bench_mid_aten.backend.json
+5187b822892e1af3eea39b28cb8f52e8a7309b195ed41b7c06f9724ed817b5d8  ./pod/bench_mid_aten.log
+ad7ef655b0431881be8b935a6b1d99548df1524bf2618eb54a3ce7056410440e  ./pod/bench_mid_default.backend.json
+0af70c71f35975020c07336739ea56d02f95747fa50ead9fca997d7f7dad493a  ./pod/bench_mid_default.log
+4a7ede9a792f661f0d0853028c51469fd36051e424b50a98263e4fab6038a08a  ./pod/bench_model_sps.py
+8261cb9f5290bf35262e62900767ff02712918a7b907a68c2ee41490f93fef8d  ./pod/check_templates.py
+20bc191577aa5a635f33d1f5e8ed990dfc1bb85a9fc1ed900148c7b4f80c8c9b  ./pod/ctl_default_lin_768_256.backend.json
+fa518d7c90cb12ad92395a00d23f2e9a4a5dcfb87ecead84b59a85cd477c272a  ./pod/ctl_default_lin_768_256.jsonl
+c453f86186c80bda2b49bef30e2580c6d56b5a66f31e98845a5ffdba9445e5d9  ./pod/ctl_default_lin_768_256.log
+a097ca068992364591e7804063dd51a23554313c0bb3436befe14daa193c48d4  ./pod/ctl_default_trunk_packed_bypass.backend.json
+c12fa97f068adf205da11cfc034151e06f0a0e5fca522962f9c6bb2946c6d943  ./pod/ctl_default_trunk_packed_bypass.jsonl
+f1bf5f30e79d6612d0c2fd10066054c053a9fad286fc7c40a60f35ce0927faa2  ./pod/ctl_default_trunk_packed_bypass.log
+b7a9e180670ef08fb64c3d10d8cc858e658a37337c9a7175aa55966c514cd548  ./pod/driver.jsonl
+b7a9e180670ef08fb64c3d10d8cc858e658a37337c9a7175aa55966c514cd548  ./pod/driver.out
+a73aa86854400b36a6241b5ac0b19c8054a62c9930ac3c48a8343cc07fc7efea  ./pod/driver.py
+5a070ef6a69800420d0f0aa7b2521150278fb414ef5a9103ca2262968ba18087  ./pod/gemm_backend_wrap.py
+853842fa19d4dd3fa7cd0a6ae7229ddbcea8bde5b65f78745dce38c433d83d61  ./pod/kernel_analysis.json
+3337c258b886ee57e393c2d83a06a2d3d87556558f6f99a7b9e0936d993562e2  ./pod/kernel_analysis.txt
+e2e847590f465960593cfe3c04b963026b8def3e289b9b69980f20484cb02e4e  ./pod/launch.out
+97d46aef0b75191b866374c1b0fc790ecf391cae50396f8f579ba86069d75943  ./pod/launch.sh
+0a7af36325d74485bc491cf72a03e1860da483f60b9f945ff5d3711b3d46f8b1  ./pod/probe_linear.py
+f700787be380b5414c323fdf45f1de9dce88a5d01ea11093d784773cd6267781  ./pod/probe_trunk_e1458d2.py
+d9c25aff77406cbc71ae77fe51a6df78c56bc140c2e9a21f0b7beda84a6ea302  ./pod/receipts/git_post.txt
+24c31c548c0adecd09d01423effcbd18b4a527d99c6f75e8af113e8992e6a7b6  ./pod/receipts/git_pre.txt
+af61e0ba400a3a1626ab53465c9027ed27c94a5aad655401e6c5b5db69ba5430  ./pod/receipts/idle_nvidia_smi_post.txt
+dfae11b9d64b776ba5e178bf3c34d3b5e289e43ca79a2901f40ee49af3ec4f70  ./pod/receipts/idle_nvidia_smi_pre.txt
+696f94af039187eba76cfbdcba05cdcbd4df325cf28fe286a3a02c1ced6efed1  ./pod/receipts/idle_nvidia_smi_prelaunch.txt
+5c74d033c6aa5eecc0bd38da7dfc992f24e469acc21ba2d97ab91bf2d6ebc832  ./pod/receipts/idle_ps_post.txt
+58fa312116adfa9d700601a0f547d16a1c3f112f70a260129dd7bf19a3d8e9d2  ./pod/receipts/idle_ps_pre.txt
+58fa312116adfa9d700601a0f547d16a1c3f112f70a260129dd7bf19a3d8e9d2  ./pod/receipts/idle_ps_prelaunch.txt
+783b49a5314aa589a9ef32c3538e98f3eb96836d8b68c25aa0677382d4b19ced  ./pod/receipts/nsys_check.txt
+e6f5952884d6834b627a544f154d8bde0b71d11003603516f556b0163a157f5b  ./pod/receipts/scripts.sha256
+cbf697c8f0d73d8c0a5e20bc9dbe279ba4bc8f78c4fa19c97fae12b7bed5dd30  ./pod/receipts/versions.txt
+9a201770a57180481c053849006bea9d8c364673f326fa540254882821880f92  ./pod/template_census.json
+6d73145647eff3bfa746deb774f8980d49a30d0f97519a6dda9baa9bcacc4bda  ./pod/template_census.txt
+b30d7d2de7501ecd3589fe72e2e41014365080ea80903dfd25de97ec5441604f  ./post-run/idle_after_copy.txt
+5a725e06d0c61baa3a64c4b36356854fc0961016deec8fe78ea6378b98c85084  ./post-run/wrapper_kernel_counts.txt
+4f7bbcb71118526cfadb7edf76acedd31a300e7d2b9df94e5313f2eefb8fa9c9  ./README.md
+ee26698a8535f32ded6e846a30233a5f461e1c005597fdf8a75a8440d719e953  ./scripts/analyze_kernels.py
+4a7ede9a792f661f0d0853028c51469fd36051e424b50a98263e4fab6038a08a  ./scripts/bench_model_sps.py
+8261cb9f5290bf35262e62900767ff02712918a7b907a68c2ee41490f93fef8d  ./scripts/check_templates.py
+a73aa86854400b36a6241b5ac0b19c8054a62c9930ac3c48a8343cc07fc7efea  ./scripts/driver.py
+5a070ef6a69800420d0f0aa7b2521150278fb414ef5a9103ca2262968ba18087  ./scripts/gemm_backend_wrap.py
+97d46aef0b75191b866374c1b0fc790ecf391cae50396f8f579ba86069d75943  ./scripts/launch.sh
+0a7af36325d74485bc491cf72a03e1860da483f60b9f945ff5d3711b3d46f8b1  ./scripts/probe_linear.py
+f700787be380b5414c323fdf45f1de9dce88a5d01ea11093d784773cd6267781  ./scripts/probe_trunk_e1458d2.py
+3e656f968540bbb664b10437005e2de2671c1780b6e589103f75f414e2a573d3  ./summarize_ab.py
+
+exec
+/bin/zsh -lc 'git show --format= --no-ext-diff 9bdd82d -- ops/rebuild-2026-09-29/results.md ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+diff --git a/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/MANIFEST.sha256 b/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/MANIFEST.sha256
+index a75de0a..d943484 100644
+--- a/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/MANIFEST.sha256
++++ b/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/MANIFEST.sha256
+@@ -57,7 +57,7 @@ cbf697c8f0d73d8c0a5e20bc9dbe279ba4bc8f78c4fa19c97fae12b7bed5dd30  ./pod/receipts
+ 6d73145647eff3bfa746deb774f8980d49a30d0f97519a6dda9baa9bcacc4bda  ./pod/template_census.txt
+ b30d7d2de7501ecd3589fe72e2e41014365080ea80903dfd25de97ec5441604f  ./post-run/idle_after_copy.txt
+ 5a725e06d0c61baa3a64c4b36356854fc0961016deec8fe78ea6378b98c85084  ./post-run/wrapper_kernel_counts.txt
+-6109b24f6ceb1d5f9c0df653e291a5ee7ba550f2e174a33c01ed38da8f6cbf80  ./README.md
++4f7bbcb71118526cfadb7edf76acedd31a300e7d2b9df94e5313f2eefb8fa9c9  ./README.md
+ ee26698a8535f32ded6e846a30233a5f461e1c005597fdf8a75a8440d719e953  ./scripts/analyze_kernels.py
+ 4a7ede9a792f661f0d0853028c51469fd36051e424b50a98263e4fab6038a08a  ./scripts/bench_model_sps.py
+ 8261cb9f5290bf35262e62900767ff02712918a7b907a68c2ee41490f93fef8d  ./scripts/check_templates.py
+diff --git a/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md b/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md
+index 2c54f2b..26abaa3 100644
+--- a/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md
++++ b/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md
+@@ -64,12 +64,12 @@ Same unchanged bench, same iteration counts (first call, 5 warmup, 20 CUDA-event
+ | density | update wall default | update wall ATEN | relative cost | ceiling SPS/rank default → ATEN |
+ |---|---|---|---|---|
+ | mid | 4.667 s | 4.970 s | **+6.5 %** | 1,755 → 1,648 |
+-| dense | 8.562 s | 8.944 s | **+4.5 %** | 957 → 916 |
++| dense | 8.561 s | 8.944 s | **+4.5 %** | 957 → 916 |
+ 
+ - update wall = 64·t_A + t_C + 16·t_B + t_D (medians); ceiling = 8,192 / wall. The default arm reproduces the SPS-ceiling run (mid 4.662 s, dense 8.564 s there).
+-- Variability: every p90 is within 0.53 % of its median (largest: ATEN dense D); every max sample (`cuda_event_ms`) is within 1.95 % of its median; no tail sample like the earlier 545 ms dense-B outlier occurred.
+-- Where the cost sits: small-batch no-grad calls lose most (A +14.6–18.0 %, D +17.3–26.3 %), because cuBLAS cannot take Inductor's fused prologues/epilogues (casts, bias + GELU, residual + LayerNorm), so they become separate Triton kernels. The large calls lose little (B +1.8–4.7 %, C +1.9–2.6 %). Attribution beyond these totals needs a timeline; none exists.
+-- Peak `max_memory_allocated` is unchanged (e.g. dense B 40.27 vs 40.28 GiB).
++- Variability: every p90 is within about 0.53 % of its median (largest 0.534 %, ATEN dense D); every max sample (`cuda_event_ms`) is within 2.14 % of its median (largest: default dense D); no tail sample like the earlier 545 ms dense-B outlier occurred.
++- Where the cost sits: small-batch no-grad calls lose most (A +14.6–18.0 %, D +17.3–26.3 %), consistent with cuBLAS not absorbing Inductor's fused prologues/epilogues (casts, bias + GELU, residual + LayerNorm), which then become separate Triton kernels. This is an inference from the generated code, not a timeline measurement. The large calls lose little (B +1.8–4.7 %, C +1.9–2.6 %). Attribution beyond these totals needs a timeline; none exists.
++- Overall peak `max_memory_allocated` is approximately unchanged (dense B 40.27 vs 40.28 GiB); dense D drops 0.950 → 0.862 GiB.
+ - First call (compile/autotune), cold mid: A 20.8 s → 15.9 s, B 39.6 s → 26.0 s (fewer autotune candidates); warm dense similar (A 8.2/8.4 s, B 10.0/9.8 s).
+ 
+ ## Limits
+diff --git a/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/codex-verify-r1.md b/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/codex-verify-r1.md
+new file mode 100644
+index 0000000..a1202bf
+--- /dev/null
++++ b/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/codex-verify-r1.md
+@@ -0,0 +1,34 @@
++The A/B supports ATEN-only as a workaround for the observed GEMM-template failure on this stack. I found no blocking correctness or run-conduct issue. Reporting needs these edits:
++
++1. **Keep “immune” narrowly scoped.** [results.md:261](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:261) should describe exclusion of the identified GEMM template paths, rather than imply universal compiled-kernel safety. FlexAttention generates its own Triton templates independently of this setting; static-shape correctness, `bmm` numerics, and real-trunk backward above the bound remain unmeasured.
++
++2. **Label the slowdown explanation as inference.** The “because” attribution to lost fusion in [README.md:71](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:71) and [results.md:292](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:292) exceeds the evidence. Generated code supports “consistent with lost fusion”; component totals without a timeline do not establish its contribution.
++
++3. **Correct the numerical summaries.** [README.md:70](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:70) understates the largest maximum: dense/default/D is **2.1362%** above its median, not ≤1.95%. Largest p90 deviation is **0.533924%**—use “about 0.53%” or “within 0.54%.” Dense/default derived wall is **8.561475 s**, rounding to **8.561 s**.
++
++4. **Qualify memory and correct the orchestrator’s kernel count.** “Allocated memory unchanged” should be “overall peak approximately unchanged”: dense D falls **0.950041→0.862261 GiB**, while dense B stays approximately 40.27 GiB. See [README.md:72](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:72). The trunk has **24 `bias_addmm` + 24 `mm` calls per wrapper**, totaling 48+48 across two wrappers; the repository table already reports this correctly.
++
++The installed `.venv` source is Torch **2.9.0**, git **`0fabc3ba…`**, matching the pod’s recorded source revision. The requested exclusions are confirmed:
++
++| Path | Installed-source evidence |
++|---|---|
++| Backend filter | [utils.py:1628](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/utils.py:1628) parses the list; [utils.py:1664](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/utils.py:1664) requires `TRITON`. |
++| `mm`, persistent-TMA, decompose-K, contiguous choices | All sit inside the gate beginning at [mm.py:760](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/mm.py:760). |
++| `addmm`, persistent-TMA, contiguous choices | Gated at [mm.py:997](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/mm.py:997). Decompose-K is added by `tuned_mm`. |
++| `bmm` Triton template | Gated at [bmm.py:211](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/bmm.py:211). |
++| ATEN/cuBLAS path | ATEN remains admitted at [utils.py:2112](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/utils.py:2112); [mm.py:581](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/mm.py:581) documents `bias_addmm`’s cuBLASLt dispatch. |
++| FlexAttention exception | Its forward and backward templates are appended independently at [flex_attention.py:348](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/flex/flex_attention.py:348) and [line 776](/Users/poonszesen/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/flex/flex_attention.py:776). |
++
++These specific GEMM gates apply to static and dynamic shapes; that source conclusion does not establish static-shape numerical qualification.
++
++Verification also confirmed:
++
++- Commit `9904121` records the statement and scripts at **07:06:00Z**, before the **07:06:29Z** launch. Script bytes, receipt hashes and all **69 manifest entries** agree.
++- Prelaunch receipts satisfy the idle rule. The driver implements first-failed-stage stopping, the 44-minute remaining-budget timeout, and the outer 45-minute timeout. Recorded completion is **503.9 s**, exit 0.
++- The trunk guard is genuinely bypassed, with one full packed call per target. Comparisons cover every valid token/channel; synthetic forward and dX cover every element. Parameter gradients use the declared **tensorwise** `max|Δ|/max|ref|` metric. Both controls reproduce the failure.
++- Revision-2 analyzer and census reports agree: ATEN caches contain zero template definitions/launch sites and retain other Triton fusions. **Generated caches remain pod-only**, so this review checked the analyzer and retained reports, not a fresh recount of those files.
++- All **320 timing samples** reproduce the saved statistics. Conditional totals are **4.666633→4.969930 s (+6.4993%)** and **8.561475→8.943540 s (+4.4626%)**. The reported rounded SPS values are correct.
++
++Adopting ATEN-only as an infrastructure workaround is supported. Production qualification and removing guards everywhere are not established by this probe. No files changed or GPU work launched.
++
++**VERDICT: APPROVE WITH EDITS**
+\ No newline at end of file
+diff --git a/ops/rebuild-2026-09-29/results.md b/ops/rebuild-2026-09-29/results.md
+index 544709c..83df4e6 100644
+--- a/ops/rebuild-2026-09-29/results.md
++++ b/ops/rebuild-2026-09-29/results.md
+@@ -258,7 +258,7 @@ Evidence that the flash path ran:
+ 
+ ## ATEN-only GEMM A/B (2026-09-29, 07:06–07:15Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+ 
+-**Infrastructure diagnostic, not a learning change.** One setting changed: `torch._inductor.config.max_autotune_gemm_backends` from torch 2.9.0's default `"ATEN,TRITON,CPP"` to `"ATEN"`, so every compiled mm/addmm lowers to extern cuBLAS instead of Inductor's Triton mm templates. The timing half is a **component measurement conditional on the A/B/C/D synthetic schedule** ("Model-only SPS ceiling (component)" above), not end-to-end SPS.
++**Infrastructure diagnostic, not a learning change.** One setting changed: `torch._inductor.config.max_autotune_gemm_backends` from torch 2.9.0's default `"ATEN,TRITON,CPP"` to `"ATEN"`, so every compiled mm/addmm lowers to extern cuBLAS instead of Inductor's Triton mm templates. **Scope:** this excludes only the identified GEMM template paths (mm, addmm, bmm, decompose-K, persistent-TMA). It is not general immunity: FlexAttention generates its own Triton templates independently of this setting (torch `flex_attention.py:348, 776`; unused here), and static-shape compiles, bmm numerics and the real-trunk backward above the bound were not measured. The timing half is a **component measurement conditional on the A/B/C/D synthetic schedule** ("Model-only SPS ceiling (component)" above), not end-to-end SPS.
+ 
+ - Pre-run statement: `run-statements/aten-gemm-ab.md`, committed with the scripts in `9904121` at 07:06:00Z. Driver 07:06:31Z–07:14:55Z, 503.9 s, exit 0; no first-failure stop fired.
+ - Source: `e1458d2` (integration HEAD, unchanged); the pod checkout's porcelain was empty before and after.
+@@ -285,12 +285,12 @@ The default-backend controls in the same run reproduced the failure: the trunk h
+ | density | A fwd 256 | B train 1,024 | C teacher-proxy 16,384 | D value 256 | update wall default → ATEN | cost | ceiling SPS/rank |
+ |---|---|---|---|---|---|---|---|
+ | mid (303) | 12.90 → 15.23 ms | 177.8 → 186.2 ms | 986.4 → 1,004.7 ms | 9.37 → 11.84 ms | 4.667 → 4.970 s | **+6.5 %** | 1,755 → 1,648 |
+-| dense (709) | 25.39 → 29.11 ms | 326.7 → 332.7 ms | 1,687.4 → 1,731.7 ms | 21.97 → 25.75 ms | 8.562 → 8.944 s | **+4.5 %** | 957 → 916 |
++| dense (709) | 25.39 → 29.11 ms | 326.7 → 332.7 ms | 1,687.4 → 1,731.7 ms | 21.97 → 25.75 ms | 8.561 → 8.944 s | **+4.5 %** | 957 → 916 |
+ 
+ - The default arm reproduces the earlier ceiling run (4.662 s and 8.564 s).
+-- Every p90 is within 0.53 % of its median.
+-- The cost is concentrated in the small no-grad calls (A +15–18 %, D +17–26 %), where cuBLAS cannot absorb Inductor's fused casts, bias+GELU and residual+LayerNorm. B and C lose 1.8–4.7 %.
+-- Allocated memory is unchanged. Cold compile is faster (mid B first call: 39.6 s → 26.0 s).
++- Every p90 is within about 0.53 % of its median (largest 0.534 %).
++- The cost is concentrated in the small no-grad calls (A +15–18 %, D +17–26 %). This is consistent with lost prologue/epilogue fusion (casts, bias+GELU, residual+LayerNorm), an inference from the generated code; there is no timeline. B and C lose 1.8–4.7 %.
++- Overall allocated peak is approximately unchanged (dense B about 40.27 GiB in both arms; dense D drops 0.950 → 0.862 GiB). Cold compile is faster (mid B first call: 39.6 s → 26.0 s).
+ 
+ **Limits:**
+ - One stack; inputs up to 2³² elements (8,388,608 × 512).
+
+exec
+/bin/zsh -lc 'git rev-parse HEAD; git diff --no-ext-diff 9bdd82d''^ 9bdd82d --numstat; rg --files ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+9bdd82de7f197a0b8e3ef0ed244c9c91cb7a783b
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+1	1	ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/MANIFEST.sha256
+4	4	ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md
+34	0	ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/codex-verify-r1.md
+5	5	ops/rebuild-2026-09-29/results.md
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/codex-verify-r1.md
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/scripts/driver.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/scripts/check_templates.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/scripts/analyze_kernels.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/scripts/probe_trunk_e1458d2.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/scripts/gemm_backend_wrap.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/scripts/bench_model_sps.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/scripts/launch.sh
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/scripts/probe_linear.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/post-run/wrapper_kernel_counts.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/post-run/idle_after_copy.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/MANIFEST.sha256
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/summarize_ab.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/ab_summary.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_lin_768_256.backend.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/kernel_analysis.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/ctl_default_lin_768_256.log
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_default/results_mid.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_default/results_dense.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_lin_768_256.jsonl
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/driver.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_mid_aten.log
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/kernel_analysis.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_dense_aten.log
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_mid_aten.backend.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_mlpbwd_256_512_256.jsonl
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/launch.out
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/template_census.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/check_templates.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/driver.jsonl
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_trunk_packed_bypass.log
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/analyze_kernels.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/ctl_default_trunk_packed_bypass.backend.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_lin_768_256.log
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_trunk_packed_bypass.jsonl
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/probe_trunk_e1458d2.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/gemm_backend_wrap.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_mlpbwd_256_512_256.log
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/ctl_default_trunk_packed_bypass.jsonl
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_dense_default.log
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_mid_default.backend.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_mid_default.log
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_dense_default.backend.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/ctl_default_trunk_packed_bypass.log
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/driver.out
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_dense_aten.backend.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/ctl_default_lin_768_256.backend.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/ctl_default_lin_768_256.jsonl
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_aten/results_mid.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_aten/results_dense.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_lin_512_256.backend.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_trunk_packed_bypass.backend.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/template_census.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_lin_512_256.log
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/bench_model_sps.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_mlpbwd_256_512_256.backend.json
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/aten_lin_512_256.jsonl
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/launch.sh
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/probe_linear.py
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/scripts.sha256
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/idle_nvidia_smi_post.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/git_pre.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/idle_nvidia_smi_prelaunch.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/idle_ps_pre.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/versions.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/idle_nvidia_smi_pre.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/nsys_check.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/idle_ps_prelaunch.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/idle_ps_post.txt
+ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod/receipts/git_post.txt
+
+exec
+/bin/zsh -lc 'cat cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+---
+type: "Reference"
+title: "Compiled GEMM template overflows above 2^21 rows"
+description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. The rebuilt trunk guard is measured correct at L−1 and rejects L; production compliance is unproven."
+tags: ["kaggriculture-v3", "cuda", "compile"]
+status: "verified-scoped"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/cuda-repro-blocking.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/ppo-from-bc-2026-09-29/train.log"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/train.log"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.log"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/driver.jsonl"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/gemm-limits-2026-09-29/"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/kernel_analysis.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md"}]
+---
+
+# Compiled GEMM template overflows above 2^21 rows
+
+## What was observed
+
+The reference branch's PPO run from the BC checkpoint crashed with a CUDA illegal memory access after 3 iterations. Rerunning the exact setup with `CUDA_LAUNCH_BLOCKING=1` reproduced it on both ranks. Both tracebacks end in the Inductor **max-autotune Triton GEMM template** `triton_tem_fused__to_copy_addmm_gelu_t_view_9`, the transformer trunk's MLP with `M` = batch rows × tokens, K = 1024, N = 256. The kernel declares `INDEX_DTYPE = tl.int64`, which the mm template does not use, and forms the input-side offset `xindex = k + 1024*idx_m` in 32-bit arithmetic. Once `M > 2^21`, that offset passes 2³¹ and wraps. Here K = 1024 is the input width of the MLP down-projection.
+
+A controlled probe confirmed the threshold. It used a synthetic BF16 MLP (256→1024, GELU, 1024→256) with `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. At M = 2,088,960 the compiled output matches eager within BF16 noise (max diff 0.0078). At M = 2,105,344 it faults. Environment: torch 2.9.0+cu128, RTX PRO 6000 Blackwell, driver 595.91.07. Hashes and logs are in `ops/rebuild-2026-09-29/results.md`.
+
+## Why it matters
+
+- Below the fault, wrapped offsets land in valid memory and **silently corrupt** activations. In the reference run, rollout forwards (8,192 rows × more than 256 padded tokens) exceeded the threshold, while training minibatches (128 rows) did not. That produced the first-update log-ratio mean of −3.77 before any weight change. The earlier "BC→PPO deterioration" was infrastructure corruption, not evidence against the BC policy.
+- The bug is in compiler-generated code, so it is invisible in the model source. It can reappear for any compiled GEMM whose `rows × input width` exceeds 2³¹: rollouts, evaluation, BC, and other models with larger batches. In training, backward reads forward outputs as inputs, so the forward output width counts too (below).
+
+## Measured limits at the rebuild's shapes (2026-09-29)
+
+A second bounded probe compared compiled output against eager at every point. It covered synthetic compiled Linears and MLPs, plus the real `KaggricultureTransformer` trunk from `kg/rebuild-model` @ `1ddc71d`, compiled directly through its own `compile_transformer_trunk`. Precision matched `run_ppo`: fp32 parameters under bf16 autocast, `max-autotune-no-cudagraphs`, `dynamic=True`, compiled small first. Codex verified the evidence and requested edits, applied here. The table, the generated-code attribution and the source citations are in `ops/rebuild-2026-09-29/results.md`, "GEMM limits at our shapes".
+
+Measured (L_in = floor(2³¹ / K) for GEMM input width K, e.g. 2,796,202 for K = 768; trunk L = 2³¹/512 = 4,194,304):
+- **The overflow is input-side at these shapes.** Input-wide GEMMs (4096→16, 768→256) were correct at L_in and failed at L_in+1. Output-wide GEMMs (16→4096, 256→512, 256→256) stayed correct up to M·N = 2³². The corrected kernel summaries show why:
+  - Every failing graph whose kernel can be attributed from the retained code launches the template with a 32-bit size argument (`ks0: i32`) and an A-load of `K*idx_m`. The 768→256 and 512→256 failures happened during autotuning, so their failing candidate kernel is not localized.
+  - Graphs whose output exceeds int32 get `ks0: i64` and stayed correct.
+  - In the real trunk, the corrupting kernel is the 512→256 MLP down-projection. Above L it kept `ks0: i32`, while the 256→512 up-projection had been promoted.
+
+  The earlier universal rule, "overflow iff M·max(K, N) > 2³¹", is withdrawn.
+- **In the real trunk the corruption is silent.** With the guard patched off:
+  - 2 tokens were wrong at L+1 = 4,194,305 packed tokens, and 4,665 at 4,198,400.
+  - The padded path was wrong on half its tokens at 8.39M, with no fault.
+- **Above the bound, nothing is reliable.** Whether a given M corrupts, faults or happens to be correct depends on the recompile hint and on autotune's backend choice. For example, cuBLAS won for a lone 512→256, and the trunk was correct again at 8.39M tokens after an i64 recompile. Recompilation is not a safety guarantee.
+- **The guard, measured endpoints:** with the guard on, `_run_trunk` is correct at L−1 = 4,194,303 packed tokens. It raises at L with zero trunk calls, and chunks the padded path into calls of 4,193,735 tokens, which are also correct.
+
+Inferred, not measured:
+- **Unguarded trunk at exactly L.** It was not run, so whether the guard's rejection at equality is stricter than necessary is unknown.
+- **Real-trunk backward.** It was not run at any size. The synthetic MLP backward faulted while compiling at L+1, which does not localize a backward-kernel threshold.
+- **Mechanism.** The source path and the generated code agree that the emitted `INDEX_DTYPE` follows an all-buffer storage-size check while the template's size-arg dtype is chosen separately from the output numel (`SIMDKernelFeatures([], output_numel)`), and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
+
+## Consequences
+
+- **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
+  - For the trunk that width is 512, which is `gemm_kmax`.
+  - Nothing enforces the bound outside the trunk. The stems are eager today, but the full stem is 371→512→256. The heads and the planned 768-wide `actor_input_proj` are not implemented yet; compiled, `actor_input_proj` would exceed L_in at 2,796,203 rows × frames.
+- **Production compliance is unproven.** Kaggriculture is not yet in `ModelConfig` or the model factory, and `configure_model_compile` rejects it for `model_compile="trunk"`. Integrated rollout, PPO recompute, evaluation, BC and teacher workloads stay unverified until Task 3.1 and Phase 6.
+- **Size margins against 2³¹/width, not against observed faults.** A passing test above the bound is not evidence of safety.
+- **Workload margins against the trunk L:**
+  - Rollout at 256 rows: 23.1× headroom, forward measured correct.
+  - PPO minibatch at 1,024 rows: 5.78×, arithmetic only.
+  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. It needs `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunking. The guard would raise, not corrupt.
+- **Log-ratio alarm:** treat a non-zero log-ratio at the first minibatch (before any optimizer step) as a correctness failure and abort, recording the batch shape.
+- **Upgrades:** don't upgrade torch or drivers as a remedy without a separate measured decision. Rerun both probes after any upgrade.
+
+## Limits
+
+- **Stack:** measured on torch 2.9.0+cu128, driver 595.91.07, RTX PRO 6000 Blackwell (sm_120). Triton 3.5.0 is the lockfile pin; its installed version was not captured.
+- **Templates:** `mm`/`addmm` templates with fused prologues and epilogues, dynamic shapes. Unmeasured:
+  - the real trunk's backward;
+  - the unguarded trunk at exactly L;
+  - `bmm`, persistent-TMA and decompose-K paths (decompose-K is on by default and can apply to weight-gradient GEMMs);
+  - static-shape compiles;
+  - other versions.
+- **Tolerances:** the checks detect the reported corruption. They do not prove BF16 equivalence for arbitrary inputs.
+- **FlashAttention:** the packed-path runs used torch's ATen varlen flash shim, because the pod venv has no `flash-attn`; the pod's run config also had `force_flash_attn: false`. The real flash-attn kernel is untested, and Phase 6 must install and verify it.
+- **Other versions:** torch 2.8 showed no overflow at width 1024 (Task 0.2).
+
+exec
+/bin/zsh -lc 'nl -ba ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+     1	# ATEN-only GEMM backend A/B, 2026-09-29 07:06–07:15Z (pod `w7ia3zvxqsvs3g`, GPU 0 only)
+     2	
+     3	**Infrastructure diagnostic.** One Inductor setting changed: `torch._inductor.config.max_autotune_gemm_backends` from torch 2.9.0's default `"ATEN,TRITON,CPP"` to `"ATEN"`. No model, loss, reward or learning code changed. The timing half is a **component measurement conditional on the A/B/C/D synthetic schedule** of the SPS-ceiling probe, not end-to-end SPS.
+     4	
+     5	- Pre-run statement: `../run-statements/aten-gemm-ab.md`, committed with the scripts in `9904121` at 07:06:00Z. Launch at 07:06:29Z; driver 07:06:31Z–07:14:55Z (**503.9 s**, exit 0; `pod/launch.out`, `pod/driver.jsonl`).
+     6	- Source: pod checkout `/workspace/kg-v3-rebuild` at `e1458d2a717d9d731a367cbb78b98616ee6649f4` (tree `16b79ba5…`), equal to `/Users/poonszesen/kg-v3-int` HEAD; `git status --porcelain` empty before and after (`pod/receipts/git_pre.txt`, `git_post.txt`); the run dir is gitignored (`.gitignore:27:runs/`). No bundle, no install.
+     7	- Stack (`pod/receipts/versions.txt`): torch 2.9.0+cu128 (git `0fabc3ba…`), triton 3.5.0, flash-attn 2.8.3, CUDA runtime 12.8, driver 595.91.07, RTX PRO 6000 Blackwell Server Edition. Default `max_autotune_gemm_backends` = `'ATEN,TRITON,CPP'`; `TORCHINDUCTOR_*`/`TRITON_*` env unset.
+     8	- Scripts: `scripts/` (sha256 in `pod/receipts/scripts.sha256`, identical to the committed copies). `probe_linear.py`, `bench_model_sps.py` and `analyze_kernels.py` (rev 2) are byte-identical to the earlier runs (`0a7af363…`, `4a7ede9a…`, `ee26698a…`). Every stage ran through `gemm_backend_wrap.py`, whose per-stage record (`pod/*.backend.json`) shows the value at start and end: `ATEN` for ATEN stages, `ATEN,TRITON,CPP` for default stages.
+     9	- Idle rule: GPU 0 no compute processes and 0 % utilization. Prelaunch capture (07:06:31Z) **0 MiB, 0 %, P8, no processes** on both GPUs; gate passed after 0 s (`pod/receipts/idle_nvidia_smi_prelaunch.txt`). Post (07:14:56Z): 0 MiB, 0 %, no processes; again at 07:16:29Z after the copy (`post-run/idle_after_copy.txt`). The pod was left running and idle.
+    10	- nsys: absent (`pod/receipts/nsys_check.txt`: `which nsys` rc 1, no `/usr/local/cuda*/bin/nsys`, no `/opt/nvidia/nsight-systems*`). Timing is CUDA-event totals only.
+    11	
+    12	## 1. Correctness above the bound, ATEN-only (guard bypassed)
+    13	
+    14	All four stages passed; the driver's first-failure stop never fired.
+    15	
+    16	| Stage (ATEN-only) | Points | Result (vs eager) | Default backends, earlier probe / this run's control |
+    17	|---|---|---|---|
+    18	| Real trunk, packed, real flash-attn, guard bypassed (`_GEMM_ELEMENT_LIMIT = 2**62`) | 4,194,305 (L+1); 4,198,400; 4,194,444 (5,916 dense rows); 8,387,470 (11,830 dense rows) packed tokens, one trunk call each | **0** tokens with \|Δ\| > 0.25, 0 non-finite; max \|Δ\| 0.1565 / 0.1638 / 0.1657 / 0.1699 (warm 0.1033) | 2 / 4,665 (1.19M non-finite) / 236 wrong tokens; 8,387,470 illegal memory access. **Control this run:** 2 and 4,665 wrong (max 45.95, 1,194,240 non-finite), identical counts |
+    19	| Linear 768→256 | 2,796,203 (L_in+1) | 0 bad rows, max \|Δ\| **0.0** | fault in autotune benchmarking. **Control this run:** illegal memory access in `select_algorithm.py` autotune at 2,796,203 (rc 1) |
+    20	| Linear 512→256 | 4,198,401; 8,388,608 (2·L_in) | 0 bad rows, max \|Δ\| 0.0 at both | 8,388,608 faulted in autotune (earlier probe) |
+    21	| MLP 256→512→256, forward + backward | 4,194,305 (L+1) | fwd 0 bad rows (max 0.000488), dX 0 bad rows (max 0.0), grad rel max: up.weight 0.0, up.bias 0.00229, down.weight 0.0, down.bias 0.00260 (threshold 0.05) | fault **while compiling** at L+1 (earlier probe) |
+    22	
+    23	Tolerances as in the earlier probe (single GEMMs: `|Δ| ≤ 0.02 + 0.02|ref|` per element; trunk: a valid token is wrong if any channel exceeds 0.25). Raw: `pod/aten_*.jsonl`, `pod/ctl_default_*.jsonl`, logs `pod/*.log`.
+    24	
+    25	The single-Linear results are bit-identical to eager (max |Δ| 0.0) because the compiled graph now calls the same cuBLAS `bias_addmm` that eager `F.linear` uses; that is the mechanism, not an independent test of cuBLAS. Every ATEN autotune log line reports `"num_choices": 2, "num_triton_choices": 0` (`bias_addmm` vs `addmm`).
+    26	
+    27	The Triton pointwise kernels' own int32 protection engaged as designed: each ATEN stage recompiled on a `can_use_32bit_indexing` guard (`simd.py:1440`), e.g. `512*x.size()[0] <= 2147483647` in the trunk (`pod/aten_trunk_packed_bypass.log:13`), and the recompiled graphs were correct.
+    28	
+    29	## 2. Generated-code evidence
+    30	
+    31	`pod/kernel_analysis.{txt,json}` (analyzer rev 2, unchanged) and `pod/template_census.{txt,json}` (`scripts/check_templates.py`), both run on the pod over every per-stage cache; `post-run/wrapper_kernel_counts.txt` counts Triton kernel definitions per wrapper.
+    32	
+    33	| Cache | Wrappers | extern GEMM calls | `triton_tem_` defs / launches |
+    34	|---|---|---|---|
+    35	| aten_trunk_packed_bypass | 2 | 48 `bias_addmm`, 48 `mm` | **0 / 0** |
+    36	| aten_lin_768_256 | 2 | 2 `bias_addmm` | **0 / 0** |
+    37	| aten_lin_512_256 | 2 | 2 `bias_addmm` | **0 / 0** |
+    38	| aten_mlpbwd_256_512_256 | 6 | 4 `bias_addmm`, 8 `mm` | **0 / 0** |
+    39	| bench_aten (A/B/C/D incl. B's trunk backward) | 4 | 57 `bias_addmm`, 135 `mm` | **0 / 0** |
+    40	| bench_default | 12 | 64 `mm` | 25 / 128 |
+    41	| ctl_default_trunk_packed_bypass | 6 | 0 | 24 / 96 |
+    42	| ctl_default_lin_768_256 | 2 | 1 `bias_addmm` | 2 / 1 |
+    43	
+    44	- **ATEN-only: every GEMM is an extern cuBLAS call and no Triton mm template exists**, including the trunk backward graph of the bench's B (`bench_aten/ke/…`: 96 `mm`, 0 templates).
+    45	- **Other fusions stay Triton.** The ATEN trunk forward wrappers still define 4 pointwise + 5 persistent-reduction Triton kernels each; the B backward wrapper 3 pointwise + 4 persistent-reduction + 8 reduction kernels (`post-run/wrapper_kernel_counts.txt`).
+    46	- **Default backends in the same run still produce the vulnerable class**: e.g. `bench_default/lu/…` launches `triton_tem_fused__to_copy_addmm_gelu_t_9` (A-load `512*idx_m`, `ks0: i32`) and the backward `bench_default/yd/…` launches `triton_tem_fused_mm_3/_11` with `ks0: i32`. This is the analyzer's positive control.
+    47	- **Decompose-K, persistent-TMA, contiguous-subgraph templates:** 0 marker files in every cache. This census is **not positive-controlled** for them (the default caches have 0 as well, so these templates were not selected here either). Their absence under ATEN-only rests on source gating: in the installed `kernel/mm.py`, `tuned_mm` (760–783) and `tuned_addmm` (997–1029) add them only inside `use_triton_template(...)`, which requires `"TRITON"` in `max_autotune_gemm_backends` (`utils.py:1640–1665`), plus the logged `num_triton_choices: 0`.
+    48	
+    49	## 3. Timing A/B (component, conditional on the synthetic schedule)
+    50	
+    51	Same unchanged bench, same iteration counts (first call, 5 warmup, 20 CUDA-event iterations), process order mid-default, mid-ATEN, dense-default, dense-ATEN; one cold cache per setting (mid cold, dense warm for both). All four passed their checks (`use_flash_attn` true on every call; trunk chunks A/B/D 1, C 2 at mid and 3 at dense). Summary: `ab_summary.json` (from `summarize_ab.py`).
+    52	
+    53	| density | workload | default median / p90 (ms) | ATEN median / p90 (ms) | ATEN / default (median) |
+    54	|---|---|---|---|---|
+    55	| mid (303 tok) | A fwd 256 | 12.904 / 12.926 | 15.228 / 15.235 | 1.180 |
+    56	| | B train 1,024 | 177.815 / 177.998 | 186.177 / 186.401 | 1.047 |
+    57	| | C teacher-proxy 16,384 | 986.390 / 986.567 | 1,004.654 / 1,004.973 | 1.019 |
+    58	| | D value 256 | 9.373 / 9.378 | 11.838 / 11.847 | 1.263 |
+    59	| dense (709 tok) | A | 25.389 / 25.394 | 29.106 / 29.118 | 1.146 |
+    60	| | B | 326.702 / 327.109 | 332.705 / 332.927 | 1.018 |
+    61	| | C | 1,687.409 / 1,687.614 | 1,731.732 / 1,732.191 | 1.026 |
+    62	| | D | 21.965 / 21.977 | 25.753 / 25.891 | 1.173 |
+    63	
+    64	| density | update wall default | update wall ATEN | relative cost | ceiling SPS/rank default → ATEN |
+    65	|---|---|---|---|---|
+    66	| mid | 4.667 s | 4.970 s | **+6.5 %** | 1,755 → 1,648 |
+    67	| dense | 8.561 s | 8.944 s | **+4.5 %** | 957 → 916 |
+    68	
+    69	- update wall = 64·t_A + t_C + 16·t_B + t_D (medians); ceiling = 8,192 / wall. The default arm reproduces the SPS-ceiling run (mid 4.662 s, dense 8.564 s there).
+    70	- Variability: every p90 is within about 0.53 % of its median (largest 0.534 %, ATEN dense D); every max sample (`cuda_event_ms`) is within 2.14 % of its median (largest: default dense D); no tail sample like the earlier 545 ms dense-B outlier occurred.
+    71	- Where the cost sits: small-batch no-grad calls lose most (A +14.6–18.0 %, D +17.3–26.3 %), consistent with cuBLAS not absorbing Inductor's fused prologues/epilogues (casts, bias + GELU, residual + LayerNorm), which then become separate Triton kernels. This is an inference from the generated code, not a timeline measurement. The large calls lose little (B +1.8–4.7 %, C +1.9–2.6 %). Attribution beyond these totals needs a timeline; none exists.
+    72	- Overall peak `max_memory_allocated` is approximately unchanged (dense B 40.27 vs 40.28 GiB); dense D drops 0.950 → 0.862 GiB.
+    73	- First call (compile/autotune), cold mid: A 20.8 s → 15.9 s, B 39.6 s → 26.0 s (fewer autotune candidates); warm dense similar (A 8.2/8.4 s, B 10.0/9.8 s).
+    74	
+    75	## Limits
+    76	
+    77	- **One stack and these shapes:** torch 2.9.0+cu128, triton 3.5.0, driver 595.91.07, sm_120. Largest tested GEMM input 8,388,608 × 512 = 2³² elements; beyond that is untested. cuBLAS 64-bit indexing is the vendor library's behavior, measured here only to 2³².
+    78	- **Real-trunk backward above the bound was not element-compared.** The bench's B ran the trunk backward only below the bound (1,024 rows), with no numerical check; above the bound, backward correctness rests on the synthetic MLP (correct at L+1) plus kernel evidence (no templates in the ATEN backward graph).
+    79	- **Non-GEMM Triton kernels remain.** Pointwise/reduction kernels are protected by Inductor's own 32-bit-indexing guards, which recompiled here and were correct at the tested sizes; that is not a general proof. `bmm` was not exercised (attention runs in flash-attn); it is gated by the same backend list (`kernel/bmm.py:200–211`), unmeasured.
+    80	- **Decompose-K / TMA absence** is source-gated plus zero-marker, not positive-controlled.
+    81	- **Timing is component-only**, conditional on the synthetic A/B/C/D schedule (uniform densities, tiled batches, surrogate B and C, no finite-loss or replay-equality check, heads eager). No nsys timeline; one run per arm; no repeat to measure run-to-run spread of the A/B difference.
+    82	- **Process-global setting.** `max_autotune_gemm_backends` applies to every `torch.compile` in the process (including a compiled Isaiah model in the same process). `configure_model_compile` still rejects this model at `e1458d2`; the compiled path is not reachable from `run_ppo` config yet.
+    83	- **No change in this repo's code.** Adoption would need a wired setting and a test; nothing was implemented here.
+    84	
+    85	## Large files kept on the pod only (not copied, > 1 MB)
+    86	
+    87	- `inductor_cache/` (269,569,900 B) and `triton_cache/` (194,098,115 B): 11,432 files. Per-file manifest `receipts/compile_caches.sha256` (2,142,259 B, 11,432 lines, sha256 `0df334497dbcab41c7600d238b5bf7bc691e7cfdb991a046848111baceac77a9`).
+    88	
+    89	Local manifest: `MANIFEST.sha256`.
+
+exec
+/bin/zsh -lc 'shasum -a 256 -c MANIFEST.sha256' in /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29
+ succeeded in 0ms:
+./ab_summary.json: OK
+./pod/analyze_kernels.py: OK
+./pod/aten_lin_512_256.backend.json: OK
+./pod/aten_lin_512_256.jsonl: OK
+./pod/aten_lin_512_256.log: OK
+./pod/aten_lin_768_256.backend.json: OK
+./pod/aten_lin_768_256.jsonl: OK
+./pod/aten_lin_768_256.log: OK
+./pod/aten_mlpbwd_256_512_256.backend.json: OK
+./pod/aten_mlpbwd_256_512_256.jsonl: OK
+./pod/aten_mlpbwd_256_512_256.log: OK
+./pod/aten_trunk_packed_bypass.backend.json: OK
+./pod/aten_trunk_packed_bypass.jsonl: OK
+./pod/aten_trunk_packed_bypass.log: OK
+./pod/bench_aten/results_dense.json: OK
+./pod/bench_aten/results_mid.json: OK
+./pod/bench_default/results_dense.json: OK
+./pod/bench_default/results_mid.json: OK
+./pod/bench_dense_aten.backend.json: OK
+./pod/bench_dense_aten.log: OK
+./pod/bench_dense_default.backend.json: OK
+./pod/bench_dense_default.log: OK
+./pod/bench_mid_aten.backend.json: OK
+./pod/bench_mid_aten.log: OK
+./pod/bench_mid_default.backend.json: OK
+./pod/bench_mid_default.log: OK
+./pod/bench_model_sps.py: OK
+./pod/check_templates.py: OK
+./pod/ctl_default_lin_768_256.backend.json: OK
+./pod/ctl_default_lin_768_256.jsonl: OK
+./pod/ctl_default_lin_768_256.log: OK
+./pod/ctl_default_trunk_packed_bypass.backend.json: OK
+./pod/ctl_default_trunk_packed_bypass.jsonl: OK
+./pod/ctl_default_trunk_packed_bypass.log: OK
+./pod/driver.jsonl: OK
+./pod/driver.out: OK
+./pod/driver.py: OK
+./pod/gemm_backend_wrap.py: OK
+./pod/kernel_analysis.json: OK
+./pod/kernel_analysis.txt: OK
+./pod/launch.out: OK
+./pod/launch.sh: OK
+./pod/probe_linear.py: OK
+./pod/probe_trunk_e1458d2.py: OK
+./pod/receipts/git_post.txt: OK
+./pod/receipts/git_pre.txt: OK
+./pod/receipts/idle_nvidia_smi_post.txt: OK
+./pod/receipts/idle_nvidia_smi_pre.txt: OK
+./pod/receipts/idle_nvidia_smi_prelaunch.txt: OK
+./pod/receipts/idle_ps_post.txt: OK
+./pod/receipts/idle_ps_pre.txt: OK
+./pod/receipts/idle_ps_prelaunch.txt: OK
+./pod/receipts/nsys_check.txt: OK
+./pod/receipts/scripts.sha256: OK
+./pod/receipts/versions.txt: OK
+./pod/template_census.json: OK
+./pod/template_census.txt: OK
+./post-run/idle_after_copy.txt: OK
+./post-run/wrapper_kernel_counts.txt: OK
+./README.md: OK
+./scripts/analyze_kernels.py: OK
+./scripts/bench_model_sps.py: OK
+./scripts/check_templates.py: OK
+./scripts/driver.py: OK
+./scripts/gemm_backend_wrap.py: OK
+./scripts/launch.sh: OK
+./scripts/probe_linear.py: OK
+./scripts/probe_trunk_e1458d2.py: OK
+./summarize_ab.py: OK
+
+codex
+The wording and numerical corrections match r1, and all 69 manifest entries pass. I’m finishing the byte-for-byte comparison against the parent commit to confirm the evidence files are unchanged.
+
+exec
+/bin/zsh -lc "python3 -B -c 'from pathlib import Path
+import json, subprocess
+base = \"ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29\"
+commit = \"9bdd82d\"
+def git(*args):
+    return subprocess.check_output([\"git\", *args], stderr=subprocess.DEVNULL)
+paths = [line.decode() for line in git(\"ls-tree\", \"-r\", \"--name-only\", commit+\""'^", "--", base).splitlines()]
+exceptions = {f"{base}/README.md", f"{base}/MANIFEST.sha256"}
+unchanged = []
+for path in paths:
+    prior = git("show", commit+"''^:"+path)
+    current = git("show", commit+":"+path)
+    local = Path(path).read_bytes()
+    if path not in exceptions:
+        assert prior == current == local, path
+        unchanged.append(path)
+    else:
+        assert current == local, path
+results_path = "ops/rebuild-2026-09-29/results.md"
+assert git("show", commit+":"+results_path) == Path(results_path).read_bytes()
+old_manifest = git("show", commit+"''^:"+base+"/MANIFEST.sha256").decode().splitlines()
+new_manifest = git("show", commit+":"+base+"/MANIFEST.sha256").decode().splitlines()
+assert len(old_manifest) == len(new_manifest) == 69
+changed_lines = [(a,b) for a,b in zip(old_manifest,new_manifest) if a != b]
+assert len(changed_lines) == 1 and changed_lines[0][1].endswith("  ./README.md")
+assert Path("ops/rebuild-2026-09-29/codex/verify-aten-ab-r1.md").read_bytes() == Path(base+"/codex-verify-r1.md").read_bytes()
+print(json.dumps({"checked_commit":git("rev-parse", commit).decode().strip(), "unchanged_preexisting_artifacts_excluding_readme_manifest":len(unchanged), "unchanged_raw_jsonl_logs_and_bench_results":sum(p.endswith((".jsonl",".log")) or "/results_" in p for p in unchanged), "manifest_entries":len(new_manifest), "manifest_changes":["README.md checksum only"], "reviewed_docs_match_commit":True, "copied_r1_matches_original":True}, indent=2))
+data=json.loads(Path(base+"/pod/bench_default/results_dense.json").read_text())
+print("raw_json_keys", list(data))
+for key,value in data.items():
+    if isinstance(value,list):
+        print(key, "count",len(value), "first",repr(value[:1])[:1800])
+    elif isinstance(value,dict):
+        print(key, "keys",list(value))
+'"'" in /Users/poonszesen/kg-v3
+ succeeded in 1289ms:
+python3: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+{
+  "checked_commit": "9bdd82de7f197a0b8e3ef0ed244c9c91cb7a783b",
+  "unchanged_preexisting_artifacts_excluding_readme_manifest": 68,
+  "unchanged_raw_jsonl_logs_and_bench_results": 21,
+  "manifest_entries": 69,
+  "manifest_changes": [
+    "README.md checksum only"
+  ],
+  "reviewed_docs_match_commit": true,
+  "copied_r1_matches_original": true
+}
+raw_json_keys ['info', 'results', 'derived']
+info keys ['density', 'density_spec', 'envs', 'rows_A_D', 'rows_B', 'rows_C', 'tokens_per_row_min', 'tokens_per_row_max', 'padded_seq_len', 'make_obs_s', 'n_params', 'config', 'torch', 'cuda_runtime', 'flash_attn', 'triton', 'device_name', 'tf32_matmul', 'trunk_compile', 'heads', 'autocast', 'grammar_tables', 'git_head', 'gpu_total_gib', 'C_head_rows_per_chunk', 'C_head_chunks']
+results keys ['A', 'D', 'B', 'C']
+derived keys ['formula', 'env_steps_per_update_per_rank', 'minibatches_per_update', 'update_wall_s_median', 'update_wall_s_p90', 'share', 'ceiling_sps_per_rank_median', 'ceiling_sps_per_rank_p90', 'ceiling_sps_2_ranks_approx_median', 'model_s_per_env_step']
+
+exec
+/bin/zsh -lc "python3 -B -c 'from pathlib import Path
+import json
+base=Path(\"ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod\")
+data=json.loads((base/\"bench_default/results_dense.json\").read_text())
+print(json.dumps(data[\"results\"][\"D\"],indent=2))
+'" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+python3: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+{
+  "workload": "D_compute_value_256",
+  "first_call_s_incl_compile": 0.0219811899587512,
+  "first_call_pack_calls": [
+    [
+      181504,
+      709
+    ]
+  ],
+  "first_call_use_flash_attn": [
+    true
+  ],
+  "warmup_iters": 5,
+  "timed_iters": 20,
+  "cuda_event_ms": [
+    21.977983474731445,
+    21.95964813232422,
+    21.971935272216797,
+    21.964704513549805,
+    21.970176696777344,
+    21.967679977416992,
+    21.960159301757812,
+    21.959360122680664,
+    21.95699119567871,
+    22.434560775756836,
+    21.967327117919922,
+    21.973312377929688,
+    21.957536697387695,
+    21.977344512939453,
+    21.961280822753906,
+    21.965984344482422,
+    21.962495803833008,
+    21.95471954345703,
+    21.959808349609375,
+    21.97702407836914
+  ],
+  "median_ms": 21.965344429016113,
+  "p90_ms": 21.977344512939453,
+  "min_ms": 21.95471954345703,
+  "max_ms": 22.434560775756836,
+  "host_wall_median_ms": 21.98141487315297,
+  "pack_sequence_calls_per_iter": 1.0,
+  "packed_tokens_per_chunk_first_iter": [
+    181504
+  ],
+  "use_flash_attn_all_true": true,
+  "use_flash_attn_calls_per_iter": 1.0,
+  "max_memory_allocated_gib": 0.9500412940979004,
+  "max_memory_reserved_gib": 1.5546875
+}
+
+exec
+/bin/zsh -lc "python3 -B -c 'from pathlib import Path
+import json,statistics
+base=Path(\"ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/pod\")
+p90s=[]; maxima=[]; count=0; wall={}; dense_memory={}
+for arm in [\"default\",\"aten\"]:
+    for density in [\"mid\",\"dense\"]:
+        data=json.loads((base/f\"bench_{arm}/results_{density}.json\").read_text())
+        med={}
+        for role, row in data[\"results\"].items():
+            samples=row[\"cuda_event_ms\"]; count+=len(samples)
+            median=statistics.median(samples); med[role]=median
+            assert median==row[\"median_ms\"]
+            assert max(samples)==row[\"max_ms\"]
+            ordered=sorted(samples)
+            assert row[\"p90_ms\"]==ordered[int((len(samples)-1)*0.9)]
+            p90s.append(((row[\"p90_ms\"]/median-1)*100,arm,density,role))
+            maxima.append(((max(samples)/median-1)*100,arm,density,role))
+        wall[arm+\"/\"+density]=(64*med[\"A\"]+med[\"C\"]+16*med[\"B\"]+med[\"D\"])/1000
+        if density==\"dense\":
+            dense_memory[arm]={r:data[\"results\"][r][\"max_memory_allocated_gib\"] for r in [\"B\",\"D\"]}
+print(json.dumps({\"samples_recomputed\":count,\"largest_p90_deviation_percent\":max(p90s),\"largest_max_deviation_percent\":max(maxima),\"derived_wall_seconds\":wall,\"dense_memory_gib\":dense_memory},indent=2))
+'" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+python3: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+{
+  "samples_recomputed": 320,
+  "largest_p90_deviation_percent": [
+    0.5339240023988667,
+    "aten",
+    "dense",
+    "D"
+  ],
+  "largest_max_deviation_percent": [
+    2.136166579390797,
+    "default",
+    "dense",
+    "D"
+  ],
+  "derived_wall_seconds": {
+    "default/mid": 4.666633473873138,
+    "default/dense": 8.561475232124328,
+    "aten/mid": 4.969930314064026,
+    "aten/dense": 8.943539784431458
+  },
+  "dense_memory_gib": {
+    "default": {
+      "B": 40.27310276031494,
+      "D": 0.9500412940979004
+    },
+    "aten": {
+      "B": 40.27539539337158,
+      "D": 0.8622612953186035
+    }
+  }
+}
+
+codex
+Commit `9bdd82d` accurately applies all r1 edits. No remaining findings.
+
+- [results.md:261](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:261) limits immunity to the identified GEMM paths and explicitly states the FlexAttention, static-shape, `bmm`, and above-bound real-trunk backward limitations.
+- Both documents label the fusion explanation as inference.
+- Recalculation from all **320 timing samples** confirms **0.534% p90**, **2.14% maximum**, and dense/default wall **8.561 s**.
+- Both qualify overall peak memory as “approximately unchanged” and report dense D **0.950 → 0.862 GiB**. See [README.md:67](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:67).
+- **69/69 manifest entries pass.** Only the README checksum changed.
+- All **68 pre-existing artifacts** other than README/manifest—including raw results and logs—are byte-identical across the parent commit, reviewed commit, and working copy.
+
+No files changed or GPU work launched.
+
+VERDICT: APPROVE
+hook: Stop
+hook: Stop Completed
+tokens used
+59,303
+Commit `9bdd82d` accurately applies all r1 edits. No remaining findings.
+
+- [results.md:261](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:261) limits immunity to the identified GEMM paths and explicitly states the FlexAttention, static-shape, `bmm`, and above-bound real-trunk backward limitations.
+- Both documents label the fusion explanation as inference.
+- Recalculation from all **320 timing samples** confirms **0.534% p90**, **2.14% maximum**, and dense/default wall **8.561 s**.
+- Both qualify overall peak memory as “approximately unchanged” and report dense D **0.950 → 0.862 GiB**. See [README.md:67](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md:67).
+- **69/69 manifest entries pass.** Only the README checksum changed.
+- All **68 pre-existing artifacts** other than README/manifest—including raw results and logs—are byte-identical across the parent commit, reviewed commit, and working copy.
+
+No files changed or GPU work launched.
+
+VERDICT: APPROVE

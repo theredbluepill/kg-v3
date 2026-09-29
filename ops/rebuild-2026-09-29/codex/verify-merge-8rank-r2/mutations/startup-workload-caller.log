@@ -1,0 +1,52 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-8rank/.codex-tmp/pytest-of-poonszesen/pytest-6/test_main_loads_kaggriculture_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110b1db80>
+capsys = <_pytest.capture.CaptureFixture object at 0x110b1f260>
+name = 'kaggriculture_8rank.yaml', rollout_rows = 64, teacher_rows = 4096
+teacher_calls = 1
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+            ("kaggriculture_8rank.yaml", 64, 4_096, 1),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(RuntimeError, match=_NOT_WIRED):
+            run_ppo.main()
+    
+        assert calls == []
+        assert not (tmp_path / "runs").exists()
+        headroom = _headroom_lines(capsys.readouterr().out)
+>       assert [line.split(":")[0] for line in headroom] == [
+            "GEMM workload headroom rollout",
+            "GEMM workload headroom minibatch",
+            "GEMM workload headroom teacher_chunk",
+            "GEMM workload headroom evaluation",
+        ]
+E       AssertionError: assert [] == ['GEMM worklo...m evaluation']
+E         
+E         Right contains 4 more items, first extra item: 'GEMM workload headroom rollout'
+E         Use -v to get more diff
+
+tests/scripts/test_run_ppo.py:3351: AssertionError
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]
+1 failed in 0.16s

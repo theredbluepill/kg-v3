@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_combined_path_rejects_foreign_or_mismatched_teachers ___________
+tests/kaggriculture/test_teacher.py:1133: in test_combined_path_rejects_foreign_or_mismatched_teachers
+    combined(obs, actions, edited)
+python/owl/model/kaggriculture.py:844: in evaluate_actions_with_teacher
+    check_replay_flags(teacher_result.valid)
+python/owl/model/kaggriculture_actor.py:551: in check_replay_flags
+    raise GrammarReplayError(
+E   owl.model.kaggriculture_actor.GrammarReplayError: evaluate_actions rejected the supplied program; failing groups: support — support (first row 1: env 0, seat 1): a chosen value is outside its prefix-dependent grammar mask
+
+During handling of the above exception, another exception occurred:
+tests/kaggriculture/test_teacher.py:1132: in test_combined_path_rejects_foreign_or_mismatched_teachers
+    with pytest.raises(ValueError, match="table market_kind"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'table market_kind'
+E     Actual message: 'evaluate_actions rejected the supplied program; failing groups: support — support (first row 1: env 0, seat 1): a chosen value is outside its prefix-dependent grammar mask'
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_combined_path_rejects_foreign_or_mismatched_teachers
+1 failed in 0.16s

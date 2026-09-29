@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_eight_rank_workloads_fit_the_model_chunking _______________
+
+    def test_eight_rank_workloads_fit_the_model_chunking() -> None:
+        # teacher_chunk = min(128, 32) x 64 x 2 rows: one trunk and one head call.
+>       assert _headroom("kaggriculture_8rank.yaml") == {
+            "rollout": (64, 1, 1),
+            "minibatch": (256, 1, 1),
+            "teacher_chunk": (4_096, 1, 1),
+            "evaluation": (64, 1, 1),
+        }
+E       AssertionError: assert {'evaluation'... (4096, 1, 1)} == {'evaluation'... (4096, 1, 1)}
+E         
+E         Omitting 3 identical items, use -vv to show
+E         Differing items:
+E         {'evaluation': (32, 1, 1)} != {'evaluation': (64, 1, 1)}
+E         Use -v to get more diff
+
+tests/kaggriculture/test_configs.py:302: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking
+1 failed in 0.04s
