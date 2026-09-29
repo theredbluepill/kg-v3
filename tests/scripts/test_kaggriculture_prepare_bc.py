@@ -7,6 +7,7 @@ interpreter (the project dependency), so its step+1 pairing is real.
 from __future__ import annotations
 
 import copy
+import importlib
 import importlib.util
 import json
 import sys
@@ -31,9 +32,9 @@ _SECRET_NAME = "Sentinel Team Name"
 
 @pytest.fixture(scope="module")
 def played() -> dict[str, Any]:
-    from kaggle_environments import make
-
-    env = make("kaggriculture", configuration={"seed": 12345})
+    env = importlib.import_module("kaggle_environments").make(
+        "kaggriculture", configuration={"seed": 12345}
+    )
     env.run(["starter", "pass"])
     data: dict[str, Any] = env.toJSON()
     data["info"] |= {"TeamNames": [_SECRET_NAME, "B"], "Agents": [_SECRET_NAME]}
@@ -79,10 +80,11 @@ def test_turn_stride_keeps_a_per_episode_phase() -> None:
     assert prepare.kept_turns("7", 1) == list(range(719))
     kept = prepare.kept_turns("7", 5)
     assert kept == prepare.kept_turns("7", 5)
-    assert len(kept) in (143, 144) and np.all(np.diff(kept) == 5)
+    assert len(kept) in (143, 144)
+    assert np.all(np.diff(kept) == 5)
     phases = {prepare.kept_turns(str(n), 5)[0] for n in range(40)}
     assert len(phases) > 1
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="turn stride"):
         prepare.kept_turns("7", 0)
 
 
@@ -94,7 +96,14 @@ def test_winner_is_the_larger_final_bank_and_draws_keep_both() -> None:
 
 @pytest.mark.parametrize(
     ("value", "kind"),
-    [(None, "null"), (False, "false"), (0, "zero"), (0.0, "zero"), ("", "empty_string"), ({}, "empty_object")],
+    [
+        (None, "null"),
+        (False, "false"),
+        (0, "zero"),
+        (0.0, "zero"),
+        ("", "empty_string"),
+        ({}, "empty_object"),
+    ],
 )
 @pytest.mark.parametrize("key", ["hands", "market"])
 def test_falsy_hands_and_market_normalize_to_empty_lists_counted(
@@ -107,11 +116,13 @@ def test_falsy_hands_and_market_normalize_to_empty_lists_counted(
 
 
 def test_bad_action_envelopes_are_rejected() -> None:
-    for raw in (None, [], {"farmer": ["PASS"], "extra": 1}, {"hands": "EAST"}):
+    raws: list[object] = [None, [], {"farmer": ["PASS"], "extra": 1}, {"hands": "EAST"}]
+    for raw in raws:
         with pytest.raises(ValueError, match="action envelope"):
             prepare.normalize_action(raw)
     action, kinds = prepare.normalize_action({"hands": [], "market": []})
-    assert action["farmer"] is None and kinds == []
+    assert action["farmer"] is None
+    assert kinds == []
 
 
 def test_envelope_checks(played: dict[str, Any]) -> None:
@@ -142,8 +153,9 @@ def test_header_copies_shared_keys_from_seat_zero(played: dict[str, Any]) -> Non
     header = prepare.turn_header(played, 5)
     assert header["seed"] == 0
     assert header["initial"]["public"]["step"] == 5
-    assert header["initial"]["privates"][1] == (
-        played["steps"][5][1]["observation"]["private"]
+    assert (
+        header["initial"]["privates"][1]
+        == (played["steps"][5][1]["observation"]["private"])
     )
     assert header["configuration"] is played["configuration"]
 
@@ -169,7 +181,8 @@ def test_step_plus_one_pairing_reproduces_kaggle_and_shifted_does_not(
         for seat in (0, 1):
             shifted["steps"][t][seat]["action"] = played["steps"][t - 1][seat]["action"]
     matches, mismatches = prepare.pairing_check(shifted)
-    assert matches < 719 and mismatches
+    assert matches < 719
+    assert mismatches
 
 
 # --- end to end -------------------------------------------------------------------
@@ -178,7 +191,7 @@ def test_step_plus_one_pairing_reproduces_kaggle_and_shifted_does_not(
 def test_end_to_end_writes_loadable_winner_shards_and_resumes(
     played: dict[str, Any], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(prepare, "_source_identity", lambda repo: {"git_head": "t"})
+    monkeypatch.setattr(prepare, "_source_identity", lambda _repo: {"git_head": "t"})
     train_id, valid_id = _ids("train", 1)[0], _ids("validation", 1)[0]
     bad = _episode(played, "999")
     bad["steps"] = bad["steps"][:700]
@@ -186,8 +199,18 @@ def test_end_to_end_writes_loadable_winner_shards_and_resumes(
     _archive(archives, 21, {train_id: _episode(played, train_id), "999": bad})
     _archive(archives, 22, {valid_id: _episode(played, valid_id)})
     out = tmp_path / "bc"
-    argv = [str(archives), str(out), "--days", "21-22", "--workers", "1",
-            "--turn-stride", "3", "--pairing-sample", "3"]
+    argv = [
+        str(archives),
+        str(out),
+        "--days",
+        "21-22",
+        "--workers",
+        "1",
+        "--turn-stride",
+        "3",
+        "--pairing-sample",
+        "3",
+    ]
     assert prepare.main(argv) == 0
 
     manifest_text = (out / MANIFEST_NAME).read_text()
@@ -201,7 +224,8 @@ def test_end_to_end_writes_loadable_winner_shards_and_resumes(
     winner = [s for s in (0, 1) if banks[s]["money"] == max(f["money"] for f in banks)]
     for episode_id, split in ((train_id, "train"), (valid_id, "validation")):
         record = records[episode_id]
-        assert record["split"] == split and record["policy_seats"] == winner
+        assert record["split"] == split
+        assert record["policy_seats"] == winner
         assert record["kept_turns"] == len(prepare.kept_turns(episode_id, 3))
         assert record["admitted"] == record["kept_turns"]
     assert manifest["run"]["turn_stride"] == 3
@@ -229,9 +253,22 @@ def test_end_to_end_writes_loadable_winner_shards_and_resumes(
     shards = {p: p.read_bytes() for p in out.glob("*/*.npz")}
     (out / MANIFEST_NAME).unlink()
     monkeypatch.setattr(
-        prepare, "process_episode", lambda *a: pytest.fail("finished episode redone")
+        prepare, "process_episode", lambda *_: pytest.fail("finished episode redone")
     )
     assert prepare.main(argv[:-2]) == 0
     assert {p: p.read_bytes() for p in out.glob("*/*.npz")} == shards
     with pytest.raises(FileExistsError):
         prepare.main(argv)
+
+    # A resume whose source or label settings changed refuses the old records.
+    (out / MANIFEST_NAME).unlink()
+    with pytest.raises(RuntimeError, match=r"turn_stride"):
+        prepare.main([*argv[:-4], "--turn-stride", "2"])
+    swapped = _episode(played, train_id)
+    swapped["steps"][-1][0]["observation"]["farms"].reverse()
+    _archive(archives, 21, {train_id: swapped, "999": bad})
+    with pytest.raises(RuntimeError, match=r"archive_sha256"):
+        prepare.main(argv[:-2])
+    monkeypatch.setattr(prepare, "_source_identity", lambda _repo: {"git_head": "u"})
+    with pytest.raises(RuntimeError, match=r"\['archive_sha256', 'run'\]"):
+        prepare.main(argv[:-2])

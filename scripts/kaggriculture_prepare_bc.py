@@ -36,6 +36,9 @@ Per episode (one worker process each, one ZIP member in memory at a time):
 
 Every finished episode leaves ``records/<day>-<episode_id>.json``; a rerun
 skips those (resumable), and ``manifest.json`` is written once at the end.
+``records/identity.json`` binds the records to the source checkout, the
+label-affecting settings and every archive's SHA-256; a rerun whose identity
+differs fails instead of reusing stale labels or winners.
 Agent and team names are never read.
 
 ``--pairing-sample N`` first steps N episodes through kaggle-environments' own
@@ -50,6 +53,7 @@ import argparse
 import contextlib
 import copy
 import hashlib
+import importlib
 import json
 import math
 import multiprocessing
@@ -76,6 +80,8 @@ PAIRED_TURNS = EPISODE_STEPS - 1
 HIRE_LIMIT = 241
 ENCODE_BATCH = 32
 RECORD_DIR = "records"
+IDENTITY_NAME = "identity.json"
+LABEL_PAIRING = "observation steps[t], action steps[t+1]"
 PAIRING_NAME = "pairing.json"
 ARCHIVE_PATTERN = "kaggriculture-episodes-{month}-{day:02d}.zip"
 PUBLIC_KEYS = ("step", "day", "hour", "farms", "market", "town")
@@ -395,7 +401,9 @@ def admit_turns(
                     json.dumps(action), actors, order_limit, HIRE_LIMIT, out
                 )
                 decoded = json.loads(
-                    rs.kaggriculture_decode(out, length, actors, order_limit, HIRE_LIMIT)
+                    rs.kaggriculture_decode(
+                        out, length, actors, order_limit, HIRE_LIMIT
+                    )
                 )
                 if decoded != action:
                     raise ValueError("decode round trip")
@@ -505,8 +513,12 @@ def pairing_check(data: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
     Returns the number of the 719 transitions whose public state and both
     privates equal ``steps[t + 1]`` (value equality), plus the mismatches.
     """
-    from kaggle_environments.envs.kaggriculture.kaggriculture import interpreter
-    from kaggle_environments.utils import Struct, structify
+    # kaggle_environments ships no type information; bind it through importlib.
+    interpreter = importlib.import_module(
+        "kaggle_environments.envs.kaggriculture.kaggriculture"
+    ).interpreter
+    utils = importlib.import_module("kaggle_environments.utils")
+    Struct, structify = utils.Struct, utils.structify
 
     env = Struct(
         configuration=structify(copy.deepcopy(data["configuration"])),
@@ -538,14 +550,14 @@ def pairing_check(data: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
                 )
             )
         interpreter(state, env)
-        predicted = _plain(
+        predicted: dict[str, Any] = _plain(
             {
                 "public": {k: state[0].observation[k] for k in PAIRING_PUBLIC_KEYS},
                 "privates": [state[s].observation["private"] for s in (0, 1)],
             }
         )
         nxt = steps[t + 1][0]["observation"]
-        expected = {
+        expected: dict[str, Any] = {
             "public": {k: nxt[k] for k in PAIRING_PUBLIC_KEYS},
             "privates": [steps[t + 1][s]["observation"]["private"] for s in (0, 1)],
         }
@@ -553,10 +565,12 @@ def pairing_check(data: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
             matches += 1
         else:
             differing = [
-                k for k in PAIRING_PUBLIC_KEYS
+                k
+                for k in PAIRING_PUBLIC_KEYS
                 if predicted["public"][k] != expected["public"][k]
             ] + [
-                f"private{s}" for s in (0, 1)
+                f"private{s}"
+                for s in (0, 1)
                 if predicted["privates"][s] != expected["privates"][s]
             ]
             mismatches.append({"turn": t, "differs": differing})
@@ -572,8 +586,13 @@ def _pairing_task(task: EpisodeTask) -> dict[str, Any]:
     try:
         check_envelope(data, task.episode_id)
     except EpisodeRejected as error:
-        return {"episode_id": task.episode_id, "day": task.day, "matches": 0,
-                "total": 0, "rejected": str(error)}
+        return {
+            "episode_id": task.episode_id,
+            "day": task.day,
+            "matches": 0,
+            "total": 0,
+            "rejected": str(error),
+        }
     matches, mismatches = pairing_check(data)
     return {
         "episode_id": task.episode_id,
@@ -604,9 +623,11 @@ def pairing_sample(
 def _engine_identity() -> dict[str, str]:
     from importlib import metadata
 
-    from kaggle_environments.envs.kaggriculture import kaggriculture
+    kaggriculture = importlib.import_module(
+        "kaggle_environments.envs.kaggriculture.kaggriculture"
+    )
 
-    source = Path(kaggriculture.__file__)
+    source = Path(str(kaggriculture.__file__))
     return {
         "kaggle_environments": metadata.version("kaggle-environments"),
         "interpreter_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
@@ -633,7 +654,9 @@ def build_manifest(
         totals[split] = {
             "episodes": len(mine),
             "admitted_turns": sum(r["admitted"] for r in mine),
-            "policy_seat_rows": sum(r["admitted"] * len(r["policy_seats"]) for r in mine),
+            "policy_seat_rows": sum(
+                r["admitted"] * len(r["policy_seats"]) for r in mine
+            ),
             "draw_episodes": sum(len(r["policy_seats"]) == 2 for r in mine),
         }
     turn_rejections: Counter[str] = Counter()
@@ -641,7 +664,9 @@ def build_manifest(
     for r in kept:
         turn_rejections.update(r["rejections"])
         normalizations.update(r["normalizations"])
-    episode_rejections = Counter(rejection_reason(Exception(r["rejected"])) for r in rejected)
+    episode_rejections = Counter(
+        rejection_reason(Exception(r["rejected"])) for r in rejected
+    )
     episodes = [bc_data.BCManifestEpisode.model_validate(r) for r in kept]
     return bc_data.write_bc_manifest(
         out_dir,
@@ -710,13 +735,44 @@ def _parse_days(text: str) -> list[int]:
     return [int(part) for part in text.split(",")]
 
 
+def _bind_identity(out_dir: Path, identity: dict[str, Any]) -> None:
+    """Record the preparation identity, or require an exact match on resume."""
+    records = out_dir / RECORD_DIR
+    path = records / IDENTITY_NAME
+    if path.is_file():
+        stored = json.loads(path.read_text(encoding="utf-8"))
+        if stored != identity:
+            changed = sorted(
+                key
+                for key in stored.keys() | identity.keys()
+                if stored.get(key) != identity.get(key)
+            )
+            raise RuntimeError(
+                f"{path} differs from this run in {changed}; "
+                "prepare into a fresh out_dir"
+            )
+        return
+    if records.is_dir() and any(records.glob("*.json")):
+        raise RuntimeError(
+            f"{records} has records but no {IDENTITY_NAME}; use a fresh out_dir"
+        )
+    records.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(identity, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("archives", type=Path, help="directory of day archive ZIPs")
-    parser.add_argument("out_dir", type=Path, help="dataset root (outside the checkout)")
+    parser.add_argument(
+        "out_dir", type=Path, help="dataset root (outside the checkout)"
+    )
     parser.add_argument("--month", default="2026-09")
-    parser.add_argument("--days", default="21-27", help="e.g. 21-27 or 21,22")
-    parser.add_argument("--workers", type=int, default=max(1, min(16, (os.cpu_count() or 2) - 2)))
+    parser.add_argument("--days", default="22-28", help="e.g. 22-28 or 22,23")
+    parser.add_argument(
+        "--workers", type=int, default=max(1, min(16, (os.cpu_count() or 2) - 2))
+    )
     parser.add_argument("--validation-fraction", type=float, default=0.03)
     stride = parser.add_mutually_exclusive_group()
     stride.add_argument("--turn-stride", type=int, default=None)
@@ -743,8 +799,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     run = _source_identity(repo)
     days = _parse_days(args.days)
     tasks = list_tasks(
-        args.archives, month=args.month, days=days,
-        validation_fraction=args.validation_fraction, turn_stride=1,
+        args.archives,
+        month=args.month,
+        days=days,
+        validation_fraction=args.validation_fraction,
+        turn_stride=1,
     )
     if args.limit_episodes is not None:
         tasks = tasks[: args.limit_episodes]
@@ -758,6 +817,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         for t in tasks
     ]
     out_dir.mkdir(parents=True, exist_ok=True)
+    archive_sha256 = {
+        Path(archive).name: _sha256(Path(archive))
+        for archive in sorted({t.archive for t in tasks})
+    }
+    _bind_identity(
+        out_dir,
+        {
+            "run": run,
+            "month": args.month,
+            "days": days,
+            "validation_fraction": args.validation_fraction,
+            "turn_stride": turn_stride,
+            "hire_limit": HIRE_LIMIT,
+            "label_pairing": LABEL_PAIRING,
+            "archive_sha256": archive_sha256,
+        },
+    )
     print(
         f"episodes={len(tasks)} days={days} turn_stride={turn_stride} "
         f"bytes_per_turn_row={resident_bytes_per_turn()} workers={args.workers}",
@@ -802,16 +878,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "turn_stride": turn_stride,
                 "bytes_per_turn_row": resident_bytes_per_turn(),
                 "validation_fraction": args.validation_fraction,
-                "label_pairing": "observation steps[t], action steps[t+1]",
+                "label_pairing": LABEL_PAIRING,
                 "policy_seats": "winner by final bank; both on a draw",
             },
             "source": {
                 "archives": str(args.archives),
                 "month": args.month,
                 "days": days,
+                "archive_sha256": archive_sha256,
                 "archive_bytes": {
-                    Path(t.archive).name: Path(t.archive).stat().st_size
-                    for t in tasks
+                    Path(t.archive).name: Path(t.archive).stat().st_size for t in tasks
                 },
                 "episodes_listed": len(tasks),
             },
