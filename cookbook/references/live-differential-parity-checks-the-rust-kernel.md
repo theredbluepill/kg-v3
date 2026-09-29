@@ -89,7 +89,7 @@ accepts external actions would need explicit handling.
 ## Verification and limits
 
 Checks run on this branch are recorded in `ops/rebuild-2026-09-29/1.1b/results.md`:
-66/66 engine tests, the trim checker, the Python tests (including live
+69/69 engine tests (19 replay-parity), the trim checker, the Python tests (including live
 byte-identical regeneration of the committed set), perturbation tests, and
 `just prepare`. Codex verification (`verify-1.1b-r1`) approved with edits; the
 fixes (confirmed classification, exact null probe, full-state rollback check,

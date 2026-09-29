@@ -1,0 +1,829 @@
+{
+  "sweep": "kaggriculture-live-differential-parity",
+  "started": "2026-09-29T13:53:23+0800",
+  "git_head": "25ec814768d35f4ee1f89678485cc9099e27019b",
+  "git_dirty_paths": [],
+  "python_engine": "kaggle-environments==1.32.7",
+  "platform": "macOS-26.4-arm64-arm-64bit",
+  "arguments": {
+    "games": 8,
+    "base_seed": 20260929,
+    "probes": true,
+    "include_known_divergences": false,
+    "traces_dir": "/Users/poonszesen/kg-v3-parity/.codex-tmp/verify-1.1b-r2/sweep-traces"
+  },
+  "rust_test_exit_code": 101,
+  "timings": {
+    "generate_games_s": 4.77,
+    "generate_probes_s": 3.71,
+    "rust_replay_s": 6.89,
+    "rust_d1_recheck_s": 0.12
+  },
+  "games": 8,
+  "probes": 303,
+  "traces": 311,
+  "transitions": 7267,
+  "game_transitions": 5752,
+  "python_rejected_steps": 82,
+  "traces_agreeing": 274,
+  "traces_diverging": 37,
+  "divergences_by_class": {
+    "D2": 25,
+    "D1": 12
+  },
+  "new_divergences": 0,
+  "per_policy": {
+    "builtin:pass": {
+      "seats": 303,
+      "probes": 303,
+      "transitions": 1515
+    },
+    "builtin:random": {
+      "seats": 2,
+      "games": 2,
+      "transitions": 1438
+    },
+    "builtin:starter": {
+      "seats": 3,
+      "games": 3,
+      "transitions": 2157
+    },
+    "edge": {
+      "seats": 6,
+      "games": 5,
+      "transitions": 3595
+    },
+    "random": {
+      "seats": 5,
+      "games": 4,
+      "transitions": 2876
+    },
+    "script": {
+      "seats": 303,
+      "probes": 303,
+      "transitions": 1515
+    }
+  },
+  "per_config_variant": {
+    "default": {
+      "traces": 8,
+      "transitions": 5752
+    },
+    "probe": {
+      "traces": 303,
+      "transitions": 1515
+    }
+  },
+  "seeds": [
+    20260929,
+    20268848,
+    20276767,
+    20284686,
+    20292605,
+    20300524,
+    20308443,
+    20316362
+  ],
+  "divergences": [
+    {
+      "file": "probe-030-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLANT\",[\"WHEAT\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-031-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLANT\",{\"crop\":\"WHEAT\"}],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-032-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[[\"NORTH\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-033-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[{\"op\":\"NORTH\"}],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-034-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PICKUP\",[\"WHEAT\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-035-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLACE\",{\"crop\":\"WHEAT\"},1],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-057-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PICKUP\",\"WHEAT\",\"\\u0663\"],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_error",
+        "field": "step",
+        "expected": "Ok",
+        "actual": "PICKUP count cannot parse \"\u0663\" as a Python integer"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-058-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PICKUP\",\"WHEAT\",\"\\uff13\"],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_error",
+        "field": "step",
+        "expected": "Ok",
+        "actual": "PICKUP count cannot parse \"\uff13\" as a Python integer"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-090-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLACE\",\"WHEAT\",\"\\u0663\"],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_error",
+        "field": "step",
+        "expected": "Ok",
+        "actual": "PLACE count cannot parse \"\u0663\" as a Python integer"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-091-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLACE\",\"WHEAT\",\"\\uff13\"],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_error",
+        "field": "step",
+        "expected": "Ok",
+        "actual": "PLACE count cannot parse \"\uff13\" as a Python integer"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-102-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PICKUP\",[\"WHEAT\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-103-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLACE\",[\"WHEAT\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-104-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLACE\",[\"WHEAT\"],1],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-105-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLANT\",[\"WHEAT\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-106-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[[\"WHEAT\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-107-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[[\"WHEAT\"],\"WHEAT\"],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-108-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PICKUP\",{\"crop\":\"WHEAT\"}],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-109-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLACE\",{\"crop\":\"WHEAT\"}],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-110-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLACE\",{\"crop\":\"WHEAT\"},1],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-111-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PLANT\",{\"crop\":\"WHEAT\"}],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-112-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[{\"crop\":\"WHEAT\"}],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-113-unit.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[{\"crop\":\"WHEAT\"},\"WHEAT\"],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-118-hand.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[[\"PASS\"],[\"PLANT\",[\"WHEAT\"]]],\"market\":[]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-144-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_SEED\",[\"WHEAT\"],1]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-145-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_ANIMAL\",{\"x\":1},1]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-167-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_SEED\",\"WHEAT\",\"\\u0663\"]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "expected": "2496.0",
+        "actual": "2526.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-168-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_SEED\",\"WHEAT\",\"\\uff13\"]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "expected": "2496.0",
+        "actual": "2526.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-179-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_SEED\",[\"WHEAT\"],1]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-180-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_SEED\",{\"crop\":\"WHEAT\"},1]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-204-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"SELL\",\"WHEAT\",\"\\u0663\"]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "expected": "2607.0",
+        "actual": "2526.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-205-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"SELL\",\"WHEAT\",\"\\uff13\"]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "expected": "2607.0",
+        "actual": "2526.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-241-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_PRODUCT\",\"FERTILIZER\",\"\\u0663\"]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "expected": "2225.0",
+        "actual": "2526.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-242-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_PRODUCT\",\"FERTILIZER\",\"\\uff13\"]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "expected": "2225.0",
+        "actual": "2526.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-278-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_ANIMAL\",\"GOOSE\",\"\\u0663\"]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "expected": "1626.0",
+        "actual": "2526.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-279-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_ANIMAL\",\"GOOSE\",\"\\uff13\"]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "expected": "1626.0",
+        "actual": "2526.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "probe-290-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_ANIMAL\",[\"WHEAT\"],1]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "probe-291-market.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "probe",
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_ANIMAL\",{\"crop\":\"WHEAT\"},1]]}",
+      "first_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    }
+  ]
+}

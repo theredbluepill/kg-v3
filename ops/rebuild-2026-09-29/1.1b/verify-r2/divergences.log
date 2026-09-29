@@ -1,0 +1,26 @@
+
+running 1 test
+test env_directory_traces ... FAILED
+
+failures:
+
+failures:
+    env_directory_traces
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.02s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running tests/replay_parity.rs (engine_rs/target/debug/deps/replay_parity-c38030bb30dd03b7)
+replayed 7 traces, 7 divergent
+
+thread 'env_directory_traces' (10027590) panicked at tests/replay_parity.rs:840:5:
+parity divergences:
+divergence-d1-unicode-digit-market-quantity.jsonl.gz: line 1 from_step Some(0): public state at public.farms[0].money: expected 2699.0 actual 3000.0
+divergence-d1-unicode-digit-unit-count.jsonl.gz: line 1 from_step Some(0): rust_error at step: expected Ok actual PICKUP count cannot parse "٣" as a Python integer
+divergence-d2-unhashable-market-item.jsonl.gz: line 1 from_step Some(0): rust_accepted at step: expected error ("TypeError: unhashable type: 'list'") actual Ok
+divergence-d2-unhashable-plant-crop.jsonl.gz: line 1 from_step Some(0): rust_accepted at step: expected error ("TypeError: unhashable type: 'list'") actual Ok
+divergence-d2-unhashable-plant-in-missing-hand.jsonl.gz: line 1 from_step Some(0): rust_accepted at step: expected error ("TypeError: unhashable type: 'list'") actual Ok
+divergence-d2-unhashable-shed-item.jsonl.gz: line 1 from_step Some(0): rust_accepted at step: expected error ("TypeError: unhashable type: 'Struct'") actual Ok
+divergence-d2-unhashable-unit-verb.jsonl.gz: line 1 from_step Some(0): rust_accepted at step: expected error ("TypeError: unhashable type: 'list'") actual Ok
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test replay_parity`

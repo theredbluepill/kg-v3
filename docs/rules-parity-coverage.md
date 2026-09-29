@@ -164,7 +164,7 @@ Nine RNG integration tests use embedded CPython vectors, including large and
 negative seeds, rollover and long streams. These 50 tests do not read episodes.
 
 Task 1.1 added nine `tests/replay_parity.rs` tests: four replay tests, a public
-API test, and four comparator regressions. Task 1.1b extends the file to 16
+API test, and four comparator regressions. Task 1.1b extends the file to 19
 (see [live differential parity](#kaggriculture-live-differential-parity)). The API test covers decoded PASS
 commands, public state, terminal banks, and economic/attribution counters.
 Comparator tests reject private inventory and private field insertion-order
@@ -196,7 +196,7 @@ selected opponent coverage returns when those opponents are imported.
 
 ### Kaggriculture Verification and Limits
 
-Task 1.1's offline engine tests passed **59/59 with none ignored** (66/66 after
+Task 1.1's offline engine tests passed **59/59 with none ignored** (69/69 after
 Task 1.1b); the retained root suite
 passes **155 with two ignored**. Receipts in `ops/rebuild-2026-09-29/1.1/` show the
 private-order regression fail with plain JSON equality, then pass with explicit

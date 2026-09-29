@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Correct live-parity test totals after Codex re-verification
+
+Codex re-verified Task 1.1b at `25ec814` (APPROVE WITH EDITS, no blocking findings; every round-one finding resolved). The [[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]] and `docs/rules-parity-coverage.md` now state the current totals, 69 engine tests including 19 replay-parity tests, rather than 66 and 16. The compact verification evidence is in `ops/rebuild-2026-09-29/1.1b/verify-r2/`.
+
 ## 2026-09-29 — Close Codex verification of the live parity check
 
 Codex approved Task 1.1b with edits; commit `6217868` fixes them test-first. The

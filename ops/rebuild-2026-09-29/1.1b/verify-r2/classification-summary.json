@@ -1,0 +1,55 @@
+{
+  "games": 0,
+  "probes": 1,
+  "traces": 1,
+  "transitions": 1,
+  "game_transitions": 0,
+  "python_rejected_steps": 0,
+  "traces_agreeing": 0,
+  "traces_diverging": 1,
+  "divergences_by_class": {
+    "unclassified": 1
+  },
+  "new_divergences": 1,
+  "per_policy": {
+    "builtin:pass": {
+      "seats": 1,
+      "probes": 1,
+      "transitions": 1
+    },
+    "script": {
+      "seats": 1,
+      "probes": 1,
+      "transitions": 1
+    }
+  },
+  "per_config_variant": {
+    "divergence": {
+      "traces": 1,
+      "transitions": 1
+    }
+  },
+  "seeds": [],
+  "divergences": [
+    {
+      "file": "divergence-d1-unicode-digit-market-quantity.jsonl.gz",
+      "kind": "probe",
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "config_variant": "divergence",
+      "probe": "{\"market\":[[\"BUY_PRODUCT\",\"FERTILIZER\",\"\\uff13\"]]}",
+      "first_divergence": {
+        "line": 1,
+        "from_step": 0,
+        "kind": "public state",
+        "field": "public.day",
+        "expected": "1",
+        "actual": "0"
+      },
+      "known_class": null
+    }
+  ]
+}
