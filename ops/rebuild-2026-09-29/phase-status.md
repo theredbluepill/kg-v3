@@ -28,7 +28,7 @@ The done count only includes plan checkboxes whose work is merged. Rows without 
 | 1 Engine and native env | 5 / 5 (plus 1.1b, merged) | merged (1.4 and 1.5 at `7f797a3`) | None. 1.5's pod DMA fence test and early two-rank smoke stay pending (Phase 6). |
 | 2 Model | 5 / 5 | merged | None. CUDA/BF16 is unqualified and waits on Phase 6. |
 | 3 Trainer | 4 / 6 | 1.4/1.5 merged; 3.1 not started | 3.1's Kaggriculture rollout/mask mapping, then 3.5 |
-| 4 Teacher | 3 / 4 | 4.1–4.3 merged | 4.4 configs (not started) |
+| 4 Teacher | 3 / 4 | 4.1–4.3 merged | 4.4 configs (implemented on `kg/rebuild-4-4`, in verification) |
 | 5 BC | 0 / 2 | in progress | 5.2 trainer approved and 5.1 preparer approved at `356d19f`, both unmerged; two later preparer commits unreviewed |
 | 6 GPU verification | 1 / 6 | 6.0 merged; evidence merged | 6.1 after 3.5 and 5.2 (1.4/1.5 merged) |
 | 7 Evaluation and packaging | 1 / 5 | 7.1 merged (`kg/merge-7-1`); 7.3 in review; 7.4 brief awaiting re-review | 7.3 verification |
@@ -88,7 +88,7 @@ Live processes at 22:11 HKT (`ps`):
 | 4.1 Per-slot KL | merged | `e584a0d` (phase tip `8fde43c`), merged by `a424d8c`; follow-up `2390c8e` | Brief: `codex/brief-4-review.md` REVISE (v1; no v2 re-review found). Code: `codex/verify-4-teacher-r2.md` APPROVE (4.1–4.3). Merge: `codex/verify-merge-teacher-r1.md` APPROVE WITH EDITS, `codex/verify-merge-teacher-r2.md` APPROVE. | `rebuild/briefs/4-teacher.md`, `rebuild/trainer-model/4.1-*.log` | `cookbook/references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce.md` | GPU component evidence exists (GPU bundle C3/C4); cross-chunk/minibatch equality, multi-rank and trainer integration are open. |
 | 4.2 Targets and cache | merged | `a90b820`; as 4.1 | As 4.1 | `rebuild/trainer-model/4.2-*.log` | As 4.1 | Cache bytes are computed, not measured in a training run. |
 | 4.3 Model methods and wiring | merged | `b94b8dc` plus r1 fixes `8fde43c`; as 4.1 | `codex/verify-4-teacher-r1.md` APPROVE WITH EDITS; `codex/verify-4-teacher-r2.md` APPROVE | `rebuild/trainer-model/4.3-*.log`, `rebuild/merge-teacher/skip-probe.log` | As 4.1 | T18 and the launch/resume tests stay skipped until the 3.1 seam and the native env are wired. |
-| 4.4 Teacher configs | not started | None | Listed as outstanding in `codex/verify-4-teacher-r2.md` | None | None | Its configs prerequisite has merged. |
+| 4.4 Teacher configs | implemented, in verification | `kg/rebuild-4-4` | Listed as outstanding in `codex/verify-4-teacher-r2.md`; verify loop `codex/verify-4.4-rN.md` | None | None | Teacher fields pinned, cache bytes at startup, teacher checkpoint required at a fresh Kaggriculture launch; also sends Kaggriculture PPO runs to W&B `kg-v3`. |
 
 ## Phase 5 — BC
 
