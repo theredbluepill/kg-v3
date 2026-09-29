@@ -1,5 +1,14 @@
 # Change log
 
+## 2026-09-29 — Register the Kaggriculture model and align its compile and critic with Isaiah
+
+Task 3.1 model side, on `kg/rebuild-trainer-model` (base `e1458d2`). The new [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] records three changes:
+- **Registration:** `KaggricultureTransformerConfig` joins `ModelConfig`, and `create_model` checks that the specs belong to the model's game. `FullConfig` rejects the model until a Kaggriculture env config exists.
+- **Compile:** `configure_model_compile` dispatches the trunk target through a nominal `TrunkCompileAPI` instead of rejecting every model except `StatelessTransformerV1`. Tests pin the compiled region to the blocks, behind `_run_trunk`'s guard.
+- **Critic:** the winner softmax uses Isaiah's masked form. The encoder and heads References now link here instead of listing these items as open.
+
+Checks: `just py-prepare` passes (1,324 passed, 4 skipped), and Isaiah's suites give 1,048 passed. Red runs are in `ops/rebuild-2026-09-29/trainer-model/`. Everything ran on CPU; real compile and CUDA are unverified.
+
 ## 2026-09-29 — Reconcile overflow notes after merging the heads and GEMM evidence
 
 Codex verified the staged merge of Task 2.3 and the GEMM-limit evidence (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md`).
