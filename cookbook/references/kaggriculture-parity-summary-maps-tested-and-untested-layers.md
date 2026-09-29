@@ -84,8 +84,11 @@ Each of them covers one layer, so this record is new rather than a revision.
   guard. No Rust source, Cargo manifest or lockfile changed after merge commit
   `7f797a3`. The page therefore cites the merge's `just prepare` result
   (274 passed, 5 ignored) as the latest full run.
-- A Codex independent verify loop follows this record. Its verdict files are
-  `ops/rebuild-2026-09-29/codex/verify-7.5-rN.md`.
+- No independent verification exists yet. Codex verify round 1
+  (`ops/rebuild-2026-09-29/codex/verify-7.5-r1-prompt.md`) and its resume both
+  stopped on Codex's usage limit before doing any work, so there is no verdict.
+  The limit resets 2026-10-06. The transcripts are kept as local working files
+  in the main checkout.
 
 ## Gaps and reopening conditions
 
