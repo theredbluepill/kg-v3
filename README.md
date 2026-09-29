@@ -568,16 +568,32 @@ GPUs):
 
 ```bash
 torchrun --nproc-per-node 2 scripts/train_bc.py configs/bc/kaggriculture_2rank.yaml \
-  --data <task-5.1-dataset> --output-dir runs/bc [--wandb-mode offline]
+  --data <task-5.1-dataset> --output-dir runs/bc [--experiment-id <id>]
 torchrun --nproc-per-node 2 scripts/train_bc.py runs/bc/<run> --data <dataset>  # restart
 ```
 
+W&B uses `run_ppo`'s one path and credential check (see "PPO training configs"):
+project `kg-v3`, job type `bc`, run name `bc-<run dir>`, grouped by
+`--experiment-id` (default: the run directory's name) and tagged
+`kaggriculture-v3`, `bc`, `kaggriculture`. Online is the default; without a key
+rank 0 fails with `MissingWandbCredentialsError` before any config or data
+load. `--wandb-mode offline` or `--log-mode debug` is an explicit outage with
+the loud banner. Each attempt writes the shared `attempts.jsonl` receipt, and
+`telemetry_mode` also appears in `bc_attempts.jsonl`, the best-checkpoint
+record and `bc_result.json`. A restart continues the saved W&B run, so it
+requires online W&B and a run that was not launched with `--log-mode debug`.
+
 A restart is a new attempt: `bc_attempts.jsonl` gains a record with the
-checkout's own source (`git`, or `--source-commit`), the parent `bc_state.pt`
-SHA-256 and every earlier attempt's source, and the best-checkpoint record and
-`bc_result.json` carry the attempt that wrote them. The restart must keep the
-saved trajectory's settings (the BC config except `max_steps`, and the whole
-PPO config); only `max_steps` in the run's `bc_config.yaml` may be raised.
+checkout's own source (`git`, or `--source-commit` on a checkout without git
+metadata; a value that disagrees with git is rejected), the parent `bc_state.pt`
+SHA-256, every earlier attempt's source, the experiment id, the settings hash
+(`bc_config_sha256`: the BC config without its `ppo_config` path, plus the PPO
+config's content) and the telemetry mode; it must agree with `attempts.jsonl`
+on every earlier attempt. The best-checkpoint record and `bc_result.json` carry
+the attempt that wrote them. The restart must keep the saved trajectory's
+settings (the BC config except `max_steps`, and the whole PPO config); only
+`max_steps` in the run's `bc_config.yaml` may be raised. BC run directories
+created before this receipt existed have no `attempts.jsonl` and cannot restart.
 
 A BC config (`BCConfig`, `owl.train.bc`) names the PPO config it warm-starts
 (`ppo_config`); the model, `rl.dtype` (BF16 autocast) and `rl.model_compile`

@@ -317,9 +317,12 @@ class RunIdentity:
 
 
 def config_sha256(cfg: FullConfig) -> str:
-    canonical = json.dumps(
-        cfg.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
-    )
+    return json_sha256(cfg.model_dump(mode="json"))
+
+
+def json_sha256(payload: Mapping[str, Any]) -> str:
+    """SHA-256 of ``payload``'s canonical JSON: a launcher's resolved settings."""
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
@@ -553,6 +556,31 @@ def record_attempt(
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, sort_keys=True) + "\n")
     return path
+
+
+def announce_recorded_outage(
+    identity: RunIdentity, receipt: Path, run_dir: Path
+) -> None:
+    """After ``record_attempt``: name the receipt and, offline, the unsynced run.
+
+    Silent for online telemetry; the startup banner came from ``check_telemetry``.
+    """
+    if not identity.telemetry.is_outage:
+        return
+    print(
+        f"W&B TELEMETRY OUTAGE recorded: telemetry_mode={identity.telemetry} "
+        f"in {receipt}",
+        file=sys.stderr,
+        flush=True,
+    )
+    if identity.telemetry is TelemetryMode.WANDB_OFFLINE:
+        # Name where the unsynced run lives, so the outage can be repaired.
+        print(
+            f"W&B offline: telemetry stays under {run_dir / 'wandb'} "
+            "until `wandb sync`",
+            file=sys.stderr,
+            flush=True,
+        )
 
 
 # --- metric loggers ----------------------------------------------------------

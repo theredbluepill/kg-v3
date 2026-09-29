@@ -7,7 +7,8 @@ reuses Isaiah's seams unchanged: ``create_model``/``reset_parameters``,
 ``create_optimizer``/``create_lr_scheduler`` (Muon/AdamW), ``autocast_context``
 (BF16 from ``rl.dtype``), ``configure_model_compile`` (the Kaggriculture
 cuBLAS-only claim), ``wrap_model_for_distributed`` (DDP under torchrun) and
-``MetricLogger``.
+the one v3 W&B path in ``owl.train.logging`` (``create_metric_logger``, project
+``kg-v3``, job type ``bc``, with its credential gate and attempt receipt).
 
 Objective. One ``evaluate_actions`` call per microbatch replays each recorded
 program teacher-forced (the model's replay validation admits it) and returns
@@ -89,7 +90,7 @@ from owl.train.distributed import (
     unwrap_model,
     wrap_model_for_distributed,
 )
-from owl.train.logging import DebugLogger, LogMode, MetricLogger
+from owl.train.logging import MetricLogger, json_sha256
 from owl.train.optimizer import (
     LRScheduler,
     Optimizer,
@@ -97,7 +98,9 @@ from owl.train.optimizer import (
 )
 from owl.train.utils import autocast_context
 
-BC_WANDB_PROJECT = "kg-v3"
+BC_JOB_TYPE = "bc"
+"""The W&B job type and attempt-receipt ``job_type`` of every BC run."""
+BC_GAME = "kaggriculture"
 CHECKPOINT_BC_BEST = "checkpoint_bc_best.pt"
 CHECKPOINT_BC_BEST_RECORD = "checkpoint_bc_best.json"
 BC_STATE = "bc_state.pt"
@@ -617,65 +620,20 @@ def restore_bc_state(
         lr_scheduler.load_state_dict(dict(state.lr_scheduler))
 
 
-# --- logging --------------------------------------------------------------------
+# --- telemetry identity ---------------------------------------------------------
 
 
-class BCWandbLogger(MetricLogger):
-    """W&B run under the v3 project, ``job_type='bc'``; offline mode supported."""
+def bc_config_sha256(config: BCConfig, ppo_config: FullConfig) -> str:
+    """This attempt's ``config_sha256``: the BC settings and the PPO config's content.
 
-    def __init__(
-        self,
-        run_dir: Path,
-        *,
-        config: Mapping[str, Any],
-        mode: Literal["online", "offline"],
-        resume_run_id: str | None,
-    ) -> None:
-        import wandb
-
-        init_kwargs: dict[str, Any] = {}
-        if resume_run_id is not None:
-            init_kwargs["id"] = resume_run_id
-            init_kwargs["resume"] = "must"
-        self._wandb = wandb
-        self._run = wandb.init(
-            project=BC_WANDB_PROJECT,
-            job_type="bc",
-            group="bc",
-            tags=["kaggriculture-v3", "bc"],
-            name=f"bc-{run_dir.name}",
-            dir=run_dir,
-            config=dict(config),
-            mode=mode,
-            **init_kwargs,
-        )
-
-    @property
-    def run_id(self) -> str | None:
-        return str(self._run.id)
-
-    def log(self, metrics: dict[str, float], *, step: int) -> None:
-        self._run.log(metrics, step=step)
-
-    def set_summary(self, key: str, value: int | float | str) -> None:
-        self._run.summary[key] = value
-
-    def close(self, *, exit_code: int = 0) -> None:
-        self._run.finish(exit_code=exit_code)
-
-
-def create_bc_logger(
-    log_mode: LogMode,
-    run_dir: Path,
-    *,
-    config: Mapping[str, Any],
-    wandb_mode: Literal["online", "offline"],
-    resume_run_id: str | None,
-) -> MetricLogger:
-    if log_mode == LogMode.DEBUG:
-        return DebugLogger()
-    return BCWandbLogger(
-        run_dir, config=config, mode=wandb_mode, resume_run_id=resume_run_id
+    The ``ppo_config`` path is left out (a fresh launch names the user's file, a
+    resume the run directory's copy); the PPO config it names is hashed instead.
+    """
+    return json_sha256(
+        {
+            "bc": config.model_dump(mode="json", exclude={"ppo_config"}),
+            "ppo": ppo_config.model_dump(mode="json"),
+        }
     )
 
 
@@ -894,6 +852,7 @@ def train_bc(
                     "selection": "lowest held-out policy NLL; not PPO promotion",
                     "best_checkpoint": CHECKPOINT_BC_BEST,
                     "best_checkpoint_sha256": file_sha256(run_dir / CHECKPOINT_BC_BEST),
+                    "wandb_run_id": wandb_run_id,
                     "dataset_manifest_sha256": dataset.manifest_sha256,
                     "world_size": context.world_size,
                     "rows_per_step": sharding.rows_per_step,

@@ -7,7 +7,6 @@ import json
 import os
 import random
 import re
-import sys
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -88,6 +87,7 @@ from owl.train.logging import (
     RunIdentity,
     TelemetryMode,
     WandbMode,
+    announce_recorded_outage,
     check_telemetry,
     config_sha256,
     create_logger,
@@ -506,21 +506,7 @@ def _run_training_session(
         receipt = record_attempt(
             run_dir, identity, logger, start_env_steps=start_env_steps
         )
-        if identity.telemetry.is_outage:
-            print(
-                f"W&B TELEMETRY OUTAGE recorded: telemetry_mode={identity.telemetry} "
-                f"in {receipt}",
-                file=sys.stderr,
-                flush=True,
-            )
-        if identity.telemetry is TelemetryMode.WANDB_OFFLINE:
-            # Name where the unsynced run lives, so the outage can be repaired.
-            print(
-                f"W&B offline: telemetry stays under {run_dir / 'wandb'} "
-                "until `wandb sync`",
-                file=sys.stderr,
-                flush=True,
-            )
+        announce_recorded_outage(identity, receipt, run_dir)
         if trainable_parameters is not None:
             logger.set_summary("trainable_parameters", trainable_parameters)
         if warm_start is not None:

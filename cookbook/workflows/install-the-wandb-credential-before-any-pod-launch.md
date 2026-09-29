@@ -1,7 +1,7 @@
 ---
 type: "Workflow"
 title: "Install the W&B credential before any pod launch"
-description: "Pod setup step for every v3 launch: copy only the operator's api.wandb.ai netrc entry to the pod through stdin, chmod 600, never print or commit it, and check wandb.Api() before any launch. All v3 launchers on integration (run_ppo) then default to online W&B in kg-v3 and fail fast without a key; scripts/train_bc.py adopts the same gate, explicit offline mode and receipt right after the BC landing in this workflow. Offline or disabled telemetry takes an explicit flag, a loud banner, an attempts.jsonl record and a report to the owner. The netrc export script is tested and the pipeline was simulated locally on synthetic files; it has not yet run on a pod."
+description: "Pod setup step for every v3 launch: copy only the operator's api.wandb.ai netrc entry to the pod through stdin, chmod 600, never print or commit it, and check wandb.Api() before any launch. All v3 launchers on integration (run_ppo and, since kg/rebuild-bc-wandb, scripts/train_bc.py) then default to online W&B in kg-v3 and fail fast without a key. Offline or disabled telemetry takes an explicit flag, a loud banner, an attempts.jsonl record and a report to the owner. The netrc export script is tested and the pipeline was simulated locally on synthetic files; it has not yet run on a pod."
 tags: ["kaggriculture-v3", "workflows", "telemetry", "pods"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -78,7 +78,7 @@ All v3 launchers on integration (today only `run_ppo`) use this shared path from
 3. `create_metric_logger` (with its own `job_type`, `game` and config) or `create_logger` for PPO;
 4. `record_attempt`.
 
-`scripts/train_bc.py` is not on integration; on the BC branches it predates this contract, with no startup gate and no telemetry mode. Its adoption (gate before data load, explicit logged offline mode, `telemetry_mode` in its receipts) runs right after the BC landing in this same workflow; the steps are in the audit. A probe that deliberately skips W&B must say so in its run statement and keep its local receipts. The completed, checksummed ops probes were not changed.
+`scripts/train_bc.py` follows this contract since `kg/rebuild-bc-wandb`: the gate before config and data load, `plan_attempt(job_type="bc")`, `create_metric_logger`, `record_attempt`, and `telemetry_mode` also in `bc_attempts.jsonl`, `checkpoint_bc_best.json` and `bc_result.json`. The A100 BC run predates it. A probe that deliberately skips W&B must say so in its run statement and keep its local receipts. The completed, checksummed ops probes were not changed.
 
 ## Verification
 
@@ -86,7 +86,7 @@ All v3 launchers on integration (today only `run_ppo`) use this shared path from
   - `tests/owl/train/test_logging.py` covers the credential lookup (env key, blank key, netrc host and password, `NETRC` and `WANDB_BASE_URL`, and a malformed file whose error does not quote it). It also covers the online, offline and debug gates, the loud banner, the `WANDB_MODE` conflict, attempt planning and receipts, config hashing, and the `kg-v3` init arguments.
   - The gate's offline-mode checks of the base URL and key are tested beside the online ones.
   - `tests/scripts/test_run_ppo.py` covers the fail-fast before config load, the offline banner without credentials, the per-mode receipt, the argument rules, and `main`'s receipt wiring for fresh, resumed and receipt-less launches.
-  - Counts are in the Reference [[../references/v3-launchers-fail-fast-without-wandb-credentials|v3 launchers fail fast without W&B credentials (run_ppo; train_bc pending)]].
+  - Counts are in the Reference [[../references/v3-launchers-fail-fast-without-wandb-credentials|v3 launchers fail fast without W&B credentials (run_ppo and train_bc)]].
 - `tests/owl/train/test_logging.py` and `tests/scripts/test_export_wandb_netrc_entry.py` cover the export. The tests use packed, split and conventional layouts with other machines and a `default` entry, a default-only file, unsafe tokens, a missing file, and the terminal refusal.
 - The step 1 pipeline, with the export script, was simulated on this Mac on a synthetic netrc, with `sh -c` and a temporary `HOME` standing in for `ssh <pod>`. The receipt is `ops/rebuild-2026-09-29/wandb-2026-09-29/install-simulation.log`. The simulation checks:
   - the installed file holds exactly the api.wandb.ai entry, and no other secret;
