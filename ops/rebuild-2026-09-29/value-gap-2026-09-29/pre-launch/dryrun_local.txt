@@ -1,0 +1,7 @@
+# Local CPU code-path dry run (VGAP_DRYRUN=1, VGAP_ROOT=/Users/poonszesen/kg-v3-trainer-model @ 8fde43cd7408c9c4f9147eeb8f916bd08f8266ed); tiny shapes (rows 4,8), no compile (eager stand-in), no flash. Not evidence.
+## kgA rc: see log
+{"case": "kgA", "precision": "bf16", "trunk": "compiled", "rows": [4, 8], "steps": {"pair_4": "ok", "hidden_4": "ok", "pair_8": "ok", "hidden_8": "ok", "gain1_pair_4": "ok", "gain1_pair_8": "ok"}, "use_flash_attn_flags": [false], "compiled_trunk_calls": 22}
+## kgC rc: see log
+{"case": "kgC", "precision": "fp32", "trunk": "eager", "rows": [4, 8], "steps": {"pair_4": "ok", "hidden_4": "ok", "pair_8": "ok", "hidden_8": "ok"}, "use_flash_attn_flags": [false], "compiled_trunk_calls": 0}
+## isF rc: see log
+{"case": "isF", "trunk": "eager", "rows": [4, 8], "steps": {"states_4": "ok", "pair_4": "ok", "hidden_4": "ok", "states_8": "ok", "pair_8": "ok", "hidden_8": "ok"}, "use_flash_attn_flags": [false], "compiled_trunk_calls": 0}

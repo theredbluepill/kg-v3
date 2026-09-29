@@ -102,3 +102,19 @@ Notation, per stage and row count: **V** = max |R − S| of values; **V̄** = me
 - The Isaiah model differs in depth, token set and player count, so F compares magnitudes, not identical computations.
 - The generated code of the two graphs is not read; the compile caches are retained on the pod.
 - No cookbook note is written by this run.
+
+## Pre-launch addendum — scripts and local checks (committed before launch)
+
+- **Scripts** (local `ops/rebuild-2026-09-29/value-gap-2026-09-29/scripts/`, copied unchanged to the pod run dir; `receipts/scripts.sha256` re-records them at launch):
+  - `common.py 69f42d8d…` and `kg_gap.py 6776ddcd…` (cases A–E). `is_gap.py 4ec0937a…` (case F).
+  - `gemm_backend_wrap.py 5a070ef6…`, unchanged.
+  - `driver.py 896966c3…` and `launch.sh c85bbe38…`.
+  - `test_driver_cleanup.py 80ebeacd…`, the local cleanup test, which also provides the self-test dummy stage.
+  - `common.py` and the stage scripts were adapted from the GPU checks' `common.py`/`c3_smoke.py` pattern, with the same model construction, registered compile path and `make_obs`.
+- **Cleanup test** (`pre-launch/driver_cleanup_test_local.txt`, macOS, Python 3.9, emulated `timeout -s TERM` to the driver's group): **ALL PASS**.
+  - Mid-stage SIGTERM: rc 143 8.1 s after the signal. Two groups were terminated, one needing SIGKILL; zero survivors.
+  - 8 spawn-storm offsets (0.4–3.1 s, 20–156 live groups whose leaders had exited): rc 143 within 0.13 s, zero survivors. Every stage that wrote its PIDs was in cleanup's registered snapshot.
+  - Ordinary completion: rc 0, zero survivors.
+
+  It has not run under GNU `timeout` or on the pod.
+- **Code-path dry run** (`pre-launch/dryrun_local.txt`, `VGAP_DRYRUN=1` on the local `8fde43c` worktree, CPU, rows 4/8, no compile, no flash): all steps `ok` for a BF16 "compiled" stand-in with hidden and gain swap, fp32 eager with hidden, and the Isaiah eager stage with state generation. The driver's judge accepted them except for the expected `use_flash_attn` flag, which is false on CPU. **Not evidence.**
