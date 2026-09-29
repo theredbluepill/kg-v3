@@ -301,3 +301,110 @@ The default-backend controls in the same run reproduced the failure: the trunk h
 - The setting is process-global.
 - The compiled path is still not reachable from `run_ppo` config at `e1458d2`.
 - Nothing was wired into repo code.
+
+## GPU checks bundle (component) (2026-09-29, 09:15–09:29Z, pod `w7ia3zvxqsvs3g`, GPUs 0 and 1)
+
+**Diagnostics plus a component measurement at `8fde43c`** (`kg/rebuild-trainer-model`, tree `70d50fa3…`: full model with encoder, masked critic, grammar heads and the Phase 4 teacher KL). No repo code changed. Check 4 is **model-only**: engine, host copies, GAE, logging and all-reduce are excluded, so its SPS numbers are not end-to-end.
+
+- Run statement `run-statements/gpu-checks-bundle.md`: committed with the scripts in `5f2ee2d` before launch. Amendment 1 was committed in `a4c75e0` before the relaunch.
+- Evidence, identities, hashes and attempts: `gpu-checks-2026-09-29/README.md`. Every number below is in `gpu-checks-2026-09-29/summary.json` (`summarize.py`).
+- Pod checkout moved `e1458d2` → `8fde43c` by git bundle and detached checkout. Porcelain was empty throughout and nothing was pushed. The Rust extension was not rebuilt, since no Rust, Cargo or lock change was involved (`rs.abi3.so` sha256 unchanged).
+- Stack: torch 2.9.0+cu128, triton 3.5.0, flash-attn 2.8.3, driver 595.91.07.
+- Settings: preset config, fp32 params under BF16 autocast, TF32 on, trunk compiled through the registered `configure_model_compile` path (`max-autotune-no-cudagraphs`, dynamic), heads eager. Inputs were synthetic `make_obs` at mid (303 tokens/row), dense (709) and, for check 1, mixed (222–709) densities, with fresh weights.
+- **Attempts.**
+  - Attempt 1 stopped after 55 s. The only failure was `c2_aten_bwd`'s `blocks.0.attn.k.bias` gradient (relative error 0.81–1.16), and it failed equally at the warm point **below** the bound.
+  - The key bias adds a per-query constant to the attention logits, so its true gradient is identically zero. An fp64 CPU check gave 3.9e-14 against 30.8 for the query bias, so a relative error there divides rounding residue by ~0.
+  - Amendment 1 judged that one parameter against the query-bias scale instead. Attempt 2 then reran the whole bundle and every stage passed: driver 480 s, exit 0.
+  - Aggregate driver wall was 535 s of the 60-min limit, about $0.6 at $4.18/h. The pod session was ~35 min, 08:55–09:30Z.
+  - Idle gate: 0 MiB, 0 %, no processes on both GPUs before and after. The pod was left running and idle.
+
+**1. fp32 discriminating check (Phase 6.0 (b) open item): BF16 rounding common to all paths is supported; no path-specific error was found.**
+
+Setup:
+- Same weights and the same BF16-rounded input for every path.
+- Reference: autocast off, TF32 off, padded MATH SDPA. The auto-backend fp32 reference differs from it by ≤ 4.5e-6.
+- Metric: present-token elements outside `0.02 + 0.02|ref|`.
+
+| density (tokens) | compiled-ATEN | compiled-default | eager flash | padded SDPA |
+|---|---|---|---|---|
+| mid (77,568 tok) max / mean / outside | 0.0431 / 0.00541 / 0.0059 % | 0.0452 / 0.00532 / 0.0046 % | 0.0642 / 0.00628 / 0.0267 % | 0.0670 / 0.00629 / 0.0264 % |
+| dense (181,504) | 0.0459 / 0.00502 / 0.0018 % | 0.0480 / 0.00495 / 0.0013 % | 0.0682 / 0.00592 / 0.0131 % | 0.0685 / 0.00592 / 0.0130 % |
+| mixed (118,916) | 0.0468 / 0.00518 / 0.0037 % | 0.0474 / 0.00510 / 0.0028 % | 0.0634 / 0.00607 / 0.0194 % | 0.0659 / 0.00607 / 0.0195 % |
+
+- **Pre-declared rule.** A path is an outlier if its mean |Δ| or outside-tol fraction exceeds 2× the median of the three paths. The result is **similar** at every density under both backends; no path is flagged.
+- **Compiled is the most accurate path**, not the least: 0.84–0.86× the median mean |Δ| and 0.10–0.22× the median outside-tol fraction. That fused kernels keep fp32 intermediates is a hypothesis; the generated code was not read for it.
+- Eager flash and padded SDPA are indistinguishable (mean |Δ| equal to 3 significant figures).
+- **Outlier location.**
+  - Outliers sit at small |ref|, where the absolute 0.02 term dominates the tolerance. Example: mid eager has 4,684 of 5,305 outliers at |ref| < 0.25, 504 in [0.25, 0.5), 114 in [0.5, 1), 3 in [1, 2) and 0 at |ref| ≥ 2.
+  - The largest errors are 0.043–0.069 at |ref| 2.5–3.4, which is **2.8–4.4 BF16 ulps** of the reference.
+  - Across token groups, outliers follow the element share (for example, mid tile tokens hold 66 % of elements and 69 % of eager outliers). No row, group or channel cluster was seen.
+  - Outlier sets barely overlap between paths (Jaccard 0.004–0.048), which fits independent rounding noise rather than a shared deterministic defect.
+- **Reproduction of Phase 6.0.** The Phase 6.0 pairwise comparisons re-measure at 0.009–0.021 % (compiled vs eager 0.009–0.015 %, eager vs padded 0.012–0.021 %). The earlier 0.017–0.021 % is therefore the tail of this common error distribution under a tolerance tighter than 8-layer BF16 accumulation near zero.
+- Repeated compiled calls were bit-identical.
+
+**2. Real-trunk backward above the bound, ATEN-only: correct at 4,194,305 and 4,198,400 packed tokens.**
+
+Setup and deviation:
+- Guard bypassed as in the forward probe, so each point was exactly one trunk call of all packed tokens.
+- Deviation: **depth 1** (one real block plus final norm at preset width). Depth 8 needs more activation memory than one GPU has.
+- Measured peak `max_memory_allocated` was 43.1 GiB compiled and 58.4 GiB eager at depth 1.
+
+Compiled vs eager:
+
+| point | output | dX | param grads (excl. k.bias) | k.bias |
+|---|---|---|---|---|
+| 4,194,305 | 0 wrong tokens, max \|Δ\| 0.034 | rel_max 0.0087, rel_fro 0.0045, max token rel-L2 0.0074, 0 non-finite, 0 at masked | rel_max ≤ 0.0113 | worst \|value\| or \|Δ\| is 0.0039 × \|q.bias grad\| |
+| 4,198,400 | 0 wrong, max 0.032 | rel_max 0.0085, token rel-L2 ≤ 0.0076 | ≤ 0.0142 | 0.0035 × |
+
+- The eager-vs-eager floor is dX 0.0044 and params ≤ 0.0040, from nondeterministic flash backward.
+- The warm point (5,672 tokens) gives the same picture.
+- **Kernel census:** the ATEN caches, including the backward graphs (26 `extern_kernels.mm`, 10 `bias_addmm`), contain **0** `triton_tem_` definitions or launches.
+- **Default-backend control reproduced the failure:** an illegal memory access during default-backend autotuning at 4,194,305 (rc 1). It failed while compiling the first target point, before any gradient was compared. The control therefore discriminates the compile/forward template path, and this run does not show backward-specific corruption under default backends.
+
+**3. Full-model GPU smoke: all four processes (mid/dense × ATEN/default) passed.**
+
+- **Sampling and replay.**
+  - 256-row sampling was replayed by `evaluate_actions` (grad enabled) at 256 rows and at 1,024 tiled rows. The model's replay validation accepted its own samples every time.
+  - **The log-ratio the first-minibatch alarm reads** (signed mean over rows of Σ replay − Σ sampled event log-probs) had |mean| ≤ **1.4e-4 nats** against the 0.05 limit.
+  - Mid ATEN +5.2e-6 / +5.4e-6 (256 / 1,024); dense ATEN −1.37e-4 / −1.28e-4; mid default −1.8e-5; dense default −7.3e-5.
+  - Per-row |log-ratio| max was 1.8e-3 (mid) to 5.6e-3 (dense). Row joint log-probs are −165 (mid) and −908 (dense) nats.
+  - Per-slot event max |Δ| was ≤ 4.1e-4.
+- **Teacher KL (Phase 4).**
+  - Self: per-row mean 1.4e-7–9.8e-7, max ≤ 8.3e-6, per-event min ≥ −4.0e-7.
+  - Perturbed copy (+5 % std noise): per-row mean 7.1e-5 (mid) and 5.4e-4 (dense), all positive and finite.
+  - Cached and combined paths are **bit-identical** (max |Δ| 0), both for self and perturbed.
+- **Values and loss.** Values are finite in [−1, 1], and `compute_value` equals the sampled values exactly. The PPO-shaped loss backward at 1,024 rows with the teacher terms gives finite loss and 210/210 finite gradients (norm 3.52 mid, 7.73 dense). `use_flash_attn` was true on all 14 calls per process.
+- Peak allocated memory was 21.3 GiB (mid) and 40.6 GiB (dense).
+- **Unplanned observation, unattributed.** Values from grad-enabled replay differ from no-grad sampling by up to **0.0154–0.0195** on the [−1, 1] scale, in every process. That is 8–10 % of the 0.2 value-clip range, while log-probs differ by ≤ 4e-4. Whether this comes from the compiled training vs inference graphs or from BF16 in general was not tested.
+
+**4. Per-rank timings, ATEN-only (component only).**
+
+Setup:
+- Isaiah split: the global config is 256 envs × 64 steps = 16,384 env steps per update.
+- Update wall = 64·t_A + t_C + 16·t_B + t_D, from medians of 20 CUDA-event iterations. Every p90 is within 1.4 % of its median.
+- B is the cached-teacher PPO step with a Muon step. C is `compute_teacher_distillation_targets` on the rank's rollout.
+
+| ranks (envs/rank, spm) | mid t_A / t_B / t_C / t_D | mid wall → global SPS (per rank) | dense t_A / t_B / t_C / t_D | dense wall → global SPS (per rank) |
+|---|---|---|---|---|
+| 2 (128, 8): rows 256 / 1,024 / 16,384 / 256 | 15.26 / 186.6 / 1,012.3 / 11.89 ms | 4.987 s → **3,286** (1,643) | 29.17 / 336.5 / 1,741.2 / 25.82 ms | 9.018 s → **1,817** (908) |
+| 4 (64, 4): 128 / 512 / 8,192 / 128 | 7.33 / 97.8 / 505.7 / 5.45 | 2.545 s → **6,437** (1,609) | 14.12 / 172.9 / 868.4 / 12.30 | 4.551 s → **3,600** (900) |
+| 8 (32, 2): 64 / 256 / 4,096 / 64 | 4.97 / 51.3 / 246.5 / 2.93 | 1.389 s → **11,796** (1,475) | 7.05 / 93.1 / 426.5 / 5.96 | 2.372 s → **6,906** (863) |
+
+- **Scaling.** Relative to 2× the 2-rank rate, component scaling efficiency is 0.98 / 0.90 at 4 / 8 ranks for mid and 0.99 / 0.95 for dense. Smaller per-rank batches lose throughput mainly in the 64 small rollout forwards (A share 18–23 %). B is 59–63 % of the wall and C 18–20 %.
+- **Comparison with the e1458d2 ATEN A/B at the 2-rank shape.**
+  - A and D are within 0.5 %.
+  - B (now cached-teacher) is +0.2 % mid and +1.1 % dense.
+  - C (now real teacher targets) is +0.8 % mid and +0.5 % dense.
+  - The wall is 4.970 → 4.987 s (mid) and 8.944 → 9.018 s (dense).
+- **Trunk chunks** matched the guard's prediction on every call: C was 2 at mid 16,384 rows, and 2 / 3 at dense 8,192 / 16,384 rows.
+- **Memory.** Peak `max_memory_allocated` was 40.70 GiB (dense 2-rank B). Peak reserved was 69.21 GiB (mid 2-rank C).
+- The Phase 2 timings ran alone on GPU 0.
+
+**Limits:**
+- Scope: one stack, synthetic observations and grammar tables, fresh weights. The small head gain understates a trained policy's logit noise, so the log-ratio and KL margins **do not qualify the 0.05 alarm for trained policies**.
+- Check 1 used 256-row batches only.
+- Check 2 ran at depth 1 only. Its control failed at compile, so it says nothing backward-specific.
+- The replay-vs-sampling value gap is unattributed.
+- Check 4 excludes the engine, copies, all-reduce, GAE and logging. It is one run per shape, with no nsys (not installed) and no timeline.
+- The backend setting is process-global and applied by a wrapper, not by repo code.
+- No cookbook note was written. Promoting these findings is left to the owner's workflow.

@@ -1,0 +1,356 @@
+{"unix": 1790673731.931, "event": "process", "case": "c2_ctl_default_bwd", "dryrun": false, "torch": "2.9.0+cu128", "torch_git": "0fabc3ba44823f257e70ce397d989c8de5e362c1", "cuda_runtime": "12.8", "kg_file": "/workspace/kg-v3-rebuild/python/owl/model/kaggriculture.py", "flash_attn_available": true, "max_autotune_gemm_backends": "ATEN,TRITON,CPP", "gemm_limit": 4611686018427387904, "tf32_matmul": true, "tf32_cudnn": true, "git": {"head": "8fde43cd7408c9c4f9147eeb8f916bd08f8266ed", "tree": "70d50fa37e66aa322e8db00c9359d3f9e3031499", "porcelain": ""}, "flash_attn": "2.8.3", "triton": "3.5.0", "device_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition", "cuda_visible_devices": "1", "depth": 1, "bypass_guard": true}
+{"unix": 1790673733.384, "event": "start", "case": "c2_ctl_default_bwd", "label": "warm", "spec": "dense:8", "rows": 8, "packed_tokens": 5672}
+Autotune Choices Stats:
+{"num_choices": 17, "num_triton_choices": 15, "best_kernel": "triton_mm_74", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4", "best_time": 0.01587199978530407, "best_triton_pos": 0}
+AUTOTUNE addmm(5672x512, 5672x256, 256x512)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  triton_mm_74 0.0159 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_69 0.0161 ms 98.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_66 0.0183 ms 86.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_68 0.0183 ms 86.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  bias_addmm 0.0184 ms 86.1% 
+  triton_mm_67 0.0184 ms 86.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_70 0.0185 ms 85.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_73 0.0185 ms 85.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_71 0.0186 ms 85.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_62 0.0204 ms 78.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 0.4669 seconds and 0.1733 seconds precompiling for 17 choices
+Autotune Choices Stats:
+{"num_choices": 17, "num_triton_choices": 15, "best_kernel": "triton_mm_9", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4", "best_time": 0.014175999909639359, "best_triton_pos": 0}
+AUTOTUNE addmm(5672x256, 5672x256, 256x256)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  triton_mm_9 0.0142 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_14 0.0142 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_6 0.0142 ms 99.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  bias_addmm 0.0157 ms 90.2% 
+  triton_mm_10 0.0161 ms 88.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_8 0.0162 ms 87.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_11 0.0163 ms 87.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_7 0.0163 ms 87.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_13 0.0164 ms 86.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_1 0.0169 ms 83.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.5610 seconds and 0.0009 seconds precompiling for 17 choices
+Autotune Choices Stats:
+{"num_choices": 16, "num_triton_choices": 15, "best_kernel": "triton_mm_89", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4", "best_time": 0.02054399996995926, "best_triton_pos": 0}
+AUTOTUNE mm(5672x512, 512x256)
+strides: [512, 1], [1, 512]
+dtypes: torch.bfloat16, torch.bfloat16
+  triton_mm_89 0.0205 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_84 0.0206 ms 99.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_76 0.0265 ms 77.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_86 0.0265 ms 77.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  mm 0.0266 ms 77.3% 
+  triton_mm_78 0.0266 ms 77.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_81 0.0266 ms 77.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_77 0.0266 ms 77.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_85 0.0284 ms 72.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_83 0.0287 ms 71.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 0.3491 seconds and 0.0001 seconds precompiling for 16 choices
+Autotune Choices Stats:
+{"num_choices": 16, "num_triton_choices": 15, "best_kernel": "triton_mm_104", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4", "best_time": 0.016383999958634377, "best_triton_pos": 0}
+AUTOTUNE mm(5672x256, 256x512)
+strides: [256, 1], [512, 1]
+dtypes: torch.bfloat16, torch.bfloat16
+  triton_mm_104 0.0164 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_99 0.0165 ms 99.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_103 0.0181 ms 90.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_96 0.0183 ms 89.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_98 0.0183 ms 89.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_97 0.0184 ms 89.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_100 0.0184 ms 89.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_101 0.0184 ms 89.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_92 0.0203 ms 80.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_102 0.0205 ms 80.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 0.3488 seconds and 0.0002 seconds precompiling for 16 choices
+Autotune Choices Stats:
+{"num_choices": 16, "num_triton_choices": 15, "best_kernel": "mm", "best_time": 0.026528000831604004, "best_triton_pos": 1, "best_triton_time": 0.046592000871896744, "best_triton_kernel": "triton_mm_108", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8"}
+AUTOTUNE mm(256x5672, 5672x512)
+strides: [1, 256], [512, 1]
+dtypes: torch.bfloat16, torch.bfloat16
+  mm 0.0265 ms 100.0% 
+  triton_mm_108 0.0466 ms 56.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_107 0.0472 ms 56.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_111 0.0531 ms 49.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_106 0.0573 ms 46.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_114 0.0615 ms 43.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_113 0.0675 ms 39.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_116 0.0694 ms 38.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_112 0.0839 ms 31.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_115 0.0858 ms 30.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.4895 seconds and 0.0002 seconds precompiling for 16 choices
+Autotune Choices Stats:
+{"num_choices": 16, "num_triton_choices": 15, "best_kernel": "mm", "best_time": 0.026623999699950218, "best_triton_pos": 1, "best_triton_time": 0.045823998749256134, "best_triton_kernel": "triton_mm_137", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8"}
+AUTOTUNE mm(512x5672, 5672x256)
+strides: [1, 512], [256, 1]
+dtypes: torch.bfloat16, torch.bfloat16
+  mm 0.0266 ms 100.0% 
+  triton_mm_137 0.0458 ms 58.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_138 0.0471 ms 56.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_141 0.0532 ms 50.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_136 0.0573 ms 46.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_144 0.0614 ms 43.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_143 0.0655 ms 40.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_146 0.0694 ms 38.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_145 0.0859 ms 31.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_142 0.0860 ms 31.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.4649 seconds and 0.0002 seconds precompiling for 16 choices
+Autotune Choices Stats:
+{"num_choices": 16, "num_triton_choices": 15, "best_kernel": "mm", "best_time": 0.018303999677300453, "best_triton_pos": 1, "best_triton_time": 0.043807998299598694, "best_triton_kernel": "triton_mm_167", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8"}
+AUTOTUNE mm(256x5672, 5672x256)
+strides: [1, 256], [256, 1]
+dtypes: torch.bfloat16, torch.bfloat16
+  mm 0.0183 ms 100.0% 
+  triton_mm_167 0.0438 ms 41.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_168 0.0449 ms 40.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_166 0.0490 ms 37.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_171 0.0513 ms 35.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_174 0.0594 ms 30.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_173 0.0655 ms 27.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_176 0.0676 ms 27.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_172 0.0796 ms 23.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_175 0.0800 ms 22.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.4628 seconds and 0.0002 seconds precompiling for 16 choices
+Autotune Choices Stats:
+{"num_choices": 16, "num_triton_choices": 15, "best_kernel": "triton_mm_129", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4", "best_time": 0.019519999623298645, "best_triton_pos": 0}
+AUTOTUNE mm(5672x512, 512x256)
+strides: [512, 1], [256, 1]
+dtypes: torch.bfloat16, torch.bfloat16
+  triton_mm_129 0.0195 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_134 0.0206 ms 94.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_126 0.0220 ms 88.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_131 0.0244 ms 79.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_128 0.0247 ms 79.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_122 0.0247 ms 79.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_123 0.0261 ms 74.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_130 0.0265 ms 73.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_121 0.0266 ms 73.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_127 0.0267 ms 73.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.3472 seconds and 0.0001 seconds precompiling for 16 choices
+Autotune Choices Stats:
+{"num_choices": 16, "num_triton_choices": 15, "best_kernel": "triton_mm_159", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4", "best_time": 0.012191999703645706, "best_triton_pos": 0}
+AUTOTUNE mm(5672x256, 256x256)
+strides: [256, 1], [256, 1]
+dtypes: torch.bfloat16, torch.bfloat16
+  triton_mm_159 0.0122 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_164 0.0124 ms 98.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_156 0.0144 ms 84.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_152 0.0153 ms 79.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_163 0.0162 ms 75.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_160 0.0162 ms 75.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_157 0.0164 ms 74.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_158 0.0165 ms 74.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_161 0.0165 ms 74.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_151 0.0178 ms 68.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.3379 seconds and 0.0001 seconds precompiling for 16 choices
+/workspace/kg-v3-rebuild/runs/gpu-checks-2026-09-29/c2_trunk_bwd.py:185: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  "loss": float(loss),
+{"unix": 1790673764.044, "event": "result", "case": "c2_ctl_default_bwd", "label": "warm", "spec": "dense:8", "rows": 8, "packed_tokens": 5672, "packed_tokens_x_width_over_2p31": 0.0013523101806640625, "compiled": {"status": "ok", "s": 30.557946518994868, "loss": -867.0670166015625, "trunk_call_M": [5672], "memory": {"max_allocated_gib": 0.21065425872802734, "max_reserved_gib": 0.3046875}, "param_grads": 18}, "eager": {"status": "ok", "s": 0.017834242898970842, "loss": -870.3660888671875, "trunk_call_M": [], "memory": {"max_allocated_gib": 0.1148524284362793, "max_reserved_gib": 0.306640625}}, "out_compiled_vs_eager": {"max_abs": 0.023157596588134766, "wrong_tokens": 0, "nonfinite": 0, "first_bad_row": null, "last_bad_row": null}, "dx_compiled_vs_eager": {"max_abs": 0.046875, "ref_max_abs": 5.875, "rel_max": 0.007978723404255319, "rel_fro": 0.004452628195090993, "token_rel_l2_max": 0.006027028430253267, "token_rel_l2_p50_p99_p999": [0.004414252936840057, 0.00540176872164011, 0.005846963729709387], "tokens_rel_gt_0.5": 0, "nonfinite": 0, "masked_nonzero": 0, "first_bad_row": null, "last_bad_row": null}, "params_compiled_vs_eager": {"blocks.0.norm1.weight": {"max_abs_diff": 0.6489863395690918, "ref_max_abs": 112.68108367919922, "out_max_abs": 112.56100463867188, "rel_max": 0.005759496707469225, "rel_fro": 0.005621297750622034, "nonfinite": 0}, "blocks.0.norm1.bias": {"max_abs_diff": 1.0769805908203125, "ref_max_abs": 226.60693359375, "out_max_abs": 226.62789916992188, "rel_max": 0.004752637352794409, "rel_fro": 0.004130307585000992, "nonfinite": 0}, "blocks.0.attn.q.weight": {"max_abs_diff": 0.5, "ref_max_abs": 72.5, "out_max_abs": 72.5, "rel_max": 0.006896551698446274, "rel_fro": 0.0055990698747336864, "nonfinite": 0}, "blocks.0.attn.q.bias": {"max_abs_diff": 0.27167415618896484, "ref_max_abs": 46.75, "out_max_abs": 46.79939270019531, "rel_max": 0.005811212118715048, "rel_fro": 0.0058457376435399055, "nonfinite": 0}, "blocks.0.attn.k.weight": {"max_abs_diff": 0.5, "r
+{"unix": 1790673764.049, "event": "start", "case": "c2_ctl_default_bwd", "label": "target", "spec": "packed:4194305", "rows": 5916, "packed_tokens": 4194305}
+V0929 09:22:44.055000 164336 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/kaggriculture.py:507
+V0929 09:22:44.055000 164336 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V0929 09:22:44.055000 164336 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     - 0/0: 512*x.size()[0] <= 2147483647  # (_inductor/codegen/simd.py:1440 in can_use_32bit_indexing)
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.387000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.388000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 09:22:45.389000 164336 .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+Autotune Choices Stats:
+{"num_choices": 17, "num_triton_choices": 15, "best_kernel": "bias_addmm", "best_time": 5.843935966491699, "best_triton_pos": 2, "best_triton_time": Infinity, "best_triton_kernel": "triton_mm_330", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=1, num_warps=2"}
+AUTOTUNE addmm(4194305x512, 4194305x256, 256x512)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 5.8439 ms 100.0% 
+  addmm 11.3961 ms 51.3% 
+  triton_mm_330 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=1, num_warps=2
+  triton_mm_331 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_332 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_333 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_334 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_335 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_336 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_337 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.2889 seconds and 0.0002 seconds precompiling for 17 choices
+{"unix": 1790673765.406, "event": "result", "case": "c2_ctl_default_bwd", "label": "target", "spec": "packed:4194305", "rows": 5916, "packed_tokens": 4194305, "packed_tokens_x_width_over_2p31": 1.000000238418579, "compiled": {"status": "InternalTorchDynamoError: AcceleratorError: CUDA error: an illegal memory access was encountered\nSearch for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n\n"}}
+Traceback (most recent call last):
+  File "/workspace/kg-v3-rebuild/runs/gpu-checks-2026-09-29/gemm_backend_wrap.py", line 60, in <module>
+    main()
+  File "/workspace/kg-v3-rebuild/runs/gpu-checks-2026-09-29/gemm_backend_wrap.py", line 51, in main
+    runpy.run_path(script, run_name="__main__")
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/kg-v3-rebuild/runs/gpu-checks-2026-09-29/c2_trunk_bwd.py", line 251, in <module>
+    main()
+  File "/workspace/kg-v3-rebuild/runs/gpu-checks-2026-09-29/c2_trunk_bwd.py", line 245, in main
+    torch.cuda.empty_cache()
+  File "/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/torch/cuda/memory.py", line 224, in empty_cache
+    torch._C._cuda_emptyCache()
+torch.AcceleratorError: CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
