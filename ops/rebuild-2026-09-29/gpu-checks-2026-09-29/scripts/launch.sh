@@ -11,9 +11,14 @@ mkdir -p "$RC"
 cd "$REPO"
 
 gpu_idle() {  # $1 = index
+  # Idle only when both queries succeed, list no compute process and read 0 %.
+  # A failed query is not evidence of idleness (post-run revision after Codex
+  # review verify-merge-gpu-receipts-r2; the recorded attempts ran without the
+  # exit-status checks, see pod/attempt*/launch.sh).
   local apps util
-  apps=$(nvidia-smi -i "$1" --query-compute-apps=pid,process_name,used_memory --format=csv,noheader)
-  util=$(nvidia-smi -i "$1" --query-gpu=utilization.gpu --format=csv,noheader,nounits | tr -d ' ')
+  apps=$(nvidia-smi -i "$1" --query-compute-apps=pid,process_name,used_memory --format=csv,noheader) || return 1
+  util=$(nvidia-smi -i "$1" --query-gpu=utilization.gpu --format=csv,noheader,nounits) || return 1
+  util=${util//[[:space:]]/}
   [ -z "$apps" ] && [ "$util" = "0" ]
 }
 

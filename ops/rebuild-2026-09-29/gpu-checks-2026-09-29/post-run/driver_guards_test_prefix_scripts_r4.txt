@@ -1,0 +1,501 @@
+# test_driver_guards.py  utc=2026-09-29T13:46:20Z
+# platform=macOS-26.4-arm64-arm-64bit python=3.12.13
+# test script sha256=dc593e9a87f55ed2c6855f3c1e391badc2a73a10cf95462b15ce6e9652703c46
+# driver.py sha256=d1147ba32441aad203d32ff7eaf04f2dd8219b328f566e94cc49d97238707572
+# c1_fp32_ref.py sha256=7a0d2c5d5a2d0ffbc4735245d888800c652b06646b8bf4d2670174fea0410373
+# c2_trunk_bwd.py sha256=12b46fd7bb1a9eb5f364b24c7c073902f1cda2610ff88f0642591757aa1fde18
+# launch.sh sha256=f5510eb369391a2dc7b8575e89c3fe81bb4adf2ac551ccab5e3a5e2c12611ffb
+{
+ "check": "driver:phase1_malformed_record",
+ "pass": true,
+ "fails": [],
+ "rc": 5,
+ "elapsed_s": 0.44,
+ "stage_pids_recorded": 2,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_bad",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_long",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_bad",
+   "status": "driver_error",
+   "error": "JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+  },
+  {
+   "t": 0.4,
+   "stage": "c2_long",
+   "status": "terminated_by_stop",
+   "rc": -15
+  },
+  {
+   "t": 0.4,
+   "stage": "c1_after",
+   "status": "skipped_after_stop"
+  },
+  {
+   "t": 0.4,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.4,
+   "stage": "c4_after",
+   "status": "skipped_after_stop"
+  },
+  {
+   "t": 0.4,
+   "status": "driver_done",
+   "exit": 5
+  }
+ ]
+}
+# driver:phase1_malformed_record: PASS
+{
+ "check": "driver:phase1_spawn_error",
+ "pass": true,
+ "fails": [],
+ "rc": 5,
+ "elapsed_s": 8.5,
+ "stage_pids_recorded": 2,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_wait",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_long",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_wait",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_spawn_fail",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_spawn_fail",
+   "status": "driver_error",
+   "error": "OSError: injected spawn failure"
+  },
+  {
+   "t": 8.4,
+   "status": "stage_cleanup",
+   "reason": "driver_error c3_spawn_fail",
+   "groups": [
+    {
+     "stage": "c2_long",
+     "pgid": 44522,
+     "sigkill": true,
+     "survived": false
+    }
+   ]
+  },
+  {
+   "t": 8.4,
+   "stage": "c2_long",
+   "status": "terminated_by_stop",
+   "rc": -9
+  },
+  {
+   "t": 8.4,
+   "stage": "c1_after",
+   "status": "skipped_after_stop"
+  },
+  {
+   "t": 8.4,
+   "status": "phase1_done"
+  },
+  {
+   "t": 8.4,
+   "stage": "c4_after",
+   "status": "skipped_after_stop"
+  },
+  {
+   "t": 8.4,
+   "status": "driver_done",
+   "exit": 5
+  }
+ ]
+}
+# driver:phase1_spawn_error: PASS
+{
+ "check": "driver:phase2_malformed_record",
+ "pass": true,
+ "fails": [],
+ "rc": 5,
+ "elapsed_s": 0.76,
+ "stage_pids_recorded": 0,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.3,
+   "stage": "c4_bad",
+   "status": "launch"
+  },
+  {
+   "t": 0.7,
+   "stage": "c4_bad",
+   "status": "driver_error",
+   "error": "JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+  },
+  {
+   "t": 0.7,
+   "status": "driver_done",
+   "exit": 5
+  }
+ ]
+}
+# driver:phase2_malformed_record: PASS
+{
+ "check": "driver:complete",
+ "pass": true,
+ "fails": [],
+ "rc": 0,
+ "elapsed_s": 0.78,
+ "stage_pids_recorded": 0,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.3,
+   "stage": "c4_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.7,
+   "stage": "c4_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.7,
+   "status": "driver_done",
+   "exit": 0
+  }
+ ]
+}
+# driver:complete: PASS
+{
+ "check": "c3_values",
+ "pass": true,
+ "fails": [],
+ "retained": [
+  {
+   "file": "c3_dense_aten.jsonl",
+   "errors": []
+  },
+  {
+   "file": "c3_dense_default.jsonl",
+   "errors": []
+  },
+  {
+   "file": "c3_mid_aten.jsonl",
+   "errors": []
+  },
+  {
+   "file": "c3_mid_default.jsonl",
+   "errors": []
+  }
+ ],
+ "mutations": [
+  {
+   "path": "teacher_self_combined",
+   "mutation": "nonfinite",
+   "caught": true
+  },
+  {
+   "path": "teacher_self_combined",
+   "mutation": "below_-1",
+   "caught": true
+  },
+  {
+   "path": "teacher_self_combined",
+   "mutation": "above_1",
+   "caught": true
+  },
+  {
+   "path": "teacher_self_cached",
+   "mutation": "nonfinite",
+   "caught": true
+  },
+  {
+   "path": "teacher_self_cached",
+   "mutation": "below_-1",
+   "caught": true
+  },
+  {
+   "path": "teacher_self_cached",
+   "mutation": "above_1",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_combined",
+   "mutation": "nonfinite",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_combined",
+   "mutation": "below_-1",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_combined",
+   "mutation": "above_1",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_cached",
+   "mutation": "nonfinite",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_cached",
+   "mutation": "below_-1",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_cached",
+   "mutation": "above_1",
+   "caught": true
+  }
+ ]
+}
+# c3_values: PASS
+{
+ "check": "c1_verdict",
+ "pass": true,
+ "fails": [],
+ "retained_regenerated": 6,
+ "median0_single": [
+  "compiled:mean_abs",
+  "compiled:outside_tol_frac"
+ ],
+ "all_zero": []
+}
+# c1_verdict: PASS
+{
+ "check": "launcher_idle",
+ "pass": false,
+ "fails": [
+  "apps_query_fail: gpu_idle rc=0 (passed the idle gate)",
+  "util_query_fail_after_zero: gpu_idle rc=0 (passed the idle gate)"
+ ],
+ "rc": {
+  "idle": 0,
+  "busy_apps": 1,
+  "busy_util": 1,
+  "apps_query_fail": 0,
+  "util_query_fail": 1,
+  "util_query_fail_after_zero": 0,
+  "both_fail": 1
+ }
+}
+# launcher_idle: FAIL
+{
+ "check": "c2_nonfinite",
+ "pass": false,
+ "fails": [
+  "dx eager_nan_chunk0: judge_c2 accepted ({'max_abs': 0.0, 'ref_max_abs': 1.0, 'rel_max': 0.0, 'rel_fro': nan, 'token_rel_l2_max': 0.0, 'token_rel_l2_p50_p99_p999': [nan, nan, nan], 'tokens_rel_gt_0.5': 0, 'nonfinite': 0, 'masked_nonzero': 0, 'first_bad_row': None, 'last_bad_row': None})",
+  "dx eager_nan_chunk0: nonfinite=0, want >= 1",
+  "dx eager_nan_masks_compiled_error: judge_c2 accepted ({'max_abs': 0.0, 'ref_max_abs': 1.0, 'rel_max': 0.0, 'rel_fro': nan, 'token_rel_l2_max': 0.0, 'token_rel_l2_p50_p99_p999': [nan, nan, nan], 'tokens_rel_gt_0.5': 0, 'nonfinite': 0, 'masked_nonzero': 0, 'first_bad_row': None, 'last_bad_row': None})",
+  "dx eager_nan_masks_compiled_error: nonfinite=0, want >= 1",
+  "dx eager_nan_chunk1: judge_c2 accepted ({'max_abs': 0.0, 'ref_max_abs': 1.0, 'rel_max': 0.0, 'rel_fro': nan, 'token_rel_l2_max': 0.0, 'token_rel_l2_p50_p99_p999': [nan, nan, nan], 'tokens_rel_gt_0.5': 0, 'nonfinite': 0, 'masked_nonzero': 0, 'first_bad_row': None, 'last_bad_row': None})",
+  "dx eager_nan_chunk1: nonfinite=0, want >= 1",
+  "dx eager_inf_chunk0: nonfinite=0, want >= 1",
+  "out eager_nan_chunk0: nonfinite=0, want >= 1",
+  "out eager_nan_chunk1: nonfinite=0, want >= 1",
+  "params eager_nan_weight: nonfinite=0, want >= 1",
+  "params eager_nan_k_bias: nonfinite=0, want >= 1"
+ ],
+ "rows": 513,
+ "row_chunk": 512,
+ "cases": [
+  {
+   "comparator": "dx",
+   "case": "baseline",
+   "nonfinite": 0,
+   "judge_errors": [],
+   "want_reject": false
+  },
+  {
+   "comparator": "dx",
+   "case": "compiled_error_only",
+   "nonfinite": 0,
+   "judge_errors": [
+    "target packed:4194305: dx nonfinite=0 tok>0.5=0 masked_nonzero=0 rel_max=0.10000002384185791"
+   ],
+   "want_reject": true
+  },
+  {
+   "comparator": "dx",
+   "case": "compiled_nan_chunk0",
+   "nonfinite": 1,
+   "judge_errors": [
+    "target packed:4194305: dx nonfinite=1 tok>0.5=1 masked_nonzero=0 rel_max=1.0000000150474662e+30"
+   ],
+   "want_reject": true
+  },
+  {
+   "comparator": "dx",
+   "case": "eager_nan_chunk0",
+   "nonfinite": 0,
+   "judge_errors": [],
+   "want_reject": true
+  },
+  {
+   "comparator": "dx",
+   "case": "eager_nan_masks_compiled_error",
+   "nonfinite": 0,
+   "judge_errors": [],
+   "want_reject": true
+  },
+  {
+   "comparator": "dx",
+   "case": "eager_nan_chunk1",
+   "nonfinite": 0,
+   "judge_errors": [],
+   "want_reject": true
+  },
+  {
+   "comparator": "dx",
+   "case": "eager_inf_chunk0",
+   "nonfinite": 0,
+   "judge_errors": [
+    "target packed:4194305: dx nonfinite=0 tok>0.5=0 masked_nonzero=0 rel_max=nan"
+   ],
+   "want_reject": true
+  },
+  {
+   "comparator": "out",
+   "case": "baseline",
+   "nonfinite": 0,
+   "judge_errors": [],
+   "want_reject": false
+  },
+  {
+   "comparator": "out",
+   "case": "eager_nan_chunk0",
+   "nonfinite": 0,
+   "judge_errors": [
+    "target packed:4194305: out wrong=1 nonfinite=0"
+   ],
+   "want_reject": true
+  },
+  {
+   "comparator": "out",
+   "case": "eager_nan_chunk1",
+   "nonfinite": 0,
+   "judge_errors": [
+    "target packed:4194305: out wrong=1 nonfinite=0"
+   ],
+   "want_reject": true
+  },
+  {
+   "comparator": "params",
+   "case": "baseline",
+   "nonfinite": 0,
+   "judge_errors": [],
+   "want_reject": false
+  },
+  {
+   "comparator": "params",
+   "case": "eager_nan_weight",
+   "nonfinite": 0,
+   "judge_errors": [
+    "target packed:4194305: grad blocks.0.mlp.w rel_max=nan nonfinite=0"
+   ],
+   "want_reject": true
+  },
+  {
+   "comparator": "params",
+   "case": "eager_nan_k_bias",
+   "nonfinite": 0,
+   "judge_errors": [
+    "target packed:4194305: grad blocks.0.attn.k.bias max(|diff|,|c|,|e|)=nan > 0.05 x |q.bias grad| 1.0 nonfinite=0"
+   ],
+   "want_reject": true
+  }
+ ]
+}
+# c2_nonfinite: FAIL
+# overall: FAIL

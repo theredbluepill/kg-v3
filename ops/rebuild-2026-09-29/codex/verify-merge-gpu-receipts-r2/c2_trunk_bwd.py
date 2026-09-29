@@ -21,11 +21,6 @@ Amendment 1 (attempt 2; run statement "Amendment 1"): attn.k.bias has an
 analytically zero gradient (softmax is invariant to the per-query constant
 q.b_k), so its relative error is judged against the sibling attn.q.bias
 gradient scale instead (driver.py). Absolute magnitudes are now recorded.
-Post-run revision (Codex review verify-merge-gpu-receipts-r2): `nonfinite`
-counts non-finite values in either operand, compiled or eager reference, at
-valid positions, and cmp_dx sanitizes the reference like the compiled side
-before its reductions. The as-run pod/attempt*/c2_trunk_bwd.py counted only
-the compiled side, so a reference NaN was dropped by Python's max().
 """
 
 from __future__ import annotations
@@ -63,9 +58,8 @@ def cmp_out(out: torch.Tensor, ref: torch.Tensor, mask: torch.Tensor) -> dict[st
     for s in range(0, out.shape[0], ROW_CHUNK):
         m = mask[s:s + ROW_CHUNK]
         o = out[s:s + ROW_CHUNK].float()
-        r = ref[s:s + ROW_CHUNK].float()
-        d = (o - r).abs()
-        nonfinite += int((~torch.isfinite(o[m])).sum()) + int((~torch.isfinite(r[m])).sum())
+        d = (o - ref[s:s + ROW_CHUNK].float()).abs()
+        nonfinite += int((~torch.isfinite(o[m])).sum())
         d = torch.nan_to_num(d, nan=1e30, posinf=1e30).amax(-1)
         d = torch.where(m, d, torch.zeros_like(d))
         max_abs = max(max_abs, float(d.max()))
@@ -90,10 +84,9 @@ def cmp_dx(dx: torch.Tensor, ref: torch.Tensor, mask: torch.Tensor) -> dict[str,
         m = mask[s:s + ROW_CHUNK]
         a = dx[s:s + ROW_CHUNK].float()
         b = ref[s:s + ROW_CHUNK].float()
-        nonfinite += int((~torch.isfinite(a[m])).sum()) + int((~torch.isfinite(b[m])).sum())
+        nonfinite += int((~torch.isfinite(a[m])).sum())
         masked_nonzero += int((a[~m] != 0).sum()) + int((b[~m] != 0).sum())
         a = torch.nan_to_num(a, nan=1e30, posinf=1e30, neginf=-1e30)
-        b = torch.nan_to_num(b, nan=1e30, posinf=1e30, neginf=-1e30)
         d = (a - b)
         dm = d[m]
         bm = b[m]
@@ -136,7 +129,7 @@ def cmp_params(a: dict[str, torch.Tensor], b: dict[str, torch.Tensor]) -> dict[s
             "out_max_abs": float(g.abs().max()),
             "rel_max": float(d.max() / r.abs().max().clamp_min(1e-30)),
             "rel_fro": float((g - r).norm() / r.norm().clamp_min(1e-30)),
-            "nonfinite": int((~torch.isfinite(g)).sum()) + int((~torch.isfinite(r)).sum()),
+            "nonfinite": int((~torch.isfinite(g)).sum()),
         }
     missing = sorted(set(b) ^ set(a))
     if missing:

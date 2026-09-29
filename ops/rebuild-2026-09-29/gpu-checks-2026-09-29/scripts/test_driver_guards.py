@@ -1,9 +1,10 @@
-"""Local test: driver failure propagation and the C1/C3 judging guards.
+"""Local test: driver failure propagation, judge guards and the launcher idle gate.
 
 Regressions for Codex review verify-merge-gpu-receipts-r1 findings 1-3. No
 GPU; the driver scenarios run dummy stages (Python sleep subprocesses, no
-torch, no /workspace paths). The C1 check imports c1_fp32_ref, so it needs the
-repository's uv environment (torch, pydantic).
+torch, no /workspace paths). The C1 and C2 checks import c1_fp32_ref and
+c2_trunk_bwd, so they need the repository's uv environment (torch, pydantic);
+the launcher check needs bash.
 
 Driver scenarios (each runs driver.main() in a fresh child process, with
 PY/WRAP/RUN/ROOT pointed at a scratch directory and every judge returning no
@@ -31,6 +32,20 @@ Judge checks:
       its per-path metrics; a single path with positive error while the other
       two are exactly zero (median 0) is flagged path_specific; three zero
       paths stay similar.
+
+Regressions for Codex review verify-merge-gpu-receipts-r2 (both findings):
+  launcher_idle launch.sh's gpu_idle, extracted verbatim and run under bash
+      with nvidia-smi stubbed. Only the idle case (both queries succeed, no
+      compute apps, utilization 0) may pass; busy apps, busy utilization, a
+      failed compute-apps query (empty output), a failed utilization query
+      (with or without a "0" printed before the failure) and both queries
+      failing must each fail the gate.
+  c2_nonfinite  c2_trunk_bwd's comparators over 513 valid rows (ROW_CHUNK 512,
+      so the cases span both chunks). A non-finite value in either operand
+      (compiled or eager reference) at a valid position is counted in
+      `nonfinite`, and judge_c2 rejects the retained attempt 2 record carrying
+      those metrics, including a reference NaN in the same chunk as a 10 %
+      compiled-gradient error; the unmodified all-equal case passes.
 
 Usage: uv run python test_driver_guards.py   (exit 0 when every check passes)
 """
@@ -300,14 +315,139 @@ def check_c1_verdict() -> dict[str, Any]:
             "all_zero": zero["flagged"]}
 
 
+LAUNCH_SH = HERE / "launch.sh"
+C2_SCRIPT = HERE / "c2_trunk_bwd.py"
+NVIDIA_SMI_STUB = r"""
+nvidia-smi() {
+  case "$*" in
+    *--query-compute-apps=*)
+      case "$SCENARIO" in
+        busy_apps) echo '123, python, 400 MiB';;
+        apps_query_fail|both_fail) return 1;;
+      esac;;
+    *--query-gpu=*)
+      case "$SCENARIO" in
+        busy_util) echo 10;;
+        util_query_fail|both_fail) return 1;;
+        util_query_fail_after_zero) echo 0; return 1;;
+        *) echo 0;;
+      esac;;
+  esac
+}
+"""
+IDLE_SCENARIOS = ("idle", "busy_apps", "busy_util", "apps_query_fail", "util_query_fail",
+                  "util_query_fail_after_zero", "both_fail")
+
+
+def check_launcher_idle() -> dict[str, Any]:
+    text = LAUNCH_SH.read_text()
+    func = text[text.index("gpu_idle()"): text.index("\nsnap()")]
+    fails = []
+    rcs = {}
+    for scenario in IDLE_SCENARIOS:
+        p = subprocess.run(["bash", "-c", "set -u\n" + NVIDIA_SMI_STUB + func + "\ngpu_idle 0\n"],
+                           env={**os.environ, "SCENARIO": scenario},
+                           capture_output=True, text=True, timeout=30)
+        rcs[scenario] = p.returncode
+        passed_gate = p.returncode == 0
+        if passed_gate != (scenario == "idle"):
+            fails.append(f"{scenario}: gpu_idle rc={p.returncode} "
+                         f"({'passed' if passed_gate else 'failed'} the idle gate)")
+    return {"check": "launcher_idle", "pass": not fails, "fails": fails, "rc": rcs}
+
+
+def check_c2_nonfinite() -> dict[str, Any]:
+    import torch
+
+    sys.path.insert(0, str(HERE))
+    c2 = load("gpu_checks_c2", C2_SCRIPT)
+    drv = load("gpu_checks_driver_c2", DRIVER)
+    retained = [json.loads(line) for line in (ATTEMPT2 / "c2_aten_bwd.jsonl").read_text()
+                .splitlines() if line]
+    fails = []
+    if drv.judge_c2(retained):
+        fails.append(f"retained attempt 2 C2 record fails judge_c2: {drv.judge_c2(retained)}")
+    rows = c2.ROW_CHUNK + 1
+    cases: list[dict[str, Any]] = []
+
+    def judged(field: str, metrics: dict[str, Any]) -> list[str]:
+        ev = copy.deepcopy(retained)
+        point = next(e for e in ev if e.get("event") == "result" and e["label"] == "target")
+        point[field] = metrics
+        return list(drv.judge_c2(ev))
+
+    def record(comparator: str, name: str, metrics: Any, errs: list[str],
+               nonfinite: int, reject: bool) -> None:
+        cases.append({"comparator": comparator, "case": name, "nonfinite": nonfinite,
+                      "judge_errors": errs, "want_reject": reject})
+        if reject and not errs:
+            fails.append(f"{comparator} {name}: judge_c2 accepted ({metrics})")
+        if not reject and errs:
+            fails.append(f"{comparator} {name}: judge_c2 rejected a clean case ({errs})")
+        if reject and nonfinite < 1 and name != "compiled_error_only":
+            fails.append(f"{comparator} {name}: nonfinite={nonfinite}, want >= 1")
+
+    # dX: [rows, tokens, channels] gradients, all valid.
+    mask = torch.ones(rows, 2, dtype=torch.bool)
+    dx_cases = {
+        "baseline": [],
+        "compiled_error_only": [("c", 1, 1.1)],
+        "compiled_nan_chunk0": [("c", 0, float("nan"))],
+        "eager_nan_chunk0": [("e", 0, float("nan"))],
+        "eager_nan_masks_compiled_error": [("e", 0, float("nan")), ("c", 1, 1.1)],
+        "eager_nan_chunk1": [("e", c2.ROW_CHUNK, float("nan"))],
+        "eager_inf_chunk0": [("e", 3, float("inf"))],
+    }
+    for name, edits in dx_cases.items():
+        comp = torch.ones(rows, 2, 4)
+        ref = comp.clone()
+        for which, row, value in edits:
+            (comp if which == "c" else ref)[row, 0, 0] = value
+        metrics = c2.cmp_dx(comp, ref, mask)
+        record("dx", name, metrics, judged("dx_compiled_vs_eager", metrics),
+               metrics["nonfinite"], name != "baseline")
+
+    # Output: same shapes; a wrong token is |d| > 0.25 on any channel.
+    for name, row, value in (("baseline", None, 0.0),
+                             ("eager_nan_chunk0", 0, float("nan")),
+                             ("eager_nan_chunk1", c2.ROW_CHUNK, float("nan"))):
+        comp = torch.ones(rows, 2, 4)
+        ref = comp.clone()
+        if row is not None:
+            ref[row, 0, 0] = value
+        metrics = c2.cmp_out(comp, ref, mask)
+        record("out", name, metrics, judged("out_compiled_vs_eager", metrics),
+               metrics["nonfinite"], row is not None)
+
+    # Parameter gradients: a plain weight and the Amendment 1 key-bias path
+    # (its gradient is analytically zero, judged against the query-bias scale).
+    names = ("blocks.0.attn.q.bias", "blocks.0.attn.k.bias", "blocks.0.mlp.w")
+    for name, target in (("baseline", None), ("eager_nan_weight", "blocks.0.mlp.w"),
+                         ("eager_nan_k_bias", "blocks.0.attn.k.bias")):
+        comp = {n: torch.zeros(rows) if n.endswith("k.bias") else torch.ones(rows)
+                for n in names}
+        ref = {n: t.clone() for n, t in comp.items()}
+        if target is not None:
+            ref[target][0] = float("nan")
+        metrics = c2.cmp_params(comp, ref)
+        count = sum(m["nonfinite"] for m in metrics.values() if isinstance(m, dict))
+        record("params", name, metrics, judged("params_compiled_vs_eager", metrics),
+               count, target is not None)
+    return {"check": "c2_nonfinite", "pass": not fails, "fails": fails,
+            "rows": rows, "row_chunk": c2.ROW_CHUNK, "cases": cases}
+
+
 def main() -> int:
     print(f"# test_driver_guards.py  utc={time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}")
     print(f"# platform={platform.platform()} python={platform.python_version()}")
     print(f"# test script sha256={sha256(Path(__file__).resolve())}")
     print(f"# driver.py sha256={sha256(DRIVER)}")
     print(f"# c1_fp32_ref.py sha256={sha256(HERE / 'c1_fp32_ref.py')}")
+    print(f"# c2_trunk_bwd.py sha256={sha256(C2_SCRIPT)}")
+    print(f"# launch.sh sha256={sha256(LAUNCH_SH)}")
     results = [run_driver_scenario(s) for s in SCENARIOS]
-    results += [check_c3_values(), check_c1_verdict()]
+    results += [check_c3_values(), check_c1_verdict(), check_launcher_idle(),
+                check_c2_nonfinite()]
     ok = True
     for r in results:
         print(json.dumps(r, indent=1))

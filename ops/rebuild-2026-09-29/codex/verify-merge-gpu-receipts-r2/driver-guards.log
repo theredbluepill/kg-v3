@@ -1,0 +1,367 @@
+# test_driver_guards.py  utc=2026-09-29T13:35:17Z
+# platform=macOS-26.4-arm64-arm-64bit python=3.12.13
+# test script sha256=4488d985758f6235d1ae875330febd31645cd6f2f351500d2d497639e6234f44
+# driver.py sha256=d1147ba32441aad203d32ff7eaf04f2dd8219b328f566e94cc49d97238707572
+# c1_fp32_ref.py sha256=7a0d2c5d5a2d0ffbc4735245d888800c652b06646b8bf4d2670174fea0410373
+{
+ "check": "driver:phase1_malformed_record",
+ "pass": true,
+ "fails": [],
+ "rc": 5,
+ "elapsed_s": 0.49,
+ "stage_pids_recorded": 2,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_bad",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_long",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_bad",
+   "status": "driver_error",
+   "error": "JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_long",
+   "status": "terminated_by_stop",
+   "rc": -15
+  },
+  {
+   "t": 0.3,
+   "stage": "c1_after",
+   "status": "skipped_after_stop"
+  },
+  {
+   "t": 0.4,
+   "status": "stage_cleanup",
+   "reason": "driver_error c3_bad",
+   "groups": [
+    {
+     "stage": "c2_long",
+     "pgid": 35210,
+     "sigkill": false,
+     "survived": false
+    }
+   ]
+  },
+  {
+   "t": 0.4,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.4,
+   "stage": "c4_after",
+   "status": "skipped_after_stop"
+  },
+  {
+   "t": 0.4,
+   "status": "driver_done",
+   "exit": 5
+  }
+ ]
+}
+# driver:phase1_malformed_record: PASS
+{
+ "check": "driver:phase1_spawn_error",
+ "pass": true,
+ "fails": [],
+ "rc": 5,
+ "elapsed_s": 8.53,
+ "stage_pids_recorded": 2,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_wait",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_long",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_wait",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_spawn_fail",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_spawn_fail",
+   "status": "driver_error",
+   "error": "OSError: injected spawn failure"
+  },
+  {
+   "t": 8.4,
+   "stage": "c2_long",
+   "status": "terminated_by_stop",
+   "rc": -9
+  },
+  {
+   "t": 8.4,
+   "stage": "c1_after",
+   "status": "skipped_after_stop"
+  },
+  {
+   "t": 8.5,
+   "status": "stage_cleanup",
+   "reason": "driver_error c3_spawn_fail",
+   "groups": [
+    {
+     "stage": "c2_long",
+     "pgid": 35214,
+     "sigkill": true,
+     "survived": false
+    }
+   ]
+  },
+  {
+   "t": 8.5,
+   "status": "phase1_done"
+  },
+  {
+   "t": 8.5,
+   "stage": "c4_after",
+   "status": "skipped_after_stop"
+  },
+  {
+   "t": 8.5,
+   "status": "driver_done",
+   "exit": 5
+  }
+ ]
+}
+# driver:phase1_spawn_error: PASS
+{
+ "check": "driver:phase2_malformed_record",
+ "pass": true,
+ "fails": [],
+ "rc": 5,
+ "elapsed_s": 0.83,
+ "stage_pids_recorded": 0,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.3,
+   "stage": "c4_bad",
+   "status": "launch"
+  },
+  {
+   "t": 0.7,
+   "stage": "c4_bad",
+   "status": "driver_error",
+   "error": "JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+  },
+  {
+   "t": 0.7,
+   "status": "driver_done",
+   "exit": 5
+  }
+ ]
+}
+# driver:phase2_malformed_record: PASS
+{
+ "check": "driver:complete",
+ "pass": true,
+ "fails": [],
+ "rc": 0,
+ "elapsed_s": 0.81,
+ "stage_pids_recorded": 0,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.3,
+   "stage": "c4_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.7,
+   "stage": "c4_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.7,
+   "status": "driver_done",
+   "exit": 0
+  }
+ ]
+}
+# driver:complete: PASS
+{
+ "check": "c3_values",
+ "pass": true,
+ "fails": [],
+ "retained": [
+  {
+   "file": "c3_dense_aten.jsonl",
+   "errors": []
+  },
+  {
+   "file": "c3_dense_default.jsonl",
+   "errors": []
+  },
+  {
+   "file": "c3_mid_aten.jsonl",
+   "errors": []
+  },
+  {
+   "file": "c3_mid_default.jsonl",
+   "errors": []
+  }
+ ],
+ "mutations": [
+  {
+   "path": "teacher_self_combined",
+   "mutation": "nonfinite",
+   "caught": true
+  },
+  {
+   "path": "teacher_self_combined",
+   "mutation": "below_-1",
+   "caught": true
+  },
+  {
+   "path": "teacher_self_combined",
+   "mutation": "above_1",
+   "caught": true
+  },
+  {
+   "path": "teacher_self_cached",
+   "mutation": "nonfinite",
+   "caught": true
+  },
+  {
+   "path": "teacher_self_cached",
+   "mutation": "below_-1",
+   "caught": true
+  },
+  {
+   "path": "teacher_self_cached",
+   "mutation": "above_1",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_combined",
+   "mutation": "nonfinite",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_combined",
+   "mutation": "below_-1",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_combined",
+   "mutation": "above_1",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_cached",
+   "mutation": "nonfinite",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_cached",
+   "mutation": "below_-1",
+   "caught": true
+  },
+  {
+   "path": "teacher_perturbed_cached",
+   "mutation": "above_1",
+   "caught": true
+  }
+ ]
+}
+# c3_values: PASS
+{
+ "check": "c1_verdict",
+ "pass": true,
+ "fails": [],
+ "retained_regenerated": 6,
+ "median0_single": [
+  "compiled:mean_abs",
+  "compiled:outside_tol_frac"
+ ],
+ "all_zero": []
+}
+# c1_verdict: PASS
+# overall: PASS

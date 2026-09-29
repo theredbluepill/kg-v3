@@ -1,0 +1,104 @@
+{"utc": "2026-09-29T13:37:11Z", "t": 0.0, "status": "driver_start", "budget_s": 3300}
+Exception in thread Thread-1 (stream):
+Traceback (most recent call last):
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "/private/tmp/kg-gpu-verify-r2-qmsanrkg/bundle/scripts/driver.py", line 465, in stream
+    self.run_stage(stage, gpu)
+  File "/Users/poonszesen/kg-v3-m-gpu-receipts/ops/rebuild-2026-09-29/codex/verify-merge-gpu-receipts-r2/additional_probes.py", line 101, in run
+    raise OSError("source-mutation sentinel")
+OSError: source-mutation sentinel
+{"utc": "2026-09-29T13:37:11Z", "t": 0.0, "status": "phase1_done", "stopped": false}
+{"utc": "2026-09-29T13:37:11Z", "t": 0.0, "status": "driver_done", "exit": 0, "elapsed_s": 0.0}
+{
+  "baseline": {
+    "metrics": {
+      "max_abs": 0.0,
+      "ref_max_abs": 1.0,
+      "rel_max": 0.0,
+      "rel_fro": 0.0,
+      "token_rel_l2_max": 0.0,
+      "token_rel_l2_p50_p99_p999": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "tokens_rel_gt_0.5": 0,
+      "nonfinite": 0,
+      "masked_nonzero": 0,
+      "first_bad_row": null,
+      "last_bad_row": null
+    },
+    "errors": []
+  },
+  "compiled_nan": {
+    "metrics": {
+      "max_abs": 1.0000000150474662e+30,
+      "ref_max_abs": 1.0,
+      "rel_max": 1.0000000150474662e+30,
+      "rel_fro": 4.415107923319666e+28,
+      "token_rel_l2_max": 1.0000000150474662e+30,
+      "token_rel_l2_p50_p99_p999": [
+        0.0,
+        0.0,
+        4.8800659447772314e+29
+      ],
+      "tokens_rel_gt_0.5": 1,
+      "nonfinite": 1,
+      "masked_nonzero": 0,
+      "first_bad_row": 0,
+      "last_bad_row": 0
+    },
+    "errors": [
+      "target packed:4194305: dx nonfinite=1 tok>0.5=1 masked_nonzero=0 rel_max=1.0000000150474662e+30"
+    ]
+  },
+  "eager_nan": {
+    "metrics": {
+      "max_abs": 0.0,
+      "ref_max_abs": 1.0,
+      "rel_max": 0.0,
+      "rel_fro": NaN,
+      "token_rel_l2_max": 0.0,
+      "token_rel_l2_p50_p99_p999": [
+        NaN,
+        NaN,
+        NaN
+      ],
+      "tokens_rel_gt_0.5": 0,
+      "nonfinite": 0,
+      "masked_nonzero": 0,
+      "first_bad_row": null,
+      "last_bad_row": null
+    },
+    "errors": []
+  },
+  "launcher_idle": {
+    "idle": 0,
+    "busy_apps": 1,
+    "busy_util": 1,
+    "both_fail": 1,
+    "apps_query_fail": 0,
+    "util_query_fail": 1
+  },
+  "source_mutations": [
+    {
+      "guard_removed": "stream exception boundary",
+      "bad_rc": 0,
+      "later_launched": true,
+      "fault_reproduced": true
+    },
+    {
+      "guard_removed": "two C3 teacher value paths",
+      "fault_reproduced": true,
+      "baseline_rejects": true
+    },
+    {
+      "guard_removed": "C1 median-zero comparison",
+      "fault_reproduced": true
+    }
+  ],
+  "restored": true
+}
