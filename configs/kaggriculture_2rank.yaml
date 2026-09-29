@@ -7,7 +7,8 @@
 # seg_per_minibatch * grad_accum stays 8 per rank; the split is set from the
 # pre-launch memory smoke (plan Task 6.1: spm 4 / accum 2 if spm 8 does not fit).
 # See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
-# Loads through FullConfig once the Kaggriculture env and model join it (Task 3.1).
+# Loads through FullConfig; run_ppo checks its GEMM workload, then stops until the
+# Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.
 env:
   n_envs: 128
   obs_spec:
@@ -26,7 +27,7 @@ env:
     econ_cap: 0.25
     econ_ineffective_weight: 0.0
   pin_memory: true
-  # Chosen from the measured native step time in Task 6.1.
+  # Provisional: Task 6.1 measures the native step time and verifies or resets it.
   native_threads: 2
 
 model: kaggriculture

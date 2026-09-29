@@ -1,0 +1,15 @@
+__________ test_trainable_env_config_passes_isaiahs_orbit_env_through __________
+
+    def test_trainable_env_config_passes_isaiahs_orbit_env_through() -> None:
+        cfg = FullConfig.from_file(_CONFIGS / "scaling_6m.yaml")
+>       assert run_ppo._trainable_env_config(cfg.env) is cfg.env
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_ppo' has no attribute '_trainable_env_config'
+
+tests/scripts/test_run_ppo.py:2885: AttributeError
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3]
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2]
+FAILED tests/scripts/test_run_ppo.py::test_resume_startup_checks_the_runtime_adapted_workload
+FAILED tests/scripts/test_run_ppo.py::test_trainable_env_config_passes_isaiahs_orbit_env_through
+4 failed, 3 passed, 77 deselected in 1.22s

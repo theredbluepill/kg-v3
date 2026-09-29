@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-09-29 — Load the Kaggriculture configs through the real FullConfig (Task 3.4 r2 fixes)
+
+Codex rejected Task 3.4 again (`ops/rebuild-2026-09-29/codex/verify-3.4-r2.md`): the three configs failed `FullConfig.from_file` with five schema errors each, the startup tests bypassed that loader, and the ranked configs called `native_threads` measured. The fix:
+- merges the Task 3.1 model registration (`kg/rebuild-trainer-model` at `4cac1a1`);
+- adds `KaggricultureEnvConfig` and `KaggricultureRewardConfig` (`python/owl/kaggriculture/config.py`), selected in `FullConfig` by the observation tag, with both game pairings, `gamma = 1` and Isaiah's Orbit cross-checks unchanged;
+- adds `require_orbit_env`, which stops `run_ppo` with an explicit error after the workload check and before the run directory, and narrows the Orbit-only sites in `run_ppo` and `benchmark_checkpoints`;
+- rewrites the startup tests to run `main` from the shipped YAML through the real loader (fresh, override rejection and resume), removes all six integration skips, and relabels `native_threads` provisional.
+
+`py-prepare`: 1,373 passed, 4 skipped; mypy 60 files; docs-fresh passed. The [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]], the [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] and the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] now say `FullConfig` loads the model with its env.
+
 ## 2026-09-29 — Wire the Kaggriculture workload check into run_ppo startup
 
 Codex rejected Task 3.4 (`ops/rebuild-2026-09-29/codex/verify-3.4-r1.md`). The fix:

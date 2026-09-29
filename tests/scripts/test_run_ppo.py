@@ -11,14 +11,12 @@ from types import SimpleNamespace
 
 import pytest
 import torch
-import yaml
 from owl.checkpoint_quantization import (
     NF4_G128_LSQ,
     dequantize_model_state_dict,
     quantize_model_state_dict,
 )
 from owl.model import LoRALinear
-from owl.model.kaggriculture import KaggricultureTransformerConfig
 from owl.rl import (
     ACTION_ENTITY_SLOTS,
     MAX_COMETS,
@@ -29,7 +27,7 @@ from owl.rl import (
     ObsBatch,
     PureActionMask,
 )
-from owl.train import FullConfig, PPOConfig, PPOTrainer
+from owl.train import FullConfig, PPOTrainer
 from owl.train.distributed import DistributedContext
 from owl.train.logging import LogMode, MetricLogger
 from owl.train.optimizer import CompositeOptimizer
@@ -2719,53 +2717,24 @@ def test_ppo_trainer_load_checkpoint_rejects_scheduler_mismatch(
 
 
 # --- Kaggriculture startup workload check (plan Task 3.4) ---------------------
+#
+# These drive ``main`` from the shipped YAML through the real
+# ``FullConfig.from_file``, CLI overrides and resume adaptation. Only the release
+# build check, torch configuration and the distributed session are stubbed; the
+# allocation steps are replaced by sentinels that record and fail if reached.
 
 _CONFIGS = Path(__file__).parents[2] / "configs"
-_TOO_WIDE_FOR_ONE_ROW = KaggricultureTransformerConfig(embed_dim=2**21, n_heads=2**16)
+_NOT_WIRED = "run_ppo cannot run Kaggriculture yet"
 
 
-class _StopAfterStartupCheck(Exception):
-    pass
-
-
-def _kaggriculture_startup_config(
-    name: str, *, model: KaggricultureTransformerConfig | None = None
-) -> FullConfig:
-    """The model, n_envs and PPO sections of a Kaggriculture config file.
-
-    Until Task 3.1 adds the Kaggriculture env to ``FullConfig`` (and admits its
-    model), these files fail ``FullConfig`` validation, so ``model_construct``
-    bypasses only that schema gate to drive the canonical startup path.
-    """
-    data = yaml.safe_load((_CONFIGS / name).read_text(encoding="utf-8"))
-    base = _full_config()
-    return FullConfig.model_construct(
-        env=base.env.model_copy(update={"n_envs": data["env"]["n_envs"]}),
-        model=model
-        or KaggricultureTransformerConfig.from_file(
-            _CONFIGS / "model" / f"{data['model']}.yaml"
-        ),
-        optimizer=base.optimizer,
-        rl=PPOConfig.model_validate(data["rl"]),
-        runtime=base.runtime,
-    )
-
-
-def _patch_startup_until_run_dir(
+def _patch_kaggriculture_startup(
     monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    cfg: FullConfig,
+    argv: list[str],
     calls: list[str],
+    *,
+    log_mode: LogMode = LogMode.DEBUG,
 ) -> None:
-    """Run ``main`` with ``cfg``; record allocation steps, stop at the run dir."""
-    config_path = tmp_path / "config.yaml"
-    config_path.write_text("placeholder: loaded through the patched FullConfig\n")
-
-    def fake_create_run_dir(_output: Path) -> Path:
-        calls.append("create_run_dir")
-        raise _StopAfterStartupCheck
-
-    def unexpected(name: str) -> object:
+    def sentinel(name: str) -> object:
         def fail(*_args: object, **_kwargs: object) -> None:
             calls.append(name)
             raise AssertionError(f"{name} ran before the startup workload check")
@@ -2773,9 +2742,7 @@ def _patch_startup_until_run_dir(
         return fail
 
     monkeypatch.setattr(
-        sys,
-        "argv",
-        ["run_ppo.py", str(config_path), str(tmp_path / "runs"), "--log-mode", "debug"],
+        sys, "argv", ["run_ppo.py", *argv, "--log-mode", log_mode.value]
     )
     monkeypatch.setattr(run_ppo, "assert_release_build", lambda: None)
     monkeypatch.setattr(run_ppo, "configure_torch", lambda: None)
@@ -2784,31 +2751,40 @@ def _patch_startup_until_run_dir(
         "distributed_session",
         lambda: nullcontext(DistributedContext.single_process_cpu()),
     )
-    monkeypatch.setattr(
-        run_ppo, "FullConfig", SimpleNamespace(from_file=lambda *_a, **_k: cfg)
-    )
-    monkeypatch.setattr(run_ppo, "_create_run_dir", fake_create_run_dir)
-    monkeypatch.setattr(run_ppo, "VectorizedEnv", unexpected("VectorizedEnv"))
-    monkeypatch.setattr(
-        run_ppo,
+    for name in (
+        "_create_run_dir",
+        "VectorizedEnv",
         "_create_training_model_for_config",
-        unexpected("_create_training_model_for_config"),
-    )
+    ):
+        monkeypatch.setattr(run_ppo, name, sentinel(name))
+
+
+def _headroom_lines(out: str) -> list[str]:
+    return [line for line in out.splitlines() if line.startswith("GEMM workload")]
 
 
 def test_main_rejects_unserviceable_kaggriculture_workload_before_allocation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
+    # Trunk width 2 * 2**21 x 709 padded tokens exceeds 2**31 for one row.
     calls: list[str] = []
-    cfg = _kaggriculture_startup_config(
-        "kaggriculture_2rank.yaml", model=_TOO_WIDE_FOR_ONE_ROW
-    )
-    _patch_startup_until_run_dir(monkeypatch, tmp_path, cfg, calls)
+    argv = [
+        str(_CONFIGS / "kaggriculture_2rank.yaml"),
+        str(tmp_path / "runs"),
+        "-o",
+        f"model.embed_dim={2**21}",
+        f"model.n_heads={2**16}",
+    ]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls)
 
     with pytest.raises(ValueError, match="one padded row of 709 tokens"):
         run_ppo.main()
+
     assert calls == []
+    assert not (tmp_path / "runs").exists()
+    assert _headroom_lines(capsys.readouterr().out) == []
 
 
 @pytest.mark.parametrize(
@@ -2818,7 +2794,7 @@ def test_main_rejects_unserviceable_kaggriculture_workload_before_allocation(
         ("kaggriculture_4rank.yaml", 128, 8_192, 2),
     ],
 )
-def test_main_prints_kaggriculture_headroom_before_allocation(
+def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -2828,16 +2804,15 @@ def test_main_prints_kaggriculture_headroom_before_allocation(
     teacher_calls: int,
 ) -> None:
     calls: list[str] = []
-    _patch_startup_until_run_dir(
-        monkeypatch, tmp_path, _kaggriculture_startup_config(name), calls
-    )
+    argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls)
 
-    with pytest.raises(_StopAfterStartupCheck):
+    with pytest.raises(RuntimeError, match=_NOT_WIRED):
         run_ppo.main()
 
-    assert calls == ["create_run_dir"]
-    lines = capsys.readouterr().out.splitlines()
-    headroom = [line for line in lines if line.startswith("GEMM workload headroom")]
+    assert calls == []
+    assert not (tmp_path / "runs").exists()
+    headroom = _headroom_lines(capsys.readouterr().out)
     assert [line.split(":")[0] for line in headroom] == [
         "GEMM workload headroom rollout",
         "GEMM workload headroom minibatch",
@@ -2859,38 +2834,40 @@ def test_resume_startup_checks_the_runtime_adapted_workload(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    calls: list[str] = []
-    cfg = _kaggriculture_startup_config("kaggriculture_2rank.yaml")
-    adapted = cfg.model_copy(update={"env": cfg.env.model_copy(update={"n_envs": 64})})
-    _patch_startup_until_run_dir(monkeypatch, tmp_path, cfg, calls)
-    monkeypatch.setattr(
-        run_ppo,
-        "_resolve_launch",
-        lambda _args: run_ppo.ResumeLaunch(
-            config_path=tmp_path / "config.yaml",
-            run_dir=tmp_path / "run",
-            checkpoint_path=tmp_path / "run" / "checkpoint_final.pt",
-            last_best_checkpoint_path=tmp_path / "run" / "checkpoint_last_best.pt",
-        ),
+    # A run saved at 2 ranks resumes on 1: resume adaptation doubles the
+    # per-rank envs to 256, so the checked rollout is 512 rows, not the file's 256.
+    saved = FullConfig.from_file(_CONFIGS / "kaggriculture_2rank.yaml")
+    saved = saved.model_copy(
+        update={"runtime": saved.runtime.model_copy(update={"n_runtime_gpus": 2})}
     )
-    monkeypatch.setattr(
-        run_ppo,
-        "_adapt_resume_config_for_runtime_gpus",
-        lambda _cfg, _distributed: adapted,
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    saved.to_file(run_dir / "config.yaml")
+    for checkpoint in ("checkpoint_final.pt", "checkpoint_last_best.pt"):
+        (run_dir / checkpoint).write_bytes(b"")
+    calls: list[str] = []
+    # Resume requires W&B logging; the check runs before any logger exists.
+    _patch_kaggriculture_startup(
+        monkeypatch,
+        [str(run_dir / "checkpoint_final.pt")],
+        calls,
+        log_mode=LogMode.WANDB,
     )
 
-    with pytest.raises(AssertionError, match="VectorizedEnv ran before"):
+    with pytest.raises(RuntimeError, match=_NOT_WIRED):
         run_ppo.main()
 
-    out = capsys.readouterr().out
-    assert "GEMM workload headroom rollout: 128 rows x 709 padded tokens;" in out
-    assert calls == ["VectorizedEnv"]
+    assert calls == []
+    headroom = _headroom_lines(capsys.readouterr().out)
+    assert headroom[0].startswith(
+        "GEMM workload headroom rollout: 512 rows x 709 padded tokens;"
+    )
 
 
 def test_startup_workload_check_omits_the_teacher_chunk_without_a_teacher(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    cfg = _kaggriculture_startup_config("kaggriculture_2rank.yaml")
+    cfg = FullConfig.from_file(_CONFIGS / "kaggriculture_2rank.yaml")
     reports = run_ppo._check_model_workload(
         cfg.model,
         n_envs=cfg.env.n_envs,

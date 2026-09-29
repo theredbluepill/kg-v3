@@ -1,0 +1,43 @@
+{
+  "scope": "isolated copies of run_ppo and its test; real owl imports and config files",
+  "command": [
+    "uv",
+    "run",
+    "pytest",
+    "/private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py",
+    "-k",
+    "test_main_rejects_unserviceable_kaggriculture_workload_before_allocation or test_main_prints_kaggriculture_headroom_before_allocation or test_resume_startup_checks_the_runtime_adapted_workload",
+    "-q",
+    "--confcutdir",
+    "/private/tmp/kg-verify34-2gdj_3zc"
+  ],
+  "sha256_before": "bc6e40d2c64c4cc45fe38e13793de4676f9ed2f76549619405d78e2a74e82582",
+  "startup-baseline": {
+    "returncode": 0,
+    "tail": [
+      "....                                                                     [100%]",
+      "4 passed, 79 deselected in 0.89s"
+    ]
+  },
+  "sha256_mutated": "5dda27becb631f62af48c17804e74f067f7fce14541b26aa13ea6d010c955f87",
+  "startup-mutated": {
+    "returncode": 1,
+    "tail": [
+      "=========================== short test summary info ============================",
+      "FAILED ../../../private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py::test_main_rejects_unserviceable_kaggriculture_workload_before_allocation",
+      "FAILED ../../../private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py::test_main_prints_kaggriculture_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3]",
+      "FAILED ../../../private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py::test_main_prints_kaggriculture_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2]",
+      "FAILED ../../../private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py::test_resume_startup_checks_the_runtime_adapted_workload",
+      "4 failed, 79 deselected in 0.79s"
+    ]
+  },
+  "sha256_restored": "bc6e40d2c64c4cc45fe38e13793de4676f9ed2f76549619405d78e2a74e82582",
+  "restored_byte_for_byte": true,
+  "startup-restored": {
+    "returncode": 0,
+    "tail": [
+      "....                                                                     [100%]",
+      "4 passed, 79 deselected in 0.76s"
+    ]
+  }
+}

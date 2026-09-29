@@ -50,7 +50,13 @@ from owl.rl import (
     VectorizedEnv,
 )
 from owl.rs import assert_release_build
-from owl.train import FullConfig, PPOConfig, PPOTrainer, configure_torch
+from owl.train import (
+    FullConfig,
+    PPOConfig,
+    PPOTrainer,
+    configure_torch,
+    require_orbit_env,
+)
 from owl.train.distributed import (
     DistributedContext,
     all_reduce_any,
@@ -78,6 +84,7 @@ PLAYER_COUNTS = (2, 4)
 LAST_BEST_WIN_RATE_THRESHOLD = 0.7
 CHECKPOINT_FINAL = "checkpoint_final.pt"
 CHECKPOINT_LAST_BEST = "checkpoint_last_best.pt"
+_TRAINER = "run_ppo"
 _NUMBERED_CHECKPOINT_RE = re.compile(
     r"^checkpoint_(\d{2})_(\d{3})_(\d{3})_(\d{3})\.pt$"
 )
@@ -149,6 +156,8 @@ def main() -> None:
         _check_model_workload(
             cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
         )
+        # Fails before the run dir for Kaggriculture, which has no env yet.
+        env_config = require_orbit_env(cfg.env, context=_TRAINER)
 
         if isinstance(launch, FreshLaunch):
             run_dir = (
@@ -166,12 +175,12 @@ def main() -> None:
 
         device = distributed.device
         env = VectorizedEnv(
-            n_envs=cfg.env.n_envs,
-            obs_spec=cfg.env.obs_spec,
-            action_spec=cfg.env.action_spec,
-            two_player_weight=cfg.env.two_player_weight,
-            reward_mode=cfg.env.reward_mode,
-            pin_memory=cfg.env.pin_memory,
+            n_envs=env_config.n_envs,
+            obs_spec=env_config.obs_spec,
+            action_spec=env_config.action_spec,
+            two_player_weight=env_config.two_player_weight,
+            reward_mode=env_config.reward_mode,
+            pin_memory=env_config.pin_memory,
         )
         model, lora_application = _create_training_model_for_config(
             cfg,
@@ -786,10 +795,11 @@ def _create_training_model_for_config(
     reset_parameters: bool = False,
     roundtrip_lora_base: bool = True,
 ) -> tuple[BaseModelAPI, LoRAApplication | None]:
+    env = require_orbit_env(cfg.env, context=_TRAINER)
     model = _create_model(
         cfg.model,
-        obs_spec=cfg.env.obs_spec,
-        action_spec=cfg.env.action_spec,
+        obs_spec=env.obs_spec,
+        action_spec=env.action_spec,
     ).to(device)
     if reset_parameters:
         model.reset_parameters()
@@ -854,9 +864,10 @@ def _load_teacher_init_model(
     if not checkpoint_path.is_file():
         raise ValueError(f"teacher_init checkpoint does not exist: {checkpoint_path}")
     teacher_cfg = FullConfig.from_file(_checkpoint_config_path(checkpoint_path))
+    teacher_env = require_orbit_env(teacher_cfg.env, context=_TRAINER)
     teacher_obs_spec = _teacher_obs_spec_for_student(
-        teacher_cfg.env.obs_spec,
-        student_obs_spec=student_cfg.env.obs_spec,
+        teacher_env.obs_spec,
+        student_obs_spec=require_orbit_env(student_cfg.env, context=_TRAINER).obs_spec,
         checkpoint_path=checkpoint_path,
     )
     _validate_teacher_specs(
@@ -867,7 +878,7 @@ def _load_teacher_init_model(
     teacher_model, _ = _create_training_model_for_config(
         teacher_cfg.model_copy(
             update={
-                "env": teacher_cfg.env.model_copy(update={"obs_spec": teacher_obs_spec})
+                "env": teacher_env.model_copy(update={"obs_spec": teacher_obs_spec})
             }
         ),
         device=device,
@@ -925,12 +936,14 @@ def _validate_teacher_specs(
     student_cfg: FullConfig,
     checkpoint_path: Path,
 ) -> None:
+    teacher_env = require_orbit_env(teacher_cfg.env, context=_TRAINER)
+    student_env = require_orbit_env(student_cfg.env, context=_TRAINER)
     _teacher_obs_spec_for_student(
-        teacher_cfg.env.obs_spec,
-        student_obs_spec=student_cfg.env.obs_spec,
+        teacher_env.obs_spec,
+        student_obs_spec=student_env.obs_spec,
         checkpoint_path=checkpoint_path,
     )
-    if teacher_cfg.env.action_spec != student_cfg.env.action_spec:
+    if teacher_env.action_spec != student_env.action_spec:
         raise ValueError(f"teacher action_spec must match student: {checkpoint_path}")
 
 
@@ -1324,12 +1337,13 @@ def _evaluate_games(
     replay_games: int = 0,
     replay_output_path: Path | None = None,
 ) -> tuple[_EvalStats, dict[int, _EvalStats], dict[str, list[float]], int]:
+    env_config = require_orbit_env(cfg.env, context=_TRAINER)
     env = VectorizedEnv(
         n_envs=n_envs,
-        obs_spec=cfg.env.obs_spec,
-        action_spec=cfg.env.action_spec,
-        two_player_weight=cfg.env.two_player_weight,
-        reward_mode=cfg.env.reward_mode,
+        obs_spec=env_config.obs_spec,
+        action_spec=env_config.action_spec,
+        two_player_weight=env_config.two_player_weight,
+        reward_mode=env_config.reward_mode,
         pin_memory=device.type == "cuda",
     )
     obs = env.reset()

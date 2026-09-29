@@ -2,11 +2,9 @@
 
 The ranked configs apply Isaiah's multi-GPU rule (``winner_ce_6m_4x5090.yaml``):
 per-rank ``n_envs`` and ``segments_per_minibatch`` are divided by the world
-size, everything else is scaling_6m's. Until Task 3.1 registers the
-Kaggriculture env and model in ``FullConfig``, the observation, action, model,
-optimizer and PPO sections are validated against their own schemas here; the
-env keys and reward-shaping values have no schema yet and receive only exact
-key and value assertions.
+size, everything else is scaling_6m's. Every config loads through the real
+``FullConfig.from_file``, so each section, the Kaggriculture env and reward
+schema and the cross-section rules are validated by the trainer's own loader.
 """
 
 from __future__ import annotations
@@ -17,8 +15,8 @@ from typing import Any
 
 import pytest
 import torch
-import yaml
 from owl.kaggriculture import types as kt
+from owl.kaggriculture.config import KaggricultureEnvConfig, KaggricultureRewardConfig
 from owl.model import create_model
 from owl.model import kaggriculture as km
 from owl.model.kaggriculture_workload import (
@@ -27,38 +25,25 @@ from owl.model.kaggriculture_workload import (
     headroom_log_lines,
     ppo_forward_workloads,
 )
-from owl.train import FullConfig, OptimizerConfig, PPOConfig
+from owl.train import FullConfig, OptimizerConfig, PPOConfig, require_orbit_env
 from owl.train.ppo import _minibatch_indices
-from pydantic import TypeAdapter
+from pydantic import ValidationError
 
 ROOT = Path(__file__).parents[2]
 _RANKED = {"kaggriculture_2rank.yaml": 2, "kaggriculture_4rank.yaml": 4}
 _ALL = (*_RANKED, "kaggriculture.yaml")
-_TASK_3_1 = (
-    "Task 3.1 registers the Kaggriculture env and model in FullConfig/ModelConfig "
-    "and create_model; until then these configs cannot load through FullConfig"
+_REWARD_SHAPING = KaggricultureRewardConfig(
+    econ_shaping=0.2,
+    econ_starvation_weight=4.0,
+    econ_drought_weight=1.0,
+    econ_cap=0.25,
+    econ_ineffective_weight=0.0,
 )
-_ENV_KEYS = {
-    "n_envs",
-    "obs_spec",
-    "action_spec",
-    "reward_mode",
-    "reward_shaping",
-    "pin_memory",
-    "native_threads",
-}
-_REWARD_SHAPING = {
-    "econ_shaping": 0.2,
-    "econ_starvation_weight": 4.0,
-    "econ_drought_weight": 1.0,
-    "econ_cap": 0.25,
-    "econ_ineffective_weight": 0.0,
-}
 
 
 @dataclass(frozen=True)
 class _Sections:
-    env: dict[str, Any]
+    env: KaggricultureEnvConfig
     model: km.KaggricultureTransformerConfig
     optimizer: OptimizerConfig
     rl: PPOConfig
@@ -73,20 +58,10 @@ class _GlobalWorkload:
 
 
 def _sections(name: str) -> _Sections:
-    with (ROOT / "configs" / name).open(encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-    assert set(data) == {"env", "model", "optimizer", "rl"}
-    env = data["env"]
-    kt.KaggricultureObsConfig.model_validate(env["obs_spec"])
-    kt.KaggricultureActionConfig.model_validate(env["action_spec"])
-    return _Sections(
-        env=env,
-        model=km.KaggricultureTransformerConfig.from_file(
-            ROOT / "configs" / "model" / f"{data['model']}.yaml"
-        ),
-        optimizer=TypeAdapter(OptimizerConfig).validate_python(data["optimizer"]),
-        rl=PPOConfig.model_validate(data["rl"]),
-    )
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert isinstance(cfg.model, km.KaggricultureTransformerConfig)
+    return _Sections(env=cfg.env, model=cfg.model, optimizer=cfg.optimizer, rl=cfg.rl)
 
 
 def _scaling_6m() -> FullConfig:
@@ -116,7 +91,7 @@ def test_ranked_config_global_workload_equals_scaling_6m(
     ours = _sections(name)
     expected = _global_workload(scaling.env.n_envs, scaling.rl, 1)
     assert expected == _GlobalWorkload(256, 16, 16, 16_384)
-    assert _global_workload(ours.env["n_envs"], ours.rl, world_size) == expected
+    assert _global_workload(ours.env.n_envs, ours.rl, world_size) == expected
 
 
 @pytest.mark.parametrize("name", _RANKED)
@@ -138,11 +113,14 @@ def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
 
 def test_ranked_configs_differ_only_in_per_rank_shapes() -> None:
     two, four = (_sections(name) for name in _RANKED)
-    assert (two.env["n_envs"], two.rl.segments_per_minibatch) == (128, 8)
-    assert (four.env["n_envs"], four.rl.segments_per_minibatch) == (64, 4)
-    assert {**two.env, "n_envs": 0} == {**four.env, "n_envs": 0}
+    assert (two.env.n_envs, two.rl.segments_per_minibatch) == (128, 8)
+    assert (four.env.n_envs, four.rl.segments_per_minibatch) == (64, 4)
+    assert two.env.model_copy(update={"n_envs": 0}) == four.env.model_copy(
+        update={"n_envs": 0}
+    )
     assert two.model == four.model
     assert two.model.force_flash_attn
+    assert (two.env.native_threads, two.env.pin_memory) == (2, True)
     assert two.rl.model_copy(
         update={"segments_per_minibatch": 0}
     ) == four.rl.model_copy(update={"segments_per_minibatch": 0})
@@ -151,19 +129,23 @@ def test_ranked_configs_differ_only_in_per_rank_shapes() -> None:
 @pytest.mark.parametrize("name", _ALL)
 def test_config_env_and_cross_section_rules(name: str) -> None:
     ours = _sections(name)
-    assert set(ours.env) == _ENV_KEYS
-    assert ours.env["reward_mode"] == "win_loss"
-    assert ours.env["reward_shaping"] == _REWARD_SHAPING
+    assert ours.env.obs_spec == kt.KaggricultureObsConfig(schema_version=3)
+    assert ours.env.action_spec == kt.KaggricultureActionConfig(hire_limit=241)
+    assert ours.env.reward_mode == "win_loss"
+    assert ours.env.reward_shaping == _REWARD_SHAPING
+    assert ours.env.reward_shaping.terminal_scale == 0.75
     assert ours.rl.gamma == 1.0
     divisor = ours.rl.segments_per_minibatch * ours.rl.gradient_accumulation_steps
-    assert ours.env["n_envs"] % divisor == 0
-    assert ours.rl.eval_replay_games <= ours.env["n_envs"]
+    assert ours.env.n_envs % divisor == 0
+    assert ours.rl.eval_replay_games <= ours.env.n_envs
 
 
 def test_local_config_is_the_recipe_on_a_tiny_cpu_model() -> None:
     scaling = _scaling_6m()
     ours = _sections("kaggriculture.yaml")
     assert ours.optimizer == scaling.optimizer
+    assert (ours.env.n_envs, ours.env.native_threads) == (2, 1)
+    assert not ours.env.pin_memory
     assert not ours.model.force_flash_attn
     assert ours.rl.model_compile == "none"
     assert ours.rl.dtype == "float32"
@@ -189,7 +171,7 @@ def _headroom(name: str) -> dict[str, tuple[int, int, int]]:
     reports = check_workload_headroom(
         ours.model,
         ppo_forward_workloads(
-            n_envs=ours.env["n_envs"],
+            n_envs=ours.env.n_envs,
             horizon=ours.rl.horizon,
             segments_per_minibatch=ours.rl.segments_per_minibatch,
             teacher_segments_per_minibatch=ours.rl.teacher_segments_per_minibatch,
@@ -300,7 +282,6 @@ def test_workload_check_rejects_empty_input() -> None:
         check_workload_headroom(config, (ForwardWorkload("bc", 0),))
 
 
-@pytest.mark.skip(reason=_TASK_3_1)
 @pytest.mark.parametrize("name", _ALL)
 def test_configs_load_through_full_config_and_build_the_model(name: str) -> None:
     cfg = FullConfig.from_file(ROOT / "configs" / name)
@@ -308,3 +289,131 @@ def test_configs_load_through_full_config_and_build_the_model(name: str) -> None
         cfg.model, obs_spec=cfg.env.obs_spec, action_spec=cfg.env.action_spec
     )
     assert isinstance(model, km.KaggricultureTransformer)
+
+
+# --- Kaggriculture env in FullConfig (verify-3.4-r2 P1) ------------------------
+
+
+def _config_data(name: str) -> dict[str, Any]:
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+    return cfg.model_dump(mode="json", round_trip=True)
+
+
+def test_config_round_trips_through_the_kaggriculture_env_schema() -> None:
+    data = _config_data("kaggriculture_2rank.yaml")
+    assert data["env"] == {
+        "n_envs": 128,
+        "obs_spec": {"obs_spec": "kaggriculture", "schema_version": 3},
+        "action_spec": {"action_spec": "kaggriculture", "hire_limit": 241},
+        "reward_mode": "win_loss",
+        "reward_shaping": {
+            "econ_shaping": 0.2,
+            "econ_starvation_weight": 4.0,
+            "econ_drought_weight": 1.0,
+            "econ_cap": 0.25,
+            "econ_ineffective_weight": 0.0,
+            "econ_ineffective_cap": 0.1,
+        },
+        "pin_memory": True,
+        "native_threads": 2,
+    }
+    assert FullConfig.model_validate(data) == FullConfig.from_file(
+        ROOT / "configs" / "kaggriculture_2rank.yaml"
+    )
+
+
+def test_orbit_configs_still_load_isaiahs_env_config() -> None:
+    cfg = _scaling_6m()
+    assert not isinstance(cfg.env, KaggricultureEnvConfig)
+    assert not isinstance(cfg.model, km.KaggricultureTransformerConfig)
+
+
+def test_kaggriculture_model_requires_the_kaggriculture_env() -> None:
+    data = _config_data("kaggriculture.yaml")
+    data["env"] = _scaling_6m().model_dump(mode="json", round_trip=True)["env"]
+    data["env"]["n_envs"] = 2
+    with pytest.raises(ValidationError, match="requires a Kaggriculture env"):
+        FullConfig.model_validate(data)
+
+
+def test_kaggriculture_env_requires_the_kaggriculture_model() -> None:
+    data = _config_data("kaggriculture.yaml")
+    data["model"] = _scaling_6m().model_dump(mode="json", round_trip=True)["model"]
+    with pytest.raises(ValidationError, match="Kaggriculture env requires"):
+        FullConfig.model_validate(data)
+
+
+def test_kaggriculture_env_rejects_orbit_specs() -> None:
+    data = _config_data("kaggriculture.yaml")
+    data["env"]["action_spec"] = {"action_spec": "pure"}
+    with pytest.raises(ValidationError, match="action_spec"):
+        FullConfig.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [("two_player_weight", 1.0), ("reward_mode", "win_only"), ("native_threads", 0)],
+)
+def test_kaggriculture_env_rejects_fields_outside_its_schema(
+    key: str, value: object
+) -> None:
+    data = _config_data("kaggriculture.yaml")
+    data["env"][key] = value
+    with pytest.raises(ValidationError, match=key):
+        FullConfig.model_validate(data)
+
+
+def test_kaggriculture_reward_rejects_the_winner_ce_value_loss() -> None:
+    data = _config_data("kaggriculture.yaml")
+    data["rl"]["value_loss"] = "winner_ce"
+    with pytest.raises(ValidationError, match="the Kaggriculture reward does not"):
+        FullConfig.model_validate(data)
+
+
+def test_kaggriculture_reward_requires_gamma_one() -> None:
+    data = _config_data("kaggriculture.yaml")
+    data["rl"]["gamma"] = 0.99
+    with pytest.raises(ValidationError, match=r"requires rl\.gamma=1\.0"):
+        FullConfig.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        (
+            {"econ_shaping": 0.2, "econ_cap": 0.6, "econ_ineffective_weight": 1.0,
+             "econ_ineffective_cap": 0.4},
+            "active economic penalty caps must sum below one",
+        ),
+        (
+            {"econ_shaping": 0.2, "econ_starvation_weight": 0.0,
+             "econ_drought_weight": 0.0},
+            "economic shaping requires a positive event weight",
+        ),
+        ({"econ_cap": 0.0}, "econ_cap"),
+        ({"econ_shaping": float("nan")}, "econ_shaping"),
+    ],
+)  # fmt: skip
+def test_reward_shaping_rejects_an_invalid_budget(
+    kwargs: dict[str, float], match: str
+) -> None:
+    with pytest.raises(ValidationError, match=match):
+        KaggricultureRewardConfig(**kwargs)
+
+
+def test_reward_terminal_scale_counts_only_enabled_caps() -> None:
+    assert KaggricultureRewardConfig().terminal_scale == 1.0
+    assert _REWARD_SHAPING.terminal_scale == 0.75
+    assert (
+        KaggricultureRewardConfig(
+            econ_shaping=0.2, econ_ineffective_weight=1.0
+        ).terminal_scale
+        == 1.0 - 0.25 - 0.1
+    )
+
+
+def test_require_orbit_env_narrows_orbit_and_fails_fast_for_kaggriculture() -> None:
+    orbit = _scaling_6m().env
+    assert require_orbit_env(orbit, context="caller") is orbit
+    with pytest.raises(RuntimeError, match="caller cannot run Kaggriculture yet"):
+        require_orbit_env(_sections("kaggriculture.yaml").env, context="caller")

@@ -1,0 +1,136 @@
+{
+  "kaggriculture_2rank.yaml": [
+    {
+      "location": [
+        "env",
+        "obs_spec"
+      ],
+      "type": "union_tag_invalid",
+      "message": "Input tag 'kaggriculture' found using 'obs_spec' does not match any of the expected tags: 'entity_based', 'entity_based_ext_v1', 'entity_based_ext_v2', 'entity_based_cross_attn_v1'"
+    },
+    {
+      "location": [
+        "env",
+        "action_spec"
+      ],
+      "type": "union_tag_invalid",
+      "message": "Input tag 'kaggriculture' found using 'action_spec' does not match any of the expected tags: 'pure', 'discrete_targets', 'discrete_target_bins'"
+    },
+    {
+      "location": [
+        "env",
+        "reward_shaping"
+      ],
+      "type": "extra_forbidden",
+      "message": "Extra inputs are not permitted"
+    },
+    {
+      "location": [
+        "env",
+        "native_threads"
+      ],
+      "type": "extra_forbidden",
+      "message": "Extra inputs are not permitted"
+    },
+    {
+      "location": [
+        "model"
+      ],
+      "type": "union_tag_invalid",
+      "message": "Input tag 'kaggriculture_transformer' found using 'model_arch' does not match any of the expected tags: 'stateless_transformer_v1', 'recurrent_transformer_v1'"
+    }
+  ],
+  "kaggriculture_4rank.yaml": [
+    {
+      "location": [
+        "env",
+        "obs_spec"
+      ],
+      "type": "union_tag_invalid",
+      "message": "Input tag 'kaggriculture' found using 'obs_spec' does not match any of the expected tags: 'entity_based', 'entity_based_ext_v1', 'entity_based_ext_v2', 'entity_based_cross_attn_v1'"
+    },
+    {
+      "location": [
+        "env",
+        "action_spec"
+      ],
+      "type": "union_tag_invalid",
+      "message": "Input tag 'kaggriculture' found using 'action_spec' does not match any of the expected tags: 'pure', 'discrete_targets', 'discrete_target_bins'"
+    },
+    {
+      "location": [
+        "env",
+        "reward_shaping"
+      ],
+      "type": "extra_forbidden",
+      "message": "Extra inputs are not permitted"
+    },
+    {
+      "location": [
+        "env",
+        "native_threads"
+      ],
+      "type": "extra_forbidden",
+      "message": "Extra inputs are not permitted"
+    },
+    {
+      "location": [
+        "model"
+      ],
+      "type": "union_tag_invalid",
+      "message": "Input tag 'kaggriculture_transformer' found using 'model_arch' does not match any of the expected tags: 'stateless_transformer_v1', 'recurrent_transformer_v1'"
+    }
+  ],
+  "kaggriculture.yaml": [
+    {
+      "location": [
+        "env",
+        "obs_spec"
+      ],
+      "type": "union_tag_invalid",
+      "message": "Input tag 'kaggriculture' found using 'obs_spec' does not match any of the expected tags: 'entity_based', 'entity_based_ext_v1', 'entity_based_ext_v2', 'entity_based_cross_attn_v1'"
+    },
+    {
+      "location": [
+        "env",
+        "action_spec"
+      ],
+      "type": "union_tag_invalid",
+      "message": "Input tag 'kaggriculture' found using 'action_spec' does not match any of the expected tags: 'pure', 'discrete_targets', 'discrete_target_bins'"
+    },
+    {
+      "location": [
+        "env",
+        "reward_shaping"
+      ],
+      "type": "extra_forbidden",
+      "message": "Extra inputs are not permitted"
+    },
+    {
+      "location": [
+        "env",
+        "native_threads"
+      ],
+      "type": "extra_forbidden",
+      "message": "Extra inputs are not permitted"
+    },
+    {
+      "location": [
+        "model"
+      ],
+      "type": "union_tag_invalid",
+      "message": "Input tag 'kaggriculture_transformer' found using 'model_arch' does not match any of the expected tags: 'stateless_transformer_v1', 'recurrent_transformer_v1'"
+    }
+  ],
+  "padded_report": "teacher_chunk: 16384 rows x 709 tokens; trunk 5915 rows/call (0.361x headroom, 3 call(s)); heads 11096 rows/call (0.6772x headroom, 2 call(s))",
+  "packed_300_tokens_each": {
+    "rows": 16384,
+    "tokens_per_row": 300,
+    "actual_trunk_calls": 2,
+    "reported_trunk_calls": 3
+  },
+  "trunk_rejects": "one padded row of 709 tokens x trunk width 4194304 reaches the 2**31 GEMM limit; no trunk chunking can service this model",
+  "head_rejects": "one row of 252 frames x 8700000 reaches the 2**31 GEMM limit; see cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md",
+  "runtime_guard_constant_sensitivity": "teacher_chunk: 16384 rows x 709 tokens; trunk 2 rows/call (0.0001221x headroom, 8192 call(s)); heads 5 rows/call (0.0003052x headroom, 3277 call(s))",
+  "guard_constant_restored": true
+}

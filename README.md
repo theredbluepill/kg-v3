@@ -146,6 +146,15 @@ Training presets live in `configs/`:
 - `model/stateless_transformer_200m_d38.yaml`,
   and `model/stateless_transformer_200m_d60.yaml`: depth-specific 200M stateless
   transformer presets with discrete-target actors.
+- `kaggriculture_2rank.yaml`, `kaggriculture_4rank.yaml` and the local CPU
+  `kaggriculture.yaml`: Kaggriculture on the `scaling_6m` recipe. Their `env`
+  section is `KaggricultureEnvConfig` (`owl.kaggriculture.config`), which
+  `FullConfig` selects when `env.obs_spec.obs_spec` is `kaggriculture`; it
+  requires the `kaggriculture_transformer` model and `rl.gamma=1.0`.
+  `run_ppo.py` prints their GEMM workload headroom (or rejects a workload the
+  model cannot chunk) before creating the run directory, then stops with an
+  explicit error: the Kaggriculture environment is not wired into the trainer
+  yet.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.

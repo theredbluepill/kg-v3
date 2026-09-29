@@ -31,6 +31,7 @@ from owl.rl import (
     DiscreteTargetActions,
     DiscreteTargetBinActionMask,
     DiscreteTargetBinActions,
+    EnvConfig,
     ObsBatch,
     ObsConfig,
     PureActionMask,
@@ -38,13 +39,14 @@ from owl.rl import (
     VectorizedEnv,
 )
 from owl.rs import assert_release_build
-from owl.train import FullConfig, configure_torch
+from owl.train import FullConfig, configure_torch, require_orbit_env
 from owl.train.utils import autocast_context
 from tqdm import tqdm
 
 MODEL_A = 0
 MODEL_B = 1
 PLAYER_COUNTS = (2, 4)
+_BENCHMARK = "benchmark_checkpoints"
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,11 @@ class LoadedCheckpoint:
     model: BaseModelAPI
     env_steps: int | None
     int8_emulation: bool = False
+
+    @property
+    def env(self) -> EnvConfig:
+        """The checkpoint's Orbit env config; Kaggriculture has no env here."""
+        return require_orbit_env(self.config.env, context=_BENCHMARK)
 
 
 @dataclass(frozen=True)
@@ -171,12 +178,11 @@ def run_benchmark(
             stats=MatchupStats.empty(),
         )
 
-    cfg = checkpoint_a.config
     n_envs = _benchmark_n_envs(n_envs, n_games)
     env = VectorizedEnv(
         n_envs=n_envs,
         obs_spec=_benchmark_env_obs_spec(checkpoint_a, checkpoint_b),
-        action_spec=cfg.env.action_spec,
+        action_spec=checkpoint_a.env.action_spec,
         two_player_weight=1.0 if player_count == 2 else 0.0,
         pin_memory=device.type == "cuda",
     )
@@ -321,8 +327,8 @@ def _benchmark_env_obs_spec(
     checkpoint_a: LoadedCheckpoint,
     checkpoint_b: LoadedCheckpoint,
 ) -> ObsConfig:
-    obs_spec_a = checkpoint_a.config.env.obs_spec
-    obs_spec_b = checkpoint_b.config.env.obs_spec
+    obs_spec_a = checkpoint_a.env.obs_spec
+    obs_spec_b = checkpoint_b.env.obs_spec
     max_entities = max(obs_spec_a.max_entities, obs_spec_b.max_entities)
     if obs_spec_a.max_entities == max_entities:
         return obs_spec_a
@@ -349,10 +355,11 @@ def _load_checkpoint(
         raise ValueError(f"{path} must contain a checkpoint mapping")
 
     config = FullConfig.from_file(_checkpoint_config_path(path))
+    env = require_orbit_env(config.env, context=_BENCHMARK)
     model = create_model(
         config.model,
-        obs_spec=config.env.obs_spec,
-        action_spec=config.env.action_spec,
+        obs_spec=env.obs_spec,
+        action_spec=env.action_spec,
     ).to(device)
     lora_config = lora_config_for_model(config.model)
     if lora_config is not None:
@@ -393,10 +400,10 @@ def _actions_for_checkpoints(
     device: torch.device,
     determinism: CheckpointDeterminism,
 ) -> tuple[DecodedLaunchActions, ModelHiddenState | None, ModelHiddenState | None]:
-    obs_spec_a = checkpoint_a.config.env.obs_spec
-    obs_spec_b = checkpoint_b.config.env.obs_spec
-    action_spec_a = checkpoint_a.config.env.action_spec
-    action_spec_b = checkpoint_b.config.env.action_spec
+    obs_spec_a = checkpoint_a.env.obs_spec
+    obs_spec_b = checkpoint_b.env.obs_spec
+    action_spec_a = checkpoint_a.env.action_spec
+    action_spec_b = checkpoint_b.env.action_spec
     obs_a = env.observation_for_spec(obs_spec_a, action_spec_a)
     obs_b = env.observation_for_spec(obs_spec_b, action_spec_b)
     output_a = _checkpoint_output(

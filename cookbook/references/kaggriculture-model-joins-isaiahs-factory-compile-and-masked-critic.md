@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Kaggriculture model joins Isaiah's factory, trunk compile and masked critic"
-description: "Task 3.1 model side: KaggricultureTransformerConfig is in the shared ModelConfig union and create_model with game-checked specs, the trunk compile target dispatches through a nominal TrunkCompileAPI that compiles only the blocks behind _run_trunk's overflow guard, and the winner softmax uses Isaiah's masked form; CPU tests only, FullConfig still rejects the model until a Kaggriculture env config exists."
+description: "Task 3.1 model side: KaggricultureTransformerConfig is in the shared ModelConfig union and create_model with game-checked specs, the trunk compile target dispatches through a nominal TrunkCompileAPI that compiles only the blocks behind _run_trunk's overflow guard, and the winner softmax uses Isaiah's masked form; CPU tests only; FullConfig now pairs it with the Task 3.4 KaggricultureEnvConfig."
 tags: ["kaggriculture-v3", "model", "training", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -17,7 +17,7 @@ Branch `kg/rebuild-trainer-model`, based on `kg/isaiah-gap-closure` at `e1458d2`
 - **Registration.**
   - `python/owl/model/config.py`: `ModelConfig` now has three members, discriminated by `model_arch`: `StatelessTransformerV1Config`, `RecurrentTransformerV1Config` and `KaggricultureTransformerConfig`. The first two are also named `OrbitModelConfig`.
   - `python/owl/model/factory.py`: `create_model` keeps Isaiah's exhaustive `match` ending in `assert_never`, but matches on the config class instead of his `config.model_arch` strings (Isaiah `32b3ec9`), so each branch narrows to its game's config type. Each architecture belongs to one game. An Orbit model given Kaggriculture specs raises `TypeError`, and so does the reverse. Overloads give Orbit callers `BaseModelAPI` and Kaggriculture callers `KaggricultureTransformer`. A caller holding the full union gets `BaseModelAPI[Any, Any, Any]`.
-  - `python/owl/train/config.py`: `FullConfig.env` is still Orbit's `EnvConfig`, so its validator rejects `kaggriculture_transformer` with an explicit error. It never reads Orbit-only fields (`actor`, `value_mode`, `critic_mode`) from the Kaggriculture config.
+  - `python/owl/train/config.py`: this change made the validator reject `kaggriculture_transformer`, because `FullConfig.env` was Orbit's `EnvConfig`. Task 3.4's second fix replaced that rejection with the env pairing ([[kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]]); the validator still never reads Orbit-only fields (`actor`, `value_mode`, `critic_mode`) from the Kaggriculture config.
 - **Trunk compile.**
   - `TrunkCompileAPI` (`python/owl/model/base.py`) is a nominal ABC with `compile_transformer_trunk(*, mode) -> int`. `StatelessTransformerV1` and `KaggricultureTransformer` both implement it.
   - `configure_model_compile` accepts any `nn.Module`. For `trunk` it dispatches with `isinstance` (no `getattr`). The recurrent model keeps Isaiah's specific error, and any other model raises.
@@ -37,7 +37,7 @@ Branch `kg/rebuild-trainer-model`, based on `kg/isaiah-gap-closure` at `e1458d2`
   - the factory builds the preset on `meta` with 6,252,223 parameters
   - a union-typed config dispatches
   - spec mismatches raise in both directions
-  - `FullConfig` rejects the model
+  - `FullConfig` rejects the model without a Kaggriculture env (the original test asserted rejection under Orbit's `EnvConfig`; its message still matches the pairing error)
 - `tests/kaggriculture/test_model_compile.py` (11 tests):
   - the trunk target compiles exactly the bound `_forward_transformer_trunk` with `dynamic=True`
   - over sampling, replay and value calls, only block submodules and `final_norm` run inside the compiled region. Stems, critic, actor projection and heads run outside it.
@@ -58,5 +58,5 @@ Branch `kg/rebuild-trainer-model`, based on `kg/isaiah-gap-closure` at `e1458d2`
 ## Limits
 
 - Nothing here runs a real `torch.compile` or CUDA. Every compile test uses a recording stand-in, so Inductor graph breaks, recompiles and the flash path in the compiled trunk remain Phase 6 GPU qualification.
-- The trainer cannot build this model yet, because `FullConfig` has no Kaggriculture env config. That seam, rollout storage and the Kaggriculture observation mapping stay open in Task 3.1. When it lands, replace the `FullConfig` rejection with the env pairing.
+- The trainer cannot build this model yet. `FullConfig` now loads it with `KaggricultureEnvConfig` (see the [[kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]]), but `run_ppo` stops at `require_orbit_env` because rollout storage, the Kaggriculture observation mapping (rest of Task 3.1) and the native env (Task 1.4) are open.
 - Reopen the no-raise critic choice if a real batch can carry a row with `still_playing = False`. Contract v4 says it cannot.

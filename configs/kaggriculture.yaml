@@ -3,7 +3,8 @@
 # training recipe and not a throughput measurement: FP32, no compilation, no
 # replay export. Optimizer, schedule, PPO coefficients and teacher settings are
 # scaling_6m's; 2 envs with segments_per_minibatch 1 give 2 optimizer steps/iter.
-# Loads through FullConfig once the Kaggriculture env and model join it (Task 3.1).
+# Loads through FullConfig; run_ppo checks its GEMM workload, then stops until the
+# Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.
 env:
   n_envs: 2
   obs_spec:
