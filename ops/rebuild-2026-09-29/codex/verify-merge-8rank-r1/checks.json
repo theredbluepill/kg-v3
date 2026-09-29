@@ -1,0 +1,67 @@
+{
+  "head": "a3a5cb8aa40d87f0e42cb0d5dc200a73c3ec277f",
+  "base": "0b8cf98ef57fc49a329dca4c8368c630586c4752",
+  "diff": "base...HEAD",
+  "host": "macOS-26.4-arm64-arm-64bit",
+  "checks": {
+    "engine": {
+      "command": "cargo test --manifest-path engine_rs/Cargo.toml --locked --offline",
+      "exit_code": 0,
+      "log": "engine.log"
+    },
+    "root-rust": {
+      "command": "cargo test",
+      "exit_code": 0,
+      "log": "root-rust.log"
+    },
+    "trim": {
+      "command": "uv run python scripts/check_engine_trim.py",
+      "exit_code": 0,
+      "log": "trim.log"
+    },
+    "python": {
+      "command": "OMP_NUM_THREADS=2 uv run pytest tests/kaggriculture tests/owl tests/scripts tests/tools -m 'not slow' -q",
+      "exit_code": 0,
+      "log": "python.log"
+    },
+    "mypy": {
+      "command": "uv run mypy python/owl scripts",
+      "exit_code": 0,
+      "log": "mypy.log"
+    },
+    "lint": {
+      "command": "uv run ruff check tests/kaggriculture/test_configs.py tests/scripts/test_run_ppo.py",
+      "exit_code": 0,
+      "log": "lint.log"
+    },
+    "format": {
+      "command": "uv run ruff format --check tests/kaggriculture/test_configs.py tests/scripts/test_run_ppo.py",
+      "exit_code": 0,
+      "log": "format.log"
+    },
+    "syntax": {
+      "command": "uv run python scripts/check_python_311_syntax.py",
+      "exit_code": 0,
+      "log": "syntax.log"
+    },
+    "docs-fresh": {
+      "command": "uv run python scripts/check_doc_freshness.py",
+      "exit_code": 0,
+      "log": "docs-fresh.log"
+    }
+  },
+  "counts": {
+    "engine_passed": 69,
+    "root_passed": 254,
+    "root_ignored": 4,
+    "pytest_passed": 1690,
+    "pytest_skipped": 11,
+    "mypy_source_files": 63
+  },
+  "limitations": [
+    "No GPU/DDP/training qualification was run.",
+    "The requested Python suite ran in one process with OMP_NUM_THREADS=2; no sharding or resource-guard workaround was needed.",
+    "docs-fresh scans working changes; branch docs were independently reviewed against both parent trees.",
+    "Cookbook lint invoked directly, not proof of hook discovery or factual consistency."
+  ]
+}

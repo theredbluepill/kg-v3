@@ -1,0 +1,15 @@
+# Parent-content and test preservation audit
+
+Audited merge `a3a5cb8aa40d87f0e42cb0d5dc200a73c3ec277f`, integration parent `0b8cf98ef57fc49a329dca4c8368c630586c4752`, 8-rank parent `7ad45fc6e209e4ad46712644e62fbf3e228ff119`.
+
+No findings.
+
+- All 247 union paths under `python/`, `scripts/`, `src/`, `engine_rs/`, `tests/`, `configs/` resolve to a parent blob or an integration-inherited deletion. There are 204 identical in both parents, 36 integration-only blobs and five 8-rank-only blobs. No merge-authored code/config/test blob exists. The five branch blobs are the 2/4/8-rank configs and the two changed test files. Production source, Rust engine, root/engine manifests and lockfiles are unchanged from integration.
+- Python AST test-function definitions: integration 926 across 46 test files, branch 859 across 43, merge 930 across 46. No integration function is lost. Branch's only absent name is the inherited Task 1.3 trim test rename from `test_task_authored_inventory_accepts_two_tests_and_generated_manifest` to `test_task_authored_inventory_accepts_replay_test_and_generated_manifest` (`tests/tools/test_check_engine_trim.py:64`); the retired grammar bridge is now explicitly rejected by `test_check_rejects_redeclared_grammar_bridge`.
+- Rust source `#[test]` definitions under `src/` and `engine_rs/`: integration 327, branch 244, merge 327. No integration function is lost. All nine branch `engine_rs/tests/grammar_kernel.rs` test names survive in `src/kaggriculture/grammar_kernel_tests.rs`. This is the existing Task 1.3 move, not a merge deletion. Counts are static definitions and do not double-count a Rust source imported into multiple test binaries. The merge has 69 engine and 258 root definitions (runtime includes four ignored root tests).
+- The other removed branch path, `src/kaggriculture.rs`, was already replaced by the integration's `src/kaggriculture/` module directory. Its resolved module and test files are byte-identical to integration.
+- Four test files collect 233 integration cases and 250 merged cases: +17, none missing. Two explicitly changed files contribute +12; the new YAML contributes four training-guard cases (`test_training_semantics.py:257`, gamma/winner_ce/win_only/per_entity) and one training-config loader case (`tests/owl/train/test_config.py:1027`). The latter uses ordinal parameter IDs, so the new YAML shifts subsequent IDs; the count increase is one. This explains 1,673 → 1,690 passing cases without any stale-receipt hypothesis.
+
+Collection uses parent test files and config blobs in a scratch copy, with current production imports. Production behavior tests were not run by this audit subtask. Source inventories and blob identities establish preservation independently of test execution.
+
+Evidence: `parent_inventory.py`, `parent_inventory.json`, `parent_inventory_summary.json`, `new_collected_cases.json`, and four `*-collect-*.log` files in this directory. Scratch files are under `parent1-collection/`. No tracked file was modified; final scoped `git diff --exit-code HEAD` passed.

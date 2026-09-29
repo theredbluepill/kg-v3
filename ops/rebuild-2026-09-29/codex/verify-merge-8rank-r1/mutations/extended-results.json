@@ -1,0 +1,163 @@
+{
+  "scratch": "/Users/poonszesen/kg-v3-m-8rank/.codex-tmp/verify-merge-8rank-r1-mutations",
+  "hashes": {
+    "configs/kaggriculture_8rank.yaml": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "python/owl/model/factory.py": "7162688103ebd0ee2a310eebe5baa090c9ab94ec657212e94008ba346d9fcd7b"
+  },
+  "restored_hashes": {
+    "configs/kaggriculture_8rank.yaml": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "python/owl/model/factory.py": "7162688103ebd0ee2a310eebe5baa090c9ab94ec657212e94008ba346d9fcd7b"
+  },
+  "source_hashes": {
+    "configs/kaggriculture_8rank.yaml": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "python/owl/model/factory.py": "7162688103ebd0ee2a310eebe5baa090c9ab94ec657212e94008ba346d9fcd7b"
+  },
+  "results": [
+    {
+      "label": "extended-baseline",
+      "returncode": 0,
+      "seconds": 1.899,
+      "command": [
+        "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/dev/null",
+        "-p",
+        "no:cacheprovider",
+        "-q",
+        "tests/kaggriculture/test_configs.py::test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_8rank.yaml-8]",
+        "tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_8rank.yaml]",
+        "tests/kaggriculture/test_configs.py::test_config_env_and_cross_section_rules[kaggriculture_8rank.yaml]",
+        "tests/kaggriculture/test_configs.py::test_configs_load_through_full_config_and_build_the_model[kaggriculture_8rank.yaml]"
+      ],
+      "output_log": "extended-baseline.log"
+    },
+    {
+      "label": "global-workload-envs64",
+      "returncode": 1,
+      "seconds": 1.186,
+      "command": [
+        "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/dev/null",
+        "-p",
+        "no:cacheprovider",
+        "-q",
+        "tests/kaggriculture/test_configs.py::test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_8rank.yaml-8]"
+      ],
+      "output_log": "global-workload-envs64.log",
+      "path": "configs/kaggriculture_8rank.yaml",
+      "old": "  n_envs: 32\n",
+      "new": "  n_envs: 64\n",
+      "original_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+      "mutated_sha256": "28186b713d032c2e93bf7963b321963639a3eae673b6057ce1e6bf75cd7d202e",
+      "expected_text": "Differing attributes:",
+      "killed_as_expected": true,
+      "restored_byte_exact": true
+    },
+    {
+      "label": "scaling-optimizer-drift",
+      "returncode": 1,
+      "seconds": 1.194,
+      "command": [
+        "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/dev/null",
+        "-p",
+        "no:cacheprovider",
+        "-q",
+        "tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_8rank.yaml]"
+      ],
+      "output_log": "scaling-optimizer-drift.log",
+      "path": "configs/kaggriculture_8rank.yaml",
+      "old": "  muon_lr: 0.002\n",
+      "new": "  muon_lr: 0.003\n",
+      "original_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+      "mutated_sha256": "282b9d1ffe4ce90fac6ec0463f6769d6299f754e237af0dc53de5a380a7a24f0",
+      "expected_text": "assert ours.optimizer == scaling.optimizer",
+      "killed_as_expected": true,
+      "restored_byte_exact": true
+    },
+    {
+      "label": "env-reward-recipe-drift",
+      "returncode": 1,
+      "seconds": 1.165,
+      "command": [
+        "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/dev/null",
+        "-p",
+        "no:cacheprovider",
+        "-q",
+        "tests/kaggriculture/test_configs.py::test_config_env_and_cross_section_rules[kaggriculture_8rank.yaml]"
+      ],
+      "output_log": "env-reward-recipe-drift.log",
+      "path": "configs/kaggriculture_8rank.yaml",
+      "old": "    econ_shaping: 0.2\n",
+      "new": "    econ_shaping: 0.1\n",
+      "original_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+      "mutated_sha256": "7a7356d7788b76007adec4fe6fb271736905cfa32c511e43ef41177de87bb1ca",
+      "expected_text": "assert ours.env.reward_shaping == _REWARD_SHAPING",
+      "killed_as_expected": true,
+      "restored_byte_exact": true
+    },
+    {
+      "label": "remove-model-factory-dispatch",
+      "returncode": 1,
+      "seconds": 1.164,
+      "command": [
+        "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/dev/null",
+        "-p",
+        "no:cacheprovider",
+        "-q",
+        "tests/kaggriculture/test_configs.py::test_configs_load_through_full_config_and_build_the_model[kaggriculture_8rank.yaml]"
+      ],
+      "output_log": "remove-model-factory-dispatch.log",
+      "path": "python/owl/model/factory.py",
+      "old": "        case KaggricultureTransformerConfig():\n            if not isinstance(obs_spec, KaggricultureObsConfig) or not isinstance(\n                action_spec, KaggricultureActionConfig\n            ):\n                raise TypeError(\n                    f\"model_arch={config.model_arch!r} requires Kaggriculture \"\n                    f\"obs/action specs, got {_spec_names(obs_spec, action_spec)}\"\n                )\n            return KaggricultureTransformer(\n                config,\n                obs_spec=obs_spec,\n                action_spec=action_spec,\n            )\n",
+      "new": "",
+      "original_sha256": "7162688103ebd0ee2a310eebe5baa090c9ab94ec657212e94008ba346d9fcd7b",
+      "mutated_sha256": "192fff66ca29744f9038dc1ff6a0ead2c8f1b320dba312b935297acb2012bd44",
+      "expected_text": "Expected code to be unreachable",
+      "killed_as_expected": true,
+      "restored_byte_exact": true
+    },
+    {
+      "label": "extended-restored",
+      "returncode": 0,
+      "seconds": 1.365,
+      "command": [
+        "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/dev/null",
+        "-p",
+        "no:cacheprovider",
+        "-q",
+        "tests/kaggriculture/test_configs.py::test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_8rank.yaml-8]",
+        "tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_8rank.yaml]",
+        "tests/kaggriculture/test_configs.py::test_config_env_and_cross_section_rules[kaggriculture_8rank.yaml]",
+        "tests/kaggriculture/test_configs.py::test_configs_load_through_full_config_and_build_the_model[kaggriculture_8rank.yaml]"
+      ],
+      "output_log": "extended-restored.log"
+    }
+  ]
+}

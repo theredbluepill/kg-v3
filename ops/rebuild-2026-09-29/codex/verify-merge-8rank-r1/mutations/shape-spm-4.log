@@ -1,0 +1,30 @@
+COMMAND ['/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python', '-B', '-m', 'pytest', '-c', '/dev/null', '-p', 'no:cacheprovider', '-q', 'tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided', '-k', '8rank']
+CWD /Users/poonszesen/kg-v3-m-8rank/.codex-tmp/verify-merge-8rank-r1-mutations
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8] _
+
+name = 'kaggriculture_8rank.yaml', world_size = 8
+
+    @pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+    def test_ranked_config_per_rank_shapes_are_scaling_6m_divided(
+        name: str, world_size: int
+    ) -> None:
+        ours = _sections(name)
+        teacher_chunk = min(ours.rl.teacher_segments_per_minibatch, ours.env.n_envs)
+>       assert _PerRankShape(
+            ours.env.n_envs, ours.rl.segments_per_minibatch, teacher_chunk
+        ) == _isaiah_per_rank_shape(_scaling_6m(), world_size)
+E       AssertionError: assert _PerRankShape...k_segments=32) == _PerRankShape...k_segments=32)
+E         
+E         Omitting 2 identical items, use -vv to show
+E         Differing attributes:
+E         ['segments_per_minibatch']
+E         
+E         Drill down into differing attribute segments_per_minibatch:
+E           segments_per_minibatch: 4 != 2
+
+tests/kaggriculture/test_configs.py:150: AssertionError
+=========================== short test summary info ============================
+FAILED ../../../../../dev::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]
+1 failed, 2 passed in 0.06s

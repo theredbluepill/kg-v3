@@ -1,0 +1,26 @@
+COMMAND ['/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python', '-B', '-m', 'pytest', '-c', '/dev/null', '-p', 'no:cacheprovider', '-q', 'tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes']
+CWD /Users/poonszesen/kg-v3-m-8rank/.codex-tmp/verify-merge-8rank-r1-mutations
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_ranked_configs_differ_only_in_per_rank_shapes ______________
+
+    def test_ranked_configs_differ_only_in_per_rank_shapes() -> None:
+        two, four, eight = (_sections(name) for name in _RANKED)
+        assert (two.env.n_envs, two.rl.segments_per_minibatch) == (128, 8)
+        assert (four.env.n_envs, four.rl.segments_per_minibatch) == (64, 4)
+        assert (eight.env.n_envs, eight.rl.segments_per_minibatch) == (32, 2)
+        assert two.model.force_flash_attn
+        assert (two.env.native_threads, two.env.pin_memory) == (2, True)
+        for other in (four, eight):
+            assert two.env.model_copy(update={"n_envs": 0}) == other.env.model_copy(
+                update={"n_envs": 0}
+            )
+>           assert two.model == other.model
+E           assert Kaggriculture...ash_attn=True) == Kaggriculture...ash_attn=True)
+E             
+E             Use -v to get more diff
+
+tests/kaggriculture/test_configs.py:214: AssertionError
+=========================== short test summary info ============================
+FAILED ../../../../../dev::test_ranked_configs_differ_only_in_per_rank_shapes
+1 failed in 0.05s

@@ -1,0 +1,21 @@
+COMMAND ['/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python', '-B', '-m', 'pytest', '-c', '/dev/null', '-p', 'no:cacheprovider', '-q', 'tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_8rank.yaml]']
+CWD /Users/poonszesen/kg-v3-m-8rank/.codex-tmp/verify-merge-8rank-r1-mutations
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_8rank.yaml] _
+
+name = 'kaggriculture_8rank.yaml'
+
+    @pytest.mark.parametrize("name", _RANKED)
+    def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
+        scaling = _scaling_6m()
+        ours = _sections(name)
+>       assert ours.optimizer == scaling.optimizer
+E       assert MuonConfig(op...n_ratio=0.01)) == MuonConfig(op...n_ratio=0.01))
+E         
+E         Use -v to get more diff
+
+tests/kaggriculture/test_configs.py:190: AssertionError
+=========================== short test summary info ============================
+FAILED ../../../../../dev::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_8rank.yaml]
+1 failed in 0.05s

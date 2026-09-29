@@ -1,0 +1,71 @@
+COMMAND ['/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python', '-B', '-m', 'pytest', '-c', '/dev/null', '-p', 'no:cacheprovider', '-q', 'tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_fails_loudly_when_not_divisible', '-k', '3-n_envs']
+CWD /Users/poonszesen/kg-v3-m-8rank/.codex-tmp/verify-merge-8rank-r1-mutations
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_isaiah_per_rank_shape_fails_loudly_when_not_divisible[3-n_envs=256 is not divisible by world size 3] _
+
+world_size = 3, match = 'n_envs=256 is not divisible by world size 3'
+
+    @pytest.mark.parametrize(
+        ("world_size", "match"),
+        [
+            (3, "n_envs=256 is not divisible by world size 3"),
+            (32, "segments_per_minibatch=16 is not divisible by world size 32"),
+        ],
+    )
+    def test_isaiah_per_rank_shape_fails_loudly_when_not_divisible(
+        world_size: int, match: str
+    ) -> None:
+        with pytest.raises(ValueError, match=match):
+>           _isaiah_per_rank_shape(_scaling_6m(), world_size)
+
+tests/kaggriculture/test_configs.py:167: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+scaling = FullConfig(env=EnvConfig(n_envs=256, obs_spec=EntityBasedExtV2Config(max_entities=320, obs_spec='entity_based_ext_v2')...-no-cudagraphs', dtype='bfloat16', truncation_step=None, truncation_prob=0.0), runtime=RuntimeConfig(n_runtime_gpus=1))
+world_size = 3
+
+    def _isaiah_per_rank_shape(scaling: FullConfig, world_size: int) -> _PerRankShape:
+        """Isaiah's multi-GPU rule: divide the global shapes by the world size.
+    
+        Fails loudly when a global quantity does not divide into whole per-rank
+        shapes, or when the per-rank envs do not split into whole minibatches or
+        whole teacher-precompute chunks.
+        """
+        rl = scaling.rl
+        for name, value in (
+            ("n_envs", scaling.env.n_envs),
+            ("segments_per_minibatch", rl.segments_per_minibatch),
+        ):
+            if name != "n_envs" and value % world_size != 0:
+>               raise ValueError(
+                    f"scaling_6m {name}={value} is not divisible by world size {world_size}"
+                )
+E               ValueError: scaling_6m segments_per_minibatch=16 is not divisible by world size 3
+
+tests/kaggriculture/test_configs.py:96: ValueError
+
+During handling of the above exception, another exception occurred:
+
+world_size = 3, match = 'n_envs=256 is not divisible by world size 3'
+
+    @pytest.mark.parametrize(
+        ("world_size", "match"),
+        [
+            (3, "n_envs=256 is not divisible by world size 3"),
+            (32, "segments_per_minibatch=16 is not divisible by world size 32"),
+        ],
+    )
+    def test_isaiah_per_rank_shape_fails_loudly_when_not_divisible(
+        world_size: int, match: str
+    ) -> None:
+>       with pytest.raises(ValueError, match=match):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'n_envs=256 is not divisible by world size 3'
+E         Actual message: 'scaling_6m segments_per_minibatch=16 is not divisible by world size 3'
+
+tests/kaggriculture/test_configs.py:166: AssertionError
+=========================== short test summary info ============================
+FAILED ../../../../../dev::test_isaiah_per_rank_shape_fails_loudly_when_not_divisible[3-n_envs=256 is not divisible by world size 3]
+1 failed, 1 deselected in 0.05s
