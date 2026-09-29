@@ -187,7 +187,10 @@ fn producer_policy_v2_appends_hire_burst_within_order_limit() {
             assert_eq!(entries.len(), expected_len, "step={step} M={orders}");
             assert!(entries.len() <= orders);
             let prefix = orders.min(2);
-            assert_eq!(&entries[..prefix], v1[seat]["market"].as_array().unwrap().as_slice());
+            assert_eq!(
+                &entries[..prefix],
+                v1[seat]["market"].as_array().unwrap().as_slice()
+            );
             for entry in &entries[prefix..] {
                 assert_eq!(entry, &json!(["HIRE"]));
             }
