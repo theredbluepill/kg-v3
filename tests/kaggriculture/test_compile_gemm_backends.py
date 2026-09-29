@@ -14,21 +14,21 @@ import torch
 import torch._inductor.config as inductor_config
 from owl.kaggriculture import types as kt
 from owl.model import StatelessTransformerV1
+from owl.model import compile_gemm as cg
 from owl.model import kaggriculture as km
-from owl.model.stateless_transformer_v1 import StatelessTransformerV1Config
-from owl.rl import ActionPureConfig, EntityBasedConfig
-from owl.train import PPOConfig
-from owl.train import utils as train_utils
-from owl.train.utils import (
+from owl.model.compile_gemm import (
+    COMPILED_GEMM_BACKENDS,
     KAGGRICULTURE_PROBED_COMPILE_STACK,
     CompileStackReport,
     GemmBackendClaim,
     InstalledCompileStack,
-    ModelCompileMode,
     check_compile_stack,
-    configure_model_compile,
     gemm_backend_claim,
 )
+from owl.model.stateless_transformer_v1 import StatelessTransformerV1Config
+from owl.rl import ActionPureConfig, EntityBasedConfig
+from owl.train import PPOConfig
+from owl.train.utils import ModelCompileMode, configure_model_compile
 from torch import nn
 
 from tests.kaggriculture.conftest import PROBED_GPU_STACK, make_obs
@@ -84,7 +84,7 @@ def test_the_probed_stack_is_one_constant() -> None:
     assert KAGGRICULTURE_PROBED_COMPILE_STACK.torch == "2.9.0"
     assert KAGGRICULTURE_PROBED_COMPILE_STACK.triton == "3.5.0"
     assert KAGGRICULTURE_PROBED_COMPILE_STACK.nvidia_drivers == ("595.91.07",)
-    assert km.COMPILED_GEMM_BACKENDS == "ATEN"
+    assert COMPILED_GEMM_BACKENDS == "ATEN"
 
 
 @pytest.mark.usefixtures("probed_compile_stack")
@@ -130,7 +130,7 @@ def test_orbit_compiles_keep_isaiahs_gemm_backends(
 ) -> None:
     seen = _record_backends_at_compile(monkeypatch)
     monkeypatch.setattr(
-        train_utils,
+        cg,
         "installed_compile_stack",
         lambda: pytest.fail("Orbit compiles do not check the Kaggriculture stack"),
     )
@@ -189,15 +189,130 @@ def test_kaggriculture_after_orbit_raises_before_changing_backends(
     assert len(seen) == orbit_compiles
 
 
-def test_direct_trunk_compile_requires_cublas_only_backends(
+# --- direct compile entry points (not through configure_model_compile) --------
+
+
+@pytest.mark.usefixtures("probed_compile_stack")
+def test_direct_kaggriculture_trunk_compile_claims_cublas_only_backends(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     seen = _record_backends_at_compile(monkeypatch)
     model = _kaggriculture()
-    with pytest.raises(RuntimeError, match="max_autotune_gemm_backends='ATEN'"):
+
+    assert model.compile_transformer_trunk(mode="max-autotune") == 1
+
+    assert seen == ["ATEN"]
+    assert model.compiled_regions_require_gemm_backends
+    claim = gemm_backend_claim()
+    assert claim is not None
+    assert claim.game == "kaggriculture"
+    assert claim.stack == CompileStackReport(
+        torch=PROBED_GPU_STACK.torch, triton="3.5.0", nvidia_driver=PROBED_DRIVER
+    )
+
+
+def test_direct_kaggriculture_trunk_compile_checks_the_stack_with_aten_preset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Setting "ATEN" by hand does not skip the probed-stack check or the claim."""
+    seen = _record_backends_at_compile(monkeypatch)
+    monkeypatch.setattr(inductor_config, "max_autotune_gemm_backends", "ATEN")
+    monkeypatch.setattr(
+        cg, "installed_compile_stack", lambda: _installed(torch="2.10.0+cu128")
+    )
+    model = _kaggriculture()
+
+    with pytest.raises(RuntimeError, match=re.escape("unprobed torch 2.10.0")):
         model.compile_transformer_trunk(mode="max-autotune")
+
     assert seen == []
     assert model._compiled_transformer_trunk is None
+    assert not model.compiled_regions_require_gemm_backends
+    assert gemm_backend_claim() is None
+
+
+def test_direct_orbit_trunk_compile_claims_orbit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen = _record_backends_at_compile(monkeypatch)
+    monkeypatch.setattr(
+        cg,
+        "installed_compile_stack",
+        lambda: pytest.fail("Orbit compiles do not check the Kaggriculture stack"),
+    )
+
+    assert _orbit().compile_transformer_trunk(mode="max-autotune") == 1
+
+    assert seen == [ISAIAH_DEFAULT_BACKENDS]
+    assert gemm_backend_claim() == GemmBackendClaim(
+        game="orbit", gemm_backends=ISAIAH_DEFAULT_BACKENDS, stack=None
+    )
+
+
+def _configured_trunk(model: nn.Module) -> None:
+    configure_model_compile(
+        model, PPOConfig(model_compile="trunk", model_compile_mode="max-autotune")
+    )
+
+
+def _configured_mlp(model: nn.Module) -> None:
+    configure_model_compile(
+        model, PPOConfig(model_compile="mlp", model_compile_mode="max-autotune")
+    )
+
+
+def _direct_trunk(model: nn.Module) -> None:
+    assert isinstance(model, km.KaggricultureTransformer | StatelessTransformerV1)
+    model.compile_transformer_trunk(mode="max-autotune")
+
+
+COMPILE_ENTRIES = {
+    "configured-trunk": _configured_trunk,
+    "configured-mlp": _configured_mlp,
+    "direct-trunk": _direct_trunk,
+}
+
+
+@pytest.mark.usefixtures("probed_compile_stack")
+@pytest.mark.parametrize("first", COMPILE_ENTRIES)
+@pytest.mark.parametrize("second", COMPILE_ENTRIES)
+def test_orbit_then_kaggriculture_raises_through_any_entry(
+    monkeypatch: pytest.MonkeyPatch, first: str, second: str
+) -> None:
+    seen = _record_backends_at_compile(monkeypatch)
+    COMPILE_ENTRIES[first](_orbit())
+    orbit_compiles = list(seen)
+    kaggriculture = _kaggriculture()
+
+    with pytest.raises(RuntimeError, match="already compiled a orbit model"):
+        COMPILE_ENTRIES[second](kaggriculture)
+
+    # Orbit's lazily compiled graphs would read "ATEN" on first run otherwise.
+    assert inductor_config.max_autotune_gemm_backends == ISAIAH_DEFAULT_BACKENDS
+    assert seen == orbit_compiles
+    assert kaggriculture._compiled_transformer_trunk is None
+    claim = gemm_backend_claim()
+    assert claim is not None
+    assert claim.game == "orbit"
+
+
+@pytest.mark.usefixtures("probed_compile_stack")
+@pytest.mark.parametrize("first", COMPILE_ENTRIES)
+@pytest.mark.parametrize("second", COMPILE_ENTRIES)
+def test_kaggriculture_then_orbit_raises_through_any_entry(
+    monkeypatch: pytest.MonkeyPatch, first: str, second: str
+) -> None:
+    seen = _record_backends_at_compile(monkeypatch)
+    COMPILE_ENTRIES[first](_kaggriculture())
+    kaggriculture_compiles = list(seen)
+    orbit = _orbit()
+
+    with pytest.raises(RuntimeError, match="already compiled a kaggriculture model"):
+        COMPILE_ENTRIES[second](orbit)
+
+    assert inductor_config.max_autotune_gemm_backends == "ATEN"
+    assert seen == kaggriculture_compiles
+    assert orbit._compiled_transformer_trunk is None
 
 
 @pytest.mark.usefixtures("probed_compile_stack")
@@ -315,7 +430,7 @@ def test_kaggriculture_compile_rejects_an_unprobed_torch_before_compiling(
 ) -> None:
     seen = _record_backends_at_compile(monkeypatch)
     monkeypatch.setattr(
-        train_utils,
+        cg,
         "installed_compile_stack",
         lambda: _installed(torch="2.10.0+cu128"),
     )
@@ -331,7 +446,7 @@ def test_kaggriculture_compile_rejects_an_unprobed_torch_before_compiling(
 
 @pytest.mark.skipif(torch.cuda.is_available(), reason="checks the CPU-only host path")
 def test_this_cpu_host_reads_no_driver() -> None:
-    installed = train_utils.installed_compile_stack()
+    installed = cg.installed_compile_stack()
     assert not installed.cuda_available
     assert installed.nvidia_drivers is None
     report = check_compile_stack(installed)

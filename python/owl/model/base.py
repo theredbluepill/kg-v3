@@ -93,8 +93,11 @@ class TrunkCompileAPI(ABC):
     ``compile_transformer_trunk`` compiles only the self-attention trunk
     (blocks plus final norm). Stems, token assembly, packing, heads and critic
     stay eager, and the model calls the compiled callable only from its own
-    trunk dispatch, so any guard in that dispatch runs before it. Returns the
-    number of compiled callables.
+    trunk dispatch, so any guard in that dispatch runs before it. Before
+    ``torch.compile`` it claims the process-global GEMM backends for its game
+    (``owl.model.compile_gemm.claim_gemm_backends``), because it is a public
+    entry point that callers may use without ``configure_model_compile``.
+    Returns the number of compiled callables.
     """
 
     @abstractmethod

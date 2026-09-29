@@ -1,5 +1,19 @@
 # Change log
 
+## 2026-09-29 — Claim cuBLAS-only GEMMs at every public compile entry
+
+Codex verification r1 of the cuBLAS-only wiring
+(`ops/rebuild-2026-09-29/codex/verify-aten-r1.md`, REJECT) found that a direct
+`compile_transformer_trunk` call bypassed the claim: a Kaggriculture compile
+with `"ATEN"` preset skipped the stack check, and a direct Orbit compile let a
+later Kaggriculture compile change Orbit's backends. The claim and stack check
+moved to `python/owl/model/compile_gemm.py`; both models'
+`compile_transformer_trunk` now claim their game, and `configure_model_compile`
+claims for `mlp`. New tests cover both orders across every pair of entry points.
+The [[decisions/kaggriculture-compiles-gemms-with-cublas-only|Decision]],
+README and run_ppo docstring also now say an installed triton is checked even
+without CUDA; only a missing triton is skipped there.
+
 ## 2026-09-29 — Require cuBLAS-only GEMMs for compiled Kaggriculture regions
 
 The owner asked that the compiled-GEMM CUDA crash never recur in v3. The

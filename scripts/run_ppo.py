@@ -28,6 +28,13 @@ from owl.model import (
     lora_config_for_model,
     roundtrip_lora_base_quantization,
 )
+from owl.model.compile_gemm import (
+    CompileStackReport,
+    GemmBackendClaim,
+    check_compile_stack,
+    gemm_backend_claim,
+    installed_compile_stack,
+)
 from owl.model.kaggriculture import KaggricultureTransformerConfig
 from owl.model.kaggriculture_workload import (
     WorkloadHeadroom,
@@ -74,14 +81,9 @@ from owl.train.optimizer import (
 )
 from owl.train.ppo import PPOCheckpointMetadata, _mean_env_metrics
 from owl.train.utils import (
-    CompileStackReport,
     DTypeConfig,
-    GemmBackendClaim,
     autocast_context,
-    check_compile_stack,
     configure_model_compile,
-    gemm_backend_claim,
-    installed_compile_stack,
 )
 from tqdm import tqdm
 
@@ -810,9 +812,10 @@ def _check_compile_stack(
     """Reject an unprobed torch/triton/driver stack before any run dir or model.
 
     Only compiled Kaggriculture regions carry the cuBLAS-only GEMM setting and
-    its probed stack; ``configure_model_compile`` repeats the check where it
-    applies the setting. Without CUDA the driver and triton checks are skipped
-    with the reason printed.
+    its probed stack; the compile claim repeats the check where it applies the
+    setting. An installed triton is always checked. Without CUDA the driver
+    check is skipped, and so is the triton check when triton is not installed,
+    each with the reason printed.
     """
     if not isinstance(model_config, KaggricultureTransformerConfig):
         return None

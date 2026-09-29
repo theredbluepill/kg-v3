@@ -17,7 +17,6 @@ from dataclasses import dataclass
 from typing import Literal
 
 import torch
-import torch._inductor.config as inductor_config
 import torch.nn.functional as F
 from pydantic import Field
 from torch import nn
@@ -36,6 +35,10 @@ from owl.model.base import (
     ModelHiddenState,
     ModelOutput,
     TrunkCompileAPI,
+)
+from owl.model.compile_gemm import (
+    claim_gemm_backends,
+    require_compiled_gemm_backends,
 )
 from owl.model.kaggriculture_actor import (
     POLICY_SLOTS,
@@ -79,24 +82,6 @@ _OVERFLOW_REFERENCE = (
 # sets it before compiling; the model refuses to compile, or to call a compiled
 # region, under any other value (cookbook decision
 # kaggriculture-compiles-gemms-with-cublas-only).
-COMPILED_GEMM_BACKENDS = "ATEN"
-_GEMM_BACKENDS_DECISION = (
-    "cookbook/decisions/kaggriculture-compiles-gemms-with-cublas-only.md"
-)
-
-
-def require_compiled_gemm_backends() -> None:
-    """Raise unless Inductor's GEMM backends are Kaggriculture's cuBLAS-only set."""
-    backends = inductor_config.max_autotune_gemm_backends
-    if backends != COMPILED_GEMM_BACKENDS:
-        raise RuntimeError(
-            "compiled Kaggriculture regions require "
-            f"torch._inductor.config.max_autotune_gemm_backends="
-            f"{COMPILED_GEMM_BACKENDS!r}, found {backends!r}; compile through "
-            f"owl.train.utils.configure_model_compile (see {_GEMM_BACKENDS_DECISION})"
-        )
-
-
 _TILE_STEM_WIDTH = (
     kt.TILE_FLOAT_CHANNELS
     + len(kt.TILE_KINDS)
@@ -539,10 +524,12 @@ class KaggricultureTransformer(
         """Compile the blocks and final norm only; ``_run_trunk`` calls it.
 
         The overflow guard and chunking in ``_run_trunk`` stay in front of the
-        compiled callable; stems, heads and critic stay eager. Inductor must
-        already be restricted to cuBLAS GEMMs (``COMPILED_GEMM_BACKENDS``).
+        compiled callable; stems, heads and critic stay eager. Called directly
+        or through ``configure_model_compile``, it first claims the process's
+        GEMM backends for Kaggriculture: the probed-stack check, then cuBLAS
+        only (``COMPILED_GEMM_BACKENDS``); an Orbit claim raises.
         """
-        require_compiled_gemm_backends()
+        claim_gemm_backends("kaggriculture")
         self._compiled_transformer_trunk = torch.compile(
             self._forward_transformer_trunk, mode=mode, dynamic=True
         )

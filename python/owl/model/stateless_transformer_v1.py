@@ -56,6 +56,7 @@ from owl.model.base import (
     ModelTeacherEvaluation,
     TrunkCompileAPI,
 )
+from owl.model.compile_gemm import claim_gemm_backends
 from owl.model.lora_config import LoRAConfig
 from owl.model.lora_linear import LoRALinear
 from owl.model.teacher_targets import TeacherTargets
@@ -788,6 +789,12 @@ class StatelessTransformerV1(BaseModelAPI, TrunkCompileAPI):
         )
 
     def compile_transformer_trunk(self, *, mode: str) -> int:
+        """Compile the blocks and final norm; ``forward`` dispatches to it.
+
+        Claims the process's GEMM backends for Orbit first (unchanged), so a
+        later Kaggriculture compile in this process raises instead of silently
+        changing the backends these lazily compiled graphs will read.
+        """
         if self.obs_spec.uses_cross_attention:
             raise RuntimeError(
                 "rl.model_compile='trunk' does not support cross-attention observations"
@@ -796,6 +803,7 @@ class StatelessTransformerV1(BaseModelAPI, TrunkCompileAPI):
             raise RuntimeError(
                 "rl.model_compile='trunk' does not support player-count adapter blocks"
             )
+        claim_gemm_backends("orbit")
         self._compiled_transformer_trunk = torch.compile(
             self._forward_transformer_trunk,
             mode=mode,

@@ -19,6 +19,11 @@ from owl.checkpoint_quantization import (
 )
 from owl.kaggriculture.types import KaggricultureObsConfig
 from owl.model import LoRALinear
+from owl.model.compile_gemm import (
+    CompileStackReport,
+    GemmBackendClaim,
+    InstalledCompileStack,
+)
 from owl.rl import (
     ACTION_ENTITY_SLOTS,
     MAX_COMETS,
@@ -34,11 +39,6 @@ from owl.train import FullConfig, PPOTrainer
 from owl.train.distributed import DistributedContext
 from owl.train.logging import LogMode, MetricLogger
 from owl.train.optimizer import CompositeOptimizer
-from owl.train.utils import (
-    CompileStackReport,
-    GemmBackendClaim,
-    InstalledCompileStack,
-)
 
 _RUN_PPO_PATH = Path(__file__).parents[2] / "scripts" / "run_ppo.py"
 _RUN_PPO_SPEC = importlib.util.spec_from_file_location("run_ppo", _RUN_PPO_PATH)

@@ -1010,7 +1010,7 @@ def test_head_chunking_dispatches_ordered_slices_and_matches_unchunked(
     assert error.value.first_rows == (5,)
 
 
-@pytest.mark.usefixtures("cublas_only_gemm_backends")
+@pytest.mark.usefixtures("probed_compile_stack")
 def test_trunk_compile_leaves_the_heads_eager(monkeypatch: pytest.MonkeyPatch) -> None:
     model = _tiny()
     monkeypatch.setattr(torch, "compile", lambda fn, **_: fn)

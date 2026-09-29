@@ -13,10 +13,8 @@ from dataclasses import dataclass
 
 import pytest
 import torch
-import torch._inductor.config as inductor_config
 from owl.kaggriculture import types as kt
-from owl.model.kaggriculture import COMPILED_GEMM_BACKENDS
-from owl.train import utils as train_utils
+from owl.model import compile_gemm
 
 _EPISODE_STEPS = 720
 _TURNS_PER_DAY = 24
@@ -33,23 +31,11 @@ _OWN_PRIVATE_PLAYER_CHANNELS = slice(11, 42)
 _SHED_ITEMS = kt.ITEM_COUNT
 
 
-@pytest.fixture
-def cublas_only_gemm_backends(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Stand in for ``configure_model_compile``'s cuBLAS-only GEMM setting.
-
-    For tests that call ``compile_transformer_trunk`` directly; the root
-    conftest restores the process-global value afterwards.
-    """
-    monkeypatch.setattr(
-        inductor_config, "max_autotune_gemm_backends", COMPILED_GEMM_BACKENDS
-    )
-
-
-PROBED_GPU_STACK = train_utils.InstalledCompileStack(
-    torch=f"{train_utils.KAGGRICULTURE_PROBED_COMPILE_STACK.torch}+cu128",
-    triton=train_utils.KAGGRICULTURE_PROBED_COMPILE_STACK.triton,
+PROBED_GPU_STACK = compile_gemm.InstalledCompileStack(
+    torch=f"{compile_gemm.KAGGRICULTURE_PROBED_COMPILE_STACK.torch}+cu128",
+    triton=compile_gemm.KAGGRICULTURE_PROBED_COMPILE_STACK.triton,
     cuda_available=True,
-    nvidia_drivers=train_utils.KAGGRICULTURE_PROBED_COMPILE_STACK.nvidia_drivers,
+    nvidia_drivers=compile_gemm.KAGGRICULTURE_PROBED_COMPILE_STACK.nvidia_drivers,
 )
 
 
@@ -61,7 +47,7 @@ def probed_compile_stack(monkeypatch: pytest.MonkeyPatch) -> None:
     and a rejection on a GPU host whose driver was never probed.
     """
     monkeypatch.setattr(
-        train_utils, "installed_compile_stack", lambda: PROBED_GPU_STACK
+        compile_gemm, "installed_compile_stack", lambda: PROBED_GPU_STACK
     )
 
 

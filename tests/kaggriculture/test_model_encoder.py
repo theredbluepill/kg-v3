@@ -496,7 +496,7 @@ def test_zero_rows_per_chunk_rejects_before_trunk(
         model.encode_observations(make_obs())
 
 
-@pytest.mark.usefixtures("cublas_only_gemm_backends")
+@pytest.mark.usefixtures("probed_compile_stack")
 def test_compiled_trunk_is_used_for_every_chunk(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -678,7 +678,7 @@ def test_packed_row_chunks_rejects_only_an_unfittable_row(
         km.packed_row_chunks([3, 10, 3], width=10)
 
 
-@pytest.mark.usefixtures("cublas_only_gemm_backends")
+@pytest.mark.usefixtures("probed_compile_stack")
 def test_compiled_trunk_serves_packed_dispatch(monkeypatch: pytest.MonkeyPatch) -> None:
     model = _tiny().eval()
     spy = _mock_flash(monkeypatch, model)
@@ -707,7 +707,7 @@ def test_compiled_trunk_serves_packed_dispatch(monkeypatch: pytest.MonkeyPatch) 
     assert spy.unpack_calls == 1
 
 
-@pytest.mark.usefixtures("cublas_only_gemm_backends")
+@pytest.mark.usefixtures("probed_compile_stack")
 def test_compile_hook_leaves_state_dict_keys_unchanged() -> None:
     model = _tiny()
     before = model.state_dict()

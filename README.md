@@ -315,16 +315,19 @@ The trunk mode dispatches through the model's `TrunkCompileAPI`
 (`StatelessTransformerV1`, `KaggricultureTransformer`) and never compiles the
 whole model; it rejects cross-attention observations, recurrent models, and
 player-count adapter trunk blocks.
-Compiling a `KaggricultureTransformer` (either target, any mode) first checks
-the probed compile stack (`KAGGRICULTURE_PROBED_COMPILE_STACK` in
-`python/owl/train/utils.py`: torch 2.9.0, triton 3.5.0, NVIDIA driver
-595.91.07; on hosts without CUDA the triton and driver checks are skipped with
-a printed reason), then sets
+Compiling a `KaggricultureTransformer` (either target, any mode, through
+`configure_model_compile` or a direct `compile_transformer_trunk` call) first
+checks the probed compile stack (`KAGGRICULTURE_PROBED_COMPILE_STACK` in
+`python/owl/model/compile_gemm.py`: torch 2.9.0, triton 3.5.0, NVIDIA driver
+595.91.07). An installed triton is always checked; on hosts without CUDA the
+driver check is skipped, and so is the triton check when triton is not
+installed, each with a printed reason. It then sets
 `torch._inductor.config.max_autotune_gemm_backends = "ATEN"` so compiled GEMMs
 lower to cuBLAS instead of Inductor's Triton GEMM templates (cookbook decision
 `kaggriculture-compiles-gemms-with-cublas-only`). Orbit compiles keep the
-backends they find. The setting is process-global, so a process that compiles
-one game refuses to compile the other. `run_ppo` repeats the stack check before
+backends they find. The setting is process-global, so every compile entry point
+claims it for its game, and a process that compiles one game refuses to compile
+the other, whichever entry point either compile uses. `run_ppo` repeats the stack check before
 creating the run directory, prints the claimed backends and stack, and records
 them as `compile_gemm_*` and `compile_stack_*` W&B summary fields.
 
