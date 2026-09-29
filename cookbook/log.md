@@ -1,5 +1,11 @@
 # Change log
 
+## 2026-09-30 — Close claude-verify-wandb-r3: correct the WANDB_MODE rationale and cite the current preparation
+
+`claude-verify-wandb-r3` (`ops/rebuild-2026-09-29/codex/claude-verify-wandb-r3.md`; a Claude subagent standing in for Codex, APPROVE WITH EDITS at `5186d70`) found r2's R1 to R4 resolved, killed all 13 of its mutations and raised no P1 or P2. On `kg/rebuild-wandb`:
+- P3-1: the README, the [[references/v3-launchers-fail-fast-without-wandb-credentials|W&B Reference]] and its index line no longer say `wandb.init` would reject a differing `WANDB_MODE`. Re-probed on wandb 0.26.1: `wandb.init(mode="offline")` with `WANDB_MODE=online` or `disabled` silently starts an offline run, and only an empty value raises `ValidationError`. The gate keeps rejecting any set differing value as policy; behaviour is unchanged.
+- P3-2: the Reference's verification now cites `prepare-claude-r2-fix.log` (py-prepare and docs-lint, 2,494 passed and 21 skipped, Python and docs only; no Rust changed since `994818b`) and the r3 run, and names the key-validator mutant V2; the audit gains an "After claude-verify-wandb-r2" bullet. No Codex APPROVE yet.
+
 ## 2026-09-30 — Close claude-verify-wandb-r2: gate W&B URL and key with wandb's own validator, correct the offline-resume claim
 
 `claude-verify-wandb-r2` (`ops/rebuild-2026-09-29/codex/claude-verify-wandb-r2.md`; a Claude subagent standing in for Codex, REQUEST CHANGES at `6d4ef48`) found r1's F2 and F3 resolved and F1 partial. On `kg/rebuild-wandb`:

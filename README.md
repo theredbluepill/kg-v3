@@ -324,13 +324,14 @@ the fix: install the credential with
 `cookbook/workflows/install-the-wandb-credential-before-any-pod-launch.md`,
 which copies only that entry with `scripts/export_wandb_netrc_entry.py`. In
 either W&B mode (online or offline) the same startup check also rejects, before
-the config, env or model exist, three environment settings that `wandb.init`
-would otherwise reject later: a set `WANDB_MODE`, even an empty one, that
-differs from `--wandb-mode`; a `WANDB_BASE_URL` that is set but empty, is not
-such a URL, or fails the installed wandb's own `Settings` validation (for
-example `https://wandb.ai` or `http://api.wandb.ai`; the error withholds the
-value); and a set `WANDB_API_KEY` that is blank, padded or fails that
-validation. Other W&B settings are not pre-checked. Once the run
+the config, env or model exist, a set `WANDB_MODE` that differs from
+`--wandb-mode` (wandb 0.26.1 would silently let the flag win, or reject an
+empty value), and two settings that `wandb.init` would otherwise reject later:
+a `WANDB_BASE_URL` that is set but empty, is not such a URL, or fails the
+installed wandb's own `Settings` validation (for example `https://wandb.ai` or
+`http://api.wandb.ai`; the error withholds the value); and a set
+`WANDB_API_KEY` that is blank, padded or fails that validation. Other W&B
+settings are not pre-checked. Once the run
 starts, the logger stops if W&B reports a mode other than the requested one, so
 the receipt records the mode the run actually used. Running without live
 telemetry takes an explicit flag, either `--wandb-mode offline` (metrics stay in
