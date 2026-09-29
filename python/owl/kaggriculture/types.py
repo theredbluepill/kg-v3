@@ -70,7 +70,7 @@ GLOBAL_INT_CHANNELS = 16
 
 class KaggricultureObsConfig(BaseConfig):
     obs_spec: Literal["kaggriculture"] = "kaggriculture"
-    schema_version: Literal[4] = 4
+    schema_version: Literal[3] = 3
 
 
 class KaggricultureActionConfig(BaseConfig):
