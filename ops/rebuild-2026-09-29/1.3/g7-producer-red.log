@@ -1,0 +1,84 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-observe)
+warning: function `timing_header` is never used
+  --> src/kaggriculture/oracle_corpus.rs:46:15
+   |
+46 | pub(super) fn timing_header(_dense: bool) -> CorpusResult<TraceHeader> { Err("producer not implemented".into()) }
+   |               ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `owl` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.17s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 8 tests
+test kaggriculture::oracle_corpus::producer_comparator_detects_values_nested_orders_and_money_bits ... FAILED
+test kaggriculture::oracle_corpus::producer_dense_pair_changes_only_the_two_key_orders ... FAILED
+test kaggriculture::oracle_corpus::producer_gzip_stream_requires_eof_and_success ... FAILED
+test kaggriculture::oracle_corpus::producer_legacy_domain_rejects_old_oracle_limits_without_narrowing_v3 ... FAILED
+test kaggriculture::oracle_corpus::producer_policy_uses_all_unit_kinds_and_exact_market_cycle ... FAILED
+test kaggriculture::oracle_corpus::producer_seeded_tiny_selection_repeats_exact_bytes_and_action_hashes ... FAILED
+test kaggriculture::oracle_corpus::producer_selection_profiles_and_policy_are_literal ... FAILED
+test kaggriculture::oracle_corpus::producer_strict_record_and_quota_guard_reject_bad_inputs ... FAILED
+
+failures:
+
+---- kaggriculture::oracle_corpus::producer_comparator_detects_values_nested_orders_and_money_bits stdout ----
+
+thread 'kaggriculture::oracle_corpus::producer_comparator_detects_values_nested_orders_and_money_bits' (10281384) panicked at src/kaggriculture/oracle_corpus.rs:131:5:
+assertion failed: ordered_equal(&json!({"a":1}), &json!({"a":2}), "root").is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- kaggriculture::oracle_corpus::producer_dense_pair_changes_only_the_two_key_orders stdout ----
+
+thread 'kaggriculture::oracle_corpus::producer_dense_pair_changes_only_the_two_key_orders' (10281385) panicked at src/kaggriculture/oracle_corpus.rs:107:33:
+called `Result::unwrap()` on an `Err` value: "producer not implemented"
+
+---- kaggriculture::oracle_corpus::producer_gzip_stream_requires_eof_and_success stdout ----
+
+thread 'kaggriculture::oracle_corpus::producer_gzip_stream_requires_eof_and_success' (10281386) panicked at src/kaggriculture/oracle_corpus.rs:184:46:
+called `Result::unwrap()` on an `Err` value: "producer not implemented"
+
+---- kaggriculture::oracle_corpus::producer_legacy_domain_rejects_old_oracle_limits_without_narrowing_v3 stdout ----
+
+thread 'kaggriculture::oracle_corpus::producer_legacy_domain_rejects_old_oracle_limits_without_narrowing_v3' (10281387) panicked at src/kaggriculture/oracle_corpus.rs:153:9:
+case 0
+
+---- kaggriculture::oracle_corpus::producer_policy_uses_all_unit_kinds_and_exact_market_cycle stdout ----
+
+thread 'kaggriculture::oracle_corpus::producer_policy_uses_all_unit_kinds_and_exact_market_cycle' (10281388) panicked at src/kaggriculture/oracle_corpus.rs:90:5:
+assertion `left == right` failed
+  left: Object {}
+ right: Object {"farmer": Array [String("PASS")], "hands": Array [Array [String("NORTH")]], "market": Array [Array [String("HIRE")], Array [String("BUY_LAND")]]}
+
+---- kaggriculture::oracle_corpus::producer_seeded_tiny_selection_repeats_exact_bytes_and_action_hashes stdout ----
+
+thread 'kaggriculture::oracle_corpus::producer_seeded_tiny_selection_repeats_exact_bytes_and_action_hashes' (10281389) panicked at src/kaggriculture/oracle_corpus.rs:160:52:
+called `Result::unwrap()` on an `Err` value: "producer not implemented"
+
+---- kaggriculture::oracle_corpus::producer_selection_profiles_and_policy_are_literal stdout ----
+
+thread 'kaggriculture::oracle_corpus::producer_selection_profiles_and_policy_are_literal' (10281390) panicked at src/kaggriculture/oracle_corpus.rs:71:5:
+assertion `left == right` failed
+  left: 0
+ right: 96
+
+---- kaggriculture::oracle_corpus::producer_strict_record_and_quota_guard_reject_bad_inputs stdout ----
+
+thread 'kaggriculture::oracle_corpus::producer_strict_record_and_quota_guard_reject_bad_inputs' (10281391) panicked at src/kaggriculture/oracle_corpus.rs:178:5:
+assertion failed: quota_error(&json!({"non_synthetic":{"actor_gt16_states":0},"dense":{},"shed_order_exception":false})).is_err()
+
+
+failures:
+    kaggriculture::oracle_corpus::producer_comparator_detects_values_nested_orders_and_money_bits
+    kaggriculture::oracle_corpus::producer_dense_pair_changes_only_the_two_key_orders
+    kaggriculture::oracle_corpus::producer_gzip_stream_requires_eof_and_success
+    kaggriculture::oracle_corpus::producer_legacy_domain_rejects_old_oracle_limits_without_narrowing_v3
+    kaggriculture::oracle_corpus::producer_policy_uses_all_unit_kinds_and_exact_market_cycle
+    kaggriculture::oracle_corpus::producer_seeded_tiny_selection_repeats_exact_bytes_and_action_hashes
+    kaggriculture::oracle_corpus::producer_selection_profiles_and_policy_are_literal
+    kaggriculture::oracle_corpus::producer_strict_record_and_quota_guard_reject_bad_inputs
+
+test result: FAILED. 0 passed; 8 failed; 0 ignored; 0 measured; 214 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`

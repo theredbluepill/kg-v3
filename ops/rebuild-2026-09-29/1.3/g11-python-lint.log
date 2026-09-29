@@ -1,0 +1,59 @@
+SIM105 Use `contextlib.suppress(ProcessLookupError)` instead of `try`-`except`-`pass`
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:809:13
+    |
+807 |               code = process.wait()
+808 |           except BaseException:
+809 | /             try:
+810 | |                 os.killpg(process.pid, signal.SIGKILL)
+811 | |             except ProcessLookupError:
+812 | |                 pass
+    | |____________________^
+813 |               process.wait()
+814 |               raise
+    |
+help: Replace `try`-`except`-`pass` with `with contextlib.suppress(ProcessLookupError): ...`
+
+E501 Line too long (106 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:258:89
+    |
+257 | def test_header_hash_preserves_numeric_spelling_and_nested_key_order() -> None:
+258 |     raw = b'{"source":{},"header":{"number":1e-7,"other":-0.0,"keys":{"B":0,"A":1}},"record_id":"test"}\n'
+    |                                                                                         ^^^^^^^^^^^^^^^^^^
+259 |     assert (
+260 |         oracle.header_bytes(raw) == b'{"number":1e-7,"other":-0.0,"keys":{"B":0,"A":1}}'
+    |
+
+ARG005 Unused lambda argument: `group`
+   --> tests/tools/test_observation_oracle_custody.py:293:53
+    |
+291 |     monkeypatch: pytest.MonkeyPatch,
+292 | ) -> None:
+293 |     monkeypatch.setattr(oracle, "group_rss", lambda group: 1_000_000_000)
+    |                                                     ^^^^^
+294 |     with pytest.raises(RuntimeError, match="reason=aggregate RSS"):
+295 |         oracle.run([sys.executable, "-c", "import time; time.sleep(30)"])
+    |
+
+ARG001 Unused function argument: `kwargs`
+   --> tests/tools/test_observation_oracle_custody.py:322:42
+    |
+320 |     calls = []
+321 |
+322 |     def fail_producer(argv: list[str], **kwargs: object) -> bytes:
+    |                                          ^^^^^^
+323 |         calls.append(argv)
+324 |         raise RuntimeError("R1 actor_gt16_states: actual 0, required 4")
+    |
+
+ARG001 Unused function argument: `path`
+   --> tests/tools/test_observation_oracle_custody.py:328:26
+    |
+326 |     monkeypatch.setattr(oracle, "run", fail_producer)
+327 |
+328 |     def forbidden_export(path: Path) -> dict[str, str]:
+    |                          ^^^^
+329 |         pytest.fail("failed producer must never export the reference")
+    |
+
+Found 5 errors.
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).

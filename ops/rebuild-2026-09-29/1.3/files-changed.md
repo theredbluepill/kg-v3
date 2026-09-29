@@ -1,0 +1,400 @@
+# Changed or added files since recovery HEAD
+
+396 paths; one line per file. No staging, commits, vendor changes or changes outside this checkout. Temporary files and build outputs are excluded by repository ignore rules. The pre-dependency A test/receipt already committed in HEAD are retained but are not new changes in this inventory.
+
+- `Cargo.lock` — Cargo-generated resolution for the root consumer; vendor lock untouched.
+- `Cargo.toml` — Cargo-added root kernel, exact-integer and ordered arbitrary-precision JSON dependencies.
+- `cookbook/decisions/index.md` — Keep restart Decision description consistent with its historical scope.
+- `cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md` — Relabel Task 1.1 root isolation as historical after the first root consumer.
+- `cookbook/log.md` — Record coherent A–J adaptations and final blocked handoff.
+- `cookbook/references/index.md` — Index the reconciled observation adaptation and actual verification limits.
+- `cookbook/references/structured-observations-preserve-legal-state-and-order.md` — Adaptation inventory, provenance, actual checks, consequences and unresolved blocks.
+- `docs/rl-api-specs.md` — Implemented signature, all fields, lifetime/publication guarantees and qualification blocks.
+- `docs/rules-engine.md` — L4 integration and root encoder versus unchanged rules boundary.
+- `docs/rules-parity-coverage.md` — Separate encoder evidence from historical rules parity and current qualification gaps.
+- `ops/rebuild-2026-09-29/1.3/a2-unified-red.json` — Actual command/resource or structured evidence for a2-unified-red.
+- `ops/rebuild-2026-09-29/1.3/a2-unified-red.log` — Actual command output for a2-unified-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/a3-green.json` — Actual command/resource or structured evidence for a3-green.
+- `ops/rebuild-2026-09-29/1.3/a3-green.log` — Actual command output for a3-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/a4-trim.json` — Actual command/resource or structured evidence for a4-trim.
+- `ops/rebuild-2026-09-29/1.3/a4-trim.log` — Actual command output for a4-trim; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/audit_g_inputs.py` — Independent streamed recount of512 input records, dense pair and action custody.
+- `ops/rebuild-2026-09-29/1.3/b1-red-missing-api.json` — Actual command/resource or structured evidence for b1-red-missing-api.
+- `ops/rebuild-2026-09-29/1.3/b1-red-missing-api.log` — Actual command output for b1-red-missing-api; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/b10-format.json` — Actual command/resource or structured evidence for b10-format.
+- `ops/rebuild-2026-09-29/1.3/b10-format.log` — Actual command output for b10-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/b11-green-final.json` — Actual command/resource or structured evidence for b11-green-final.
+- `ops/rebuild-2026-09-29/1.3/b11-green-final.log` — Actual command output for b11-green-final; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/b2-red-full-boundary-tests.json` — Actual command/resource or structured evidence for b2-red-full-boundary-tests.
+- `ops/rebuild-2026-09-29/1.3/b2-red-full-boundary-tests.log` — Actual command output for b2-red-full-boundary-tests; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/b3-first-green-compile.json` — Actual command/resource or structured evidence for b3-first-green-compile.
+- `ops/rebuild-2026-09-29/1.3/b3-first-green-compile.log` — Actual command output for b3-first-green-compile; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/b4-format.json` — Actual command/resource or structured evidence for b4-format.
+- `ops/rebuild-2026-09-29/1.3/b4-format.log` — Actual command output for b4-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/b5-red-length-check-disabled.json` — Actual command/resource or structured evidence for b5-red-length-check-disabled.
+- `ops/rebuild-2026-09-29/1.3/b5-red-length-check-disabled.log` — Actual command output for b5-red-length-check-disabled; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/b6-green-boundaries.json` — Actual command/resource or structured evidence for b6-green-boundaries.
+- `ops/rebuild-2026-09-29/1.3/b6-green-boundaries.log` — Actual command output for b6-green-boundaries; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/b7-clippy.json` — Actual command/resource or structured evidence for b7-clippy.
+- `ops/rebuild-2026-09-29/1.3/b7-clippy.log` — Actual command output for b7-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/b8-clippy-cleanup.json` — Actual command/resource or structured evidence for b8-clippy-cleanup.
+- `ops/rebuild-2026-09-29/1.3/b8-clippy-cleanup.log` — Actual command output for b8-clippy-cleanup; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/b9-clippy-green.json` — Actual command/resource or structured evidence for b9-clippy-green.
+- `ops/rebuild-2026-09-29/1.3/b9-clippy-green.log` — Actual command output for b9-clippy-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/bounded.py` — Mac sampled process-group RSS/deadline runner with receipt output and nested deadline propagation.
+- `ops/rebuild-2026-09-29/1.3/c1-red-missing-api.json` — Actual command/resource or structured evidence for c1-red-missing-api.
+- `ops/rebuild-2026-09-29/1.3/c1-red-missing-api.log` — Actual command output for c1-red-missing-api; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/c2-hire-green.json` — Actual command/resource or structured evidence for c2-hire-green.
+- `ops/rebuild-2026-09-29/1.3/c2-hire-green.log` — Actual command output for c2-hire-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/c3-config-green.json` — Actual command/resource or structured evidence for c3-config-green.
+- `ops/rebuild-2026-09-29/1.3/c3-config-green.log` — Actual command output for c3-config-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/c4-format.json` — Actual command/resource or structured evidence for c4-format.
+- `ops/rebuild-2026-09-29/1.3/c4-format.log` — Actual command output for c4-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/c5-clippy.json` — Actual command/resource or structured evidence for c5-clippy.
+- `ops/rebuild-2026-09-29/1.3/c5-clippy.log` — Actual command output for c5-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/c6-red-rival-hire-mutation.json` — Actual command/resource or structured evidence for c6-red-rival-hire-mutation.
+- `ops/rebuild-2026-09-29/1.3/c6-red-rival-hire-mutation.log` — Actual command output for c6-red-rival-hire-mutation; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/c7-format.json` — Actual command/resource or structured evidence for c7-format.
+- `ops/rebuild-2026-09-29/1.3/c7-format.log` — Actual command output for c7-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/c8-bc-green.json` — Actual command/resource or structured evidence for c8-bc-green.
+- `ops/rebuild-2026-09-29/1.3/c8-bc-green.log` — Actual command output for c8-bc-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/c9-clippy-green.json` — Actual command/resource or structured evidence for c9-clippy-green.
+- `ops/rebuild-2026-09-29/1.3/c9-clippy-green.log` — Actual command output for c9-clippy-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/check_recorder.py` — Verify125 pinned export files and source-only recorder compilation.
+- `ops/rebuild-2026-09-29/1.3/cookbook-before-closeout.md` — Byte-exact preserved dirty adaptation note before coherent closeout rewrite.
+- `ops/rebuild-2026-09-29/1.3/cookbook-before-closeout.sha256` — Checksum of the preserved pre-closeout note.
+- `ops/rebuild-2026-09-29/1.3/d1-tile-red.json` — Actual command/resource or structured evidence for d1-tile-red.
+- `ops/rebuild-2026-09-29/1.3/d1-tile-red.log` — Actual command output for d1-tile-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/d2-tile-green.json` — Actual command/resource or structured evidence for d2-tile-green.
+- `ops/rebuild-2026-09-29/1.3/d2-tile-green.log` — Actual command output for d2-tile-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/d3-format.json` — Actual command/resource or structured evidence for d3-format.
+- `ops/rebuild-2026-09-29/1.3/d3-format.log` — Actual command output for d3-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/d4-red-transpose-mutation.json` — Actual command/resource or structured evidence for d4-red-transpose-mutation.
+- `ops/rebuild-2026-09-29/1.3/d4-red-transpose-mutation.log` — Actual command output for d4-red-transpose-mutation; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/d5-restored-green.json` — Actual command/resource or structured evidence for d5-restored-green.
+- `ops/rebuild-2026-09-29/1.3/d5-restored-green.log` — Actual command output for d5-restored-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/d6-clippy.json` — Actual command/resource or structured evidence for d6-clippy.
+- `ops/rebuild-2026-09-29/1.3/d6-clippy.log` — Actual command output for d6-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/e1-actors-red.json` — Actual command/resource or structured evidence for e1-actors-red.
+- `ops/rebuild-2026-09-29/1.3/e1-actors-red.log` — Actual command output for e1-actors-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/e10-restored-module-green.json` — Actual command/resource or structured evidence for e10-restored-module-green.
+- `ops/rebuild-2026-09-29/1.3/e10-restored-module-green.log` — Actual command output for e10-restored-module-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/e2-storage-red.json` — Actual command/resource or structured evidence for e2-storage-red.
+- `ops/rebuild-2026-09-29/1.3/e2-storage-red.log` — Actual command output for e2-storage-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/e3-privacy-red.json` — Actual command/resource or structured evidence for e3-privacy-red.
+- `ops/rebuild-2026-09-29/1.3/e3-privacy-red.log` — Actual command output for e3-privacy-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/e4-actors-green.json` — Actual command/resource or structured evidence for e4-actors-green.
+- `ops/rebuild-2026-09-29/1.3/e4-actors-green.log` — Actual command output for e4-actors-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/e5-storage-green.json` — Actual command/resource or structured evidence for e5-storage-green.
+- `ops/rebuild-2026-09-29/1.3/e5-storage-green.log` — Actual command output for e5-storage-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/e6-privacy-green.json` — Actual command/resource or structured evidence for e6-privacy-green.
+- `ops/rebuild-2026-09-29/1.3/e6-privacy-green.log` — Actual command output for e6-privacy-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/e7-format.json` — Actual command/resource or structured evidence for e7-format.
+- `ops/rebuild-2026-09-29/1.3/e7-format.log` — Actual command output for e7-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/e8-clippy.json` — Actual command/resource or structured evidence for e8-clippy.
+- `ops/rebuild-2026-09-29/1.3/e8-clippy.log` — Actual command output for e8-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/e9-red-reversed-ranks.json` — Actual command/resource or structured evidence for e9-red-reversed-ranks.
+- `ops/rebuild-2026-09-29/1.3/e9-red-reversed-ranks.log` — Actual command output for e9-red-reversed-ranks; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/f1-context-red.json` — Actual command/resource or structured evidence for f1-context-red.
+- `ops/rebuild-2026-09-29/1.3/f1-context-red.log` — Actual command output for f1-context-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/f10-final-clippy.json` — Actual command/resource or structured evidence for f10-final-clippy.
+- `ops/rebuild-2026-09-29/1.3/f10-final-clippy.log` — Actual command output for f10-final-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/f2-context-green.json` — Actual command/resource or structured evidence for f2-context-green.
+- `ops/rebuild-2026-09-29/1.3/f2-context-green.log` — Actual command output for f2-context-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/f3-check-row-red.json` — Actual command/resource or structured evidence for f3-check-row-red.
+- `ops/rebuild-2026-09-29/1.3/f3-check-row-red.log` — Actual command output for f3-check-row-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/f4-complete-green.json` — Actual command/resource or structured evidence for f4-complete-green.
+- `ops/rebuild-2026-09-29/1.3/f4-complete-green.log` — Actual command output for f4-complete-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/f5-format.json` — Actual command/resource or structured evidence for f5-format.
+- `ops/rebuild-2026-09-29/1.3/f5-format.log` — Actual command output for f5-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/f6-clippy.json` — Actual command/resource or structured evidence for f6-clippy.
+- `ops/rebuild-2026-09-29/1.3/f6-clippy.log` — Actual command output for f6-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/f7-pending-bonus-red.json` — Actual command/resource or structured evidence for f7-pending-bonus-red.
+- `ops/rebuild-2026-09-29/1.3/f7-pending-bonus-red.log` — Actual command output for f7-pending-bonus-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/f8-format.json` — Actual command/resource or structured evidence for f8-format.
+- `ops/rebuild-2026-09-29/1.3/f8-format.log` — Actual command output for f8-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/f9-final-module-green.json` — Actual command/resource or structured evidence for f9-final-module-green.
+- `ops/rebuild-2026-09-29/1.3/f9-final-module-green.log` — Actual command output for f9-final-module-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/files-changed.md` — This complete one-line-per-file handoff inventory.
+- `ops/rebuild-2026-09-29/1.3/final-01-root-tests.json` — Actual command/resource or structured evidence for final-01-root-tests.
+- `ops/rebuild-2026-09-29/1.3/final-01-root-tests.log` — Actual command output for final-01-root-tests; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-02-engine-tests.json` — Actual command/resource or structured evidence for final-02-engine-tests.
+- `ops/rebuild-2026-09-29/1.3/final-02-engine-tests.log` — Actual command output for final-02-engine-tests; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-03-trim.json` — Actual command/resource or structured evidence for final-03-trim.
+- `ops/rebuild-2026-09-29/1.3/final-03-trim.log` — Actual command output for final-03-trim; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-04-observe-custody-pytest.json` — Actual command/resource or structured evidence for final-04-observe-custody-pytest.
+- `ops/rebuild-2026-09-29/1.3/final-04-observe-custody-pytest.log` — Actual command output for final-04-observe-custody-pytest; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-05-reference-fast-pytest.json` — Actual command/resource or structured evidence for final-05-reference-fast-pytest.
+- `ops/rebuild-2026-09-29/1.3/final-05-reference-fast-pytest.log` — Actual command output for final-05-reference-fast-pytest; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-05b-fast-pytest-no-extra.json` — Actual command/resource or structured evidence for final-05b-fast-pytest-no-extra.
+- `ops/rebuild-2026-09-29/1.3/final-05b-fast-pytest-no-extra.log` — Actual command output for final-05b-fast-pytest-no-extra; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-06-rs-prepare.json` — Actual command/resource or structured evidence for final-06-rs-prepare.
+- `ops/rebuild-2026-09-29/1.3/final-06-rs-prepare.log` — Actual command output for final-06-rs-prepare; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-07-py-prepare.json` — Actual command/resource or structured evidence for final-07-py-prepare.
+- `ops/rebuild-2026-09-29/1.3/final-07-py-prepare.log` — Actual command output for final-07-py-prepare; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-08-prepare.json` — Actual command/resource or structured evidence for final-08-prepare.
+- `ops/rebuild-2026-09-29/1.3/final-08-prepare.log` — Actual command output for final-08-prepare; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-09-docs-fresh.json` — Actual command/resource or structured evidence for final-09-docs-fresh.
+- `ops/rebuild-2026-09-29/1.3/final-09-docs-fresh.log` — Actual command output for final-09-docs-fresh; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-10-native-boundary.json` — Actual command/resource or structured evidence for final-10-native-boundary.
+- `ops/rebuild-2026-09-29/1.3/final-10-native-boundary.log` — Actual command output for final-10-native-boundary; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-11-source-audit.json` — Actual command/resource or structured evidence for final-11-source-audit.
+- `ops/rebuild-2026-09-29/1.3/final-11-source-audit.log` — Actual command output for final-11-source-audit; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/final-commands.json` — Machine-readable actual end-command argv/results/resources.
+- `ops/rebuild-2026-09-29/1.3/final-source.sha256` — Final code/dependency/doc/cookbook fingerprints.
+- `ops/rebuild-2026-09-29/1.3/final_audit.py` — Read-only working-tree, provenance, source and mutation-restoration audit.
+- `ops/rebuild-2026-09-29/1.3/g-input-audit.json` — Independent Python recount of the actual unqualified stream and action hashes.
+- `ops/rebuild-2026-09-29/1.3/g-input-generation.json` — Actual512-input native generation coverage and six seeded action/replay identities.
+- `ops/rebuild-2026-09-29/1.3/g-parent-deadline-green.json` — Actual command/resource or structured evidence for g-parent-deadline-green.
+- `ops/rebuild-2026-09-29/1.3/g-parent-deadline-green.log` — Actual command output for g-parent-deadline-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g-parent-deadline-red.json` — Actual command/resource or structured evidence for g-parent-deadline-red.
+- `ops/rebuild-2026-09-29/1.3/g-parent-deadline-red.log` — Actual command output for g-parent-deadline-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g-parent-wall-deadline-green.json` — Actual command/resource or structured evidence for g-parent-wall-deadline-green.
+- `ops/rebuild-2026-09-29/1.3/g-parent-wall-deadline-green.log` — Actual command output for g-parent-wall-deadline-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g-parent-wall-deadline-red.json` — Actual command/resource or structured evidence for g-parent-wall-deadline-red.
+- `ops/rebuild-2026-09-29/1.3/g-parent-wall-deadline-red.log` — Actual command output for g-parent-wall-deadline-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g-recorder-compile.json` — Source-only exported-reference compilation identity and measured limits.
+- `ops/rebuild-2026-09-29/1.3/g-source.sha256` — Source identity fingerprints for the named evidence checkpoint (g-source).
+- `ops/rebuild-2026-09-29/1.3/g1-custody-red.json` — Actual command/resource or structured evidence for g1-custody-red.
+- `ops/rebuild-2026-09-29/1.3/g1-custody-red.log` — Actual command output for g1-custody-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g10-python-format.json` — Actual command/resource or structured evidence for g10-python-format.
+- `ops/rebuild-2026-09-29/1.3/g10-python-format.log` — Actual command output for g10-python-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g11-python-lint.json` — Actual command/resource or structured evidence for g11-python-lint.
+- `ops/rebuild-2026-09-29/1.3/g11-python-lint.log` — Actual command output for g11-python-lint; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g12-recipe-export-red.json` — Actual command/resource or structured evidence for g12-recipe-export-red.
+- `ops/rebuild-2026-09-29/1.3/g12-recipe-export-red.log` — Actual command output for g12-recipe-export-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g13-recorder-format.json` — Actual command/resource or structured evidence for g13-recorder-format.
+- `ops/rebuild-2026-09-29/1.3/g13-recorder-format.log` — Actual command output for g13-recorder-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g14-python-format.json` — Actual command/resource or structured evidence for g14-python-format.
+- `ops/rebuild-2026-09-29/1.3/g14-python-format.log` — Actual command output for g14-python-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g15-python-lint.json` — Actual command/resource or structured evidence for g15-python-lint.
+- `ops/rebuild-2026-09-29/1.3/g15-python-lint.log` — Actual command output for g15-python-lint; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g16-custody-green.json` — Actual command/resource or structured evidence for g16-custody-green.
+- `ops/rebuild-2026-09-29/1.3/g16-custody-green.log` — Actual command output for g16-custody-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g17-python-mypy.json` — Actual command/resource or structured evidence for g17-python-mypy.
+- `ops/rebuild-2026-09-29/1.3/g17-python-mypy.log` — Actual command output for g17-python-mypy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g18-python-mypy.json` — Actual command/resource or structured evidence for g18-python-mypy.
+- `ops/rebuild-2026-09-29/1.3/g18-python-mypy.log` — Actual command output for g18-python-mypy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g19-custody-green.json` — Actual command/resource or structured evidence for g19-custody-green.
+- `ops/rebuild-2026-09-29/1.3/g19-custody-green.log` — Actual command output for g19-custody-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g2-custody-first.json` — Actual command/resource or structured evidence for g2-custody-first.
+- `ops/rebuild-2026-09-29/1.3/g2-custody-first.log` — Actual command output for g2-custody-first; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g20-producer-format.json` — Actual command/resource or structured evidence for g20-producer-format.
+- `ops/rebuild-2026-09-29/1.3/g20-producer-format.log` — Actual command output for g20-producer-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g21-producer-first-green.json` — Actual command/resource or structured evidence for g21-producer-first-green.
+- `ops/rebuild-2026-09-29/1.3/g21-producer-first-green.log` — Actual command output for g21-producer-first-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g22-python-format.json` — Actual command/resource or structured evidence for g22-python-format.
+- `ops/rebuild-2026-09-29/1.3/g22-python-format.log` — Actual command output for g22-python-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g23-python-lint.json` — Actual command/resource or structured evidence for g23-python-lint.
+- `ops/rebuild-2026-09-29/1.3/g23-python-lint.log` — Actual command output for g23-python-lint; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g24-producer-green.json` — Actual command/resource or structured evidence for g24-producer-green.
+- `ops/rebuild-2026-09-29/1.3/g24-producer-green.log` — Actual command output for g24-producer-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g25-full-inputs-r1.json` — Actual command/resource or structured evidence for g25-full-inputs-r1.
+- `ops/rebuild-2026-09-29/1.3/g25-full-inputs-r1.log` — Actual command output for g25-full-inputs-r1; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g25-producer-source.sha256` — Source identity fingerprints for the named evidence checkpoint (g25-producer-source).
+- `ops/rebuild-2026-09-29/1.3/g26-full-driver-r1.json` — Actual command/resource or structured evidence for g26-full-driver-r1.
+- `ops/rebuild-2026-09-29/1.3/g26-full-driver-r1.log` — Actual command output for g26-full-driver-r1; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g27-rss-real-red.json` — Actual command/resource or structured evidence for g27-rss-real-red.
+- `ops/rebuild-2026-09-29/1.3/g27-rss-real-red.log` — Actual command output for g27-rss-real-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g28-rss-real-green.json` — Actual command/resource or structured evidence for g28-rss-real-green.
+- `ops/rebuild-2026-09-29/1.3/g28-rss-real-green.log` — Actual command output for g28-rss-real-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g29-source-custody-red.json` — Actual command/resource or structured evidence for g29-source-custody-red.
+- `ops/rebuild-2026-09-29/1.3/g29-source-custody-red.log` — Actual command output for g29-source-custody-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g29-watchdog-tests.json` — Actual command/resource or structured evidence for g29-watchdog-tests.
+- `ops/rebuild-2026-09-29/1.3/g29-watchdog-tests.log` — Actual command output for g29-watchdog-tests; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g3-python-format.json` — Actual command/resource or structured evidence for g3-python-format.
+- `ops/rebuild-2026-09-29/1.3/g3-python-format.log` — Actual command output for g3-python-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g30-input-audit.json` — Actual command/resource or structured evidence for g30-input-audit.
+- `ops/rebuild-2026-09-29/1.3/g30-input-audit.log` — Actual command output for g30-input-audit; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g30-source-custody-green.json` — Actual command/resource or structured evidence for g30-source-custody-green.
+- `ops/rebuild-2026-09-29/1.3/g30-source-custody-green.log` — Actual command output for g30-source-custody-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g31-driver-r1-fixed-watchdog.json` — Actual command/resource or structured evidence for g31-driver-r1-fixed-watchdog.
+- `ops/rebuild-2026-09-29/1.3/g31-driver-r1-fixed-watchdog.log` — Actual command output for g31-driver-r1-fixed-watchdog; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g31-source-custody-format.json` — Actual command/resource or structured evidence for g31-source-custody-format.
+- `ops/rebuild-2026-09-29/1.3/g31-source-custody-format.log` — Actual command output for g31-source-custody-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g32-recorder-compile.json` — Actual command/resource or structured evidence for g32-recorder-compile.
+- `ops/rebuild-2026-09-29/1.3/g32-recorder-source-check.json` — Actual command/resource or structured evidence for g32-recorder-source-check.
+- `ops/rebuild-2026-09-29/1.3/g32-recorder-source-check.log` — Actual command output for g32-recorder-source-check; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g32-source-custody-full.json` — Actual command/resource or structured evidence for g32-source-custody-full.
+- `ops/rebuild-2026-09-29/1.3/g32-source-custody-full.log` — Actual command output for g32-source-custody-full; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g33-clippy.json` — Actual command/resource or structured evidence for g33-clippy.
+- `ops/rebuild-2026-09-29/1.3/g33-clippy.log` — Actual command output for g33-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g33-source-custody-ruff.json` — Actual command/resource or structured evidence for g33-source-custody-ruff.
+- `ops/rebuild-2026-09-29/1.3/g33-source-custody-ruff.log` — Actual command output for g33-source-custody-ruff; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g34-recorder-check-metrics.json` — Actual command/resource or structured evidence for g34-recorder-check-metrics.
+- `ops/rebuild-2026-09-29/1.3/g34-recorder-check-metrics.log` — Actual command output for g34-recorder-check-metrics; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g34-source-custody-mypy.json` — Actual command/resource or structured evidence for g34-source-custody-mypy.
+- `ops/rebuild-2026-09-29/1.3/g34-source-custody-mypy.log` — Actual command output for g34-source-custody-mypy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g35-rust-format.json` — Actual command/resource or structured evidence for g35-rust-format.
+- `ops/rebuild-2026-09-29/1.3/g35-rust-format.log` — Actual command output for g35-rust-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g35-source-custody-ruff-green.json` — Actual command/resource or structured evidence for g35-source-custody-ruff-green.
+- `ops/rebuild-2026-09-29/1.3/g35-source-custody-ruff-green.log` — Actual command output for g35-source-custody-ruff-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g36-clippy-green.json` — Actual command/resource or structured evidence for g36-clippy-green.
+- `ops/rebuild-2026-09-29/1.3/g36-clippy-green.log` — Actual command output for g36-clippy-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g36-source-custody-final-green.json` — Actual command/resource or structured evidence for g36-source-custody-final-green.
+- `ops/rebuild-2026-09-29/1.3/g36-source-custody-final-green.log` — Actual command output for g36-source-custody-final-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g37-root-tests.json` — Actual command/resource or structured evidence for g37-root-tests.
+- `ops/rebuild-2026-09-29/1.3/g37-root-tests.log` — Actual command output for g37-root-tests; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g37-source-custody-format-check.json` — Actual command/resource or structured evidence for g37-source-custody-format-check.
+- `ops/rebuild-2026-09-29/1.3/g37-source-custody-format-check.log` — Actual command output for g37-source-custody-format-check; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g38-python-format.json` — Actual command/resource or structured evidence for g38-python-format.
+- `ops/rebuild-2026-09-29/1.3/g38-python-format.log` — Actual command output for g38-python-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g39-custody-final.json` — Actual command/resource or structured evidence for g39-custody-final.
+- `ops/rebuild-2026-09-29/1.3/g39-custody-final.log` — Actual command output for g39-custody-final; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g4-python-format.json` — Actual command/resource or structured evidence for g4-python-format.
+- `ops/rebuild-2026-09-29/1.3/g4-python-format.log` — Actual command output for g4-python-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g5-python-lint.json` — Actual command/resource or structured evidence for g5-python-lint.
+- `ops/rebuild-2026-09-29/1.3/g5-python-lint.log` — Actual command output for g5-python-lint; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g6-review-tests-red.json` — Actual command/resource or structured evidence for g6-review-tests-red.
+- `ops/rebuild-2026-09-29/1.3/g6-review-tests-red.log` — Actual command output for g6-review-tests-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g7-producer-red.json` — Actual command/resource or structured evidence for g7-producer-red.
+- `ops/rebuild-2026-09-29/1.3/g7-producer-red.log` — Actual command output for g7-producer-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g8-custody-review-green.json` — Actual command/resource or structured evidence for g8-custody-review-green.
+- `ops/rebuild-2026-09-29/1.3/g8-custody-review-green.log` — Actual command output for g8-custody-review-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/g9-python-format.json` — Actual command/resource or structured evidence for g9-python-format.
+- `ops/rebuild-2026-09-29/1.3/g9-python-format.log` — Actual command output for g9-python-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h1-semantic-red.json` — Actual command/resource or structured evidence for h1-semantic-red.
+- `ops/rebuild-2026-09-29/1.3/h1-semantic-red.log` — Actual command output for h1-semantic-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h10-added-facts-corrected.json` — Actual command/resource or structured evidence for h10-added-facts-corrected.
+- `ops/rebuild-2026-09-29/1.3/h10-added-facts-corrected.log` — Actual command output for h10-added-facts-corrected; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h11-format.json` — Actual command/resource or structured evidence for h11-format.
+- `ops/rebuild-2026-09-29/1.3/h11-format.log` — Actual command output for h11-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h12-clippy.json` — Actual command/resource or structured evidence for h12-clippy.
+- `ops/rebuild-2026-09-29/1.3/h12-clippy.log` — Actual command output for h12-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m01-summary-bank.json` — Actual command/resource or structured evidence for h13-m01-summary-bank.
+- `ops/rebuild-2026-09-29/1.3/h13-m01-summary-bank.log` — Actual command output for h13-m01-summary-bank; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m02-tile-category.json` — Actual command/resource or structured evidence for h13-m02-tile-category.
+- `ops/rebuild-2026-09-29/1.3/h13-m02-tile-category.log` — Actual command output for h13-m02-tile-category; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m03-first-actor-position.json` — Actual command/resource or structured evidence for h13-m03-first-actor-position.
+- `ops/rebuild-2026-09-29/1.3/h13-m03-first-actor-position.log` — Actual command output for h13-m03-first-actor-position; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m04-first-inventory-prefix.json` — Actual command/resource or structured evidence for h13-m04-first-inventory-prefix.
+- `ops/rebuild-2026-09-29/1.3/h13-m04-first-inventory-prefix.log` — Actual command output for h13-m04-first-inventory-prefix; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m05-storage-scaling.json` — Actual command/resource or structured evidence for h13-m05-storage-scaling.
+- `ops/rebuild-2026-09-29/1.3/h13-m05-storage-scaling.log` — Actual command output for h13-m05-storage-scaling; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m06-market-price.json` — Actual command/resource or structured evidence for h13-m06-market-price.
+- `ops/rebuild-2026-09-29/1.3/h13-m06-market-price.log` — Actual command output for h13-m06-market-price; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m07-shop-slot-swap.json` — Actual command/resource or structured evidence for h13-m07-shop-slot-swap.
+- `ops/rebuild-2026-09-29/1.3/h13-m07-shop-slot-swap.log` — Actual command output for h13-m07-shop-slot-swap; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m08-actor-count.json` — Actual command/resource or structured evidence for h13-m08-actor-count.
+- `ops/rebuild-2026-09-29/1.3/h13-m08-actor-count.log` — Actual command output for h13-m08-actor-count; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m09-maintenance.json` — Actual command/resource or structured evidence for h13-m09-maintenance.
+- `ops/rebuild-2026-09-29/1.3/h13-m09-maintenance.log` — Actual command output for h13-m09-maintenance; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m10-last-actor-position.json` — Actual command/resource or structured evidence for h13-m10-last-actor-position.
+- `ops/rebuild-2026-09-29/1.3/h13-m10-last-actor-position.log` — Actual command output for h13-m10-last-actor-position; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m11-last-actor-inventory.json` — Actual command/resource or structured evidence for h13-m11-last-actor-inventory.
+- `ops/rebuild-2026-09-29/1.3/h13-m11-last-actor-inventory.log` — Actual command output for h13-m11-last-actor-inventory; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m12-rule-suffix.json` — Actual command/resource or structured evidence for h13-m12-rule-suffix.
+- `ops/rebuild-2026-09-29/1.3/h13-m12-rule-suffix.log` — Actual command output for h13-m12-rule-suffix; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m13-ever-current-fertilizer.json` — Actual command/resource or structured evidence for h13-m13-ever-current-fertilizer.
+- `ops/rebuild-2026-09-29/1.3/h13-m13-ever-current-fertilizer.log` — Actual command output for h13-m13-ever-current-fertilizer; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m14-dropped-positive-zero.json` — Actual command/resource or structured evidence for h13-m14-dropped-positive-zero.
+- `ops/rebuild-2026-09-29/1.3/h13-m14-dropped-positive-zero.log` — Actual command output for h13-m14-dropped-positive-zero; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m15-availability-constant.json` — Actual command/resource or structured evidence for h13-m15-availability-constant.
+- `ops/rebuild-2026-09-29/1.3/h13-m15-availability-constant.log` — Actual command output for h13-m15-availability-constant; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-m16-investment-constant.json` — Actual command/resource or structured evidence for h13-m16-investment-constant.
+- `ops/rebuild-2026-09-29/1.3/h13-m16-investment-constant.log` — Actual command output for h13-m16-investment-constant; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h13-mutations.json` — 16 exact temporary mutations, expected failing offsets and matching restoration hashes.
+- `ops/rebuild-2026-09-29/1.3/h14-final-format.json` — Actual command/resource or structured evidence for h14-final-format.
+- `ops/rebuild-2026-09-29/1.3/h14-final-format.log` — Actual command output for h14-final-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h15-restored-reconstruction-green.json` — Actual command/resource or structured evidence for h15-restored-reconstruction-green.
+- `ops/rebuild-2026-09-29/1.3/h15-restored-reconstruction-green.log` — Actual command output for h15-restored-reconstruction-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h16-final-added-facts-green.json` — Actual command/resource or structured evidence for h16-final-added-facts-green.
+- `ops/rebuild-2026-09-29/1.3/h16-final-added-facts-green.log` — Actual command output for h16-final-added-facts-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h17-final-clippy.json` — Actual command/resource or structured evidence for h17-final-clippy.
+- `ops/rebuild-2026-09-29/1.3/h17-final-clippy.log` — Actual command output for h17-final-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h18-full-oracle-still-blocked.json` — Actual command/resource or structured evidence for h18-full-oracle-still-blocked.
+- `ops/rebuild-2026-09-29/1.3/h18-full-oracle-still-blocked.log` — Actual command output for h18-full-oracle-still-blocked; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h2-missing-qualified-corpus.json` — Actual command/resource or structured evidence for h2-missing-qualified-corpus.
+- `ops/rebuild-2026-09-29/1.3/h2-missing-qualified-corpus.log` — Actual command output for h2-missing-qualified-corpus; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h3-reconstruction-green.json` — Actual command/resource or structured evidence for h3-reconstruction-green.
+- `ops/rebuild-2026-09-29/1.3/h3-reconstruction-green.log` — Actual command output for h3-reconstruction-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h4-reconstruction-green.json` — Actual command/resource or structured evidence for h4-reconstruction-green.
+- `ops/rebuild-2026-09-29/1.3/h4-reconstruction-green.log` — Actual command output for h4-reconstruction-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h5-stream-controls-red.json` — Actual command/resource or structured evidence for h5-stream-controls-red.
+- `ops/rebuild-2026-09-29/1.3/h5-stream-controls-red.log` — Actual command output for h5-stream-controls-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h6-stream-controls-green.json` — Actual command/resource or structured evidence for h6-stream-controls-green.
+- `ops/rebuild-2026-09-29/1.3/h6-stream-controls-green.log` — Actual command output for h6-stream-controls-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h7-reader-formats.json` — Actual command/resource or structured evidence for h7-reader-formats.
+- `ops/rebuild-2026-09-29/1.3/h7-reader-formats.log` — Actual command output for h7-reader-formats; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h8-format.json` — Actual command/resource or structured evidence for h8-format.
+- `ops/rebuild-2026-09-29/1.3/h8-format.log` — Actual command output for h8-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/h9-added-facts-first-check.json` — Actual command/resource or structured evidence for h9-added-facts-first-check.
+- `ops/rebuild-2026-09-29/1.3/h9-added-facts-first-check.log` — Actual command output for h9-added-facts-first-check; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i1-native-missing-binding-red.json` — Actual command/resource or structured evidence for i1-native-missing-binding-red.
+- `ops/rebuild-2026-09-29/1.3/i1-native-missing-binding-red.log` — Actual command output for i1-native-missing-binding-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i10-clippy.json` — Actual command/resource or structured evidence for i10-clippy.
+- `ops/rebuild-2026-09-29/1.3/i10-clippy.log` — Actual command output for i10-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i11-python-lint.json` — Actual command/resource or structured evidence for i11-python-lint.
+- `ops/rebuild-2026-09-29/1.3/i11-python-lint.log` — Actual command output for i11-python-lint; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i12-native-final.json` — Actual command/resource or structured evidence for i12-native-final.
+- `ops/rebuild-2026-09-29/1.3/i12-native-final.log` — Actual command output for i12-native-final; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i13-schema-final.json` — Actual command/resource or structured evidence for i13-schema-final.
+- `ops/rebuild-2026-09-29/1.3/i13-schema-final.log` — Actual command output for i13-schema-final; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i14-python-lint-green.json` — Actual command/resource or structured evidence for i14-python-lint-green.
+- `ops/rebuild-2026-09-29/1.3/i14-python-lint-green.log` — Actual command output for i14-python-lint-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i15-native-retry-green.json` — Actual command/resource or structured evidence for i15-native-retry-green.
+- `ops/rebuild-2026-09-29/1.3/i15-native-retry-green.log` — Actual command output for i15-native-retry-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i16-stub-typecheck.json` — Actual command/resource or structured evidence for i16-stub-typecheck.
+- `ops/rebuild-2026-09-29/1.3/i16-stub-typecheck.log` — Actual command output for i16-stub-typecheck; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i2-real-schema-collection-block.json` — Actual command/resource or structured evidence for i2-real-schema-collection-block.
+- `ops/rebuild-2026-09-29/1.3/i2-real-schema-collection-block.log` — Actual command output for i2-real-schema-collection-block; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i3-rust-check.json` — Actual command/resource or structured evidence for i3-rust-check.
+- `ops/rebuild-2026-09-29/1.3/i3-rust-check.log` — Actual command output for i3-rust-check; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i4-maturin-build.json` — Actual command/resource or structured evidence for i4-maturin-build.
+- `ops/rebuild-2026-09-29/1.3/i4-maturin-build.log` — Actual command output for i4-maturin-build; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i5-native-boundary.json` — Actual command/resource or structured evidence for i5-native-boundary.
+- `ops/rebuild-2026-09-29/1.3/i5-native-boundary.log` — Actual command output for i5-native-boundary; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i6-native-dense.json` — Actual command/resource or structured evidence for i6-native-dense.
+- `ops/rebuild-2026-09-29/1.3/i6-native-dense.log` — Actual command output for i6-native-dense; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i7-rust-format.json` — Actual command/resource or structured evidence for i7-rust-format.
+- `ops/rebuild-2026-09-29/1.3/i7-rust-format.log` — Actual command output for i7-rust-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i8-python-lint.json` — Actual command/resource or structured evidence for i8-python-lint.
+- `ops/rebuild-2026-09-29/1.3/i8-python-lint.log` — Actual command output for i8-python-lint; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/i9-python-format.json` — Actual command/resource or structured evidence for i9-python-format.
+- `ops/rebuild-2026-09-29/1.3/i9-python-format.log` — Actual command output for i9-python-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/j1-two-snapshots-red.json` — Actual command/resource or structured evidence for j1-two-snapshots-red.
+- `ops/rebuild-2026-09-29/1.3/j1-two-snapshots-red.log` — Actual command output for j1-two-snapshots-red; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/j2-single-snapshot-green.json` — Actual command/resource or structured evidence for j2-single-snapshot-green.
+- `ops/rebuild-2026-09-29/1.3/j2-single-snapshot-green.log` — Actual command output for j2-single-snapshot-green; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/j3-format.json` — Actual command/resource or structured evidence for j3-format.
+- `ops/rebuild-2026-09-29/1.3/j3-format.log` — Actual command output for j3-format; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/j4-clippy.json` — Actual command/resource or structured evidence for j4-clippy.
+- `ops/rebuild-2026-09-29/1.3/j4-clippy.log` — Actual command output for j4-clippy; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/j5-optimized-timing.json` — Actual command/resource or structured evidence for j5-optimized-timing.
+- `ops/rebuild-2026-09-29/1.3/j5-optimized-timing.log` — Actual command output for j5-optimized-timing; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/j6-clippy-restored.json` — Actual command/resource or structured evidence for j6-clippy-restored.
+- `ops/rebuild-2026-09-29/1.3/j6-clippy-restored.log` — Actual command output for j6-clippy-restored; result is in the paired JSON/receipt, not inferred from the filename.
+- `ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py` — Explicit NumPy-only native bridge check; no replacement schema.
+- `ops/rebuild-2026-09-29/1.3/oracle-results.json` — Actual input/seat/comparison status, R1 quota outcomes and fixture custody.
+- `ops/rebuild-2026-09-29/1.3/progress.md` — Recovery ledger separating plans, intermediate results and final blocked status.
+- `ops/rebuild-2026-09-29/1.3/r1-audit.json` — Early official selection counts and fixed seeded-policy bounds.
+- `ops/rebuild-2026-09-29/1.3/r1-blocker.md` — Proof of the reviewed R1 recipe/quota contradiction and required handoff.
+- `ops/rebuild-2026-09-29/1.3/r1_audit.py` — Official-state counts and fixed-policy actor upper-bound proof.
+- `ops/rebuild-2026-09-29/1.3/results.md` — Complete final handoff report with commands, counts, quotas and open items.
+- `ops/rebuild-2026-09-29/1.3/task-a.md` — Task A actual red/green, scope and handoff receipt.
+- `ops/rebuild-2026-09-29/1.3/task-b.md` — Task B actual red/green, scope and handoff receipt.
+- `ops/rebuild-2026-09-29/1.3/task-c-source.sha256` — Source identity fingerprints for the named evidence checkpoint (task-c-source).
+- `ops/rebuild-2026-09-29/1.3/task-c.md` — Task C actual red/green, scope and handoff receipt.
+- `ops/rebuild-2026-09-29/1.3/task-d.md` — Task D actual red/green, scope and handoff receipt.
+- `ops/rebuild-2026-09-29/1.3/task-e.md` — Task E actual red/green, scope and handoff receipt.
+- `ops/rebuild-2026-09-29/1.3/task-f-source.sha256` — Source identity fingerprints for the named evidence checkpoint (task-f-source).
+- `ops/rebuild-2026-09-29/1.3/task-f.md` — Task F actual red/green, scope and handoff receipt.
+- `ops/rebuild-2026-09-29/1.3/task-g.md` — Task G actual red/green, scope and handoff receipt.
+- `ops/rebuild-2026-09-29/1.3/task-h.md` — Task H actual red/green, scope and handoff receipt.
+- `ops/rebuild-2026-09-29/1.3/task-i.md` — Task I actual red/green, scope and handoff receipt.
+- `ops/rebuild-2026-09-29/1.3/task-j.md` — Task J actual red/green, scope and handoff receipt.
+- `ops/rebuild-2026-09-29/1.3/timing-plan.md` — Pre-run diagnostic question, exact workload and stopping conditions; not results.
+- `ops/rebuild-2026-09-29/1.3/timing.json` — Actual R4 optimized-build memory stop and unchanged pod command; no phase costs.
+- `python/owl/rs.pyi` — Typed public signature for the new caller-owned-array binding.
+- `scripts/kaggriculture_observation_oracle/record.rs` — Standalone reference-only feature recorder; no production encoder copy.
+- `scripts/kaggriculture_observation_oracle/regenerate.py` — Bounded source-pinned generation, streaming custody checks and deterministic compression.
+- `src/kaggriculture/buffers.rs` — Typed named buffers, checked sizes, safe row/Rayon views and reusable publication.
+- `src/kaggriculture/config.rs` — Checked immutable config and exact finite hire-cost cache.
+- `src/kaggriculture/mod.rs` — Exact typed 29-buffer header binding; checked admission and atomic writes.
+- `src/kaggriculture/observe.rs` — Single-snapshot config-bound encoder, strict preflight and diagnostic row checks.
+- `src/kaggriculture/oracle_corpus.rs` — Test-only deterministic inputs, coverage admission, legacy reconstruction and streaming comparison.
+- `src/kaggriculture/tests.rs` — Field/privacy/rollback/added-fact tests, snapshot mutation and optimized timing diagnostic.
+- `src/lib.rs` — Register Kaggriculture in the existing rs extension.
+- `src/rules_engine/generation.rs` — Test-only L4 Number decoder and attributable decimal/rejection regressions.
+- `tests/kaggriculture/test_observe.py` — Actual Task 2.1 schema and native caller-buffer tests; collection intentionally blocked until merge.
+- `tests/tools/test_observation_oracle_custody.py` — 43 custody, corruption, source-drift and watchdog regression cases.

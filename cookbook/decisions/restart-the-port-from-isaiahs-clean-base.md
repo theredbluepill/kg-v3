@@ -88,12 +88,12 @@ trimmed lockfile, and pins the appendix hash. Eight `check()`-level regressions
 (`ops/rebuild-2026-09-29/1.1/verify-r1/`). Four gitignored `replay-*.json`
 receipts were force-added, and the receipt opening now matches the 59-test commit.
 
-The package stays standalone, with its own lockfile and no root dependency or
-shared workspace. This is Claude's accepted refinement of the parent plan's
-workspace wording. Root Cargo files and Rust sources stay byte-identical and
-the root suite remains 155 passed/two ignored. Keep the engine's numeric features
-and reopen L4's test-only `fixture_float` repair at the first compiled root
-consumer (potentially Task 1.3, certainly needed by Task 1.4).
+At the Task 1.1 checkpoint, the package was standalone with its own lockfile, no
+root dependency and no shared workspace; root Cargo/Rust files were unchanged
+and the root suite passed 155 tests with two ignored. Task 1.3 now adds the first
+root consumer and the test-only L4 `fixture_float` repair, recorded in the
+[[../references/structured-observations-preserve-legal-state-and-order|structured
+observation Reference]]. The engine keeps its standalone lockfile and pinned bytes.
 
 Adaptation inventory: the 12 retained engine paths plus manifest/replay test;
 `scripts/check_engine_trim.py`, `tests/tools/test_check_engine_trim.py`, `justfile`,

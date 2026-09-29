@@ -694,19 +694,41 @@ mod tests {
         #[serde(rename = "randint")]
         Randint { low: i32, high: i32, value: i32 },
         #[serde(rename = "uniform")]
-        Uniform { low: f64, high: f64, value: f64 },
+        Uniform {
+            #[serde(deserialize_with = "fixture_float")]
+            low: f64,
+            #[serde(deserialize_with = "fixture_float")]
+            high: f64,
+            #[serde(deserialize_with = "fixture_float")]
+            value: f64,
+        },
     }
 
     #[test]
     fn arbitrary_precision_uniform_fixture_float() {
-        let call: RandomCall = serde_json::from_str(
-            r#"{"kind":"uniform","low":0.125,"high":1.75,"value":0.625}"#,
-        )
-        .unwrap();
+        let call: RandomCall =
+            serde_json::from_str(r#"{"kind":"uniform","low":0.125,"high":1.75,"value":0.625}"#)
+                .unwrap();
         let RandomCall::Uniform { low, high, value } = call else {
             panic!("expected uniform fixture call");
         };
         assert_eq!([low, high, value], [0.125, 1.75, 0.625]);
+    }
+
+    fn fixture_float<'de, D: serde::Deserializer<'de>>(d: D) -> Result<f64, D::Error> {
+        // Tagged enum buffering sees arbitrary-precision decimals as Number maps.
+        serde_json::Number::deserialize(d)?
+            .as_f64()
+            .filter(|value| value.is_finite())
+            .ok_or_else(|| serde::de::Error::custom("expected a finite fixture number"))
+    }
+
+    #[test]
+    fn fixture_float_rejects_non_number_and_nonfinite() {
+        for value in [r#""1.0""#, "true", "null", "1e999"] {
+            let raw = format!(r#"{{"kind":"uniform","low":0,"high":1,"value":{value}}}"#);
+            assert!(serde_json::from_str::<RandomCall>(&raw).is_err(), "{raw}");
+        }
     }
 
     struct FixtureRandom {

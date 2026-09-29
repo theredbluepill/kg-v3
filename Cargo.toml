@@ -12,12 +12,16 @@ crate-type = ["cdylib"]
 extension-module = ["pyo3/extension-module"]
 
 [dependencies]
+kaggriculture-engine = { version = "0.1.0", path = "engine_rs" }
+num-bigint = "0.4"
+num-traits = "0.2"
 numpy = "0.28.0"
 # "abi3-py311" tells pyo3 (and maturin) to build using the stable ABI with
 # minimum Python version 3.11, matching the Kaggle competition runtime.
 pyo3 = { version = "0.28.2", features = ["abi3-py311"] }
 rand = "0.10.1"
 rayon = "1.12.0"
+serde_json = { version = "1.0.149", features = ["arbitrary_precision", "preserve_order"] }
 
 [profile.release]
 lto = true

@@ -1,0 +1,58 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-observe)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.27s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 5 tests
+test kaggriculture::tests::context_can_act_boundaries_and_terminal_snapshots_are_live_rows ... FAILED
+test kaggriculture::tests::context_market_preserves_signed_exact_integers_and_unbounded_scales ... FAILED
+test kaggriculture::tests::context_market_rejects_missing_unknown_fractional_and_wrong_type_values ... FAILED
+test kaggriculture::tests::context_order_limits_follow_rule_not_hires_cash_or_actor_count ... FAILED
+test kaggriculture::tests::context_shops_preserve_order_duplicates_zero_categories_and_padding ... FAILED
+
+failures:
+
+---- kaggriculture::tests::context_can_act_boundaries_and_terminal_snapshots_are_live_rows stdout ----
+
+thread 'kaggriculture::tests::context_can_act_boundaries_and_terminal_snapshots_are_live_rows' (10153892) panicked at src/kaggriculture/tests.rs:2765:17:
+assertion `left == right` failed
+  left: 0
+ right: 5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- kaggriculture::tests::context_market_preserves_signed_exact_integers_and_unbounded_scales stdout ----
+
+thread 'kaggriculture::tests::context_market_preserves_signed_exact_integers_and_unbounded_scales' (10153893) panicked at src/kaggriculture/tests.rs:2701:13:
+assertion `left == right` failed
+  left: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+ right: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+---- kaggriculture::tests::context_market_rejects_missing_unknown_fractional_and_wrong_type_values stdout ----
+
+thread 'kaggriculture::tests::context_market_rejects_missing_unknown_fractional_and_wrong_type_values' (10153894) panicked at src/kaggriculture/tests.rs:938:24:
+called `Result::unwrap_err()` on an `Ok` value: ()
+
+---- kaggriculture::tests::context_order_limits_follow_rule_not_hires_cash_or_actor_count stdout ----
+
+thread 'kaggriculture::tests::context_order_limits_follow_rule_not_hires_cash_or_actor_count' (10153895) panicked at src/kaggriculture/tests.rs:2745:69:
+assertion `left == right` failed
+  left: false
+ right: true
+
+---- kaggriculture::tests::context_shops_preserve_order_duplicates_zero_categories_and_padding stdout ----
+
+thread 'kaggriculture::tests::context_shops_preserve_order_duplicates_zero_categories_and_padding' (10153896) panicked at src/kaggriculture/tests.rs:2675:13:
+assertion `left == right` failed
+  left: [0, 0, 0, 0, 0, 0, 0, 0]
+ right: [5, 0, 5, 0, 0, 0, 0, 0]
+
+
+failures:
+    kaggriculture::tests::context_can_act_boundaries_and_terminal_snapshots_are_live_rows
+    kaggriculture::tests::context_market_preserves_signed_exact_integers_and_unbounded_scales
+    kaggriculture::tests::context_market_rejects_missing_unknown_fractional_and_wrong_type_values
+    kaggriculture::tests::context_order_limits_follow_rule_not_hires_cash_or_actor_count
+    kaggriculture::tests::context_shops_preserve_order_duplicates_zero_categories_and_padding
+
+test result: FAILED. 0 passed; 5 failed; 0 ignored; 0 measured; 205 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`

@@ -1,0 +1,228 @@
+E501 Line too long (119 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:286:89
+    |
+284 |         check_header(row["header"])
+285 |         if row["source"]["kind"] != "dense":
+286 |             require(row["source"]["step"] == row["header"]["initial"]["public"]["step"], "source/header step mismatch")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+287 |         if row["source"]["kind"] == "seeded":
+288 |             require(row["source"]["seed"] == row["header"]["seed"], "source/header seed mismatch")
+    |
+
+E501 Line too long (98 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:288:89
+    |
+286 |             require(row["source"]["step"] == row["header"]["initial"]["public"]["step"], "source/header step mismatch")
+287 |         if row["source"]["kind"] == "seeded":
+288 |             require(row["source"]["seed"] == row["header"]["seed"], "source/header seed mismatch")
+    |                                                                                         ^^^^^^^^^^
+289 |         yield row, raw
+    |
+
+E501 Line too long (119 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:356:89
+    |
+354 |         key = next(iter(mapping))
+355 |         mapping[key] = mapping.pop(key)
+356 |     require(json_bytes(expected) == json_bytes(second), "dense d30/d31 must differ only by two remove/reinsert orders")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+357 |     require(list(private["shed"]) != sorted(private["shed"], key=ITEMS.index), "dense d31 shed order must differ from Item order")
+    |
+
+E501 Line too long (130 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:357:89
+    |
+355 |         mapping[key] = mapping.pop(key)
+356 |     require(json_bytes(expected) == json_bytes(second), "dense d30/d31 must differ only by two remove/reinsert orders")
+357 |     require(list(private["shed"]) != sorted(private["shed"], key=ITEMS.index), "dense d31 shed order must differ from Item order")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (91 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:733:89
+    |
+731 |         )
+732 |         if expected_records == 512:
+733 |             require(dense_pair_checked, "full corpus requires verified dense d30/d31 pair")
+    |                                                                                         ^^^
+734 |         _check_recipe(manifest, sources, expected_records)
+    |
+
+E501 Line too long (102 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:756:89
+    |
+754 |                 stat = (path / "stat").read_text().rsplit(")", 1)[1].split()
+755 |                 if int(stat[2]) == group:
+756 |                     total += int((path / "statm").read_text().split()[1]) * os.sysconf("SC_PAGE_SIZE")
+    |                                                                                         ^^^^^^^^^^^^^^
+757 |             except (FileNotFoundError, ProcessLookupError):
+758 |                 continue
+    |
+
+E501 Line too long (90 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:760:89
+    |
+758 |                 continue
+759 |     else:
+760 |         raise RuntimeError("bounded oracle execution requires Mac libproc or Linux /proc")
+    |                                                                                         ^^
+761 |     return total
+    |
+
+E501 Line too long (112 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:772:89
+    |
+770 |         peak = 0
+771 |         reason = None
+772 |         process = subprocess.Popen(argv, cwd=cwd, env=env, stdout=stdout, stderr=stderr, start_new_session=True)
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^
+773 |         try:
+774 |             while process.poll() is None:
+    |
+
+E501 Line too long (98 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:777:89
+    |
+775 |                 peak = max(peak, group_rss(process.pid))
+776 |                 if peak >= 1_000_000_000 or time.monotonic() - start >= 120:
+777 |                     reason = "aggregate RSS" if peak >= 1_000_000_000 else "120-second wall limit"
+    |                                                                                         ^^^^^^^^^^
+778 |                     os.killpg(process.pid, signal.SIGKILL)
+779 |                     break
+    |
+
+SIM105 Use `contextlib.suppress(ProcessLookupError)` instead of `try`-`except`-`pass`
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:783:13
+    |
+781 |               code = process.wait()
+782 |           except BaseException:
+783 | /             try:
+784 | |                 os.killpg(process.pid, signal.SIGKILL)
+785 | |             except ProcessLookupError:
+786 | |                 pass
+    | |____________________^
+787 |               process.wait()
+788 |               raise
+    |
+help: Replace `try`-`except`-`pass` with `with contextlib.suppress(ProcessLookupError): ...`
+
+E501 Line too long (114 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:230:89
+    |
+230 | @pytest.mark.parametrize("field", ["schema_version", "observation_schema", "contract_version", "reference_shape"])
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+231 | def test_manifest_versions_and_dimensions_are_integers(tmp_path: Path, field: str) -> None:
+232 |     manifest, rows, features = fixture(tmp_path)
+    |
+
+E501 Line too long (91 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:231:89
+    |
+230 | @pytest.mark.parametrize("field", ["schema_version", "observation_schema", "contract_version", "reference_shape"])
+231 | def test_manifest_versions_and_dimensions_are_integers(tmp_path: Path, field: str) -> None:
+    |                                                                                         ^^^
+232 |     manifest, rows, features = fixture(tmp_path)
+233 |     manifest[field] = True if field == "schema_version" else (
+    |
+
+E501 Line too long (106 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:251:89
+    |
+250 | def test_header_hash_preserves_numeric_spelling_and_nested_key_order() -> None:
+251 |     raw = b'{"source":{},"header":{"number":1e-7,"other":-0.0,"keys":{"B":0,"A":1}},"record_id":"test"}\n'
+    |                                                                                         ^^^^^^^^^^^^^^^^^^
+252 |     assert oracle.header_bytes(raw) == b'{"number":1e-7,"other":-0.0,"keys":{"B":0,"A":1}}'
+253 |     assert oracle.header_bytes(raw) != encoded(json.loads(raw)["header"])
+    |
+
+E501 Line too long (91 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:252:89
+    |
+250 | def test_header_hash_preserves_numeric_spelling_and_nested_key_order() -> None:
+251 |     raw = b'{"source":{},"header":{"number":1e-7,"other":-0.0,"keys":{"B":0,"A":1}},"record_id":"test"}\n'
+252 |     assert oracle.header_bytes(raw) == b'{"number":1e-7,"other":-0.0,"keys":{"B":0,"A":1}}'
+    |                                                                                         ^^^
+253 |     assert oracle.header_bytes(raw) != encoded(json.loads(raw)["header"])
+    |
+
+E501 Line too long (114 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:261:89
+    |
+259 |     first["initial"]["privates"][0]["inventories"][0] = {"WOOL": 0, "WHEAT": 7}
+260 |     second = copy.deepcopy(first)
+261 |     for mapping in (second["initial"]["privates"][0]["inventories"][0], second["initial"]["privates"][0]["shed"]):
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+262 |         key = next(iter(mapping))
+263 |         mapping[key] = mapping.pop(key)
+    |
+
+E501 Line too long (100 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:278:89
+    |
+278 | def test_bounded_command_reports_process_group_memory_stop(monkeypatch: pytest.MonkeyPatch) -> None:
+    |                                                                                         ^^^^^^^^^^^^
+279 |     monkeypatch.setattr(oracle, "group_rss", lambda group: 1_000_000_000)
+280 |     with pytest.raises(RuntimeError, match="reason=aggregate RSS"):
+    |
+
+ARG005 Unused lambda argument: `group`
+   --> tests/tools/test_observation_oracle_custody.py:279:53
+    |
+278 | def test_bounded_command_reports_process_group_memory_stop(monkeypatch: pytest.MonkeyPatch) -> None:
+279 |     monkeypatch.setattr(oracle, "group_rss", lambda group: 1_000_000_000)
+    |                                                     ^^^^^
+280 |     with pytest.raises(RuntimeError, match="reason=aggregate RSS"):
+281 |         oracle.run([sys.executable, "-c", "import time; time.sleep(30)"])
+    |
+
+E501 Line too long (114 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:285:89
+    |
+284 | def test_bounded_command_returns_exact_stdout() -> None:
+285 |     assert oracle.run([sys.executable, "-c", "import sys; sys.stdout.buffer.write(b'\\x00\\x80')"]) == b"\x00\x80"
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (119 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:288:89
+    |
+288 | def test_producer_failure_never_exports_or_installs_reference(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+289 |     for key, value in {"CARGO_BUILD_JOBS": "2", "CARGO_NET_OFFLINE": "true", "UV_OFFLINE": "true", "RAYON_NUM_THREADS": "2", "OMP_NUM…
+290 |         monkeypatch.setenv(key, value)
+    |
+
+E501 Line too long (207 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:289:89
+    |
+288 | …eypatch: pytest.MonkeyPatch) -> None:
+289 | …FFLINE": "true", "RAYON_NUM_THREADS": "2", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "RUST_TEST_THREADS": "1"}.items():
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+290 | …
+291 | …
+    |
+
+ARG001 Unused function argument: `kwargs`
+   --> tests/tools/test_observation_oracle_custody.py:292:42
+    |
+290 |         monkeypatch.setenv(key, value)
+291 |     calls = []
+292 |     def fail_producer(argv: list[str], **kwargs: object) -> bytes:
+    |                                          ^^^^^^
+293 |         calls.append(argv)
+294 |         raise RuntimeError("R1 actor_gt16_states: actual 0, required 4")
+    |
+
+ARG001 Unused function argument: `path`
+   --> tests/tools/test_observation_oracle_custody.py:296:26
+    |
+294 |         raise RuntimeError("R1 actor_gt16_states: actual 0, required 4")
+295 |     monkeypatch.setattr(oracle, "run", fail_producer)
+296 |     def forbidden_export(path: Path) -> dict[str, str]:
+    |                          ^^^^
+297 |         pytest.fail("failed producer must never export the reference")
+298 |     monkeypatch.setattr(oracle, "export_reference", forbidden_export)
+    |
+
+Found 23 errors (1 fixed, 22 remaining).
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).

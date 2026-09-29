@@ -1,0 +1,52 @@
+{
+  "argv": [
+    "cargo",
+    "test",
+    "--release",
+    "--locked",
+    "--offline",
+    "--lib",
+    "kaggriculture::tests::measure_observe_cost",
+    "--",
+    "--exact",
+    "--ignored",
+    "--nocapture"
+  ],
+  "exit_status": -9,
+  "wall_seconds": 53.809625834,
+  "sampled_process_group_peak_rss_bytes": 1052393472,
+  "stop_reason": "memory",
+  "time_limit_seconds": 600.0,
+  "rss_limit_bytes": 1000000000,
+  "rss_sampling_seconds": 0.1,
+  "status": "blocked_release_build_memory",
+  "profile": "release",
+  "fat_lto": true,
+  "codegen_units": 1,
+  "build_completed": false,
+  "test_body_executed": false,
+  "phase_costs": null,
+  "completed_build_seconds": null,
+  "elapsed_until_stop_seconds": 53.809625834,
+  "handoff_command": "cargo test --release --locked --offline --lib kaggriculture::tests::measure_observe_cost -- --exact --ignored --nocapture",
+  "hardware": {
+    "platform": "macOS-26.4-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu_brand": null,
+    "cpu_brand_error": "sysctl -n machdep.cpu.brand_string: Operation not permitted"
+  },
+  "source_sha256_after_profile_guard_lint_fix": {
+    "Cargo.toml": "ecdc814595708e7b763d05d65622202c6cc23838cda72d780849ab3b16df9600",
+    "Cargo.lock": "01f02e3cb9fd915e5b0678f9c5f986524929f55262850dc237d46e989440a352",
+    "src/kaggriculture/mod.rs": "eccfe0916120d0236d7ebcf7db779c13f2d48707e1eb428263f901d6bc64e34c",
+    "src/kaggriculture/config.rs": "82edc952a0446f5a5b2379ba25b1071150c3e992e0fe7405bae0c98170b0ac0f",
+    "src/kaggriculture/buffers.rs": "ea71932ed0f429ef251b4283438b060beaed0a59e2a263f30800ea623c0ffec4",
+    "src/kaggriculture/observe.rs": "0d84eb9df01f699767fc674996e5eae14be31c09f70b058b5af35fce36365749",
+    "src/kaggriculture/tests.rs": "33c39eb746f7f259f99ddbac6e9771ddc55c75e65fb0bf98a26018f83f0898f6",
+    "src/kaggriculture/oracle_corpus.rs": "4eb560d56d064e9b43d5445d01706e7bbdadbe1b43297b0aefdcb46b95ccde80",
+    "engine_rs/src/lib.rs": "c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd"
+  },
+  "source_change_after_attempt": "Only the runtime profile assertion wraps cfg!(debug_assertions) in black_box to satisfy Clippy; measured operations unchanged. No optimized rerun after memory stop.",
+  "corpus_manifest_sha256": null,
+  "limits": "RSS sampled each 0.1 s; killed at first >=1,000,000,000-byte sample. No debug cost measured."
+}

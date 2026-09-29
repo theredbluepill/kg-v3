@@ -866,3 +866,93 @@ The Kaggriculture game uses the same shared training path through its own observ
   - Only input channel widths and the grammar action heads are game-specific. Seat rows are encoded independently.
 - **Actions** `KaggricultureActions`: `tokens [E,2,252,12]` and `lengths [E,2]` (one unit frame per own actor, then up to `order_limits` market frames, then STOP). The slot widths and action enums are pinned in the contract; the native grammar supplies syntax/support masks.
 - **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks, and truncation keeps the transition's economic reward.
+
+### Structured native observation buffers (Task 1.3)
+
+The root `src/kaggriculture/` boundary uses the following named buffers. Every
+shape starts with `[E, 2]`; each row is one legal seat perspective. The contract
+is version 4, observation schema 3. Native writing is implemented; the real
+Python `KaggricultureObsBatch.check_contract()` integration awaits Task 2.1's
+schema merge. Task 1.3 remains incomplete until that integration and the required
+corpus checks pass.
+
+| Fields | Scalar type | Trailing shape |
+| --- | --- | --- |
+| `tile_kind`, `tile_crop`, `tile_animal`, `tile_cell`, `tile_role` | int64 | `[200]` |
+| `tiles_int` | int64 | `[200,7]` |
+| `tiles_float` | float32 | `[200,15]` |
+| `actor_slot`, `actor_cell`, `actor_role` | int64 | `[482]` |
+| `actor_mask` | bool | `[482]` |
+| `actor_inventory`, `actor_inventory_rank` | int64 | `[241,12]` |
+| `actors_float` | float32 | `[482,26]` |
+| `player_features` | float32 | `[2,44]` |
+| `storage_counts` | int64 | `[17]` |
+| `storage_rank` | int64 | `[12]` |
+| `banks` | float64 | `[2]` |
+| `shop_type`, `shop_slot` | int64 | `[8]` |
+| `shop_mask` | bool | `[8]` |
+| `market_product` | int64 | `[9]` |
+| `market_float` | float32 | `[9,2]` |
+| `market_int` | int64 | `[9,2]` |
+| `global_features` | float32 | `[15]` |
+| `globals_int` | int64 | `[16]` |
+| `still_playing` | bool | scalar |
+| `order_limits` | int64 | scalar |
+| `can_act` (`action_mask.can_act` in Python) | bool | `[252]` |
+
+`ObsBuffersMut::validate(E)` checks nonzero E, checked shape/byte products and
+exact lengths before making typed row views. `ObsStaging::new(E)` allocates the
+29 named vectors once; `buffers_mut()` provides serial or indexed parallel
+views. `publish()` checks source/destination environment counts in release
+before any copy. These native mutable references are disjoint typed slices;
+NumPy admission runs on each binding call before making Rust mutable slices:
+exact native dtype, complete shape, C-contiguous and aligned layout, fallible
+writable borrowing, and pairwise disjoint byte ranges. Distinct Torch/NumPy base
+objects do not bypass overlap checks. Publication gives no authorization to
+overwrite data still in use by a reader; Task 1.4 owns lifecycle rollback and
+reuse fencing.
+
+The explicit-header seam in the existing `owl.rs` extension is:
+
+```python
+encode_kaggriculture_headers_into(
+    headers: str, *,
+    tile_kind, tile_crop, tile_animal, tile_cell, tile_role,
+    tiles_int, tiles_float, actor_slot, actor_cell, actor_role,
+    actor_mask, actor_inventory, actor_inventory_rank, actors_float,
+    player_features, storage_counts, storage_rank, banks,
+    shop_type, shop_slot, shop_mask, market_product, market_float, market_int,
+    global_features, globals_int, still_playing, order_limits, can_act,
+) -> None
+```
+
+All 29 keyword arguments are caller-owned NumPy arrays with the table's dtypes
+and complete `[E,2,...]` shapes; `python/owl/rs.pyi` carries their typed signature.
+`headers` is a JSON array of E full engine `TraceHeader` objects, not live-step
+JSON. The writer prepares every environment before the first destination write,
+then writes infallibly while detached from Python. Typed borrow guards remain
+alive for the call. Supplied-data errors raise `ValueError` with field and,
+where applicable, environment context; all output bytes stay unchanged. The
+call returns `None`, retains no caller array and allocates no replacement output
+arrays. Parsing and prepared snapshots still allocate scratch storage.
+
+`ObservationGame` owns its immutable checked config, forwards native stepping
+and prepares both seat views from one public snapshot. Exact count/rank tensors,
+strict engine-shaped tiles and wide intermediate arithmetic preserve admitted
+facts; positive hire costs use exact integer Fibonacci products before floating
+conversion. The one-shot writer always sets `still_playing=true`; live reset,
+transition rewards/dones, terminal records and seed allocation belong to Task 1.4.
+Native `check_row` is a diagnostic validator outside the write hot path. The
+Python schema's range checks do not replace semantic/privacy assertions.
+
+Snapshot acquisition and output allocation are separate costs. The engine's
+public snapshot clones both private inventories internally; only the requesting
+seat's private state may enter its row. A counter test proves exactly one
+acquisition per both-seat encode and stable output allocations; an intentional
+two-acquisition mutation fails. The fat-LTO release timing build was stopped at
+53.81 seconds after sampled process-group RSS reached 1,052,393,472 bytes.
+No phase costs were obtained; the optimized command is handed off for the pod in
+`ops/rebuild-2026-09-29/1.3/timing.json`. Debug timings do not justify changing
+the approved snapshot path. Complete corpus qualification is also pending:
+the unchanged R1 recipe produces zero >16-actor non-synthetic states against
+quota four. See the Task 1.3 receipt for actual checks and unresolved limits.

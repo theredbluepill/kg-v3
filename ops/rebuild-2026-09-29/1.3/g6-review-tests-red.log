@@ -1,0 +1,104 @@
+...............FFFFFF.                                                   [100%]
+=================================== FAILURES ===================================
+____ test_manifest_versions_and_dimensions_are_integers[observation_schema] ____
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-1/test_manifest_versions_and_dim1')
+field = 'observation_schema'
+
+    @pytest.mark.parametrize("field", ["schema_version", "observation_schema", "contract_version", "reference_shape"])
+    def test_manifest_versions_and_dimensions_are_integers(tmp_path: Path, field: str) -> None:
+        manifest, rows, features = fixture(tmp_path)
+        manifest[field] = True if field == "schema_version" else (
+            float(manifest[field]) if field != "reference_shape" else [2.0, 2, 8176]
+        )
+        install(tmp_path, manifest, rows, features)
+>       with pytest.raises(ValueError, match=r"schema/contract|shape/dtype"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:236: Failed
+_____ test_manifest_versions_and_dimensions_are_integers[contract_version] _____
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-1/test_manifest_versions_and_dim2')
+field = 'contract_version'
+
+    @pytest.mark.parametrize("field", ["schema_version", "observation_schema", "contract_version", "reference_shape"])
+    def test_manifest_versions_and_dimensions_are_integers(tmp_path: Path, field: str) -> None:
+        manifest, rows, features = fixture(tmp_path)
+        manifest[field] = True if field == "schema_version" else (
+            float(manifest[field]) if field != "reference_shape" else [2.0, 2, 8176]
+        )
+        install(tmp_path, manifest, rows, features)
+>       with pytest.raises(ValueError, match=r"schema/contract|shape/dtype"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:236: Failed
+_____ test_manifest_versions_and_dimensions_are_integers[reference_shape] ______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-1/test_manifest_versions_and_dim3')
+field = 'reference_shape'
+
+    @pytest.mark.parametrize("field", ["schema_version", "observation_schema", "contract_version", "reference_shape"])
+    def test_manifest_versions_and_dimensions_are_integers(tmp_path: Path, field: str) -> None:
+        manifest, rows, features = fixture(tmp_path)
+        manifest[field] = True if field == "schema_version" else (
+            float(manifest[field]) if field != "reference_shape" else [2.0, 2, 8176]
+        )
+        install(tmp_path, manifest, rows, features)
+>       with pytest.raises(ValueError, match=r"schema/contract|shape/dtype"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:236: Failed
+_____________ test_record_source_step_cannot_disagree_with_header ______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-1/test_record_source_step_cannot0')
+
+    def test_record_source_step_cannot_disagree_with_header(tmp_path: Path) -> None:
+        manifest, rows, features = fixture(tmp_path)
+        rows[0]["source"]["step"] = 17
+        manifest["records"][0]["source"]["step"] = 17
+        install(tmp_path, manifest, rows, features)
+>       with pytest.raises(ValueError, match="source/header step"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:245: Failed
+_______ test_header_hash_preserves_numeric_spelling_and_nested_key_order _______
+
+    def test_header_hash_preserves_numeric_spelling_and_nested_key_order() -> None:
+        raw = b'{"source":{},"header":{"number":1e-07,"other":-0.0,"keys":{"B":0,"A":1}},"record_id":"test"}\n'
+        assert oracle.header_bytes(raw) == b'{"number":1e-07,"other":-0.0,"keys":{"B":0,"A":1}}'
+>       assert oracle.header_bytes(raw) != encoded(json.loads(raw)["header"])
+E       assert b'{"number":1e-07,"other":-0.0,"keys":{"B":0,"A":1}}' != b'{"number":1e-07,"other":-0.0,"keys":{"B":0,"A":1}}'
+E        +  where b'{"number":1e-07,"other":-0.0,"keys":{"B":0,"A":1}}' = <function header_bytes at 0x10b3a9a80>(b'{"source":{},"header":{"number":1e-07,"other":-0.0,"keys":{"B":0,"A":1}},"record_id":"test"}\n')
+E        +    where <function header_bytes at 0x10b3a9a80> = oracle.header_bytes
+E        +  and   b'{"number":1e-07,"other":-0.0,"keys":{"B":0,"A":1}}' = encoded({'keys': {'A': 1, 'B': 0}, 'number': 1e-07, 'other': -0.0})
+
+tests/tools/test_observation_oracle_custody.py:252: AssertionError
+____________ test_dense_pair_allows_only_two_remove_reinsert_orders ____________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-1/test_dense_pair_allows_only_tw0')
+
+    def test_dense_pair_allows_only_two_remove_reinsert_orders(tmp_path: Path) -> None:
+        _, rows, _ = fixture(tmp_path)
+        first = rows[0]["header"]
+        first["initial"]["privates"][0]["inventories"][0] = {"WOOL": 0, "WHEAT": 7}
+        second = copy.deepcopy(first)
+        for mapping in (second["initial"]["privates"][0]["inventories"][0], second["initial"]["privates"][0]["shed"]):
+            key = next(iter(mapping))
+            mapping[key] = mapping.pop(key)
+>       oracle.validate_dense_pair(first, second)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'observation_oracle' has no attribute 'validate_dense_pair'
+
+tests/tools/test_observation_oracle_custody.py:263: AttributeError
+=========================== short test summary info ============================
+FAILED tests/tools/test_observation_oracle_custody.py::test_manifest_versions_and_dimensions_are_integers[observation_schema]
+FAILED tests/tools/test_observation_oracle_custody.py::test_manifest_versions_and_dimensions_are_integers[contract_version]
+FAILED tests/tools/test_observation_oracle_custody.py::test_manifest_versions_and_dimensions_are_integers[reference_shape]
+FAILED tests/tools/test_observation_oracle_custody.py::test_record_source_step_cannot_disagree_with_header
+FAILED tests/tools/test_observation_oracle_custody.py::test_header_hash_preserves_numeric_spelling_and_nested_key_order
+FAILED tests/tools/test_observation_oracle_custody.py::test_dense_pair_allows_only_two_remove_reinsert_orders
+6 failed, 16 passed in 0.10s

@@ -199,8 +199,9 @@ selected opponent coverage returns when those opponents are imported.
 
 ### Kaggriculture Verification and Limits
 
-Offline engine tests pass **59/59 with none ignored**; the retained root suite
-passes **155 with two ignored**. Receipts in `ops/rebuild-2026-09-29/1.1/` show the
+At the Task 1.1 checkpoint, offline engine tests pass **59/59 with none ignored**;
+the retained root suite passes **155 with two ignored**. Receipts in
+`ops/rebuild-2026-09-29/1.1/` show the
 private-order regression fail with plain JSON equality, then pass with explicit
 key-order checks. Claude's review added the public-order and nested private-order
 regressions, which fail against the earlier field-specific check and pass with
@@ -219,12 +220,13 @@ those three named lints after `-D warnings`; the authored replay test explicitly
 re-denies them. These exceptions preserve the required source hashes, and both
 raw failing checks are retained. They are tooling deviations from the reviewed
 brief, not changes to rules or weaker parity comparisons.
-The package has its own lockfile, no shared workspace and no root path dependency.
-This isolates its required `serde_json` arbitrary-precision/preserve-order
-features. Root manifest, lockfile and Rust sources stay unchanged. Reopen L4's
-test-only `fixture_float` repair at the first compiled root consumer (potentially
-Task 1.3, certainly Task 1.4); selecting multiple packages together can unify
-features even with a newer Cargo resolver.
+The package keeps its own lockfile and remains outside the root workspace. Task
+1.3 now adds a root path dependency, deliberately unifying arbitrary-precision and
+ordered JSON features. The test-only `RandomCall::Uniform` Number decoder repairs
+L4 without changing production rules or tolerances. The literal regression passes
+before dependencies, fails after feature unification, and passes after repair;
+root tests at the Task 1.3 A checkpoint are 157 passed and two ignored.
+Observation encoding does not expand rules parity.
 
 Parity is scoped to these four recorded worlds plus synthetic unit/RNG coverage.
 The trace headers' recorded RNG and shop schedules are not compared directly;
@@ -233,3 +235,31 @@ It does not establish exhaustive malformed-input parity, a fresh differential
 run against Python, adapter/model integration, learning quality or GPU throughput.
 Historical full-engine and performance claims in provenance do not qualify this
 trim. No training or network access is required by these checks.
+
+## Kaggriculture Observation Coverage (Task 1.3)
+
+The root encoder adds hand-derived field, strict tile, exact integer/rank,
+privacy, role-order, finite-cost, buffer-reuse and transactional-output tests.
+The tile-shape scan checks 576,000 tiles across all 2,880 pinned official states.
+The tensor-only reconstructor covers all 8,176 legacy offsets with independent
+hand expectations and 16 failing/restored mutations; eight reconstruction
+controls and five added-fact tests pass. This is observation information
+coverage, not new Python-engine rules differential parity.
+
+The deterministic generator produces 512 input records, then rejects them:
+the unchanged R1 recipe has zero non-synthetic states with more than 16 actors
+against quota four. No qualified reference fixture is published, and the full
+comparison test remains a visible failure. Other quotas pass, using only the
+reviewed dense shed-order exception. Source-only recorder compilation verifies
+the exported pinned crate, but does not execute feature recording. Forty-three
+custody tests cover corruption, ordering, strict metadata, source drift and
+resource guards; 55 NumPy boundary checks pass separately from the unavailable
+Task 2.1 schema. The real-schema test has an unconditional import and fails
+collection until that merge.
+
+The exactly-one-snapshot test passes after its two-acquisition mutation fails.
+The optimized timing build stops at the Mac memory limit before any phase runs;
+there is no debug timing substitute. Actual final command counts, fixture and
+schema errors, resource receipts and the pod timing command are recorded in
+`ops/rebuild-2026-09-29/1.3/results.md` and `timing.json`. Task 1.3 is incomplete;
+no test skip or quota reduction makes these gaps green.

@@ -22,7 +22,12 @@ start = time.monotonic()
 peak = 0
 stopped = None
 with out.with_suffix('.log').open('w') as log:
-    process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+    # Nested watchdogs must finish killing their own child groups before this
+    # outer watchdog kills them. Mac Python 3.9's monotonic origin is process
+    # local, so export a Unix deadline; children convert remaining wall time to
+    # their own monotonic deadline. This includes any uv startup time.
+    child_env = os.environ | {'KG_BOUNDED_DEADLINE_UNIX': str(time.time() + args.seconds)}
+    process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True, env=child_env)
     while process.poll() is None:
         pids = (ctypes.c_int * 4096)()
         count = libproc.proc_listpgrppids(process.pid, pids, ctypes.sizeof(pids))

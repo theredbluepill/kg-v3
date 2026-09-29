@@ -1,0 +1,230 @@
+.........................FFFFFF                                          [100%]
+=================================== FAILURES ===================================
+_____ test_recipe_metadata_rejects_float_integer_replacements[profile_int] _____
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-3/test_recipe_metadata_rejects_f0')
+field = 'profile_int'
+
+    @pytest.mark.parametrize("field", ["profile_int", "seed", "sampled_steps", "terminal_step"])
+    def test_recipe_metadata_rejects_float_integer_replacements(tmp_path: Path, field: str) -> None:
+        manifest, rows, features = fixture(tmp_path)
+        manifest["profiles"] = copy.deepcopy(manifest["profiles"])
+        manifest["seed_runs"] = [{"seed":11001,"profile":0,"sampled_steps":[k*94//15 for k in range(16)],"action_sha256":"b"*64,"final_snapshot_sha256":"b"*64,"terminal_step":95}]
+        if field == "profile_int":
+            manifest["profiles"][0][0] = 96.0
+        elif field == "sampled_steps":
+            manifest["seed_runs"][0][field][0] = False
+        else:
+            manifest["seed_runs"][0][field] = float(manifest["seed_runs"][0][field])
+        install(tmp_path, manifest, rows, features)
+>       with pytest.raises(ValueError, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:354: Failed
+________ test_recipe_metadata_rejects_float_integer_replacements[seed] _________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-3/test_recipe_metadata_rejects_f1')
+field = 'seed'
+
+    @pytest.mark.parametrize("field", ["profile_int", "seed", "sampled_steps", "terminal_step"])
+    def test_recipe_metadata_rejects_float_integer_replacements(tmp_path: Path, field: str) -> None:
+        manifest, rows, features = fixture(tmp_path)
+        manifest["profiles"] = copy.deepcopy(manifest["profiles"])
+        manifest["seed_runs"] = [{"seed":11001,"profile":0,"sampled_steps":[k*94//15 for k in range(16)],"action_sha256":"b"*64,"final_snapshot_sha256":"b"*64,"terminal_step":95}]
+        if field == "profile_int":
+            manifest["profiles"][0][0] = 96.0
+        elif field == "sampled_steps":
+            manifest["seed_runs"][0][field][0] = False
+        else:
+            manifest["seed_runs"][0][field] = float(manifest["seed_runs"][0][field])
+        install(tmp_path, manifest, rows, features)
+>       with pytest.raises(ValueError, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:354: Failed
+____ test_recipe_metadata_rejects_float_integer_replacements[sampled_steps] ____
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-3/test_recipe_metadata_rejects_f2')
+field = 'sampled_steps'
+
+    @pytest.mark.parametrize("field", ["profile_int", "seed", "sampled_steps", "terminal_step"])
+    def test_recipe_metadata_rejects_float_integer_replacements(tmp_path: Path, field: str) -> None:
+        manifest, rows, features = fixture(tmp_path)
+        manifest["profiles"] = copy.deepcopy(manifest["profiles"])
+        manifest["seed_runs"] = [{"seed":11001,"profile":0,"sampled_steps":[k*94//15 for k in range(16)],"action_sha256":"b"*64,"final_snapshot_sha256":"b"*64,"terminal_step":95}]
+        if field == "profile_int":
+            manifest["profiles"][0][0] = 96.0
+        elif field == "sampled_steps":
+            manifest["seed_runs"][0][field][0] = False
+        else:
+            manifest["seed_runs"][0][field] = float(manifest["seed_runs"][0][field])
+        install(tmp_path, manifest, rows, features)
+>       with pytest.raises(ValueError, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:354: Failed
+____ test_recipe_metadata_rejects_float_integer_replacements[terminal_step] ____
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-3/test_recipe_metadata_rejects_f3')
+field = 'terminal_step'
+
+    @pytest.mark.parametrize("field", ["profile_int", "seed", "sampled_steps", "terminal_step"])
+    def test_recipe_metadata_rejects_float_integer_replacements(tmp_path: Path, field: str) -> None:
+        manifest, rows, features = fixture(tmp_path)
+        manifest["profiles"] = copy.deepcopy(manifest["profiles"])
+        manifest["seed_runs"] = [{"seed":11001,"profile":0,"sampled_steps":[k*94//15 for k in range(16)],"action_sha256":"b"*64,"final_snapshot_sha256":"b"*64,"terminal_step":95}]
+        if field == "profile_int":
+            manifest["profiles"][0][0] = 96.0
+        elif field == "sampled_steps":
+            manifest["seed_runs"][0][field][0] = False
+        else:
+            manifest["seed_runs"][0][field] = float(manifest["seed_runs"][0][field])
+        install(tmp_path, manifest, rows, features)
+>       with pytest.raises(ValueError, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:354: Failed
+______ test_reference_export_checks_archive_bytes_against_git_show[False] ______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-3/test_reference_export_checks_a0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10716ae70>
+corrupt = False
+
+    @pytest.mark.parametrize("corrupt", [False, True])
+    def test_reference_export_checks_archive_bytes_against_git_show(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, corrupt: bool) -> None:
+        path = "engine_rs/src/myolie_features.rs"
+        original = b"reference encoder\n"
+        buffer = io.BytesIO()
+        with tarfile.open(fileobj=buffer, mode="w") as archive:
+            directory = tarfile.TarInfo("engine_rs/")
+            directory.type = tarfile.DIRTYPE
+            archive.addfile(directory)
+            file = tarfile.TarInfo(path)
+            content = b"changed" if corrupt else original
+            file.size = len(content)
+            archive.addfile(file, io.BytesIO(content))
+        def fake_git(argv: list[str]) -> bytes:
+            if argv[1] == "archive":
+                return buffer.getvalue()
+            if argv[1] == "ls-tree":
+                return (path+"\n").encode()
+            assert argv[1] == "show"
+            return original
+        monkeypatch.setattr(oracle, "run", fake_git)
+        monkeypatch.setattr(oracle, "FEATURE_SHA", sha(original))
+        if corrupt:
+            with pytest.raises(ValueError, match="reference export bytes changed"):
+                oracle.export_reference(tmp_path)
+        else:
+>           assert oracle.export_reference(tmp_path) == {path:sha(original)}
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/tools/test_observation_oracle_custody.py:384: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/kaggriculture_observation_oracle/regenerate.py:832: in export_reference
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, message = 'unsafe reference archive entry'
+
+    def require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: unsafe reference archive entry
+
+scripts/kaggriculture_observation_oracle/regenerate.py:83: ValueError
+______ test_reference_export_checks_archive_bytes_against_git_show[True] _______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-3/test_reference_export_checks_a1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107126840>
+corrupt = True
+
+    @pytest.mark.parametrize("corrupt", [False, True])
+    def test_reference_export_checks_archive_bytes_against_git_show(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, corrupt: bool) -> None:
+        path = "engine_rs/src/myolie_features.rs"
+        original = b"reference encoder\n"
+        buffer = io.BytesIO()
+        with tarfile.open(fileobj=buffer, mode="w") as archive:
+            directory = tarfile.TarInfo("engine_rs/")
+            directory.type = tarfile.DIRTYPE
+            archive.addfile(directory)
+            file = tarfile.TarInfo(path)
+            content = b"changed" if corrupt else original
+            file.size = len(content)
+            archive.addfile(file, io.BytesIO(content))
+        def fake_git(argv: list[str]) -> bytes:
+            if argv[1] == "archive":
+                return buffer.getvalue()
+            if argv[1] == "ls-tree":
+                return (path+"\n").encode()
+            assert argv[1] == "show"
+            return original
+        monkeypatch.setattr(oracle, "run", fake_git)
+        monkeypatch.setattr(oracle, "FEATURE_SHA", sha(original))
+        if corrupt:
+            with pytest.raises(ValueError, match="reference export bytes changed"):
+>               oracle.export_reference(tmp_path)
+
+tests/tools/test_observation_oracle_custody.py:382: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/kaggriculture_observation_oracle/regenerate.py:832: in export_reference
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, message = 'unsafe reference archive entry'
+
+    def require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: unsafe reference archive entry
+
+scripts/kaggriculture_observation_oracle/regenerate.py:83: ValueError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-observe/.codex-tmp/pytest-of-poonszesen/pytest-3/test_reference_export_checks_a1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107126840>
+corrupt = True
+
+    @pytest.mark.parametrize("corrupt", [False, True])
+    def test_reference_export_checks_archive_bytes_against_git_show(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, corrupt: bool) -> None:
+        path = "engine_rs/src/myolie_features.rs"
+        original = b"reference encoder\n"
+        buffer = io.BytesIO()
+        with tarfile.open(fileobj=buffer, mode="w") as archive:
+            directory = tarfile.TarInfo("engine_rs/")
+            directory.type = tarfile.DIRTYPE
+            archive.addfile(directory)
+            file = tarfile.TarInfo(path)
+            content = b"changed" if corrupt else original
+            file.size = len(content)
+            archive.addfile(file, io.BytesIO(content))
+        def fake_git(argv: list[str]) -> bytes:
+            if argv[1] == "archive":
+                return buffer.getvalue()
+            if argv[1] == "ls-tree":
+                return (path+"\n").encode()
+            assert argv[1] == "show"
+            return original
+        monkeypatch.setattr(oracle, "run", fake_git)
+        monkeypatch.setattr(oracle, "FEATURE_SHA", sha(original))
+        if corrupt:
+>           with pytest.raises(ValueError, match="reference export bytes changed"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E             Expected regex: 'reference export bytes changed'
+E             Actual message: 'unsafe reference archive entry'
+
+tests/tools/test_observation_oracle_custody.py:381: AssertionError
+=========================== short test summary info ============================
+FAILED tests/tools/test_observation_oracle_custody.py::test_recipe_metadata_rejects_float_integer_replacements[profile_int]
+FAILED tests/tools/test_observation_oracle_custody.py::test_recipe_metadata_rejects_float_integer_replacements[seed]
+FAILED tests/tools/test_observation_oracle_custody.py::test_recipe_metadata_rejects_float_integer_replacements[sampled_steps]
+FAILED tests/tools/test_observation_oracle_custody.py::test_recipe_metadata_rejects_float_integer_replacements[terminal_step]
+FAILED tests/tools/test_observation_oracle_custody.py::test_reference_export_checks_archive_bytes_against_git_show[False]
+FAILED tests/tools/test_observation_oracle_custody.py::test_reference_export_checks_archive_bytes_against_git_show[True]
+6 failed, 25 passed in 0.20s

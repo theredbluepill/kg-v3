@@ -41,4 +41,24 @@ Cargo tests use `--locked --offline`.
   process-child enumeration via psutil is denied by sandbox sysctl. This is not
   a successful monitored build or test receipt.
 
-Completion/results will be updated after dependencies, attributable red and repair.
+The resumed implementation results follow.
+
+## Resumed actual results
+
+- HEAD recovery: `32e2cdd`; the pre-dependency regression receipt above is committed.
+- `cargo add --offline kaggriculture-engine --path engine_rs`, `cargo add --offline
+  serde_json@1.0.149 --features arbitrary_precision,preserve_order`, and
+  `cargo add --offline num-bigint@0.4 num-traits@0.2` all succeeded offline.
+- `a2-unified-red`: unchanged decimal regression **0 passed, 1 failed**, exit 101,
+  `invalid type: map, expected f64`; 7.078 seconds, sampled peak 589,381,632 bytes.
+- Added Number-based finite conversion only to the three test fixture fields;
+  added rejection of strings, bools, null and overflowing numbers.
+- `a3-green`: `cargo test --locked --offline`: **157 passed, 0 failed, 2 ignored**,
+  2.910 seconds, sampled peak 451,559,424 bytes.
+- `a4-trim`: `uv run --offline python scripts/check_engine_trim.py`: exit 0,
+  `engine trim manifest: OK`; 23.327 seconds including editable build,
+  sampled peak 866,942,976 bytes. No vendored file changed.
+- Docs and the in-progress adaptation Reference updated; final prepare remains J.
+
+Read-only independent review `review_a` found no blocking Task A code issue; stale
+Task 1.1 current-state wording was relabelled historical (no checks rerun by reviewer).

@@ -1,5 +1,7 @@
 # References
 
+- [[structured-observations-preserve-legal-state-and-order|Structured observation rebuild]] — Native fields and caller buffers; 233 Rust passes/one corpus failure, 59 engine passes, 1,056 fast Python passes/three platform skips. Full oracle, real-schema qualification and optimized costs remain blocked by R1, Task 2.1 and the Mac build limit.
+
 ## Current rebuild
 
 - [[ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|PPO trainer seams and replay-drift alarm]] — Tasks 3.1/3.6 and Phase 4 prep: schema-generic observation mapping, a default-on 0.05-nat first-minibatch log-ratio alarm and a `TeacherTargets` protocol, proven on Orbit types with CPU TDD and 941 Python passes (the replay-alarm error lists action-mask shapes too); GPU noise, multi-rank and Kaggriculture use unverified.

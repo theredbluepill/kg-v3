@@ -1,5 +1,76 @@
 # Change log
 
+## 2026-09-29 — Implement structured native observations and record qualification blocks
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] now records the full native encoder, exact caller-buffer binding,
+source-bound oracle tooling and reconstruction controls. All 16 reconstruction
+mutations fail and restore; 43 custody and 55 native boundary checks pass. The
+snapshot counter fails with two acquisitions and passes with one. Full corpus
+qualification remains blocked by the unchanged R1 actor quota, actual-schema
+collection by Task 2.1, and optimized timing by the 1-GB Mac build limit. Final
+command outcomes and the pod handoff remain explicit in the linked receipt:
+233 root Rust passes/one corpus failure/four ignored, 59 engine passes and
+1,056 broad fast Python passes/three platform skips. Preparation gates retain
+the corpus and missing-schema failures; lint, typing and trim checks pass.
+
+## 2026-09-29 — Complete native observation fields and diagnostic validation
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] adds ordered shops, exact markets, live-row masks and complete-row
+checks. The 54-test B–F suite and Clippy pass; 72 corruptions are rejected.
+Late second-environment failure preserves both published rows, serial/two-worker
+results agree and reused dense buffers clear correctly. Corpus, Python binding,
+shared-schema admission and optimized timing remain unqualified.
+
+## 2026-09-29 — Preserve all actors and own private insertion order
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] adds exact actor/storage counts and ranks, public player facts and
+both-seat privacy controls. Twelve new semantic failures become passes; the
+combined B–E module passes 46 tests. Reversing actor/shed ranks fails two tests,
+then restoration and Clippy pass. Market/mask completion and corpus/schema
+qualification remain pending.
+
+## 2026-09-29 — Admit strict engine-shaped tiles before publication
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] adds all seven tile tensors and strict key/type/sentinel admission.
+Nine semantic failures become ten passing tile tests; the independent scan covers
+2,880 official states and 576,000 tiles. Transposing cell coordinates fails the
+asymmetric fixture; restoration and Clippy pass. Actors, markets, corpus and
+shared-schema qualification remain pending.
+
+## 2026-09-29 — Bind observation config and preserve exact hire costs
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] adds Task C's checked config, single-snapshot wrapper and exact
+Fibonacci cost prefix. All 24 B/C tests and Clippy pass; a rival-count mutation
+fails two hire tests and restoration passes. The pinned integer type lacks the
+brief's proposed Display API, so exact serialization is used only at config
+admission. Complete encoding, corpus and shared-schema checks remain pending.
+
+## 2026-09-29 — Add checked structured observation storage
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation
+Reference]] records Task B's 29 named buffers, checked sizes, safe serial/Rayon
+views and atomic equal-capacity publication. Eleven boundary tests and Clippy
+pass; disabling a length check produces the expected failure and restoring it
+passes. State encoding and Python admission remain unfinished.
+
+## 2026-09-29 — Integrate root numeric features and expose an observation-corpus limit
+
+The [[references/structured-observations-preserve-legal-state-and-order|in-progress
+observation Reference]] records Task A: the decimal regression passes before
+feature unification, fails afterward, then passes with the test-only Number
+repair. Root tests: 157 passed, two ignored; trim checker OK. The prescribed R1
+corpus cannot supply four non-synthetic >16-actor states: the official selection
+has none and the seeded policy cannot hire that many before daily reset. Quotas
+remain unchanged. Task I still awaits the shared-schema merge; no completion or
+performance claim is made. Independent Task A review also prompted relabelling
+the restart Decision's no-root-dependency paragraph as the historical Task 1.1
+checkpoint.
+
 ## 2026-09-29 — Report action-mask shapes in the replay-drift alarm and refresh its evidence
 
 Codex's stream C re-verification (approve with edits) found stale evidence and one diagnostic gap, now corrected in the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:

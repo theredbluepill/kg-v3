@@ -1,0 +1,36 @@
+E501 Line too long (94 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:341:89
+    |
+339 |             sys.executable,
+340 |             "-c",
+341 |             "import time; x=bytearray(32*1024**2); print('ready',flush=True); time.sleep(30)",
+    |                                                                                         ^^^^^^
+342 |         ],
+343 |         stdout=subprocess.PIPE,
+    |
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_observation_oracle_custody.py:596:42
+    |
+594 |     )
+595 |     output = tmp_path / "final"
+596 |     with pytest.raises(ValueError, match="source.*changed|source.*identity"):
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+597 |         oracle.regenerate(output, oracle.PIN)
+598 |     assert "producer" in calls
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_observation_oracle_custody.py:608:42
+    |
+606 |     _root, calls = regeneration_harness(tmp_path, monkeypatch, corrupt_recorder=phase)
+607 |     output = tmp_path / "final"
+608 |     with pytest.raises(ValueError, match="recorder.*changed|recorder.*identity"):
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+609 |         oracle.regenerate(output, oracle.PIN)
+610 |     if phase == "copy":
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+Found 3 errors.

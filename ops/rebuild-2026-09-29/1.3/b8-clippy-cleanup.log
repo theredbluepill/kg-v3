@@ -1,0 +1,20 @@
+    Checking owl v0.1.0 (/Users/poonszesen/kg-v3-observe)
+error: this operation has no effect
+  --> src/kaggriculture/tests.rs:84:39
+   |
+84 |             still_playing: vec![true; n_envs * 2 * 1],
+   |                                       ^^^^^^^^^^^^^^ help: consider reducing it to: `(n_envs * 2)`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#identity_op
+   = note: `-D clippy::identity-op` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::identity_op)]`
+
+error: this operation has no effect
+  --> src/kaggriculture/tests.rs:85:37
+   |
+85 |             order_limits: vec![-17; n_envs * 2 * 1],
+   |                                     ^^^^^^^^^^^^^^ help: consider reducing it to: `(n_envs * 2)`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#identity_op
+
+error: could not compile `owl` (lib test) due to 2 previous errors

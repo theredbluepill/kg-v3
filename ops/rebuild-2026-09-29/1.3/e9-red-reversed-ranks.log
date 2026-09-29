@@ -1,0 +1,33 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-observe)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.24s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 2 tests
+test kaggriculture::tests::actors_rank_remove_reinsert_preserves_counts_and_replacement_preserves_rank ... FAILED
+test kaggriculture::tests::storage_rank_remove_reinsert_changes_order_not_counts ... FAILED
+
+failures:
+
+---- kaggriculture::tests::actors_rank_remove_reinsert_preserves_counts_and_replacement_preserves_rank stdout ----
+
+thread 'kaggriculture::tests::actors_rank_remove_reinsert_preserves_counts_and_replacement_preserves_rank' (10134090) panicked at src/kaggriculture/tests.rs:2167:9:
+assertion `left == right` failed
+  left: 12
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- kaggriculture::tests::storage_rank_remove_reinsert_changes_order_not_counts stdout ----
+
+thread 'kaggriculture::tests::storage_rank_remove_reinsert_changes_order_not_counts' (10134091) panicked at src/kaggriculture/tests.rs:2385:9:
+assertion `left == right` failed
+  left: [11, 0, 0, 0, 0, 0, 0, 12, 0, 0, 10, 0]
+ right: [2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 3, 0]
+
+
+failures:
+    kaggriculture::tests::actors_rank_remove_reinsert_preserves_counts_and_replacement_preserves_rank
+    kaggriculture::tests::storage_rank_remove_reinsert_changes_order_not_counts
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 203 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`

@@ -1,0 +1,1111 @@
+E501 Line too long (122 > 88)
+  --> scripts/kaggriculture_observation_oracle/regenerate.py:42:89
+   |
+40 |     [96, 16, 5, 5, 33, 2, 4, 16, 100000, 1.0],
+41 | ]
+42 | ITEMS = ["WHEAT", "CARROT", "TOMATO", "STRAWBERRY", "MELON", "EGG", "MILK", "WOOL", "FERTILIZER", "GOOSE", "COW", "SHEEP"]
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+43 | COVERAGE_TAGS = [
+44 |     "records", *[f"tile_{s}" for s in ("EMPTY", "LOCKED", "WEED", "PLANT", "COOP", "PASTURE")],
+   |
+
+E501 Line too long (95 > 88)
+  --> scripts/kaggriculture_observation_oracle/regenerate.py:44:89
+   |
+42 | ITEMS = ["WHEAT", "CARROT", "TOMATO", "STRAWBERRY", "MELON", "EGG", "MILK", "WOOL", "FERTILIZER", "GOOSE", "COW", "SHEEP"]
+43 | COVERAGE_TAGS = [
+44 |     "records", *[f"tile_{s}" for s in ("EMPTY", "LOCKED", "WEED", "PLANT", "COOP", "PASTURE")],
+   |                                                                                         ^^^^^^^
+45 |     *[f"crop_{s}" for s in ITEMS[:5]], *[f"animal_{s}" for s in ITEMS[9:]],
+46 |     "fert_current", "fert_expired", "unwatered", "unfed", "actor_gt16_states",
+   |
+
+E501 Line too long (96 > 88)
+  --> scripts/kaggriculture_observation_oracle/regenerate.py:47:89
+   |
+45 |     *[f"crop_{s}" for s in ITEMS[:5]], *[f"animal_{s}" for s in ITEMS[9:]],
+46 |     "fert_current", "fert_expired", "unwatered", "unfed", "actor_gt16_states",
+47 |     "reordered_inventories", "reordered_sheds", "shops_ge4_states", "both_hires_nonzero_states",
+   |                                                                                         ^^^^^^^^
+48 | ]
+49 | MAX_COMPRESSED = 8 * 1024**2
+   |
+
+E501 Line too long (117 > 88)
+  --> scripts/kaggriculture_observation_oracle/regenerate.py:60:89
+   |
+59 | def obj(value: Any, keys: Iterable[str], label: str) -> dict[str, Any]:
+60 |     require(isinstance(value, dict) and set(value) == set(keys), f"{label}: exact schema keys {list(keys)} required")
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |     return value
+   |
+
+E501 Line too long (95 > 88)
+  --> scripts/kaggriculture_observation_oracle/regenerate.py:65:89
+   |
+64 | def integer(value: Any, label: str, minimum: int = 0) -> int:
+65 |     require(type(value) is int and value >= minimum, f"{label}: integer >= {minimum} required")
+   |                                                                                         ^^^^^^^
+66 |     return value
+   |
+
+E501 Line too long (118 > 88)
+  --> scripts/kaggriculture_observation_oracle/regenerate.py:70:89
+   |
+69 | def digest(value: Any, label: str) -> str:
+70 |     require(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None, f"{label}: SHA-256 required")
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+71 |     return value
+   |
+
+E501 Line too long (97 > 88)
+  --> scripts/kaggriculture_observation_oracle/regenerate.py:98:89
+   |
+97 | def json_bytes(value: Any) -> bytes:
+98 |     return json.dumps(value, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
+   |                                                                                         ^^^^^^^^^
+   |
+
+E501 Line too long (94 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:127:89
+    |
+125 |     if kind == "official":
+126 |         obj(source, ("kind", "episode", "step"), "official source")
+127 |         require(integer(source["episode"], "episode") in EPISODES, "unknown official episode")
+    |                                                                                         ^^^^^^
+128 |         integer(source["step"], "step")
+129 |     elif kind == "seeded":
+    |
+
+E501 Line too long (90 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:130:89
+    |
+128 |         integer(source["step"], "step")
+129 |     elif kind == "seeded":
+130 |         obj(source, ("kind", "seed", "profile", "step", "policy_sha256"), "seeded source")
+    |                                                                                         ^^
+131 |         profile = integer(source["profile"], "profile")
+132 |         require(profile < 6 and source["seed"] == 11001 + profile, "seed/profile mismatch")
+    |
+
+E501 Line too long (91 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:132:89
+    |
+130 |         obj(source, ("kind", "seed", "profile", "step", "policy_sha256"), "seeded source")
+131 |         profile = integer(source["profile"], "profile")
+132 |         require(profile < 6 and source["seed"] == 11001 + profile, "seed/profile mismatch")
+    |                                                                                         ^^^
+133 |         integer(source["step"], "step")
+134 |         digest(source["policy_sha256"], "policy SHA")
+    |
+
+E501 Line too long (139 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:144:89
+    |
+143 | …
+144 | …n", "shop_schedule", "rng_schedule", "initial", "terminal_banks", "transitions"), "header")
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+145 | …e-parity-v1", "header format")
+146 | … << 63))
+    |
+
+E501 Line too long (177 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:147:89
+    |
+145 | …er format")
+146 | …
+147 | …ader["terminal_banks"] == [] and header["transitions"] == 0, "oracle header must contain no future schedules")
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+148 | …
+149 | …axMarketOrdersPerTurn", "turnsPerDay", "shedCapacity", "weedSpawnChance", "townShopUnlockInterval", "townShopSellInterval", "townCen…
+    |
+
+E501 Line too long (252 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:149:89
+    |
+147 | …anks"] == [] and header["transitions"] == 0, "oracle header must contain no future schedules")
+148 | …
+149 | …rTurn", "turnsPerDay", "shedCapacity", "weedSpawnChance", "townShopUnlockInterval", "townShopSellInterval", "townCenterSellInterval", "farmHandCostMult", "marketParams"}
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+150 | …| {"actTimeout", "runTimeout", "seed"}, "complete configuration keys")
+151 | …
+    |
+
+E501 Line too long (153 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:150:89
+    |
+148 | …
+149 | …ngMoney", "maxMarketOrdersPerTurn", "turnsPerDay", "shedCapacity", "weedSpawnChance", "townShopUnlockInterval", "townShopSellInterva…
+150 | … set(config) <= config_keys | {"actTimeout", "runTimeout", "seed"}, "complete configuration keys")
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+151 | …es"), "initial")
+152 | …ur", "farms", "market", "town"), "public")
+    |
+
+E501 Line too long (97 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:152:89
+    |
+150 |     require(isinstance(config, dict) and config_keys <= set(config) <= config_keys | {"actTimeout", "runTimeout", "seed"}, "complete …
+151 |     initial = obj(header["initial"], ("public", "privates"), "initial")
+152 |     public = obj(initial["public"], ("step", "day", "hour", "farms", "market", "town"), "public")
+    |                                                                                         ^^^^^^^^^
+153 |     turns = integer(config["turnsPerDay"], "turnsPerDay", 1)
+154 |     step = integer(public["step"], "step")
+    |
+
+E501 Line too long (92 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:155:89
+    |
+153 |     turns = integer(config["turnsPerDay"], "turnsPerDay", 1)
+154 |     step = integer(public["step"], "step")
+155 |     require((public["day"], public["hour"]) == divmod(step, turns), "header clock mismatch")
+    |                                                                                         ^^^^
+156 |     require(len(public["farms"]) == len(initial["privates"]) == 2, "two farms/privates required")
+157 |     for farm, private in zip(public["farms"], initial["privates"], strict=True):
+    |
+
+E501 Line too long (97 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:156:89
+    |
+154 |     step = integer(public["step"], "step")
+155 |     require((public["day"], public["hour"]) == divmod(step, turns), "header clock mismatch")
+156 |     require(len(public["farms"]) == len(initial["privates"]) == 2, "two farms/privates required")
+    |                                                                                         ^^^^^^^^^
+157 |     for farm, private in zip(public["farms"], initial["privates"], strict=True):
+158 |         obj(farm, ("money", "tiles", "farmer", "hands", "unlocked_quadrants", "hires_today"), "farm")
+    |
+
+E501 Line too long (101 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:158:89
+    |
+156 |     require(len(public["farms"]) == len(initial["privates"]) == 2, "two farms/privates required")
+157 |     for farm, private in zip(public["farms"], initial["privates"], strict=True):
+158 |         obj(farm, ("money", "tiles", "farmer", "hands", "unlocked_quadrants", "hires_today"), "farm")
+    |                                                                                         ^^^^^^^^^^^^^
+159 |         obj(private, ("shed", "seeds", "inventories"), "private")
+160 |     obj(public["town"], ("unlocked_shops",), "town")
+    |
+
+E501 Line too long (103 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:162:89
+    |
+160 |     obj(public["town"], ("unlocked_shops",), "town")
+161 |     market = public["market"]
+162 |     require(set(market) in ({"inventory", "prices"}, {"inventory", "prices", "params"}), "market keys")
+    |                                                                                         ^^^^^^^^^^^^^^^
+163 |     require(config["marketParams"] == {} and market.get("params") in (None, {}), "market parameters must use defaults")
+    |
+
+E501 Line too long (119 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:163:89
+    |
+161 |     market = public["market"]
+162 |     require(set(market) in ({"inventory", "prices"}, {"inventory", "prices", "params"}), "market keys")
+163 |     require(config["marketParams"] == {} and market.get("params") in (None, {}), "market parameters must use defaults")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (97 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:170:89
+    |
+168 |     while raw := stream.readline(MAX_ROW + 1):
+169 |         total += len(raw)
+170 |         require(len(raw) <= MAX_ROW and total <= MAX_EXPANDED, "state expansion budget exceeded")
+    |                                                                                         ^^^^^^^^^
+171 |         require(raw.endswith(b"\n"), "truncated state row")
+172 |         row = obj(parse(raw), ("record_id", "source", "header"), "record")
+    |
+
+E501 Line too long (99 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:173:89
+    |
+171 |         require(raw.endswith(b"\n"), "truncated state row")
+172 |         row = obj(parse(raw), ("record_id", "source", "header"), "record")
+173 |         require(isinstance(row["record_id"], str) and bool(row["record_id"]), "record id required")
+    |                                                                                         ^^^^^^^^^^^
+174 |         check_source(row["source"])
+175 |         check_header(row["header"])
+    |
+
+E501 Line too long (134 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:180:89
+    |
+179 | def empty_coverage() -> dict[str, Any]:
+180 |     return {"non_synthetic": dict.fromkeys(COVERAGE_TAGS, 0), "dense": dict.fromkeys(COVERAGE_TAGS, 0), "shed_order_exception": False}
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (92 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:190:89
+    |
+188 |     count["actor_gt16_states"] += any(len(f["hands"]) + 1 > 16 for f in public["farms"])
+189 |     count["shops_ge4_states"] += len(public["town"]["unlocked_shops"]) >= 4
+190 |     count["both_hires_nonzero_states"] += all(f["hires_today"] > 0 for f in public["farms"])
+    |                                                                                         ^^^^
+191 |     for farm, private in zip(public["farms"], privates, strict=True):
+192 |         count["reordered_sheds"] += list(private["shed"]) != sorted(private["shed"], key=ITEMS.index)
+    |
+
+E501 Line too long (101 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:192:89
+    |
+190 |     count["both_hires_nonzero_states"] += all(f["hires_today"] > 0 for f in public["farms"])
+191 |     for farm, private in zip(public["farms"], privates, strict=True):
+192 |         count["reordered_sheds"] += list(private["shed"]) != sorted(private["shed"], key=ITEMS.index)
+    |                                                                                         ^^^^^^^^^^^^^
+193 |         for inv in private["inventories"]:
+194 |             count["reordered_inventories"] += list(inv) != sorted(inv, key=ITEMS.index)
+    |
+
+E501 Line too long (95 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:196:89
+    |
+194 |             count["reordered_inventories"] += list(inv) != sorted(inv, key=ITEMS.index)
+195 |         for tile in (t for line in farm["tiles"] for t in line):
+196 |             kind = "EMPTY" if tile is None else tile if isinstance(tile, str) else tile["kind"]
+    |                                                                                         ^^^^^^^
+197 |             count[f"tile_{kind}"] += 1
+198 |             if not isinstance(tile, dict):
+    |
+
+E501 Line too long (133 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:215:89
+    |
+213 |     for row in rows:
+214 |         add_coverage(coverage, row)
+215 |     coverage["shed_order_exception"] = coverage["non_synthetic"]["reordered_sheds"] == 0 and coverage["dense"]["reordered_sheds"] > 0
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+216 |     return coverage
+    |
+
+E501 Line too long (135 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:221:89
+    |
+219 | … -> None:
+220 | …
+221 | …le_") else 4 for name in COVERAGE_TAGS if name.startswith(("tile_", "crop_", "animal_"))}
+    |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+222 | …ed=4, unwatered=4, unfed=4, actor_gt16_states=4, reordered_inventories=8, shops_ge4_states=8, both_hires_nonzero_states=8)
+223 | …
+    |
+
+E501 Line too long (168 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:222:89
+    |
+220 | …
+221 | … name in COVERAGE_TAGS if name.startswith(("tile_", "crop_", "animal_"))}
+222 | …4, unfed=4, actor_gt16_states=4, reordered_inventories=8, shops_ge4_states=8, both_hires_nonzero_states=8)
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+223 | …
+224 | … actual {counts[name]}, required {minimum}; final corpus publication blocked")
+    |
+
+E501 Line too long (140 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:224:89
+    |
+222 | …=4, unwatered=4, unfed=4, actor_gt16_states=4, reordered_inventories=8, shops_ge4_states=8, both_hires_nonzero_states=8)
+223 | …
+224 | …verage {name}: actual {counts[name]}, required {minimum}; final corpus publication blocked")
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+225 | …verage["shed_order_exception"] is True, "R1 reordered sheds needs explicit dense d=31 exception")
+    |
+
+E501 Line too long (145 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:225:89
+    |
+223 | …
+224 | …age {name}: actual {counts[name]}, required {minimum}; final corpus publication blocked")
+225 | …age["shed_order_exception"] is True, "R1 reordered sheds needs explicit dense d=31 exception")
+    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (220 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:229:89
+    |
+228 | …
+229 | …t", "feature_sha256", "recorder_sha256", "driver_sha256", "producer_sha256", "versions", "argv", "official_fixtures"), "source identity")
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+230 | …ot commit")
+231 | …EATURE_SHA, "reference source pin mismatch")
+    |
+
+E501 Line too long (94 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:230:89
+    |
+228 | def _check_identity(value: Any) -> None:
+229 |     identity = obj(value, ("root_commit", "dirty_files", "engine", "reference_commit", "feature_sha256", "recorder_sha256", "driver_s…
+230 |     require(re.fullmatch(r"[0-9a-f]{40}", identity["root_commit"]) is not None, "root commit")
+    |                                                                                         ^^^^^^
+231 |     require(identity["reference_commit"] == PIN and identity["feature_sha256"] == FEATURE_SHA, "reference source pin mismatch")
+232 |     for key in ("recorder_sha256", "driver_sha256", "producer_sha256"):
+    |
+
+E501 Line too long (127 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:231:89
+    |
+229 |     identity = obj(value, ("root_commit", "dirty_files", "engine", "reference_commit", "feature_sha256", "recorder_sha256", "driver_s…
+230 |     require(re.fullmatch(r"[0-9a-f]{40}", identity["root_commit"]) is not None, "root commit")
+231 |     require(identity["reference_commit"] == PIN and identity["feature_sha256"] == FEATURE_SHA, "reference source pin mismatch")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+232 |     for key in ("recorder_sha256", "driver_sha256", "producer_sha256"):
+233 |         digest(identity[key], key)
+    |
+
+E501 Line too long (134 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:239:89
+    |
+237 |     require(isinstance(identity["dirty_files"], dict), "dirty files map")
+238 |     for path, value in identity["dirty_files"].items():
+239 |         require(not Path(path).is_absolute() and all(s not in ("", ".", "..", ".git") for s in path.split("/")), "unsafe source path")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+240 |         digest(value, path)
+241 |     obj(identity["versions"], ("rustc", "cargo", "python"), "versions")
+    |
+
+E501 Line too long (98 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:242:89
+    |
+240 |         digest(value, path)
+241 |     obj(identity["versions"], ("rustc", "cargo", "python"), "versions")
+242 |     require(all(isinstance(v, str) and v for v in identity["versions"].values()), "tool versions")
+    |                                                                                         ^^^^^^^^^^
+243 |     require(isinstance(identity["argv"], list) and identity["argv"] and all(isinstance(a, list) and a and all(isinstance(v, str) for …
+244 |     obj(identity["official_fixtures"], map(str, EPISODES), "official hashes")
+    |
+
+E501 Line too long (189 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:243:89
+    |
+241 | …
+242 | …lues()), "tool versions")
+243 | …ll(isinstance(a, list) and a and all(isinstance(v, str) for v in a) for a in identity["argv"]), "exact argv arrays")
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+244 | …es")
+245 | …
+    |
+
+E501 Line too long (106 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:249:89
+    |
+249 | def _check_recipe(manifest: dict[str, Any], sources: list[dict[str, Any]], expected_records: int) -> None:
+    |                                                                                         ^^^^^^^^^^^^^^^^^^
+250 |     require(manifest["profiles"] == PROFILES and manifest["policy"] == "observation-corpus-v1", "profile/policy recipe changed")
+251 |     require(isinstance(manifest["seed_runs"], list), "seed runs array")
+    |
+
+E501 Line too long (128 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:250:89
+    |
+249 | def _check_recipe(manifest: dict[str, Any], sources: list[dict[str, Any]], expected_records: int) -> None:
+250 |     require(manifest["profiles"] == PROFILES and manifest["policy"] == "observation-corpus-v1", "profile/policy recipe changed")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+251 |     require(isinstance(manifest["seed_runs"], list), "seed runs array")
+252 |     for run in manifest["seed_runs"]:
+    |
+
+E501 Line too long (125 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:253:89
+    |
+251 |     require(isinstance(manifest["seed_runs"], list), "seed runs array")
+252 |     for run in manifest["seed_runs"]:
+253 |         obj(run, ("seed", "profile", "sampled_steps", "action_sha256", "final_snapshot_sha256", "terminal_step"), "seed run")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+254 |         p = integer(run["profile"], "profile")
+255 |         require(p < 6 and run["seed"] == 11001+p, "seed run identity")
+    |
+
+E501 Line too long (126 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:256:89
+    |
+254 |         p = integer(run["profile"], "profile")
+255 |         require(p < 6 and run["seed"] == 11001+p, "seed run identity")
+256 |         require(run["sampled_steps"] == [k*94//15 for k in range(16)] and run["terminal_step"] == 95, "sample/terminal steps")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+257 |         digest(run["action_sha256"], "action hash")
+258 |         digest(run["final_snapshot_sha256"], "final snapshot hash")
+    |
+
+E501 Line too long (106 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:261:89
+    |
+259 |     if expected_records != 512:
+260 |         return
+261 |     require([r["profile"] for r in manifest["seed_runs"]] == list(range(6)), "all six seed runs required")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^
+262 |     expected: list[dict[str, Any]] = [{"kind": "official", "episode": ep, "step": step} for ep in EPISODES for step in OFFICIAL_STEPS]
+263 |     expected += [{"kind": "seeded", "seed": r["seed"], "profile": r["profile"], "step": step, "policy_sha256": r["action_sha256"]} fo…
+    |
+
+E501 Line too long (134 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:262:89
+    |
+260 | …
+261 | …seed_runs"]] == list(range(6)), "all six seed runs required")
+262 | …: "official", "episode": ep, "step": step} for ep in EPISODES for step in OFFICIAL_STEPS]
+    |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+263 | …["seed"], "profile": r["profile"], "step": step, "policy_sha256": r["action_sha256"]} for r in manifest["seed_runs"] for step in r["…
+264 | … for d in range(32)]
+    |
+
+E501 Line too long (193 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:263:89
+    |
+261 | …, "all six seed runs required")
+262 | …step": step} for ep in EPISODES for step in OFFICIAL_STEPS]
+263 | …e"], "step": step, "policy_sha256": r["action_sha256"]} for r in manifest["seed_runs"] for step in r["sampled_steps"]]
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+264 | …
+265 | …m 512-state recipe")
+    |
+
+E501 Line too long (95 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:265:89
+    |
+263 |     expected += [{"kind": "seeded", "seed": r["seed"], "profile": r["profile"], "step": step, "policy_sha256": r["action_sha256"]} fo…
+264 |     expected += [{"kind": "dense", "case": d} for d in range(32)]
+265 |     require(sources == expected, "record source order/selection differs from 512-state recipe")
+    |                                                                                         ^^^^^^^
+266 |     require_coverage(manifest["coverage"])
+    |
+
+E501 Line too long (161 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:270:89
+    |
+269 | …
+270 | …ed_size": raw.stat().st_size, "compressed_sha256": hash_file(path), "expanded_sha256": hash_file(raw)}
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (148 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:274:89
+    |
+273 | …e:
+274 | … as dst, gzip.GzipFile(filename="", fileobj=dst, mode="wb", mtime=0, compresslevel=9) as zipped:
+    |                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+275 | …
+    |
+
+E501 Line too long (102 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:300:89
+    |
+299 | def _expand(path: Path, target: Path, info: dict[str, Any]) -> None:
+300 |     obj(info, ("compressed_size", "expanded_size", "compressed_sha256", "expanded_sha256"), str(path))
+    |                                                                                         ^^^^^^^^^^^^^^
+301 |     for key in ("compressed_size", "expanded_size"):
+302 |         integer(info[key], key)
+    |
+
+E501 Line too long (155 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:305:89
+    |
+303 | …
+304 | …
+305 | …"] and hash_file(path) == info["compressed_sha256"], f"{path.name}: compressed size/hash mismatch")
+    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+306 | …
+307 | …
+    |
+
+E501 Line too long (119 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:311:89
+    |
+309 |             while block := src.read(1024*1024):
+310 |                 total += len(block)
+311 |                 require(total <= MAX_EXPANDED and total <= info["expanded_size"], "expanded byte budget/size exceeded")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+312 |                 dst.write(block)
+313 |     except (OSError, EOFError) as error:
+    |
+
+E501 Line too long (137 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:315:89
+    |
+313 | …
+314 | … gzip: {error}") from error
+315 | …hash_file(target) == info["expanded_sha256"], f"{path.name}: expanded size/hash mismatch")
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (125 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:320:89
+    |
+318 | def validate_corpus(directory: Path, *, expected_records: int = 512) -> None:
+319 |     """Validate all declared bytes; tiny-test scope never bypasses final512 quotas."""
+320 |     require((directory/"manifest.json").is_file(), "qualified observation corpus missing; R1 coverage dependency unresolved")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+321 |     manifest = obj(parse((directory/"manifest.json").read_bytes()), ("format", "schema_version", "observation_schema", "contract_vers…
+322 |     require(manifest["format"] in (FORMAT, SHUFFLED_FORMAT), "unsupported format")
+    |
+
+E501 Line too long (282 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:321:89
+    |
+319 | …"""
+320 | …ssing; R1 coverage dependency unresolved")
+321 | …ema_version", "observation_schema", "contract_version", "source_identity", "profiles", "policy", "seed_runs", "source_counts", "records", "files", "reference_shape", "dtype", "coverage"), "manifest")
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+322 | …
+323 | …== 1 and manifest["observation_schema"] == 3 and manifest["contract_version"] == 4, "unsupported schema/contract version")
+    |
+
+E501 Line too long (205 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:323:89
+    |
+321 | …chema_version", "observation_schema", "contract_version", "source_identity", "profiles", "policy", "seed_runs", "source_counts", "re…
+322 | …)
+323 | …] == 1 and manifest["observation_schema"] == 3 and manifest["contract_version"] == 4, "unsupported schema/contract version")
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+324 | …nifest["dtype"] == "<f4", "reference shape/dtype mismatch")
+325 | …
+    |
+
+E501 Line too long (140 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:324:89
+    |
+322 | …LED_FORMAT), "unsupported format")
+323 | …int and manifest["schema_version"] == 1 and manifest["observation_schema"] == 3 and manifest["contract_version"] == 4, "unsupported …
+324 | …cted_records, 2, FEATURES] and manifest["dtype"] == "<f4", "reference shape/dtype mismatch")
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+325 | …
+326 | …l.gz", "reference.f32le.gz"), "files")
+    |
+
+E501 Line too long (237 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:327:89
+    |
+325 | …
+326 | …s")
+327 | …ues()) <= MAX_COMPRESSED and sum(integer(f["expanded_size"], "expanded size") for f in files.values()) <= MAX_EXPANDED, "fixture storage budget exceeded")
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+328 | …xpected_records, "record metadata count mismatch")
+329 | …e counts")
+    |
+
+E501 Line too long (133 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:328:89
+    |
+326 | …sonl.gz", "reference.f32le.gz"), "files")
+327 | … "compressed size") for f in files.values()) <= MAX_COMPRESSED and sum(integer(f["expanded_size"], "expanded size") for f in files.v…
+328 | …ist) and len(manifest["records"]) == expected_records, "record metadata count mismatch")
+    |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+329 | …"official", "seeded", "dense"), "source counts")
+330 | …
+    |
+
+E501 Line too long (93 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:329:89
+    |
+327 |     require(sum(integer(f["compressed_size"], "compressed size") for f in files.values()) <= MAX_COMPRESSED and sum(integer(f["expand…
+328 |     require(isinstance(manifest["records"], list) and len(manifest["records"]) == expected_records, "record metadata count mismatch")
+329 |     counts = obj(manifest["source_counts"], ("official", "seeded", "dense"), "source counts")
+    |                                                                                         ^^^^^
+330 |     for value in counts.values():
+331 |         integer(value, "source count")
+    |
+
+E501 Line too long (104 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:332:89
+    |
+330 |     for value in counts.values():
+331 |         integer(value, "source count")
+332 |     coverage = obj(manifest["coverage"], ("non_synthetic", "dense", "shed_order_exception"), "coverage")
+    |                                                                                         ^^^^^^^^^^^^^^^^
+333 |     for scope in ("non_synthetic", "dense"):
+334 |         obj(coverage[scope], COVERAGE_TAGS, "coverage tags")
+    |
+
+E501 Line too long (111 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:346:89
+    |
+344 |             byteplanes(feature_path, work/"reference.raw", decode=True)
+345 |             feature_path = work/"reference.raw"
+346 |         require(feature_path.stat().st_size == expected_records*2*SEAT_BYTES, "reference byte length mismatch")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+347 |         found_ids: set[str] = set()
+348 |         actual_counts = dict.fromkeys(counts, 0)
+    |
+
+E501 Line too long (96 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:351:89
+    |
+349 |         actual_coverage = empty_coverage()
+350 |         sources = []
+351 |         with (work/"states.jsonl.gz").open("rb") as states, feature_path.open("rb") as features:
+    |                                                                                         ^^^^^^^^
+352 |             n = 0
+353 |             for row, raw in iter_rows(states):
+    |
+
+E501 Line too long (126 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:355:89
+    |
+353 |             for row, raw in iter_rows(states):
+354 |                 require(n < expected_records, "extra state record")
+355 |                 meta = obj(manifest["records"][n], ("record_id", "source", "header_sha256", "seat_sha256"), "record metadata")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+356 |                 require(row["record_id"] not in found_ids, "duplicate record id")
+357 |                 found_ids.add(row["record_id"])
+    |
+
+E501 Line too long (133 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:358:89
+    |
+356 | …     require(row["record_id"] not in found_ids, "duplicate record id")
+357 | …     found_ids.add(row["record_id"])
+358 | …     require(meta["record_id"] == row["record_id"] and meta["source"] == row["source"], "record identity/source mismatch")
+    |                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+359 | …     require(digest(meta["header_sha256"], "header hash") == sha(header_bytes(raw)), "header bytes/key-order hash mismatch")
+360 | …     require(isinstance(meta["seat_sha256"], list) and len(meta["seat_sha256"]) == 2, "two seat block hashes required")
+    |
+
+E501 Line too long (135 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:359:89
+    |
+357 | …     found_ids.add(row["record_id"])
+358 | …     require(meta["record_id"] == row["record_id"] and meta["source"] == row["source"], "record identity/source mismatch")
+359 | …     require(digest(meta["header_sha256"], "header hash") == sha(header_bytes(raw)), "header bytes/key-order hash mismatch")
+    |                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+360 | …     require(isinstance(meta["seat_sha256"], list) and len(meta["seat_sha256"]) == 2, "two seat block hashes required")
+361 | …     for seat in range(2):
+    |
+
+E501 Line too long (130 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:360:89
+    |
+358 | …     require(meta["record_id"] == row["record_id"] and meta["source"] == row["source"], "record identity/source mismatch")
+359 | …     require(digest(meta["header_sha256"], "header hash") == sha(header_bytes(raw)), "header bytes/key-order hash mismatch")
+360 | …     require(isinstance(meta["seat_sha256"], list) and len(meta["seat_sha256"]) == 2, "two seat block hashes required")
+    |                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+361 | …     for seat in range(2):
+362 | …         block = features.read(SEAT_BYTES)
+    |
+
+E501 Line too long (189 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:363:89
+    |
+361 | …
+362 | …
+363 | …gest(meta["seat_sha256"][seat], "seat hash"), f"record {row['record_id']} seat {seat}: feature block hash mismatch")
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+364 | …
+365 | …
+    |
+
+E501 Line too long (109 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:368:89
+    |
+366 | …             sources.append(row["source"])
+367 | …             n += 1
+368 | …         require(n == expected_records and not features.read(1), "missing/extra records or feature bytes")
+    |                                                                                       ^^^^^^^^^^^^^^^^^^^^^
+369 | …     actual_coverage["shed_order_exception"] = actual_coverage["non_synthetic"]["reordered_sheds"] == 0 and actual_coverage["dense"]…
+370 | …     require(counts == actual_counts and coverage == actual_coverage, "declared source/coverage counts disagree with states")
+    |
+
+E501 Line too long (158 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:369:89
+    |
+367 | …
+368 | …s.read(1), "missing/extra records or feature bytes")
+369 | …coverage["non_synthetic"]["reordered_sheds"] == 0 and actual_coverage["dense"]["reordered_sheds"] > 0
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+370 | …ctual_coverage, "declared source/coverage counts disagree with states")
+371 | …)
+    |
+
+E501 Line too long (128 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:370:89
+    |
+368 | …         require(n == expected_records and not features.read(1), "missing/extra records or feature bytes")
+369 | …     actual_coverage["shed_order_exception"] = actual_coverage["non_synthetic"]["reordered_sheds"] == 0 and actual_coverage["dense"]…
+370 | …     require(counts == actual_counts and coverage == actual_coverage, "declared source/coverage counts disagree with states")
+    |                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+371 | …     _check_recipe(manifest, sources, expected_records)
+    |
+
+E501 Line too long (90 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:374:89
+    |
+374 | def run(argv: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None) -> bytes:
+    |                                                                                         ^^
+375 |     try:
+376 |         return subprocess.run(argv, cwd=cwd, env=env, check=True, capture_output=True, timeout=120).stdout
+    |
+
+E501 Line too long (106 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:376:89
+    |
+374 | def run(argv: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None) -> bytes:
+375 |     try:
+376 |         return subprocess.run(argv, cwd=cwd, env=env, check=True, capture_output=True, timeout=120).stdout
+    |                                                                                         ^^^^^^^^^^^^^^^^^^
+377 |     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+378 |         raise RuntimeError(f"bounded offline command failed: {argv}: {error}; stdout={error.stdout!r}; stderr={error.stderr!r}") from…
+    |
+
+E501 Line too long (139 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:378:89
+    |
+376 | …=env, check=True, capture_output=True, timeout=120).stdout
+377 | …ocess.TimeoutExpired) as error:
+378 | …mand failed: {argv}: {error}; stdout={error.stdout!r}; stderr={error.stderr!r}") from error
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+E501 Line too long (171 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:386:89
+    |
+384 | …
+385 | …
+386 | … Path(member.name).is_absolute() and ".." not in Path(member.name).parts, "unsafe reference archive entry")
+    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+387 | …
+388 | …
+    |
+
+E501 Line too long (96 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:397:89
+    |
+395 |                 with source, target.open("wb") as dst:
+396 |                     shutil.copyfileobj(source, dst)
+397 |     paths = run(["git", "ls-tree", "-r", "--name-only", PIN, "engine_rs"]).decode().splitlines()
+    |                                                                                         ^^^^^^^^
+398 |     hashes = {}
+399 |     for path in paths:
+    |
+
+E501 Line too long (97 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:401:89
+    |
+399 |     for path in paths:
+400 |         expected = sha(run(["git", "show", f"{PIN}:{path}"]))
+401 |         require(hash_file(directory/path) == expected, f"reference export bytes changed: {path}")
+    |                                                                                         ^^^^^^^^^
+402 |         hashes[path] = expected
+403 |     require(hashes["engine_rs/src/myolie_features.rs"] == FEATURE_SHA, "reference feature source hash changed")
+    |
+
+E501 Line too long (111 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:403:89
+    |
+401 |         require(hash_file(directory/path) == expected, f"reference export bytes changed: {path}")
+402 |         hashes[path] = expected
+403 |     require(hashes["engine_rs/src/myolie_features.rs"] == FEATURE_SHA, "reference feature source hash changed")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+404 |     return hashes
+    |
+
+E501 Line too long (97 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:409:89
+    |
+407 | def regenerate(output: Path, reference: str) -> None:
+408 |     require(reference == PIN, "only the reviewed reference commit is supported")
+409 |     require(not output.exists(), "output directory already exists; refusing fixture replacement")
+    |                                                                                         ^^^^^^^^^
+410 |     for name, value in {"CARGO_BUILD_JOBS": "2", "CARGO_NET_OFFLINE": "true", "UV_OFFLINE": "true", "RAYON_NUM_THREADS": "2", "OMP_NU…
+411 |         require(os.environ.get(name) == value, f"required bounded environment: {name}={value}")
+    |
+
+E501 Line too long (208 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:410:89
+    |
+408 | …
+409 | …e replacement")
+410 | …OFFLINE": "true", "RAYON_NUM_THREADS": "2", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "RUST_TEST_THREADS": "1"}.items():
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+411 | …me}={value}")
+412 | …
+    |
+
+E501 Line too long (95 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:411:89
+    |
+409 |     require(not output.exists(), "output directory already exists; refusing fixture replacement")
+410 |     for name, value in {"CARGO_BUILD_JOBS": "2", "CARGO_NET_OFFLINE": "true", "UV_OFFLINE": "true", "RAYON_NUM_THREADS": "2", "OMP_NU…
+411 |         require(os.environ.get(name) == value, f"required bounded environment: {name}={value}")
+    |                                                                                         ^^^^^^^
+412 |     with tempfile.TemporaryDirectory(prefix="obs-oracle-") as tmp:
+413 |         work = Path(tmp)
+    |
+
+E501 Line too long (181 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:416:89
+    |
+414 | …
+415 | …
+416 | …kaggriculture::oracle_corpus::generate_observation_oracle_inputs", "--", "--exact", "--ignored", "--nocapture"]]
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+417 | …
+418 | …ctual report.
+    |
+
+E501 Line too long (210 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:438:89
+    |
+436 | …
+437 | …
+438 | …r(exported/"engine_rs/Cargo.toml"), "--example", "observation_v3_oracle", "--", str(inputs/"states.jsonl"), str(raw_features)])
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+439 | …
+440 | …
+    |
+
+E501 Line too long (116 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:443:89
+    |
+441 |         finally:
+442 |             for path, value in original_hashes.items():
+443 |                 require(hash_file(exported/path) == value, f"reference existing bytes changed during build: {path}")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+444 |         require(raw_features.stat().st_size == 33488896, "reference must contain exactly 33,488,896 bytes")
+445 |         output.parent.mkdir(parents=True, exist_ok=True)
+    |
+
+E501 Line too long (107 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:444:89
+    |
+442 |             for path, value in original_hashes.items():
+443 |                 require(hash_file(exported/path) == value, f"reference existing bytes changed during build: {path}")
+444 |         require(raw_features.stat().st_size == 33488896, "reference must contain exactly 33,488,896 bytes")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^
+445 |         output.parent.mkdir(parents=True, exist_ok=True)
+446 |         with tempfile.TemporaryDirectory(prefix=".observation-install-", dir=output.parent) as staging:
+    |
+
+E501 Line too long (103 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:446:89
+    |
+444 |         require(raw_features.stat().st_size == 33488896, "reference must contain exactly 33,488,896 bytes")
+445 |         output.parent.mkdir(parents=True, exist_ok=True)
+446 |         with tempfile.TemporaryDirectory(prefix=".observation-install-", dir=output.parent) as staging:
+    |                                                                                         ^^^^^^^^^^^^^^^
+447 |             staged = Path(staging)/"fixture"
+448 |             staged.mkdir()
+    |
+
+E501 Line too long (372 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:458:89
+    |
+456 | …
+457 | …
+458 | …lture/mod.rs", "src/kaggriculture/config.rs", "src/kaggriculture/buffers.rs", "src/kaggriculture/observe.rs", "src/kaggriculture/tests.rs", "src/kaggriculture/oracle_corpus.rs", "scripts/kaggriculture_observation_oracle/record.rs", "scripts/kaggriculture_observation_oracle/regenerate.py"]
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+459 | …
+460 | …
+    |
+
+E501 Line too long (190 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:462:89
+    |
+460 | ….strip(),
+461 | …s},
+462 | …trim_manifest", "engine_rs/TRIM_MANIFEST.json"), ("lib", "engine_rs/src/lib.rs"), ("lock", "engine_rs/Cargo.lock"))},
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+463 | …
+464 | …hash_file(Path(__file__)),
+    |
+
+E501 Line too long (99 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:464:89
+    |
+462 | …     "engine": {key: hash_file(ROOT/path) for key, path in (("trim_manifest", "engine_rs/TRIM_MANIFEST.json"), ("lib", "engine_rs/sr…
+463 | …     "reference_commit": PIN, "feature_sha256": FEATURE_SHA,
+464 | …     "recorder_sha256": hash_file(recorder), "driver_sha256": hash_file(Path(__file__)),
+    |                                                                               ^^^^^^^^^^^
+465 | …     "producer_sha256": hash_file(ROOT/"src/kaggriculture/oracle_corpus.rs"),
+466 | …     "versions": {"rustc": run(["rustc", "--version"]).decode().strip(), "cargo": run(["cargo", "--version"]).decode().strip(), "pyt…
+    |
+
+E501 Line too long (162 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:466:89
+    |
+464 | …iver_sha256": hash_file(Path(__file__)),
+465 | …riculture/oracle_corpus.rs"),
+466 | …ion"]).decode().strip(), "cargo": run(["cargo", "--version"]).decode().strip(), "python": sys.version},
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+467 | …],
+468 | …OT/f"engine_rs/fixtures/episode-{ep}.jsonl.gz") for ep in EPISODES},
+    |
+
+E501 Line too long (127 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:468:89
+    |
+466 | …         "versions": {"rustc": run(["rustc", "--version"]).decode().strip(), "cargo": run(["cargo", "--version"]).decode().strip(), …
+467 | …         "argv": [[sys.executable, *sys.argv], *argv],
+468 | …         "official_fixtures": {str(ep): hash_file(ROOT/f"engine_rs/fixtures/episode-{ep}.jsonl.gz") for ep in EPISODES},
+    |                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+469 | …     }
+470 | …     records = []
+    |
+
+E501 Line too long (105 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:471:89
+    |
+469 | …     }
+470 | …     records = []
+471 | …     with (inputs/"states.jsonl").open("rb") as state_stream, raw_features.open("rb") as features:
+    |                                                                                   ^^^^^^^^^^^^^^^^^
+472 | …         for row, raw in iter_rows(state_stream):
+473 | …             records.append({"record_id": row["record_id"], "source": row["source"], "header_sha256": sha(header_bytes(raw)), "seat_…
+    |
+
+E501 Line too long (200 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:473:89
+    |
+471 | …res.open("rb") as features:
+472 | …
+473 | …ow["source"], "header_sha256": sha(header_bytes(raw)), "seat_sha256": [sha(features.read(SEAT_BYTES)) for _ in range(2)]})
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+474 | …a": 3, "contract_version": 4, "source_identity": identity, "profiles": PROFILES, "policy": "observation-corpus-v1", "seed_runs": gen…
+475 | …
+    |
+
+E501 Line too long (574 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:474:89
+    |
+472 | …
+473 | …ource"], "header_sha256": sha(header_bytes(raw)), "seat_sha256": [sha(features.read(SEAT_BYTES)) for _ in range(2)]})
+474 | …, "contract_version": 4, "source_identity": identity, "profiles": PROFILES, "policy": "observation-corpus-v1", "seed_runs": generation["seed_runs"], "source_counts": {"official": 384, "seeded": 96, "dense": 32}, "records": records, "files": {"states.jsonl.gz": _file_info(staged/"states.jsonl.gz", inputs/"states.jsonl"), "reference.f32le.gz": _file_info(staged/"reference.f32le.gz", stored_features)}, "reference_shape": [512,2,FEATURES], "dtype": "<f4", "coverage": generation["coverage"]}
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+475 | …
+476 | …
+    |
+
+E501 Line too long (89 > 88)
+  --> tests/tools/test_observation_oracle_custody.py:16:89
+   |
+14 | ROOT = Path(__file__).parents[2]
+15 | SPEC = importlib.util.spec_from_file_location(
+16 |     "observation_oracle", ROOT / "scripts/kaggriculture_observation_oracle/regenerate.py"
+   |                                                                                         ^
+17 | )
+18 | assert SPEC is not None and SPEC.loader is not None
+   |
+
+PT018 Assertion should be broken down into multiple parts
+  --> tests/tools/test_observation_oracle_custody.py:18:1
+   |
+16 |     "observation_oracle", ROOT / "scripts/kaggriculture_observation_oracle/regenerate.py"
+17 | )
+18 | assert SPEC is not None and SPEC.loader is not None
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 | oracle = importlib.util.module_from_spec(SPEC)
+20 | SPEC.loader.exec_module(oracle)
+   |
+help: Break down assertion into multiple parts
+
+E501 Line too long (97 > 88)
+  --> tests/tools/test_observation_oracle_custody.py:52:89
+   |
+50 |     features = b"".join(struct.pack("<f", i + 0.25) * 8176 for i in range(4))
+51 |     identity = {
+52 |         "root_commit": "a" * 40, "dirty_files": {"src/kaggriculture/oracle_corpus.rs": "b" * 64},
+   |                                                                                         ^^^^^^^^^
+53 |         "engine": {k: "b" * 64 for k in ("trim_manifest", "lib", "lock")},
+54 |         "reference_commit": "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0",
+   |
+
+E501 Line too long (93 > 88)
+  --> tests/tools/test_observation_oracle_custody.py:55:89
+   |
+53 |         "engine": {k: "b" * 64 for k in ("trim_manifest", "lib", "lock")},
+54 |         "reference_commit": "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0",
+55 |         "feature_sha256": "24a7d09f9ddf8196aed7e5dc3b18d7590562370d697c8407f95b4cc8b4f9a6ab",
+   |                                                                                         ^^^^^
+56 |         "recorder_sha256": "b" * 64, "driver_sha256": "b" * 64,
+57 |         "producer_sha256": "b" * 64,
+   |
+
+E501 Line too long (95 > 88)
+  --> tests/tools/test_observation_oracle_custody.py:60:89
+   |
+58 |         "versions": {k: "test" for k in ("rustc", "cargo", "python")},
+59 |         "argv": [["tiny-fixture"]],
+60 |         "official_fixtures": {str(k): "b" * 64 for k in (95324500,95901360,95921764,95990191)},
+   |                                                                                         ^^^^^^^
+61 |     }
+62 |     manifest = {
+   |
+
+E501 Line too long (101 > 88)
+  --> tests/tools/test_observation_oracle_custody.py:70:89
+   |
+68 |         "records": [{"record_id": r["record_id"], "source": r["source"],
+69 |                      "header_sha256": sha(encoded(r["header"])),
+70 |                      "seat_sha256": [sha(features[(2*i+s)*32704:(2*i+s+1)*32704]) for s in range(2)]}
+   |                                                                                         ^^^^^^^^^^^^^
+71 |                     for i, r in enumerate(rows)],
+72 |         "files": {}, "reference_shape": [2,2,8176], "dtype": "<f4",
+   |
+
+E501 Line too long (108 > 88)
+  --> tests/tools/test_observation_oracle_custody.py:79:89
+   |
+79 | def install(directory: Path, manifest: dict[str, Any], rows: list[dict[str, Any]], features: bytes) -> None:
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^
+80 |     directory.mkdir(exist_ok=True)
+81 |     for name, raw in (("states.jsonl.gz", b"".join(encoded(r)+b"\n" for r in rows)),
+   |
+
+E501 Line too long (173 > 88)
+  --> tests/tools/test_observation_oracle_custody.py:97:89
+   |
+97 | …icate", "missing", "seat_swap", "length", "version", "unknown", "source", "duplicate_json_key", "coverage"])
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+98 | …path: Path, damage: str) -> None:
+99 | …
+   |
+
+E501 Line too long (98 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:98:89
+    |
+ 97 | @pytest.mark.parametrize("damage", ["byte", "header_order", "duplicate", "missing", "seat_swap", "length", "version", "unknown", "sou…
+ 98 | def test_custody_rejects_corruption_even_with_rehashed_files(tmp_path: Path, damage: str) -> None:
+    |                                                                                         ^^^^^^^^^^
+ 99 |     manifest, rows, features = fixture(tmp_path)
+100 |     if damage == "byte":
+    |
+
+E501 Line too long (122 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:126:89
+    |
+124 |     if damage == "duplicate_json_key":
+125 |         text = (tmp_path/"manifest.json").read_text()
+126 |         (tmp_path/"manifest.json").write_text(text.replace('"schema_version":1', '"schema_version":1,"schema_version":1'))
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+127 |     with pytest.raises(ValueError):
+128 |         oracle.validate_corpus(tmp_path, expected_records=2)
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/tools/test_observation_oracle_custody.py:127:24
+    |
+125 |         text = (tmp_path/"manifest.json").read_text()
+126 |         (tmp_path/"manifest.json").write_text(text.replace('"schema_version":1', '"schema_version":1,"schema_version":1'))
+127 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+128 |         oracle.validate_corpus(tmp_path, expected_records=2)
+    |
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_observation_oracle_custody.py:134:42
+    |
+132 |     counts = {name: 100 for name in oracle.COVERAGE_TAGS}
+133 |     counts["actor_gt16_states"] = 0
+134 |     with pytest.raises(ValueError, match="actor_gt16_states.*0.*4"):
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^
+135 |         oracle.require_coverage({"non_synthetic": counts, "dense": {name: 100 for name in counts}, "shed_order_exception": False})
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+E501 Line too long (130 > 88)
+   --> tests/tools/test_observation_oracle_custody.py:135:89
+    |
+133 |     counts["actor_gt16_states"] = 0
+134 |     with pytest.raises(ValueError, match="actor_gt16_states.*0.*4"):
+135 |         oracle.require_coverage({"non_synthetic": counts, "dense": {name: 100 for name in counts}, "shed_order_exception": False})
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+Found 107 errors (2 fixed, 105 remaining).
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).

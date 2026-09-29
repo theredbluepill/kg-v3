@@ -1,0 +1,71 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-observe)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.23s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 10 tests
+test kaggriculture::tests::tile_all_vocabularies_and_empty_applicability ... 
+thread 'kaggriculture::tests::tile_all_vocabularies_and_empty_applicability' (10038722) panicked at src/kaggriculture/tests.rs:1542:13:
+assertion `left == right` failed
+  left: 0
+ right: 3
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test kaggriculture::tests::tile_asymmetric_coordinates_and_every_channel ... 
+thread 'kaggriculture::tests::tile_asymmetric_coordinates_and_every_channel' (10038723) panicked at src/kaggriculture/tests.rs:1492:9:
+assertion `left == right` failed
+  left: 0
+ right: 3
+FAILED
+test kaggriculture::tests::tile_board_shape_rejection_preserves_all_output ... 
+thread 'kaggriculture::tests::tile_board_shape_rejection_preserves_all_output' (10038724) panicked at src/kaggriculture/tests.rs:938:24:
+called `Result::unwrap_err()` on an `Ok` value: ()
+FAILED
+test kaggriculture::tests::tile_exact_large_integers_and_signed_future_dates_are_not_clamped ... 
+thread 'kaggriculture::tests::tile_exact_large_integers_and_signed_future_dates_are_not_clamped' (10038725) panicked at src/kaggriculture/tests.rs:1612:5:
+assertion `left == right` failed
+  left: [0, 0, 0, 0, 0, 0, 0]
+ right: [9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 0, 9223372036854775807, 0]
+FAILED
+test kaggriculture::tests::tile_integer_fields_reject_fractional_wrong_types_ranges_and_negative_counts ... 
+thread 'kaggriculture::tests::tile_integer_fields_reject_fractional_wrong_types_ranges_and_negative_counts' (10038726) panicked at src/kaggriculture/tests.rs:938:24:
+called `Result::unwrap_err()` on an `Ok` value: ()
+FAILED
+test kaggriculture::tests::tile_official_fixture_constructor_keys_cover_all_2880_states ... official constructor key-set scan: 2880 states, 576000 tiles; [empty, locked, weed, plant, empty coop, empty pasture, goose, cow, sheep] = [73459, 210575, 10257, 212147, 970, 4593, 3320, 38060, 22619]
+ok
+test kaggriculture::tests::tile_rejects_bad_representations_enums_and_nonboolean_flags ... 
+thread 'kaggriculture::tests::tile_rejects_bad_representations_enums_and_nonboolean_flags' (10038807) panicked at src/kaggriculture/tests.rs:938:24:
+called `Result::unwrap_err()` on an `Ok` value: ()
+FAILED
+test kaggriculture::tests::tile_reusing_output_fully_clears_old_applicable_values ... 
+thread 'kaggriculture::tests::tile_reusing_output_fully_clears_old_applicable_values' (10038808) panicked at src/kaggriculture/tests.rs:1744:9:
+assertion `left == right` failed
+  left: 0
+ right: 1
+FAILED
+test kaggriculture::tests::tile_sentinels_and_fertilizer_flags_keep_applicability ... 
+thread 'kaggriculture::tests::tile_sentinels_and_fertilizer_flags_keep_applicability' (10038809) panicked at src/kaggriculture/tests.rs:1585:9:
+assertion `left == right` failed
+  left: [0, 0, 0, 0, 0, 0, 0]
+ right: [3, -1, -1, -1, 0, 2, 0]
+FAILED
+test kaggriculture::tests::tile_strict_constructor_keys_reject_stale_null_missing_and_unknown_fields ... 
+thread 'kaggriculture::tests::tile_strict_constructor_keys_reject_stale_null_missing_and_unknown_fields' (10038810) panicked at src/kaggriculture/tests.rs:938:24:
+called `Result::unwrap_err()` on an `Ok` value: ()
+FAILED
+
+failures:
+
+failures:
+    kaggriculture::tests::tile_all_vocabularies_and_empty_applicability
+    kaggriculture::tests::tile_asymmetric_coordinates_and_every_channel
+    kaggriculture::tests::tile_board_shape_rejection_preserves_all_output
+    kaggriculture::tests::tile_exact_large_integers_and_signed_future_dates_are_not_clamped
+    kaggriculture::tests::tile_integer_fields_reject_fractional_wrong_types_ranges_and_negative_counts
+    kaggriculture::tests::tile_rejects_bad_representations_enums_and_nonboolean_flags
+    kaggriculture::tests::tile_reusing_output_fully_clears_old_applicable_values
+    kaggriculture::tests::tile_sentinels_and_fertilizer_flags_keep_applicability
+    kaggriculture::tests::tile_strict_constructor_keys_reject_stale_null_missing_and_unknown_fields
+
+test result: FAILED. 1 passed; 9 failed; 0 ignored; 0 measured; 183 filtered out; finished in 3.23s
+
+error: test failed, to rerun pass `--lib`

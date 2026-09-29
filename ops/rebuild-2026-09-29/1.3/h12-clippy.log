@@ -1,0 +1,12 @@
+    Checking owl v0.1.0 (/Users/poonszesen/kg-v3-observe)
+error: manual implementation of `.is_multiple_of()`
+    --> src/kaggriculture/oracle_corpus.rs:1879:13
+     |
+1879 |     require(bytes % 4 == 0, "byte-plane stream must be f32 aligned")?;
+     |             ^^^^^^^^^^^^^^ help: replace with: `bytes.is_multiple_of(4)`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+     = note: `-D clippy::manual-is-multiple-of` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::manual_is_multiple_of)]`
+
+error: could not compile `owl` (lib test) due to 1 previous error
