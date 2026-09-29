@@ -35,13 +35,18 @@ py-prepare: py-format py-lint py-static py-test docs-fresh
 
 [group: 'rust']
 rs-format:
+    uv run python scripts/check_engine_trim.py
     cargo fmt
+    cargo fmt --manifest-path engine_rs/Cargo.toml --check
 [group: 'rust']
 rs-lint:
     cargo clippy --all-targets -- -D warnings
+    # Six pinned upstream style findings; see ops/rebuild-2026-09-29/1.1/results.md.
+    cargo clippy --manifest-path engine_rs/Cargo.toml --all-targets --locked -- -D warnings -A clippy::too_many_arguments -A clippy::collapsible_if -A clippy::needless_range_loop
 [group: 'rust']
 rs-test:
 	cargo test
+	cargo test --manifest-path engine_rs/Cargo.toml --locked
 [group: 'rust']
 rs-prepare: rs-format rs-lint rs-test docs-fresh
 

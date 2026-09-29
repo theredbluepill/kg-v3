@@ -1,0 +1,95 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --lib --locked --offline
+CARGO_BUILD_JOBS=3 CARGO_NET_OFFLINE=true UV_OFFLINE=true
+   Compiling autocfg v1.5.1
+   Compiling crossbeam-utils v0.8.23
+   Compiling proc-macro2 v1.0.107
+   Compiling num-traits v0.2.19
+   Compiling quote v1.0.47
+   Compiling serde_core v1.0.229
+   Compiling crossbeam-epoch v0.9.21
+   Compiling unicode-ident v1.0.24
+   Compiling crossbeam-deque v0.8.8
+   Compiling zmij v1.0.23
+   Compiling rayon-core v1.13.0
+   Compiling num-integer v0.1.47
+   Compiling syn v3.0.3
+   Compiling equivalent v1.0.2
+   Compiling hashbrown v0.17.1
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling serde_derive v1.0.229
+   Compiling indexmap v2.14.0
+   Compiling num-bigint v0.4.8
+   Compiling itoa v1.0.18
+   Compiling either v1.18.0
+   Compiling memchr v2.8.3
+   Compiling num-rational v0.4.2
+   Compiling rayon v1.12.0
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-codex/engine_rs)
+error[E0583]: file not found for module `ffi`
+  --> src/lib.rs:19:1
+   |
+19 | pub mod ffi;
+   | ^^^^^^^^^^^^
+   |
+   = help: to create the module `ffi`, create file "src/ffi.rs" or "src/ffi/mod.rs"
+   = note: if there is a `mod ffi` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `joint_matching`
+  --> src/lib.rs:21:1
+   |
+21 | pub mod joint_matching;
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: to create the module `joint_matching`, create file "src/joint_matching.rs" or "src/joint_matching/mod.rs"
+   = note: if there is a `mod joint_matching` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `myolie_features`
+  --> src/lib.rs:22:1
+   |
+22 | pub mod myolie_features;
+   | ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: to create the module `myolie_features`, create file "src/myolie_features.rs" or "src/myolie_features/mod.rs"
+   = note: if there is a `mod myolie_features` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `myolie_sampler`
+  --> src/lib.rs:23:1
+   |
+23 | pub mod myolie_sampler;
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: to create the module `myolie_sampler`, create file "src/myolie_sampler.rs" or "src/myolie_sampler/mod.rs"
+   = note: if there is a `mod myolie_sampler` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `native_agents`
+  --> src/lib.rs:24:1
+   |
+24 | pub mod native_agents;
+   | ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: to create the module `native_agents`, create file "src/native_agents.rs" or "src/native_agents/mod.rs"
+   = note: if there is a `mod native_agents` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `policy_rows`
+  --> src/lib.rs:25:1
+   |
+25 | pub mod policy_rows;
+   | ^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: to create the module `policy_rows`, create file "src/policy_rows.rs" or "src/policy_rows/mod.rs"
+   = note: if there is a `mod policy_rows` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `training`
+  --> src/lib.rs:27:1
+   |
+27 | pub mod training;
+   | ^^^^^^^^^^^^^^^^^
+   |
+   = help: to create the module `training`, create file "src/training.rs" or "src/training/mod.rs"
+   = note: if there is a `mod training` elsewhere in the crate already, import it with `use crate::...` instead
+
+For more information about this error, try `rustc --explain E0583`.
+error: could not compile `kaggriculture-engine` (lib test) due to 7 previous errors
+
+EXIT_CODE=101

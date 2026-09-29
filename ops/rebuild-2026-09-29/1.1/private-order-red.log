@@ -1,0 +1,22 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --test replay_parity private_order_mismatch_is_rejected --locked --offline
+CARGO_BUILD_JOBS=3 CARGO_NET_OFFLINE=true UV_OFFLINE=true
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-codex/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.82s
+     Running tests/replay_parity.rs (engine_rs/target/debug/deps/replay_parity-c38030bb30dd03b7)
+
+running 1 test
+test private_order_mismatch_is_rejected - should panic ... FAILED
+
+failures:
+
+---- private_order_mismatch_is_rejected stdout ----
+note: test did not panic as expected at tests/replay_parity.rs:16:4
+
+failures:
+    private_order_mismatch_is_rejected
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test replay_parity`
+
+EXIT_CODE=101

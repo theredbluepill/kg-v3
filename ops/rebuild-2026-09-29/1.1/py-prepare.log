@@ -1,0 +1,68 @@
+$ uvx --offline --from rust-just just py-prepare
+CARGO_BUILD_JOBS=3 CARGO_NET_OFFLINE=true UV_OFFLINE=true
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+81 files left unchanged
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uv run mypy python/ scripts/
+Success: no issues found in 49 source files
+uv run pytest tests/ -m "not slow"
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/poonszesen/kg-v3-codex
+configfile: pyproject.toml
+plugins: anyio-4.13.0
+collected 769 items
+
+tests/owl/agent/test_agent.py .......................................... [  5%]
+...........                                                              [  6%]
+tests/owl/agent/test_kaggle_engine_sanitization.py ....                  [  7%]
+tests/owl/agent/test_kaggle_observation.py ...                           [  7%]
+tests/owl/model/test_attn.py .....ss                                     [  8%]
+tests/owl/model/test_model_config_files.py ............................. [ 12%]
+................                                                         [ 14%]
+tests/owl/model/test_recurrent_transformer_v1.py ..............          [ 16%]
+tests/owl/model/test_stateless_transformer_v1.py ....................... [ 19%]
+........................................................................ [ 28%]
+...............................                                          [ 32%]
+tests/owl/test_checkpoint_quantization.py .............................. [ 36%]
+..............                                                           [ 38%]
+tests/owl/test_config.py .........                                       [ 39%]
+tests/owl/test_int8_emulation.py ...s                                    [ 40%]
+tests/owl/test_replay.py ...                                             [ 40%]
+tests/owl/test_rl.py ................................................... [ 47%]
+...........................                                              [ 50%]
+tests/owl/train/test_advantages.py ..............                        [ 52%]
+tests/owl/train/test_config.py ......................................... [ 57%]
+........................                                                 [ 60%]
+tests/owl/train/test_distributed.py ...................                  [ 63%]
+tests/owl/train/test_logging.py ..                                       [ 63%]
+tests/owl/train/test_loss.py .............                               [ 65%]
+tests/owl/train/test_metrics.py ..                                       [ 65%]
+tests/owl/train/test_optimizer.py ...........                            [ 67%]
+tests/owl/train/test_ppo.py ............................................ [ 72%]
+..........                                                               [ 74%]
+tests/scripts/test_benchmark_checkpoints.py ............................ [ 77%]
+.........                                                                [ 78%]
+tests/scripts/test_download_replays.py ....                              [ 79%]
+tests/scripts/test_extract_model_weights.py .................            [ 81%]
+tests/scripts/test_roundtrip_checkpoint_quantization.py ................ [ 83%]
+..                                                                       [ 84%]
+tests/scripts/test_run_ppo.py .......................................... [ 89%]
+...................................                                      [ 94%]
+tests/tools/test_check_engine_trim.py .................................. [ 98%]
+..........                                                               [ 99%]
+tests/tools/test_replay_viewer.py ..                                     [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/owl/model/test_attn.py:60: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/model/test_attn.py:80: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/test_int8_emulation.py:15: x86 torch quantized backend is unavailable: qnnpack
+======================== 766 passed, 3 skipped in 5.87s ========================
+uv run python scripts/check_doc_freshness.py
+No doc updates required
+
+EXIT_CODE=0

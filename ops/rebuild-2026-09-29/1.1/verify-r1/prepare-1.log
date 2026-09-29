@@ -1,0 +1,101 @@
+uv run maturin develop
+📦 Including license file `LICENSE`
+🍹 Building a mixed python/rust project
+🔗 Found pyo3 bindings with abi3 support
+🐍 Found CPython 3.12 at /Users/poonszesen/kg-v3-codex/.venv/bin/python
+📡 Using build options features from pyproject.toml
+Audited 8 packages in 18ms
+Resolved 44 packages in 9ms
+Audited 44 packages in 0.52ms
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-codex)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.03s
+📦 Built wheel for abi3 Python ≥ 3.11 to /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/.tmpGA3dB2/owl-0.1.0-cp311-abi3-macosx_11_0_arm64.whl
+✏️ Setting installed package as editable
+🛠 Installed owl-0.1.0
+uv run python scripts/check_engine_trim.py
+Uninstalled 1 package in 0.47ms
+Installed 1 package in 1ms
+engine trim manifest: OK
+cargo fmt
+cargo fmt --manifest-path engine_rs/Cargo.toml --check
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+1 file reformatted, 80 files left unchanged
+cargo clippy --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+# Six pinned upstream style findings; see ops/rebuild-2026-09-29/1.1/results.md.
+cargo clippy --manifest-path engine_rs/Cargo.toml --all-targets --locked -- -D warnings -A clippy::too_many_arguments -A clippy::collapsible_if -A clippy::needless_range_loop
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+B905 `zip()` without an explicit `strict=` parameter
+   --> scripts/check_engine_trim.py:422:42
+    |
+420 |     pruned = {f'name = "{name}"'.encode() for name in RAYON_CLOSURE}
+421 |     _require(pruned <= set(names), "Cargo.lock: reference lacks the Rayon closure")
+422 |     kept = [package for package, name in zip(packages, names) if name not in pruned]
+    |                                          ^^^^^^^^^^^^^^^^^^^^
+423 |     lock = separator.join([header, *kept])
+424 |     edge = b'\n "rayon",\n'
+    |
+help: Add explicit value for parameter `strict=`
+
+ARG005 Unused lambda argument: `root`
+   --> tests/tools/test_check_engine_trim.py:302:60
+    |
+300 |     manifest = _REPO / "engine_rs/TRIM_MANIFEST.json"
+301 |     (tmp_path / "engine_rs/TRIM_MANIFEST.json").write_bytes(manifest.read_bytes())
+302 |     monkeypatch.setattr(checker, "reference_files", lambda root: reference)
+    |                                                            ^^^^
+303 |     return tmp_path
+    |
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_check_engine_trim.py:361:42
+    |
+359 |     lines = len(original.decode("utf-8").splitlines())
+360 |     _declare(trimmed, _VENDORED, original, [])
+361 |     with pytest.raises(ValueError, match="VENDORED_FROM.md: Task 1.1 trim appendix"):
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+362 |         checker.check(trimmed)
+363 |     # Also reject a rewritten appendix that keeps the heading.
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_check_engine_trim.py:382:42
+    |
+380 |         ],
+381 |     )
+382 |     with pytest.raises(ValueError, match="VENDORED_FROM.md: Task 1.1 trim appendix"):
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+383 |         checker.check(trimmed)
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_check_engine_trim.py:416:42
+    |
+414 |     assert changed != current
+415 |     _declare(trimmed, _LOCK, changed, _whole_file_edit(reference[_LOCK], changed))
+416 |     with pytest.raises(ValueError, match="Cargo.lock: Rayon closure removal only"):
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+417 |         checker.check(trimmed)
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_check_engine_trim.py:431:42
+    |
+429 |     )
+430 |     _declare(trimmed, path, changed, _whole_file_edit(original, changed))
+431 |     with pytest.raises(ValueError, match="lib.rs: exact seven removals"):
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+432 |         checker.check(trimmed)
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+Found 6 errors.
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+error: recipe `py-lint` failed on line 23 with exit code 1

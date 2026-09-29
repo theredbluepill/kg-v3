@@ -1,0 +1,89 @@
+.FFF...........................................                          [100%]
+=================================== FAILURES ===================================
+_______________ test_task_authored_inventory_accepts_replay_test _______________
+
+    def test_task_authored_inventory_accepts_replay_test() -> None:
+        manifest, _, _ = fixture()
+>       checker.verify_task_authored(manifest["authored"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'check_engine_trim' has no attribute 'verify_task_authored'
+
+tests/tools/test_check_engine_trim.py:62: AttributeError
+_______ test_task_authored_inventory_requires_exact_replay_test[paths0] ________
+
+paths = []
+
+    @pytest.mark.parametrize("paths", [[], ["engine_rs/tests/other.rs"]])
+    def test_task_authored_inventory_requires_exact_replay_test(paths: list[str]) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+        with pytest.raises(ValueError, match=r"Task 1.1 authored set: missing=.*replay_parity"):
+>           checker.verify_task_authored(authored)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'check_engine_trim' has no attribute 'verify_task_authored'
+
+tests/tools/test_check_engine_trim.py:72: AttributeError
+_______ test_task_authored_inventory_requires_exact_replay_test[paths1] ________
+
+paths = ['engine_rs/tests/other.rs']
+
+    @pytest.mark.parametrize("paths", [[], ["engine_rs/tests/other.rs"]])
+    def test_task_authored_inventory_requires_exact_replay_test(paths: list[str]) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+        with pytest.raises(ValueError, match=r"Task 1.1 authored set: missing=.*replay_parity"):
+>           checker.verify_task_authored(authored)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'check_engine_trim' has no attribute 'verify_task_authored'
+
+tests/tools/test_check_engine_trim.py:72: AttributeError
+=========================== short test summary info ============================
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_accepts_replay_test
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_replay_test[paths0]
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_replay_test[paths1]
+3 failed, 44 passed in 0.03s
+
+GREEN: exact Task 1.1 authored inventory
+Environment: UV_OFFLINE=true CARGO_NET_OFFLINE=true CARGO_BUILD_JOBS=3
+
+$ uv run --offline pytest tests/tools/test_check_engine_trim.py -q
+...............................................                          [100%]
+47 passed in 0.02s
+EXIT_CODE=0
+
+$ uvx --offline ruff check scripts/check_engine_trim.py tests/tools/test_check_engine_trim.py
+E501 Line too long (92 > 88)
+  --> tests/tools/test_check_engine_trim.py:71:89
+   |
+69 |         for path in paths
+70 |     ]
+71 |     with pytest.raises(ValueError, match=r"Task 1.1 authored set: missing=.*replay_parity"):
+   |                                                                                         ^^^^
+72 |         checker.verify_task_authored(authored)
+   |
+
+Found 1 error.
+EXIT_CODE=1
+
+FINAL: absent replay and extra authored path both rejected
+
+$ uv run --offline pytest tests/tools/test_check_engine_trim.py -q
+...............................................                          [100%]
+47 passed in 0.02s
+EXIT_CODE=0
+
+$ uvx --offline ruff check scripts/check_engine_trim.py tests/tools/test_check_engine_trim.py
+All checks passed!
+EXIT_CODE=0
+
+$ uvx --offline ruff format --check scripts/check_engine_trim.py tests/tools/test_check_engine_trim.py
+2 files already formatted
+EXIT_CODE=0
+
+$ uv run --offline mypy scripts/check_engine_trim.py
+Success: no issues found in 1 source file
+EXIT_CODE=0

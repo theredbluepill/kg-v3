@@ -1,2 +1,5 @@
 imports_granularity = "Module"
 match_block_trailing_comma = true
+# Vendored bytes are enforced by scripts/check_engine_trim.py. Keep the new
+# replay harness and retained RNG files in the formatter's checked surface.
+ignore = ["engine_rs/src/lib.rs", "engine_rs/src/econ_attrib.rs"]

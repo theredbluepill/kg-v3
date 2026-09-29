@@ -1,8 +1,8 @@
 # Rules Parity Coverage
 
-This document is the system of record for Orbit Wars parity coverage. Keep it
-updated whenever the Python reference, fixture generators, or Rust rules engine
-changes.
+This document is the system of record for Orbit Wars and Kaggriculture parity
+coverage. Keep it updated whenever the Python reference, fixture generators,
+or Rust rules engines change. The Orbit Wars coverage below remains unchanged.
 
 ## Covered By Replay Fixtures
 
@@ -133,3 +133,103 @@ RL-only terminal metrics such as `ships_lost_in_combat_per_game`,
 `neutral_comet_undershot_rate` are derived from simulator step results and are
 covered by focused Rust/Python metric tests, not by replay fixture parity
 assertions.
+
+## Kaggriculture Rules Kernel
+
+Task 1.1 retains a standalone `engine_rs` package pinned to reference commit
+`65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`. Its compatibility target is
+`kaggle-environments==1.32.7`, Python engine SHA-256
+`bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`.
+`engine_rs/TRIM_MANIFEST.json` accounts for all 125 reference files: 12 retained,
+113 excluded, plus the authored replay test and non-engine change inventory.
+`python scripts/check_engine_trim.py` checks hashes, exhaustive inventory,
+declared original-line edits, exact Cargo removals and append-only provenance.
+Independently of manifest declarations, only `lib.rs`, `Cargo.toml`,
+`Cargo.lock` and `VENDORED_FROM.md` may differ from the reference; the lockfile
+must equal the reference minus the six-package Rayon closure, and the Task 1.1
+provenance appendix must follow the historical bytes with a pinned SHA-256.
+
+Only reference `lib.rs` lines 19, 21–25 and 27 are removed: declarations for
+`ffi`, `joint_matching`, `myolie_features`, `myolie_sampler`, `native_agents`,
+`policy_rows` and `training`. The resulting file is 185,626 bytes, SHA-256
+`c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd`.
+`py_random.rs`, `econ_attrib.rs` and the RNG integration tests retain exact
+reference bytes, as do the Apache-2.0 license and four compressed fixtures.
+Cargo removes the unused binary, cdylib target and Rayon dependency; its
+generated lockfile prunes the unused closure. Historical provenance is retained
+with an explicit trim note.
+
+### Kaggriculture Test Surface
+
+The retained 41 library unit tests exercise configuration/numeric behavior,
+market ordering, native reset/randomness, terminal behavior, transactional
+failure rollback, and economic/attribution counters including state neutrality.
+Nine RNG integration tests use embedded CPython vectors, including large and
+negative seeds, rollover and long streams. These 50 tests do not read episodes.
+
+The nine new `tests/replay_parity.rs` tests comprise four replay tests, a public
+API test, and four comparator regressions. The API test covers decoded PASS
+commands, public state, terminal banks, and economic/attribution counters.
+Comparator tests reject private inventory and private field insertion-order
+drift, public market-map insertion-order drift, and public integer-versus-float
+drift. Replay tests compare complete public and private state, the key order of
+every object at every depth of both (market inventory/prices, shed, seeds,
+inventories), statuses, typed `Vec<f64>` rewards, step/done and terminal banks. Typed rewards accommodate recorded `[0,0]` versus
+serialized `[0.0,0.0]` without relaxing public market-number comparisons.
+
+Each replay constructs `Game::new(config, seed, 2)` directly. No expected initial
+state, RNG/shop schedule or final bank value is injected into the constructor.
+System `gzip -dc` reads each pinned trace; decompression or fixture failures are
+hard failures. Each episode has 719 transitions and 720 checked snapshots
+(initial plus successors): **2,876 transitions and 2,880 snapshots** overall.
+
+| Episode | Seed | Final bank seat 0 | Final bank seat 1 |
+| --- | --- | --- | --- |
+| 95324500 | 181681617 | 97,126 | 32,640 |
+| 95901360 | 804786120 | 143,344 | 151,788 |
+| 95921764 | 2089097928 | 7,843 | 94,230 |
+| 95990191 | 1447832391 | 87,792 | 99,703 |
+
+The 79 excluded library unit tests belong to excluded bots/controllers (47),
+FFI (16), matching (3), flat features (5), grammar (4), and policy rows (4).
+The excluded ShopRouter integration test compares controller actions and executes
+zero engine transitions. Bot/controller/matching fixtures, examples and binaries
+are excluded with per-file reasons. Grammar coverage returns with Task 1.2;
+selected opponent coverage returns when those opponents are imported.
+
+### Kaggriculture Verification and Limits
+
+Offline engine tests pass **59/59 with none ignored**; the retained root suite
+passes **155 with two ignored**. Receipts in `ops/rebuild-2026-09-29/1.1/` show the
+private-order regression fail with plain JSON equality, then pass with explicit
+key-order checks. Claude's review added the public-order and nested private-order
+regressions, which fail against the earlier field-specific check and pass with
+the recursive check. A separate deliberately
+corrupted initial snapshot makes episode 95324500 fail; restoring the snapshot
+passes the episode and full suite. Pinned fixture bytes are never corrupted.
+
+`just rs-prepare` and `just prepare` run engine formatting in check mode, Clippy
+and tests with separate `--manifest-path engine_rs/Cargo.toml` invocations.
+Preparation also runs the provenance checker. Two byte-frozen sources (`lib.rs`
+and `econ_attrib.rs`) have inherited formatting drift and are excluded by exact
+path in root `rustfmt.toml`; retained RNG and authored replay files remain checked.
+Clippy reports six inherited style findings: one `too_many_arguments`, four
+`collapsible_if`, and one `needless_range_loop`. Only the engine command allows
+those three named lints after `-D warnings`; the authored replay test explicitly
+re-denies them. These exceptions preserve the required source hashes, and both
+raw failing checks are retained. They are tooling deviations from the reviewed
+brief, not changes to rules or weaker parity comparisons.
+The package has its own lockfile, no shared workspace and no root path dependency.
+This isolates its required `serde_json` arbitrary-precision/preserve-order
+features. Root manifest, lockfile and Rust sources stay unchanged. Reopen L4's
+test-only `fixture_float` repair at the first compiled root consumer (potentially
+Task 1.3, certainly Task 1.4); selecting multiple packages together can unify
+features even with a newer Cargo resolver.
+
+Parity is scoped to these four recorded worlds plus synthetic unit/RNG coverage.
+The trace headers' recorded RNG and shop schedules are not compared directly;
+their effects are checked only through the resulting public and private state.
+It does not establish exhaustive malformed-input parity, a fresh differential
+run against Python, adapter/model integration, learning quality or GPU throughput.
+Historical full-engine and performance claims in provenance do not qualify this
+trim. No training or network access is required by these checks.

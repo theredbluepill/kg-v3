@@ -1,0 +1,18 @@
+Environment: UV_OFFLINE=true CARGO_NET_OFFLINE=true CARGO_BUILD_JOBS=3
+
+$ uv run --offline pytest tests/tools/test_check_engine_trim.py -q
+............................................                             [100%]
+44 passed in 0.02s
+EXIT_CODE=0
+
+$ uvx --offline ruff check scripts/check_engine_trim.py tests/tools/test_check_engine_trim.py
+All checks passed!
+EXIT_CODE=0
+
+$ uvx --offline ruff format --check scripts/check_engine_trim.py tests/tools/test_check_engine_trim.py
+2 files already formatted
+EXIT_CODE=0
+
+$ uv run --offline mypy scripts/check_engine_trim.py
+Success: no issues found in 1 source file
+EXIT_CODE=0
