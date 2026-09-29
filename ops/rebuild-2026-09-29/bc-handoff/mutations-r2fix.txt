@@ -1,0 +1,18 @@
+Mutation re-run after the Claude verification r2 fixes (2026-09-30, Mac CPU).
+Report: ops/rebuild-2026-09-29/codex/claude-verify-bchandoff-r2.md (main checkout).
+The fake-trainer main test now writes (1 << 20) + 17 random bytes into the
+checkpoint, passes it as the relative path "checkpoint.pt" after
+monkeypatch.chdir(tmp_path), and asserts the resolved path and the SHA-256 of
+those bytes in warm_start.json.
+Each mutation was applied to scripts/run_ppo.py alone, then
+  OMP_NUM_THREADS=2 uv run pytest -q \
+    tests/scripts/test_run_ppo.py tests/kaggriculture/test_bc.py tests/kaggriculture/test_teacher.py
+ran, and the file was restored byte-for-byte (cmp) afterwards.
+Unmutated baseline for these three files: 196 passed, 6 skipped.
+
+R3   _warm_start_record never feeds bytes to the digest (digest.update(chunk) -> pass)
+     CAUGHT: 3 failed, 193 passed, 6 skipped (r2: survived)
+R4   warm_start.json records the unresolved CLI path (.resolve() dropped)
+     CAUGHT: 3 failed, 193 passed, 6 skipped (r2: survived)
+R14  hash only the first 1 MiB chunk
+     CAUGHT: 3 failed, 193 passed, 6 skipped (r2: survived)

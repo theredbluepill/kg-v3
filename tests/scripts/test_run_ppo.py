@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import sys
 import time
@@ -991,8 +992,14 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
     )
     config_path = tmp_path / "config.yaml"
     cfg.to_file(config_path)
+    # More than one 1 MiB read chunk of non-constant bytes, so the recorded digest
+    # proves the whole file was hashed.
+    checkpoint_content = os.urandom((1 << 20) + 17)
     checkpoint_path = tmp_path / "checkpoint.pt"
-    checkpoint_path.touch()
+    checkpoint_path.write_bytes(checkpoint_content)
+    # The documented launch passes a relative path; the record must resolve it.
+    monkeypatch.chdir(tmp_path)
+    relative_checkpoint_path = Path("checkpoint.pt")
     output_dir = tmp_path / "runs"
     run_dir = output_dir / "run"
     student_model = torch.nn.Linear(1, 1)
@@ -1033,7 +1040,7 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
             load_optimizer: bool = False,
             fresh_state_keys: frozenset[str] = frozenset(),
         ) -> run_ppo.PPOCheckpointMetadata:
-            assert path == checkpoint_path
+            assert path == relative_checkpoint_path
             assert load_optimizer is expect_load_optimizer
             assert fresh_state_keys == (
                 fresh_sentinel if expect_fresh_sentinel else frozenset()
@@ -1079,7 +1086,7 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
             str(config_path),
             str(output_dir),
             "--load-model-weights",
-            str(checkpoint_path),
+            str(relative_checkpoint_path),
             "--load-model-weights-mode",
             mode,
             "--log-mode",
@@ -1128,7 +1135,7 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
     warm_start = json.loads((run_dir / run_ppo.WARM_START_RECORD).read_text())
     assert warm_start == {
         "checkpoint_path": str(checkpoint_path.resolve()),
-        "checkpoint_sha256": hashlib.sha256(b"").hexdigest(),
+        "checkpoint_sha256": hashlib.sha256(checkpoint_content).hexdigest(),
         "load_model_weights_mode": mode,
     }
     assert session_ref["warm_start"] == warm_start
