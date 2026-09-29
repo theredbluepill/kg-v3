@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Credit the SPS run's GPU chunk counts in the compiled-GEMM Reference
+
+Codex verification r1 of the evidence merge (`4974888`, APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/verify-merge-evidence-r1.md`) found one P3: the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] still said the chunked teacher-sized packed path was "not measured on the GPU", although the [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]] run counted 1/2/3 teacher-proxy trunk chunks there. The Reference, its description and the [[references/index|References index]] line now credit that timing-only measurement and keep the numerical-correctness and production teacher-integration gaps.
+
 ## 2026-09-29 — Merge the kg/rebuild-model ops evidence and cookbook refresh onto the integration
 
 The Codex-approved `kg/rebuild-model` commits `4fd40c7`..`8093d51` change only `ops/` and `cookbook/`: Phase 6.0 flash-attn, model-only SPS ceiling and ATEN-only GEMM A/B receipts, the cookbook refresh and the [[workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict|codex exec Workflow]]. Two files conflicted. This log keeps both sides, integration first. The [[references/index|References index]] keeps every integration line, including the cuBLAS-only lane's [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] text, adds the two new References at the top and takes the corrected Task 0.3 Rust status. `results.md` auto-merged to the branch's copy, so the integration's "`results.md` lines 259–303" citations now resolve in this tree. The [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment Reference]] no longer says the compiled-GEMM FlashAttention limit awaits revision, because the cuBLAS-only lane revised it.
