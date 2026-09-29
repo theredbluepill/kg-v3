@@ -314,6 +314,30 @@ def test_redact_team_hides_the_name() -> None:
     ]
 
 
+def test_team_option_rejects_abbreviations(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit):
+        prepare.main([str(tmp_path), str(tmp_path / "o"), "--tea", "Secret"])
+
+
+def test_draw_totals_count_equal_banks_not_policy_seats() -> None:
+    def record(banks: list[float], seats: list[int]) -> dict[str, Any]:
+        return {
+            "split": "train",
+            "terminal_banks": banks,
+            "policy_seats": seats,
+            "admitted": 3,
+        }
+
+    kept = [
+        record([5.0, 5.0], [0]),
+        record([9.0, 1.0], [0, 1]),
+        record([1.0, 2.0], [1]),
+    ]
+    train = prepare.split_totals(kept)["train"]
+    assert train["draw_episodes"] == 1
+    assert train["policy_seat_rows"] == 12
+
+
 def test_end_to_end_team_filter_keeps_only_that_teams_winning_seat(
     played: dict[str, Any], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

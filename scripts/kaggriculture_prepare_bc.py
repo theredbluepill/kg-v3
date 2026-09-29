@@ -681,6 +681,24 @@ def _engine_identity() -> dict[str, str]:
 # --- manifest ---------------------------------------------------------------------
 
 
+def split_totals(kept: Sequence[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    """Per-split denominators; a draw is equal terminal banks, not two policy seats."""
+    totals: dict[str, dict[str, int]] = {}
+    for split in ("train", "validation"):
+        mine = [r for r in kept if r["split"] == split]
+        totals[split] = {
+            "episodes": len(mine),
+            "admitted_turns": sum(r["admitted"] for r in mine),
+            "policy_seat_rows": sum(
+                r["admitted"] * len(r["policy_seats"]) for r in mine
+            ),
+            "draw_episodes": sum(
+                r["terminal_banks"][0] == r["terminal_banks"][1] for r in mine
+            ),
+        }
+    return totals
+
+
 def build_manifest(
     out_dir: Path, records: Sequence[dict[str, Any]], custody: dict[str, Any]
 ) -> bc_data.BCManifest:
@@ -692,17 +710,7 @@ def build_manifest(
         (r for r in records if "rejected" in r),
         key=lambda r: (r["day"], r["episode_id"]),
     )
-    totals: dict[str, dict[str, int]] = {}
-    for split in ("train", "validation"):
-        mine = [r for r in kept if r["split"] == split]
-        totals[split] = {
-            "episodes": len(mine),
-            "admitted_turns": sum(r["admitted"] for r in mine),
-            "policy_seat_rows": sum(
-                r["admitted"] * len(r["policy_seats"]) for r in mine
-            ),
-            "draw_episodes": sum(len(r["policy_seats"]) == 2 for r in mine),
-        }
+    totals = split_totals(kept)
     turn_rejections: Counter[str] = Counter()
     normalizations: Counter[str] = Counter()
     for r in kept:
@@ -825,7 +833,10 @@ def _redact_team(argv: Sequence[str]) -> list[str]:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    # No abbreviations: _redact_team must see every spelling that carries a name.
+    parser = argparse.ArgumentParser(
+        description=__doc__.splitlines()[0], allow_abbrev=False
+    )
     parser.add_argument("archives", type=Path, help="directory of day archive ZIPs")
     parser.add_argument(
         "out_dir", type=Path, help="dataset root (outside the checkout)"
