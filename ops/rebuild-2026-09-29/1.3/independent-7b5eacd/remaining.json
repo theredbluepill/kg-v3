@@ -1,0 +1,108 @@
+[
+  {
+    "name": "pinned-repro",
+    "argv": [
+      "uv",
+      "run",
+      "--no-sync",
+      "python",
+      "-X",
+      "faulthandler",
+      "-c",
+      "import torch; print(torch.__version__, flush=True); torch.empty(1, pin_memory=True).fill_(0)"
+    ],
+    "exit_status": 139,
+    "wall_seconds": 0.837885541,
+    "sampled_process_group_peak_rss_bytes": 218087424,
+    "stop_reason": null,
+    "time_limit_seconds": 120.0,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "summary": "2.9.0\nFatal Python error: Segmentation fault\n\nCurrent thread 0x00000001f048d8c0 (most recent call first):\n  File \"<string>\", line 1 in <module>\n\nExtension modules: numpy._core._multiarray_umath, numpy.linalg._umath_linalg, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special (total: 13)\n"
+  },
+  {
+    "name": "observe-unpinned",
+    "argv": [
+      "uv",
+      "run",
+      "--no-sync",
+      "pytest",
+      "tests/kaggriculture/test_observe.py",
+      "-q",
+      "-k",
+      "not True",
+      "--tb=short"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 2.18684425,
+    "sampled_process_group_peak_rss_bytes": 263077888,
+    "stop_reason": null,
+    "time_limit_seconds": 120.0,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "summary": "....................................................                     [100%]\n52 passed, 5 deselected in 1.25s\n"
+  },
+  {
+    "name": "custody",
+    "argv": [
+      "uv",
+      "run",
+      "--no-sync",
+      "pytest",
+      "tests/tools/test_observation_oracle_custody.py",
+      "tests/tools/test_check_engine_trim.py",
+      "-q",
+      "--tb=short"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 2.924394791,
+    "sampled_process_group_peak_rss_bytes": 123535360,
+    "stop_reason": null,
+    "time_limit_seconds": 120.0,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "summary": "........................................................................ [ 58%]\n....................................................                     [100%]\n124 passed in 2.66s\n"
+  },
+  {
+    "name": "heads-noncompiled",
+    "argv": [
+      "uv",
+      "run",
+      "--no-sync",
+      "pytest",
+      "tests/kaggriculture/test_model_heads.py",
+      "-q",
+      "-k",
+      "not fullgraph_captured_core",
+      "--tb=short"
+    ],
+    "exit_status": -9,
+    "wall_seconds": 2.944086791,
+    "sampled_process_group_peak_rss_bytes": 1000390656,
+    "stop_reason": "memory",
+    "time_limit_seconds": 120.0,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "summary": "..................................................."
+  },
+  {
+    "name": "heads-compiled",
+    "argv": [
+      "uv",
+      "run",
+      "--no-sync",
+      "pytest",
+      "tests/kaggriculture/test_model_heads.py::test_fullgraph_captured_core_matches_eager_density_and_gradients",
+      "-q",
+      "--tb=short"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 4.788828958,
+    "sampled_process_group_peak_rss_bytes": 470663168,
+    "stop_reason": null,
+    "time_limit_seconds": 120.0,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "summary": ".                                                                        [100%]\n1 passed in 3.45s\n"
+  }
+]
