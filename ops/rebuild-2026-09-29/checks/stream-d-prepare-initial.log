@@ -1,0 +1,102 @@
+uv run maturin develop
+📦 Including license file `LICENSE`
+🍹 Building a mixed python/rust project
+🔗 Found pyo3 bindings with abi3 support
+🐍 Found CPython 3.12 at /Users/poonszesen/kg-v3-codex-data/.venv/bin/python
+📡 Using build options features from pyproject.toml
+Audited 8 packages in 29ms
+Resolved 44 packages in 10ms
+Audited 44 packages in 0.97ms
+   Compiling target-lexicon v0.13.5
+   Compiling autocfg v1.5.0
+   Compiling proc-macro2 v1.0.106
+   Compiling libc v0.2.186
+   Compiling quote v1.0.45
+   Compiling unicode-ident v1.0.24
+   Compiling pyo3-build-config v0.28.3
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-utils v0.8.21
+   Compiling pyo3-macros-backend v0.28.3
+   Compiling pyo3-ffi v0.28.3
+   Compiling syn v2.0.117
+   Compiling matrixmultiply v0.3.10
+   Compiling heck v0.5.0
+   Compiling crossbeam-epoch v0.9.18
+   Compiling pyo3 v0.28.3
+   Compiling rand_core v0.10.1
+   Compiling getrandom v0.4.2
+   Compiling cfg-if v1.0.4
+   Compiling rawpointer v0.2.1
+   Compiling rayon-core v1.13.0
+   Compiling crossbeam-deque v0.8.6
+   Compiling pyo3-macros v0.28.3
+   Compiling num-complex v0.4.6
+   Compiling num-integer v0.1.46
+   Compiling numpy v0.28.0
+   Compiling once_cell v1.21.4
+   Compiling ndarray v0.17.2
+   Compiling chacha20 v0.10.0
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-codex-data)
+   Compiling rustc-hash v2.1.2
+   Compiling either v1.15.0
+   Compiling rayon v1.12.0
+   Compiling rand v0.10.1
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.43s
+📦 Built wheel for abi3 Python ≥ 3.11 to /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/.tmpifks64/owl-0.1.0-cp311-abi3-macosx_11_0_arm64.whl
+✏️ Setting installed package as editable
+🛠 Installed owl-0.1.0
+cargo fmt
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+81 files left unchanged
+cargo clippy --all-targets -- -D warnings
+   Compiling target-lexicon v0.13.5
+   Compiling autocfg v1.5.0
+   Compiling proc-macro2 v1.0.106
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.45
+   Compiling libc v0.2.186
+   Compiling pyo3-build-config v0.28.3
+   Compiling syn v2.0.117
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-utils v0.8.21
+   Compiling pyo3-ffi v0.28.3
+   Compiling pyo3-macros-backend v0.28.3
+   Compiling matrixmultiply v0.3.10
+   Compiling heck v0.5.0
+    Checking crossbeam-epoch v0.9.18
+   Compiling pyo3 v0.28.3
+   Compiling serde_core v1.0.228
+   Compiling rayon-core v1.13.0
+    Checking cfg-if v1.0.4
+   Compiling getrandom v0.4.2
+    Checking rand_core v0.10.1
+    Checking rawpointer v0.2.1
+   Compiling pyo3-macros v0.28.3
+    Checking crossbeam-deque v0.8.6
+    Checking num-integer v0.1.46
+    Checking num-complex v0.4.6
+   Compiling numpy v0.28.0
+    Checking once_cell v1.21.4
+   Compiling zmij v1.0.21
+    Checking ndarray v0.17.2
+    Checking chacha20 v0.10.0
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-codex-data)
+   Compiling serde v1.0.228
+   Compiling serde_json v1.0.149
+    Checking either v1.15.0
+    Checking rustc-hash v2.1.2
+    Checking rayon v1.12.0
+    Checking rand v0.10.1
+   Compiling serde_derive v1.0.228
+    Checking memchr v2.8.0
+    Checking itoa v1.0.18
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.86s
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uvx pymarkdownlnt scan *.md
+uvx pymarkdownlnt scan --recurse python/ scripts/ tests/ src/ docs/
+/Users/poonszesen/kg-v3-codex-data/docs/kaggriculture-contract.md:173:1: MD032: Lists should be surrounded by blank lines (blanks-around-lists)
+error: recipe `docs-lint` failed on line 11 with exit code 1

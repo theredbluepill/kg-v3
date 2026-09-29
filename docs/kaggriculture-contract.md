@@ -170,6 +170,7 @@ Isaiah adds each player's summary to that player's learned token through `player
 ### Token order (model)
 
 Wiring: player tokens are `player_tokens + player_feature_proj(player_features)`, the global token is `global_proj(global_features)`, and the two seat rows are encoded independently. The sequence follows Isaiah's `[action entities][other entities][players][global][board scratch][actor plan][critic value]`:
+
 - own actors (the acting entities, first)
 - rival actors
 - tiles

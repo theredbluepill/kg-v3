@@ -1,5 +1,19 @@
 # Change log
 
+## 2026-09-29 — Port replay selection and bound the data/evaluation rebuild
+
+Stream D ports the engine-independent selector with typed manifests, unchanged
+seeds/counts/splits and early duplicate rejection. The
+[[references/rebuild-data-preparation-preserves-replay-identity|new Reference]]
+records the 252-ID offline inventory match, synthetic tests and source-bound
+check receipt. The three task briefs locate volume 4llk4uaf20, specify v4 native
+preparation and seed replay requirements, and recommend four compact opponents
+without importing them. Current pod reachability and raw-payload admission remain
+unverified. The [[references/bc-bootstrap-uses-native-replay-features-and-current-heads|historical BC Reference]]
+corrects its omitted-unit claim: inserted Python None is rejected by the codec,
+not encoded as NONE. No engine, bot, exporter or preparation code was imported;
+no training, download or network operation ran.
+
 ## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
 
 Owner decisions:
