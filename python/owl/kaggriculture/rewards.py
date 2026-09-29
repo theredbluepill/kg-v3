@@ -7,7 +7,6 @@ tests; only ``transition_rewards`` reproduces the native float32 rounding points
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING, Literal, Self
 
 import torch
@@ -96,17 +95,6 @@ def _validate_counts(counts: Tensor, name: str) -> None:
         raise ValueError(f"{name} must contain nonnegative cumulative counts")
 
 
-def _capped_product(counts: Tensor, coefficient: float, cap: float) -> Tensor:
-    if coefficient == 0:
-        return torch.zeros_like(counts)
-    if math.isinf(coefficient):
-        # Finite config factors can overflow when multiplied. Avoid 0 * inf.
-        return torch.where(
-            counts > 0, torch.full_like(counts, cap), torch.zeros_like(counts)
-        )
-    return (counts * coefficient).clamp(max=cap)
-
-
 def economic_penalty(counts: Tensor, config: KaggricultureRewardConfig) -> Tensor:
     """Return P per seat in float64, using only S0, D1 and I2."""
     _validate_counts(counts, "counts")
@@ -119,25 +107,13 @@ def economic_penalty(counts: Tensor, config: KaggricultureRewardConfig) -> Tenso
         )
         raw = config.econ_shaping * weighted
         deaths = raw.clamp(max=config.econ_cap)
-        if bool((~torch.isfinite(weighted)).any()):
-            # Preserve the formula's operation order normally. Only overflowing
-            # inner sums need rescaling: tiny W may bring their result below cap.
-            scaled = _capped_product(
-                values[..., 0],
-                config.econ_shaping * config.econ_starvation_weight,
-                config.econ_cap,
-            ) + _capped_product(
-                values[..., 1],
-                config.econ_shaping * config.econ_drought_weight,
-                config.econ_cap,
-            )
-            deaths = torch.where(
-                torch.isfinite(weighted), deaths, scaled.clamp(max=config.econ_cap)
-            )
+        # Native binary64 operation order is authoritative: an overflowing
+        # inner sum stays infinite even for tiny W, then saturates at the cap.
+        # Rescaling W into the event weights would change native rewards.
         penalty += deaths
     if config.econ_ineffective_weight > 0:
-        penalty += _capped_product(
-            values[..., 2], config.econ_ineffective_weight, config.econ_ineffective_cap
+        penalty += (config.econ_ineffective_weight * values[..., 2]).clamp(
+            max=config.econ_ineffective_cap
         )
     if not bool(torch.isfinite(penalty).all()):
         raise ValueError("economic penalty must be finite")

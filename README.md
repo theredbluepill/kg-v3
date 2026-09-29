@@ -154,8 +154,9 @@ Training presets live in `configs/`:
   guards (`rl.gamma=1.0`, `rl.value_loss: mse`, `rl.ppo_clip_mode: per_player`).
   `run_ppo.py` prints their GEMM workload headroom (or rejects a workload the
   model cannot chunk) before creating the run directory, then stops with an
-  explicit error: the Kaggriculture environment is not wired into the trainer
-  yet.
+  explicit error: Task 3.1 rollout storage and action mapping are not implemented.
+  The native environment and Python adapter exist; canonical PPO adoption remains
+  Task 3.1.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.
@@ -393,9 +394,11 @@ from the candidate's seat. Each Kaggriculture evaluation is to seed its games
 with `_evaluation_seed(base_seed, env_steps)`, a reproducible seed that differs
 per evaluation step within a run (the seed ranges of different evaluations or
 runs are not guaranteed disjoint), in the non-negative int64 band
-`[2**62, 2**62 + 2**61)`; the native evaluation env that consumes it is pending rebuild Tasks 1.4/1.5, so a
-Kaggriculture config fails fast at evaluation until then. Orbit evaluation
-environments stay unseeded.
+`[2**62, 2**62 + 2**61)`. `_create_eval_env` now constructs an independent native
+Kaggriculture adapter through `owl.game.create_env`, with rank 0 and world size 1.
+Short fixed-action tests reproduce its seeds, evolving games and final banks exactly.
+Policy evaluation still fails explicitly until Task 3.1 supplies observation and
+action mapping. Orbit evaluation environments stay unseeded.
 Set `rl.eval_replay_games` to a positive count to save random eval replay
 samples from the weighted eval game set under
 `eval_replays/<checkpoint-name>/` in the run directory. The sampled game

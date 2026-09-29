@@ -868,17 +868,21 @@ The Kaggriculture game uses the same shared training path through its own observ
 - **Model outputs** (`KaggricultureTransformer`, Task 2.3): `forward` returns sampled `KaggricultureActions` with `log_probs.event` and `entropies.event` of shape `[E,2,252,12]` (per frame and slot; implicit slots 0/2/11 are zero), `per_player_entity = event.sum(-1)` `[E,2,252]`, zero `launch`, per-slot entropy `components`, `values [E,2]` and `winner_probabilities [E,2,2]`. `evaluate_actions` requires `int64` tokens/lengths of exactly these shapes, rejects non-canonical or out-of-support programs itself (`GrammarReplayError` naming the support, length or canonical group), and requires `hidden_state` and `dones` to be `None`.
 - **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks (equal banks draw), and truncation keeps the transition's economic reward and bootstraps from the critic. Each evaluation seeds its games with `_evaluation_seed(base_seed, env_steps)` (`scripts/run_ppo.py`), a reproducible mix placed in `[2**62, 2**62 + 2**61)` that is distinct per evaluation step for a fixed base seed (and per base seed for a fixed step) and leaves int64 headroom for the seeds one evaluation consumes. It is not injective over `(base_seed, env_steps)` pairs, and consecutive seeds consumed by different evaluations or runs may overlap. Training seeds stay below the band only while `base_seed + rank + k * world_size < 2**62`. Enforcing any training-only band separation belongs to the training factory; it is not a native admission cap. The approved Task 1.4 native ABI accepts nonnegative i64 seeds for both training and evaluation, with checked consumption as specified below.
 
-### Python adapter, factory and reward configuration (Task 1.5 Stage 1)
+### Python adapter, factory and reward configuration (Task 1.5 Stage 2)
 
-**Stage 1 status: native binding pending.** The adapter and cold codec wrappers
-are implemented against the reviewed Task 1.4 stub. The built extension here
-exports only `encode_kaggriculture_headers_into` for Kaggriculture. Exact-signature
-fake tests qualify forwarding, ownership and fence ordering; the real Task 1.3
-encoder qualifies allocation and seat-private isolation. Native lifecycle,
-codec fixture replay, reward agreement and seed consumption await Task 1.4.
-`run_ppo` still deliberately stops before creating a Kaggriculture environment;
-Task 3.1 owns trainer/factory adoption. Native grammar-table loading and the
-model's temporary default remain Stage 2 work.
+**Stage 2 status: real native binding wired.** The adapter and cold codec call
+the merged Task 1.4 extension directly. Real-binding CPU tests cover construction,
+reset, legal steps, terminal metrics, diagnostics, selected-row truncation,
+stable buffer identities, rollback of all 35 outputs, live seat isolation,
+reference codec replay, reward admission/oracle agreement and rank seed streams.
+Exact-signature fake tests retain fault injection and fence-order coverage.
+The model now loads native grammar tables with strict metadata/array validation.
+`run_ppo._create_eval_env` uses the game factory with reproducible evaluation
+seeds and independent native environments; short fixed-action games test final
+banks. Training still stops explicitly on Task 3.1 rollout storage and action mapping;
+policy evaluation likewise awaits Task 3.1 observation/action mapping.
+The pod DMA fence test and early 2-rank smoke remain pending; CPU tests do not
+qualify either. No training or GPU run is part of Stage 2.
 
 `owl.train.config.GameEnvConfig` remains the single config union, discriminated
 by `env.obs_spec.obs_spec`; absent observation tags select Isaiah's Orbit schema.
@@ -938,7 +942,12 @@ underflow cases. `to_native_dict(reward_mode)` produces the seven exact native
 keys. The float64 economic/terminal oracles validate shapes, finite banks and
 monotonic int64 cumulative counters; only S0/D1/I2 contribute. The transition
 oracle casts the economic difference to f32, promotes to f64 for terminal
-addition, then casts to f32. Rust remains the live reward authority. Complete
+addition, then casts to f32. It preserves native binary64 operation order:
+overflow of the inner death sum saturates at the cap even for tiny positive
+shaping, and disabled components short-circuit. Live extreme-coefficient tests
+compare native rewards exactly; the recorded 16-game fixture checks the
+independent oracle within its existing one-f32-ULP allowance.
+Rust remains the live reward authority. Complete
 719-transition synthetic paths test the telescoping bound with a sum of output
 rounding ULP allowances; this does not bound bootstrapped partial returns.
 
@@ -960,8 +969,9 @@ Requested unavailable pinning fails explicitly. Actions must contain exact
 C-contiguous CPU int64 tokens `[E,2,252,12]` and lengths `[E,2]`; truncate masks
 must be C-contiguous CPU bool `[E]`. Each fresh input gets one zero-copy NumPy
 view per call. There is no casting, device transfer, repair or live JSON codec.
-Native failures propagate without adapter writes; native transaction atomicity
-is a separate Task 1.4 obligation.
+Native failures propagate without adapter writes; the real-binding adapter test
+checks byte-identical outputs after an invalid native action, complementing
+Task 1.4's injected native transaction tests.
 
 Diagnostics delegate lazily: `terminal_metrics(i)` is the stub's typed dict or
 None (float banks/margin, integer steps/winner, two int64 `[32]` counter arrays),
@@ -970,8 +980,8 @@ None (float banks/margin, integer steps/winner, two int64 `[32]` counter arrays)
 codec functions call native encode/decode only; actor counts come from this
 seat's first 241 mask entries, order limits from its observation and hire limit
 from the action spec. Batch encoding publishes a newly allocated result only
-when every row succeeds. Table constants/provenance remain the Task 1.2 grammar
-and pending Task 1.4 exports, with no Python grammar fallback.
+when every row succeeds. Table constants/provenance are the Task 1.2 grammar
+and Task 1.4 exports, with no Python grammar fallback.
 
 ### Structured native observation buffers (Task 1.3)
 
@@ -1125,11 +1135,14 @@ Task 1.4 implements `kaggriculture_grammar_tables()` returning exactly these
 keys as independent C-contiguous `numpy.bool_` arrays on every call, plus
 `kaggriculture_grammar_constants()` returning a tuple of
 `(GRAMMAR_TABLES_VERSION=1, SLOT_NAMES, SLOT_WIDTHS)` with tuple names and widths.
-Task 1.5 will check that metadata and map same-name arrays to device
-`torch.bool` tensors once per model/device. Task 2.3 consumes these shapes
-directly. The Python codec and `native_grammar_tables(device)` integration
-remain Task 1.5; no Python grammar reconstruction or binary DFA runtime layer
-is introduced here.
+Task 1.5's `native_grammar_tables(device="cpu")` checks constants first:
+exact version 1, slot names and widths, then exactly eight keys with the specified
+shapes, NumPy bool dtype and C layout. It maps same-name arrays through
+`grammar_tables_from_arrays(arrays, device=device)` once per model construction;
+registered buffers follow model device transfers. Task 2.3 consumes these shapes
+directly. The model default uses native tables; explicit table injection remains,
+and `expected_grammar_tables` is only a test oracle. Missing bindings or malformed
+metadata/arrays raise, with no fallback or Python grammar reconstruction.
 
 The root builds this source under edition 2021. Task 1.3 created the first
 production root → engine dependency, unified the Serde feature graph (L4 repair
@@ -1139,7 +1152,7 @@ acceptance and replay-state tests run in root integration
 addresses a separate indexing hazard; it does not qualify the L6 Inductor
 GEMM overflow fix or CUDA/BF16 replay. Native lifecycle transactions and CPU
 buffer admission have separate Task 1.4 checks below; the pinned CUDA reuse
-fence remains a Task 1.5 obligation.
+fence is implemented in Task 1.5; its real DMA proof remains pod-only.
 
 ### Native environment lifecycle (Task 1.4)
 

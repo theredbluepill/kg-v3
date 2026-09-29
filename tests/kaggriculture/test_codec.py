@@ -1,4 +1,4 @@
-"""Cold codec transport checks; native grammar qualification waits for Task 1.4."""
+"""Cold native codec transport, corpus replay and transactional rejection."""
 
 from __future__ import annotations
 
@@ -264,7 +264,6 @@ def test_codec_batch_rejects_mismatched_environment_count() -> None:
         )
 
 
-@pytest.mark.skip(reason="needs Task 1.4 binding")
 def test_reference_programs_round_trip() -> None:
     fixtures = Path(__file__).parents[1] / "fixtures" / "kaggriculture"
     fixture = fixtures / "grammar-v4-reference.jsonl.gz"
@@ -301,3 +300,53 @@ def test_reference_programs_round_trip() -> None:
             accepted += 1
     assert accepted == manifest["counts"]["accepted"] + 1
     assert rejected == manifest["counts"]["mutations"] - 1
+
+
+@pytest.mark.parametrize(
+    "action",
+    [
+        {},
+        {"farmer": ["PASS"], "hands": []},
+        {"hands": [], "market": []},
+        {"farmer": ["PASS"], "market": []},
+        {"farmer": None, "hands": [], "market": []},
+        {"farmer": ["PASS"], "hands": [None], "market": []},
+        {"farmer": ["PASS"], "hands": [["PASS"]], "market": []},
+        {"farmer": ["PICKUP", "WHEAT", True], "hands": [], "market": []},
+        {"farmer": ["PICKUP", "WHEAT", "1"], "hands": [], "market": []},
+        {"farmer": ["PICKUP", "WHEAT", 0], "hands": [], "market": []},
+        {"farmer": ["PASS"], "hands": [], "market": [["SELL", "WHEAT", True]]},
+        {"farmer": ["PASS"], "hands": [], "market": [["SELL", "WHEAT", "1"]]},
+        {"farmer": ["PASS"], "hands": [], "market": [], "version": 2},
+    ],
+)
+def test_native_encode_rejection_preserves_output(action) -> None:
+    out = np.full((252, 12), -71, dtype=np.int64)
+    before = out.tobytes()
+    with pytest.raises(ValueError, match=r".+"):
+        codec.encode_action_into(
+            action, actors=1, order_limit=10, hire_limit=241, out=out
+        )
+    assert out.tobytes() == before
+
+
+def test_native_codec_batch_preserves_json_order_and_input_rows() -> None:
+    obs = _observation()
+    programs = _programs()
+    spec = KaggricultureActionConfig(hire_limit=19)
+    actions = codec.encode_actions(programs, obs, action_spec=spec)
+    before = actions.tokens.clone()
+    assert codec.decode_actions(actions, obs, action_spec=spec) == programs
+    assert torch.equal(actions.tokens, before)
+    for env, seats in enumerate(programs):
+        for seat, program in enumerate(seats):
+            rows = np.full((252, 12), 91, dtype=np.int64)
+            length = codec.encode_action_into(
+                program,
+                actors=int(obs.actor_mask[env, seat, :241].sum()),
+                order_limit=int(obs.order_limits[env, seat]),
+                hire_limit=spec.hire_limit,
+                out=rows,
+            )
+            assert actions.lengths[env, seat] == length
+            np.testing.assert_array_equal(actions.tokens[env, seat].numpy(), rows)

@@ -1,14 +1,16 @@
-"""Stage 1 adapter ownership checks; fake calls do not prove native rollback."""
+"""Adapter ownership, fake failure injection and real native lifecycle checks."""
 
 from __future__ import annotations
 
 import copy
 import json
+from dataclasses import fields
 
 import numpy as np
 import pytest
 import torch
 from owl import rs
+from owl.kaggriculture.codec import encode_actions
 from owl.kaggriculture.env import (
     KaggricultureVectorizedEnv,
     allocate_observation_buffers,
@@ -80,12 +82,12 @@ def reward_config():
 _CPU_DEVICE = torch.device("cpu")
 
 
-def make_env(*, pin_memory=False, transfer_device=_CPU_DEVICE):
+def make_env(*, pin_memory=False, transfer_device=_CPU_DEVICE, config=None):
     return KaggricultureVectorizedEnv(
         n_envs=2,
         seed=41,
         seed_stride=2,
-        config=KaggricultureGameConfig(),
+        config=KaggricultureGameConfig() if config is None else config,
         reward_config=reward_config(),
         reward_mode="win_loss",
         native_threads=1,
@@ -383,11 +385,9 @@ def test_seat_private_isolation():
     assert not torch.equal(before["actors_float"][:, 1], after["actors_float"][:, 1])
 
 
-@pytest.mark.skip(reason="needs Task 1.4 binding")
 def test_seat_private_isolation_live_actions():
     env = make_env()
-    actions = pass_actions()
-    actions.tokens[:, 0, 0, 1] = 4  # EAST for seat 0; seat 1 passes
+    actions = native_actions(env, farmer=["EAST"])
     old = env.observations.actor_cell.clone()
     env.step(actions)
     env.observations.check_contract()
@@ -404,3 +404,193 @@ def test_requested_pinning_without_cuda_rejected_before_allocation(monkeypatch):
     )
     with pytest.raises(RuntimeError, match="pinned memory"):
         allocate_observation_buffers(1, pin_memory=True)
+
+
+def native_actions(env, *, farmer=None, market=None):
+    """Cold native encoding uses only each seat's current legal observation."""
+    programs = []
+    for i in range(env.n_envs):
+        seats = []
+        for seat in range(2):
+            actors = int(env.observations.actor_mask[i, seat, :241].sum())
+            seats.append(
+                {
+                    "farmer": ["PASS"] if farmer is None or seat else farmer,
+                    "hands": [["PASS"] for _ in range(actors - 1)],
+                    "market": [] if market is None or seat else market,
+                }
+            )
+        programs.append((seats[0], seats[1]))
+    return encode_actions(programs, env.observations, action_spec=env.action_spec)
+
+
+def test_real_binding_every_batch_checks_contract():
+    env = make_env()
+    assert type(env._native) is rs.KaggricultureEnv
+    obs = env.observations
+    tensors = output_tensors(env)
+    arrays = {
+        field.name: getattr(env._arrays, field.name) for field in fields(env._arrays)
+    }
+    assert set(arrays) == set(tensors) == set(OUTPUTS)
+    assert len(arrays) == 35
+    assert env.seed_state() == (45, (41, 43))
+    assert not env.rewards.any()
+    assert not env.dones.any()
+    assert not env.transition_econ_before.any()
+    assert not env.transition_econ_after.any()
+    assert torch.equal(env.transition_banks_before, env.transition_banks_after)
+    for name, (dtype, shape) in OUTPUTS.items():
+        assert arrays[name].dtype == dtype
+        assert arrays[name].shape == shape
+        assert arrays[name].flags.c_contiguous
+        assert arrays[name].__array_interface__["data"][0] == tensors[name].data_ptr()
+    for operation in (
+        lambda: env.observations,
+        env.reset,
+        lambda: env.step(native_actions(env))[0],
+        lambda: env.truncate_envs(torch.tensor([False, True])),
+    ):
+        assert operation() is obs
+        obs.check_contract()
+        for name, tensor in output_tensors(env).items():
+            assert tensor is tensors[name]
+            assert getattr(env._arrays, name) is arrays[name]
+            assert tensor.data_ptr() == arrays[name].__array_interface__["data"][0]
+    assert env.seed_state() == (51, (45, 49))
+    assert env.state_snapshot(0)["public"]["step"] == 1
+    assert env.state_snapshot(1)["public"]["step"] == 0
+    assert env.terminal_metrics(0) is None
+    assert env.terminal_metrics(1) is None
+
+
+def test_real_binding_terminal_step_keeps_completed_transition_and_new_observation():
+    env = make_env(config=KaggricultureGameConfig(episode_steps=3))
+    obs = env.observations
+    result, rewards, dones, metrics = env.step(
+        native_actions(env, market=[["BUY_PRODUCT", "WHEAT", 1]])
+    )
+    assert result is obs
+    assert rewards is env.rewards
+    assert dones is env.dones
+    assert not dones.any()
+    assert all(value == [] for value in metrics.values())
+    assert all(env.terminal_metrics(i) is None for i in range(2))
+    final_banks = env.transition_banks_after.clone()
+    result, rewards, dones, metrics = env.step(native_actions(env))
+    obs.check_contract()
+    assert result is obs
+    assert rewards is env.rewards
+    assert dones is env.dones
+    assert dones.all()
+    assert env.seed_state() == (49, (45, 47))
+    assert not obs.globals_int[..., 0].any()
+    assert obs.still_playing.all()
+    assert torch.equal(env.transition_banks_after, final_banks)
+    assert not torch.equal(obs.banks[..., 0], final_banks)
+    records = [env.terminal_metrics(i) for i in range(2)]
+    for i, record in enumerate(records):
+        assert record is not None
+        assert record["episode_steps"] == 2
+        assert record["winner"] == 1
+        assert [record["bank_0"], record["bank_1"]] == final_banks[i].tolist()
+        assert record["margin_0"] == record["bank_0"] - record["bank_1"]
+        np.testing.assert_array_equal(record["econ_0"], env.transition_econ_after[i, 0])
+        np.testing.assert_array_equal(record["econ_1"], env.transition_econ_after[i, 1])
+        assert env.state_snapshot(i)["public"]["step"] == 0
+    assert metrics == {
+        "total_games_played": [1.0, 1.0],
+        "terminal_bank_0": final_banks[:, 0].tolist(),
+        "terminal_bank_1": final_banks[:, 1].tolist(),
+        "terminal_margin_0": (final_banks[:, 0] - final_banks[:, 1]).tolist(),
+    }
+    assert env.reset() is obs
+    obs.check_contract()
+    assert env.seed_state() == (53, (49, 51))
+    assert not env.rewards.any()
+    assert not env.dones.any()
+    assert not env.transition_econ_before.any()
+    assert not env.transition_econ_after.any()
+    assert all(env.terminal_metrics(i) is None for i in range(2))
+
+
+@pytest.mark.parametrize("episode_steps", [2, 4])
+@pytest.mark.parametrize("selected", [(False, True), (True, False), (False, False)])
+def test_real_binding_truncate_preserves_unselected_and_all_transitions(
+    episode_steps, selected
+):
+    from .test_native_env import buffers
+
+    env = make_env(config=KaggricultureGameConfig(episode_steps=episode_steps))
+    env.step(
+        native_actions(env, farmer=["HARVEST"], market=[["BUY_PRODUCT", "WHEAT", 1]])
+    )
+    assert env.dones.all().item() == (episode_steps == 2)
+    assert env.transition_econ_after[..., 2].any()
+    obs = env.observations
+    before = {
+        name: tensor.numpy().tobytes() for name, tensor in output_tensors(env).items()
+    }
+    rows = {
+        name: [tensor[i].numpy().tobytes() for i in range(2)]
+        for name, tensor in _tensors(obs).items()
+    }
+    states = [env.state_snapshot(i) for i in range(2)]
+    terminals = [env.terminal_metrics(i) for i in range(2)]
+    next_seed, seeds = env.seed_state()
+    expected_seeds = list(seeds)
+    for i, reset in enumerate(selected):
+        if reset:
+            expected_seeds[i] = next_seed
+            next_seed += 2
+    assert env.truncate_envs(torch.tensor(selected)) is obs
+    obs.check_contract()
+    assert env.seed_state() == (next_seed, tuple(expected_seeds))
+    fresh = buffers(2)
+    env._native.observe(**fresh)
+    for name, tensor in output_tensors(env).items():
+        if name not in _tensors(obs):
+            assert tensor.numpy().tobytes() == before[name], name
+        else:
+            for i, reset in enumerate(selected):
+                expected = fresh[name][i].tobytes() if reset else rows[name][i]
+                assert tensor[i].numpy().tobytes() == expected, (name, i)
+    for i, reset in enumerate(selected):
+        if reset:
+            assert env.state_snapshot(i)["public"]["step"] == 0
+            assert env.terminal_metrics(i) is None
+        else:
+            assert env.state_snapshot(i) == states[i]
+            terminal = env.terminal_metrics(i)
+            if terminals[i] is None:
+                assert terminal is None
+            else:
+                assert terminal is not None
+                for name, value in terminals[i].items():
+                    np.testing.assert_array_equal(terminal[name], value)
+
+
+def test_real_binding_invalid_action_preserves_all_35_buffers_and_diagnostics():
+    env = make_env(config=KaggricultureGameConfig(episode_steps=2))
+    env.step(native_actions(env, farmer=["HARVEST"]))
+    tensors = output_tensors(env)
+    before = {name: tensor.numpy().tobytes() for name, tensor in tensors.items()}
+    states = [env.state_snapshot(i) for i in range(2)]
+    seeds = env.seed_state()
+    terminals = [env.terminal_metrics(i) for i in range(2)]
+    actions = native_actions(env)
+    actions.tokens[1, 1, 0, 1] = 2**62
+    with pytest.raises(ValueError, match=r"env=1.*seat=1"):
+        env.step(actions)
+    assert len(before) == 35
+    for name, tensor in output_tensors(env).items():
+        assert tensor is tensors[name]
+        assert tensor.numpy().tobytes() == before[name], name
+    assert env.seed_state() == seeds
+    assert [env.state_snapshot(i) for i in range(2)] == states
+    for i, old in enumerate(terminals):
+        current = env.terminal_metrics(i)
+        assert old is not None
+        assert current is not None
+        for name, value in old.items():
+            np.testing.assert_array_equal(current[name], value)

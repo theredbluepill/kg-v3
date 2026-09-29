@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import json
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -17,6 +17,9 @@ from owl.kaggriculture.rewards import (
     transition_rewards,
 )
 from pydantic import ValidationError
+
+from .test_env_reference import _recorder
+from .test_native_env import buffers
 
 if TYPE_CHECKING:
     from owl.rs import KaggricultureRewardDict
@@ -101,7 +104,6 @@ def test_reward_admission_predicate_cases(
             KaggricultureRewardConfig.model_validate(case)
 
 
-@pytest.mark.skip(reason="needs Task 1.4 binding")
 @pytest.mark.parametrize(
     ("coefficients", "accepted"), _ADMISSION_CASES + _STRENGTHENING_CASES
 )
@@ -201,14 +203,12 @@ def test_large_finite_coefficients_saturate_without_nan() -> None:
         assert torch.isfinite(penalty).all()
         assert penalty[1] == 0
         assert penalty[0].item() == pytest.approx(1 - config.terminal_scale)
-    # An overflowing inner sum must not prematurely saturate a tiny W.
+    # Native evaluates the inner sum first: overflow saturates even for tiny W.
     counts[0, :3] = torch.tensor([10, 0, 0])
     config = _config(
         econ_shaping=1e-320, econ_starvation_weight=1e308, econ_drought_weight=0
     )
-    assert economic_penalty(counts, config)[0].item() == pytest.approx(
-        1e-320 * 1e308 * 10, rel=1e-12, abs=0
-    )
+    assert economic_penalty(counts, config)[0].item() == 0.25
 
 
 def test_terminal_sign_tie_and_finite_bank_extremes() -> None:
@@ -321,34 +321,102 @@ def test_reward_oracle_rejects_invalid_shape_dtype_finite_and_monotonicity() -> 
         transition_rewards(counts, counts, banks.expand(2, 2), dones, config)
 
 
-@pytest.mark.skip(reason="needs Task 1.4 binding")
 def test_native_fixture_rewards_match_independent_oracle() -> None:
-    path = Path(__file__).parents[1] / "fixtures" / "kaggriculture_env_reference_v1.npz"
-    with np.load(path, allow_pickle=False) as fixture:
-        assert fixture["rewards"].shape == (16, 719, 2)
-        for game in range(16):
-            config = _config(
-                econ_shaping=0.02 if game < 8 else 0.2,
-                econ_ineffective_weight=0.001 if game < 8 else 0,
-            )
-            actual = transition_rewards(
-                torch.from_numpy(fixture["transition_econ_before"][game]),
-                torch.from_numpy(fixture["transition_econ_after"][game]),
-                torch.from_numpy(fixture["transition_banks_after"][game]),
-                torch.from_numpy(fixture["dones"][game]),
-                config,
-            ).numpy()
-            expected = fixture["rewards"][game]
-            # Independently evaluated f64 arithmetic may move one f32 ULP;
-            # fixture-vs-live-native bit equality belongs to Task 1.4's replay.
-            tolerance = np.maximum(
-                np.abs(np.nextafter(expected, np.float32(np.inf)) - expected),
-                np.abs(expected - np.nextafter(expected, np.float32(-np.inf))),
-            )
-            assert np.all(np.abs(actual.astype(np.float64) - expected) <= tolerance)
+    # Validate source, compressed/expanded hashes, array inventory and trajectory
+    # custody before loading any recorded rewards into the independent oracle.
+    manifest, fixture = _recorder().load_fixture()
+    assert (manifest["games"], manifest["steps_per_game"]) == (16, 719)
+    assert fixture["rewards"].shape == (16, 719, 2)
+    for game in range(16):
+        config = _config(
+            econ_shaping=0.02 if game < 8 else 0.2,
+            econ_ineffective_weight=0.001 if game < 8 else 0,
+        )
+        actual = transition_rewards(
+            torch.from_numpy(fixture["econ_before"][game]),
+            torch.from_numpy(fixture["econ_after"][game]),
+            torch.from_numpy(fixture["banks_after"][game]),
+            torch.from_numpy(fixture["dones"][game]),
+            config,
+        ).numpy()
+        expected = fixture["rewards"][game]
+        # Independent f64 arithmetic may move one f32 ULP; fixture vs live
+        # native bit equality is qualified by Task 1.4's full native replay.
+        tolerance = np.maximum(
+            np.abs(np.nextafter(expected, np.float32(np.inf)) - expected),
+            np.abs(expected - np.nextafter(expected, np.float32(-np.inf))),
+        )
+        assert np.all(np.abs(actual.astype(np.float64) - expected) <= tolerance)
 
 
-def test_overflow_rescaling_keeps_float64_caps() -> None:
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {
+            "econ_shaping": 1e308,
+            "econ_starvation_weight": 1e308,
+            "econ_drought_weight": 1e308,
+            "econ_ineffective_weight": 1e308,
+            "econ_cap": 0.7,
+        },
+        {
+            "econ_shaping": 0,
+            "econ_starvation_weight": 1e308,
+            "econ_drought_weight": 1e308,
+            "econ_ineffective_weight": 0,
+        },
+        {
+            "econ_shaping": 1e-320,
+            "econ_starvation_weight": 1e308,
+            "econ_drought_weight": 1e308,
+            "econ_ineffective_weight": 0,
+        },
+    ],
+    ids=["overflow-saturation", "disabled-extremes", "tiny-W-overflowing-inner-sum"],
+)
+def test_extreme_value_native_rewards_match_independent_oracle(overrides) -> None:
+    config = _config(**overrides)
+    recorder = _recorder()
+    env = rs.KaggricultureEnv(
+        1,
+        17000,
+        1,
+        '{"episodeSteps":97}',
+        config.to_native_dict("win_loss"),
+        1,
+        hire_limit=241,
+    )
+    out = buffers(1)
+    env.observe(**out)
+    for step in range(96):
+        public = json.loads(env.state_snapshot(0))["public"]
+        tokens = np.zeros((1, 2, 252, 12), dtype=np.int64)
+        lengths = np.zeros((1, 2), dtype=np.int64)
+        for seat in range(2):
+            action = recorder.policy.action(public, seat)
+            lengths[0, seat] = rs.kaggriculture_encode(
+                json.dumps(action),
+                int(out["actor_mask"][0, seat, :241].sum()),
+                int(out["order_limits"][0, seat]),
+                241,
+                tokens[0, seat],
+            )
+        env.step(tokens, lengths, **out)
+        expected = transition_rewards(
+            torch.from_numpy(out["transition_econ_before"]),
+            torch.from_numpy(out["transition_econ_after"]),
+            torch.from_numpy(out["transition_banks_after"]),
+            torch.from_numpy(out["dones"]),
+            config,
+        ).numpy()
+        np.testing.assert_array_equal(out["rewards"], expected, err_msg=f"step={step}")
+    assert out["dones"].all()
+    assert out["transition_econ_after"][0, 0, 0] >= 1
+    assert out["transition_econ_after"][0, 0, 1] >= 1
+    assert out["transition_econ_after"][0, 0, 2] >= 1
+
+
+def test_overflow_saturation_keeps_float64_caps() -> None:
     config = _config(
         econ_shaping=1e308,
         econ_starvation_weight=1e308,

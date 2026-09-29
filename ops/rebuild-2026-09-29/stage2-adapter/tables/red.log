@@ -1,0 +1,1088 @@
+FFFFFFFFFFFFFFFFFFFFF........................F                           [100%]
+=================================== FAILURES ===================================
+____________________ test_native_tables_equal_expected[cpu] ____________________
+
+device = 'cpu'
+
+    @pytest.mark.parametrize("device", ["cpu", torch.device("cpu")])
+    def test_native_tables_equal_expected(device: torch.device | str) -> None:
+>       actual = gg.native_grammar_tables(device=device).as_dict()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_native_tables.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+__________________ test_native_tables_equal_expected[device1] __________________
+
+device = device(type='cpu')
+
+    @pytest.mark.parametrize("device", ["cpu", torch.device("cpu")])
+    def test_native_tables_equal_expected(device: torch.device | str) -> None:
+>       actual = gg.native_grammar_tables(device=device).as_dict()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_native_tables.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+_____ test_native_constants_rejected_before_tables_are_requested[version] ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a293d0>
+constants = (2, ('unit_actor', 'unit_kind', 'unit_target', 'unit_item', 'unit_quantity_present', 'unit_quantity_high', ...), (241, 20, 128, 16, 2, 32, ...))
+
+    @pytest.mark.parametrize(
+        "constants",
+        [
+            (2, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (True, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (1, ("wrong", *kt.SLOT_NAMES[1:]), kt.SLOT_WIDTHS),
+            (1, tuple(reversed(kt.SLOT_NAMES)), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, (242, *kt.SLOT_WIDTHS[1:])),
+            (1, kt.SLOT_NAMES, kt.SLOT_WIDTHS[:-1]),
+            (1, list(kt.SLOT_NAMES), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, tuple(float(n) for n in kt.SLOT_WIDTHS)),
+        ],
+        ids=["version", "bool-version", "name", "name-order", "width", "arity", "name-list", "float-widths"],
+    )
+    def test_native_constants_rejected_before_tables_are_requested(
+        monkeypatch: pytest.MonkeyPatch, constants: object
+    ) -> None:
+        def unexpected_tables() -> dict[str, np.ndarray]:
+            pytest.fail("tables must not be fetched before constants are admitted")
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_constants", lambda: constants)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", unexpected_tables)
+        with pytest.raises(ValueError, match="grammar constants"):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+___ test_native_constants_rejected_before_tables_are_requested[bool-version] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1109fac60>
+constants = (True, ('unit_actor', 'unit_kind', 'unit_target', 'unit_item', 'unit_quantity_present', 'unit_quantity_high', ...), (241, 20, 128, 16, 2, 32, ...))
+
+    @pytest.mark.parametrize(
+        "constants",
+        [
+            (2, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (True, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (1, ("wrong", *kt.SLOT_NAMES[1:]), kt.SLOT_WIDTHS),
+            (1, tuple(reversed(kt.SLOT_NAMES)), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, (242, *kt.SLOT_WIDTHS[1:])),
+            (1, kt.SLOT_NAMES, kt.SLOT_WIDTHS[:-1]),
+            (1, list(kt.SLOT_NAMES), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, tuple(float(n) for n in kt.SLOT_WIDTHS)),
+        ],
+        ids=["version", "bool-version", "name", "name-order", "width", "arity", "name-list", "float-widths"],
+    )
+    def test_native_constants_rejected_before_tables_are_requested(
+        monkeypatch: pytest.MonkeyPatch, constants: object
+    ) -> None:
+        def unexpected_tables() -> dict[str, np.ndarray]:
+            pytest.fail("tables must not be fetched before constants are admitted")
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_constants", lambda: constants)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", unexpected_tables)
+        with pytest.raises(ValueError, match="grammar constants"):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+_______ test_native_constants_rejected_before_tables_are_requested[name] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a29c10>
+constants = (1, ('wrong', 'unit_kind', 'unit_target', 'unit_item', 'unit_quantity_present', 'unit_quantity_high', ...), (241, 20, 128, 16, 2, 32, ...))
+
+    @pytest.mark.parametrize(
+        "constants",
+        [
+            (2, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (True, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (1, ("wrong", *kt.SLOT_NAMES[1:]), kt.SLOT_WIDTHS),
+            (1, tuple(reversed(kt.SLOT_NAMES)), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, (242, *kt.SLOT_WIDTHS[1:])),
+            (1, kt.SLOT_NAMES, kt.SLOT_WIDTHS[:-1]),
+            (1, list(kt.SLOT_NAMES), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, tuple(float(n) for n in kt.SLOT_WIDTHS)),
+        ],
+        ids=["version", "bool-version", "name", "name-order", "width", "arity", "name-list", "float-widths"],
+    )
+    def test_native_constants_rejected_before_tables_are_requested(
+        monkeypatch: pytest.MonkeyPatch, constants: object
+    ) -> None:
+        def unexpected_tables() -> dict[str, np.ndarray]:
+            pytest.fail("tables must not be fetched before constants are admitted")
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_constants", lambda: constants)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", unexpected_tables)
+        with pytest.raises(ValueError, match="grammar constants"):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+____ test_native_constants_rejected_before_tables_are_requested[name-order] ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a29d60>
+constants = (1, ('stop', 'market_quantity', 'market_quantity_high', 'market_item', 'market_kind', 'unit_quantity', ...), (241, 20, 128, 16, 2, 32, ...))
+
+    @pytest.mark.parametrize(
+        "constants",
+        [
+            (2, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (True, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (1, ("wrong", *kt.SLOT_NAMES[1:]), kt.SLOT_WIDTHS),
+            (1, tuple(reversed(kt.SLOT_NAMES)), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, (242, *kt.SLOT_WIDTHS[1:])),
+            (1, kt.SLOT_NAMES, kt.SLOT_WIDTHS[:-1]),
+            (1, list(kt.SLOT_NAMES), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, tuple(float(n) for n in kt.SLOT_WIDTHS)),
+        ],
+        ids=["version", "bool-version", "name", "name-order", "width", "arity", "name-list", "float-widths"],
+    )
+    def test_native_constants_rejected_before_tables_are_requested(
+        monkeypatch: pytest.MonkeyPatch, constants: object
+    ) -> None:
+        def unexpected_tables() -> dict[str, np.ndarray]:
+            pytest.fail("tables must not be fetched before constants are admitted")
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_constants", lambda: constants)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", unexpected_tables)
+        with pytest.raises(ValueError, match="grammar constants"):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+______ test_native_constants_rejected_before_tables_are_requested[width] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a2a840>
+constants = (1, ('unit_actor', 'unit_kind', 'unit_target', 'unit_item', 'unit_quantity_present', 'unit_quantity_high', ...), (242, 20, 128, 16, 2, 32, ...))
+
+    @pytest.mark.parametrize(
+        "constants",
+        [
+            (2, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (True, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (1, ("wrong", *kt.SLOT_NAMES[1:]), kt.SLOT_WIDTHS),
+            (1, tuple(reversed(kt.SLOT_NAMES)), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, (242, *kt.SLOT_WIDTHS[1:])),
+            (1, kt.SLOT_NAMES, kt.SLOT_WIDTHS[:-1]),
+            (1, list(kt.SLOT_NAMES), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, tuple(float(n) for n in kt.SLOT_WIDTHS)),
+        ],
+        ids=["version", "bool-version", "name", "name-order", "width", "arity", "name-list", "float-widths"],
+    )
+    def test_native_constants_rejected_before_tables_are_requested(
+        monkeypatch: pytest.MonkeyPatch, constants: object
+    ) -> None:
+        def unexpected_tables() -> dict[str, np.ndarray]:
+            pytest.fail("tables must not be fetched before constants are admitted")
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_constants", lambda: constants)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", unexpected_tables)
+        with pytest.raises(ValueError, match="grammar constants"):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+______ test_native_constants_rejected_before_tables_are_requested[arity] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a2b500>
+constants = (1, ('unit_actor', 'unit_kind', 'unit_target', 'unit_item', 'unit_quantity_present', 'unit_quantity_high', ...), (241, 20, 128, 16, 2, 32, ...))
+
+    @pytest.mark.parametrize(
+        "constants",
+        [
+            (2, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (True, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (1, ("wrong", *kt.SLOT_NAMES[1:]), kt.SLOT_WIDTHS),
+            (1, tuple(reversed(kt.SLOT_NAMES)), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, (242, *kt.SLOT_WIDTHS[1:])),
+            (1, kt.SLOT_NAMES, kt.SLOT_WIDTHS[:-1]),
+            (1, list(kt.SLOT_NAMES), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, tuple(float(n) for n in kt.SLOT_WIDTHS)),
+        ],
+        ids=["version", "bool-version", "name", "name-order", "width", "arity", "name-list", "float-widths"],
+    )
+    def test_native_constants_rejected_before_tables_are_requested(
+        monkeypatch: pytest.MonkeyPatch, constants: object
+    ) -> None:
+        def unexpected_tables() -> dict[str, np.ndarray]:
+            pytest.fail("tables must not be fetched before constants are admitted")
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_constants", lambda: constants)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", unexpected_tables)
+        with pytest.raises(ValueError, match="grammar constants"):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+____ test_native_constants_rejected_before_tables_are_requested[name-list] _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110aadf40>
+constants = (1, ['unit_actor', 'unit_kind', 'unit_target', 'unit_item', 'unit_quantity_present', 'unit_quantity_high', ...], (241, 20, 128, 16, 2, 32, ...))
+
+    @pytest.mark.parametrize(
+        "constants",
+        [
+            (2, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (True, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (1, ("wrong", *kt.SLOT_NAMES[1:]), kt.SLOT_WIDTHS),
+            (1, tuple(reversed(kt.SLOT_NAMES)), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, (242, *kt.SLOT_WIDTHS[1:])),
+            (1, kt.SLOT_NAMES, kt.SLOT_WIDTHS[:-1]),
+            (1, list(kt.SLOT_NAMES), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, tuple(float(n) for n in kt.SLOT_WIDTHS)),
+        ],
+        ids=["version", "bool-version", "name", "name-order", "width", "arity", "name-list", "float-widths"],
+    )
+    def test_native_constants_rejected_before_tables_are_requested(
+        monkeypatch: pytest.MonkeyPatch, constants: object
+    ) -> None:
+        def unexpected_tables() -> dict[str, np.ndarray]:
+            pytest.fail("tables must not be fetched before constants are admitted")
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_constants", lambda: constants)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", unexpected_tables)
+        with pytest.raises(ValueError, match="grammar constants"):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+___ test_native_constants_rejected_before_tables_are_requested[float-widths] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a2b920>
+constants = (1, ('unit_actor', 'unit_kind', 'unit_target', 'unit_item', 'unit_quantity_present', 'unit_quantity_high', ...), (241.0, 20.0, 128.0, 16.0, 2.0, 32.0, ...))
+
+    @pytest.mark.parametrize(
+        "constants",
+        [
+            (2, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (True, kt.SLOT_NAMES, kt.SLOT_WIDTHS),
+            (1, ("wrong", *kt.SLOT_NAMES[1:]), kt.SLOT_WIDTHS),
+            (1, tuple(reversed(kt.SLOT_NAMES)), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, (242, *kt.SLOT_WIDTHS[1:])),
+            (1, kt.SLOT_NAMES, kt.SLOT_WIDTHS[:-1]),
+            (1, list(kt.SLOT_NAMES), kt.SLOT_WIDTHS),
+            (1, kt.SLOT_NAMES, tuple(float(n) for n in kt.SLOT_WIDTHS)),
+        ],
+        ids=["version", "bool-version", "name", "name-order", "width", "arity", "name-list", "float-widths"],
+    )
+    def test_native_constants_rejected_before_tables_are_requested(
+        monkeypatch: pytest.MonkeyPatch, constants: object
+    ) -> None:
+        def unexpected_tables() -> dict[str, np.ndarray]:
+            pytest.fail("tables must not be fetched before constants are admitted")
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_constants", lambda: constants)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", unexpected_tables)
+        with pytest.raises(ValueError, match="grammar constants"):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+______________ test_native_arrays_reject_corruption[missing-key] _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a2ae40>
+edit = <function <lambda> at 0x1109c3420>, message = 'missing'
+
+    @pytest.mark.parametrize(
+        ("edit", "message"),
+        [
+            (lambda a: a.pop("unit_kind"), "missing"),
+            (lambda a: a.update(extra=a["unit_kind"]), "unexpected"),
+            (lambda a: a.update(unit_kind=a["unit_kind"].astype(np.int8)), "bool"),
+            (lambda a: a.update(unit_kind=torch.from_numpy(a["unit_kind"])), "NumPy"),
+            (lambda a: a.update(unit_item=a["unit_item"][:, :15].copy()), "shape"),
+            (lambda a: a.update(unit_item=np.asfortranarray(a["unit_item"])), "C-contiguous"),
+            (lambda a: a.update(unit_kind=a["unit_kind"][::-1]), "C-contiguous"),
+        ],
+        ids=["missing-key", "extra-key", "dtype", "non-array", "shape", "fortran", "strided"],
+    )
+    def test_native_arrays_reject_corruption(
+        monkeypatch: pytest.MonkeyPatch,
+        edit: Callable[[dict[str, Any]], object],
+        message: str,
+    ) -> None:
+        arrays = dict(rs.kaggriculture_grammar_tables())
+        edit(arrays)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", lambda: arrays)
+        with pytest.raises(ValueError, match=message):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+_______________ test_native_arrays_reject_corruption[extra-key] ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a2b6e0>
+edit = <function <lambda> at 0x1109c34c0>, message = 'unexpected'
+
+    @pytest.mark.parametrize(
+        ("edit", "message"),
+        [
+            (lambda a: a.pop("unit_kind"), "missing"),
+            (lambda a: a.update(extra=a["unit_kind"]), "unexpected"),
+            (lambda a: a.update(unit_kind=a["unit_kind"].astype(np.int8)), "bool"),
+            (lambda a: a.update(unit_kind=torch.from_numpy(a["unit_kind"])), "NumPy"),
+            (lambda a: a.update(unit_item=a["unit_item"][:, :15].copy()), "shape"),
+            (lambda a: a.update(unit_item=np.asfortranarray(a["unit_item"])), "C-contiguous"),
+            (lambda a: a.update(unit_kind=a["unit_kind"][::-1]), "C-contiguous"),
+        ],
+        ids=["missing-key", "extra-key", "dtype", "non-array", "shape", "fortran", "strided"],
+    )
+    def test_native_arrays_reject_corruption(
+        monkeypatch: pytest.MonkeyPatch,
+        edit: Callable[[dict[str, Any]], object],
+        message: str,
+    ) -> None:
+        arrays = dict(rs.kaggriculture_grammar_tables())
+        edit(arrays)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", lambda: arrays)
+        with pytest.raises(ValueError, match=message):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+_________________ test_native_arrays_reject_corruption[dtype] __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110aadbe0>
+edit = <function <lambda> at 0x1109c3560>, message = 'bool'
+
+    @pytest.mark.parametrize(
+        ("edit", "message"),
+        [
+            (lambda a: a.pop("unit_kind"), "missing"),
+            (lambda a: a.update(extra=a["unit_kind"]), "unexpected"),
+            (lambda a: a.update(unit_kind=a["unit_kind"].astype(np.int8)), "bool"),
+            (lambda a: a.update(unit_kind=torch.from_numpy(a["unit_kind"])), "NumPy"),
+            (lambda a: a.update(unit_item=a["unit_item"][:, :15].copy()), "shape"),
+            (lambda a: a.update(unit_item=np.asfortranarray(a["unit_item"])), "C-contiguous"),
+            (lambda a: a.update(unit_kind=a["unit_kind"][::-1]), "C-contiguous"),
+        ],
+        ids=["missing-key", "extra-key", "dtype", "non-array", "shape", "fortran", "strided"],
+    )
+    def test_native_arrays_reject_corruption(
+        monkeypatch: pytest.MonkeyPatch,
+        edit: Callable[[dict[str, Any]], object],
+        message: str,
+    ) -> None:
+        arrays = dict(rs.kaggriculture_grammar_tables())
+        edit(arrays)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", lambda: arrays)
+        with pytest.raises(ValueError, match=message):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+_______________ test_native_arrays_reject_corruption[non-array] ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110aadb80>
+edit = <function <lambda> at 0x1109c3600>, message = 'NumPy'
+
+    @pytest.mark.parametrize(
+        ("edit", "message"),
+        [
+            (lambda a: a.pop("unit_kind"), "missing"),
+            (lambda a: a.update(extra=a["unit_kind"]), "unexpected"),
+            (lambda a: a.update(unit_kind=a["unit_kind"].astype(np.int8)), "bool"),
+            (lambda a: a.update(unit_kind=torch.from_numpy(a["unit_kind"])), "NumPy"),
+            (lambda a: a.update(unit_item=a["unit_item"][:, :15].copy()), "shape"),
+            (lambda a: a.update(unit_item=np.asfortranarray(a["unit_item"])), "C-contiguous"),
+            (lambda a: a.update(unit_kind=a["unit_kind"][::-1]), "C-contiguous"),
+        ],
+        ids=["missing-key", "extra-key", "dtype", "non-array", "shape", "fortran", "strided"],
+    )
+    def test_native_arrays_reject_corruption(
+        monkeypatch: pytest.MonkeyPatch,
+        edit: Callable[[dict[str, Any]], object],
+        message: str,
+    ) -> None:
+        arrays = dict(rs.kaggriculture_grammar_tables())
+        edit(arrays)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", lambda: arrays)
+        with pytest.raises(ValueError, match=message):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+_________________ test_native_arrays_reject_corruption[shape] __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110aac5c0>
+edit = <function <lambda> at 0x1109c36a0>, message = 'shape'
+
+    @pytest.mark.parametrize(
+        ("edit", "message"),
+        [
+            (lambda a: a.pop("unit_kind"), "missing"),
+            (lambda a: a.update(extra=a["unit_kind"]), "unexpected"),
+            (lambda a: a.update(unit_kind=a["unit_kind"].astype(np.int8)), "bool"),
+            (lambda a: a.update(unit_kind=torch.from_numpy(a["unit_kind"])), "NumPy"),
+            (lambda a: a.update(unit_item=a["unit_item"][:, :15].copy()), "shape"),
+            (lambda a: a.update(unit_item=np.asfortranarray(a["unit_item"])), "C-contiguous"),
+            (lambda a: a.update(unit_kind=a["unit_kind"][::-1]), "C-contiguous"),
+        ],
+        ids=["missing-key", "extra-key", "dtype", "non-array", "shape", "fortran", "strided"],
+    )
+    def test_native_arrays_reject_corruption(
+        monkeypatch: pytest.MonkeyPatch,
+        edit: Callable[[dict[str, Any]], object],
+        message: str,
+    ) -> None:
+        arrays = dict(rs.kaggriculture_grammar_tables())
+        edit(arrays)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", lambda: arrays)
+        with pytest.raises(ValueError, match=message):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+________________ test_native_arrays_reject_corruption[fortran] _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a2a960>
+edit = <function <lambda> at 0x1109c3740>, message = 'C-contiguous'
+
+    @pytest.mark.parametrize(
+        ("edit", "message"),
+        [
+            (lambda a: a.pop("unit_kind"), "missing"),
+            (lambda a: a.update(extra=a["unit_kind"]), "unexpected"),
+            (lambda a: a.update(unit_kind=a["unit_kind"].astype(np.int8)), "bool"),
+            (lambda a: a.update(unit_kind=torch.from_numpy(a["unit_kind"])), "NumPy"),
+            (lambda a: a.update(unit_item=a["unit_item"][:, :15].copy()), "shape"),
+            (lambda a: a.update(unit_item=np.asfortranarray(a["unit_item"])), "C-contiguous"),
+            (lambda a: a.update(unit_kind=a["unit_kind"][::-1]), "C-contiguous"),
+        ],
+        ids=["missing-key", "extra-key", "dtype", "non-array", "shape", "fortran", "strided"],
+    )
+    def test_native_arrays_reject_corruption(
+        monkeypatch: pytest.MonkeyPatch,
+        edit: Callable[[dict[str, Any]], object],
+        message: str,
+    ) -> None:
+        arrays = dict(rs.kaggriculture_grammar_tables())
+        edit(arrays)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", lambda: arrays)
+        with pytest.raises(ValueError, match=message):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+________________ test_native_arrays_reject_corruption[strided] _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a2ba40>
+edit = <function <lambda> at 0x1109c37e0>, message = 'C-contiguous'
+
+    @pytest.mark.parametrize(
+        ("edit", "message"),
+        [
+            (lambda a: a.pop("unit_kind"), "missing"),
+            (lambda a: a.update(extra=a["unit_kind"]), "unexpected"),
+            (lambda a: a.update(unit_kind=a["unit_kind"].astype(np.int8)), "bool"),
+            (lambda a: a.update(unit_kind=torch.from_numpy(a["unit_kind"])), "NumPy"),
+            (lambda a: a.update(unit_item=a["unit_item"][:, :15].copy()), "shape"),
+            (lambda a: a.update(unit_item=np.asfortranarray(a["unit_item"])), "C-contiguous"),
+            (lambda a: a.update(unit_kind=a["unit_kind"][::-1]), "C-contiguous"),
+        ],
+        ids=["missing-key", "extra-key", "dtype", "non-array", "shape", "fortran", "strided"],
+    )
+    def test_native_arrays_reject_corruption(
+        monkeypatch: pytest.MonkeyPatch,
+        edit: Callable[[dict[str, Any]], object],
+        message: str,
+    ) -> None:
+        arrays = dict(rs.kaggriculture_grammar_tables())
+        edit(arrays)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", lambda: arrays)
+        with pytest.raises(ValueError, match=message):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+_____ test_native_loader_checks_constants_then_tables_and_forwards_device ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110aadaf0>
+
+    def test_native_loader_checks_constants_then_tables_and_forwards_device(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        events: list[str] = []
+        arrays = rs.kaggriculture_grammar_tables()
+        constants = rs.kaggriculture_grammar_constants()
+        convert = gg.grammar_tables_from_arrays
+        requested_device = torch.device("cpu")
+    
+        def get_constants() -> tuple[int, tuple[str, ...], tuple[int, ...]]:
+            events.append("constants")
+            return constants
+    
+        def get_tables() -> dict[str, np.ndarray]:
+            events.append("tables")
+            return arrays
+    
+        def from_arrays(
+            passed_arrays: dict[str, np.ndarray], *, device: torch.device | str
+        ) -> gg.GrammarTables:
+            events.append("convert")
+            assert passed_arrays is arrays
+            assert device is requested_device
+            return convert(passed_arrays, device=device)
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_constants", get_constants)
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", get_tables)
+        monkeypatch.setattr(gg, "grammar_tables_from_arrays", from_arrays)
+>       gg.native_grammar_tables(device=requested_device)
+
+tests/kaggriculture/test_native_tables.py:107: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+_ test_failed_native_binding_propagates_without_fallback[kaggriculture_grammar_constants] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110aac320>
+binding = 'kaggriculture_grammar_constants'
+
+    @pytest.mark.parametrize("binding", ["kaggriculture_grammar_constants", "kaggriculture_grammar_tables"])
+    def test_failed_native_binding_propagates_without_fallback(
+        monkeypatch: pytest.MonkeyPatch, binding: str
+    ) -> None:
+        def fail() -> None:
+            raise RuntimeError("native table probe failed")
+    
+        monkeypatch.setattr(rs, binding, fail)
+        with pytest.raises(RuntimeError, match="native table probe failed"):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+
+During handling of the above exception, another exception occurred:
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110aac320>
+binding = 'kaggriculture_grammar_constants'
+
+    @pytest.mark.parametrize("binding", ["kaggriculture_grammar_constants", "kaggriculture_grammar_tables"])
+    def test_failed_native_binding_propagates_without_fallback(
+        monkeypatch: pytest.MonkeyPatch, binding: str
+    ) -> None:
+        def fail() -> None:
+            raise RuntimeError("native table probe failed")
+    
+        monkeypatch.setattr(rs, binding, fail)
+>       with pytest.raises(RuntimeError, match="native table probe failed"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'native table probe failed'
+E         Actual message: 'native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists'
+
+tests/kaggriculture/test_native_tables.py:119: AssertionError
+_ test_failed_native_binding_propagates_without_fallback[kaggriculture_grammar_tables] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110aae150>
+binding = 'kaggriculture_grammar_tables'
+
+    @pytest.mark.parametrize("binding", ["kaggriculture_grammar_constants", "kaggriculture_grammar_tables"])
+    def test_failed_native_binding_propagates_without_fallback(
+        monkeypatch: pytest.MonkeyPatch, binding: str
+    ) -> None:
+        def fail() -> None:
+            raise RuntimeError("native table probe failed")
+    
+        monkeypatch.setattr(rs, binding, fail)
+        with pytest.raises(RuntimeError, match="native table probe failed"):
+>           gg.native_grammar_tables()
+
+tests/kaggriculture/test_native_tables.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+
+During handling of the above exception, another exception occurred:
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110aae150>
+binding = 'kaggriculture_grammar_tables'
+
+    @pytest.mark.parametrize("binding", ["kaggriculture_grammar_constants", "kaggriculture_grammar_tables"])
+    def test_failed_native_binding_propagates_without_fallback(
+        monkeypatch: pytest.MonkeyPatch, binding: str
+    ) -> None:
+        def fail() -> None:
+            raise RuntimeError("native table probe failed")
+    
+        monkeypatch.setattr(rs, binding, fail)
+>       with pytest.raises(RuntimeError, match="native table probe failed"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'native table probe failed'
+E         Actual message: 'native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists'
+
+tests/kaggriculture/test_native_tables.py:119: AssertionError
+_________________ test_model_default_loads_native_tables_once __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110aafbc0>
+
+    def test_model_default_loads_native_tables_once(monkeypatch: pytest.MonkeyPatch) -> None:
+        expected = gg.grammar_tables_from_arrays(rs.kaggriculture_grammar_tables())
+        native_tables = rs.kaggriculture_grammar_tables
+        calls = 0
+    
+        def load() -> dict[str, np.ndarray]:
+            nonlocal calls
+            calls += 1
+            return native_tables()
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", load)
+        model = _tiny_model()
+>       assert calls == 1
+E       assert 0 == 1
+
+tests/kaggriculture/test_native_tables.py:151: AssertionError
+___________________ test_native_tables_match_expected_tables ___________________
+
+    def test_native_tables_match_expected_tables() -> None:
+        """Brief §7.2: every table row matches the native plans (after Task 1.2)."""
+>       native = gg.native_grammar_tables()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_gpu_grammar.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
+        """Hook for the native builder: tables extracted from the Rust grammar plans.
+    
+        Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
+        ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
+        ``kaggriculture_grammar_constants()`` for version/name/width checks). The
+        implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
+        after the constants check. Until then this raises instead of silently
+        substituting :func:`expected_grammar_tables`.
+        """
+        del device
+>       raise NotImplementedError(
+            "native grammar tables arrive with Task 1.2/1.4 "
+            "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
+            "until the binding exists"
+        )
+E       NotImplementedError: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+
+python/owl/kaggriculture/gpu_grammar.py:240: NotImplementedError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_tables.py::test_native_tables_equal_expected[cpu]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_tables_equal_expected[device1]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_constants_rejected_before_tables_are_requested[version]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_constants_rejected_before_tables_are_requested[bool-version]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_constants_rejected_before_tables_are_requested[name]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_constants_rejected_before_tables_are_requested[name-order]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_constants_rejected_before_tables_are_requested[width]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_constants_rejected_before_tables_are_requested[arity]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_constants_rejected_before_tables_are_requested[name-list]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_constants_rejected_before_tables_are_requested[float-widths]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_arrays_reject_corruption[missing-key]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_arrays_reject_corruption[extra-key]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_arrays_reject_corruption[dtype]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_arrays_reject_corruption[non-array]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_arrays_reject_corruption[shape]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_arrays_reject_corruption[fortran]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_arrays_reject_corruption[strided]
+FAILED tests/kaggriculture/test_native_tables.py::test_native_loader_checks_constants_then_tables_and_forwards_device
+FAILED tests/kaggriculture/test_native_tables.py::test_failed_native_binding_propagates_without_fallback[kaggriculture_grammar_constants]
+FAILED tests/kaggriculture/test_native_tables.py::test_failed_native_binding_propagates_without_fallback[kaggriculture_grammar_tables]
+FAILED tests/kaggriculture/test_native_tables.py::test_model_default_loads_native_tables_once
+FAILED tests/kaggriculture/test_gpu_grammar.py::test_native_tables_match_expected_tables
+22 failed, 24 passed in 0.12s
+   Building owl @ file:///Users/poonszesen/kg-v3-adapter
+      Built owl @ file:///Users/poonszesen/kg-v3-adapter
+Uninstalled 1 package in 1ms
+Installed 1 package in 1ms

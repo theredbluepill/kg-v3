@@ -1,4 +1,4 @@
-"""Stage 1 game envelope and constructor seam, independent of the live binding."""
+"""Game envelope, factory forwarding and native rank-stream qualification."""
 
 from __future__ import annotations
 
@@ -354,7 +354,6 @@ def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
         create_env(cfg, **(kwargs | patch))
 
 
-@pytest.mark.skip(reason="needs Task 1.4 binding")
 def test_real_binding_seed_streams() -> None:
     from owl.game import create_env
     from owl.kaggriculture.env import KaggricultureVectorizedEnv
@@ -374,9 +373,12 @@ def test_real_binding_seed_streams() -> None:
         assert isinstance(env, KaggricultureVectorizedEnv)
         assert env.seed_state() == (15 + rank, (11 + rank, 13 + rank))
         seeds = set(env.seed_state()[1])
-        for _ in range(31):
+        for cycle in range(32):
             env.reset()
+            expected = 11 + rank + (cycle + 1) * 4
+            assert env.seed_state() == (expected + 4, (expected, expected + 2))
             seeds.update(env.seed_state()[1])
-        assert seeds == {11 + rank + k * 2 for k in range(64)}
+        assert seeds == {11 + rank + k * 2 for k in range(66)}
         streams.append(seeds)
+        del env  # Rank batches run sequentially, at most two live games.
     assert streams[0].isdisjoint(streams[1])

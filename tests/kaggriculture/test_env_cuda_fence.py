@@ -1,20 +1,20 @@
-"""Pod-only DMA proof; Stage 2 removes only the native-binding skip."""
+"""Pod-only real-binding DMA proof with a fence-removal control."""
 
 from __future__ import annotations
 
 import pytest
 import torch
 
-from tests.kaggriculture.test_env import make_env, output_tensors, pass_actions
+from tests.kaggriculture.test_env import make_env, native_actions, output_tensors
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is unavailable")
-@pytest.mark.skip(reason="needs Task 1.4 binding")
 def test_step_does_not_overwrite_pending_dma(monkeypatch):
     device = torch.device("cuda")
     env = make_env(pin_memory=True, transfer_device=device)
 
     def delayed_read():
+        actions = native_actions(env)
         buffers = output_tensors(env)
         before = {name: value.clone() for name, value in buffers.items()}
         copies = {
@@ -25,7 +25,7 @@ def test_step_does_not_overwrite_pending_dma(monkeypatch):
         torch.cuda._sleep(200_000_000)
         for name, value in buffers.items():
             copies[name].copy_(value, non_blocking=True)
-        env.step(pass_actions())
+        env.step(actions)
         torch.cuda.synchronize(device)
         return before, {name: value.cpu() for name, value in copies.items()}
 

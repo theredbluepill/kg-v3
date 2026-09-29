@@ -23,7 +23,7 @@ from torch import nn
 
 from owl.config import BaseConfig
 from owl.kaggriculture import types as kt
-from owl.kaggriculture.gpu_grammar import GrammarTables, expected_grammar_tables
+from owl.kaggriculture.gpu_grammar import GrammarTables, native_grammar_tables
 from owl.model.actor.common import OutputProjectionMLP
 from owl.model.attn import use_flash_attn
 from owl.model.base import (
@@ -232,8 +232,8 @@ class KaggricultureTransformer(
     ) -> None:
         """Build the encoder, critic and grammar action heads.
 
-        ``grammar_tables`` defaults to ``expected_grammar_tables()`` until the
-        native binding (Task 1.2/1.4) exists; see ``owl.kaggriculture.gpu_grammar``.
+        ``grammar_tables`` defaults to the validated native tables. They are
+        loaded once, then move with the model as non-persistent actor buffers.
         """
         super().__init__()
         self.config = config
@@ -264,7 +264,7 @@ class KaggricultureTransformer(
         self.actor_input_proj = nn.Linear(3 * width, width)
         self.actor = KaggricultureGrammarActor(
             trunk,
-            expected_grammar_tables() if grammar_tables is None else grammar_tables,
+            native_grammar_tables() if grammar_tables is None else grammar_tables,
         )
         self._compiled_transformer_trunk: (
             Callable[

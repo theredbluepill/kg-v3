@@ -1,0 +1,23 @@
+COMMAND: uvx --offline --from rust-just just py-prepare
+CWD: /Users/poonszesen/kg-v3-adapter
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+133 files left unchanged
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uv run mypy python/ scripts/
+Success: no issues found in 69 source files
+uv run pytest tests/ -m "not slow"
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/poonszesen/kg-v3-adapter
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 2230 items
+
+tests/kaggriculture/test_base_generics_typing.py 
+EXIT_CODE=-9
+STOP_REASON=memory
+PEAK_RSS_BYTES=1008943104

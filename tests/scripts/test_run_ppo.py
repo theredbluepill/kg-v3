@@ -17,7 +17,10 @@ from owl.checkpoint_quantization import (
     dequantize_model_state_dict,
     quantize_model_state_dict,
 )
-from owl.kaggriculture.types import KaggricultureObsConfig
+from owl.kaggriculture.codec import encode_actions
+from owl.kaggriculture.config import KaggricultureEnvConfig
+from owl.kaggriculture.env import KaggricultureVectorizedEnv
+from owl.kaggriculture.types import MAX_ACTORS, KaggricultureObsConfig
 from owl.model import LoRALinear
 from owl.model.compile_gemm import (
     CompileStackReport,
@@ -3004,7 +3007,7 @@ def test_evaluation_seed_rejects_values_outside_the_seed_band(
         run_ppo._evaluation_seed(base_seed=base_seed, env_steps=env_steps)
 
 
-def test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native(
+def test_create_eval_env_keeps_orbit_env_and_builds_kaggriculture(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     built: list[dict[str, object]] = []
@@ -3032,27 +3035,161 @@ def test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native(
             "pin_memory": False,
         }
     ]
-    with pytest.raises(NotImplementedError, match=r"Tasks 1\.4/1\.5"):
-        run_ppo._create_eval_env(
-            _kaggriculture_eval_config(),
-            n_envs=4,
+    kaggriculture = run_ppo._create_eval_env(
+        _kaggriculture_eval_config(),
+        n_envs=1,
+        device=torch.device("cpu"),
+        env_steps=1000,
+    )
+    assert isinstance(kaggriculture, KaggricultureVectorizedEnv)
+    assert not kaggriculture.pin_memory_enabled
+    assert len(built) == 1
+
+
+@pytest.mark.parametrize("device_type", ["cpu", "cuda"])
+def test_kaggriculture_eval_factory_arguments(
+    monkeypatch: pytest.MonkeyPatch, device_type: str
+) -> None:
+    cfg = _kaggriculture_eval_config()
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    cfg = cfg.model_copy(update={"env": cfg.env.model_copy(update={"seed": 7})})
+    calls: list[tuple[object, dict[str, object]]] = []
+    sentinel = object()
+
+    def fake_create_env(config: object, **kwargs: object) -> object:
+        calls.append((config, kwargs))
+        return sentinel
+
+    monkeypatch.setattr(run_ppo, "create_env", fake_create_env)
+    device = torch.device(device_type)
+    assert (
+        run_ppo._create_eval_env(cfg, n_envs=2, device=device, env_steps=123)
+        is sentinel
+    )
+    assert calls == [
+        (
+            cfg.env,
+            {
+                "n_envs": 2,
+                "base_seed": run_ppo._evaluation_seed(base_seed=7, env_steps=123),
+                "rank": 0,
+                "world_size": 1,
+                "pin_memory": device_type == "cuda",
+                "transfer_device": device,
+            },
+        )
+    ]
+
+
+def test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds() -> None:
+    cfg = _kaggriculture_eval_config()
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    cfg = cfg.model_copy(
+        update={
+            "env": cfg.env.model_copy(
+                update={
+                    "seed": 7,
+                    "native_threads": 1,
+                    "config": cfg.env.config.model_copy(
+                        update={
+                            "episode_steps": 3,
+                            "turns_per_day": 1,
+                            "weed_spawn_chance": 0.5,
+                        }
+                    ),
+                }
+            )
+        }
+    )
+
+    def evaluate(
+        env_steps: int,
+    ) -> tuple[tuple[int, ...], list[object], list[tuple[float, float]]]:
+        env = run_ppo._create_eval_env(
+            cfg, n_envs=2, device=torch.device("cpu"), env_steps=env_steps
+        )
+        assert isinstance(env, KaggricultureVectorizedEnv)
+        seed = run_ppo._evaluation_seed(base_seed=7, env_steps=env_steps)
+        assert env.seed_state() == (seed + 2, (seed, seed + 1))
+        # Match the evaluation caller's explicit reset after factory construction.
+        obs = env.reset()
+        assert env.seed_state() == (seed + 4, (seed + 2, seed + 3))
+        game_seeds = env.seed_state()[1]
+        snapshots = [env.state_snapshot(i) for i in range(2)]
+        for step in range(2):
+            programs = [
+                tuple(
+                    {
+                        "farmer": ["PASS"],
+                        "hands": [["PASS"]]
+                        * (int(obs.actor_mask[i, s, :MAX_ACTORS].sum()) - 1),
+                        "market": [],
+                    }
+                    for s in range(2)
+                )
+                for i in range(2)
+            ]
+            actions = encode_actions(programs, obs, action_spec=env.action_spec)
+            obs, _rewards, dones, _metrics = env.step(actions)
+            obs.check_contract()
+            assert bool(dones.all()) == (step == 1)
+            if step == 0:
+                # Initial boards are deterministic. Native daily RNG is the
+                # first observable effect of the distinct game seeds.
+                snapshots.extend(env.state_snapshot(i) for i in range(2))
+        banks = []
+        for i in range(2):
+            terminal = env.terminal_metrics(i)
+            assert terminal is not None
+            assert terminal["episode_steps"] == 2
+            banks.append((terminal["bank_0"], terminal["bank_1"]))
+        return game_seeds, snapshots, banks
+
+    first_seeds, first_worlds, first_banks = evaluate(1000)
+    different_seeds, different_worlds, _different_banks = evaluate(2000)
+    repeated_seeds, repeated_worlds, repeated_banks = evaluate(1000)
+    assert first_seeds != different_seeds
+    assert first_worlds[:2] == different_worlds[:2]
+    assert first_worlds[2:] != different_worlds[2:]
+    assert first_seeds == repeated_seeds
+    assert first_worlds == repeated_worlds
+    assert first_banks == repeated_banks
+
+
+def test_kaggriculture_eval_env_is_independent() -> None:
+    cfg = _kaggriculture_eval_config()
+    first = run_ppo._create_eval_env(
+        cfg, n_envs=1, device=torch.device("cpu"), env_steps=1000
+    )
+    second = run_ppo._create_eval_env(
+        cfg, n_envs=1, device=torch.device("cpu"), env_steps=1000
+    )
+    assert isinstance(first, KaggricultureVectorizedEnv)
+    assert isinstance(second, KaggricultureVectorizedEnv)
+    assert first is not second
+    snapshot, seeds = second.state_snapshot(0), second.seed_state()
+    first.reset()
+    assert second.state_snapshot(0) == snapshot
+    assert second.seed_state() == seeds
+
+
+def test_kaggriculture_policy_evaluation_names_remaining_mapping_blocker() -> None:
+    with pytest.raises(
+        RuntimeError,
+        match=(
+            r"Kaggriculture policy evaluation needs Task 3\.1 observation "
+            "and action mapping"
+        ),
+    ):
+        run_ppo._evaluate_games(
+            current_model=_LaunchPolicy(launch=True),
+            last_best_model=_LaunchPolicy(launch=False),
+            cfg=_kaggriculture_eval_config(),
+            n_games=1,
+            n_envs=1,
             device=torch.device("cpu"),
             env_steps=1000,
         )
-
-
-@pytest.mark.skip(
-    reason=(
-        "Needs the native Kaggriculture environment and its EnvConfig seed "
-        "(rebuild Tasks 1.4/1.5)."
-    )
-)
-def test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds() -> None:
-    pytest.fail(
-        "Unskip when owl.game.create_env builds KaggricultureEnv: two evaluations "
-        "at different env_steps must start different games, and repeating one "
-        "evaluation must reproduce its games and final banks exactly."
-    )
 
 
 # Rebuild Task 3.3: promotion telemetry ----------------------------------------------
@@ -3175,7 +3312,10 @@ def test_run_training_loop_reports_promotion_only_after_it_completes(
 # allocation steps are replaced by sentinels that record and fail if reached.
 
 _CONFIGS = Path(__file__).parents[2] / "configs"
-_NOT_WIRED = "run_ppo cannot run Kaggriculture yet"
+_NOT_WIRED = (
+    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action "
+    "mapping are not implemented"
+)
 
 
 def _patch_kaggriculture_startup(
@@ -3341,7 +3481,7 @@ def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
     argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
     _patch_kaggriculture_startup(monkeypatch, argv, calls)
 
-    with pytest.raises(RuntimeError, match=_NOT_WIRED):
+    with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
         run_ppo.main()
 
     assert calls == []
@@ -3388,7 +3528,7 @@ def test_resume_startup_checks_the_runtime_adapted_workload(
         log_mode=LogMode.WANDB,
     )
 
-    with pytest.raises(RuntimeError, match=_NOT_WIRED):
+    with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
         run_ppo.main()
 
     assert calls == []

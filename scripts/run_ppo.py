@@ -14,6 +14,9 @@ from typing import Any, Literal
 
 import torch
 import yaml
+from owl.game import GameVectorizedEnv, create_env
+from owl.kaggriculture.config import KaggricultureEnvConfig
+from owl.kaggriculture.env import KaggricultureVectorizedEnv
 from owl.kaggriculture.evaluation import terminal_seat_banks
 from owl.kaggriculture.types import KaggricultureObsConfig
 from owl.model import (
@@ -96,8 +99,8 @@ LAST_BEST_WIN_RATE_THRESHOLD = 0.7
 # seeds start in the band [2**62, 2**62 + 2**61), leaving 2**61 seeds of headroom
 # below the int64 limit for the games one evaluation env consumes. Training
 # streams draw `base_seed + rank + k * world_size`; they stay below this band only
-# while that value is below 2**62, a bound nothing here enforces yet (the native
-# env seam, rebuild Tasks 1.4/1.5, must enforce it to keep the two apart).
+# while that value is below 2**62. Any training-only band restriction belongs to
+# Task 3.1's rollout factory adoption; native admission accepts nonnegative i64.
 _EVAL_SEED_BITS = 61
 _EVAL_SEED_FLOOR = 1 << 62
 CHECKPOINT_FINAL = "checkpoint_final.pt"
@@ -175,7 +178,13 @@ def main() -> None:
             cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
         )
         _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
-        # Fails before the run dir for Kaggriculture, which has no env yet.
+        # The native adapter exists; Task 3.1 must add its rollout storage and
+        # action mapping before the canonical trainer can consume its batches.
+        if isinstance(cfg.env, KaggricultureEnvConfig):
+            raise RuntimeError(
+                "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                "and action mapping are not implemented"
+            )
         env_config = require_orbit_env(cfg.env, context=_TRAINER)
 
         if isinstance(launch, FreshLaunch):
@@ -1412,6 +1421,12 @@ def _evaluate_games(
     replay_output_path: Path | None = None,
 ) -> tuple[_EvalStats, dict[int, _EvalStats], dict[str, list[float]], int]:
     env = _create_eval_env(cfg, n_envs=n_envs, device=device, env_steps=env_steps)
+    # The factory is native-ready; the policy evaluation mapper is still Orbit.
+    if isinstance(env, KaggricultureVectorizedEnv):
+        raise RuntimeError(
+            "Kaggriculture policy evaluation needs Task 3.1 observation "
+            "and action mapping"
+        )
     obs = env.reset()
     # One slot per player seat the game exposes (4 Orbit slots, 2 Kaggriculture).
     assignments = torch.full(obs.still_playing.shape, -1, dtype=torch.int64)
@@ -1583,13 +1598,17 @@ def _create_eval_env(
     n_envs: int,
     device: torch.device,
     env_steps: int,
-) -> VectorizedEnv:
-    """Build the evaluation env for the evaluation at ``env_steps``."""
-    if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
-        raise NotImplementedError(
-            "Kaggriculture evaluation needs the native environment (rebuild Tasks "
-            "1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, "
-            f"env_steps={env_steps})"
+) -> GameVectorizedEnv:
+    """Build an independent evaluation env for the evaluation at ``env_steps``."""
+    if isinstance(cfg.env, KaggricultureEnvConfig):
+        return create_env(
+            cfg.env,
+            n_envs=n_envs,
+            base_seed=_evaluation_seed(base_seed=cfg.env.seed, env_steps=env_steps),
+            rank=0,
+            world_size=1,
+            pin_memory=device.type == "cuda",
+            transfer_device=device,
         )
     # Isaiah's Orbit env samples its own games; it takes no seed.
     env_config = require_orbit_env(cfg.env, context=_TRAINER)
