@@ -1,0 +1,632 @@
+uv run maturin develop
+📦 Including license file `LICENSE`
+🍹 Building a mixed python/rust project
+🔗 Found pyo3 bindings with abi3 support
+🐍 Found CPython 3.12 at /Users/poonszesen/kg-v3-m-4-4/.venv/bin/python
+📡 Using build options features from pyproject.toml
+Audited 9 packages in 19ms
+Resolved 44 packages in 8ms
+Audited 44 packages in 0.60ms
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-m-4-4)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.13s
+📦 Built wheel for abi3 Python ≥ 3.11 to /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/.tmpFofoc4/owl-0.1.0-cp311-abi3-macosx_11_0_arm64.whl
+✏️ Setting installed package as editable
+🛠 Installed owl-0.1.0
+uv run python scripts/check_engine_trim.py
+Uninstalled 1 package in 0.61ms
+Installed 1 package in 1ms
+engine trim manifest: OK
+uv run --offline python scripts/check_opponent_import.py
+opponent import check passed (entry pins; custody only; parity is checked separately)
+cargo fmt
+cargo fmt --manifest-path engine_rs/Cargo.toml --check
+cargo fmt --manifest-path opponents_rs/Cargo.toml --check
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+139 files left unchanged
+cargo clippy --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s
+# Six pinned upstream style findings; see ops/rebuild-2026-09-29/1.1/results.md.
+cargo clippy --manifest-path engine_rs/Cargo.toml --all-targets --locked -- -D warnings -A clippy::too_many_arguments -A clippy::collapsible_if -A clippy::needless_range_loop
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s
+cargo clippy --offline --manifest-path opponents_rs/Cargo.toml --all-targets --locked -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uvx pymarkdownlnt scan *.md
+uvx pymarkdownlnt scan --recurse python/ scripts/ tests/ src/ docs/
+uv run mypy python/ scripts/
+Success: no issues found in 71 source files
+cargo test
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 279 tests
+test kaggriculture::admission::tests::hire_cash_no_execution_does_not_cap_configuration ... ok
+test kaggriculture::admission::tests::hire_cash_admits_safe_executed_sequences ... ok
+test kaggriculture::admission::tests::hire_cash_rejects_negative_multiplier_explicitly ... ok
+test kaggriculture::admission::tests::hire_cash_rejects_cost_that_rounds_up_to_two_to_64 ... ok
+test kaggriculture::admission::tests::hire_cash_checks_later_executed_hire_and_both_seats ... ok
+test kaggriculture::admission::tests::hire_cash_rejects_oversized_exact_cost_without_float_saturation ... ok
+test kaggriculture::env_tests::reward_admission_predicate_cases ... ok
+test kaggriculture::env_tests::reward_rejects_invalid_coefficients_and_handles_huge_counts ... ok
+test kaggriculture::env_tests::reward_uses_only_own_counters_and_raw_banks ... ok
+test kaggriculture::env_tests::seed_construction_reset_stride_and_overflow ... ok
+test kaggriculture::grammar::tests::grammar_constants ... ok
+test kaggriculture::env_tests::reward_episode_telescopes_with_explicit_output_rounding_budget ... ok
+test kaggriculture::env_tests::truncate_preserves_transition_and_no_winner ... ok
+test kaggriculture::grammar::tests::grammar_coupled_hire_exact_distribution ... ok
+test kaggriculture::env_tests::executed_unbounded_hire_cast_rejects_before_publication ... ok
+test kaggriculture::env_tests::release_dependency_overflow_is_caught ... ok
+test kaggriculture::grammar::tests::grammar_rejects_malformed_i64 ... ok
+test kaggriculture::bindings::detached_test::native_observe_releases_gil_with_controlled_latch ... ok
+test kaggriculture::grammar::tests::grammar_exact_commands ... ok
+test kaggriculture::grammar::tests::grammar_encode_rejects ... ok
+test kaggriculture::grammar::tests::grammar_fixture_oracle ... ok
+test kaggriculture::env_tests::batch_failure_preserves_every_published_byte ... ok
+test kaggriculture::grammar::tests::grammar_encode_round_trip ... ok
+test kaggriculture::grammar_kernel_tests::decoded_programs_feed_kernel ... ok
+test kaggriculture::env_tests::truncate_commits_only_selected_rows ... ok
+test kaggriculture::env_tests::reset_and_truncate_failures_preserve_every_published_byte ... ok
+test kaggriculture::grammar::tests::grammar_replays_reference_program ... ok
+test kaggriculture::grammar_kernel_tests::decoded_actor_ordinals_match_engine_units ... ok
+test kaggriculture::grammar_kernel_tests::kernel_comparator_rejects_nested_order_change - should panic ... ok
+test kaggriculture::lifecycle_timing_tests::measure_lifecycle ... ignored, optimized-only one-game lifecycle phase diagnostic; bounded externally
+test kaggriculture::grammar_kernel_tests::decoded_command_matrices_execute_both_seats ... ok
+test kaggriculture::oracle_corpus::generate_observation_oracle_inputs ... ignored, explicit bounded oracle generation; R1 coverage failure blocks final publication
+test kaggriculture::oracle_corpus::missing_observation_oracle_names_files_and_regeneration_only ... ok
+test kaggriculture::oracle_corpus::producer_comparator_detects_values_nested_orders_and_money_bits ... ok
+test kaggriculture::lifecycle_timing_tests::lifecycle_timing_fixtures_step_and_prepare ... ok
+test kaggriculture::oracle_corpus::producer_gzip_stream_requires_eof_and_success ... ok
+test kaggriculture::oracle_corpus::producer_legacy_domain_rejects_old_oracle_limits_without_narrowing_v3 ... ok
+test kaggriculture::oracle_corpus::producer_policy_uses_all_unit_kinds_and_exact_market_cycle ... ok
+test kaggriculture::oracle_corpus::producer_policy_v2_appends_hire_burst_within_order_limit ... ok
+observation oracle custody: OK (512 states, 1,024 seats)
+test kaggriculture::grammar_kernel_tests::decoded_dense_241_and_hire_capacity ... ok
+test kaggriculture::grammar::tests::grammar_tables_match_reference_and_reachable_states ... ok
+test kaggriculture::oracle_corpus::producer_strict_record_and_quota_guard_reject_bad_inputs ... ok
+test kaggriculture::oracle_corpus::reconstruction_byteplane_decode_preserves_bits_and_rejects_bad_lengths ... ok
+test kaggriculture::oracle_corpus::reconstruction_comparator_names_record_seat_group_offset_and_signed_zero ... ok
+test kaggriculture::oracle_corpus::reconstruction_coverage_rejects_duplicate_offset - should panic ... ok
+test kaggriculture::oracle_corpus::reconstruction_coverage_rejects_unwritten_zero_hole - should panic ... ok
+test kaggriculture::oracle_corpus::reconstruction_feature_streams_support_both_formats_and_exact_eof ... ok
+test kaggriculture::oracle_corpus::reconstruction_hand_anchors_cover_every_range_and_boundary ... ok
+test kaggriculture::oracle_corpus::producer_selection_profiles_and_policy_are_literal ... ok
+test kaggriculture::oracle_corpus::reconstruction_old_day_rule_sentinel_age_and_clamping_are_explicit ... ok
+test kaggriculture::oracle_corpus::reconstruction_recorded_constants_and_duplicates_are_checked_independently ... ok
+test kaggriculture::tests::actors_all_241_slots_preserve_exact_counts_and_positions ... ok
+test kaggriculture::tests::actors_public_positions_roles_and_all_private_channels ... ok
+test kaggriculture::tests::actors_empty_farmer_is_present_and_dense_to_sparse_clears_padding ... ok
+test kaggriculture::tests::actors_rank_remove_reinsert_preserves_counts_and_replacement_preserves_rank ... ok
+test kaggriculture::oracle_corpus::producer_seeded_tiny_selection_repeats_exact_bytes_and_action_hashes ... ok
+test kaggriculture::tests::added_facts_large_exact_values_and_wide_totals_exceed_legacy_admission ... ok
+test kaggriculture::tests::added_facts_legacy_omits_rule_inputs_and_public_rival_hires ... ok
+test kaggriculture::grammar_kernel_tests::decoded_hire_masks_ignore_cash ... ok
+test kaggriculture::tests::added_facts_order_only_pair_keeps_counts_and_legacy_but_changes_exact_ranks ... ok
+test kaggriculture::tests::added_facts_remaining_transitions_follow_actual_small_episode_stop_rule ... ok
+test kaggriculture::tests::config_context_uses_bound_rules_wide_time_arithmetic_and_both_roles ... ok
+test kaggriculture::tests::config_accepts_all_six_corpus_profiles_and_small_episodes ... ok
+test kaggriculture::tests::added_facts_hire_cost_bits_match_an_independent_python_integer_loop ... ok
+test kaggriculture::tests::config_day_order_product_has_exact_240_boundary_and_checked_overflow ... ok
+test kaggriculture::tests::config_preserves_maximum_exact_integers_and_large_scaled_values ... ok
+test kaggriculture::tests::config_framework_extras_do_not_replace_explicit_seed_or_rule_context ... ok
+test kaggriculture::tests::config_rejects_nonempty_explicit_market_params_but_accepts_empty ... ok
+test kaggriculture::tests::config_rejects_farm_count_clock_and_nonfinite_derived_context_transactionally ... ok
+test kaggriculture::tests::context_can_act_boundaries_and_terminal_snapshots_are_live_rows ... ok
+test kaggriculture::tests::config_weed_requires_finite_nonnegative_numeric_f32_without_unit_cap ... ok
+test kaggriculture::tests::context_market_preserves_signed_exact_integers_and_unbounded_scales ... ok
+test kaggriculture::grammar_kernel_tests::decoded_transfer_quantities_have_inventory_effects ... ok
+test kaggriculture::tests::context_order_limits_follow_rule_not_hires_cash_or_actor_count ... ok
+test kaggriculture::tests::context_shops_preserve_order_duplicates_zero_categories_and_padding ... ok
+test kaggriculture::tests::hire_cost_literal_sequence_matches_engine_hire_bank_deltas ... ok
+test kaggriculture::tests::hire_cost_positive_prefix_stops_at_first_f32_overflow ... ok
+test kaggriculture::tests::hire_cost_uses_each_public_count ... ok
+test kaggriculture::tests::actors_reject_malformed_positions_cardinality_and_private_counts_atomically ... ok
+test kaggriculture::tests::measure_observe_cost ... ignored, bounded optimized-only CPU access-cost diagnostic; no throughput claim
+test kaggriculture::tests::hire_cost_zero_multiplier_handles_huge_representable_count_without_iteration ... ok
+test kaggriculture::tests::config_rejects_envelope_violations_without_output_writes ... ok
+test kaggriculture::tests::shape_byte_capacity_overflow_is_an_error ... ok
+test kaggriculture::tests::privacy_public_mutation_changes_both_rows_and_complete_seat_swap_is_symmetric ... ok
+test kaggriculture::tests::shape_error_display_preserves_field_and_optional_context ... ok
+test kaggriculture::tests::context_market_rejects_missing_unknown_fractional_and_wrong_type_values ... ok
+test kaggriculture::tests::shape_header_helper_retains_both_private_states ... ok
+test kaggriculture::tests::shape_product_overflow_is_an_error ... ok
+test kaggriculture::tests::privacy_private_values_and_key_order_do_not_cross_seats ... ok
+test kaggriculture::tests::shape_clear_overwrites_every_field_with_positive_zero_or_false ... ok
+test kaggriculture::tests::shape_publish_mismatched_environments_leaves_all_fields_unchanged ... ok
+test kaggriculture::tests::shape_wrong_environment_count_and_251_frame_mask_are_rejected ... ok
+test kaggriculture::tests::shape_zero_environments_is_an_error ... ok
+test kaggriculture::tests::shape_serial_and_rayon_cover_identical_ordered_rows ... ok
+test kaggriculture::tests::storage_all_player_channels_use_public_roles_and_own_private_state ... ok
+test kaggriculture::tests::storage_native_zero_counts_have_all_twelve_insertion_ranks ... ok
+test kaggriculture::tests::storage_rank_remove_reinsert_changes_order_not_counts ... ok
+test kaggriculture::tests::context_check_row_rejects_corruptions_in_every_domain ... ok
+test kaggriculture::tests::storage_room_uses_wide_nonnegative_remainder_without_clamping_used_ratio ... ok
+test kaggriculture::tests::tile_all_vocabularies_and_empty_applicability ... ok
+test kaggriculture::tests::tile_asymmetric_coordinates_and_every_channel ... ok
+test kaggriculture::tests::shape_staging_allocations_stay_fixed_across_writes_and_publication ... ok
+test kaggriculture::tests::tile_exact_large_integers_and_signed_future_dates_are_not_clamped ... ok
+test kaggriculture::tests::storage_rejects_unknown_items_negative_counts_and_bad_quadrants_atomically ... ok
+test kaggriculture::tests::snapshot_both_seats_acquire_once_and_keep_staging_allocations ... ok
+test kaggriculture::env_tests::default_horizon_terminates_at_719 ... ok
+test kaggriculture::tests::tile_reusing_output_fully_clears_old_applicable_values ... ok
+test kaggriculture::tests::tile_sentinels_and_fertilizer_flags_keep_applicability ... ok
+test kaggriculture::tests::tile_board_shape_rejection_preserves_all_output ... ok
+test kaggriculture::oracle_corpus::producer_dense_pair_changes_only_the_two_key_orders ... ok
+test kaggriculture::tests::transaction_dense_to_sparse_reuse_clears_every_field ... ok
+test rl::action_spec::tests::adversarial_selected_target_angle_search ... ignored, expensive adversarial selected-angle search; run with --ignored --nocapture
+test kaggriculture::tests::transaction_late_market_failure_preserves_both_environments_then_serial_equals_rayon ... ok
+test rl::action_spec::tests::anything_goes_submits_sun_crossing_static_target ... ok
+test rl::action_spec::tests::anything_goes_target_bins_submit_sun_crossing_static_target ... ok
+test rl::action_spec::tests::audit_selected_target_angle_quality ... ignored, expensive selected-angle quality audit; run with --ignored --nocapture
+test rl::action_spec::tests::cached_orbit_path_matches_step_zero_swept_phase ... ok
+test rl::action_spec::tests::discrete_comet_target_arc_subtracts_dynamic_blocker ... ok
+test rl::action_spec::tests::discrete_comet_target_arc_subtracts_static_blocker ... ok
+test rl::action_spec::tests::discrete_comet_target_hits_in_simulator ... ok
+test rl::action_spec::tests::discrete_comet_target_with_exhausted_path_is_no_op ... ok
+test rl::action_spec::tests::discrete_comet_target_without_intercept_is_no_op ... ok
+test rl::action_spec::tests::discrete_orbiting_target_hits_in_simulator ... ok
+test rl::action_spec::tests::discrete_static_target_arc_subtracts_dynamic_blocker ... ok
+test rl::action_spec::tests::discrete_static_target_tangent_fallback_hits_in_simulator ... ok
+test rl::action_spec::tests::discrete_target_bins_decode_target_and_fleet_bin ... ok
+test rl::action_spec::tests::discrete_target_bins_mask_keeps_only_higher_duplicate_bins ... ok
+test rl::action_spec::tests::discrete_target_bins_zero_bin_decodes_as_no_launch ... ok
+test rl::action_spec::tests::discrete_targets_mask_rejects_sun_blocked_static_targets ... ok
+test rl::action_spec::tests::discrete_targets_mask_uses_source_target_square ... ok
+test rl::action_spec::tests::discrete_targets_rejects_invalid_targets ... ok
+test rl::action_spec::tests::dynamic_target_launch_crossing_sun_is_counted_as_launch_failure ... ok
+test rl::action_spec::tests::dynamic_target_launch_ending_out_of_bounds_is_counted_as_launch_failure ... ok
+test rl::action_spec::tests::fallback_to_expiring_unintended_neutral_comet_is_no_op ... ok
+test rl::action_spec::tests::fallback_to_profitable_unintended_neutral_comet_still_fires ... ok
+test rl::action_spec::tests::fallback_to_unintended_neutral_comet_without_profit_is_no_op ... ok
+test rl::action_spec::tests::fallback_to_unintended_neutral_planet_undershot_is_no_op ... ok
+test rl::action_spec::tests::fleet_bin_mapping_uses_half_up_rounding ... ok
+test rl::action_spec::tests::fleet_segment_hits_circle_counts_stationary_tangent ... ok
+test rl::action_spec::tests::full_mask_falls_back_to_sun_safe_blocked_dynamic_target ... ok
+test rl::action_spec::tests::full_mask_sun_blocked_static_target_decodes_as_no_op ... ok
+test rl::action_spec::tests::full_mask_target_bins_reject_masked_nonzero_target_bin ... ok
+test rl::action_spec::tests::intended_neutral_target_undershot_still_fires ... ok
+test rl::action_spec::tests::loose_discrete_target_bin_modes_do_not_mask_statically_obstructed_targets ... ok
+test rl::action_spec::tests::loose_discrete_target_modes_do_not_mask_statically_obstructed_targets ... ok
+test rl::action_spec::tests::orbiting_target_candidate_falls_back_to_scan_when_target_is_faster ... ok
+test rl::action_spec::tests::orbiting_target_candidate_matches_dense_solver_and_hits_in_simulator ... ok
+test rl::action_spec::tests::orbiting_target_candidate_solves_inflated_radius_intercept ... ok
+test rl::action_spec::tests::orbiting_target_candidate_uses_observed_generated_reset_phase ... ok
+test rl::action_spec::tests::parse_rejects_invalid_targeting_mode_for_discrete_action_specs ... ok
+test rl::action_spec::tests::parse_rejects_invalid_targeting_mode_for_pure_action_spec ... ok
+test rl::action_spec::tests::piecewise_linear_comet_candidate_solves_segment_intercept ... ok
+test rl::action_spec::tests::piecewise_linear_comet_candidates_hit_swept_segments ... ok
+test rl::action_spec::tests::piecewise_linear_orbiting_candidates_hit_swept_segments ... ok
+test rl::action_spec::tests::pure_comet_action_uses_reserved_comet_slots_after_planets ... ok
+test rl::action_spec::tests::pure_launch_decodes_against_cached_slot_mapping ... ok
+test rl::action_spec::tests::pure_launch_decodes_from_remapped_outer_player_slot ... ok
+test rl::action_spec::tests::pure_launch_emits_multiple_actions_until_first_false_slot ... ok
+test kaggriculture::tests::tile_strict_constructor_keys_reject_stale_null_missing_and_unknown_fields ... ok
+test rl::action_spec::tests::pure_launch_errors_when_angle_is_not_finite ... ok
+test rl::action_spec::tests::pure_launch_errors_when_cached_slot_planet_is_missing ... ok
+test rl::action_spec::tests::pure_launch_errors_when_player_does_not_own_source ... ok
+test rl::action_spec::tests::pure_launch_errors_when_ship_count_exceeds_i32 ... ok
+test rl::action_spec::tests::pure_launch_errors_when_ship_count_is_below_min_fleet_size ... ok
+test rl::action_spec::tests::pure_launch_errors_when_ship_count_is_zero ... ok
+test rl::action_spec::tests::pure_launch_errors_when_total_launches_exceed_source_ships ... ok
+test rl::action_spec::tests::replay_far_static_target_blocked_by_neutral_planet_is_no_op_for_slow_fleets ... ok
+test rl::action_spec::tests::reset_precomputes_static_target_cache ... ok
+test rl::action_spec::tests::static_source_static_target_cache_gates_full_mask_mask ... ok
+test rl::action_spec::tests::stop_bad_launch_falls_back_to_sun_safe_blocked_static_target ... ok
+test rl::action_spec::tests::stop_bad_launch_replaces_sun_crossing_static_target_with_no_op ... ok
+test rl::action_spec::tests::stop_bad_launch_target_bins_replace_sun_crossing_static_target_with_no_op ... ok
+test rl::obs_spec::tests::angular_velocity_normalization_maps_generated_range_to_zero_one ... ok
+test rl::obs_spec::tests::cross_attention_fleet_features_bucket_late_eta_and_post_comet_flag ... ok
+test rl::obs_spec::tests::cross_attention_fleets_route_to_target_and_write_eta_features ... ok
+test rl::obs_spec::tests::cross_attention_incoming_summaries_include_truncated_routed_fleets ... ok
+test rl::obs_spec::tests::encode_state_rejects_invalid_planet_production - should panic ... ok
+test rl::obs_spec::tests::encode_state_respects_min_fleet_size_action_mask ... ok
+test rl::obs_spec::tests::encode_state_writes_owners_and_action_masks_to_remapped_outer_slots ... ok
+test rl::obs_spec::tests::fleet_motion_features_zero_heading_for_stationary_fleet ... ok
+test rl::obs_spec::tests::fleet_motion_features_zero_radial_basis_at_sun_center ... ok
+test rl::obs_spec::tests::fleet_ship_count_features_start_at_one_then_next_power_above_min_fleet_size ... ok
+test rl::obs_spec::tests::integer_fields_reject_fractional_values ... ok
+test rl::obs_spec::tests::integer_fields_round_values_within_tolerance ... ok
+test rl::obs_spec::tests::planet_orbital_velocity_uses_normalized_tangent_direction_only_for_orbiting_planets ... ok
+test rl::obs_spec::tests::planet_production_requires_documented_one_hot_range ... ok
+test rl::obs_spec::tests::ship_count_features_two_hot_linear_and_log_space ... ok
+test rl::obs_spec::tests::ship_count_features_use_zero_bucket_and_overflow_channels ... ok
+test rl::obs_spec::tests::spatial_feature_count_matches_public_channel_widths ... ok
+test rl::vec_env::tests::decoded_launch_buffers_represent_each_action_spec ... ok
+test rl::vec_env::tests::dense_decoded_launches_match_direct_step_actions ... ok
+test rl::vec_env::tests::eliminated_player_gets_one_loss_reward_then_sticky_done ... ok
+test rl::vec_env::tests::episode_stats_reports_ships_per_launch_mean ... ok
+test rl::vec_env::tests::nonterminal_horizon_step_does_not_reset_before_returning_done ... ok
+test rl::vec_env::tests::player_reward_done_ship_ratio_zeros_losers_and_pays_winner ... ok
+test rl::vec_env::tests::player_reward_done_win_only_zeros_losers_and_pays_winner ... ok
+test rl::vec_env::tests::rewards_and_dones_use_remapped_outer_player_slots ... ok
+test rl::action_spec::tests::replay_static_target_to_57_ship_planet_arrives_for_slow_fleets ... ok
+test rl::vec_env::tests::ship_ratio_winner_reward_divides_max_by_total ... ok
+test rl::vec_env::tests::split_won_reward_averages_one_win_with_tied_losses ... ok
+test rl::vec_env::tests::ship_ratio_mode_pays_only_winners_at_terminal ... ok
+test rl::vec_env::tests::still_playing_marks_only_current_unfinished_player_slots ... ok
+test rl::vec_env::tests::still_playing_uses_remapped_outer_player_slots ... ok
+test rl::vec_env::tests::terminal_planet_occupancy_rate_counts_only_terminal_non_comet_planets ... ok
+test rl::vec_env::tests::still_playing_describes_reset_observation_after_terminal_step ... ok
+test rl::vec_env::tests::tied_terminal_winners_get_split_reward ... ok
+test rl::vec_env::tests::terminal_win_rates_use_remapped_outer_player_slots ... ok
+test rl::vec_env::tests::win_only_winner_reward_splits_tied_probability_mass ... ok
+test rules_engine::env::tests::attacker_tie_with_garrison_leaves_zero_ship_owner_unchanged ... ok
+test rl::vec_env::tests::win_only_mode_pays_only_terminal_winner_probability ... ok
+test rules_engine::env::tests::combat_lists_reject_planet_ids_at_limit - should panic ... ok
+test rules_engine::env::tests::comet_moves_along_existing_path_and_expires ... ok
+test rules_engine::env::tests::duplicate_planet_ids_are_rejected - should panic ... ok
+test rules_engine::env::tests::equal_attackers_destroy_each_other_without_touching_planet ... ok
+test rules_engine::env::tests::fleet_crossing_sun_without_planet_hit_is_removed ... ok
+test rules_engine::env::tests::exact_boundary_planet_contact_collides ... ok
+test rules_engine::env::tests::fleet_hits_planet_before_crossing_sun ... ok
+test rules_engine::env::tests::fleet_hitting_comet_planet_counts_comet_capture ... ok
+test rules_engine::env::tests::fleet_hits_planet_before_leaving_board ... ok
+test rules_engine::env::tests::fleet_hitting_planet_queues_combat_and_can_capture ... ok
+test rules_engine::env::tests::fleet_leaving_board_without_planet_hit_is_removed ... ok
+test rules_engine::env::tests::four_player_top_attacker_tie_leaves_planet_unchanged ... ok
+test rules_engine::env::tests::four_player_unique_top_beats_tied_second_place ... ok
+test rules_engine::env::tests::launch_rejects_non_positive_ship_count - should panic ... ok
+test rules_engine::env::tests::launch_spends_ships_and_creates_fleet_before_production ... ok
+test rules_engine::env::tests::moving_planet_sweeps_fleet_into_combat ... ok
+test rules_engine::env::tests::neutral_arrival_with_too_few_ships_counts_undershot ... ok
+test rules_engine::env::tests::neutral_comet_arrival_with_too_few_ships_counts_comet_undershot ... ok
+test rules_engine::env::tests::no_op_score_tie_marks_all_tied_players_as_winners ... ok
+test rules_engine::env::tests::nonterminal_eliminated_player_is_lost ... ok
+test rules_engine::env::tests::nonterminal_player_results_do_not_compute_scores ... ok
+test rules_engine::env::tests::orbiting_planets_rotate_from_initial_position ... ok
+test rules_engine::env::tests::player_alive_flags_rejects_neutral_fleet_owner - should panic ... ok
+test rules_engine::env::tests::queued_combat_for_removed_planet_still_removes_fleet ... ok
+test rules_engine::env::tests::generated_reset_creates_first_playable_state_with_homes ... ok
+test rules_engine::env::tests::remove_comet_planets_handles_duplicate_expired_ids ... ok
+test rules_engine::env::tests::resolve_combats_rejects_neutral_fleet_owner - should panic ... ok
+test rules_engine::env::tests::resolve_combats_rejects_out_of_bounds_fleet_owner - should panic ... ok
+test rules_engine::env::tests::same_owner_arrival_reinforces_planet ... ok
+test rules_engine::env::tests::step_limit_sets_player_results_for_actual_player_count ... ok
+test rules_engine::env::tests::step_rejects_fleet_owner_outside_player_count - should panic ... ok
+test rules_engine::env::tests::step_rejects_negative_non_neutral_planet_owner - should panic ... ok
+test rules_engine::env::tests::step_rejects_planet_owner_outside_player_count - should panic ... ok
+test rules_engine::env::tests::swept_aabb_keeps_endpoint_collision_candidates ... ok
+test rules_engine::env::tests::swept_aabb_rejects_far_paths ... ok
+test rules_engine::generation::tests::arbitrary_precision_uniform_fixture_float ... ok
+test rules_engine::env::tests::step_spawns_comets_before_same_step_comet_movement ... ok
+test rules_engine::generation::tests::assign_home_planets_selects_four_player_home_from_any_symmetric_group ... ok
+test rules_engine::generation::tests::assign_home_planets_sets_two_player_q1_and_q4 ... ok
+test kaggriculture::tests::tile_rejects_bad_representations_enums_and_nonboolean_flags ... ok
+test rules_engine::generation::tests::fixture_float_rejects_non_number_and_nonfinite ... ok
+test rl::action_spec::tests::analytic_orbiting_candidates_are_compared_to_swept_segments ... ok
+test rules_engine::generation::tests::generate_comet_paths_returns_four_symmetric_paths_without_obstacles ... ok
+test rules_engine::generation::tests::generate_planets_accepts_degenerate_uniform_endpoints ... ok
+test kaggriculture::tests::shape_every_field_rejects_short_and_long_without_writes ... ok
+test rules_engine::generation::tests::generated_planets_have_reference_shape_invariants ... ok
+test rules_engine::generation::tests::comet_ship_sampling_matches_python_reference_fixtures ... ok
+test rules_engine::generation::tests::generate_comet_paths_matches_python_reference_fixture ... ok
+test rules_engine::generation::tests::spawn_comet_group_adds_placeholder_planets_and_metadata ... ok
+test rules_engine::generation::tests::symmetric_planets_preserves_generated_group_order ... ok
+test rules_engine::replay_tests::python_validated_actions_does_not_truncate_planet_ids ... ok
+test rules_engine::generation::tests::no_op_terminal_tie_matches_python_reference_fixture ... ok
+test rules_engine::replay_tests::replay_skip_spawn_injection_does_not_request_rng ... ok
+test rules_engine::utils::tests::distance_matches_reference_formula ... ok
+test rules_engine::utils::tests::fleet_speed_caps_above_max ... ok
+test rules_engine::utils::tests::fleet_speed_matches_python_formula_examples ... ok
+test rules_engine::utils::tests::point_to_segment_distance_clamps_to_endpoint ... ok
+test rules_engine::utils::tests::point_to_segment_distance_handles_zero_length_segment ... ok
+test rules_engine::utils::tests::point_to_segment_distance_projects_inside_segment ... ok
+test rules_engine::utils::tests::swept_pair_hit_matches_reference_formula_examples ... ok
+test rules_engine::generation::tests::generate_planets_matches_python_reference_fixture ... ok
+test rules_engine::generation::tests::comet_path_cases_match_python_reference_fixtures ... ok
+test rules_engine::replay_tests::replay_fixtures_match_reference_transitions ... ok
+test rules_engine::generation::tests::reset_cases_match_python_reference_fixtures ... ok
+test kaggriculture::tests::tile_integer_fields_reject_fractional_wrong_types_ranges_and_negative_counts ... ok
+test kaggriculture::grammar_kernel_tests::decoded_sampled_oracle_programs_execute ... ok
+test kaggriculture::oracle_corpus::compare_observation_oracle ... ok
+test kaggriculture::tests::tile_official_fixture_constructor_keys_cover_all_2880_states ... ok
+test kaggriculture::grammar_kernel_tests::decoded_replay_actions_preserve_selected_states ... ok
+
+test result: ok. 274 passed; 0 failed; 5 ignored; 0 measured; 0 filtered out; finished in 7.14s
+
+cargo test --manifest-path engine_rs/Cargo.toml --locked
+   Compiling num-traits v0.2.19
+   Compiling serde_core v1.0.229
+   Compiling num-integer v0.1.47
+   Compiling equivalent v1.0.2
+   Compiling hashbrown v0.17.1
+   Compiling num-bigint v0.4.8
+   Compiling indexmap v2.14.0
+   Compiling zmij v1.0.23
+   Compiling itoa v1.0.18
+   Compiling memchr v2.8.3
+   Compiling num-rational v0.4.2
+   Compiling serde_json v1.0.151
+   Compiling serde v1.0.229
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-m-4-4/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.39s
+     Running unittests src/lib.rs (engine_rs/target/debug/deps/kaggriculture_engine-defe974ba3c431db)
+
+running 41 tests
+test tests::boolean_weed_probability_is_not_a_schema_number ... ok
+test tests::econ_v4_death_clipping_and_missed_growth ... ok
+test tests::econ_telemetry_counts_commands_pass_commits_and_sales ... ok
+test tests::econ_v4_loss_counters ... ok
+test tests::econ_v4_market_failures_and_reference_prices ... ok
+test tests::concurrent_sellers_receive_the_same_precommit_quote ... ok
+test tests::econ_v4_terminal_provenance_and_flags ... ok
+test tests::econ_v4_labor_and_malformed_commands ... ok
+test tests::attrib_ledger_exact_small_cases ... ok
+test tests::exact_linear_amplitude_does_not_eagerly_float_wide_horizon ... ok
+test tests::failed_action_is_transactional ... ok
+test tests::integral_float_and_boolean_horizons_keep_their_python_numeric_kinds ... ok
+test tests::econ_v4_unit_losses ... ok
+test tests::float_seed_is_accepted_at_reset_but_fails_at_the_first_daily_mix ... ok
+test tests::mixed_float_division_rejects_an_exact_square_beyond_f64 ... ok
+test tests::mixed_float_numerator_squares_integer_t_before_float_conversion ... ok
+test tests::mixed_integer_float_market_comparison_is_exact_before_arithmetic ... ok
+test tests::mixed_float_numerator_does_not_eagerly_convert_a_wide_hinge_t ... ok
+test tests::native_reset_rejects_non_two_player_cardinality ... ok
+test tests::normalized_integral_float_configuration_and_unknown_keys_are_retained ... ok
+test tests::nested_market_horizon_does_not_coerce_strings ... ok
+test tests::python_ties_to_even_price_boundary_is_preserved ... ok
+test tests::python_action_integer_requires_valid_decimal_underscore_grammar ... ok
+test tests::schema_integer_configuration_does_not_apply_python_action_coercions ... ok
+test tests::shed_overflow_keeps_inventory_in_insertion_order ... ok
+test tests::seat_wealth_marks_liquid_holdings_to_market_and_productive_assets_at_book ... ok
+test tests::squared_integer_market_distance_is_shaped_before_float_conversion ... ok
+test tests::step_zero_town_tick_and_terminal_lifecycle_match_python ... ok
+test tests::upstream_deaths_are_exact_disjoint_removal_events ... ok
+test tests::upstream_harvest_counts_success_not_unripe_request ... ok
+test tests::upstream_plant_overcommit_and_missing_hand_are_not_commits ... ok
+test tests::upstream_ready_stock_uses_harvest_age_post_close_and_includes_terminal ... ok
+test tests::upstream_verbs_preserve_coarse_family_accounting ... ok
+test tests::upstream_schema_is_numeric_complete_and_accumulates_all_paths ... ok
+test tests::wide_integer_hinge_uses_exact_t_over_t_and_distance_ratio ... ok
+test tests::zero_market_horizon_fails_when_python_first_prices_the_market ... ok
+test tests::zero_count_pickup_is_a_pass ... ok
+test tests::ineffective_commands_equal_the_per_verb_upstream_sums ... ok
+test tests::market_escape_guard_matches_pythons_99_999_unit_limit ... ok
+test tests::attrib_ledger_reconciles_with_econ_counters ... ok
+test tests::econ_v4_counting_is_state_neutral ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/py_random.rs (engine_rs/target/debug/deps/py_random-4fe19bb9f2a1d8df)
+
+running 9 tests
+test integer_seed_and_mt19937_state_match_cpython ... ok
+test primitive_and_word_seed_adapters_use_the_same_python_integer_path ... ok
+test python_domain_edges_are_explicit_and_zero_bit_draws_consume_nothing ... ok
+test getrandbits_matches_cpython_across_word_boundaries ... ok
+test random_53_bit_fractions_match_cpython_bit_for_bit ... ok
+test randrange_rejection_sampling_matches_cpython ... ok
+test choice_and_two_successive_shuffles_match_cpython ... ok
+test mt19937_twists_match_cpython_across_multiple_state_rollovers ... ok
+test first_ten_thousand_tempered_words_match_cpython_stream_hashes ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/replay_parity.rs (engine_rs/target/debug/deps/replay_parity-c38030bb30dd03b7)
+
+running 19 tests
+test env_directory_traces ... ok
+test comparator_names_first_differing_field ... ok
+test kernel_public_api ... ok
+test nested_private_order_mismatch_is_rejected - should panic ... ok
+test private_order_mismatch_is_rejected - should panic ... ok
+test public_number_mismatch_is_rejected - should panic ... ok
+test public_order_mismatch_is_rejected - should panic ... ok
+test rollback_check_accepts_an_untouched_state ... ok
+test rollback_check_rejects_a_key_order_only_mutation ... ok
+test rollback_check_rejects_status_reward_and_done_mutations ... ok
+test generated_trace_perturbed_action_is_rejected ... ok
+test generated_trace_perturbed_private_order_is_rejected ... ok
+test generated_trace_rejection_claims_are_checked ... ok
+test generated_trace_perturbed_state_is_rejected ... ok
+test episode_95324500 ... ok
+test episode_95990191 ... ok
+test episode_95921764 ... ok
+test episode_95901360 ... ok
+test generated_fixtures_replay ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.57s
+
+   Doc-tests kaggriculture_engine
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+cargo test --offline --manifest-path opponents_rs/Cargo.toml --locked
+   Compiling num-traits v0.2.19
+   Compiling serde_core v1.0.229
+   Compiling typenum v1.20.1
+   Compiling generic-array v0.14.7
+   Compiling num-integer v0.1.47
+   Compiling hashbrown v0.17.1
+   Compiling equivalent v1.0.2
+   Compiling num-bigint v0.4.8
+   Compiling indexmap v2.14.2
+   Compiling zmij v1.0.23
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling num-rational v0.4.2
+   Compiling serde_json v1.0.151
+   Compiling serde v1.0.229
+   Compiling libc v0.2.189
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling cpufeatures v0.2.17
+   Compiling digest v0.10.7
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-m-4-4/engine_rs)
+   Compiling cfg-if v1.0.5
+   Compiling sha2 v0.10.9
+   Compiling kaggriculture-opponents v0.1.0 (/Users/poonszesen/kg-v3-m-4-4/opponents_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.77s
+     Running unittests src/lib.rs (opponents_rs/target/debug/deps/kaggriculture_opponents-d6c252fb53cc70b9)
+
+running 12 tests
+test view_tests::fibonacci_and_config_are_exact ... ok
+test native_agents::starter::tests::a_farmer_who_cannot_afford_a_seed_passes_with_an_empty_market ... ok
+test native_agents::starter::tests::hands_are_always_empty_even_for_a_farm_with_hands ... ok
+test view_tests::debug_does_not_expose_hidden_engine_fields ... ok
+test view_tests::snapshot_refreshes_only_after_success ... ok
+test native_agents::starter::tests::hire_step_requests_one_hand_when_affordable_and_not_at_the_days_end ... ok
+test native_agents::starter::tests::carrot_cycle_step_is_the_starter_rule_at_the_assigned_tile ... ok
+test native_agents::starter::tests::carrot_loop_follows_the_kit_starter_across_the_first_four_days ... ok
+test view_tests::starter_visibility ... ok
+test view_tests::e776_visibility ... ok
+test view_tests::ecobot_visibility ... ok
+test view_tests::r04_visibility ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.28s
+
+     Running tests/lifecycle.rs (opponents_rs/target/debug/deps/lifecycle-26f2b04071bdc076)
+
+running 5 tests
+test matches_reject_nondefault_configuration ... ok
+test registry_and_lifecycle_fail_explicitly ... ok
+test independent_seats_and_mid_episode_replay ... ok
+test changed_seed_changes_actions ... ok
+test same_seed_has_identical_action_hashes_banks_and_execution ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.36s
+
+     Running tests/oracle_parity.rs (opponents_rs/target/debug/deps/oracle_parity-ba1379c4e274aa62)
+
+running 5 tests
+test comparator_preserves_numbers_array_order_and_state_key_order ... ok
+test replay_comparison_rejects_tampered_resumed_actions_and_final_state ... ok
+test every_oracle_rejects_tampered_actions_for_both_seats ... ok
+test original_python_mid_episode_replays_match_native_resumed_actions ... ok
+test original_python_oracles_match_native_actions_and_states ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 19.12s
+
+   Doc-tests kaggriculture_opponents
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+uv run pytest tests/
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/poonszesen/kg-v3-m-4-4
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 2443 items
+
+tests/kaggriculture/test_base_generics_typing.py .                       [  0%]
+tests/kaggriculture/test_codec.py .............................          [  1%]
+tests/kaggriculture/test_compile_gemm_backends.py ...................... [  2%]
+.................................                                        [  3%]
+tests/kaggriculture/test_configs.py .................................... [  4%]
+.......................                                                  [  5%]
+tests/kaggriculture/test_env.py ........................................ [  7%]
+..............                                                           [  8%]
+tests/kaggriculture/test_env_cuda_fence.py s                             [  8%]
+tests/kaggriculture/test_env_reference.py .                              [  8%]
+tests/kaggriculture/test_evaluation.py .............                     [  8%]
+tests/kaggriculture/test_game.py ...........................             [  9%]
+tests/kaggriculture/test_gpu_grammar.py ........................         [ 10%]
+tests/kaggriculture/test_model_compile.py ...........                    [ 11%]
+tests/kaggriculture/test_model_encoder.py .............................. [ 12%]
+.............                                                            [ 13%]
+tests/kaggriculture/test_model_heads.py ................................ [ 14%]
+.................................                                        [ 15%]
+tests/kaggriculture/test_model_registration.py .......                   [ 15%]
+tests/kaggriculture/test_native_env.py ................................. [ 17%]
+........................................................................ [ 20%]
+........................................................................ [ 23%]
+........................................................................ [ 26%]
+........................................................................ [ 29%]
+........................                                                 [ 30%]
+tests/kaggriculture/test_native_grammar_bindings.py .................... [ 30%]
+.......................                                                  [ 31%]
+tests/kaggriculture/test_native_tables.py ......................         [ 32%]
+tests/kaggriculture/test_observe.py ..ss................................ [ 34%]
+.....................                                                    [ 35%]
+tests/kaggriculture/test_rewards.py .................................... [ 36%]
+......                                                                   [ 36%]
+tests/kaggriculture/test_teacher.py .................................... [ 38%]
+..........s..sss                                                         [ 38%]
+tests/kaggriculture/test_training_semantics.py ......................... [ 39%]
+..                                                                       [ 40%]
+tests/kaggriculture/test_types.py ...................................... [ 41%]
+........................................................................ [ 44%]
+................                                                         [ 45%]
+tests/owl/agent/test_agent.py .......................................... [ 46%]
+...........                                                              [ 47%]
+tests/owl/agent/test_kaggle_engine_sanitization.py ....                  [ 47%]
+tests/owl/agent/test_kaggle_observation.py ...                           [ 47%]
+tests/owl/kaggriculture/test_opponents.py sssssssss                      [ 48%]
+tests/owl/model/test_attn.py .....ss                                     [ 48%]
+tests/owl/model/test_model_config_files.py ............................. [ 49%]
+..................                                                       [ 50%]
+tests/owl/model/test_recurrent_transformer_v1.py ..............          [ 50%]
+tests/owl/model/test_stateless_transformer_v1.py ....................... [ 51%]
+........................................................................ [ 54%]
+...............................                                          [ 55%]
+tests/owl/model/test_teacher_targets.py ............................     [ 57%]
+tests/owl/test_checkpoint_quantization.py .............................. [ 58%]
+..............                                                           [ 58%]
+tests/owl/test_config.py .........                                       [ 59%]
+tests/owl/test_int8_emulation.py ...s                                    [ 59%]
+tests/owl/test_replay.py ...                                             [ 59%]
+tests/owl/test_rl.py ................................................... [ 61%]
+...........................                                              [ 62%]
+tests/owl/train/test_advantages.py ..............                        [ 63%]
+tests/owl/train/test_config.py ......................................... [ 65%]
+............................                                             [ 66%]
+tests/owl/train/test_distributed.py ...................                  [ 66%]
+tests/owl/train/test_logging.py .....                                    [ 67%]
+tests/owl/train/test_loss.py .............                               [ 67%]
+tests/owl/train/test_metrics.py ..                                       [ 67%]
+tests/owl/train/test_optimizer.py ...........                            [ 68%]
+tests/owl/train/test_ppo.py ............................................ [ 69%]
+...............................                                          [ 71%]
+tests/owl/train/test_ppo_observation_mapping.py ........................ [ 72%]
+........................................................................ [ 75%]
+........................................................................ [ 78%]
+...                                                                      [ 78%]
+tests/scripts/test_benchmark_checkpoints.py ............................ [ 79%]
+.........                                                                [ 79%]
+tests/scripts/test_download_replays.py ....                              [ 79%]
+tests/scripts/test_extract_model_weights.py .................            [ 80%]
+tests/scripts/test_kaggriculture_parity.py .................s........... [ 81%]
+.......                                                                  [ 82%]
+tests/scripts/test_kaggriculture_select_replays.py .................     [ 82%]
+tests/scripts/test_roundtrip_checkpoint_quantization.py ................ [ 83%]
+..                                                                       [ 83%]
+tests/scripts/test_run_ppo.py .......................................... [ 85%]
+........................................................................ [ 88%]
+....                                                                     [ 88%]
+tests/tools/test_check_engine_trim.py .................................. [ 89%]
+.............................................                            [ 91%]
+tests/tools/test_check_opponent_import.py .............................. [ 92%]
+.................................s.                                      [ 94%]
+tests/tools/test_observation_oracle_custody.py ......................... [ 95%]
+............................                                             [ 96%]
+tests/tools/test_record_grammar_reference.py .........................   [ 97%]
+tests/tools/test_record_kaggriculture_env_reference.py ................. [ 98%]
+...........................................                              [ 99%]
+tests/tools/test_replay_viewer.py ..                                     [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/kaggriculture/test_env_cuda_fence.py:11: CUDA is unavailable
+SKIPPED [2] tests/kaggriculture/test_observe.py:288: pinned host memory requires CUDA
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1356: needs Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping in ppo.py; the merged trainer rejects KaggricultureActionMask)
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1625: needs the Task 3.1 run_ppo game seam (the merged configs load and the Task 1.4/1.5 native env exists, but run_ppo stops for Kaggriculture until Task 3.1 rollout storage and action mapping land)
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1654: needs the Task 3.1 run_ppo game seam (the merged configs load and the Task 1.4/1.5 native env exists, but run_ppo stops for Kaggriculture until Task 3.1 rollout storage and action mapping land)
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1690: needs Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping in ppo.py; the merged trainer rejects KaggricultureActionMask)
+SKIPPED [8] tests/owl/kaggriculture/test_opponents.py:26: needs a native opponent seat: Task 1.4 KaggricultureEnv has no opponents_rs hook
+SKIPPED [1] tests/owl/kaggriculture/test_opponents.py:31: needs a native opponent seat: Task 1.4 KaggricultureEnv has no opponents_rs hook
+SKIPPED [1] tests/owl/model/test_attn.py:60: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/model/test_attn.py:80: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/test_int8_emulation.py:15: x86 torch quantized backend is unavailable: qnnpack
+SKIPPED [1] tests/scripts/test_kaggriculture_parity.py:371: Mac bound: committed regeneration exceeds two live games; run on pod
+SKIPPED [1] tests/tools/test_check_opponent_import.py:396: original sources live in the sibling repo
+================= 2422 passed, 21 skipped in 65.79s (0:01:05) ==================
+uv run python scripts/check_doc_freshness.py
+No doc updates required
+EXIT=0
