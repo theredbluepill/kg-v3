@@ -142,6 +142,13 @@ class PPOConfig(BaseConfig):
     # replayed policy must reproduce the rollout log-probs. Abort when the first
     # minibatch's policy-weighted mean log-ratio exceeds this many nats; None
     # disables the check. See _FIRST_MINIBATCH_LOGRATIO_REFERENCE.
+    # Units follow ppo_clip_mode, because the alarm reads the loss's own
+    # log-ratio metric. "per_player" sums entity log-probs, so the limit bounds
+    # the joint action's log-ratio per player-step: a coherent drift of d nats
+    # on each of K acting entities reads as K * d. "per_entity" averages entity
+    # log-ratios per player-step, so the same drift reads as d. The 0.05 default
+    # is unmeasured against GPU BF16/compile replay noise; the rebuild Phase 6
+    # GPU qualification measures it.
     first_minibatch_logratio_limit: float | None = Field(
         default=0.05, gt=0.0, allow_inf_nan=False
     )

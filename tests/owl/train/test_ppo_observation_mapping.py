@@ -1,9 +1,13 @@
 """Schema-generic observation mapping in the PPO trainer (rebuild Task 3.1).
 
-The ``_isaiah_*`` functions below are frozen copies of the Orbit-specific helpers
-from Isaiah's ``python/owl/train/ppo.py`` at upstream commit 32b3ec9. They are the
-oracle: the schema-generic helpers must produce identical tensors for every Orbit
-``ObsBatch`` shape, with optional fields set and unset and every action-mask type.
+The ``_isaiah_*`` functions below are extracted successful-path copies of the
+Orbit-specific helpers from Isaiah's ``python/owl/train/ppo.py`` at upstream
+commit 32b3ec9, not a literal freeze of that file. The tensor field list is
+derived from the current ``ObsBatch`` schema, and the copy helper omits the
+original's validation and error paths. They are the oracle for successful Orbit
+calls only: the schema-generic helpers must produce identical tensors for every
+Orbit ``ObsBatch`` shape, with optional fields set and unset and every
+action-mask type. Failure ordering and error wording are not compared.
 """
 
 from __future__ import annotations
@@ -29,7 +33,7 @@ MaskKind = Literal["pure", "discrete_target", "discrete_target_bin"]
 _MASK_KINDS: tuple[MaskKind, ...] = ("pure", "discrete_target", "discrete_target_bin")
 _SEEDS = (0, 1, 2)
 
-# --- Frozen oracle: Isaiah's helpers at 32b3ec9 ------------------------------
+# --- Oracle: successful-path extracts of Isaiah's 32b3ec9 helpers ------------
 
 _ISAIAH_OBS_TENSOR_FIELDS = tuple(
     field
@@ -266,7 +270,7 @@ _ORBIT_CASES = [
 ]
 
 
-# --- Orbit equivalence against the frozen oracle ------------------------------
+# --- Orbit equivalence against the extracted oracle --------------------------
 
 
 @pytest.mark.parametrize(("seed", "with_optional", "mask_kind"), _ORBIT_CASES)

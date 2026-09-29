@@ -1,5 +1,14 @@
 # Change log
 
+## 2026-09-29 — Narrow the trainer-seam claims after Codex's stream C review
+
+Codex's stream C verification (approve with edits) found three overstated claims, now corrected in the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:
+- `TeacherTargets.concat` docs promised rejection of any optional-target mismatch; they now state the inherited first-chunk asymmetry, and tests pin both chunk orders. Behavior is unchanged; Phase 4 decides.
+- The log-ratio alarm's units follow `ppo_clip_mode` (joint action under `per_player`, entity mean under `per_entity`), documented in `PPOConfig` and README with multi-entity and two-fake-rank tests. The 0.05 default awaits Phase 6 GPU noise measurement.
+- The observation oracle is an extracted successful-path copy, not a frozen one; the invalid-limit tests assert exact Pydantic errors (7 red with the field removed).
+
+Python suite: 934 passed, 3 skipped. No GPU, training or Rust check ran.
+
 ## 2026-09-29 — Make the trainer seams schema-generic and alarm on replay drift
 
 Three game-neutral refactors of Isaiah's trainer, each test-first on Orbit types, are recorded in the new [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:

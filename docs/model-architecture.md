@@ -700,8 +700,13 @@ winner probabilities as a `CachedTeacherDistillationTargets` in segment-major
 layout. The cached targets implement the `TeacherTargets` protocol
 (`python/owl/model/teacher_targets.py`): PPO joins the chunks with
 `type(chunks[0]).concat(chunks)` and slices each minibatch with
-`targets.index(idx)`, both along the segment dimension. `concat` raises when
-chunks disagree about which optional targets they carry. Each update minibatch
+`targets.index(idx)`, both along the segment dimension. `concat` follows the
+first chunk's layout: it raises when a later chunk lacks an optional target
+(action params, continuation logits or winner probabilities) that the first
+chunk carries, but silently drops a target that only later chunks carry. This
+asymmetry is inherited from Isaiah's free function; rebuild Phase 4 decides
+whether to validate symmetrically. The PPO loop requests the same targets from
+the same teacher for every chunk. Each update minibatch
 then calls `evaluate_actions_with_cached_teacher(...)`,
 which encodes the student once (with grad), returns the normal PPO replay
 log-probs, entropy, and values from that encoding, and computes the action KL

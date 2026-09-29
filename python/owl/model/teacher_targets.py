@@ -13,8 +13,11 @@ class TeacherTargets(Protocol):
 
     The PPO trainer computes them in segment chunks, joins the chunks with
     ``concat`` and slices each update minibatch with ``index``. Both act on the
-    leading (segment) dimension of every tensor. Implementations fail fast when
-    chunks disagree about which optional targets they carry.
+    leading (segment) dimension of every tensor. The protocol does not require
+    ``concat`` to validate that chunks carry the same optional targets; see each
+    implementation. ``CachedTeacherDistillationTargets.concat`` follows the first
+    chunk: it raises when a later chunk lacks an optional target the first chunk
+    carries, but silently drops a target that only later chunks carry.
     """
 
     def index(self, indices: torch.Tensor) -> Self:

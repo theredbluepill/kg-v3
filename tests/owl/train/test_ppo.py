@@ -37,6 +37,7 @@ from owl.rl import (
     VectorizedEnv,
 )
 from owl.train import ppo
+from pydantic import ValidationError
 from torch import nn
 
 _OBS_COPY_FIELDS = tuple(
@@ -1989,12 +1990,32 @@ def test_ppo_config_defaults_first_minibatch_logratio_limit() -> None:
     )
 
 
-@pytest.mark.parametrize("limit", [0.0, -0.05, float("nan"), float("inf")])
+@pytest.mark.parametrize(
+    ("limit", "error_type"),
+    [
+        (0.0, "greater_than"),
+        (-0.05, "greater_than"),
+        (float("nan"), "finite_number"),
+        (float("inf"), "finite_number"),
+        (float("-inf"), "finite_number"),
+    ],
+)
 def test_ppo_config_rejects_invalid_first_minibatch_logratio_limit(
     limit: float,
+    error_type: str,
 ) -> None:
-    with pytest.raises(ValueError, match="first_minibatch_logratio_limit"):
+    with pytest.raises(ValidationError) as raised:
         ppo.PPOConfig(first_minibatch_logratio_limit=limit)
+
+    assert [(error["loc"], error["type"]) for error in raised.value.errors()] == [
+        (("first_minibatch_logratio_limit",), error_type)
+    ]
+
+
+def test_ppo_config_accepts_custom_first_minibatch_logratio_limit() -> None:
+    config = ppo.PPOConfig(first_minibatch_logratio_limit=0.125)
+
+    assert config.first_minibatch_logratio_limit == 0.125
 
 
 @pytest.mark.parametrize("gradient_accumulation_steps", [1, 2])
@@ -2062,6 +2083,204 @@ def test_first_minibatch_logratio_alarm_can_be_disabled() -> None:
     trainer.train_iteration()
 
     assert trainer.optimizer_steps == 4
+
+
+class AllEntitiesActEnv(TinyOrbitEnv):
+    """Every action-entity slot of every live player may act."""
+
+    def _obs(self) -> ObsBatch:
+        obs = super()._obs()
+        obs.action_mask.can_act[:] = obs.still_playing.unsqueeze(-1)
+        return obs
+
+
+class EntityShiftedReplayModel(TinyOrbitModel):
+    """Replays with every acting entity's log-prob shifted by the same amount.
+
+    Models a small coherent per-entity drift, as a numerically different replay
+    kernel could produce, spread over ``ACTION_ENTITY_SLOTS`` acting entities.
+    """
+
+    def __init__(self, entity_shift: float) -> None:
+        super().__init__()
+        self.entity_shift = entity_shift
+
+    def evaluate_actions(
+        self,
+        obs: ObsBatch,
+        actions: ActionBundle,
+    ) -> ModelEvaluation:
+        evaluation = super().evaluate_actions(obs, actions)
+        acting = obs.action_mask.can_act & obs.still_playing.unsqueeze(-1)
+        shifted = (
+            evaluation.log_probs.per_player_entity
+            + self.entity_shift * acting.to(evaluation.log_probs.per_player_entity)
+        )
+        return replace(
+            evaluation,
+            log_probs=replace(evaluation.log_probs, per_player_entity=shifted),
+        )
+
+
+def _entity_drift_trainer(
+    model: TinyOrbitModel,
+    ppo_clip_mode: Literal["per_player", "per_entity"],
+) -> ppo.PPOTrainer:
+    torch.manual_seed(12)
+    return ppo.PPOTrainer(
+        env=AllEntitiesActEnv(n_envs=4, episode_length=3),
+        model=model,
+        optimizer=torch.optim.AdamW(model.parameters(), lr=0.05, eps=1e-5),
+        config=ppo.PPOConfig(
+            horizon=2,
+            segments_per_minibatch=1,
+            target_kl=None,
+            ppo_clip_mode=ppo_clip_mode,
+        ),
+        device=torch.device("cpu"),
+    )
+
+
+@pytest.mark.parametrize(
+    ("ppo_clip_mode", "entity_shift", "observed"),
+    [
+        # per_player sums entity log-probs: the limit bounds the joint action.
+        ("per_player", 0.002, 0.002 * ACTION_ENTITY_SLOTS),
+        # per_entity averages entity log-ratios: the limit bounds one entity.
+        ("per_entity", 0.06, 0.06),
+    ],
+)
+def test_first_minibatch_logratio_alarm_units_follow_clip_mode(
+    ppo_clip_mode: Literal["per_player", "per_entity"],
+    entity_shift: float,
+    observed: float,
+) -> None:
+    model = EntityShiftedReplayModel(entity_shift)
+    trainer = _entity_drift_trainer(model, ppo_clip_mode)
+
+    with pytest.raises(RuntimeError) as raised:
+        trainer.train_iteration()
+
+    assert f"log-ratio mean {observed:+.4f} nats" in str(raised.value)
+    assert trainer.optimizer_steps == 0
+
+
+def test_first_minibatch_logratio_alarm_per_entity_tolerates_joint_sized_drift() -> (
+    None
+):
+    # The same 0.002-nat drift per entity that trips per_player (0.088 nats
+    # summed over 44 acting entities) stays at 0.002 nats under per_entity.
+    model = EntityShiftedReplayModel(0.002)
+    trainer = _entity_drift_trainer(model, "per_entity")
+
+    trainer.train_iteration()
+
+    assert trainer.optimizer_steps == 4
+
+
+@pytest.mark.parametrize("ppo_clip_mode", ["per_player", "per_entity"])
+def test_first_minibatch_logratio_mean_weights_ranks_by_active_players(
+    monkeypatch: pytest.MonkeyPatch,
+    ppo_clip_mode: Literal["per_player", "per_entity"],
+) -> None:
+    """Two fake ranks with unequal active-player counts reach one decision.
+
+    Rank 0 has one active player whose replay drifts by 0.3 nats; rank 1 has
+    three matching active players. ``_distributed_ppo_loss_metrics`` sums the
+    weighted log-ratios and the weights across ranks before dividing, so both
+    ranks see 0.3 / 4 = 0.075 nats, not the 0.15 mean of per-rank means. Each
+    rank therefore compares the same value with the limit.
+    """
+    config = ppo.PPOConfig(ppo_clip_mode=ppo_clip_mode)
+    entities = 3
+    rank_drifts = {0: [0.3], 1: [0.0, 0.0, 0.0]}
+
+    def rank_inputs(rank: int) -> dict[str, Any]:
+        drifts = torch.tensor(rank_drifts[rank]).unsqueeze(0)
+        players = drifts.shape[1]
+        zeros = torch.zeros((1, players))
+        if ppo_clip_mode == "per_entity":
+            entity_weight = torch.ones((1, players, entities))
+            old_logp = torch.full((1, players, entities), -1.0)
+            new_logp = old_logp + drifts.unsqueeze(-1)
+            entity_kwargs: dict[str, Any] = {"entity_policy_weight": entity_weight}
+            entropy = torch.zeros((1, players, entities))
+        else:
+            old_logp = torch.full((1, players), -1.0)
+            new_logp = old_logp + drifts
+            entity_kwargs = {}
+            entropy = zeros
+        return {
+            "new_logp": new_logp,
+            "entropy": entropy,
+            "new_values": zeros,
+            "old_logp": old_logp,
+            "old_values": zeros,
+            "returns": zeros,
+            "advantages": zeros,
+            "policy_weight": torch.ones((1, players)),
+            "value_weight": torch.ones((1, players)),
+            "config": config,
+            **entity_kwargs,
+        }
+
+    def context(rank: int) -> ppo.DistributedContext:
+        return ppo.DistributedContext(
+            device=torch.device("cpu"),
+            rank=rank,
+            local_rank=rank,
+            world_size=2,
+            initialized=True,
+        )
+
+    local_sums: dict[int, torch.Tensor] = {}
+    local_maxes: dict[int, torch.Tensor] = {}
+
+    def capture_sum(
+        tensor: torch.Tensor, _context: ppo.DistributedContext
+    ) -> torch.Tensor:
+        local_sums[_context.rank] = tensor.detach().clone()
+        return tensor
+
+    def capture_max(
+        tensor: torch.Tensor, _context: ppo.DistributedContext
+    ) -> torch.Tensor:
+        local_maxes[_context.rank] = tensor.detach().clone()
+        return tensor
+
+    monkeypatch.setattr(ppo, "all_reduce_sum", capture_sum)
+    monkeypatch.setattr(ppo, "all_reduce_max", capture_max)
+    local_means = {
+        rank: ppo._ppo_loss(**rank_inputs(rank), context=context(rank))[
+            0
+        ].logratio_mean.item()
+        for rank in (0, 1)
+    }
+    assert local_means == pytest.approx({0: 0.3, 1: 0.0})
+
+    monkeypatch.setattr(
+        ppo,
+        "all_reduce_sum",
+        lambda tensor, _context: local_sums[0] + local_sums[1],  # noqa: ARG005
+    )
+    monkeypatch.setattr(
+        ppo,
+        "all_reduce_max",
+        lambda tensor, _context: torch.maximum(  # noqa: ARG005
+            local_maxes[0], local_maxes[1]
+        ),
+    )
+    reduced = {
+        rank: ppo._ppo_loss(**rank_inputs(rank), context=context(rank))[
+            0
+        ].logratio_mean.item()
+        for rank in (0, 1)
+    }
+
+    assert reduced == pytest.approx({0: 0.075, 1: 0.075})
+    limit = config.first_minibatch_logratio_limit
+    assert limit is not None
+    assert all(abs(value) > limit for value in reduced.values())
 
 
 def test_trainer_compile_mode_compiles_only_tensor_helpers(

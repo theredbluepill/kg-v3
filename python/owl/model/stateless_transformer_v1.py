@@ -258,7 +258,14 @@ class CachedTeacherDistillationTargets(TeacherTargets):
 
     @classmethod
     def concat(cls, chunks: Sequence[Self]) -> Self:
-        """Concatenate per-chunk cached teacher targets along the segment dimension."""
+        """Concatenate per-chunk cached teacher targets along the segment dimension.
+
+        The first chunk decides which optional targets the result carries. A
+        later chunk that lacks one of them raises ``ValueError``; a target that
+        only later chunks carry is silently dropped. This asymmetry is inherited
+        from Isaiah's ``concat_teacher_distillation_targets`` (32b3ec9) and kept
+        until rebuild Phase 4 decides on symmetric validation.
+        """
         if not chunks:
             raise ValueError("cannot concatenate an empty list of teacher targets")
         action_params: DiscreteTargetPolicyParams | None = None

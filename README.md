@@ -230,7 +230,13 @@ alarm. Before the first optimizer step of each update, the policy-weighted mean
 log-ratio of the first minibatch (replayed versus rollout log-probs, reduced
 across ranks) must stay within the limit. Otherwise training raises a
 `RuntimeError` that reports the rollout batch and observation shapes, with
-parameters still unchanged. Set it to `null` to disable the check.
+parameters still unchanged. Set it to `null` to disable the check. The limit
+uses the same units as `rl.ppo_clip_mode`'s log-ratio: under `per_player` it
+bounds the joint action (entity log-probs are summed, so a coherent drift of
+`d` nats on each of `K` acting entities reads as `K * d`); under `per_entity`
+it bounds the mean per-entity log-ratio (the same drift reads as `d`). The
+`0.05` default has not yet been measured against GPU BF16/compile replay noise;
+the rebuild's Phase 6 GPU qualification measures that margin.
 PPO supports `pure`, `discrete_targets`, and `discrete_target_bins` action specs
 when the `StatelessTransformerV1` actor discriminator matches the environment
 action spec. The current discrete-target actor requires

@@ -147,21 +147,64 @@ def test_concat_rejects_empty_chunks() -> None:
         CachedTeacherDistillationTargets.concat([])
 
 
-@pytest.mark.parametrize(
-    ("second", "message"),
-    [
-        (
-            {"with_action_params": False, "with_continue": False},
-            "inconsistent action_params",
-        ),
-        ({"with_winner": False}, "inconsistent winner_probabilities"),
-        ({"with_continue": False}, "inconsistent optional tensors"),
-    ],
-)
-def test_concat_rejects_mixed_none_and_tensor_chunks(
-    second: dict[str, bool], message: str
+_OPTIONAL_TARGET_GAPS = [
+    pytest.param(
+        {"with_action_params": False, "with_continue": False},
+        "target_logits",
+        "inconsistent action_params",
+        id="action_params",
+    ),
+    pytest.param(
+        {"with_winner": False},
+        "winner_probabilities",
+        "inconsistent winner_probabilities",
+        id="winner_probabilities",
+    ),
+    pytest.param(
+        {"with_continue": False},
+        "continue_logits",
+        "inconsistent optional tensors",
+        id="continue_logits",
+    ),
+]
+
+
+@pytest.mark.parametrize(("gap", "field", "message"), _OPTIONAL_TARGET_GAPS)
+def test_concat_rejects_later_chunk_missing_a_target_the_first_carries(
+    gap: dict[str, bool], field: str, message: str
 ) -> None:
-    chunks = [_targets(seed=0, n=2), _targets(seed=1, n=3, **second)]
+    del field
+    chunks = [_targets(seed=0, n=2), _targets(seed=1, n=3, **gap)]
 
     with pytest.raises(ValueError, match=message):
         CachedTeacherDistillationTargets.concat(chunks)
+
+
+@pytest.mark.parametrize(("gap", "field", "message"), _OPTIONAL_TARGET_GAPS)
+def test_concat_drops_target_carried_only_by_later_chunks(
+    gap: dict[str, bool], field: str, message: str
+) -> None:
+    """Pin the inherited asymmetry: the first chunk's layout wins, silently.
+
+    A populated target in a later chunk is discarded when the first chunk lacks
+    it. This is Isaiah's behavior at 32b3ec9, preserved by the protocol refactor;
+    rebuild Phase 4 decides whether ``concat`` should validate symmetrically.
+    """
+    del message
+    first = _targets(seed=0, n=2, **gap)
+    later = _targets(seed=1, n=3)
+    assert _tensors(first)[field] is None
+    assert _tensors(later)[field] is not None
+
+    joined = CachedTeacherDistillationTargets.concat([first, later])
+
+    assert _tensors(joined)[field] is None
+    for name, tensor in _tensors(first).items():
+        joined_tensor = _tensors(joined)[name]
+        if tensor is None:
+            assert joined_tensor is None, name
+        else:
+            later_tensor = _tensors(later)[name]
+            assert later_tensor is not None, name
+            assert joined_tensor is not None, name
+            assert torch.equal(joined_tensor, torch.cat([tensor, later_tensor])), name
