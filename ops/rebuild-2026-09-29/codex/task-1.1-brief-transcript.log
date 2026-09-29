@@ -4735,3 +4735,740 @@ cargo 1.97.0-nightly (eb94155a9 2026-04-09)
 v26.5.0
 ?? ops/rebuild-2026-09-29/1.1-brief-prepare.log
 
+hook: PreToolUse
+hook: PreToolUse Completed
+apply patch
+patch: completed
+/Users/poonszesen/kg-v3-codex/ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md
+diff --git a/ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md b/ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..1596331f8d41d90b962d21b9b4c882dd3169a2e5
+--- /dev/null
++++ b/ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md
+@@ -0,0 +1,357 @@
++# Task 1.1 — Trimmed Rules Kernel Implementation Plan
++
++> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
++
++**Goal:** Vendor the smallest provenance-pinned Kaggriculture rules package that constructs a game from configuration and seed, executes decoded commands, exposes state and economic counters, and passes retained and replay parity tests without changing Isaiah's root crate.
++
++**Architecture:** Three reference Rust implementation files form a standalone package. Remove exactly seven module declarations from `lib.rs`; preserve the other two source files and the retained RNG tests byte-for-byte. A new test-only replay harness consumes four pinned official-engine traces; a manifest checker accounts for every reference file and every permitted edit.
++
++**Tech Stack:** Pinned Rust `nightly-2026-04-18`, Cargo, existing cached Serde/IndexMap/num crates, system `gzip`, Node's standard library for manifest verification and tests, Python 3.12 for one-shot manifest generation.
++
++**Spec:** `ops/rebuild-2026-09-29/plan.md` (Global Constraints, C1–C2, L4, Task 1.1); `cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md`; `AGENTS.md`. Read all three before executing. This brief proposes a deliberate refinement of Task 1.1's **workspace** wording: keep a standalone package until there is a real root consumer.
++
++**Status:** Brief for Claude's review. No engine implementation, new checker, or new engine test has been installed or executed in this change. Code blocks below are execution instructions, not completed work.
++
++## Global Constraints
++
++- Work only on `kg/rebuild-codex`; do not push or touch other branches. Claude reviews this brief before implementation.
++- One trainer: extend `scripts/run_ppo.py` and `python/owl/train/ppo.py`; never add a second PPO loop.
++- v3-owned Rust I/O with caller-owned buffers; no v2 model, collector or trainer code; no ctypes path.
++- Isaiah's stateless model is the reference, with the same layer topology. No between-turn state or opponent identity conditioning. Task 1.1 adds no model or training code.
++- **On the owner's Mac: unit tests and bounded tiny checks only.** A "tiny check" means a tiny model, ≤ 2 environments, ≤ 2 updates, < 1 GB RAM and < 2 min. Anything larger runs on the pod. Only Claude operates the pod; this task needs none.
++- Offline only: set `CARGO_NET_OFFLINE=true` and `UV_OFFLINE=true`; do not fetch, regenerate official traces, or download missing fixtures. Report any missing cached package by name/version.
++- After Python edits run `just py-prepare`; after Rust edits run `just rs-prepare`; before a commit run `just prepare`. On this Mac invoke `just` as `uvx --offline --from rust-just just`.
++- Use Cargo commands for dependency/lockfile changes; do not hand-edit lockfiles. Keep both root and engine lockfiles tracked.
++- Retained implementation bytes are the oracle: no formatting, cleanup, renamed identifiers, feature gates, or rule changes in vendored sources beyond the seven authorized line removals.
++- Every material adaptation gets a cookbook record (note + folder index + prepended log). Preserve Apache-2.0 licensing and historical provenance.
++- Stop implementation when the manifest, engine tests, unchanged root 155-pass/2-ignore suite, and preparation checks pass with recorded evidence. Stop a failing check to diagnose it; never weaken comparisons to obtain a pass.
++
++## Investigation and decisions
++
++### Pin and retained file inventory
++
++Investigated with `git show kg/reference-2026-09-29:<path>` and `git ls-tree -r kg/reference-2026-09-29 engine_rs`. The reference resolves to **`65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`**. The clean integration head examined was `ab0de014070ace82ba80ceebbb492bcdd64c6b81`.
++
++There are **125** tracked reference files under `engine_rs/`. Retain these **12** paths; paths in this table are relative to `engine_rs/`. SHA-256 values are over the exact reference blob bytes, including compressed fixture bytes.
++
++| Path | Reference SHA-256 | Disposition and reason |
++|---|---|---|
++| `src/lib.rs` | `a33c70ffb1f1ee887b4c51b66d8592dd7cab38f583cd3af06586356e27fd6d84` | Retain with seven declaration removals; complete rules, configuration, public/private state, counters and 41 unit tests |
++| `src/py_random.rs` | `40ff0c5e5a79a8ad9d580af4957e028f95ff180603259d8b81be2b357cd73356` | Unchanged CPython-compatible random generator |
++| `src/econ_attrib.rs` | `861b7bbaf61ac065bb18797bc389c2acbf6e15c37decaeeeff7eeaeac71e05ac` | Unchanged attribution implementation referenced by the rules |
++| `tests/py_random.rs` | `5d844a377db4db7817991c63440e30f7253a5799048e69f1ed8ba82b0beef35a` | Unchanged nine CPython-vector integration tests on this 64-bit Mac |
++| `fixtures/episode-95324500.jsonl.gz` | `47cdfa489b7a80edf8ec1361f2f55cd033c75824d624cd7c9e9daaa3137affd7` | Replay oracle |
++| `fixtures/episode-95901360.jsonl.gz` | `e80653f445570a3778a3fb9026a66614b1ecaa2ea417cf8358d3f1850d725281` | Replay oracle |
++| `fixtures/episode-95921764.jsonl.gz` | `bc3e01cd12ff70fd2f78bfbe7129d5caca468a6324c124c25c9efebc86fbd3f2` | Replay oracle |
++| `fixtures/episode-95990191.jsonl.gz` | `4bf1a3b09c644719c8b36a619289844e52c3458d0e25dc0a0a1429bc6eaa0d1b` | Replay oracle |
++| `LICENSE` | `c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4` | Unchanged Apache-2.0 license |
++| `VENDORED_FROM.md` | `bb2940661fac106aa05454ee6641c095fb6ecd722ec48668f232af9e2ece81ea` | Preserve all historical text and append the explicit trim note below |
++| `Cargo.toml` | `8157c3e6c6aa70922d3423938cd24532ddfd958fb1025f8db9939717d2b50827` | Remove unused binary, cdylib target and Rayon dependency; retain engine compatibility metadata and numeric features |
++| `Cargo.lock` | `c76725f0f07325924f7f00e0fc6b0dbdddb83d33230191f76daf6a6cf51253f1` | Seed from reference; let `cargo remove --offline rayon` prune unused dependency closure; record generated diff |
++
++New files at implementation time: `engine_rs/tests/replay_parity.rs`, `engine_rs/TRIM_MANIFEST.json`, `scripts/check_engine_trim.mjs`, `tests/tools/check_engine_trim.test.mjs`. Update `docs/rules-parity-coverage.md`, the existing restart Decision, its index, and cookbook log; save command receipts under `ops/rebuild-2026-09-29/1.1/`. Root `Cargo.toml`, root `Cargo.lock`, `justfile`, and Isaiah Rust sources remain unchanged for this task.
++
++### Exhaustive retained-source dependency audit
++
++These are **all** retained `mod`/`use` edges to excluded modules, using original reference line numbers:
++
++| Reference location | Exact line to remove | Reason |
++|---|---|---|
++| `src/lib.rs:19` | `pub mod ffi;` | C ABI/ctypes surface is rebuilt in Task 1.4, C5 |
++| `src/lib.rs:21` | `pub mod joint_matching;` | C2 candidate-matching policy machinery |
++| `src/lib.rs:22` | `pub mod myolie_features;` | C4 flat v2 observation encoder; Task 1.3 rebuild |
++| `src/lib.rs:23` | `pub mod myolie_sampler;` | C3 grammar is a reviewed port in Task 1.2 |
++| `src/lib.rs:24` | `pub mod native_agents;` | C2 scripted opponents; selected imports belong to Phase 7 |
++| `src/lib.rs:25` | `pub mod policy_rows;` | C2 policy action-row machinery |
++| `src/lib.rs:27` | `pub mod training;` | C5 collector/lifecycle is rebuilt, not vendored |
++
++Remove each whole line including its LF; retain blank lines and all other bytes. Expected resulting `lib.rs`: **185,626 bytes**, SHA-256 **`c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd`**. This hash was calculated by applying the seven removals in memory, not by installing or compiling a trimmed crate.
++
++There are **no other excluded-module imports** in the retained implementation or RNG test. `lib.rs` retains `mod econ_attrib`, its `pub use econ_attrib::{ATTRIB_FIELDS, ATTRIB_VERBS, ATTRIB_VERSION}`, `pub mod py_random`, and `use py_random::PyRandom`. `econ_attrib.rs:10` uses `super::*`, resolving to the retained library; `lib.rs` unit tests use `super::*` and `crate::econ_attrib::*`, also retained. `py_random.rs` and its integration test depend only on the retained generator and numeric crates. Bins/examples are not dependencies of these files. No `rayon` use survives in the three sources or RNG test.
++
++No extra public wrapper is necessary. Reference APIs already provide:
++
++```rust
++Game::new(config: Config, seed: i64, num_agents: usize) -> Result<Game, String>
++Game::new_with_seed_decimal(config: Config, seed: &str, num_agents: usize) -> Result<Game, String>
++Game::step(&mut self, actions: &[serde_json::Value]) -> Result<(), String>
++Game::step_with_market_metrics(&mut self, actions: &[serde_json::Value]) -> Result<StepMetrics, String>
++Game::public_state(&self) -> PublicState
++Game::snapshot(&self) -> StepSnapshot
++Game::terminal_banks(&self) -> Option<&[f64]>
++Game::econ_counters(&self) -> Option<&[[u64; ECON_FIELDS]; 2]>
++Game::attrib_counters(&self) -> Option<&[[u64; ATTRIB_FIELDS]; 2]>
++```
++
++The seed/config constructor starts at step 0. `step` consumes already decoded per-seat JSON command objects (`farmer`, `hands`, `market`), not policy slots; new grammar decoding is outside Task 1.1. State includes both privates for native adapters; this is not permission to expose the rival's private state to a model. `ECON_FIELDS=32`, `ATTRIB_FIELDS=167`; counters remain telemetry, not observation history.
++
++### Exhaustive exclusion classes and test boundary
++
++The manifest generator below expands these classes to individual paths and reference hashes, never a wildcard-only manifest. They account for the other **113** paths:
++
++| Excluded paths | Count | Reason / affected tests |
++|---|---:|---|
++| `src/native_agents/**` | 57 | Scripted bots and controller helpers, C2; 47 unit tests are deferred with selected Phase 7 imports |
++| `src/bin/**` | 21 | Bot executables and execution oracles, C2 |
++| `examples/**` | 11 | Bot-specific oracle executables, C2 |
++| `src/ffi.rs` | 1 | C5 ABI; 16 unit tests target the excluded FFI |
++| `src/joint_matching.rs` | 1 | C2 matching enumeration; 3 unit tests |
++| `src/myolie_features.rs` | 1 | C4 flat encoder; 5 unit tests |
++| `src/myolie_sampler.rs` | 1 | C3 grammar; 4 unit tests are inputs to Task 1.2, not discarded as irrelevant |
++| `src/policy_rows.rs` | 1 | C2 policy rows; 4 unit tests |
++| `src/training.rs` | 1 | C5 old lifecycle/collector; no inline tests |
++| `src/main.rs` | 1 | Replay/benchmark/branch CLI is not needed by the library; replace only its test purpose with a direct integration test |
++| `tests/shoprouter_parity.rs` | 1 | Imports `native_agents::shoprouter::ShopRouterController` on line 2; one controller-action parity test, explicitly zero engine transitions |
++| Non-episode fixtures listed below | 14 | Bot/controller/matching oracles; none used by retained sources/tests |
++| `README.md` | 1 | Describes excluded ABI, matching, controllers and historical sibling scripts; current scope is documented in provenance and root parity docs |
++| `V3_IMPORT.json` | 1 | Manifest of the full prior import; new trim manifest supersedes it for this package |
++
++The 14 excluded fixtures are `e776-kenjo-trace.json`, `evgen-c27-trace.json`, `farm2945-sell-library.bin`, `flex-fieldbook-routes.json`, `jat-animal-resupply.json`, `metav4-sell-library.bin`, `re3-joint-matching.json`, `shop-router-0909-actions.json`, `shop-router-0909-parity.json`, `tetsutani-shape-shop-pasture-routes.json`, `v39-late-parity.json`, `v39-production-parity.json`, `v39-routes.json`, and `v43-routes.json`.
++
++The reference source inventory contains 120 library unit tests: **41 retained, 79 excluded**. The 41 retained cases use inline synthetic states, not external fixture files. They cover config/numeric semantics, market ordering, native reset/randomness, terminal behavior, failure rollback, and economic/attribution counters including counted-versus-uncounted state neutrality. The nine RNG tests embed CPython vectors (including large/negative seeds, rollover and long streams), with generator provenance in their source. Neither the retained unit tests nor RNG tests consume the four replay fixtures. The reference's `re_parity.py`, `re1_parity.py`, and `export_re_trace.py` mentioned by its README are not tracked on this reference branch. Therefore **50 retained tests alone do not establish replay parity**.
++
++Each retained compressed trace has one header plus **719 transitions**, with expected complete public and private state, statuses and rewards; initial plus successor checks give **720 snapshots per episode, 2,880 total**, and **2,876 transitions**. Total compressed size is 1,053,870 bytes. The new integration test reads each fixture independently and uses system `gzip`, avoiding a new decompression dependency. It performs no agent inference or training.
++
++| Episode | Seed | Final banks, seat 0 / seat 1 |
++|---|---:|---:|
++| 95324500 | 181681617 | 97,126 / 32,640 |
++| 95901360 | 804786120 | 143,344 / 151,788 |
++| 95921764 | 2089097928 | 7,843 / 94,230 |
++| 95990191 | 1447832391 | 87,792 / 99,703 |
++
++All headers identify `kaggle-environments==1.32.7` and engine SHA-256 `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`. Replay parity is scoped to these recorded worlds plus synthetic unit coverage, not a fresh exhaustive differential run against Python, malformed-input completeness, learning quality, or GPU performance. Preserve integer-versus-float representation in public market values. Compare rewards as typed `Vec<f64>` because nonterminal trace rewards are `[0,0]`, whereas snapshots serialize `[0.0,0.0]`. Check private-map insertion order separately: JSON object equality alone misses it.
++
++### Workspace, path dependency and L4
++
++**Decision proposed for Claude:** do not create a shared workspace or a root path dependency in Task 1.1. The root `Cargo.toml` has no `[workspace]`, no engine dependency, and root `src/` has no engine consumer. A nested independent Cargo package needs neither a root workspace entry nor a root dependency. Its own lockfile and explicit `--manifest-path` commands give a separate feature resolution. Keep root manifest/lock/source byte-identical.
++
++Task 1.2 lives inside the engine package. Task 1.3's planned `src/kaggriculture/observe.rs` may become the first root consumer when compiled against `Game`; Task 1.4 certainly will. Add the path dependency at the **first actual compiled consumer**, after reviewing that task, rather than claiming nothing before 1.4 can need it. There is no consumer that justifies it in **this** task.
++
++Workspace membership is not a dependency edge, but it is also **not feature isolation**. Cargo's locally installed primary documentation (`share/doc/rust/html/cargo/reference/resolver.html`, “Features”, in `nightly-2026-04-18-aarch64-apple-darwin`) explicitly states that selecting multiple workspace packages with `--workspace` or multiple `-p` flags unifies dependency features; separate invocations avoid that unification. A shared workspace also shares lock resolution. Resolver 2/3 does not isolate a normal engine dependency from the root's active test dependency on the same `serde_json` package. A root-only default invocation can avoid the engine when no dependency selects it, but `cargo test --workspace` would reintroduce L4.
++
++Keep engine `serde_json` features `arbitrary_precision` and `preserve_order`: removing them breaks the kernel's tested unbounded integer/numeric and ordered-inventory semantics. If Claude chooses a shared workspace now, the minimal way to keep unmodified root decoding is **separate package test invocations** (never selecting both); the more robust choice is the standalone package proposed here. Once the root needs the path dependency, apply the reference's narrow test-only repair, not feature deletion:
++
++```rust
++// src/rules_engine/generation.rs, test RandomCall::Uniform only:
++Uniform {
++    #[serde(deserialize_with = "fixture_float")]
++    low: f64,
++    #[serde(deserialize_with = "fixture_float")]
++    high: f64,
++    #[serde(deserialize_with = "fixture_float")]
++    value: f64,
++},
++
++fn fixture_float<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<f64, D::Error> {
++    serde_json::Number::deserialize(deserializer)?
++        .as_f64()
++        .filter(|number| number.is_finite())
++        .ok_or_else(|| serde::de::Error::custom("expected a finite fixture number"))
++}
++```
++
++This handles Serde's tagged-enum buffering of arbitrary-precision decimals as Number's private map. The exact reference diff is obtainable with `git diff HEAD kg/reference-2026-09-29 -- src/rules_engine/generation.rs`. It is **not applied in Task 1.1**. Reopen L4 when adding a root dependency/workspace; test the affected generation fixtures red before the decoder repair, then require 155 passed / 2 ignored unchanged.
++
++### Checks actually performed while writing this brief
++
++- Reference tree/source/module/test inventory and SHA-256 computation; no engine source installed.
++- All **25 registry packages** in the reference engine lockfile are present in the local Cargo cache. A temporary copy of its unchanged `Cargo.toml`/`Cargo.lock` passed `cargo metadata --offline --locked --format-version 1` (26 packages including the engine). No missing engine crates, downloads, or engine compilation. Metadata resolution is not proof of compilation.
++- `CARGO_NET_OFFLINE=true cargo test --locked`: **155 passed, 2 ignored**, with the existing local Orbit fixtures; no fixture bypass.
++- `CARGO_NET_OFFLINE=true UV_OFFLINE=true uvx --offline --from rust-just just prepare`: exit 0; formatting/lint/type/docs/build checks pass, Rust **155 passed / 2 ignored**, Python **722 passed / 3 platform skips**. Receipt: `ops/rebuild-2026-09-29/1.1-brief-prepare.log`.
++- Tool versions: Cargo `1.97.0-nightly (eb94155a9 2026-04-09)`, Python `3.12.13`, Node `v26.5.0`. No training, pod operation or network request.
++
++## Task A: Pin provenance and make the minimal standalone import
++
++**Files:** create the 12 retained paths above, `engine_rs/TRIM_MANIFEST.json`, `scripts/check_engine_trim.mjs`, `tests/tools/check_engine_trim.test.mjs`.
++
++**Interfaces:** consumes pinned Git blobs; produces an exhaustive byte/line manifest and `check(root: string): void` exported by the checker. CLI is `node scripts/check_engine_trim.mjs [root]`; success exits 0 and prints `engine trim manifest: OK`; any mismatch exits nonzero with the offending path. Full code for the checker, tests and generator appears in the appendices.
++
++- [ ] **Step 1: Establish the unchanged baseline.**
++
++```bash
++export CARGO_NET_OFFLINE=true UV_OFFLINE=true
++git branch --show-current
++git status --short
++git rev-parse kg/reference-2026-09-29
++cargo test --locked
++cargo tree --locked -e features -i serde_json
++command -v gzip
++```
++
++Expected: `kg/rebuild-codex`, the pinned reference commit, root **155 passed / 2 ignored**, no `serde_json` arbitrary-precision feature. `gzip` is installed. Preserve unrelated dirty work; if fixtures/cache are missing report the exact path/package instead of downloading or disabling parity.
++
++- [ ] **Step 2: Write the checker tests from Appendix B; run them red.**
++
++```bash
++node --test tests/tools/check_engine_trim.test.mjs
++```
++
++Expected: module-not-found for `scripts/check_engine_trim.mjs`. This is the explicit red test for the new checker, not a fabricated failing rules test.
++
++- [ ] **Step 3: Add the checker from Appendix A and run its fixture tests green.**
++
++```bash
++node --test tests/tools/check_engine_trim.test.mjs
++node scripts/check_engine_trim.mjs
++```
++
++Expected: checker unit tests pass; repository invocation fails because the engine manifest does not exist yet.
++
++- [ ] **Step 4: Materialize exactly the retained reference files.**
++
++```bash
++.venv/bin/python - <<'PY'
++from pathlib import Path
++import subprocess
++ref = '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0'
++paths = ['src/lib.rs', 'src/py_random.rs', 'src/econ_attrib.rs',
++         'tests/py_random.rs', 'LICENSE', 'VENDORED_FROM.md', 'Cargo.toml', 'Cargo.lock']
++paths += [f'fixtures/episode-{i}.jsonl.gz' for i in (95324500, 95901360, 95921764, 95990191)]
++for name in paths:
++    path = Path('engine_rs') / name
++    if path.exists():
++        raise SystemExit(f'refusing to overwrite {path}')
++    path.parent.mkdir(parents=True, exist_ok=True)
++    path.write_bytes(subprocess.check_output(['git', 'show', f'{ref}:{path.as_posix()}']))
++PY
++cargo test --manifest-path engine_rs/Cargo.toml --lib --locked
++```
++
++Expected red: missing files for the seven excluded modules. Keep this as the pre-trim compile failure. Do not copy those modules to fix it.
++
++- [ ] **Step 5: Remove only the seven declarations and unused Cargo targets.**
++
++```bash
++.venv/bin/python - <<'PY'
++from pathlib import Path
++p = Path('engine_rs/src/lib.rs')
++lines = p.read_bytes().splitlines(keepends=True)
++removed = {19: b'pub mod ffi;\n', 21: b'pub mod joint_matching;\n',
++           22: b'pub mod myolie_features;\n', 23: b'pub mod myolie_sampler;\n',
++           24: b'pub mod native_agents;\n', 25: b'pub mod policy_rows;\n',
++           27: b'pub mod training;\n'}
++for n, expected in removed.items():
++    assert lines[n - 1] == expected, (n, lines[n - 1])
++p.write_bytes(b''.join(line for n, line in enumerate(lines, 1) if n not in removed))
++p = Path('engine_rs/Cargo.toml')
++b = p.read_bytes()
++for old in [b'crate-type = ["rlib", "cdylib"]\n',
++            b'[[bin]]\nname = "re_engine"\npath = "src/main.rs"\n\n']:
++    assert b.count(old) == 1
++    b = b.replace(old, b'')
++p.write_bytes(b)
++PY
++cargo remove --manifest-path engine_rs/Cargo.toml --offline rayon
++```
++
++Manifest exceptions outside the three implementation files: reference Cargo line 16 removed (default `rlib` suffices); lines 18–21 removed (excluded `src/main.rs`); line 27 removed by Cargo (no retained Rayon use). Cargo alone regenerates the engine lockfile, pruning Rayon and its exclusive closure. Preserve other resolved versions; inspect and diagnose unrelated version movement. No dependency is added; no new workspace entry is needed.
++
++- [ ] **Step 6: Append this exact trim note to `engine_rs/VENDORED_FROM.md`.**
++
++```markdown
++
++## Task 1.1 rules-only trim — 2026-09-29
++
++The sections above describe historical full imports, not this trimmed package.
++This copy is pinned to kg/reference-2026-09-29 at
++65f0eac5bb00b18a9d3acce319c2a231cbd5dff0. TRIM_MANIFEST.json accounts for every
++reference path, source hash, permitted line edit and excluded component.
++The only rules-source edits remove lib.rs reference lines 19, 21–25 and 27:
++ffi, joint_matching, myolie_features, myolie_sampler, native_agents,
++policy_rows and training declarations. py_random.rs, econ_attrib.rs and the
++RNG integration tests are unchanged. Cargo drops the cdylib/binary targets
++and unused Rayon dependency; Cargo regenerates the lockfile. This provenance
++note is append-only. No bot, v2 collector, trainer, model or C ABI is imported.
++Four episode traces remain as rules oracles; the new replay integration test
++starts from configuration and seed. Historic opponent/ABI/performance claims
++above do not qualify this trim. See ../docs/rules-parity-coverage.md for current
++checks and limits, and ../ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md
++for the reviewed import plan. The root crate does not yet depend on this package.
++```
++
++- [ ] **Step 7: Generate the manifest using Appendix C; verify the import and retained tests.**
++
++```bash
++node scripts/check_engine_trim.mjs
++cargo test --manifest-path engine_rs/Cargo.toml --lib --locked
++cargo test --manifest-path engine_rs/Cargo.toml --test py_random --locked
++cargo metadata --manifest-path engine_rs/Cargo.toml --offline --locked --format-version 1
++git diff --exit-code -- Cargo.toml Cargo.lock src/rules_engine/generation.rs
++```
++
++Expected: manifest passes; **41 library + 9 RNG tests** pass; Cargo metadata uses `engine_rs/Cargo.lock` and engine workspace root only; the three root paths have no diff. An engine compile/cache error is a blocker to diagnose, not permission for a network fetch. Appendix C is rerun after the new replay test is added to account for that authored file.
++
++## Task B: Prove native-reset replay parity through the retained API
++
++**Files:** create `engine_rs/tests/replay_parity.rs` with Appendix D.
++
++**Interfaces:** consumes `Config`, `Game`, `TraceHeader`, `StepSnapshot` and the four traces; produces five integration tests (one public API test and four episode tests) plus two comparator regressions. The API test exercises decoded PASS commands, state access and economic counters. Replay construction uses `Game::new(config, seed, 2)`; no exported initial state, RNG schedule, shop schedule or terminal bank oracle enters the constructor.
++
++- [ ] **Step 1: Write Appendix D with `assert_private` temporarily using only `assert_eq!(actual, expected, "{context}")`.** Run its comparator regressions:
++
++```bash
++cargo test --manifest-path engine_rs/Cargo.toml --test replay_parity private_order_mismatch_is_rejected --locked
++```
++
++Expected red: the `#[should_panic]` test fails because JSON object equality ignores inventory insertion order. This demonstrates why simple snapshot JSON equality is insufficient.
++
++- [ ] **Step 2: Install the complete `assert_private` from Appendix D and rerun the two comparator tests.**
++
++```bash
++cargo test --manifest-path engine_rs/Cargo.toml --test replay_parity mismatch_is_rejected --locked
++```
++
++Expected: **2 passed**; one proves private-order rejection, one proves public numeric-type rejection. These intentionally catch panics; no corruption is written to the pinned fixtures.
++
++- [ ] **Step 3: Run the API test, then one replay before the entire fixture set.**
++
++```bash
++cargo test --manifest-path engine_rs/Cargo.toml --test replay_parity kernel_public_api --locked
++cargo test --manifest-path engine_rs/Cargo.toml --test replay_parity episode_95324500 --locked
++```
++
++Expected: one pass each, including exact terminal banks 97,126 / 32,640. On divergence, the assertion names episode and step. Inspect the expected JSON and original engine source before changing the harness; record unsupported comparisons instead of suppressing them.
++
++- [ ] **Step 4: Format only the newly authored Rust file; refresh its manifest entry and run complete parity.**
++
++```bash
++rustfmt --edition 2024 engine_rs/tests/replay_parity.rs
++# Run Appendix C again after formatting.
++node scripts/check_engine_trim.mjs
++cargo test --manifest-path engine_rs/Cargo.toml --locked
++```
++
++Expected: **41 library + 9 RNG + 7 new integration = 57 tests passed**, no ignored tests, plus no failing doctests. Four complete replays cover 2,876 transitions / 2,880 snapshots. This is a forecast from source/test inventory, not a claimed observed result. Record actual runner counts. Do not run `cargo fmt --manifest-path engine_rs/Cargo.toml`: it would rewrite retained reference bytes.
++
++## Task C: Close provenance, root regression and review evidence
++
++**Files:** update `docs/rules-parity-coverage.md`, `cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md`, `cookbook/decisions/index.md`, `cookbook/log.md`; create `ops/rebuild-2026-09-29/1.1/results.md` and command logs.
++
++**Interfaces:** consumes manifest/test outputs; produces a source-bound receipt and current coverage documentation. Read the existing parity doc and all cookbook notes with `repository:` sources for edited paths before editing.
++
++- [ ] **Step 1: Add a Kaggriculture section to the parity doc.** State the package pin, Python engine target, seven deletions, 41 retained unit tests, 9 RNG tests, four trace IDs/seeds/banks and 2,876 transitions / 2,880 snapshots. Identify all new harness tests separately, the 79+1 excluded tests and why, private-order/numeric comparisons, standalone dependency boundary and L4 reopening condition. Mark outcome pending until commands below finish; preserve existing Orbit coverage.
++- [ ] **Step 2: Run the unchanged root and required preparation checks.**
++
++```bash
++export CARGO_NET_OFFLINE=true UV_OFFLINE=true
++cargo test
++uvx --offline --from rust-just just rs-prepare
++uvx --offline --from rust-just just prepare
++node --test tests/tools/check_engine_trim.test.mjs
++node scripts/check_engine_trim.mjs
++cargo test --manifest-path engine_rs/Cargo.toml --locked
++git diff --exit-code -- Cargo.toml Cargo.lock src/rules_engine/generation.rs justfile
++git diff --check
++```
++
++Expected root result on every invocation: **155 passed / 2 ignored**, unchanged fixture coverage. `just rs-prepare` and `just prepare` cover the **root package only**; the explicit engine test and manifest invocations above are additional mandatory checks, not implicitly covered by `just`. Root formatting must not traverse the standalone engine. The baseline full Python suite is 722 passed / 3 platform skips; no Python implementation changes are planned. Use real exit codes when saving logs (no pipeline masking). No further repeat is needed after a successful final check unless code changes.
++- [ ] **Step 3: Record actual results in the receipt and cookbook trio.** Inventory changed paths, hashes, commands, toolchain, skipped tests and any warnings. Revise the existing restart Decision's Task 1.1 brief section to distinguish reviewed plan from completed import; do not relabel old reference performance or full-engine tests as new results. Keep root Cargo/source identity checks in the receipt. If the outcome contradicts this brief, document it and return the concrete change for Claude's review.
++- [ ] **Step 4: Commit the complete, passing task for Claude's code review.**
++
++```bash
++git add engine_rs scripts/check_engine_trim.mjs tests/tools/check_engine_trim.test.mjs docs/rules-parity-coverage.md cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md cookbook/decisions/index.md cookbook/log.md ops/rebuild-2026-09-29/1.1
++git diff --cached --check
++git commit -m "Vendor the trimmed Kaggriculture rules kernel"
++```
++
++Expected: local commit on `kg/rebuild-codex`, cookbook pre-commit passes. No push or merge. This is one coherent import commit after its TDD steps; the present brief is committed separately before any implementation.
+
+hook: PostToolUse
+hook: PostToolUse Completed
+diff --git a/ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md b/ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..1596331f8d41d90b962d21b9b4c882dd3169a2e5
+--- /dev/null
++++ b/ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md
+@@ -0,0 +1,357 @@
++# Task 1.1 — Trimmed Rules Kernel Implementation Plan
++
++> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
++
++**Goal:** Vendor the smallest provenance-pinned Kaggriculture rules package that constructs a game from configuration and seed, executes decoded commands, exposes state and economic counters, and passes retained and replay parity tests without changing Isaiah's root crate.
++
++**Architecture:** Three reference Rust implementation files form a standalone package. Remove exactly seven module declarations from `lib.rs`; preserve the other two source files and the retained RNG tests byte-for-byte. A new test-only replay harness consumes four pinned official-engine traces; a manifest checker accounts for every reference file and every permitted edit.
++
++**Tech Stack:** Pinned Rust `nightly-2026-04-18`, Cargo, existing cached Serde/IndexMap/num crates, system `gzip`, Node's standard library for manifest verification and tests, Python 3.12 for one-shot manifest generation.
++
++**Spec:** `ops/rebuild-2026-09-29/plan.md` (Global Constraints, C1–C2, L4, Task 1.1); `cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md`; `AGENTS.md`. Read all three before executing. This brief proposes a deliberate refinement of Task 1.1's **workspace** wording: keep a standalone package until there is a real root consumer.
++
++**Status:** Brief for Claude's review. No engine implementation, new checker, or new engine test has been installed or executed in this change. Code blocks below are execution instructions, not completed work.
++
++## Global Constraints
++
++- Work only on `kg/rebuild-codex`; do not push or touch other branches. Claude reviews this brief before implementation.
++- One trainer: extend `scripts/run_ppo.py` and `python/owl/train/ppo.py`; never add a second PPO loop.
++- v3-owned Rust I/O with caller-owned buffers; no v2 model, collector or trainer code; no ctypes path.
++- Isaiah's stateless model is the reference, with the same layer topology. No between-turn state or opponent identity conditioning. Task 1.1 adds no model or training code.
++- **On the owner's Mac: unit tests and bounded tiny checks only.** A "tiny check" means a tiny model, ≤ 2 environments, ≤ 2 updates, < 1 GB RAM and < 2 min. Anything larger runs on the pod. Only Claude operates the pod; this task needs none.
++- Offline only: set `CARGO_NET_OFFLINE=true` and `UV_OFFLINE=true`; do not fetch, regenerate official traces, or download missing fixtures. Report any missing cached package by name/version.
++- After Python edits run `just py-prepare`; after Rust edits run `just rs-prepare`; before a commit run `just prepare`. On this Mac invoke `just` as `uvx --offline --from rust-just just`.
++- Use Cargo commands for dependency/lockfile changes; do not hand-edit lockfiles. Keep both root and engine lockfiles tracked.
++- Retained implementation bytes are the oracle: no formatting, cleanup, renamed identifiers, feature gates, or rule changes in vendored sources beyond the seven authorized line removals.
++- Every material adaptation gets a cookbook record (note + folder index + prepended log). Preserve Apache-2.0 licensing and historical provenance.
++- Stop implementation when the manifest, engine tests, unchanged root 155-pass/2-ignore suite, and preparation checks pass with recorded evidence. Stop a failing check to diagnose it; never weaken comparisons to obtain a pass.
++
++## Investigation and decisions
++
++### Pin and retained file inventory
++
++Investigated with `git show kg/reference-2026-09-29:<path>` and `git ls-tree -r kg/reference-2026-09-29 engine_rs`. The reference resolves to **`65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`**. The clean integration head examined was `ab0de014070ace82ba80ceebbb492bcdd64c6b81`.
++
++There are **125** tracked reference files under `engine_rs/`. Retain these **12** paths; paths in this table are relative to `engine_rs/`. SHA-256 values are over the exact reference blob bytes, including compressed fixture bytes.
++
++| Path | Reference SHA-256 | Disposition and reason |
++|---|---|---|
++| `src/lib.rs` | `a33c70ffb1f1ee887b4c51b66d8592dd7cab38f583cd3af06586356e27fd6d84` | Retain with seven declaration removals; complete rules, configuration, public/private state, counters and 41 unit tests |
++| `src/py_random.rs` | `40ff0c5e5a79a8ad9d580af4957e028f95ff180603259d8b81be2b357cd73356` | Unchanged CPython-compatible random generator |
++| `src/econ_attrib.rs` | `861b7bbaf61ac065bb18797bc389c2acbf6e15c37decaeeeff7eeaeac71e05ac` | Unchanged attribution implementation referenced by the rules |
++| `tests/py_random.rs` | `5d844a377db4db7817991c63440e30f7253a5799048e69f1ed8ba82b0beef35a` | Unchanged nine CPython-vector integration tests on this 64-bit Mac |
++| `fixtures/episode-95324500.jsonl.gz` | `47cdfa489b7a80edf8ec1361f2f55cd033c75824d624cd7c9e9daaa3137affd7` | Replay oracle |
++| `fixtures/episode-95901360.jsonl.gz` | `e80653f445570a3778a3fb9026a66614b1ecaa2ea417cf8358d3f1850d725281` | Replay oracle |
++| `fixtures/episode-95921764.jsonl.gz` | `bc3e01cd12ff70fd2f78bfbe7129d5caca468a6324c124c25c9efebc86fbd3f2` | Replay oracle |
++| `fixtures/episode-95990191.jsonl.gz` | `4bf1a3b09c644719c8b36a619289844e52c3458d0e25dc0a0a1429bc6eaa0d1b` | Replay oracle |
++| `LICENSE` | `c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4` | Unchanged Apache-2.0 license |
++| `VENDORED_FROM.md` | `bb2940661fac106aa05454ee6641c095fb6ecd722ec48668f232af9e2ece81ea` | Preserve all historical text and append the explicit trim note below |
++| `Cargo.toml` | `8157c3e6c6aa70922d3423938cd24532ddfd958fb1025f8db9939717d2b50827` | Remove unused binary, cdylib target and Rayon dependency; retain engine compatibility metadata and numeric features |
++| `Cargo.lock` | `c76725f0f07325924f7f00e0fc6b0dbdddb83d33230191f76daf6a6cf51253f1` | Seed from reference; let `cargo remove --offline rayon` prune unused dependency closure; record generated diff |
++
++New files at implementation time: `engine_rs/tests/replay_parity.rs`, `engine_rs/TRIM_MANIFEST.json`, `scripts/check_engine_trim.mjs`, `tests/tools/check_engine_trim.test.mjs`. Update `docs/rules-parity-coverage.md`, the existing restart Decision, its index, and cookbook log; save command receipts under `ops/rebuild-2026-09-29/1.1/`. Root `Cargo.toml`, root `Cargo.lock`, `justfile`, and Isaiah Rust sources remain unchanged for this task.
++
++### Exhaustive retained-source dependency audit
++
++These are **all** retained `mod`/`use` edges to excluded modules, using original reference line numbers:
++
++| Reference location | Exact line to remove | Reason |
++|---|---|---|
++| `src/lib.rs:19` | `pub mod ffi;` | C ABI/ctypes surface is rebuilt in Task 1.4, C5 |
++| `src/lib.rs:21` | `pub mod joint_matching;` | C2 candidate-matching policy machinery |
++| `src/lib.rs:22` | `pub mod myolie_features;` | C4 flat v2 observation encoder; Task 1.3 rebuild |
++| `src/lib.rs:23` | `pub mod myolie_sampler;` | C3 grammar is a reviewed port in Task 1.2 |
++| `src/lib.rs:24` | `pub mod native_agents;` | C2 scripted opponents; selected imports belong to Phase 7 |
++| `src/lib.rs:25` | `pub mod policy_rows;` | C2 policy action-row machinery |
++| `src/lib.rs:27` | `pub mod training;` | C5 collector/lifecycle is rebuilt, not vendored |
++
++Remove each whole line including its LF; retain blank lines and all other bytes. Expected resulting `lib.rs`: **185,626 bytes**, SHA-256 **`c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd`**. This hash was calculated by applying the seven removals in memory, not by installing or compiling a trimmed crate.
++
++There are **no other excluded-module imports** in the retained implementation or RNG test. `lib.rs` retains `mod econ_attrib`, its `pub use econ_attrib::{ATTRIB_FIELDS, ATTRIB_VERBS, ATTRIB_VERSION}`, `pub mod py_random`, and `use py_random::PyRandom`. `econ_attrib.rs:10` uses `super::*`, resolving to the retained library; `lib.rs` unit tests use `super::*` and `crate::econ_attrib::*`, also retained. `py_random.rs` and its integration test depend only on the retained generator and numeric crates. Bins/examples are not dependencies of these files. No `rayon` use survives in the three sources or RNG test.
++
++No extra public wrapper is necessary. Reference APIs already provide:
++
++```rust
++Game::new(config: Config, seed: i64, num_agents: usize) -> Result<Game, String>
++Game::new_with_seed_decimal(config: Config, seed: &str, num_agents: usize) -> Result<Game, String>
++Game::step(&mut self, actions: &[serde_json::Value]) -> Result<(), String>
++Game::step_with_market_metrics(&mut self, actions: &[serde_json::Value]) -> Result<StepMetrics, String>
++Game::public_state(&self) -> PublicState
++Game::snapshot(&self) -> StepSnapshot
++Game::terminal_banks(&self) -> Option<&[f64]>
++Game::econ_counters(&self) -> Option<&[[u64; ECON_FIELDS]; 2]>
++Game::attrib_counters(&self) -> Option<&[[u64; ATTRIB_FIELDS]; 2]>
++```
++
++The seed/config constructor starts at step 0. `step` consumes already decoded per-seat JSON command objects (`farmer`, `hands`, `market`), not policy slots; new grammar decoding is outside Task 1.1. State includes both privates for native adapters; this is not permission to expose the rival's private state to a model. `ECON_FIELDS=32`, `ATTRIB_FIELDS=167`; counters remain telemetry, not observation history.
++
++### Exhaustive exclusion classes and test boundary
++
++The manifest generator below expands these classes to individual paths and reference hashes, never a wildcard-only manifest. They account for the other **113** paths:
++
++| Excluded paths | Count | Reason / affected tests |
++|---|---:|---|
++| `src/native_agents/**` | 57 | Scripted bots and controller helpers, C2; 47 unit tests are deferred with selected Phase 7 imports |
++| `src/bin/**` | 21 | Bot executables and execution oracles, C2 |
++| `examples/**` | 11 | Bot-specific oracle executables, C2 |
++| `src/ffi.rs` | 1 | C5 ABI; 16 unit tests target the excluded FFI |
++| `src/joint_matching.rs` | 1 | C2 matching enumeration; 3 unit tests |
++| `src/myolie_features.rs` | 1 | C4 flat encoder; 5 unit tests |
++| `src/myolie_sampler.rs` | 1 | C3 grammar; 4 unit tests are inputs to Task 1.2, not discarded as irrelevant |
++| `src/policy_rows.rs` | 1 | C2 policy rows; 4 unit tests |
++| `src/training.rs` | 1 | C5 old lifecycle/collector; no inline tests |
++| `src/main.rs` | 1 | Replay/benchmark/branch CLI is not needed by the library; replace only its test purpose with a direct integration test |
++| `tests/shoprouter_parity.rs` | 1 | Imports `native_agents::shoprouter::ShopRouterController` on line 2; one controller-action parity test, explicitly zero engine transitions |
++| Non-episode fixtures listed below | 14 | Bot/controller/matching oracles; none used by retained sources/tests |
++| `README.md` | 1 | Describes excluded ABI, matching, controllers and historical sibling scripts; current scope is documented in provenance and root parity docs |
++| `V3_IMPORT.json` | 1 | Manifest of the full prior import; new trim manifest supersedes it for this package |
++
++The 14 excluded fixtures are `e776-kenjo-trace.json`, `evgen-c27-trace.json`, `farm2945-sell-library.bin`, `flex-fieldbook-routes.json`, `jat-animal-resupply.json`, `metav4-sell-library.bin`, `re3-joint-matching.json`, `shop-router-0909-actions.json`, `shop-router-0909-parity.json`, `tetsutani-shape-shop-pasture-routes.json`, `v39-late-parity.json`, `v39-production-parity.json`, `v39-routes.json`, and `v43-routes.json`.
++
++The reference source inventory contains 120 library unit tests: **41 retained, 79 excluded**. The 41 retained cases use inline synthetic states, not external fixture files. They cover config/numeric semantics, market ordering, native reset/randomness, terminal behavior, failure rollback, and economic/attribution counters including counted-versus-uncounted state neutrality. The nine RNG tests embed CPython vectors (including large/negative seeds, rollover and long streams), with generator provenance in their source. Neither the retained unit tests nor RNG tests consume the four replay fixtures. The reference's `re_parity.py`, `re1_parity.py`, and `export_re_trace.py` mentioned by its README are not tracked on this reference branch. Therefore **50 retained tests alone do not establish replay parity**.
++
++Each retained compressed trace has one header plus **719 transitions**, with expected complete public and private state, statuses and rewards; initial plus successor checks give **720 snapshots per episode, 2,880 total**, and **2,876 transitions**. Total compressed size is 1,053,870 bytes. The new integration test reads each fixture independently and uses system `gzip`, avoiding a new decompression dependency. It performs no agent inference or training.
++
++| Episode | Seed | Final banks, seat 0 / seat 1 |
++|---|---:|---:|
++| 95324500 | 181681617 | 97,126 / 32,640 |
++| 95901360 | 804786120 | 143,344 / 151,788 |
++| 95921764 | 2089097928 | 7,843 / 94,230 |
++| 95990191 | 1447832391 | 87,792 / 99,703 |
++
++All headers identify `kaggle-environments==1.32.7` and engine SHA-256 `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`. Replay parity is scoped to these recorded worlds plus synthetic unit coverage, not a fresh exhaustive differential run against Python, malformed-input completeness, learning quality, or GPU performance. Preserve integer-versus-float representation in public market values. Compare rewards as typed `Vec<f64>` because nonterminal trace rewards are `[0,0]`, whereas snapshots serialize `[0.0,0.0]`. Check private-map insertion order separately: JSON object equality alone misses it.
++
++### Workspace, path dependency and L4
++
++**Decision proposed for Claude:** do not create a shared workspace or a root path dependency in Task 1.1. The root `Cargo.toml` has no `[workspace]`, no engine dependency, and root `src/` has no engine consumer. A nested independent Cargo package needs neither a root workspace entry nor a root dependency. Its own lockfile and explicit `--manifest-path` commands give a separate feature resolution. Keep root manifest/lock/source byte-identical.
++
++Task 1.2 lives inside the engine package. Task 1.3's planned `src/kaggriculture/observe.rs` may become the first root consumer when compiled against `Game`; Task 1.4 certainly will. Add the path dependency at the **first actual compiled consumer**, after reviewing that task, rather than claiming nothing before 1.4 can need it. There is no consumer that justifies it in **this** task.
++
++Workspace membership is not a dependency edge, but it is also **not feature isolation**. Cargo's locally installed primary documentation (`share/doc/rust/html/cargo/reference/resolver.html`, “Features”, in `nightly-2026-04-18-aarch64-apple-darwin`) explicitly states that selecting multiple workspace packages with `--workspace` or multiple `-p` flags unifies dependency features; separate invocations avoid that unification. A shared workspace also shares lock resolution. Resolver 2/3 does not isolate a normal engine dependency from the root's active test dependency on the same `serde_json` package. A root-only default invocation can avoid the engine when no dependency selects it, but `cargo test --workspace` would reintroduce L4.
++
++Keep engine `serde_json` features `arbitrary_precision` and `preserve_order`: removing them breaks the kernel's tested unbounded integer/numeric and ordered-inventory semantics. If Claude chooses a shared workspace now, the minimal way to keep unmodified root decoding is **separate package test invocations** (never selecting both); the more robust choice is the standalone package proposed here. Once the root needs the path dependency, apply the reference's narrow test-only repair, not feature deletion:
++
++```rust
++// src/rules_engine/generation.rs, test RandomCall::Uniform only:
++Uniform {
++    #[serde(deserialize_with = "fixture_float")]
++    low: f64,
++    #[serde(deserialize_with = "fixture_float")]
++    high: f64,
++    #[serde(deserialize_with = "fixture_float")]
++    value: f64,
++},
++
++fn fixture_float<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<f64, D::Error> {
++    serde_json::Number::deserialize(deserializer)?
++        .as_f64()
++        .filter(|number| number.is_finite())
++        .ok_or_else(|| serde::de::Error::custom("expected a finite fixture number"))
++}
++```
++
++This handles Serde's tagged-enum buffering of arbitrary-precision decimals as Number's private map. The exact reference diff is obtainable with `git diff HEAD kg/reference-2026-09-29 -- src/rules_engine/generation.rs`. It is **not applied in Task 1.1**. Reopen L4 when adding a root dependency/workspace; test the affected generation fixtures red before the decoder repair, then require 155 passed / 2 ignored unchanged.
++
++### Checks actually performed while writing this brief
++
++- Reference tree/source/module/test inventory and SHA-256 computation; no engine source installed.
++- All **25 registry packages** in the reference engine lockfile are present in the local Cargo cache. A temporary copy of its unchanged `Cargo.toml`/`Cargo.lock` passed `cargo metadata --offline --locked --format-version 1` (26 packages including the engine). No missing engine crates, downloads, or engine compilation. Metadata resolution is not proof of compilation.
++- `CARGO_NET_OFFLINE=true cargo test --locked`: **155 passed, 2 ignored**, with the existing local Orbit fixtures; no fixture bypass.
++- `CARGO_NET_OFFLINE=true UV_OFFLINE=true uvx --offline --from rust-just just prepare`: exit 0; formatting/lint/type/docs/build checks pass, Rust **155 passed / 2 ignored**, Python **722 passed / 3 platform skips**. Receipt: `ops/rebuild-2026-09-29/1.1-brief-prepare.log`.
++- Tool versions: Cargo `1.97.0-nightly (eb94155a9 2026-04-09)`, Python `3.12.13`, Node `v26.5.0`. No training, pod operation or network request.
++
++## Task A: Pin provenance and make the minimal standalone import
++
++**Files:** create the 12 retained paths above, `engine_rs/TRIM_MANIFEST.json`, `scripts/check_engine_trim.mjs`, `tests/tools/check_engine_trim.test.mjs`.
++
++**Interfaces:** consumes pinned Git blobs; produces an exhaustive byte/line manifest and `check(root: string): void` exported by the checker. CLI is `node scripts/check_engine_trim.mjs [root]`; success exits 0 and prints `engine trim manifest: OK`; any mismatch exits nonzero with the offending path. Full code for the checker, tests and generator appears in the appendices.
++
++- [ ] **Step 1: Establish the unchanged baseline.**
++
++```bash
++export CARGO_NET_OFFLINE=true UV_OFFLINE=true
++git branch --show-current
++git status --short
++git rev-parse kg/reference-2026-09-29
++cargo test --locked
++cargo tree --locked -e features -i serde_json
++command -v gzip
++```
++
++Expected: `kg/rebuild-codex`, the pinned reference commit, root **155 passed / 2 ignored**, no `serde_json` arbitrary-precision feature. `gzip` is installed. Preserve unrelated dirty work; if fixtures/cache are missing report the exact path/package instead of downloading or disabling parity.
++
++- [ ] **Step 2: Write the checker tests from Appendix B; run them red.**
++
++```bash
++node --test tests/tools/check_engine_trim.test.mjs
++```
++
++Expected: module-not-found for `scripts/check_engine_trim.mjs`. This is the explicit red test for the new checker, not a fabricated failing rules test.
++
++- [ ] **Step 3: Add the checker from Appendix A and run its fixture tests green.**
++
++```bash
++node --test tests/tools/check_engine_trim.test.mjs
++node scripts/check_engine_trim.mjs
++```
++
++Expected: checker unit tests pass; repository invocation fails because the engine manifest does not exist yet.
++
++- [ ] **Step 4: Materialize exactly the retained reference files.**
++
++```bash
++.venv/bin/python - <<'PY'
++from pathlib import Path
++import subprocess
++ref = '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0'
++paths = ['src/lib.rs', 'src/py_random.rs', 'src/econ_attrib.rs',
++         'tests/py_random.rs', 'LICENSE', 'VENDORED_FROM.md', 'Cargo.toml', 'Cargo.lock']
++paths += [f'fixtures/episode-{i}.jsonl.gz' for i in (95324500, 95901360, 95921764, 95990191)]
++for name in paths:
++    path = Path('engine_rs') / name
++    if path.exists():
++        raise SystemExit(f'refusing to overwrite {path}')
++    path.parent.mkdir(parents=True, exist_ok=True)
++    path.write_bytes(subprocess.check_output(['git', 'show', f'{ref}:{path.as_posix()}']))
++PY
++cargo test --manifest-path engine_rs/Cargo.toml --lib --locked
++```
++
++Expected red: missing files for the seven excluded modules. Keep this as the pre-trim compile failure. Do not copy those modules to fix it.
++
++- [ ] **Step 5: Remove only the seven declarations and unused Cargo targets.**
++
++```bash
++.venv/bin/python - <<'PY'
++from pathlib import Path
++p = Path('engine_rs/src/lib.rs')
++lines = p.read_bytes().splitlines(keepends=True)
++removed = {19: b'pub mod ffi;\n', 21: b'pub mod joint_matching;\n',
++           22: b'pub mod myolie_features;\n', 23: b'pub mod myolie_sampler;\n',
++           24: b'pub mod native_agents;\n', 25: b'pub mod policy_rows;\n',
++           27: b'pub mod training;\n'}
++for n, expected in removed.items():
++    assert lines[n - 1] == expected, (n, lines[n - 1])
++p.write_bytes(b''.join(line for n, line in enumerate(lines, 1) if n not in removed))
++p = Path('engine_rs/Cargo.toml')
++b = p.read_bytes()
++for old in [b'crate-type = ["rlib", "cdylib"]\n',
++            b'[[bin]]\nname = "re_engine"\npath = "src/main.rs"\n\n']:
++    assert b.count(old) == 1
++    b = b.replace(old, b'')
++p.write_bytes(b)
++PY
++cargo remove --manifest-path engine_rs/Cargo.toml --offline rayon
++```
++
++Manifest exceptions outside the three implementation files: reference Cargo line 16 removed (default `rlib` suffices); lines 18–21 removed (excluded `src/main.rs`); line 27 removed by Cargo (no retained Rayon use). Cargo alone regenerates the engine lockfile, pruning Rayon and its exclusive closure. Preserve other resolved versions; inspect and diagnose unrelated version movement. No dependency is added; no new workspace entry is needed.
++
++- [ ] **Step 6: Append this exact trim note to `engine_rs/VENDORED_FROM.md`.**
++
++```markdown
++
++## Task 1.1 rules-only trim — 2026-09-29
++
++The sections above describe historical full imports, not this trimmed package.
++This copy is pinned to kg/reference-2026-09-29 at
++65f0eac5bb00b18a9d3acce319c2a231cbd5dff0. TRIM_MANIFEST.json accounts for every
++reference path, source hash, permitted line edit and excluded component.
++The only rules-source edits remove lib.rs reference lines 19, 21–25 and 27:
++ffi, joint_matching, myolie_features, myolie_sampler, native_agents,
++policy_rows and training declarations. py_random.rs, econ_attrib.rs and the
++RNG integration tests are unchanged. Cargo drops the cdylib/binary targets
++and unused Rayon dependency; Cargo regenerates the lockfile. This provenance
++note is append-only. No bot, v2 collector, trainer, model or C ABI is imported.
++Four episode traces remain as rules oracles; the new replay integration test
++starts from configuration and seed. Historic opponent/ABI/performance claims
++above do not qualify this trim. See ../docs/rules-parity-coverage.md for current
++checks and limits, and ../ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md
++for the reviewed import plan. The root crate does not yet depend on this package.
++```
++
++- [ ] **Step 7: Generate the manifest using Appendix C; verify the import and retained tests.**
++
++```bash
++node scripts/check_engine_trim.mjs
++cargo test --manifest-path engine_rs/Cargo.toml --lib --locked
++cargo test --manifest-path engine_rs/Cargo.toml --test py_random --locked
++cargo metadata --manifest-path engine_rs/Cargo.toml --offline --locked --format-version 1
++git diff --exit-code -- Cargo.toml Cargo.lock src/rules_engine/generation.rs
++```
++
++Expected: manifest passes; **41 library + 9 RNG tests** pass; Cargo metadata uses `engine_rs/Cargo.lock` and engine workspace root only; the three root paths have no diff. An engine compile/cache error is a blocker to diagnose, not permission for a network fetch. Appendix C is rerun after the new replay test is added to account for that authored file.
++
++## Task B: Prove native-reset replay parity through the retained API
++
++**Files:** create `engine_rs/tests/replay_parity.rs` with Appendix D.
++
++**Interfaces:** consumes `Config`, `Game`, `TraceHeader`, `StepSnapshot` and the four traces; produces five integration tests (one public API test and four episode tests) plus two comparator regressions. The API test exercises decoded PASS commands, state access and economic counters. Replay construction uses `Game::new(config, seed, 2)`; no exported initial state, RNG schedule, shop schedule or terminal bank oracle enters the constructor.
++
++- [ ] **Step 1: Write Appendix D with `assert_private` temporarily using only `assert_eq!(actual, expected, "{context}")`.** Run its comparator regressions:
++
++```bash
++cargo test --manifest-path engine_rs/Cargo.toml --test replay_parity private_order_mismatch_is_rejected --locked
++```
++
++Expected red: the `#[should_panic]` test fails because JSON object equality ignores inventory insertion order. This demonstrates why simple snapshot JSON equality is insufficient.
++
++- [ ] **Step 2: Install the complete `assert_private` from Appendix D and rerun the two comparator tests.**
++
++```bash
++cargo test --manifest-path engine_rs/Cargo.toml --test replay_parity mismatch_is_rejected --locked
++```
++
++Expected: **2 passed**; one proves private-order rejection, one proves public numeric-type rejection. These intentionally catch panics; no corruption is written to the pinned fixtures.
++
++- [ ] **Step 3: Run the API test, then one replay before the entire fixture set.**
++
++```bash
++cargo test --manifest-path engine_rs/Cargo.toml --test replay_parity kernel_public_api --locked
++cargo test --manifest-path engine_rs/Cargo.toml --test replay_parity episode_95324500 --locked
++```
++
++Expected: one pass each, including exact terminal banks 97,126 / 32,640. On divergence, the assertion names episode and step. Inspect the expected JSON and original engine source before changing the harness; record unsupported comparisons instead of suppressing them.
++
++- [ ] **Step 4: Format only the newly authored Rust file; refresh its manifest entry and run complete parity.**
++
++```bash
++rustfmt --edition 2024 engine_rs/tests/replay_parity.rs
++# Run Appendix C again after formatting.
++node scripts/check_engine_trim.mjs
++cargo test --manifest-path engine_rs/Cargo.toml --locked
++```
++
++Expected: **41 library + 9 RNG + 7 new integration = 57 tests passed**, no ignored tests, plus no failing doctests. Four complete replays cover 2,876 transitions / 2,880 snapshots. This is a forecast from source/test inventory, not a claimed observed result. Record actual runner counts. Do not run `cargo fmt --manifest-path engine_rs/Cargo.toml`: it would rewrite retained reference bytes.
++
++## Task C: Close provenance, root regression and review evidence
++
++**Files:** update `docs/rules-parity-coverage.md`, `cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md`, `cookbook/decisions/index.md`, `cookbook/log.md`; create `ops/rebuild-2026-09-29/1.1/results.md` and command logs.
++
++**Interfaces:** consumes manifest/test outputs; produces a source-bound receipt and current coverage documentation. Read the existing parity doc and all cookbook notes with `repository:` sources for edited paths before editing.
++
++- [ ] **Step 1: Add a Kaggriculture section to the parity doc.** State the package pin, Python engine target, seven deletions, 41 retained unit tests, 9 RNG tests, four trace IDs/seeds/banks and 2,876 transitions / 2,880 snapshots. Identify all new harness tests separately, the 79+1 excluded tests and why, private-order/numeric comparisons, standalone dependency boundary and L4 reopening condition. Mark outcome pending until commands below finish; preserve existing Orbit coverage.
++- [ ] **Step 2: Run the unchanged root and required preparation checks.**
++
++```bash
++export CARGO_NET_OFFLINE=true UV_OFFLINE=true
++cargo test
++uvx --offline --from rust-just just rs-prepare
++uvx --offline --from rust-just just prepare
++node --test tests/tools/check_engine_trim.test.mjs
++node scripts/check_engine_trim.mjs
++cargo test --manifest-path engine_rs/Cargo.toml --locked
++git diff --exit-code -- Cargo.toml Cargo.lock src/rules_engine/generation.rs justfile
++git diff --check
++```
++
++Expected root result on every invocation: **155 passed / 2 ignored**, unchanged fixture coverage. `just rs-prepare` and `just prepare` cover the **root package only**; the explicit engine test and manifest invocations above are additional mandatory checks, not implicitly covered by `just`. Root formatting must not traverse the standalone engine. The baseline full Python suite is 722 passed / 3 platform skips; no Python implementation changes are planned. Use real exit codes when saving logs (no pipeline masking). No further repeat is needed after a successful final check unless code changes.
++- [ ] **Step 3: Record actual results in the receipt and cookbook trio.** Inventory changed paths, hashes, commands, toolchain, skipped tests and any warnings. Revise the existing restart Decision's Task 1.1 brief section to distinguish reviewed plan from completed import; do not relabel old reference performance or full-engine tests as new results. Keep root Cargo/source identity checks in the receipt. If the outcome contradicts this brief, document it and return the concrete change for Claude's review.
++- [ ] **Step 4: Commit the complete, passing task for Claude's code review.**
++
++```bash
++git add engine_rs scripts/check_engine_trim.mjs tests/tools/check_engine_trim.test.mjs docs/rules-parity-coverage.md cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md cookbook/decisions/index.md cookbook/log.md ops/rebuild-2026-09-29/1.1
++git diff --cached --check
++git commit -m "Vendor the trimmed Kaggriculture rules kernel"
++```
++
++Expected: local commit on `kg/rebuild-codex`, cookbook pre-commit passes. No push or merge. This is one coherent import commit after its TDD steps; the present brief is committed separately before any implementation.
+
+codex
+The brief proposes a standalone package, an exhaustive 125-file manifest, and replay checks that preserve numeric types and private inventory order. The offline `just prepare` baseline also passed. I’m finishing the checker and test code blocks so Claude can review exact implementation steps.
