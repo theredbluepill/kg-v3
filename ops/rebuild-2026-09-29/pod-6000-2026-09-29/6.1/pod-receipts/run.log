@@ -1,0 +1,115 @@
+[kg-probe] {"kind": "start", "rank": 1, "t": 1790699314.241552, "argv": ["/root/kg-v3/scripts/run_ppo.py", "configs/kaggriculture_2rank.yaml", "/root/runs/kg-v3-prelanding-6.1-memory-2rank-20260930", "--load-model-weights", "/root/bc-best/checkpoint_bc_best.pt", "--load-model-weights-mode", "model_fresh_critic_head", "--log-mode", "wandb", "--wandb-mode", "online", "--max-env-steps", "16384", "-o", "rl.eval_replay_games=0", "rl.checkpoint_freq=16384"], "torch": "2.9.0+cu128", "wandb": "0.26.1"}
+[kg-probe] {"kind": "start", "rank": 0, "t": 1790699314.2850392, "argv": ["/root/kg-v3/scripts/run_ppo.py", "configs/kaggriculture_2rank.yaml", "/root/runs/kg-v3-prelanding-6.1-memory-2rank-20260930", "--load-model-weights", "/root/bc-best/checkpoint_bc_best.pt", "--load-model-weights-mode", "model_fresh_critic_head", "--log-mode", "wandb", "--wandb-mode", "online", "--max-env-steps", "16384", "-o", "rl.eval_replay_games=0", "rl.checkpoint_freq=16384"], "torch": "2.9.0+cu128", "wandb": "0.26.1"}
+Launched with the following raw manual overrides: '['rl.eval_replay_games=0', 'rl.checkpoint_freq=16384']'
+GEMM workload headroom rollout: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+GEMM workload headroom minibatch: 1024 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 5.776x headroom, <= 1 call(s)); heads 11096 rows/call (10.84x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16384 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 0.361x headroom, <= 3 call(s)); heads 11096 rows/call (0.6772x headroom, 2 call(s)); teacher targets 1674575872 B per chunk, 1674575872 B cached for 16384 rollout rows
+GEMM workload headroom evaluation: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+[kg-probe] {"kind": "env_construct", "rank": 0, "t": 1790699314.8014646, "n_envs": 128, "seed": 0, "seed_stride": 2, "native_threads": 2, "pin_memory": true, "transfer_device": "cuda:0", "episode_steps": 720}
+[kg-probe] {"kind": "env_construct", "rank": 1, "t": 1790699314.820939, "n_envs": 128, "seed": 1, "seed_stride": 2, "native_threads": 2, "pin_memory": true, "transfer_device": "cuda:1", "episode_steps": 720}
+Compiled GEMM backends: compile_gemm_game=kaggriculture, compile_gemm_backends=ATEN, compile_stack_torch=2.9.0+cu128, compile_stack_triton=3.5.0, compile_stack_nvidia_driver=595.91.07
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /root/.netrc.
+wandb: Currently logged in as: spoon to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.26.1
+wandb: Run data is saved locally in /root/runs/kg-v3-prelanding-6.1-memory-2rank-20260930/20260929-162834/wandb/run-20260929_162836-blb43l9j
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run ppo-20260929-162834
+wandb: ⭐️ View project at https://wandb.ai/spoon/kg-v3
+wandb: 🚀 View run at https://wandb.ai/spoon/kg-v3/runs/blb43l9j
+[kg-probe] {"kind": "wandb", "rank": 0, "t": 1790699317.4498565, "url": "https://wandb.ai/spoon/kg-v3/runs/blb43l9j", "id": "blb43l9j", "name": "ppo-20260929-162834", "project": "kg-v3"}
+0env steps [00:00, ?env steps/s]Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.09347199648618698}
+AUTOTUNE addmm(56576x256, 56576x256, 256x256)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.0935 ms 100.0% 
+  addmm 0.1106 ms 84.5% 
+SingleProcess AUTOTUNE benchmarking takes 0.0564 seconds and 0.0001 seconds precompiling for 2 choices
+[kg-probe] {"kind": "phase", "rank": 0, "t": 1790699333.8220258, "phase": "rollout", "iteration": 1, "seconds": 16.368535106001218, "peak_allocated": 3432926720, "peak_reserved": 4062183424, "device_total": 101975851008, "reserved_fraction": 0.03983475875755449, "native_steps": 64, "native_step_seconds": 3.3713406459955877}
+[kg-probe] {"kind": "phase", "rank": 1, "t": 1790699333.9569705, "phase": "rollout", "iteration": 1, "seconds": 16.503326824000396, "peak_allocated": 3432926720, "peak_reserved": 4062183424, "device_total": 101975851008, "reserved_fraction": 0.03983475875755449, "native_steps": 64, "native_step_seconds": 2.923840465986359}
+[kg-probe] {"kind": "phase", "rank": 0, "t": 1790699337.9533737, "phase": "teacher_precompute", "iteration": 1, "seconds": 4.125756557999921, "peak_allocated": 39982710272, "peak_reserved": 67205332992, "device_total": 101975851008, "reserved_fraction": 0.6590318426146573, "native_steps": 0, "native_step_seconds": 0.0}
+[kg-probe] {"kind": "phase", "rank": 1, "t": 1790699339.122779, "phase": "teacher_precompute", "iteration": 1, "seconds": 5.161609421998946, "peak_allocated": 39980977664, "peak_reserved": 67205332992, "device_total": 101975851008, "reserved_fraction": 0.6590318426146573, "native_steps": 0, "native_step_seconds": 0.0}
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.35017600655555725}
+AUTOTUNE addmm(232498x512, 232498x256, 256x512)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.3502 ms 100.0% 
+  addmm 0.6686 ms 52.4% 
+SingleProcess AUTOTUNE benchmarking takes 0.0851 seconds and 0.0001 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.35017600655555725}
+AUTOTUNE addmm(231748x512, 231748x256, 256x512)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.3502 ms 100.0% 
+  addmm 0.6666 ms 52.5% 
+SingleProcess AUTOTUNE benchmarking takes 0.0847 seconds and 0.0001 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.3494400084018707}
+AUTOTUNE addmm(232498x512, 232498x256, 256x512)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.3494 ms 100.0% 
+  addmm 0.6686 ms 52.3% 
+SingleProcess AUTOTUNE benchmarking takes 0.0843 seconds and 0.0000 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.3255999982357025}
+AUTOTUNE addmm(231748x256, 231748x256, 256x256)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.3256 ms 100.0% 
+  addmm 0.3932 ms 82.8% 
+SingleProcess AUTOTUNE benchmarking takes 0.0834 seconds and 0.0001 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.32969599962234497}
+AUTOTUNE addmm(232498x256, 232498x256, 256x256)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.3297 ms 100.0% 
+  addmm 0.3976 ms 82.9% 
+SingleProcess AUTOTUNE benchmarking takes 0.0835 seconds and 0.0001 seconds precompiling for 2 choices
+[kg-probe] {"kind": "phase", "rank": 1, "t": 1790699384.0474052, "phase": "update", "iteration": 1, "seconds": 26.197517136999522, "peak_allocated": 26076435456, "peak_reserved": 67297607680, "device_total": 101975851008, "reserved_fraction": 0.659936710650451, "native_steps": 0, "native_step_seconds": 0.0}
+[kg-probe] {"kind": "phase", "rank": 0, "t": 1790699384.0475636, "phase": "update", "iteration": 1, "seconds": 26.097515591000047, "peak_allocated": 26095332864, "peak_reserved": 67297607680, "device_total": 101975851008, "reserved_fraction": 0.659936710650451, "native_steps": 0, "native_step_seconds": 0.0}
+[kg-probe] {"kind": "iteration", "rank": 1, "t": 1790699384.050361, "iteration": 1, "wall_seconds": 66.59732073899977, "optimizer_steps": 16, "metrics": {"loss/entropy_loss": -4.402180820761714e-06, "loss/policy_loss": 0.0005641303723677993, "loss/teacher_kl_loss": 1.2861202776548453e-05, "loss/teacher_value_loss": 0.0033181142061948776, "loss/total_loss": 0.03684023767709732, "loss/value_loss": 0.01647476851940155, "optimizer/grad_norm": 14.82149600982666, "optimizer/learning_rate": 3.199999991920777e-05, "optimizer/minibatches_per_update": 16.0, "optimizer/steps": 16.0, "policy/approx_kl": 0.0026589941699057817, "policy/clipfrac": 0.0169677734375, "policy/entropy": 4.4021806716918945, "policy/logratio_abs_max": 0.6088635921478271, "policy/logratio_mean": -0.003297396469861269, "policy/market_item_entropy": 0.3376528322696686, "policy/market_kind_entropy": 1.356400966644287, "policy/market_quantity_entropy": 0.5254409313201904, "policy/market_quantity_high_entropy": 0.01831280067563057, "policy/ratio_max": 1.9021151065826416, "policy/ratio_mean": 0.9993615746498108, "policy/stop_entropy": 0.0, "policy/target_kl_exceeded": 0.0, "policy/target_kl_exceeded_total": 0.0, "policy/unit_actor_entropy": 0.0, "policy/unit_item_entropy": 0.49792319536209106, "policy/unit_kind_entropy": 1.5752453804016113, "policy/unit_quantity_entropy": 0.09120354056358337, "policy/unit_quantity_high_entropy": 7.242799142659351e-07, "policy/unit_quantity_present_entropy": 3.410855811125657e-07, "policy/unit_target_entropy": 0.0, "teacher/kl": 0.0025722405407577753, "teacher/kl_coef": 0.004999999888241291, "teacher/market_item_kl": 0.00014848250430077314, "teacher/market_kind_kl": 0.0007883070502430201, "teacher/market_quantity_high_kl": 2.05552078114124e-06, "teacher/market_quantity_kl": 0.00019054353469982743, "teacher/unit_item_kl": 0.00026356399757787585, "teacher/unit_kind_kl": 0.00113738514482975, "teacher/unit_quantity_high_kl": 8.331233272707017e-12, "teacher/unit_quantity_kl": 4.1902669181581587e-05, "teacher/unit_quantity_present_kl": -5.50526464693224e-12, "teacher/value_coef": 0.004999999888241291, "teacher/value_cross_entropy": 0.6636228561401367, "train/policy_active_ratio": 1.0, "train/return_mean": 0.0, "train/return_max": 0.25, "train/explained_variance": -0.6721888780593872, "train/advantage_mean": 0.008975258097052574, "train/advantage_std": 0.18210469186306, "train/max_entities": 13.0, "train/1p_rate": 0.0, "train/2p_rate": 1.0, "train/3p_rate": 0.0, "train/4p_rate": 0.0, "train/player_step_total": 32768.0, "train/total_active_entities": 482532.0, "time/rollout_seconds": 16.504100799560547, "time/teacher_seconds": 5.164387226104736, "teacher/cache_bytes": 1674575872.0, "time/update_seconds": 26.197996139526367, "time/iteration_seconds": 66.5970687866211, "perf/rollout_sps": 992.7229722467677, "perf/teacher_sps": 3172.496422650652, "perf/update_sps": 625.3913433967017, "perf/steps_per_second": 246.0168337512692, "perf/tokens_per_second": 111421.72073331103, "perf/active_entities_per_second": 7245.544117655482}}[kg-probe] {"kind": "iteration", "rank": 0, "t": 1790699384.0503652, "iteration": 1, "wall_seconds": 66.59736156899999, "optimizer_steps": 16, "metrics": {"loss/entropy_loss": -4.402180820761714e-06, "loss/policy_loss": 0.0005641303723677993, "loss/teacher_kl_loss": 1.2861202776548453e-05, "loss/teacher_value_loss": 0.0033181142061948776, "loss/total_loss": 0.03684023767709732, "loss/value_loss": 0.01647476851940155, "optimizer/grad_norm": 14.82149600982666, "optimizer/learning_rate": 3.199999991920777e-05, "optimizer/minibatches_per_update": 16.0, "optimizer/steps": 16.0, "policy/approx_kl": 0.0026589941699057817, "policy/clipfrac": 0.0169677734375, "policy/entropy": 4.4021806716918945, "policy/logratio_abs_max": 0.6088635921478271, "policy/logratio_mean": -0.003297396469861269, "policy/market_item_entropy": 0.3376528322696686, "policy/market_kind_entropy": 1.356400966644287, "policy/market_quantity_entropy": 0.5254409313201904, "policy/market_quantity_high_entropy": 0.01831280067563057, "policy/ratio_max": 1.9021151065826416, "policy/ratio_mean": 0.9993615746498108, "policy/stop_entropy": 0.0, "policy/target_kl_exceeded": 0.0, "policy/target_kl_exceeded_total": 0.0, "policy/unit_actor_entropy": 0.0, "policy/unit_item_entropy": 0.49792319536209106, "policy/unit_kind_entropy": 1.5752453804016113, "policy/unit_quantity_entropy": 0.09120354056358337, "policy/unit_quantity_high_entropy": 7.242799142659351e-07, "policy/unit_quantity_present_entropy": 3.410855811125657e-07, "policy/unit_target_entropy": 0.0, "teacher/kl": 0.0025722405407577753, "teacher/kl_coef": 0.004999999888241291, "teacher/market_item_kl": 0.00014848250430077314, "teacher/market_kind_kl": 0.0007883070502430201, "teacher/market_quantity_high_kl": 2.05552078114124e-06, "teacher/market_quantity_kl": 0.00019054353469982743, "teacher/unit_item_kl": 0.00026356399757787585, "teacher/unit_kind_kl": 0.00113738514482975, "teacher/unit_quantity_high_kl": 8.331233272707017e-12, "teacher/unit_quantity_kl": 4.1902669181581587e-05, "teacher/unit_quantity_present_kl": -5.50526464693224e-12, "teacher/value_coef": 0.004999999888241291, "teacher/value_cross_entropy": 0.6636228561401367, "train/policy_active_ratio": 1.0, "train/return_mean": 0.0, "train/return_max": 0.25, "train/explained_variance": -0.6721888780593872, "train/advantage_mean": 0.008975258097052574, "train/advantage_std": 0.18210469186306, "train/max_entities": 13.0, "train/1p_rate": 0.0, "train/2p_rate": 1.0, "train/3p_rate": 0.0, "train/4p_rate": 0.0, "train/player_step_total": 32768.0, "train/total_active_entities": 482532.0, "time/rollout_seconds": 16.504100799560547, "time/teacher_seconds": 5.164387226104736, "teacher/cache_bytes": 1674575872.0, "time/update_seconds": 26.197996139526367, "time/iteration_seconds": 66.5970687866211, "perf/rollout_sps": 992.7229722467677, "perf/teacher_sps": 3172.496422650652, "perf/update_sps": 625.3913433967017, "perf/steps_per_second": 246.0168337512692, "perf/tokens_per_second": 111421.72073331103, "perf/active_entities_per_second": 7245.544117655482}}
+
+16384env steps [01:06, 246.02env steps/s][kg-probe] {"kind": "env_construct", "rank": 0, "t": 1790699384.1164513, "n_envs": 128, "seed": 6896813423430531219, "seed_stride": 1, "native_threads": 2, "pin_memory": true, "transfer_device": "cuda:0", "episode_steps": 720}
+16384env steps [01:20, 246.02env steps/s][kg-probe] {"kind": "terminal_sample", "rank": 0, "t": 1790699458.1465998, "step_call": 783, "metrics": {"total_games_played": [1.0, 1.0, 1.0, 1.0], "terminal_bank_0": [108452.0, 65337.0, 77019.0, 103911.0], "terminal_bank_1": [64964.0, 60600.0, 111279.0, 72306.0], "terminal_margin_0": [43488.0, 4737.0, -34260.0, 31605.0]}, "counts": {"total_games_played": 128, "terminal_bank_0": 128, "terminal_bank_1": 128, "terminal_margin_0": 128}, "dones_any": true}
+[kg-probe] {"kind": "phase", "rank": 0, "t": 1790699458.1610754, "phase": "evaluation", "iteration": 1, "seconds": 74.04519246000018, "peak_allocated": 3528730112, "peak_reserved": 67297607680, "device_total": 101975851008, "reserved_fraction": 0.659936710650451, "native_steps": 719, "native_step_seconds": 52.90355198801626}
+16384env steps [02:20, 116.44env steps/s]
+wandb: updating run metadata
+wandb: uploading output.log; uploading wandb-summary.json; uploading config.yaml
+wandb: 
+wandb: Run history:
+wandb:                eval/bank_0 ▁
+wandb:                eval/bank_1 ▁
+wandb:        eval/candidate_bank ▁
+wandb: eval/candidate_bank_margin ▁
+wandb:         eval/episode_steps ▁
+wandb:                 eval/games ▁
+wandb:        eval/last_best_bank ▁
+wandb:              eval/margin_0 ▁
+wandb:              eval/promoted ▁
+wandb:   eval/promotion_threshold ▁
+wandb:                        +74 ...
+wandb: 
+wandb: Run summary:
+wandb:       compile_gemm_backends ATEN
+wandb:           compile_gemm_game kaggriculture
+wandb: compile_stack_nvidia_driver 595.91.07
+wandb:         compile_stack_torch 2.9.0+cu128
+wandb:        compile_stack_triton 3.5.0
+wandb:      compiled_model_modules 1
+wandb:                 eval/bank_0 70434.66406
+wandb:                 eval/bank_1 71749.02344
+wandb:         eval/candidate_bank 69806.99219
+wandb:  eval/candidate_bank_margin -2569.70312
+wandb:                         +81 ...
+wandb: 
+wandb: 🚀 View run ppo-20260929-162834 at: https://wandb.ai/spoon/kg-v3/runs/blb43l9j
+wandb: ⭐️ View project at: https://wandb.ai/spoon/kg-v3
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: /root/runs/kg-v3-prelanding-6.1-memory-2rank-20260930/20260929-162834/wandb/run-20260929_162836-blb43l9j/logs
+[kg-probe] {"kind": "exit", "rank": 1, "t": 1790699459.6173239, "native_step_calls": 64, "native_step_seconds": 2.923840465986359, "native_step_mean_ms": 45.68500728103686, "terminal_records": 0, "phase_peaks": {"rollout": {"allocated": 3432926720, "reserved": 4062183424}, "teacher_precompute": {"allocated": 39980977664, "reserved": 67205332992}, "update": {"allocated": 26076435456, "reserved": 67297607680}}, "inductor_max_autotune_gemm_backends": "ATEN"}
+[kg-probe] {"kind": "exit", "rank": 0, "t": 1790699459.8929806, "native_step_calls": 783, "native_step_seconds": 56.27489263401185, "native_step_mean_ms": 71.87087181866137, "terminal_records": 128, "phase_peaks": {"rollout": {"allocated": 3432926720, "reserved": 4062183424}, "teacher_precompute": {"allocated": 39982710272, "reserved": 67205332992}, "update": {"allocated": 26095332864, "reserved": 67297607680}, "evaluation": {"allocated": 3528730112, "reserved": 67297607680}}, "inductor_max_autotune_gemm_backends": "ATEN"}
