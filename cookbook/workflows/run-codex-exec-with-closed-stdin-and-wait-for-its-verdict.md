@@ -5,7 +5,7 @@ description: "Rebuild-plan rules for delegating to Codex (commit 9bfa0a0): close
 tags: ["kaggriculture-v3", "workflows", "codex"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
-sources: [{"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/brief-2.3-r3-transcript.log"}]
+sources: [{"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/brief-2.3-r3-transcript.log"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt2-killed-transcript.log"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-2.3-r2-attempt1-killed-transcript.log"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt1-usage-limit-transcript.log"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-prompt.md"}]
 ---
 
 # Run codex exec with closed stdin and wait for its verdict
@@ -28,13 +28,13 @@ codex exec -C <worktree> -s <workspace-write|read-only> \
 ## Evidence
 
 - **Stdin.** The tracked `codex/brief-2.3-r3-transcript.log` begins with "Reading additional input from stdin...". That run still finished with a verdict. The stall itself is operator-reported; no transcript records a hung run.
-- **Incomplete reviews.** Two local, uncommitted transcripts stop mid-review without a verdict of their own: `verify-1.1b-r2-attempt2-killed-transcript.log` and `verify-2.3-r2-attempt1-killed-transcript.log`. Their `VERDICT` lines are quoted from the prompt or from earlier reports the reviewer read. The operator reports that the parent agent's return terminated the child. No termination signal or parent-lifecycle receipt was retained, so that cause is inferred.
-- **Usage limit.** The local transcript `verify-1.1b-r2-attempt1-usage-limit-transcript.log` ends with Codex's "You’ve hit your usage limit" error. The resume pattern is shown by the local `task-1.2-impl-resume-prompt.md`, which continues brief 1.2 from the committed partial work.
+- **Incomplete reviews.** Two transcripts stop mid-review without a verdict of their own: `verify-1.1b-r2-attempt2-killed-transcript.log` and `verify-2.3-r2-attempt1-killed-transcript.log`. Their `VERDICT` lines are quoted from the prompt or from earlier reports the reviewer read. The operator reports that the parent agent's return terminated the child. No termination signal or parent-lifecycle receipt was retained, so that cause is inferred.
+- **Usage limit.** The transcript `verify-1.1b-r2-attempt1-usage-limit-transcript.log` ends with Codex's "You’ve hit your usage limit" error. The resume pattern is shown by `task-1.2-impl-resume-prompt.md`, which continues brief 1.2 from the committed partial work.
 
 ## Verification
 
 - On 2026-09-29 I read the cited transcripts on this checkout: line 1 of the stdin transcript, the ends of both incomplete-review transcripts and the location of every `VERDICT` line in them, the last lines of the usage-limit transcript, and the resume prompt. That confirms what the transcripts contain, not why the processes stopped.
-- Only `brief-2.3-r3-transcript.log` and the plan are committed. The other transcripts are local working files in `ops/rebuild-2026-09-29/codex/`.
+- The evidence-custody sweep committed the other cited transcripts and the resume prompt to `ops/rebuild-2026-09-29/codex/` as byte-identical copies of the local working files (SHA-256 checked against the custody inventory). The 2026-09-29 read above was of the local copies.
 
 ## Limits and gaps
 

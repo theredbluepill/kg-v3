@@ -54,7 +54,7 @@ sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resour
 
 ## Verification
 
-- Codex reviewed the receipts twice: `verify-sps-ceiling-r1` (APPROVE WITH EDITS, edits applied in `ddf1fb2`) and `verify-sps-ceiling-r2` (APPROVE; 21 of 21 checksums verified, and the 20 non-README artifacts unchanged across `cb4af49`, `ddf1fb2` and HEAD; the README and its checksum changed with the r1 edits). The reports are local working transcripts in `ops/rebuild-2026-09-29/codex/`, not committed.
+- Codex reviewed the receipts twice: `verify-sps-ceiling-r1` (APPROVE WITH EDITS, edits applied in `ddf1fb2`) and `verify-sps-ceiling-r2` (APPROVE; 21 of 21 checksums verified, and the 20 non-README artifacts unchanged across `cb4af49`, `ddf1fb2` and HEAD; the README and its checksum changed with the r1 edits). The reports, prompts and transcripts are committed in `ops/rebuild-2026-09-29/codex/` by the evidence-custody sweep.
 - On this checkout, `shasum -a 256 -c MANIFEST.sha256` in `model-sps-ceiling-2026-09-29/` reports 21 of 21 files OK (2026-09-29).
 - A second measurement episode reproduced the schedule: the default-backend arm of the ATEN-only GEMM A/B gave update walls of 4.667 s (mid) and 8.561 s (dense), against 4.662 s and 8.564 s here (`results.md`, "ATEN-only GEMM A/B").
 

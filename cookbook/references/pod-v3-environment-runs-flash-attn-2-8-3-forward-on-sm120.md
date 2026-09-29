@@ -48,7 +48,7 @@ Phase 6.0 of the rebuild set up a **separate v3 environment** on pod `w7ia3zvxqs
 
 ## Verification
 
-- Codex reviewed the receipts twice: `verify-flash-attn-r1` (APPROVE WITH EDITS, edits applied in `78df33c`) and `verify-flash-attn-r2` (APPROVE). The reports are local working transcripts in `ops/rebuild-2026-09-29/codex/`, not committed.
+- Codex reviewed the receipts twice: `verify-flash-attn-r1` (APPROVE WITH EDITS, edits applied in `78df33c`) and `verify-flash-attn-r2` (APPROVE). Both reports, both prompts and the r1 transcript are committed in `ops/rebuild-2026-09-29/codex/` by the evidence-custody sweep. The r2 transcript is not: it contains the pod's unredacted SSH host and port, so it stays local and `ops/rebuild-2026-09-29/evidence-custody.json` records only its path and that reason.
 - On this checkout, `shasum -a 256 -c MANIFEST.sha256` in `flash-attn-setup-2026-09-29/pod/` reports 30 of 30 files OK (2026-09-29). This checks local custody of the receipts, not the pod's live venv.
 - The wheel-member receipt (`pod/wheel_member_compare.txt`) and the cubin listing are the retained evidence for the digest and sm_120 claims.
 
