@@ -1,0 +1,144 @@
+framework oracle: seed=1208925819614629174706195, 9 transitions, 0.016589s, peak RSS=423510016 bytes
+FFFFFFFFF
+=================================== FAILURES ===================================
+_________ test_official_fixture_round_trip_all_python_states[95324500] _________
+
+episode_id = '95324500'
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '45063d08-bc01-11f1-981c-ddef8f60c53d', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    @pytest.mark.parametrize("episode_id", FIXTURE_HASHES)
+    def test_official_fixture_round_trip_all_python_states(episode_id: str, framework_episode: dict[str, Any]) -> None:
+        episode = _fixture_episode(episode_id, framework_episode)
+        started = time.monotonic()
+>       report = json.loads(rs.verify_kaggriculture_episode(_dump(episode), _dump(_captured(episode))))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'verify_kaggriculture_episode'
+
+tests/kaggriculture/test_replay_export_oracles.py:246: AttributeError
+_________ test_official_fixture_round_trip_all_python_states[95901360] _________
+
+episode_id = '95901360'
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '45063d08-bc01-11f1-981c-ddef8f60c53d', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    @pytest.mark.parametrize("episode_id", FIXTURE_HASHES)
+    def test_official_fixture_round_trip_all_python_states(episode_id: str, framework_episode: dict[str, Any]) -> None:
+        episode = _fixture_episode(episode_id, framework_episode)
+        started = time.monotonic()
+>       report = json.loads(rs.verify_kaggriculture_episode(_dump(episode), _dump(_captured(episode))))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'verify_kaggriculture_episode'
+
+tests/kaggriculture/test_replay_export_oracles.py:246: AttributeError
+_________ test_official_fixture_round_trip_all_python_states[95921764] _________
+
+episode_id = '95921764'
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '45063d08-bc01-11f1-981c-ddef8f60c53d', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    @pytest.mark.parametrize("episode_id", FIXTURE_HASHES)
+    def test_official_fixture_round_trip_all_python_states(episode_id: str, framework_episode: dict[str, Any]) -> None:
+        episode = _fixture_episode(episode_id, framework_episode)
+        started = time.monotonic()
+>       report = json.loads(rs.verify_kaggriculture_episode(_dump(episode), _dump(_captured(episode))))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'verify_kaggriculture_episode'
+
+tests/kaggriculture/test_replay_export_oracles.py:246: AttributeError
+_________ test_official_fixture_round_trip_all_python_states[95990191] _________
+
+episode_id = '95990191'
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '45063d08-bc01-11f1-981c-ddef8f60c53d', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    @pytest.mark.parametrize("episode_id", FIXTURE_HASHES)
+    def test_official_fixture_round_trip_all_python_states(episode_id: str, framework_episode: dict[str, Any]) -> None:
+        episode = _fixture_episode(episode_id, framework_episode)
+        started = time.monotonic()
+>       report = json.loads(rs.verify_kaggriculture_episode(_dump(episode), _dump(_captured(episode))))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'verify_kaggriculture_episode'
+
+tests/kaggriculture/test_replay_export_oracles.py:246: AttributeError
+________ test_real_framework_export_and_import_are_independent_oracles _________
+
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '45063d08-bc01-11f1-981c-ddef8f60c53d', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    def test_real_framework_export_and_import_are_independent_oracles(framework_episode: dict[str, Any]) -> None:
+        header, tape = _header_tape(framework_episode)
+>       exported = json.loads(rs.export_kaggriculture_episode(_dump(header), _dump(tape)))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'export_kaggriculture_episode'
+
+tests/kaggriculture/test_replay_export_oracles.py:262: AttributeError
+__________________ test_native_byte_round_trip_and_wide_seed ___________________
+
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '45063d08-bc01-11f1-981c-ddef8f60c53d', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    def test_native_byte_round_trip_and_wide_seed(framework_episode: dict[str, Any]) -> None:
+        header, tape = _header_tape(framework_episode)
+>       exported = rs.export_kaggriculture_episode(_dump(header), _dump(tape))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'export_kaggriculture_episode'
+
+tests/kaggriculture/test_replay_export_oracles.py:275: AttributeError
+_______________ test_captured_evidence_is_independent_of_replay ________________
+
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '45063d08-bc01-11f1-981c-ddef8f60c53d', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    def test_captured_evidence_is_independent_of_replay(framework_episode: dict[str, Any]) -> None:
+        header, tape = _header_tape(framework_episode)
+>       exported = rs.export_kaggriculture_episode(_dump(header), _dump(tape))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'export_kaggriculture_episode'
+
+tests/kaggriculture/test_replay_export_oracles.py:287: AttributeError
+____________ test_shared_fields_restore_but_private_state_does_not _____________
+
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '45063d08-bc01-11f1-981c-ddef8f60c53d', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    def test_shared_fields_restore_but_private_state_does_not(framework_episode: dict[str, Any]) -> None:
+        episode = copy.deepcopy(framework_episode)
+        shared = [key for key, field in episode["specification"]["observation"].items() if field.get("shared")]
+        for step in episode["steps"]:
+            for key in shared:
+                step[1]["observation"].pop(key, None)
+>       assert json.loads(rs.verify_kaggriculture_episode(_dump(episode)))["ok"]
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'verify_kaggriculture_episode'
+
+tests/kaggriculture/test_replay_export_oracles.py:302: AttributeError
+_____________________ test_inventory_order_is_not_ignored ______________________
+
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '45063d08-bc01-11f1-981c-ddef8f60c53d', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    def test_inventory_order_is_not_ignored(framework_episode: dict[str, Any]) -> None:
+        episode = copy.deepcopy(framework_episode)
+        # Seeds are an ordered private map with several keys even in the initial state.
+        seeds = episode["steps"][0][0]["observation"]["private"]["seeds"]
+        assert len(seeds) > 1
+        episode["steps"][0][0]["observation"]["private"]["seeds"] = dict(reversed(list(seeds.items())))
+>       message = _reject(episode, "initial private key order reversed")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_replay_export_oracles.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '45063d08-bc01-11f1-981c-ddef8f60c53d', 'info': {'seed': 1208925819614629174706195}, ...}
+label = 'initial private key order reversed', captured = None
+
+    def _reject(episode: dict[str, Any], label: str, captured: dict[str, Any] | None = None) -> str:
+        with pytest.raises(ValueError) as error:
+>           rs.verify_kaggriculture_episode(_dump(episode), None if captured is None else _dump(captured))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'verify_kaggriculture_episode'
+
+tests/kaggriculture/test_replay_export_oracles.py:234: AttributeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_official_fixture_round_trip_all_python_states[95324500]
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_official_fixture_round_trip_all_python_states[95901360]
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_official_fixture_round_trip_all_python_states[95921764]
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_official_fixture_round_trip_all_python_states[95990191]
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_real_framework_export_and_import_are_independent_oracles
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_native_byte_round_trip_and_wide_seed
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_captured_evidence_is_independent_of_replay
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_shared_fields_restore_but_private_state_does_not
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_inventory_order_is_not_ignored
+9 failed in 1.79s

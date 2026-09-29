@@ -1,0 +1,111 @@
+$ uvx --offline --from rust-just just py-prepare
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+124 files left unchanged
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uv run mypy python/ scripts/
+Success: no issues found in 65 source files
+uv run pytest tests/ -m "not slow"
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/poonszesen/kg-v3-t73
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 1753 items
+
+tests/kaggriculture/test_base_generics_typing.py .                       [  0%]
+tests/kaggriculture/test_compile_gemm_backends.py ...................... [  1%]
+.................................                                        [  3%]
+tests/kaggriculture/test_configs.py .................................... [  5%]
+...                                                                      [  5%]
+tests/kaggriculture/test_evaluation.py .............                     [  6%]
+tests/kaggriculture/test_gpu_grammar.py .......................s         [  7%]
+tests/kaggriculture/test_model_compile.py ...........                    [  8%]
+tests/kaggriculture/test_model_encoder.py .............................. [  9%]
+.............                                                            [ 10%]
+tests/kaggriculture/test_model_heads.py ................................ [ 12%]
+.................................                                        [ 14%]
+tests/kaggriculture/test_model_registration.py .......                   [ 14%]
+tests/kaggriculture/test_observe.py ..ss................................ [ 16%]
+.....................                                                    [ 17%]
+tests/kaggriculture/test_replay_export.py .............................. [ 19%]
+...........                                                              [ 20%]
+tests/kaggriculture/test_replay_export_integration.py sssss              [ 20%]
+tests/kaggriculture/test_replay_export_oracles.py ..........             [ 21%]
+tests/kaggriculture/test_teacher.py .................................... [ 23%]
+..........s..sss                                                         [ 24%]
+tests/kaggriculture/test_training_semantics.py .......................   [ 25%]
+tests/kaggriculture/test_types.py ...................................... [ 27%]
+........................................................................ [ 31%]
+................                                                         [ 32%]
+tests/owl/agent/test_agent.py .......................................... [ 35%]
+...........                                                              [ 35%]
+tests/owl/agent/test_kaggle_engine_sanitization.py ....                  [ 35%]
+tests/owl/agent/test_kaggle_observation.py ...                           [ 36%]
+tests/owl/model/test_attn.py .....ss                                     [ 36%]
+tests/owl/model/test_model_config_files.py ............................. [ 38%]
+..................                                                       [ 39%]
+tests/owl/model/test_recurrent_transformer_v1.py ..............          [ 39%]
+tests/owl/model/test_stateless_transformer_v1.py ....................... [ 41%]
+........................................................................ [ 45%]
+...............................                                          [ 47%]
+tests/owl/model/test_teacher_targets.py ............................     [ 48%]
+tests/owl/test_checkpoint_quantization.py .............................. [ 50%]
+..............                                                           [ 51%]
+tests/owl/test_config.py .........                                       [ 51%]
+tests/owl/test_int8_emulation.py ...s                                    [ 51%]
+tests/owl/test_replay.py ...                                             [ 52%]
+tests/owl/test_rl.py ................................................... [ 55%]
+...........................                                              [ 56%]
+tests/owl/train/test_advantages.py ..............                        [ 57%]
+tests/owl/train/test_config.py ......................................... [ 59%]
+...........................                                              [ 61%]
+tests/owl/train/test_distributed.py ...................                  [ 62%]
+tests/owl/train/test_logging.py ..                                       [ 62%]
+tests/owl/train/test_loss.py .............                               [ 63%]
+tests/owl/train/test_metrics.py ..                                       [ 63%]
+tests/owl/train/test_optimizer.py ...........                            [ 63%]
+tests/owl/train/test_ppo.py ............................................ [ 66%]
+...............................                                          [ 68%]
+tests/owl/train/test_ppo_observation_mapping.py ........................ [ 69%]
+........................................................................ [ 73%]
+........................................................................ [ 77%]
+...                                                                      [ 77%]
+tests/scripts/test_benchmark_checkpoints.py ............................ [ 79%]
+.........                                                                [ 80%]
+tests/scripts/test_download_replays.py ....                              [ 80%]
+tests/scripts/test_extract_model_weights.py .................            [ 81%]
+tests/scripts/test_kaggriculture_parity.py ..................            [ 82%]
+tests/scripts/test_kaggriculture_select_replays.py .................     [ 83%]
+tests/scripts/test_roundtrip_checkpoint_quantization.py ................ [ 84%]
+..                                                                       [ 84%]
+tests/scripts/test_run_ppo.py .......................................... [ 86%]
+...............................................s.............            [ 90%]
+tests/tools/test_check_engine_trim.py .................................. [ 92%]
+.............................................                            [ 94%]
+tests/tools/test_observation_oracle_custody.py ......................... [ 96%]
+............................                                             [ 97%]
+tests/tools/test_record_grammar_reference.py .........................   [ 99%]
+tests/tools/test_replay_trim_manifest.py .............                   [ 99%]
+tests/tools/test_replay_viewer.py ..                                     [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/kaggriculture/test_gpu_grammar.py:171: Task 1.2/1.4 native grammar binding not available: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+SKIPPED [2] tests/kaggriculture/test_observe.py:288: pinned host memory requires CUDA
+SKIPPED [3] tests/kaggriculture/test_replay_export_integration.py:12: needs Task 1.4 binding
+SKIPPED [1] tests/kaggriculture/test_replay_export_integration.py:18: needs Task 1.4 binding
+SKIPPED [1] tests/kaggriculture/test_replay_export_integration.py:24: needs Task 1.4 binding
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1355: needs Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping in ppo.py; the merged trainer rejects KaggricultureActionMask)
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1624: needs the Task 3.1 run_ppo game seam and the Task 1.4 native env (the merged configs load, but run_ppo stops because no Kaggriculture environment exists)
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1653: needs the Task 3.1 run_ppo game seam and the Task 1.4 native env (the merged configs load, but run_ppo stops because no Kaggriculture environment exists)
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1689: needs Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping in ppo.py; the merged trainer rejects KaggricultureActionMask)
+SKIPPED [1] tests/owl/model/test_attn.py:60: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/model/test_attn.py:80: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/test_int8_emulation.py:15: x86 torch quantized backend is unavailable: qnnpack
+SKIPPED [1] tests/scripts/test_run_ppo.py:3044: Needs the native Kaggriculture environment and its EnvConfig seed (rebuild Tasks 1.4/1.5).
+================= 1737 passed, 16 skipped in 163.88s (0:02:43) =================
+uv run python scripts/check_doc_freshness.py
+No doc updates required

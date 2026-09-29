@@ -1,0 +1,39 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-t73)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.17s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 10 tests
+test kaggriculture::replay_export_tests::semantic_numbers_are_exact_without_float_seed_rounding ... ok
+test kaggriculture::replay_export_tests::native_step_error_is_explicit_and_never_shortened_success ... ok
+test kaggriculture::replay_export_tests::replay_seed_only_poison_and_exact_wide_seed ... ok
+test kaggriculture::replay_export_tests::replay_rejects_invalid_seed_config_counts_and_completion ... ok
+test kaggriculture::replay_export_tests::token_tape_uses_pre_step_native_decode ... ok
+test kaggriculture::replay_export_tests::typed_tape_rejects_token_seat_count_without_panicking ... FAILED
+test kaggriculture::replay_export_tests::native_byte_numeric_spelling_reports_the_first_pointer ... FAILED
+test kaggriculture::replay_export_tests::shifted_action_and_dropped_transition_are_detected ... ok
+test kaggriculture::replay_export_tests::import_rejections_and_captured_evidence_are_not_circular ... ok
+test kaggriculture::replay_export_tests::episode_timing_shared_privacy_quantities_and_byte_roundtrip ... ok
+
+failures:
+
+---- kaggriculture::replay_export_tests::typed_tape_rejects_token_seat_count_without_panicking stdout ----
+
+thread 'kaggriculture::replay_export_tests::typed_tape_rejects_token_seat_count_without_panicking' (11942689) panicked at src/kaggriculture/replay_export_tests.rs:258:9:
+token seats=0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- kaggriculture::replay_export_tests::native_byte_numeric_spelling_reports_the_first_pointer stdout ----
+
+thread 'kaggriculture::replay_export_tests::native_byte_numeric_spelling_reports_the_first_pointer' (11942682) panicked at src/kaggriculture/replay_export_tests.rs:244:5:
+assertion `left == right` failed
+  left: ""
+ right: "/steps/1/0/observation/farms/0/money"
+
+
+failures:
+    kaggriculture::replay_export_tests::native_byte_numeric_spelling_reports_the_first_pointer
+    kaggriculture::replay_export_tests::typed_tape_rejects_token_seat_count_without_panicking
+
+test result: FAILED. 8 passed; 2 failed; 0 ignored; 0 measured; 258 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `--lib`

@@ -92,7 +92,10 @@ skips**, including **17 selector cases**; `prepare` also passes **155 Rust tests
 2 ignored**. The result receipt retains commands, logs and the initial Markdown
 failure. Rust checks concern the retained Orbit starter, not the absent
 Kaggriculture engine.
-Preparation, native replay export, opponent import and full-payload admission
-remain deferred until their native seams exist. Reopen when the engine lands or
-custody changes; qualify these interfaces before BC or panel results can claim
-current-tree parity.
+At that preparation checkpoint, native replay export, opponent import and
+full-payload admission remained deferred. Task 7.3's current native replay
+implementation and its separate runtime qualification are recorded in
+[[native-replay-export-preserves-kaggle-episodes|the replay-export Reference]];
+this preparation evidence does not establish that runtime claim. Live evaluation
+wiring still awaits the native environment binding. Reopen the remaining
+preparation and custody seams before BC or panel results claim current-tree parity.

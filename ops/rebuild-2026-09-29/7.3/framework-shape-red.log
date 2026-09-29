@@ -1,0 +1,25 @@
+F
+=================================== FAILURES ===================================
+_________ test_official_fixture_round_trip_all_python_states[95324500] _________
+
+episode_id = '95324500'
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': '1a6333a2-bc02-11f1-a1c2-dfe90287f69b', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    @pytest.mark.parametrize("episode_id", FIXTURE_HASHES)
+    def test_official_fixture_round_trip_all_python_states(
+        episode_id: str, framework_episode: dict[str, Any]
+    ) -> None:
+        episode = _fixture_episode(episode_id, framework_episode)
+        started = time.monotonic()
+        report = json.loads(
+>           rs.verify_kaggriculture_episode(_dump(episode), _dump(_captured(episode)))
+        )
+E       ValueError: expected object at /specification/observation/properties (transition None)
+
+tests/kaggriculture/test_replay_export_oracles.py:260: ValueError
+---------------------------- Captured stdout setup -----------------------------
+framework oracle: seed=1208925819614629174706195, 9 transitions, 0.059005s, peak RSS=424263680 bytes
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_official_fixture_round_trip_all_python_states[95324500]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 3.49s

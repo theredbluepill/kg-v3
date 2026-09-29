@@ -964,6 +964,87 @@ offsets. Seeded states use policy `observation-corpus-v2`, the Claude R1
 correction, and 6 non-synthetic states exceed 16 actors against quota four.
 See the Task 1.3 receipt for actual checks and unresolved limits.
 
+### Stateless native replay export (Task 7.3)
+
+The existing `owl.rs` extension exposes two diagnostic JSON-text functions:
+
+```python
+export_kaggriculture_episode(seed_header_json: str, tape_json: str) -> str
+verify_kaggriculture_episode(
+    episode_json: str, captured_json: str | None = None
+) -> str
+```
+
+Invalid data and divergence raise `ValueError`, naming the first JSON pointer
+and transition where one applies. These functions retain no environment, seed
+counter or caller buffer. JSON text preserves non-negative, arbitrary-width
+integer seeds without passing through a Python/Rust float. Missing, negative,
+fractional and float-typed seeds are rejected.
+
+Every public PyO3 call checks the installed source hashes and compares the
+supplied specification, full configuration and envelope against the pinned
+framework. The pure Rust adapter accepts an already verified specification from
+its caller; it does not load Python framework files itself.
+
+The seed header carries `seed`, resolved `configuration`, `provenance`, the
+pinned framework's `specification` and its envelope metadata. Configuration
+admission reuses the v4 native validator. Provenance identifies source, engine,
+schema 1 and target framework `1.32.7`. Replay constructs the engine only through
+`Game::from_seed_header`; required initial/schedule/terminal-bank placeholders
+are diagnostic scaffolding, never oracle answers. The tape has `complete` and
+`transitions`, each with exactly two seat-ordered engine `actions` and optional
+two-seat `tokens` records (`tokens`, `length`). Native `grammar::plan` and
+`grammar::decode` validate tokens against the pre-transition actor count and
+order limit, then compare their decoded action to the recorded action.
+
+Episode `steps[0]` is initial state. Submitted action `t` appears beside its
+post-action observation in `steps[t+1][seat].action`. Each observation has only
+that seat's `player` and `private`; the pinned framework omits shared `step`
+from seat 1, while Kaggriculture's interpreter populates both copies of the five
+game-shared fields. Import restores only specification-marked shared fields
+from seat 0. Payload order, zero quantities, empty action entries and float64
+banks survive serialization. Top-level rewards/statuses mirror the last row;
+rewards are raw Kaggle rewards. `info.seed` retains the consumed seed and
+`configuration.seed` is null. `info.v3_native_replay` explicitly identifies
+native production rather than Python-framework execution.
+
+Verification imports, replays from the seed and re-exports. Exporter-produced
+episodes require byte equality after canonical JSON reserialization. Foreign
+episodes use value equality followed by object-key insertion-order comparison.
+Only these host/runtime fields are omitted from foreign comparison:
+
+- top-level `info` other than `seed`, including the native provenance added on
+  import; the framework's `toJSON` copies arbitrary host metadata;
+- per-seat `info`, populated by the framework rather than the game kernel;
+- per-seat `observation.remainingOverageTime`, charged by the framework from
+  measured agent execution duration;
+- `configuration.actTimeout` and `configuration.runTimeout`, framework time
+  budgets that do not affect native game rules.
+
+Schema-shared omission is normalized, and the observation wrapper uses schema
+order; nested payload order stays significant. No public/private state, action,
+seed, status or raw reward is allowlisted. A separate captured-evidence check
+accepts an `initial` snapshot, `terminal` snapshot, one post-transition bank
+pair per transition (`banks`), and indexed full successor snapshots
+(`snapshots: [{transition, snapshot}]`). Its report counts the evidence actually
+provided; replay agreement with itself is not independent certification.
+
+`python/owl/kaggriculture/replay_export.py` loads the specification from the
+installed framework after checking its version and four pinned source hashes.
+`ReplayRecorder` selects reproducibly from an explicit evaluation identity,
+takes its default count from `cfg.rl.eval_replay_games`, and stratifies against
+the supplied model-seat schedule. Only selected game ordinals perform recording
+work. Start/transition/terminal evidence is copied before later caller writes;
+completed exports have seed/action/checkpoint/seat/version custody sidecars and
+episode SHA-256. Truncation and errors remain explicit non-success records.
+Seeds and checkpoint identity are host metadata, never model inputs.
+
+The native `KaggricultureEnv` binding and `_evaluate_games` recorder wiring are
+not implemented here. The planned binding-dependent cases remain explicit
+`pytest.skip("needs Task 1.4 binding")` tests; the two- and four-rank configs already
+request eight replays, but no live eight-game evaluation is qualified by this
+diagnostic API.
+
 ### Native grammar boundary (Task 1.2)
 
 `src/kaggriculture/grammar.rs` is the single C3 implementation. It uses `std`

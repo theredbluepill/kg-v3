@@ -1,0 +1,134 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+______ test_malformed_selected_transition_creates_error_custody[actions] _______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-5/test_malformed_selected_transi0')
+malformed = 'actions'
+
+    @pytest.mark.parametrize("malformed", ["actions", "tokens"])
+    def test_malformed_selected_transition_creates_error_custody(
+        tmp_path: Path, malformed: str
+    ) -> None:
+        recorder = _recorder(tmp_path)
+        _start(recorder)
+        with pytest.raises(ValueError, match="exactly two"):
+            recorder.record_transition(
+                0,
+                _actions()[:1] if malformed == "actions" else _actions(),
+                tokens=[] if malformed == "tokens" else None,
+            )
+>       sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_replay_export.py:333: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-5/test_malformed_selected_transi0/game_000000.custody.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-5/test_malformed_selected_transi0/game_000000.custody.json'
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_______ test_malformed_selected_transition_creates_error_custody[tokens] _______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-5/test_malformed_selected_transi1')
+malformed = 'tokens'
+
+    @pytest.mark.parametrize("malformed", ["actions", "tokens"])
+    def test_malformed_selected_transition_creates_error_custody(
+        tmp_path: Path, malformed: str
+    ) -> None:
+        recorder = _recorder(tmp_path)
+        _start(recorder)
+        with pytest.raises(ValueError, match="exactly two"):
+            recorder.record_transition(
+                0,
+                _actions()[:1] if malformed == "actions" else _actions(),
+                tokens=[] if malformed == "tokens" else None,
+            )
+>       sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_replay_export.py:333: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-5/test_malformed_selected_transi1/game_000000.custody.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-5/test_malformed_selected_transi1/game_000000.custody.json'
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/pathlib.py:1013: FileNotFoundError
+___________ test_start_requires_both_checkpoint_hashes[checkpoints0] ___________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-5/test_start_requires_both_check0')
+checkpoints = {}
+
+    @pytest.mark.parametrize("checkpoints", [{}, {"candidate": "a" * 64}, {"candidate": "not-a-hash", "incumbent": "b" * 64}])
+    def test_start_requires_both_checkpoint_hashes(tmp_path: Path, checkpoints: dict[str, str]) -> None:
+        recorder = _recorder(tmp_path)
+>       with pytest.raises(ValueError, match="checkpoint_hashes"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:342: Failed
+___________ test_start_requires_both_checkpoint_hashes[checkpoints1] ___________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-5/test_start_requires_both_check1')
+checkpoints = {'candidate': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'}
+
+    @pytest.mark.parametrize("checkpoints", [{}, {"candidate": "a" * 64}, {"candidate": "not-a-hash", "incumbent": "b" * 64}])
+    def test_start_requires_both_checkpoint_hashes(tmp_path: Path, checkpoints: dict[str, str]) -> None:
+        recorder = _recorder(tmp_path)
+>       with pytest.raises(ValueError, match="checkpoint_hashes"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:342: Failed
+___________ test_start_requires_both_checkpoint_hashes[checkpoints2] ___________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-5/test_start_requires_both_check2')
+checkpoints = {'candidate': 'not-a-hash', 'incumbent': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'}
+
+    @pytest.mark.parametrize("checkpoints", [{}, {"candidate": "a" * 64}, {"candidate": "not-a-hash", "incumbent": "b" * 64}])
+    def test_start_requires_both_checkpoint_hashes(tmp_path: Path, checkpoints: dict[str, str]) -> None:
+        recorder = _recorder(tmp_path)
+>       with pytest.raises(ValueError, match="checkpoint_hashes"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:342: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_malformed_selected_transition_creates_error_custody[actions]
+FAILED tests/kaggriculture/test_replay_export.py::test_malformed_selected_transition_creates_error_custody[tokens]
+FAILED tests/kaggriculture/test_replay_export.py::test_start_requires_both_checkpoint_hashes[checkpoints0]
+FAILED tests/kaggriculture/test_replay_export.py::test_start_requires_both_checkpoint_hashes[checkpoints1]
+FAILED tests/kaggriculture/test_replay_export.py::test_start_requires_both_checkpoint_hashes[checkpoints2]
+5 failed, 21 deselected in 0.65s

@@ -1,0 +1,39 @@
+framework oracle: seed=1208925819614629174706195, 9 transitions, 0.096116s, peak RSS=425820160 bytes
+F
+=================================== FAILURES ===================================
+__________________ test_official_inventory_key_order_mutation __________________
+
+framework_episode = {'configuration': {'episodeSteps': 10, 'turnsPerDay': 3, 'maxMarketOrdersPerTurn': 4, 'townShopUnlockInterval': 1, 'we...rket over one season.', 'id': 'c386b360-bc01-11f1-b198-4d92b9efc9fa', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    def test_official_inventory_key_order_mutation(
+        framework_episode: dict[str, Any],
+    ) -> None:
+        episode = _fixture_episode("95324500", framework_episode)
+        inventory = episode["steps"][22][1]["observation"]["private"]["inventories"][3]
+        assert list(inventory) == ["COW", "WHEAT"]
+        episode["steps"][22][1]["observation"]["private"]["inventories"][3] = dict(
+            reversed(list(inventory.items()))
+        )
+>       message = _reject(episode, "fixture actor inventory key order reversed")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_replay_export_oracles.py:382: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+episode = {'configuration': {'actTimeout': 1, 'boardSize': 10, 'episodeSteps': 720, 'farmHandCostMult': 1, ...}, 'description': ..., hiring help, and trading with a dynamic market over one season.', 'id': '95324500', 'info': {'seed': 181681617}, ...}
+label = 'fixture actor inventory key order reversed', captured = None
+
+    def _reject(
+        episode: dict[str, Any], label: str, captured: dict[str, Any] | None = None
+    ) -> str:
+        with pytest.raises(ValueError, match="transition") as error:
+>           rs.verify_kaggriculture_episode(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                _dump(episode), None if captured is None else _dump(captured)
+            )
+E           AttributeError: module 'owl.rs' has no attribute 'verify_kaggriculture_episode'
+
+tests/kaggriculture/test_replay_export_oracles.py:243: AttributeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_official_inventory_key_order_mutation
+1 failed, 9 deselected in 1.65s

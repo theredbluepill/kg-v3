@@ -1,0 +1,96 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_direct_native_api_rejects_invalid_framework_time_budgets[not-a-number-actTimeout] _
+
+field = 'actTimeout', value = 'not-a-number'
+
+    @pytest.mark.parametrize("field", ["actTimeout", "runTimeout"])
+    @pytest.mark.parametrize("value", ["not-a-number", -1])
+    def test_direct_native_api_rejects_invalid_framework_time_budgets(
+        field: str, value: Any
+    ) -> None:
+        header, tape = _native_replay_input()
+        episode = json.loads(
+            replay_export.rs.export_kaggriculture_episode(
+                json.dumps(header), json.dumps(tape)
+            )
+        )
+        episode["configuration"][field] = value
+        episode["info"].pop("v3_native_replay")
+>       with pytest.raises(ValueError, match=r"configuration"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:521: Failed
+_ test_direct_native_api_rejects_invalid_framework_time_budgets[not-a-number-runTimeout] _
+
+field = 'runTimeout', value = 'not-a-number'
+
+    @pytest.mark.parametrize("field", ["actTimeout", "runTimeout"])
+    @pytest.mark.parametrize("value", ["not-a-number", -1])
+    def test_direct_native_api_rejects_invalid_framework_time_budgets(
+        field: str, value: Any
+    ) -> None:
+        header, tape = _native_replay_input()
+        episode = json.loads(
+            replay_export.rs.export_kaggriculture_episode(
+                json.dumps(header), json.dumps(tape)
+            )
+        )
+        episode["configuration"][field] = value
+        episode["info"].pop("v3_native_replay")
+>       with pytest.raises(ValueError, match=r"configuration"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:521: Failed
+_ test_direct_native_api_rejects_invalid_framework_time_budgets[-1-actTimeout] _
+
+field = 'actTimeout', value = -1
+
+    @pytest.mark.parametrize("field", ["actTimeout", "runTimeout"])
+    @pytest.mark.parametrize("value", ["not-a-number", -1])
+    def test_direct_native_api_rejects_invalid_framework_time_budgets(
+        field: str, value: Any
+    ) -> None:
+        header, tape = _native_replay_input()
+        episode = json.loads(
+            replay_export.rs.export_kaggriculture_episode(
+                json.dumps(header), json.dumps(tape)
+            )
+        )
+        episode["configuration"][field] = value
+        episode["info"].pop("v3_native_replay")
+>       with pytest.raises(ValueError, match=r"configuration"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:521: Failed
+_ test_direct_native_api_rejects_invalid_framework_time_budgets[-1-runTimeout] _
+
+field = 'runTimeout', value = -1
+
+    @pytest.mark.parametrize("field", ["actTimeout", "runTimeout"])
+    @pytest.mark.parametrize("value", ["not-a-number", -1])
+    def test_direct_native_api_rejects_invalid_framework_time_budgets(
+        field: str, value: Any
+    ) -> None:
+        header, tape = _native_replay_input()
+        episode = json.loads(
+            replay_export.rs.export_kaggriculture_episode(
+                json.dumps(header), json.dumps(tape)
+            )
+        )
+        episode["configuration"][field] = value
+        episode["info"].pop("v3_native_replay")
+>       with pytest.raises(ValueError, match=r"configuration"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:521: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_rejects_invalid_framework_time_budgets[not-a-number-actTimeout]
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_rejects_invalid_framework_time_budgets[not-a-number-runTimeout]
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_rejects_invalid_framework_time_budgets[-1-actTimeout]
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_rejects_invalid_framework_time_budgets[-1-runTimeout]
+4 failed, 37 deselected in 0.53s

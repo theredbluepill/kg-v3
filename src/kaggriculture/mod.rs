@@ -6,6 +6,10 @@ mod buffers;
 mod config;
 pub mod grammar;
 mod observe;
+pub mod replay_export;
+
+#[cfg(test)]
+mod replay_export_tests;
 
 pub use buffers::{ObsBuffersMut, ObsEnvMut, ObsRowMut, ObsStaging, ValidatedObsBuffersMut};
 pub use config::ObservationConfig;
@@ -353,5 +357,55 @@ pub fn encode_kaggriculture_headers_into(
 }
 
 pub(super) fn add_to_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
-    module.add_function(wrap_pyfunction!(encode_kaggriculture_headers_into, module)?)
+    module.add_function(wrap_pyfunction!(encode_kaggriculture_headers_into, module)?)?;
+    module.add_function(wrap_pyfunction!(export_kaggriculture_episode, module)?)?;
+    module.add_function(wrap_pyfunction!(verify_kaggriculture_episode, module)?)
+}
+
+#[pyfunction]
+fn export_kaggriculture_episode(
+    py: Python<'_>,
+    seed_header_json: &str,
+    tape_json: &str,
+) -> PyResult<String> {
+    validate_replay_framework(py, seed_header_json, false)?;
+    py.detach(|| {
+        let header: Value = serde_json::from_str(seed_header_json).map_err(|e| e.to_string())?;
+        let tape: Value = serde_json::from_str(tape_json).map_err(|e| e.to_string())?;
+        let header = replay_export::SeedHeader::parse(&header).map_err(|e| e.to_string())?;
+        let tape = replay_export::ActionTape::parse(&tape).map_err(|e| e.to_string())?;
+        replay_export::export_kaggle_episode(&header, &tape)
+            .map(|v| v.to_string())
+            .map_err(|e| e.to_string())
+    })
+    .map_err(PyValueError::new_err)
+}
+
+#[pyfunction]
+#[pyo3(signature = (episode_json, captured_json=None))]
+fn verify_kaggriculture_episode(
+    py: Python<'_>,
+    episode_json: &str,
+    captured_json: Option<&str>,
+) -> PyResult<String> {
+    validate_replay_framework(py, episode_json, true)?;
+    py.detach(|| {
+        let captured: Option<Value> = captured_json
+            .map(serde_json::from_str)
+            .transpose()
+            .map_err(|e| e.to_string())?;
+        replay_export::verify_round_trip(episode_json, captured.as_ref())
+            .map(|v| v.to_json().to_string())
+            .map_err(|e| e.to_string())
+    })
+    .map_err(PyValueError::new_err)
+}
+
+fn validate_replay_framework(py: Python<'_>, json: &str, episode: bool) -> PyResult<()> {
+    // The pure Rust adapter takes an already verified specification. The public
+    // Python seam must also reject missing/drifted installed framework sources.
+    PyModule::import(py, "owl.kaggriculture.replay_export")
+        .and_then(|module| module.call_method1("validate_native_replay_input", (json, episode)))
+        .map(|_| ())
+        .map_err(|error| PyValueError::new_err(error.to_string()))
 }

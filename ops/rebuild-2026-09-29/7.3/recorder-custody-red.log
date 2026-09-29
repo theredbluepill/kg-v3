@@ -1,0 +1,55 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_native_error_writes_incomplete_custody_without_successful_episode ____
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-t73/.codex-tmp/pytest-of-poonszesen/pytest-3/test_native_error_writes_incom0')
+native_calls = []
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1110379b0>
+
+    def test_native_error_writes_incomplete_custody_without_successful_episode(
+        tmp_path: Path, native_calls: list[dict[str, Any]], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        recorder = _recorder(tmp_path)
+        _start(recorder)
+        recorder.record_transition(0, _actions())
+    
+        def fail(*_args: str) -> str:
+            raise ValueError("transition 0 /steps/1/0/action: native step failed")
+    
+        monkeypatch.setattr(replay_export.rs, "export_kaggriculture_episode", fail)
+        recorder.finish_game(0, _snapshot(1, done=True))
+        sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+        assert sidecar["status"] == "error"
+        assert sidecar["complete"] is False
+>       assert sidecar["action_tape"]["complete"] is False
+E       assert True is False
+
+tests/kaggriculture/test_replay_export.py:204: AssertionError
+____________________ test_loader_uses_the_bytes_it_verified ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111c31700>
+
+    def test_loader_uses_the_bytes_it_verified(monkeypatch: pytest.MonkeyPatch) -> None:
+        original = Path.read_text
+    
+        def changed(path: Path, *args: Any, **kwargs: Any) -> str:
+            text = original(path, *args, **kwargs)
+            if path.name == "kaggriculture.json":
+                spec = json.loads(text)
+                spec["title"] = "unverified replacement"
+                return json.dumps(spec)
+            return text
+    
+        monkeypatch.setattr(Path, "read_text", changed)
+        framework = replay_export.load_pinned_framework()
+>       assert framework["envelope"]["title"] == "Kaggriculture"
+E       AssertionError: assert 'unverified replacement' == 'Kaggriculture'
+E         
+E         - Kaggriculture
+E         + unverified replacement
+
+tests/kaggriculture/test_replay_export.py:318: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_native_error_writes_incomplete_custody_without_successful_episode
+FAILED tests/kaggriculture/test_replay_export.py::test_loader_uses_the_bytes_it_verified
+2 failed, 19 deselected in 0.93s

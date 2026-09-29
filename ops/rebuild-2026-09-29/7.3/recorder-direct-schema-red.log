@@ -1,0 +1,260 @@
+FF..FFFFFF                                                               [100%]
+=================================== FAILURES ===================================
+____ test_direct_native_api_rejects_unpinned_schema[action_default-export] _____
+
+operation = 'export', mutation = 'action_default'
+
+    @pytest.mark.parametrize("operation", ["export", "verify"])
+    @pytest.mark.parametrize("mutation", ["action_default", "shared_private", "title"])
+    def test_direct_native_api_rejects_unpinned_schema(
+        operation: str, mutation: str
+    ) -> None:
+        header, tape = _native_replay_input()
+        if operation == "verify":
+            data = json.loads(
+                replay_export.rs.export_kaggriculture_episode(
+                    json.dumps(header), json.dumps(tape)
+                )
+            )
+        else:
+            data = header
+        if mutation == "action_default":
+            data["specification"]["action"]["default"]["farmer"] = ["NORTH"]
+            if operation == "verify":
+                for seat in data["steps"][0]:
+                    seat["action"]["farmer"] = ["NORTH"]
+        elif mutation == "shared_private":
+            data["specification"]["observation"]["private"]["shared"] = True
+        elif operation == "verify":
+            data["title"] = "Unpinned game title"
+        else:
+            data["envelope"]["title"] = "Unpinned game title"
+>       with pytest.raises(ValueError, match=r"specification|title|envelope"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:472: Failed
+____ test_direct_native_api_rejects_unpinned_schema[action_default-verify] _____
+
+operation = 'verify', mutation = 'action_default'
+
+    @pytest.mark.parametrize("operation", ["export", "verify"])
+    @pytest.mark.parametrize("mutation", ["action_default", "shared_private", "title"])
+    def test_direct_native_api_rejects_unpinned_schema(
+        operation: str, mutation: str
+    ) -> None:
+        header, tape = _native_replay_input()
+        if operation == "verify":
+            data = json.loads(
+                replay_export.rs.export_kaggriculture_episode(
+                    json.dumps(header), json.dumps(tape)
+                )
+            )
+        else:
+            data = header
+        if mutation == "action_default":
+            data["specification"]["action"]["default"]["farmer"] = ["NORTH"]
+            if operation == "verify":
+                for seat in data["steps"][0]:
+                    seat["action"]["farmer"] = ["NORTH"]
+        elif mutation == "shared_private":
+            data["specification"]["observation"]["private"]["shared"] = True
+        elif operation == "verify":
+            data["title"] = "Unpinned game title"
+        else:
+            data["envelope"]["title"] = "Unpinned game title"
+>       with pytest.raises(ValueError, match=r"specification|title|envelope"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:472: Failed
+_________ test_direct_native_api_rejects_unpinned_schema[title-export] _________
+
+operation = 'export', mutation = 'title'
+
+    @pytest.mark.parametrize("operation", ["export", "verify"])
+    @pytest.mark.parametrize("mutation", ["action_default", "shared_private", "title"])
+    def test_direct_native_api_rejects_unpinned_schema(
+        operation: str, mutation: str
+    ) -> None:
+        header, tape = _native_replay_input()
+        if operation == "verify":
+            data = json.loads(
+                replay_export.rs.export_kaggriculture_episode(
+                    json.dumps(header), json.dumps(tape)
+                )
+            )
+        else:
+            data = header
+        if mutation == "action_default":
+            data["specification"]["action"]["default"]["farmer"] = ["NORTH"]
+            if operation == "verify":
+                for seat in data["steps"][0]:
+                    seat["action"]["farmer"] = ["NORTH"]
+        elif mutation == "shared_private":
+            data["specification"]["observation"]["private"]["shared"] = True
+        elif operation == "verify":
+            data["title"] = "Unpinned game title"
+        else:
+            data["envelope"]["title"] = "Unpinned game title"
+>       with pytest.raises(ValueError, match=r"specification|title|envelope"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:472: Failed
+_________ test_direct_native_api_rejects_unpinned_schema[title-verify] _________
+
+operation = 'verify', mutation = 'title'
+
+    @pytest.mark.parametrize("operation", ["export", "verify"])
+    @pytest.mark.parametrize("mutation", ["action_default", "shared_private", "title"])
+    def test_direct_native_api_rejects_unpinned_schema(
+        operation: str, mutation: str
+    ) -> None:
+        header, tape = _native_replay_input()
+        if operation == "verify":
+            data = json.loads(
+                replay_export.rs.export_kaggriculture_episode(
+                    json.dumps(header), json.dumps(tape)
+                )
+            )
+        else:
+            data = header
+        if mutation == "action_default":
+            data["specification"]["action"]["default"]["farmer"] = ["NORTH"]
+            if operation == "verify":
+                for seat in data["steps"][0]:
+                    seat["action"]["farmer"] = ["NORTH"]
+        elif mutation == "shared_private":
+            data["specification"]["observation"]["private"]["shared"] = True
+        elif operation == "verify":
+            data["title"] = "Unpinned game title"
+        else:
+            data["envelope"]["title"] = "Unpinned game title"
+>       with pytest.raises(ValueError, match=r"specification|title|envelope"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:472: Failed
+_ test_direct_native_api_requires_installed_framework_custody[missing-export] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112fef4a0>
+operation = 'export', failure = 'missing'
+
+    @pytest.mark.parametrize("operation", ["export", "verify"])
+    @pytest.mark.parametrize("failure", ["missing", "hash"])
+    def test_direct_native_api_requires_installed_framework_custody(
+        monkeypatch: pytest.MonkeyPatch, operation: str, failure: str
+    ) -> None:
+        header, tape = _native_replay_input()
+        episode_json = replay_export.rs.export_kaggriculture_episode(
+            json.dumps(header), json.dumps(tape)
+        )
+    
+        def failed_loader() -> dict[str, Any]:
+            raise ValueError(
+                "pinned framework unavailable"
+                if failure == "missing"
+                else "core.py SHA-256 differs"
+            )
+    
+        monkeypatch.setattr(replay_export, "load_pinned_framework", failed_loader)
+>       with pytest.raises(ValueError, match=r"unavailable|SHA-256"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:499: Failed
+_ test_direct_native_api_requires_installed_framework_custody[missing-verify] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1130952e0>
+operation = 'verify', failure = 'missing'
+
+    @pytest.mark.parametrize("operation", ["export", "verify"])
+    @pytest.mark.parametrize("failure", ["missing", "hash"])
+    def test_direct_native_api_requires_installed_framework_custody(
+        monkeypatch: pytest.MonkeyPatch, operation: str, failure: str
+    ) -> None:
+        header, tape = _native_replay_input()
+        episode_json = replay_export.rs.export_kaggriculture_episode(
+            json.dumps(header), json.dumps(tape)
+        )
+    
+        def failed_loader() -> dict[str, Any]:
+            raise ValueError(
+                "pinned framework unavailable"
+                if failure == "missing"
+                else "core.py SHA-256 differs"
+            )
+    
+        monkeypatch.setattr(replay_export, "load_pinned_framework", failed_loader)
+>       with pytest.raises(ValueError, match=r"unavailable|SHA-256"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:499: Failed
+___ test_direct_native_api_requires_installed_framework_custody[hash-export] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113098b00>
+operation = 'export', failure = 'hash'
+
+    @pytest.mark.parametrize("operation", ["export", "verify"])
+    @pytest.mark.parametrize("failure", ["missing", "hash"])
+    def test_direct_native_api_requires_installed_framework_custody(
+        monkeypatch: pytest.MonkeyPatch, operation: str, failure: str
+    ) -> None:
+        header, tape = _native_replay_input()
+        episode_json = replay_export.rs.export_kaggriculture_episode(
+            json.dumps(header), json.dumps(tape)
+        )
+    
+        def failed_loader() -> dict[str, Any]:
+            raise ValueError(
+                "pinned framework unavailable"
+                if failure == "missing"
+                else "core.py SHA-256 differs"
+            )
+    
+        monkeypatch.setattr(replay_export, "load_pinned_framework", failed_loader)
+>       with pytest.raises(ValueError, match=r"unavailable|SHA-256"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:499: Failed
+___ test_direct_native_api_requires_installed_framework_custody[hash-verify] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113031520>
+operation = 'verify', failure = 'hash'
+
+    @pytest.mark.parametrize("operation", ["export", "verify"])
+    @pytest.mark.parametrize("failure", ["missing", "hash"])
+    def test_direct_native_api_requires_installed_framework_custody(
+        monkeypatch: pytest.MonkeyPatch, operation: str, failure: str
+    ) -> None:
+        header, tape = _native_replay_input()
+        episode_json = replay_export.rs.export_kaggriculture_episode(
+            json.dumps(header), json.dumps(tape)
+        )
+    
+        def failed_loader() -> dict[str, Any]:
+            raise ValueError(
+                "pinned framework unavailable"
+                if failure == "missing"
+                else "core.py SHA-256 differs"
+            )
+    
+        monkeypatch.setattr(replay_export, "load_pinned_framework", failed_loader)
+>       with pytest.raises(ValueError, match=r"unavailable|SHA-256"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_replay_export.py:499: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_rejects_unpinned_schema[action_default-export]
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_rejects_unpinned_schema[action_default-verify]
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_rejects_unpinned_schema[title-export]
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_rejects_unpinned_schema[title-verify]
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_requires_installed_framework_custody[missing-export]
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_requires_installed_framework_custody[missing-verify]
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_requires_installed_framework_custody[hash-export]
+FAILED tests/kaggriculture/test_replay_export.py::test_direct_native_api_requires_installed_framework_custody[hash-verify]
+8 failed, 2 passed, 27 deselected in 0.54s

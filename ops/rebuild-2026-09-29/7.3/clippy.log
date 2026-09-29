@@ -1,0 +1,67 @@
+    Checking num-traits v0.2.19
+    Checking libc v0.2.186
+    Checking crossbeam-utils v0.8.21
+    Checking num-integer v0.1.46
+    Checking serde_core v1.0.228
+    Checking crossbeam-epoch v0.9.18
+    Checking rawpointer v0.2.1
+    Checking rand_core v0.10.1
+    Checking hashbrown v0.17.0
+    Checking equivalent v1.0.2
+    Checking cfg-if v1.0.4
+    Checking matrixmultiply v0.3.10
+    Checking crossbeam-deque v0.8.6
+    Checking zmij v1.0.21
+    Checking num-bigint v0.4.8
+    Checking indexmap v2.14.0
+    Checking num-complex v0.4.6
+    Checking pyo3-ffi v0.28.3
+    Checking memchr v2.8.0
+    Checking itoa v1.0.18
+    Checking once_cell v1.21.4
+    Checking pyo3 v0.28.3
+    Checking serde_json v1.0.149
+    Checking ndarray v0.17.2
+    Checking serde v1.0.228
+    Checking num-rational v0.4.2
+    Checking rayon-core v1.13.0
+    Checking getrandom v0.4.2
+    Checking chacha20 v0.10.0
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-t73)
+    Checking either v1.15.0
+    Checking rustc-hash v2.1.2
+    Checking numpy v0.28.0
+    Checking rayon v1.12.0
+    Checking rand v0.10.1
+    Checking kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-t73/engine_rs)
+error: this boolean expression can be simplified
+   --> src/kaggriculture/replay_export.rs:104:16
+    |
+104 |             if !provenance[key].as_str().is_some_and(|s| !s.is_empty()) {
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `provenance[key].as_str().is_none_or(|s| s.is_empty())`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#nonminimal_bool
+    = note: `-D clippy::nonminimal-bool` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::nonminimal_bool)]`
+
+error: this creates an owned instance just for comparison
+   --> src/kaggriculture/replay_export.rs:801:12
+    |
+801 |         if replayed.to_string() != episode.to_string() {
+    |            ^^^^^^^^^^^^^^^^^^^^ help: try: `replayed`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cmp_owned
+    = note: `-D clippy::cmp-owned` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::cmp_owned)]`
+
+error: this creates an owned instance just for comparison
+   --> src/kaggriculture/replay_export.rs:801:36
+    |
+801 |         if replayed.to_string() != episode.to_string() {
+    |                                    ^^^^^^^^^^^^^^^^^^^ help: try: `episode`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cmp_owned
+
+error: could not compile `owl` (lib) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `owl` (lib test) due to 3 previous errors

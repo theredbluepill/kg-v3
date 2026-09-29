@@ -445,3 +445,10 @@ def encode_kaggriculture_headers_into(
     order_limits: NDArray[np.int64],
     can_act: NDArray[np.bool_],
 ) -> None: ...
+def export_kaggriculture_episode(seed_header_json: str, tape_json: str) -> str:
+    """Replay from exact seed/config/action JSON and emit a native Kaggle episode."""
+
+def verify_kaggriculture_episode(
+    episode_json: str, captured_json: str | None = None
+) -> str:
+    """Verify canonical bytes or semantic parity and optional captured evidence."""

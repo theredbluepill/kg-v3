@@ -1,0 +1,48 @@
+framework oracle: seed=1208925819614629174706195, 9 transitions, 0.014567s, peak RSS=198279168 bytes
+F
+=================================== FAILURES ===================================
+__________________ test_native_byte_round_trip_and_wide_seed ___________________
+
+framework_episode = {'configuration': {'actTimeout': 1, 'boardSize': 10, 'episodeSteps': 10, 'farmHandCostMult': 1, ...}, 'description': '...rket over one season.', 'id': 'c3f97e26-bc02-11f1-ab66-a733d8343738', 'info': {'seed': 1208925819614629174706195}, ...}
+
+    def test_native_byte_round_trip_and_wide_seed(
+        framework_episode: dict[str, Any],
+    ) -> None:
+        header, tape = _header_tape(framework_episode)
+        exported = rs.export_kaggriculture_episode(_dump(header), _dump(tape))
+        report = json.loads(rs.verify_kaggriculture_episode(exported))
+        assert report["ok"]
+        assert report["mode"] == "byte"
+        assert report["canonical_json"] == exported
+        assert json.loads(exported)["info"]["seed"] == SEED
+        mutated = json.loads(exported)
+        assert mutated["steps"][2][0]["action"] == tape["transitions"][1]["actions"][0]
+        assert mutated["steps"][2][0]["action"]["market"][0][-1] == 0
+        for seat in mutated["steps"][0]:
+            assert seat["observation"]["farms"][0]["money"] == 3000.0
+            seat["observation"]["farms"][0]["money"] = 3000
+>       message = _reject(mutated, "native byte round trip float money spelled as integer")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_replay_export_oracles.py:351: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+episode = {'configuration': {'actTimeout': 1, 'boardSize': 10, 'episodeSteps': 10, 'farmHandCostMult': 1, ...}, 'description': '...a_version': 1, 'source': 'Task 7.3 independent Python oracle tests', 'target_framework_version': '1.32.7'}, ...}}, ...}
+label = 'native byte round trip float money spelled as integer', captured = None
+
+    def _reject(
+        episode: dict[str, Any], label: str, captured: dict[str, Any] | None = None
+    ) -> str:
+        with pytest.raises(ValueError, match="transition") as error:
+            rs.verify_kaggriculture_episode(
+                _dump(episode), None if captured is None else _dump(captured)
+            )
+        message = str(error.value)
+>       assert "/" in message, "divergence must contain a JSON pointer"
+E       AssertionError: divergence must contain a JSON pointer
+E       assert '/' in 'canonical byte serialization differs at  (transition None)'
+
+tests/kaggriculture/test_replay_export_oracles.py:273: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export_oracles.py::test_native_byte_round_trip_and_wide_seed
+1 failed, 9 deselected in 0.40s

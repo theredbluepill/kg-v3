@@ -29,6 +29,14 @@ oracle = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(oracle)
 
 
+@pytest.fixture(autouse=True)
+def fresh_command_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    # regenerate.py intentionally bounds an entire invocation from import time.
+    # Unit tests are independent invocations: collection/earlier replay tests
+    # must not consume their budget. Deadline-specific tests override this value.
+    monkeypatch.setattr(oracle, "RUN_DEADLINE", time.monotonic() + 120)
+
+
 def sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 

@@ -1,0 +1,32 @@
+$ uvx --offline --from rust-just just py-prepare
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+1 file reformatted, 123 files left unchanged
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+PIE790 [*] Unnecessary `...` literal
+   --> python/owl/rs.pyi:450:5
+    |
+448 | def export_kaggriculture_episode(seed_header_json: str, tape_json: str) -> str:
+449 |     """Replay from exact seed/config/action JSON and emit a native Kaggle episode."""
+450 |     ...
+    |     ^^^
+451 |
+452 | def verify_kaggriculture_episode(
+    |
+help: Remove unnecessary `...`
+
+PIE790 [*] Unnecessary `...` literal
+   --> python/owl/rs.pyi:456:5
+    |
+454 | ) -> str:
+455 |     """Verify canonical bytes or semantic parity and optional captured evidence."""
+456 |     ...
+    |     ^^^
+    |
+help: Remove unnecessary `...`
+
+Found 2 errors.
+[*] 2 fixable with the `--fix` option.
+error: recipe `py-lint` failed on line 23 with exit code 1

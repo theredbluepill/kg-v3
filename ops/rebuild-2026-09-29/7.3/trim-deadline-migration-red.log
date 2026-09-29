@@ -1,0 +1,33 @@
+...........F.                                                            [100%]
+=================================== FAILURES ===================================
+________ test_pre_deadline_isolation_manifest_is_an_explicit_migration _________
+
+    def test_pre_deadline_isolation_manifest_is_an_explicit_migration() -> None:
+        before = baseline()
+        path = "tests/tools/test_observation_oracle_custody.py"
+        previous = updater.regenerate(before, before, set())
+        previous["non_engine_changes"] = [
+            entry for entry in previous["non_engine_changes"] if entry["path"] != path
+        ]
+>       updated = updater.regenerate(before, previous, {path})
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/tools/test_replay_trim_manifest.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+baseline = {'authored': [{'path': 'engine_rs/tests/replay_parity.rs', 'sha256': 'frozen'}], 'excluded': [{'path': 'engine_rs/src/...ne_changes': [{'path': 'docs/rl-api-specs.md', 'reason': 'Earlier declaration'}], 'reference_commit': 'unchanged', ...}
+current = {'authored': [{'path': 'engine_rs/tests/replay_parity.rs', 'sha256': 'frozen'}], 'excluded': [{'path': 'engine_rs/src/...hash-pinned framework schema, deterministic recorder and custody writer.'}, ...], 'reference_commit': 'unchanged', ...}
+changed_paths = {'tests/tools/test_observation_oracle_custody.py'}
+
+    def regenerate(baseline: dict, current: dict, changed_paths: set[str]) -> dict:
+        """Return the declared update, rejecting frozen/input/worktree drift."""
+        for path in changed_paths:
+            _validate_path(path)
+            if path != PATH and path not in DECLARED and not _receipt(path):
+>               raise ValueError(f"undeclared task path: {path}")
+E               ValueError: undeclared task path: tests/tools/test_observation_oracle_custody.py
+
+ops/rebuild-2026-09-29/7.3/update_trim_manifest.py:106: ValueError
+=========================== short test summary info ============================
+FAILED tests/tools/test_replay_trim_manifest.py::test_pre_deadline_isolation_manifest_is_an_explicit_migration
+1 failed, 12 passed in 0.02s

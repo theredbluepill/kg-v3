@@ -1,0 +1,69 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-t73)
+error[E0425]: cannot find function `export_kaggle_episode` in this scope
+  --> src/kaggriculture/replay_export_tests.rs:94:17
+   |
+94 |     let episode=export_kaggle_episode(&h,&tape).unwrap();
+   |                 ^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `verify_round_trip` in this scope
+  --> src/kaggriculture/replay_export_tests.rs:99:16
+   |
+99 |     let report=verify_round_trip(&episode.to_string(),None).unwrap();
+   |                ^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `verify_round_trip` in this scope
+   --> src/kaggriculture/replay_export_tests.rs:107:13
+    |
+107 |     assert!(verify_round_trip(&omitted.to_string(),None).is_ok());
+    |             ^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `verify_round_trip` in this scope
+   --> src/kaggriculture/replay_export_tests.rs:109:13
+    |
+109 |     let err=verify_round_trip(&bad.to_string(),None).unwrap_err();
+    |             ^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `verify_round_trip` in this scope
+   --> src/kaggriculture/replay_export_tests.rs:115:13
+    |
+115 |     let err=verify_round_trip(&bad.to_string(),None).unwrap_err();
+    |             ^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `export_kaggle_episode` in this scope
+   --> src/kaggriculture/replay_export_tests.rs:124:11
+    |
+124 |     let e=export_kaggle_episode(&h,&t).unwrap();
+    |           ^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `import_kaggle_episode` in this scope
+   --> src/kaggriculture/replay_export_tests.rs:127:17
+    |
+127 |         assert!(import_kaggle_episode(&bad).is_err(),"{pointer}");
+    |                 ^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `import_kaggle_episode` in this scope
+   --> src/kaggriculture/replay_export_tests.rs:129:78
+    |
+129 |     let mut bad=e.clone();bad["steps"].as_array_mut().unwrap().pop();assert!(import_kaggle_episode(&bad).is_err());
+    |                                                                              ^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `import_kaggle_episode` in this scope
+   --> src/kaggriculture/replay_export_tests.rs:130:81
+    |
+130 |     let mut bad=e.clone();bad["steps"][1].as_array_mut().unwrap().pop();assert!(import_kaggle_episode(&bad).is_err());
+    |                                                                                 ^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `verify_round_trip` in this scope
+   --> src/kaggriculture/replay_export_tests.rs:134:13
+    |
+134 |     assert!(verify_round_trip(&e.to_string(),Some(&captured)).is_ok());
+    |             ^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `verify_round_trip` in this scope
+   --> src/kaggriculture/replay_export_tests.rs:136:13
+    |
+136 |     let err=verify_round_trip(&e.to_string(),Some(&captured)).unwrap_err();
+    |             ^^^^^^^^^^^^^^^^^ not found in this scope
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `owl` (lib test) due to 11 previous errors

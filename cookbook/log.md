@@ -1,5 +1,29 @@
 # Change log
 
+## 2026-09-29 — Add native seed replay export and selected-game custody
+
+Task 7.3 adds the [[references/native-replay-export-preserves-kaggle-episodes|native
+replay-export Reference]], root-crate JSON replay functions and the opt-in Python
+recorder. Independent fixture/framework, byte-round-trip and evidence checks
+pass: four official fixtures cover 2,876 transitions and the small live framework
+oracle covers nine transitions at seed `2**80 + 19`; mutation checks report exact
+pointers. Receipts are under `ops/rebuild-2026-09-29/7.3/`. The installed framework now
+matches 1.32.7 and all four archived source hashes, correcting the brief's old
+Mac gap. The preparation Reference retains its historical scope and links the
+new runtime claim. Live evaluation wiring still awaits Task 1.4; no model/PPO
+or vendored kernel bytes are changed.
+
+Full replay cases exposed four existing observation-custody unit tests sharing a
+deadline started during collection. Their test fixture now refreshes that budget
+per independent test; production deadlines and explicit expiration tests remain
+unchanged. The preserved preparation red and the manifest's narrowly declared
+inventory migration are recorded in the same Reference.
+
+After that isolation repair, final `just py-prepare` and `just prepare` pass
+**1,737 Python tests / 16 skips**; full preparation also passes **266 root Rust
+tests / four ignored** and **69 engine tests**. The final command logs retain
+timings and the earlier failures. Live eight-game evaluation remains unrun.
+
 ## 2026-09-29 — Credit the SPS run's GPU chunk counts in the compiled-GEMM Reference
 
 Codex verification r1 of the evidence merge (`4974888`, APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/verify-merge-evidence-r1.md`) found one P3: the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] still said the chunked teacher-sized packed path was "not measured on the GPU", although the [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]] run counted 1/2/3 teacher-proxy trunk chunks there. The Reference, its description and the [[references/index|References index]] line now credit that timing-only measurement and keep the numerical-correctness and production teacher-integration gaps.

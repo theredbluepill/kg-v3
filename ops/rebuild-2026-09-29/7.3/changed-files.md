@@ -1,0 +1,85 @@
+# Task 7.3 changed-file inventory
+
+Implementation and documentation paths are listed first; every receipt follows.
+
+- `cookbook/log.md`: prepended adaptation entry.
+- `cookbook/references/index.md`: retrieve the new runtime claim and scoped preparation history.
+- `cookbook/references/native-replay-export-preserves-kaggle-episodes.md`: adaptation inventory, source correction, evidence and limits.
+- `cookbook/references/rebuild-data-preparation-preserves-replay-identity.md`: retain historical preparation evidence and link the new runtime qualification.
+- `docs/rl-api-specs.md`: public replay JSON API and comparison/custody contract.
+- `docs/rules-parity-coverage.md`: current replay coverage, independent sources and gaps.
+- `engine_rs/TRIM_MANIFEST.json`: updater-generated non-engine inventory only; retained/excluded/authored unchanged.
+- `python/owl/kaggriculture/replay_export.py`: verified framework schema, reproducible selected-game recorder, copied seed/terminal custody, partial/error records and hashed episode sidecars.
+- `python/owl/rs.pyi`: JSON-text API signatures.
+- `src/kaggriculture/mod.rs`: declare adapter and register two stateless PyO3 functions; enforce the installed pinned framework at each Python entry.
+- `src/kaggriculture/replay_export.rs`: typed exact seed/header/tape, native seed replay, Kaggle envelope export/import, first-pointer value/order/byte divergence, independent captured evidence comparison.
+- `src/kaggriculture/replay_export_tests.rs`: synthetic rejection, timing/privacy/quantity, poisoned placeholders, token/native error, exact numeric and captured-evidence controls.
+- `tests/kaggriculture/test_replay_export.py`: recorder tests plus real native writer and direct-API schema/source/configuration admission.
+- `tests/kaggriculture/test_replay_export_integration.py`: five explicit Task 1.4 binding-dependent skips with intended API.
+- `tests/kaggriculture/test_replay_export_oracles.py`: independent four-fixture and bounded real-framework round trips, byte equality and mutation failures.
+- `tests/tools/test_observation_oracle_custody.py`: give each independent unit test its own command-deadline window so earlier full fixture tests do not exhaust an import-time deadline.
+- `tests/tools/test_replay_trim_manifest.py`: updater immutability, inventory, unsafe-path, drift and idempotence controls.
+- `ops/rebuild-2026-09-29/7.3/captured-empty-red.log`: Recorded captured empty red command output.
+- `ops/rebuild-2026-09-29/7.3/changed-files.md`: One-purpose-per-path inventory of all Task 7.3 working-tree changes.
+- `ops/rebuild-2026-09-29/7.3/clippy-green.log`: Recorded clippy green command output.
+- `ops/rebuild-2026-09-29/7.3/clippy.log`: Recorded clippy command output.
+- `ops/rebuild-2026-09-29/7.3/cookbook-lint.json`: Cookbook shape and repository-source lint receipt.
+- `ops/rebuild-2026-09-29/7.3/envelope-green.log`: Recorded envelope green command output.
+- `ops/rebuild-2026-09-29/7.3/envelope-red.log`: Recorded envelope red command output.
+- `ops/rebuild-2026-09-29/7.3/expectations.md`: Bounded implementation mechanisms and planned red/green checks.
+- `ops/rebuild-2026-09-29/7.3/final-cargo.log`: Recorded final cargo command output.
+- `ops/rebuild-2026-09-29/7.3/final-engine.log`: Recorded final engine command output.
+- `ops/rebuild-2026-09-29/7.3/final-focused.log`: Recorded final focused command output.
+- `ops/rebuild-2026-09-29/7.3/final-maturin.log`: Recorded final maturin command output.
+- `ops/rebuild-2026-09-29/7.3/final-native.log`: Recorded final native command output.
+- `ops/rebuild-2026-09-29/7.3/final-prepare.log`: Recorded final prepare command output.
+- `ops/rebuild-2026-09-29/7.3/final-py-prepare.log`: Recorded final py prepare command output.
+- `ops/rebuild-2026-09-29/7.3/final-results.json`: Machine-readable final command exit status, timing and test counts.
+- `ops/rebuild-2026-09-29/7.3/final-rs-prepare.log`: Recorded final rs prepare command output.
+- `ops/rebuild-2026-09-29/7.3/final-trim.log`: Recorded final trim command output.
+- `ops/rebuild-2026-09-29/7.3/framework-shape-red.log`: Recorded framework shape red command output.
+- `ops/rebuild-2026-09-29/7.3/framework-source-audit.json`: Recomputed four pinned framework source hashes and version.
+- `ops/rebuild-2026-09-29/7.3/guards-green.log`: Recorded guards green command output.
+- `ops/rebuild-2026-09-29/7.3/guards-red.log`: Recorded guards red command output.
+- `ops/rebuild-2026-09-29/7.3/maturin-develop.log`: Recorded maturin develop command output.
+- `ops/rebuild-2026-09-29/7.3/native-green.log`: Recorded native green command output.
+- `ops/rebuild-2026-09-29/7.3/native-mutational-green.log`: Recorded native mutational green command output.
+- `ops/rebuild-2026-09-29/7.3/native-red.log`: Recorded native red command output.
+- `ops/rebuild-2026-09-29/7.3/numeric-red.log`: Recorded numeric red command output.
+- `ops/rebuild-2026-09-29/7.3/observation-custody-isolation-green.log`: Recorded observation custody isolation green command output.
+- `ops/rebuild-2026-09-29/7.3/oracle-byte-pointer-red.log`: Recorded oracle byte pointer red command output.
+- `ops/rebuild-2026-09-29/7.3/oracle-expectations.md`: Independent-oracle expectations and live-game resource limits.
+- `ops/rebuild-2026-09-29/7.3/oracle-green-attempt1.log`: Recorded oracle green attempt1 command output.
+- `ops/rebuild-2026-09-29/7.3/oracle-green-final.log`: Recorded oracle green final command output.
+- `ops/rebuild-2026-09-29/7.3/oracle-inventory-red.log`: Recorded oracle inventory red command output.
+- `ops/rebuild-2026-09-29/7.3/oracle-red-autobuild.log`: Recorded oracle red autobuild command output.
+- `ops/rebuild-2026-09-29/7.3/oracle-red.log`: Recorded oracle red command output.
+- `ops/rebuild-2026-09-29/7.3/oracle-results.md`: Independent fixtures/framework results, timings and mutation pointers.
+- `ops/rebuild-2026-09-29/7.3/prepare-deadline-red.log`: Recorded prepare deadline red command output.
+- `ops/rebuild-2026-09-29/7.3/prepare-lint-red.log`: Recorded prepare lint red command output.
+- `ops/rebuild-2026-09-29/7.3/py-prepare-deadline-red.log`: Recorded py prepare deadline red command output.
+- `ops/rebuild-2026-09-29/7.3/py-prepare-lint-red.log`: Recorded py prepare lint red command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-admission-green.log`: Recorded recorder admission green command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-admission-red.log`: Recorded recorder admission red command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-budget-red.log`: Recorded recorder budget red command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-custody-green.log`: Recorded recorder custody green command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-custody-red.log`: Recorded recorder custody red command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-direct-schema-green.log`: Recorded recorder direct schema green command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-direct-schema-red.log`: Recorded recorder direct schema red command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-final-green.log`: Recorded recorder final green command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-green.log`: Recorded recorder green command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-native-green.log`: Recorded recorder native green command output.
+- `ops/rebuild-2026-09-29/7.3/recorder-red.log`: Recorded recorder red command output.
+- `ops/rebuild-2026-09-29/7.3/results.md`: Final implementation report with command results, mutations and unresolved scope.
+- `ops/rebuild-2026-09-29/7.3/run_checks.py`: offline command/status/timing receipts.
+- `ops/rebuild-2026-09-29/7.3/source-custody-final-audit.json`: Audit of final test-source and debug-extension fingerprint refresh.
+- `ops/rebuild-2026-09-29/7.3/source-custody.json`: Final implementation and installed-extension hashes, base identity and tool versions.
+- `ops/rebuild-2026-09-29/7.3/terminal-shape-red.log`: Recorded terminal shape red command output.
+- `ops/rebuild-2026-09-29/7.3/trim-check.log`: Recorded trim check command output.
+- `ops/rebuild-2026-09-29/7.3/trim-custody-audit.json`: Frozen manifest inventory and updater idempotence audit.
+- `ops/rebuild-2026-09-29/7.3/trim-deadline-migration-green.log`: Recorded trim deadline migration green command output.
+- `ops/rebuild-2026-09-29/7.3/trim-deadline-migration-red.log`: Recorded trim deadline migration red command output.
+- `ops/rebuild-2026-09-29/7.3/trim-update.log`: Recorded trim update command output.
+- `ops/rebuild-2026-09-29/7.3/trim-updater-green.log`: Recorded trim updater green command output.
+- `ops/rebuild-2026-09-29/7.3/trim-updater-red.log`: Recorded trim updater red command output.
+- `ops/rebuild-2026-09-29/7.3/update_trim_manifest.py`: idempotent non-engine registration, rejecting unexpected input.

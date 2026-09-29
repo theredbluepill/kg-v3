@@ -385,6 +385,74 @@ interpreter (timeouts, agent errors, `INVALID` statuses) is not modeled. The
 sweep is a bounded sample: 40 games and 303 probes, not exhaustive input
 coverage. A larger pod sweep remains open.
 
+## Kaggriculture Replay Export (Task 7.3)
+
+The replay adapter lives in root `src/kaggriculture/replay_export.rs`; no
+vendored engine bytes or existing Orbit replay code change. It constructs games
+only with `Game::from_seed_header`, checks the existing supported-configuration
+envelope, and preserves exact integer seeds. Required trace initial/schedule/
+terminal-bank placeholders do not supply answers: the poison regression changes
+them while preserving valid player counts and requires the same native replay.
+
+The native tests cover initial versus successor action timing, specification-
+shared restoration, seat-private state, absent versus zero quantities, empty
+entries and object order, raw rewards, wide seeds, native token decoding against
+the pre-step state, explicit native errors, and strict configuration/seed/count/
+terminal rejection. Independent captured initial/terminal snapshots, transition
+banks and indexed full snapshots are checked separately from replay's own output.
+
+`tests/kaggriculture/test_replay_export_oracles.py` builds complete Kaggle
+episodes from each official fixture's Python-recorded header and transition
+values, independently of the native exporter. After verifying the brief's four
+compressed SHA-256 pins, it imports, seed-replays and re-exports all **4 × 719 =
+2,876 transitions**, including all public/private payloads and their insertion
+order, statuses, raw rewards and terminal banks. All four fixture cases run in
+the default Python suite; none is ignored or marked `slow`.
+
+The installed `kaggle-environments==1.32.7` now matches the brief's archived
+hashes for `core.py`, `utils.py`, the Kaggriculture interpreter and its JSON
+specification. The live framework oracle runs one game per module in an isolated
+child: seed `1208925819614629174706195` (`2**80 + 19`), `episodeSteps=10`,
+`turnsPerDay=3`, `maxMarketOrdersPerTurn=4`, `townShopUnlockInterval=1`,
+`weedSpawnChance=0.2`; other values use the pinned defaults. Nine deterministic
+transitions cross three day rolls, unlock shops, spawn weeds and reach DONE.
+The framework's own `env.toJSON()` is compared to native replay, with a native
+canonical-byte round trip and Python/JSON/Rust wide-seed preservation separately.
+This test also runs by default, with a two-minute/1 GB live-game bound.
+
+Foreign semantic comparison first checks values and then recursive key order.
+It normalizes only specification-shared omissions and observation-wrapper order;
+nested payload order remains significant. Its exact allowlist, justified by the
+pinned framework's execution/serialization code, is top-level `info` except
+`seed` (host metadata/native provenance), per-seat `info` (runtime metadata),
+`observation.remainingOverageTime` (measured agent duration), and configuration
+`actTimeout`/`runTimeout` (framework execution budgets). Gameplay, seed, actions,
+statuses and rewards are never ignored. Native-produced episodes require byte
+equality after canonical JSON reserialization, including their provenance.
+
+Recorder tests use supplied game data without an environment: stable selection,
+count/seat coverage, consumed seed retained after the live counter advances,
+simultaneous terminals, copied evidence surviving simulated auto-reset, and
+explicit truncation/error records. Unselected ordinals return before any
+per-transition work. Mutation checks report a first JSON pointer and transition
+for fixture rewards, framework seed, payload order, private leakage, byte-round-
+trip corruption and captured banks. Actual commands, timings and mutation
+diagnostics are retained in `ops/rebuild-2026-09-29/7.3/`.
+
+A state-only oracle cannot distinguish alternate ineffective action tapes. An
+initial negative control that removed an ineffective SELL zero did not diverge;
+its failed expectation is retained. Supplied action payloads remain preserved in
+the episode/tape and the episode hash binds custody. The byte-mode control uses
+a numeric-representation mutation instead.
+
+Limits: Task 1.4's `KaggricultureEnv` binding is absent, so five explicit cases
+in `test_replay_export_integration.py` skip with `needs Task 1.4 binding`:
+construction/reset/simultaneous-reset seed custody (three cases), exactly eight
+live evaluation exports, and terminal-before-auto-reset capture. `_evaluate_games`
+is unchanged. No pod-scale eight-game evaluation or recorder-overhead measurement
+ran. The small framework configuration and four recorded worlds are bounded
+oracles, not exhaustive supported-configuration or timeout/INVALID/error parity.
+
 ## Kaggriculture Native Grammar (Task 1.2)
 
 The root compiles the v4.1 typed grammar, strict JSON encoder and checked i64
