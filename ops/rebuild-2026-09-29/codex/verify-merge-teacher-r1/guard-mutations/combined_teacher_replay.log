@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_combined_path_admits_teacher_before_student_replay ____________
+tests/kaggriculture/test_verifier_guard_supplement.py:86: in test_combined_path_admits_teacher_before_student_replay
+    student.evaluate_actions_with_teacher(obs, bad, teacher)
+python/owl/model/kaggriculture.py:852: in evaluate_actions_with_teacher
+    return self._teacher_evaluation(
+python/owl/model/kaggriculture.py:865: in _teacher_evaluation
+    result = self._policy(
+tests/kaggriculture/test_verifier_guard_supplement.py:83: in no_student_policy
+    raise AssertionError("invalid teacher replay reached student policy")
+E   AssertionError: invalid teacher replay reached student policy
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_combined_path_admits_teacher_before_student_replay
+1 failed in 0.04s

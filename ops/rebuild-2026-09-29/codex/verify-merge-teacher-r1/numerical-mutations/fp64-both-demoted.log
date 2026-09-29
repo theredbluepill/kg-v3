@@ -1,0 +1,43 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_kl_gradient_matches_finite_differences_in_fp64 ______________
+
+    def test_kl_gradient_matches_finite_differences_in_fp64() -> None:
+        student, teacher = _tiny().double(), _tiny(seed=6).double().eval()
+        obs, actions = _base_case()
+        obs = _obs_double(obs)
+        with torch.no_grad():
+            teacher_logits = _collect(teacher, obs, actions).slot_logits
+        assert teacher_logits is not None
+        assert all(t.dtype == torch.float64 for t in teacher_logits.values())
+        weight = student.actor.heads["market_item"].out.weight
+        item = 3  # seat 0 SELLs item 3 at frame 2
+    
+        def total() -> torch.Tensor:
+            kl = _with_teacher(student, teacher_logits, obs, actions).kl
+            assert kl is not None
+            assert kl.dtype == torch.float64
+            return kl.sum()
+    
+        total().backward()
+        assert weight.grad is not None
+        analytic = float(weight.grad[item, 0])
+        assert abs(analytic) > 1e-8
+        epsilon = 1e-6
+        with torch.no_grad():
+            weight[item, 0] += epsilon
+            plus = float(total())
+            weight[item, 0] -= 2 * epsilon
+            minus = float(total())
+            weight[item, 0] += epsilon
+>       assert analytic == pytest.approx((plus - minus) / (2 * epsilon), rel=1e-6)
+E       assert 3.299969713079851e-05 == -0.11691008694469929 ± 1.2e-07
+E         
+E         comparison failed
+E         Obtained: 3.299969713079851e-05
+E         Expected: -0.11691008694469929 ± 1.2e-07
+
+tests/kaggriculture/test_teacher.py:555: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_kl_gradient_matches_finite_differences_in_fp64
+1 failed in 0.17s

@@ -1,0 +1,46 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_chunked_precompute_equals_one_whole_batch_call ______________
+
+    def test_chunked_precompute_equals_one_whole_batch_call() -> None:
+        model = _tiny().eval()
+        obs, actions = _segment_major(model)
+        whole = model.compute_teacher_distillation_targets(obs, actions)
+        chunks = []
+        for start in range(SEGMENTS):
+            index = torch.tensor([start])
+            chunks.append(
+                model.compute_teacher_distillation_targets(
+                    _take_obs(obs, index), _take_actions(actions, index)
+                )
+            )
+        joined = kt_teacher.KaggricultureTeacherTargets.concat(chunks)
+        # The trunk and head batch sizes differ, so GEMM blocking may differ.
+>       _assert_targets_equal(joined, whole, exact=False)
+
+tests/kaggriculture/test_teacher.py:819: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38,  1.4983e+00,  1.4943e+00,  ...,  1.4854e+00,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+expected = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38,  4.4983e+00,  4.4943e+00,  ...,  4.4854e+00,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+
+    def _assert_targets_equal(actual: Any, expected: Any, *, exact: bool = True) -> None:
+        assert type(actual) is type(expected)
+        assert actual.grammar == expected.grammar
+        got, want = _target_tensors(actual), _target_tensors(expected)
+        assert set(got) == set(want)
+        for name, tensor in want.items():
+            if tensor is None:
+                assert got[name] is None, name
+            elif exact:
+                assert torch.equal(got[name], tensor), name
+            else:
+>               torch.testing.assert_close(got[name], tensor, msg=name)
+E               AssertionError: slot1
+
+tests/kaggriculture/test_teacher.py:609: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_chunked_precompute_equals_one_whole_batch_call
+1 failed in 0.19s

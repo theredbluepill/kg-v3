@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_targets_and_kl_are_seat_isolated_and_stateless ______________
+
+    def test_targets_and_kl_are_seat_isolated_and_stateless() -> None:
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs = make_obs(envs=2, own_actors=(2, 3), rival_actors=(3, 2), order_limit=4)
+        actions = _sampled(student, obs)
+        changed = make_obs(envs=2, own_actors=(2, 3), rival_actors=(3, 2), order_limit=4)
+        changed.tiles_float[:, 1] += 1.0
+        changed.actors_float[:, 1] += 0.5
+        with torch.no_grad():
+            base = teacher.compute_teacher_distillation_targets(obs, actions)
+            other = teacher.compute_teacher_distillation_targets(changed, actions)
+            base_eval = student.evaluate_actions_with_cached_teacher(obs, actions, base)
+            other_eval = student.evaluate_actions_with_cached_teacher(
+                changed, actions, other
+            )
+            teacher.compute_teacher_distillation_targets(
+                make_obs(envs=3, own_actors=7, order_limit=10),
+                _sampled(teacher, make_obs(envs=3, own_actors=7, order_limit=10)),
+            )
+            again = teacher.compute_teacher_distillation_targets(obs, actions)
+        assert base.slot_logits is not None
+        assert other.slot_logits is not None
+        for slot in ka.POLICY_SLOTS:
+>           assert torch.equal(other.slot_logits[slot][:, 0], base.slot_logits[slot][:, 0])
+E           assert False
+E            +  where False = <built-in method equal of type object at 0x109c2f778>(tensor([[[   -inf,  0.0085, -0.0003,  ...,  0.0101,  0.0031,    -inf],\n         [   -inf,  0.0091, -0.0016,  ...,  0.0...nf,    -inf,  ...,    -inf,    -inf,    -inf],\n         [-0.0067,    -inf,    -inf,  ...,    -inf,    -inf,    -inf]]]), tensor([[[   -inf,  0.0078, -0.0007,  ...,  0.0104,  0.0023,    -inf],\n         [   -inf,  0.0083, -0.0020,  ...,  0.0...nf,    -inf,  ...,    -inf,    -inf,    -inf],\n         [-0.0076,    -inf,    -inf,  ...,    -inf,    -inf,    -inf]]]))
+E            +    where <built-in method equal of type object at 0x109c2f778> = torch.equal
+
+tests/kaggriculture/test_teacher.py:1312: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_targets_and_kl_are_seat_isolated_and_stateless
+1 failed in 0.17s

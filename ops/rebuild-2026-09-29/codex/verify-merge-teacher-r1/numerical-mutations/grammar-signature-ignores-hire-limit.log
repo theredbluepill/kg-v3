@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_grammar_signature_tracks_tables_and_hire_limit ______________
+
+    def test_grammar_signature_tracks_tables_and_hire_limit() -> None:
+        base = _tiny()
+        assert _tiny(seed=6).grammar_signature() == base.grammar_signature()
+>       assert _tiny(hire_limit=5).grammar_signature() != base.grammar_signature()
+E       AssertionError: assert GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241) != GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241)
+E        +  where GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241) = grammar_signature()
+E        +    where grammar_signature = KaggricultureTransformer(\n  (tile_proj): ObservationInputStem(\n    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)\n        (out): Linear(in_features=16, out_features=32, bias=True)\n      )\n    )\n  )\n).grammar_signature
+E        +      where KaggricultureTransformer(\n  (tile_proj): ObservationInputStem(\n    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)\n        (out): Linear(in_features=16, out_features=32, bias=True)\n      )\n    )\n  )\n) = _tiny(hire_limit=5)
+E        +  and   GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241) = grammar_signature()
+E        +    where grammar_signature = KaggricultureTransformer(\n  (tile_proj): ObservationInputStem(\n    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)\n        (out): Linear(in_features=16, out_features=32, bias=True)\n      )\n    )\n  )\n).grammar_signature
+
+tests/kaggriculture/test_teacher.py:738: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_grammar_signature_tracks_tables_and_hire_limit
+1 failed in 0.11s

@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_last_best_refresh_keeps_the_tables_and_copies_the_student ________
+
+    def test_last_best_refresh_keeps_the_tables_and_copies_the_student() -> None:
+        import scripts.run_ppo as run_ppo
+    
+        student, last_best = _tiny(), _tiny(seed=6)
+        obs, actions = _base_case()
+        before = last_best.grammar_signature()
+        run_ppo._refresh_eval_model_from_weights(last_best, student)
+        assert not last_best.training
+        assert last_best.grammar_signature() == before
+        for name, table in gg.expected_grammar_tables().as_dict().items():
+            assert torch.equal(last_best.actor.tables().as_dict()[name], table), name
+        with torch.no_grad():
+            evaluation = _cached(student, last_best, obs, actions)
+        assert evaluation.action_kl is not None
+>       assert torch.equal(
+            evaluation.action_kl.event, torch.zeros_like(evaluation.action_kl.event)
+        )
+E       assert False
+E        +  where False = <built-in method equal of type object at 0x10c39f778>(tensor([[[[0.0000e+00, 9.4034e-05, 0.0000e+00,  ..., 0.0000e+00,\n           0.0000e+00, 0.0000e+00],\n          [0.0000...0, 0.0000e+00],\n          [0.0000e+00, 0.0000e+00, 0.0000e+00,  ..., 0.0000e+00,\n           0.0000e+00, 0.0000e+00]]]]), tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0... [0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0., 0.]]]]))
+E        +    where <built-in method equal of type object at 0x10c39f778> = torch.equal
+E        +    and   tensor([[[[0.0000e+00, 9.4034e-05, 0.0000e+00,  ..., 0.0000e+00,\n           0.0000e+00, 0.0000e+00],\n          [0.0000...0, 0.0000e+00],\n          [0.0000e+00, 0.0000e+00, 0.0000e+00,  ..., 0.0000e+00,\n           0.0000e+00, 0.0000e+00]]]]) = ModelActionKLDivergences(launch=tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., ...        0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,\n          0.0000e+00, 0.0000e+00]]])}, target=None).event
+E        +      where ModelActionKLDivergences(launch=tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., ...        0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,\n          0.0000e+00, 0.0000e+00]]])}, target=None) = ModelTeacherEvaluation(student=ModelEvaluation(log_probs=ModelActionLogProbs(launch=tensor([[[0., 0., 0., 0., 0., 0., ...     [0.3948, 0.6052]]]), student_winner_log_probabilities=tensor([[[-0.5241, -0.8968],\n         [-0.4947, -0.9410]]])).action_kl
+E        +    and   tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0... [0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0., 0.]]]]) = <built-in method zeros_like of type object at 0x10c39f778>(tensor([[[[0.0000e+00, 9.4034e-05, 0.0000e+00,  ..., 0.0000e+00,\n           0.0000e+00, 0.0000e+00],\n          [0.0000...0, 0.0000e+00],\n          [0.0000e+00, 0.0000e+00, 0.0000e+00,  ..., 0.0000e+00,\n           0.0000e+00, 0.0000e+00]]]]))
+E        +      where <built-in method zeros_like of type object at 0x10c39f778> = torch.zeros_like
+E        +      and   tensor([[[[0.0000e+00, 9.4034e-05, 0.0000e+00,  ..., 0.0000e+00,\n           0.0000e+00, 0.0000e+00],\n          [0.0000...0, 0.0000e+00],\n          [0.0000e+00, 0.0000e+00, 0.0000e+00,  ..., 0.0000e+00,\n           0.0000e+00, 0.0000e+00]]]]) = ModelActionKLDivergences(launch=tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., ...        0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,\n          0.0000e+00, 0.0000e+00]]])}, target=None).event
+E        +        where ModelActionKLDivergences(launch=tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., ...        0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,\n          0.0000e+00, 0.0000e+00]]])}, target=None) = ModelTeacherEvaluation(student=ModelEvaluation(log_probs=ModelActionLogProbs(launch=tensor([[[0., 0., 0., 0., 0., 0., ...     [0.3948, 0.6052]]]), student_winner_log_probabilities=tensor([[[-0.5241, -0.8968],\n         [-0.4947, -0.9410]]])).action_kl
+
+tests/kaggriculture/test_teacher.py:1448: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_last_best_refresh_keeps_the_tables_and_copies_the_student
+1 failed in 0.14s

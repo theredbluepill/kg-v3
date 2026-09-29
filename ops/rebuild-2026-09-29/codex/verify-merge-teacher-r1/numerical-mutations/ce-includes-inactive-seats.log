@@ -1,0 +1,40 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_value_cross_entropy_is_the_live_seat_mean ________________
+
+    def test_value_cross_entropy_is_the_live_seat_mean() -> None:
+        model = _tiny()
+        teacher = torch.tensor(
+            [
+                [[0.8, 0.2], [0.3, 0.7]],
+                [[0.6, 0.4], [0.5, 0.5]],
+                [[0.9, 0.1], [0.1, 0.9]],
+            ]
+        )
+        student_log = torch.log(
+            torch.tensor(
+                [
+                    [[0.5, 0.5], [0.4, 0.6]],
+                    [[0.7, 0.3], [0.5, 0.5]],
+                    [[0.2, 0.8], [0.6, 0.4]],
+                ]
+            )
+        )
+        live = torch.tensor([[True, True], [True, False], [False, False]])
+        ce = model.teacher_value_cross_entropy(student_log, teacher, value_mask=live)
+        per_seat = -(teacher * student_log).sum(-1)
+        assert ce.shape == (3,)
+        torch.testing.assert_close(ce[0], per_seat[0].mean())  # mean, not sum
+        assert float(ce[0]) != pytest.approx(float(per_seat[0].sum()))
+>       torch.testing.assert_close(ce[1], per_seat[1, 0])  # the non-live seat is out
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Scalars are not close!
+E       
+E       Expected 0.6955941319465637 but got 0.6943706274032593.
+E       Absolute difference: 0.0012235045433044434 (up to 1e-05 allowed)
+E       Relative difference: 0.0017589345382781842 (up to 1.3e-06 allowed)
+
+tests/kaggriculture/test_teacher.py:989: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_value_cross_entropy_is_the_live_seat_mean
+1 failed in 0.10s

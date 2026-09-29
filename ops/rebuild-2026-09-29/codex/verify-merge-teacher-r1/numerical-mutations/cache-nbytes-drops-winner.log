@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_nbytes_counts_every_cached_tensor ____________________
+
+    def test_nbytes_counts_every_cached_tensor() -> None:
+        model = _tiny().eval()
+        obs, actions = _segment_major(model)
+        targets = model.compute_teacher_distillation_targets(obs, actions)
+        tensors = [t for t in _target_tensors(targets).values() if t is not None]
+>       assert targets.nbytes() == sum(t.nbytes for t in tensors)
+E       AssertionError: assert 1226400 == 1226496
+E        +  where 1226400 = nbytes()
+E        +    where nbytes = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,\n    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241)).nbytes
+E        +  and   1226496 = sum(<generator object test_nbytes_counts_every_cached_tensor.<locals>.<genexpr> at 0x112acbd00>)
+
+tests/kaggriculture/test_teacher.py:757: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_nbytes_counts_every_cached_tensor
+1 failed in 0.16s

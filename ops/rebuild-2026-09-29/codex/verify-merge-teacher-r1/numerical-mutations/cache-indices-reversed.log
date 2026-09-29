@@ -1,0 +1,264 @@
+FF.FF.FF.                                                                [100%]
+=================================== FAILURES ===================================
+_____________ test_index_then_concat_restores_the_targets[1-both] ______________
+
+layout = 'both', chunk = 1
+
+    @pytest.mark.parametrize("layout", ["both", "kl", "value"])
+    @pytest.mark.parametrize("chunk", [1, 2, 3])
+    def test_index_then_concat_restores_the_targets(layout: str, chunk: int) -> None:
+        model = _tiny().eval()
+        obs, actions = _segment_major(model)
+        targets = model.compute_teacher_distillation_targets(
+            obs,
+            actions,
+            compute_action_kl=layout != "value",
+            compute_value=layout != "kl",
+        )
+        pieces = [
+            targets.index(torch.arange(start, min(start + chunk, SEGMENTS)))
+            for start in range(0, SEGMENTS, chunk)
+        ]
+        joined = kt_teacher.KaggricultureTeacherTargets.concat(pieces)
+        _assert_targets_equal(joined, targets)
+        if len(pieces) == 1:
+            assert joined is pieces[0]
+        picked = targets.index(torch.tensor([2, 0]))
+        for name, tensor in _target_tensors(targets).items():
+            if tensor is not None:
+>               assert torch.equal(
+                    _target_tensors(picked)[name], tensor[torch.tensor([2, 0])]
+                ), name
+E               AssertionError: slot1
+E               assert False
+E                +  where False = <built-in method equal of type object at 0x10c27f778>(tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,\n            -1.0231e-02, -3.4028e+38],\n         ...e+38],\n           [ 2.2508e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]), tensor([[[[[-3.4028e+38, -1.4827e-03, -1.0402e-02,  ..., -1.1229e-02,\n            -1.0098e-02, -3.4028e+38],\n         ...e+38],\n           [ 2.3221e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]))
+E                +    where <built-in method equal of type object at 0x10c27f778> = torch.equal
+
+tests/kaggriculture/test_teacher.py:694: AssertionError
+______________ test_index_then_concat_restores_the_targets[1-kl] _______________
+
+layout = 'kl', chunk = 1
+
+    @pytest.mark.parametrize("layout", ["both", "kl", "value"])
+    @pytest.mark.parametrize("chunk", [1, 2, 3])
+    def test_index_then_concat_restores_the_targets(layout: str, chunk: int) -> None:
+        model = _tiny().eval()
+        obs, actions = _segment_major(model)
+        targets = model.compute_teacher_distillation_targets(
+            obs,
+            actions,
+            compute_action_kl=layout != "value",
+            compute_value=layout != "kl",
+        )
+        pieces = [
+            targets.index(torch.arange(start, min(start + chunk, SEGMENTS)))
+            for start in range(0, SEGMENTS, chunk)
+        ]
+        joined = kt_teacher.KaggricultureTeacherTargets.concat(pieces)
+        _assert_targets_equal(joined, targets)
+        if len(pieces) == 1:
+            assert joined is pieces[0]
+        picked = targets.index(torch.tensor([2, 0]))
+        for name, tensor in _target_tensors(targets).items():
+            if tensor is not None:
+>               assert torch.equal(
+                    _target_tensors(picked)[name], tensor[torch.tensor([2, 0])]
+                ), name
+E               AssertionError: slot1
+E               assert False
+E                +  where False = <built-in method equal of type object at 0x10c27f778>(tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,\n            -1.0231e-02, -3.4028e+38],\n         ...e+38],\n           [ 2.2508e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]), tensor([[[[[-3.4028e+38, -1.4827e-03, -1.0402e-02,  ..., -1.1229e-02,\n            -1.0098e-02, -3.4028e+38],\n         ...e+38],\n           [ 2.3221e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]))
+E                +    where <built-in method equal of type object at 0x10c27f778> = torch.equal
+
+tests/kaggriculture/test_teacher.py:694: AssertionError
+_____________ test_index_then_concat_restores_the_targets[2-both] ______________
+
+layout = 'both', chunk = 2
+
+    @pytest.mark.parametrize("layout", ["both", "kl", "value"])
+    @pytest.mark.parametrize("chunk", [1, 2, 3])
+    def test_index_then_concat_restores_the_targets(layout: str, chunk: int) -> None:
+        model = _tiny().eval()
+        obs, actions = _segment_major(model)
+        targets = model.compute_teacher_distillation_targets(
+            obs,
+            actions,
+            compute_action_kl=layout != "value",
+            compute_value=layout != "kl",
+        )
+        pieces = [
+            targets.index(torch.arange(start, min(start + chunk, SEGMENTS)))
+            for start in range(0, SEGMENTS, chunk)
+        ]
+        joined = kt_teacher.KaggricultureTeacherTargets.concat(pieces)
+>       _assert_targets_equal(joined, targets)
+
+tests/kaggriculture/test_teacher.py:688: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38, -6.3896e-03, -8.4781e-03,  ..., -9.0324e-03,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+expected = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+
+    def _assert_targets_equal(actual: Any, expected: Any, *, exact: bool = True) -> None:
+        assert type(actual) is type(expected)
+        assert actual.grammar == expected.grammar
+        got, want = _target_tensors(actual), _target_tensors(expected)
+        assert set(got) == set(want)
+        for name, tensor in want.items():
+            if tensor is None:
+                assert got[name] is None, name
+            elif exact:
+>               assert torch.equal(got[name], tensor), name
+E               AssertionError: slot1
+E               assert False
+E                +  where False = <built-in method equal of type object at 0x10c27f778>(tensor([[[[[-3.4028e+38, -6.3896e-03, -8.4781e-03,  ..., -9.0324e-03,\n            -4.8684e-03, -3.4028e+38],\n         ...e+38],\n           [ 2.2508e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]), tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,\n            -1.0231e-02, -3.4028e+38],\n         ...e+38],\n           [ 2.2508e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]))
+E                +    where <built-in method equal of type object at 0x10c27f778> = torch.equal
+
+tests/kaggriculture/test_teacher.py:607: AssertionError
+______________ test_index_then_concat_restores_the_targets[2-kl] _______________
+
+layout = 'kl', chunk = 2
+
+    @pytest.mark.parametrize("layout", ["both", "kl", "value"])
+    @pytest.mark.parametrize("chunk", [1, 2, 3])
+    def test_index_then_concat_restores_the_targets(layout: str, chunk: int) -> None:
+        model = _tiny().eval()
+        obs, actions = _segment_major(model)
+        targets = model.compute_teacher_distillation_targets(
+            obs,
+            actions,
+            compute_action_kl=layout != "value",
+            compute_value=layout != "kl",
+        )
+        pieces = [
+            targets.index(torch.arange(start, min(start + chunk, SEGMENTS)))
+            for start in range(0, SEGMENTS, chunk)
+        ]
+        joined = kt_teacher.KaggricultureTeacherTargets.concat(pieces)
+>       _assert_targets_equal(joined, targets)
+
+tests/kaggriculture/test_teacher.py:688: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38, -6.3896e-03, -8.4781e-03,  ..., -9.0324e-03,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+expected = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+
+    def _assert_targets_equal(actual: Any, expected: Any, *, exact: bool = True) -> None:
+        assert type(actual) is type(expected)
+        assert actual.grammar == expected.grammar
+        got, want = _target_tensors(actual), _target_tensors(expected)
+        assert set(got) == set(want)
+        for name, tensor in want.items():
+            if tensor is None:
+                assert got[name] is None, name
+            elif exact:
+>               assert torch.equal(got[name], tensor), name
+E               AssertionError: slot1
+E               assert False
+E                +  where False = <built-in method equal of type object at 0x10c27f778>(tensor([[[[[-3.4028e+38, -6.3896e-03, -8.4781e-03,  ..., -9.0324e-03,\n            -4.8684e-03, -3.4028e+38],\n         ...e+38],\n           [ 2.2508e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]), tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,\n            -1.0231e-02, -3.4028e+38],\n         ...e+38],\n           [ 2.2508e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]))
+E                +    where <built-in method equal of type object at 0x10c27f778> = torch.equal
+
+tests/kaggriculture/test_teacher.py:607: AssertionError
+_____________ test_index_then_concat_restores_the_targets[3-both] ______________
+
+layout = 'both', chunk = 3
+
+    @pytest.mark.parametrize("layout", ["both", "kl", "value"])
+    @pytest.mark.parametrize("chunk", [1, 2, 3])
+    def test_index_then_concat_restores_the_targets(layout: str, chunk: int) -> None:
+        model = _tiny().eval()
+        obs, actions = _segment_major(model)
+        targets = model.compute_teacher_distillation_targets(
+            obs,
+            actions,
+            compute_action_kl=layout != "value",
+            compute_value=layout != "kl",
+        )
+        pieces = [
+            targets.index(torch.arange(start, min(start + chunk, SEGMENTS)))
+            for start in range(0, SEGMENTS, chunk)
+        ]
+        joined = kt_teacher.KaggricultureTeacherTargets.concat(pieces)
+>       _assert_targets_equal(joined, targets)
+
+tests/kaggriculture/test_teacher.py:688: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38, -1.4827e-03, -1.0402e-02,  ..., -1.1229e-02,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+expected = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+
+    def _assert_targets_equal(actual: Any, expected: Any, *, exact: bool = True) -> None:
+        assert type(actual) is type(expected)
+        assert actual.grammar == expected.grammar
+        got, want = _target_tensors(actual), _target_tensors(expected)
+        assert set(got) == set(want)
+        for name, tensor in want.items():
+            if tensor is None:
+                assert got[name] is None, name
+            elif exact:
+>               assert torch.equal(got[name], tensor), name
+E               AssertionError: slot1
+E               assert False
+E                +  where False = <built-in method equal of type object at 0x10c27f778>(tensor([[[[[-3.4028e+38, -1.4827e-03, -1.0402e-02,  ..., -1.1229e-02,\n            -1.0098e-02, -3.4028e+38],\n         ...e+38],\n           [ 2.3221e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]), tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,\n            -1.0231e-02, -3.4028e+38],\n         ...e+38],\n           [ 2.2508e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]))
+E                +    where <built-in method equal of type object at 0x10c27f778> = torch.equal
+
+tests/kaggriculture/test_teacher.py:607: AssertionError
+______________ test_index_then_concat_restores_the_targets[3-kl] _______________
+
+layout = 'kl', chunk = 3
+
+    @pytest.mark.parametrize("layout", ["both", "kl", "value"])
+    @pytest.mark.parametrize("chunk", [1, 2, 3])
+    def test_index_then_concat_restores_the_targets(layout: str, chunk: int) -> None:
+        model = _tiny().eval()
+        obs, actions = _segment_major(model)
+        targets = model.compute_teacher_distillation_targets(
+            obs,
+            actions,
+            compute_action_kl=layout != "value",
+            compute_value=layout != "kl",
+        )
+        pieces = [
+            targets.index(torch.arange(start, min(start + chunk, SEGMENTS)))
+            for start in range(0, SEGMENTS, chunk)
+        ]
+        joined = kt_teacher.KaggricultureTeacherTargets.concat(pieces)
+>       _assert_targets_equal(joined, targets)
+
+tests/kaggriculture/test_teacher.py:688: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actual = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38, -1.4827e-03, -1.0402e-02,  ..., -1.1229e-02,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+expected = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+
+    def _assert_targets_equal(actual: Any, expected: Any, *, exact: bool = True) -> None:
+        assert type(actual) is type(expected)
+        assert actual.grammar == expected.grammar
+        got, want = _target_tensors(actual), _target_tensors(expected)
+        assert set(got) == set(want)
+        for name, tensor in want.items():
+            if tensor is None:
+                assert got[name] is None, name
+            elif exact:
+>               assert torch.equal(got[name], tensor), name
+E               AssertionError: slot1
+E               assert False
+E                +  where False = <built-in method equal of type object at 0x10c27f778>(tensor([[[[[-3.4028e+38, -1.4827e-03, -1.0402e-02,  ..., -1.1229e-02,\n            -1.0098e-02, -3.4028e+38],\n         ...e+38],\n           [ 2.3221e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]), tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,\n            -1.0231e-02, -3.4028e+38],\n         ...e+38],\n           [ 2.2508e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]]))
+E                +    where <built-in method equal of type object at 0x10c27f778> = torch.equal
+
+tests/kaggriculture/test_teacher.py:607: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[1-both]
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[1-kl]
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[2-both]
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[2-kl]
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[3-both]
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[3-kl]
+6 failed, 3 passed in 0.70s

@@ -1,0 +1,53 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_head_and_trunk_chunking_match_the_unchunked_kl ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1101f2960>
+
+    def test_head_and_trunk_chunking_match_the_unchunked_kl(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs = make_obs(envs=3, own_actors=(1, 4, 2), rival_actors=(3, 1, 5), order_limit=3)
+        actions = _sampled(student, obs)
+        with torch.no_grad():
+            whole_teacher = _collect(teacher, obs, actions).slot_logits
+            assert whole_teacher is not None
+            whole = _with_teacher(student, whole_teacher, obs, actions).kl
+        assert whole is not None
+    
+        head_calls: list[int] = []
+    
+        def head_spy(core: Any) -> Any:
+            def run(*args: Any) -> ka.GrammarPolicyResult:
+                head_calls.append(args[0].shape[0])
+                return core(*args)
+    
+            return run
+    
+        monkeypatch.setattr(km, "head_rows_per_chunk", lambda _config: 2)
+        for model in (student, teacher):
+            model._compiled_actor_core = head_spy(model.actor.policy_core)
+        with torch.no_grad():
+            head_teacher = _collect(teacher, obs, actions).slot_logits
+            assert head_teacher is not None
+            head_kl = _with_teacher(student, head_teacher, obs, actions).kl
+        assert head_calls == [2, 2, 2, 2, 2, 2]
+        # Not bit-exact: CPU GEMM blocking varies with the row count (measured on
+        # the market-kind head), as in test_model_heads' chunking test.
+        for slot in ka.POLICY_SLOTS:
+            torch.testing.assert_close(
+                head_teacher[slot], whole_teacher[slot], msg=str(slot)
+            )
+        assert head_kl is not None
+>       torch.testing.assert_close(head_kl, whole)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 31 / 18144 (0.2%)
+E       Greatest absolute difference: 3.4709630012512207 at index (5, 7, 10) (up to 1e-05 allowed)
+E       Greatest relative difference: inf at index (2, 5, 9) (up to 1.3e-06 allowed)
+
+tests/kaggriculture/test_teacher.py:435: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_head_and_trunk_chunking_match_the_unchunked_kl
+1 failed in 0.16s

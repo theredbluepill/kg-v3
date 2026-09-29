@@ -1,0 +1,61 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_ppo_teacher_wrappers_dispatch_statelessly ________________
+
+    def test_ppo_teacher_wrappers_dispatch_statelessly() -> None:
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs, actions = _segment_major(student)
+        dones = torch.zeros(SEGMENTS, HORIZON, 2, dtype=torch.bool)
+        targets = teacher.compute_teacher_distillation_targets(obs, actions)
+        with torch.no_grad():
+>           cached = ppo._model_evaluate_actions_with_cached_teacher(
+                student,
+                obs,
+                actions,
+                targets,
+                hidden_state=None,
+                dones=dones,
+                compute_teacher_action_kl=True,
+                compute_teacher_value=True,
+            )
+
+tests/kaggriculture/test_teacher.py:1176: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:2826: in _model_evaluate_actions_with_cached_teacher
+    return model.evaluate_actions_with_cached_teacher(
+python/owl/model/kaggriculture.py:718: in evaluate_actions_with_cached_teacher
+    self._require_stateless_replay(hidden_state, dones)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+hidden_state = None
+dones = tensor([[[False, False],
+         [False, False]],
+
+        [[False, False],
+         [False, False]],
+
+        [[False, False],
+         [False, False]]])
+
+    def _require_stateless_replay(
+        self, hidden_state: ModelHiddenState | None, dones: torch.Tensor | None
+    ) -> None:
+        self._require_stateless(hidden_state)
+        if dones is not None:
+>           raise ValueError(
+                "KaggricultureTransformer is stateless; dones must be None"
+            )
+E           ValueError: KaggricultureTransformer is stateless; dones must be None
+
+python/owl/model/kaggriculture.py:592: ValueError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_ppo_teacher_wrappers_dispatch_statelessly
+1 failed in 0.18s

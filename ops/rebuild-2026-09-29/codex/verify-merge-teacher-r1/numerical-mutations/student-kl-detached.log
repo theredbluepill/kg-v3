@@ -1,0 +1,45 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_kl_gradients_reach_every_student_head_and_no_teacher_parameter ______
+
+    def test_kl_gradients_reach_every_student_head_and_no_teacher_parameter() -> None:
+        student, teacher = _tiny(), _tiny(seed=6).eval()
+        teacher.requires_grad_(False)
+        obs, actions = _base_case()
+        with torch.no_grad():
+            teacher_logits = _collect(teacher, obs, actions).slot_logits
+        assert teacher_logits is not None
+        kl = _with_teacher(student, teacher_logits, obs, actions).kl
+        assert kl is not None
+>       kl.sum().backward()
+
+tests/kaggriculture/test_teacher.py:517: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/poonszesen/kg-v3-m-teacher/.venv/lib/python3.12/site-packages/torch/_tensor.py:625: in backward
+    torch.autograd.backward(
+/Users/poonszesen/kg-v3-m-teacher/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:354: in backward
+    _engine_run_backward(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+t_outputs = (tensor(0.0021),), args = ((None,), False, False, ())
+kwargs = {'accumulate_grad': True, 'allow_unreachable': True}
+attach_logging_hooks = False
+
+    def _engine_run_backward(
+        t_outputs: Sequence[Union[torch.Tensor, GradientEdge]],
+        *args: Any,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, ...]:
+        attach_logging_hooks = log.getEffectiveLevel() <= logging.DEBUG
+        if attach_logging_hooks:
+            unregister_hooks = _register_logging_hooks_on_whole_graph(t_outputs)
+        try:
+>           return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+                t_outputs, *args, **kwargs
+            )  # Calls into the C++ engine to run the backward pass
+E           RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn
+
+/Users/poonszesen/kg-v3-m-teacher/.venv/lib/python3.12/site-packages/torch/autograd/graph.py:841: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_kl_gradients_reach_every_student_head_and_no_teacher_parameter
+1 failed in 0.13s

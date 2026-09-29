@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_targets_have_the_lead_layout_dtypes_and_optional_fields _________
+
+    def test_targets_have_the_lead_layout_dtypes_and_optional_fields() -> None:
+        model = _tiny().eval()
+        obs, actions = _segment_major(model)
+        targets = model.compute_teacher_distillation_targets(obs, actions)
+        assert isinstance(targets, kt_teacher.KaggricultureTeacherTargets)
+        assert targets.slot_logits is not None
+        assert set(targets.slot_logits) == set(ka.POLICY_SLOTS)
+        for slot, logits in targets.slot_logits.items():
+            width = kt.SLOT_WIDTHS[slot]
+            assert logits.shape == (SEGMENTS, HORIZON, 2, _unit_or_market(slot), width)
+            assert logits.dtype == torch.float32
+>           assert not logits.requires_grad
+E           assert not True
+E            +  where True = tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,\n            -1.0231e-02, -3.4028e+38],\n         ...8e-02, -3.4028e+38, -3.4028e+38,  ..., -3.4028e+38,\n            -3.4028e+38, -3.4028e+38]]]]], grad_fn=<ViewBackward0>).requires_grad
+
+tests/kaggriculture/test_teacher.py:623: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_targets_have_the_lead_layout_dtypes_and_optional_fields
+1 failed in 0.16s

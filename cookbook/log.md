@@ -1,5 +1,21 @@
 # Change log
 
+## 2026-09-29 — Reconcile the teacher Reference's open dependencies after the merge
+
+Codex verification r1 of the Phase 4 merge (`a424d8c`, APPROVE WITH EDITS,
+`ops/rebuild-2026-09-29/codex/verify-merge-teacher-r1.md`) found one P3: the
+[[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]]
+still said T18 awaited the Task 3.2 value-mode guards, T19b and Task 4.4 awaited
+the configs merge, and described the old skip reason, while its appended
+post-merge line said those had landed. The launch-pair, T19-split and "Phase 4
+is not complete" prose now states the current seams in place: T18 and the
+trainer-checkpoint test wait for the Task 3.1 trainer mapping, the launch/resume
+pair for the run_ppo game seam and Task 1.4 native env, and 4.4 is undone with
+its configs prerequisite satisfied. The superseded appended line is folded in.
+Documentation only; the verification evidence is committed beside the verdict.
+`just py-prepare`: 1,673 passed, 11 skipped, docs-fresh passes
+(`ops/rebuild-2026-09-29/merge-teacher-r1-fixes/py-prepare.log`).
+
 ## 2026-09-29 — Merge Phase 4 teacher distillation onto the Task 1.3 integration
 
 Phase 4 (Codex APPROVE at `8fde43c`) forked from Task 3.1 at `4cac1a1`, before

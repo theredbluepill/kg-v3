@@ -1,0 +1,80 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+__________ test_teacher_paths_keep_integration_gemm_guard[precompute] __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111eb8f20>
+path = 'precompute'
+
+    @pytest.mark.parametrize("path", ["precompute", "cached", "combined_student", "combined_teacher"])
+    def test_teacher_paths_keep_integration_gemm_guard(monkeypatch, path):
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs, actions = _base_case()
+        targets = teacher.compute_teacher_distillation_targets(obs, actions)
+        monkeypatch.setattr(config, "max_autotune_gemm_backends", "ATEN,TRITON")
+        guarded = teacher if path in ("precompute", "combined_teacher") else student
+        guarded.compiled_regions_require_gemm_backends = True
+>       with pytest.raises(RuntimeError, match="compiled Kaggriculture regions require"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/kaggriculture/test_merge_teacher_guards.py:13: Failed
+____________ test_teacher_paths_keep_integration_gemm_guard[cached] ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111ebee10>
+path = 'cached'
+
+    @pytest.mark.parametrize("path", ["precompute", "cached", "combined_student", "combined_teacher"])
+    def test_teacher_paths_keep_integration_gemm_guard(monkeypatch, path):
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs, actions = _base_case()
+        targets = teacher.compute_teacher_distillation_targets(obs, actions)
+        monkeypatch.setattr(config, "max_autotune_gemm_backends", "ATEN,TRITON")
+        guarded = teacher if path in ("precompute", "combined_teacher") else student
+        guarded.compiled_regions_require_gemm_backends = True
+>       with pytest.raises(RuntimeError, match="compiled Kaggriculture regions require"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/kaggriculture/test_merge_teacher_guards.py:13: Failed
+_______ test_teacher_paths_keep_integration_gemm_guard[combined_student] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111ebc440>
+path = 'combined_student'
+
+    @pytest.mark.parametrize("path", ["precompute", "cached", "combined_student", "combined_teacher"])
+    def test_teacher_paths_keep_integration_gemm_guard(monkeypatch, path):
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs, actions = _base_case()
+        targets = teacher.compute_teacher_distillation_targets(obs, actions)
+        monkeypatch.setattr(config, "max_autotune_gemm_backends", "ATEN,TRITON")
+        guarded = teacher if path in ("precompute", "combined_teacher") else student
+        guarded.compiled_regions_require_gemm_backends = True
+>       with pytest.raises(RuntimeError, match="compiled Kaggriculture regions require"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/kaggriculture/test_merge_teacher_guards.py:13: Failed
+_______ test_teacher_paths_keep_integration_gemm_guard[combined_teacher] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111ebd940>
+path = 'combined_teacher'
+
+    @pytest.mark.parametrize("path", ["precompute", "cached", "combined_student", "combined_teacher"])
+    def test_teacher_paths_keep_integration_gemm_guard(monkeypatch, path):
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs, actions = _base_case()
+        targets = teacher.compute_teacher_distillation_targets(obs, actions)
+        monkeypatch.setattr(config, "max_autotune_gemm_backends", "ATEN,TRITON")
+        guarded = teacher if path in ("precompute", "combined_teacher") else student
+        guarded.compiled_regions_require_gemm_backends = True
+>       with pytest.raises(RuntimeError, match="compiled Kaggriculture regions require"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/kaggriculture/test_merge_teacher_guards.py:13: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_merge_teacher_guards.py::test_teacher_paths_keep_integration_gemm_guard[precompute]
+FAILED tests/kaggriculture/test_merge_teacher_guards.py::test_teacher_paths_keep_integration_gemm_guard[cached]
+FAILED tests/kaggriculture/test_merge_teacher_guards.py::test_teacher_paths_keep_integration_gemm_guard[combined_student]
+FAILED tests/kaggriculture/test_merge_teacher_guards.py::test_teacher_paths_keep_integration_gemm_guard[combined_teacher]
+4 failed in 0.08s

@@ -1,0 +1,262 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+____________ test_trainer_precomputes_once_and_logs_teacher_metrics ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111d535c0>
+
+    def test_trainer_precomputes_once_and_logs_teacher_metrics(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        student, teacher = _tiny(), _tiny(seed=6)
+        horizon = 4
+>       trainer = ppo.PPOTrainer(
+            env=_FakeKaggricultureEnv(),
+            model=student,
+            optimizer=torch.optim.AdamW(student.parameters(), lr=0.0),
+            config=ppo.PPOConfig(
+                horizon=horizon,
+                segments_per_minibatch=1,
+                teacher_mode="last_best",
+                teacher_kl_coef=0.005,
+                teacher_value_coef=0.005,
+                teacher_segments_per_minibatch=1,
+            ),
+            device=torch.device("cpu"),
+            teacher_model=teacher,
+            teacher_active=True,
+        )
+
+tests/kaggriculture/test_teacher.py:1360: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:565: in __init__
+    self._obs = _obs_to_device(
+python/owl/train/ppo.py:2258: in _obs_to_device
+    return _map_observation(
+python/owl/train/ppo.py:2119: in _map_observation
+    field: _map_observation_value(getattr(obs, field), fn, field=field)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = KaggricultureActionMask(can_act=tensor([[[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  Tr...       [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]]))
+fn = <function _obs_to_device.<locals>.<lambda> at 0x112b1cf40>
+
+    def _map_observation_value(
+        value: object,
+        fn: Callable[[torch.Tensor], torch.Tensor],
+        *,
+        field: str,
+    ) -> object:
+        if value is None:
+            return None
+        if isinstance(value, torch.Tensor):
+            return fn(value)
+        if isinstance(
+            value,
+            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+        ):
+            return _map_action_mask(value, fn)
+>       raise TypeError(
+            f"observation field {field!r} has unsupported type {type(value).__name__}; "
+            "expected a tensor, an action mask or None"
+        )
+E       TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+
+python/owl/train/ppo.py:2140: TypeError
+___ test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache ___
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-teacher/.codex-tmp/pytest-of-poonszesen/pytest-1/test_trainer_checkpoint_after_0')
+
+    def test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache(
+        tmp_path: Path,
+    ) -> None:
+        """T19b: after an iteration fills the teacher cache, checkpoints omit it."""
+        import scripts.run_ppo as run_ppo
+    
+        student, teacher = _tiny(), _tiny(seed=6)
+>       trainer = ppo.PPOTrainer(
+            env=_FakeKaggricultureEnv(),
+            model=student,
+            optimizer=torch.optim.AdamW(student.parameters(), lr=0.0),
+            config=ppo.PPOConfig(
+                horizon=4,
+                segments_per_minibatch=1,
+                teacher_mode="last_best",
+                teacher_segments_per_minibatch=1,
+            ),
+            device=torch.device("cpu"),
+            teacher_model=teacher,
+            teacher_active=True,
+        )
+
+tests/kaggriculture/test_teacher.py:1693: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:565: in __init__
+    self._obs = _obs_to_device(
+python/owl/train/ppo.py:2258: in _obs_to_device
+    return _map_observation(
+python/owl/train/ppo.py:2119: in _map_observation
+    field: _map_observation_value(getattr(obs, field), fn, field=field)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = KaggricultureActionMask(can_act=tensor([[[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  Tr...       [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]]))
+fn = <function _obs_to_device.<locals>.<lambda> at 0x112b1cfe0>
+
+    def _map_observation_value(
+        value: object,
+        fn: Callable[[torch.Tensor], torch.Tensor],
+        *,
+        field: str,
+    ) -> object:
+        if value is None:
+            return None
+        if isinstance(value, torch.Tensor):
+            return fn(value)
+        if isinstance(
+            value,
+            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+        ):
+            return _map_action_mask(value, fn)
+>       raise TypeError(
+            f"observation field {field!r} has unsupported type {type(value).__name__}; "
+            "expected a tensor, an action mask or None"
+        )
+E       TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+
+python/owl/train/ppo.py:2140: TypeError
+______ test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best ______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-teacher/.codex-tmp/pytest-of-poonszesen/pytest-1/test_run_ppo_resume_restores_t0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112327fe0>
+
+    def test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T19b resume: the teacher is ``checkpoint_last_best.pt``, not the student."""
+        cfg = _kaggriculture_run_config()
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        cfg.to_file(run_dir / "config.yaml")
+        student, last_best = _tiny(), _tiny(seed=6)
+        _write_run_checkpoint(
+            run_dir / "checkpoint_final.pt", student, env_steps=128, run_id="run-123"
+        )
+        _write_run_checkpoint(
+            run_dir / "checkpoint_last_best.pt", last_best, env_steps=64, run_id="run-123"
+        )
+        for name in ("checkpoint_final.pt", "checkpoint_last_best.pt"):
+            saved = torch.load(run_dir / name, weights_only=False)
+            assert set(saved) == CHECKPOINT_KEYS
+            _assert_no_teacher_state(saved["model"])
+    
+>       trainer, session = _run_ppo_main(monkeypatch, [str(run_dir), "--log-mode", "wandb"])
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:1643: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:1595: in _run_ppo_main
+    run_ppo.main()
+scripts/run_ppo.py:179: in main
+    env_config = require_orbit_env(cfg.env, context=_TRAINER)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=2, obs_spec=KaggricultureObsConfig(obs_spec='kaggriculture', schema_version=3), action_s..._weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=False, native_threads=1)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom minibatch: 8 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 1.188e+04x headroom, <= 1 call(s)); heads 177536 rows/call (2.219e+04x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 5941x headroom, <= 1 call(s)); heads 177536 rows/call (1.11e+04x headroom, 1 call(s))
+GEMM workload headroom evaluation: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+____ test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher ____
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-teacher/.codex-tmp/pytest-of-poonszesen/pytest-1/test_run_ppo_fresh_launch_from0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1123395e0>
+
+    def test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T19b fresh launch: the loaded weights become the active last-best teacher."""
+        cfg = _kaggriculture_run_config()
+        config_path = tmp_path / "config.yaml"
+        cfg.to_file(config_path)
+        source = _tiny(seed=6)
+        weights = tmp_path / "weights.pt"
+        _write_run_checkpoint(weights, source, env_steps=64, run_id="run-123")
+    
+>       trainer, session = _run_ppo_main(
+            monkeypatch,
+            [
+                str(config_path),
+                str(tmp_path / "runs"),
+                "--load-model-weights",
+                str(weights),
+                "--log-mode",
+                "debug",
+            ],
+        )
+
+tests/kaggriculture/test_teacher.py:1662: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:1595: in _run_ppo_main
+    run_ppo.main()
+scripts/run_ppo.py:179: in main
+    env_config = require_orbit_env(cfg.env, context=_TRAINER)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=2, obs_spec=KaggricultureObsConfig(obs_spec='kaggriculture', schema_version=3), action_s..._weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=False, native_threads=1)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom minibatch: 8 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 1.188e+04x headroom, <= 1 call(s)); heads 177536 rows/call (2.219e+04x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 5941x headroom, <= 1 call(s)); heads 177536 rows/call (1.11e+04x headroom, 1 call(s))
+GEMM workload headroom evaluation: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_trainer_precomputes_once_and_logs_teacher_metrics
+FAILED tests/kaggriculture/test_teacher.py::test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache
+FAILED tests/kaggriculture/test_teacher.py::test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best
+FAILED tests/kaggriculture/test_teacher.py::test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher
+4 failed in 0.28s

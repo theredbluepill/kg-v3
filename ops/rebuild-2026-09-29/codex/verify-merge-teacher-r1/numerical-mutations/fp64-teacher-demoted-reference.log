@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_fp64_teacher_probability_reference ____________________
+
+    def test_fp64_teacher_probability_reference():
+        teacher = torch.tensor([[1.00000001, 1.00000002]], dtype=torch.float64)
+        student = torch.tensor([[0.3, 0.5]], dtype=torch.float64)
+        mask = torch.ones_like(teacher, dtype=torch.bool)
+        lp = teacher.log_softmax(-1)
+        expected = (lp.exp() * (lp - student.log_softmax(-1))).sum(-1)
+        actual = categorical_kl_from_logits(teacher, student, mask)
+>       torch.testing.assert_close(actual, expected, rtol=0, atol=1e-14)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 1 / 1 (100.0%)
+E       Greatest absolute difference: 1.4046543372892017e-09 at index (0,) (up to 1e-14 allowed)
+E       Greatest relative difference: 2.8139864646554464e-07 at index (0,) (up to 0 allowed)
+
+tests/kaggriculture/test_teacher_precision_probe.py:11: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher_precision_probe.py::test_fp64_teacher_probability_reference
+1 failed in 0.01s

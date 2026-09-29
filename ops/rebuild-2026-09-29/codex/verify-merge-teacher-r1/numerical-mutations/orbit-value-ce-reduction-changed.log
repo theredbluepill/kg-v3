@@ -1,0 +1,105 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_ppo_teacher_wrappers_leave_orbit_results_unchanged ____________
+
+    def test_ppo_teacher_wrappers_leave_orbit_results_unchanged() -> None:
+        from owl.model.stateless_transformer_v1 import (
+            ActorDiscreteTargetsConfig,
+            StatelessTransformerV1,
+            StatelessTransformerV1Config,
+        )
+    
+        from tests.owl.train.test_ppo import TinyDiscreteTargetEnv
+    
+        torch.manual_seed(0)
+        env = TinyDiscreteTargetEnv(n_envs=2)
+        config = StatelessTransformerV1Config(
+            actor=ActorDiscreteTargetsConfig(n_action_mixtures=2, entropy_ship_quantiles=8),
+            embed_dim=32,
+            depth=1,
+            n_heads=4,
+        )
+        models = []
+        for _ in range(2):
+            model = StatelessTransformerV1(
+                config, obs_spec=env.obs_spec, action_spec=env.action_spec
+            )
+            model.reset_parameters()
+            models.append(model.eval())
+        student, teacher = models
+        teacher.requires_grad_(False)
+        trainer = ppo.PPOTrainer(
+            env=env,
+            model=student,
+            optimizer=torch.optim.AdamW(student.parameters(), lr=0.01, eps=1e-5),
+            config=ppo.PPOConfig(horizon=3, segments_per_minibatch=1),
+            device=torch.device("cpu"),
+            teacher_model=teacher,
+            teacher_active=True,
+        )
+        trainer._collect_rollout()
+        segments = trainer.rollout.segment_major()
+        targets = teacher.compute_teacher_distillation_targets(
+            segments.obs, segments.actions
+        )
+        flags = {"compute_teacher_action_kl": True, "compute_teacher_value": True}
+        with torch.no_grad():
+            wrapped = ppo._model_evaluate_actions_with_cached_teacher(
+                student,
+                segments.obs,
+                segments.actions,
+                targets,
+                hidden_state=None,
+                dones=segments.dones,
+                **flags,
+            )
+            direct = student.evaluate_actions_with_cached_teacher(
+                segments.obs, segments.actions, targets, dones=segments.dones, **flags
+            )
+            wrapped_combined = ppo._model_evaluate_actions_with_teacher(
+                student,
+                segments.obs,
+                segments.actions,
+                teacher,
+                hidden_state=None,
+                dones=segments.dones,
+                **flags,
+            )
+            direct_combined = student.evaluate_actions_with_teacher(
+                segments.obs, segments.actions, teacher, dones=segments.dones, **flags
+            )
+        for got, want in ((wrapped, direct), (wrapped_combined, direct_combined)):
+            assert got.action_kl is not None
+            assert want.action_kl is not None
+            assert torch.equal(got.action_kl.event, want.action_kl.event)
+            assert torch.equal(got.student.log_probs.event, want.student.log_probs.event)
+            assert torch.equal(
+                got.teacher_winner_probabilities, want.teacher_winner_probabilities
+            )
+        # Isaiah's value CE, now a base-class method, is his formula exactly.
+        student_log = wrapped.student_winner_log_probabilities
+        teacher_probs = wrapped.teacher_winner_probabilities
+        assert student_log is not None
+        assert teacher_probs is not None
+>       assert torch.equal(
+            student.teacher_value_cross_entropy(
+                student_log, teacher_probs, value_mask=segments.obs.still_playing
+            ),
+            (-teacher_probs.detach() * student_log).sum(dim=-1),
+        )
+E       assert False
+E        +  where False = <built-in method equal of type object at 0x10e357778>(tensor([[0.3103, 0.3103, 0.3103],\n        [0.3103, 0.3103, 0.3103]]), tensor([[1.2412, 1.2412, 1.2412],\n        [1.2412, 1.2412, 1.2412]]))
+E        +    where <built-in method equal of type object at 0x10e357778> = torch.equal
+E        +    and   tensor([[0.3103, 0.3103, 0.3103],\n        [0.3103, 0.3103, 0.3103]]) = teacher_value_cross_entropy(tensor([[[-1.1732, -1.1460, -1.5044, -1.8933],\n         [-1.1732, -1.1460, -1.5044, -1.8933],\n         [-1.1732, -1.14...460, -1.5044, -1.8933],\n         [-1.1732, -1.1460, -1.5044, -1.8933],\n         [-1.1732, -1.1460, -1.5044, -1.8933]]]), tensor([[[0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386....4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448]]]), value_mask=tensor([[[True, True, True, True],\n         [True, True, True, True],\n         [True, True, True, True]],\n\n        [[True, True, True, True],\n         [True, True, True, True],\n         [True, True, True, True]]]))
+E        +      where teacher_value_cross_entropy = StatelessTransformerV1(\n  (static_planet_proj): ObservationInputStem(\n    (input): Linear(in_features=107, out_feature...(in_features=32, out_features=32, bias=True)\n      (out): Linear(in_features=32, out_features=2, bias=True)\n    )\n  )\n).teacher_value_cross_entropy
+E        +      and   tensor([[[True, True, True, True],\n         [True, True, True, True],\n         [True, True, True, True]],\n\n        [[True, True, True, True],\n         [True, True, True, True],\n         [True, True, True, True]]]) = ObsBatch(planets=tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0...., 0,  ..., 0, 0, 0],\n          [3, 0, 0,  ..., 0, 0, 0],\n          [3, 0, 0,  ..., 0, 0, 0]]]])), player_features=None).still_playing
+E        +        where ObsBatch(planets=tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0...., 0,  ..., 0, 0, 0],\n          [3, 0, 0,  ..., 0, 0, 0],\n          [3, 0, 0,  ..., 0, 0, 0]]]])), player_features=None) = _PPORolloutSegments(obs=ObsBatch(planets=tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0....0.],\n          [0., 0., 0.,  ..., 0., 0., 0.],\n          [0., 0., 0.,  ..., 0., 0., 0.]]]]), initial_hidden_state=None).obs
+E        +    and   tensor([[1.2412, 1.2412, 1.2412],\n        [1.2412, 1.2412, 1.2412]]) = <built-in method sum of Tensor object at 0x1138badf0>(dim=-1)
+E        +      where <built-in method sum of Tensor object at 0x1138badf0> = (-tensor([[[0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386....4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448]]]) * tensor([[[-1.1732, -1.1460, -1.5044, -1.8933],\n         [-1.1732, -1.1460, -1.5044, -1.8933],\n         [-1.1732, -1.14...460, -1.5044, -1.8933],\n         [-1.1732, -1.1460, -1.5044, -1.8933],\n         [-1.1732, -1.1460, -1.5044, -1.8933]]])).sum
+E        +        where tensor([[[0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386....4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448]]]) = <built-in method detach of Tensor object at 0x1138b0190>()
+E        +          where <built-in method detach of Tensor object at 0x1138b0190> = tensor([[[0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386....4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448],\n         [0.4406, 0.3760, 0.1386, 0.0448]]]).detach
+
+tests/kaggriculture/test_teacher.py:1282: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_ppo_teacher_wrappers_leave_orbit_results_unchanged
+1 failed in 0.23s

@@ -1,0 +1,132 @@
+[
+  {
+    "mutant": "ce_shape",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "teacher_value_cross_entropy",
+    "replaced": "tuple(tensor.shape) != expected",
+    "replacement": "False",
+    "tests": [
+      "test_value_ce_shape_guard"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "FF                                                                       [100%]\n=================================== FAILURES ===================================\n______________________ test_value_ce_shape_guard[student] ______________________\ntests/kaggriculture/test_verifier_guard_supplement.py:25: in test_value_ce_shape_guard\n    with pytest.raises(ValueError, match=\"must have shape\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n______________________ test_value_ce_shape_guard[teacher] ______________________\ntests/kaggriculture/test_verifier_guard_supplement.py:25: in test_value_ce_shape_guard\n    with pytest.raises(ValueError, match=\"must have shape\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_value_ce_shape_guard[student]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_value_ce_shape_guard[teacher]\n2 failed in 0.02s\n"
+  },
+  {
+    "mutant": "precompute_layout",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "compute_teacher_distillation_targets",
+    "replaced": "_check_action_layout(actions, obs.still_playing.shape)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_paths_validate_action_layout_before_encoding"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "============= FAILURES ===================================\n_ test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-precompute] _\ntests/kaggriculture/test_verifier_guard_supplement.py:45: in test_teacher_paths_validate_action_layout_before_encoding\n    student.compute_teacher_distillation_targets(obs, bad)\npython/owl/model/kaggriculture.py:666: in compute_teacher_distillation_targets\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n_ test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-precompute] _\ntests/kaggriculture/test_verifier_guard_supplement.py:45: in test_teacher_paths_validate_action_layout_before_encoding\n    student.compute_teacher_distillation_targets(obs, bad)\npython/owl/model/kaggriculture.py:666: in compute_teacher_distillation_targets\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n_ test_teacher_paths_validate_action_layout_before_encoding[dtype-precompute] __\ntests/kaggriculture/test_verifier_guard_supplement.py:45: in test_teacher_paths_validate_action_layout_before_encoding\n    student.compute_teacher_distillation_targets(obs, bad)\npython/owl/model/kaggriculture.py:666: in compute_teacher_distillation_targets\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-precompute]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-precompute]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[dtype-precompute]\n3 failed, 6 passed in 0.13s\n"
+  },
+  {
+    "mutant": "cached_layout",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_cached_teacher",
+    "replaced": "_check_action_layout(actions, lead)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_paths_validate_action_layout_before_encoding"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "=========== FAILURES ===================================\n_ test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-cache] _\ntests/kaggriculture/test_verifier_guard_supplement.py:47: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_cached_teacher(obs, bad, targets)\npython/owl/model/kaggriculture.py:741: in evaluate_actions_with_cached_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n_ test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-cache] _\ntests/kaggriculture/test_verifier_guard_supplement.py:47: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_cached_teacher(obs, bad, targets)\npython/owl/model/kaggriculture.py:741: in evaluate_actions_with_cached_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n____ test_teacher_paths_validate_action_layout_before_encoding[dtype-cache] ____\ntests/kaggriculture/test_verifier_guard_supplement.py:47: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_cached_teacher(obs, bad, targets)\npython/owl/model/kaggriculture.py:741: in evaluate_actions_with_cached_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-cache]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-cache]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[dtype-cache]\n3 failed, 6 passed in 0.13s\n"
+  },
+  {
+    "mutant": "combined_layout",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_teacher",
+    "replaced": "_check_action_layout(actions, lead)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_paths_validate_action_layout_before_encoding"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "%]\n=================================== FAILURES ===================================\n_ test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-combined] _\ntests/kaggriculture/test_verifier_guard_supplement.py:49: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_teacher(obs, bad, teacher)\npython/owl/model/kaggriculture.py:830: in evaluate_actions_with_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n_ test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-combined] _\ntests/kaggriculture/test_verifier_guard_supplement.py:49: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_teacher(obs, bad, teacher)\npython/owl/model/kaggriculture.py:830: in evaluate_actions_with_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n__ test_teacher_paths_validate_action_layout_before_encoding[dtype-combined] ___\ntests/kaggriculture/test_verifier_guard_supplement.py:49: in test_teacher_paths_validate_action_layout_before_encoding\n    student.evaluate_actions_with_teacher(obs, bad, teacher)\npython/owl/model/kaggriculture.py:830: in evaluate_actions_with_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[tokens_shape-combined]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[lengths_shape-combined]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_validate_action_layout_before_encoding[dtype-combined]\n3 failed, 6 passed in 0.13s\n"
+  },
+  {
+    "mutant": "cached_stateless_call",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_cached_teacher",
+    "replaced": "self._require_stateless_replay(hidden_state, dones)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_paths_reject_temporal_inputs"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F.F.                                                                     [100%]\n=================================== FAILURES ===================================\n________ test_teacher_paths_reject_temporal_inputs[hidden_state-cache] _________\ntests/kaggriculture/test_verifier_guard_supplement.py:62: in test_teacher_paths_reject_temporal_inputs\n    student.evaluate_actions_with_cached_teacher(obs, actions, targets, **{field:value})\npython/owl/model/kaggriculture.py:741: in evaluate_actions_with_cached_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n____________ test_teacher_paths_reject_temporal_inputs[dones-cache] ____________\ntests/kaggriculture/test_verifier_guard_supplement.py:62: in test_teacher_paths_reject_temporal_inputs\n    student.evaluate_actions_with_cached_teacher(obs, actions, targets, **{field:value})\npython/owl/model/kaggriculture.py:741: in evaluate_actions_with_cached_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_reject_temporal_inputs[hidden_state-cache]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_reject_temporal_inputs[dones-cache]\n2 failed, 2 passed in 0.08s\n"
+  },
+  {
+    "mutant": "combined_stateless_call",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_teacher",
+    "replaced": "self._require_stateless_replay(hidden_state, dones)",
+    "replacement": "pass",
+    "tests": [
+      "test_teacher_paths_reject_temporal_inputs"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": ".F.F                                                                     [100%]\n=================================== FAILURES ===================================\n_______ test_teacher_paths_reject_temporal_inputs[hidden_state-combined] _______\ntests/kaggriculture/test_verifier_guard_supplement.py:64: in test_teacher_paths_reject_temporal_inputs\n    student.evaluate_actions_with_teacher(obs, actions, teacher, **{field:value})\npython/owl/model/kaggriculture.py:830: in evaluate_actions_with_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n__________ test_teacher_paths_reject_temporal_inputs[dones-combined] ___________\ntests/kaggriculture/test_verifier_guard_supplement.py:64: in test_teacher_paths_reject_temporal_inputs\n    student.evaluate_actions_with_teacher(obs, actions, teacher, **{field:value})\npython/owl/model/kaggriculture.py:830: in evaluate_actions_with_teacher\n    encoded = self.encode_observations(obs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/kaggriculture/test_verifier_guard_supplement.py:12: in _no_encode\n    raise AssertionError(\"invalid input reached encode_observations\")\nE   AssertionError: invalid input reached encode_observations\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_reject_temporal_inputs[hidden_state-combined]\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_teacher_paths_reject_temporal_inputs[dones-combined]\n2 failed, 2 passed in 0.07s\n"
+  },
+  {
+    "mutant": "cached_student_replay",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_teacher_evaluation",
+    "replaced": "check_replay_flags(result.valid)",
+    "replacement": "pass",
+    "tests": [
+      "test_cached_path_admits_student_replay"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n____________________ test_cached_path_admits_student_replay ____________________\ntests/kaggriculture/test_verifier_guard_supplement.py:73: in test_cached_path_admits_student_replay\n    with pytest.raises(ka.GrammarReplayError, match=\"length\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'owl.model.kaggriculture_actor.GrammarReplayError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_cached_path_admits_student_replay\n1 failed in 0.03s\n"
+  },
+  {
+    "mutant": "combined_teacher_replay",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "evaluate_actions_with_teacher",
+    "replaced": "check_replay_flags(teacher_result.valid)",
+    "replacement": "pass",
+    "tests": [
+      "test_combined_path_admits_teacher_before_student_replay"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___________ test_combined_path_admits_teacher_before_student_replay ____________\ntests/kaggriculture/test_verifier_guard_supplement.py:86: in test_combined_path_admits_teacher_before_student_replay\n    student.evaluate_actions_with_teacher(obs, bad, teacher)\npython/owl/model/kaggriculture.py:852: in evaluate_actions_with_teacher\n    return self._teacher_evaluation(\npython/owl/model/kaggriculture.py:865: in _teacher_evaluation\n    result = self._policy(\ntests/kaggriculture/test_verifier_guard_supplement.py:83: in no_student_policy\n    raise AssertionError(\"invalid teacher replay reached student policy\")\nE   AssertionError: invalid teacher replay reached student policy\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_combined_path_admits_teacher_before_student_replay\n1 failed in 0.04s\n"
+  },
+  {
+    "mutant": "policy_core_field_presence",
+    "file": "python/owl/model/kaggriculture.py",
+    "function": "_require",
+    "replaced": "value is None",
+    "replacement": "False",
+    "tests": [
+      "test_requested_policy_core_field_presence"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________________ test_requested_policy_core_field_presence ___________________\ntests/kaggriculture/test_verifier_guard_supplement.py:90: in test_requested_policy_core_field_presence\n    with pytest.raises(RuntimeError, match=\"requested policy-core output\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'RuntimeError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_requested_policy_core_field_presence\n1 failed in 0.01s\n"
+  },
+  {
+    "mutant": "concat_internal_presence",
+    "file": "python/owl/model/kaggriculture_teacher.py",
+    "function": "_present",
+    "replaced": "value is None",
+    "replacement": "False",
+    "tests": [
+      "test_validated_chunk_field_presence"
+    ],
+    "exit_code": 1,
+    "result": "KILLED",
+    "tail": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_____________________ test_validated_chunk_field_presence ______________________\ntests/kaggriculture/test_verifier_guard_supplement.py:95: in test_validated_chunk_field_presence\n    with pytest.raises(ValueError, match=\"missing a field\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_verifier_guard_supplement.py::test_validated_chunk_field_presence\n1 failed in 0.01s\n"
+  }
+]

@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_combined_path_rejects_foreign_or_mismatched_teachers ___________
+tests/kaggriculture/test_teacher.py:1115: in test_combined_path_rejects_foreign_or_mismatched_teachers
+    combined(obs, actions, orbit)
+python/owl/model/kaggriculture.py:813: in evaluate_actions_with_teacher
+    raise ValueError(
+E   ValueError: teacher action_spec action_spec='pure' max_per_planet_launches=1 min_fleet_size=6 must match the student's action_spec='kaggriculture' hire_limit=241
+
+During handling of the above exception, another exception occurred:
+tests/kaggriculture/test_teacher.py:1114: in test_combined_path_rejects_foreign_or_mismatched_teachers
+    with pytest.raises(ValueError, match="KaggricultureTransformer"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'KaggricultureTransformer'
+E     Actual message: "teacher action_spec action_spec='pure' max_per_planet_launches=1 min_fleet_size=6 must match the student's action_spec='kaggriculture' hire_limit=241"
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_combined_path_rejects_foreign_or_mismatched_teachers
+1 failed in 0.13s

@@ -1,0 +1,80 @@
+F..F                                                                     [100%]
+=================================== FAILURES ===================================
+___ test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[dense] ___
+
+case = 'dense'
+
+    @pytest.mark.parametrize("case", CASES)
+    def test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support(
+        case: str,
+    ) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        with torch.no_grad():
+            same = _teacher_kl(model, model, obs, actions)
+        assert same.shape == (obs.still_playing.numel(), F, K)
+        assert torch.equal(same, torch.zeros_like(same))
+    
+        teacher = _tiny(seed=6).eval()
+        with torch.no_grad():
+            kl = _teacher_kl(model, teacher, obs, actions)
+        layout = _layout(obs, actions)
+        assert bool(torch.isfinite(kl).all())
+        # Non-negative up to FP32 rounding of sum p_T (log p_T - log p_S): near-equal
+        # distributions measured -5.6e-8 against terms of order 1e-5.
+        assert float(kl.min()) >= -1e-6, float(kl.min())
+        assert bool((kl[:, :, IMPLICIT_SLOTS] == 0).all())
+        unit = kl[:, :UNIT_FRAMES, list(ka.UNIT_POLICY_SLOTS)]
+        assert bool((unit[~layout["unit_live"]] == 0).all())
+        assert bool((unit[layout["unit_live"]] > 0).any())
+        # Frames after the market block hold nothing.
+        beyond = torch.arange(F)[None, :] > (layout["counts"] + layout["stop"])[:, None]
+>       assert bool((kl[beyond] == 0).all())
+E       assert False
+E        +  where False = bool(tensor(False))
+E        +    where tensor(False) = <built-in method all of Tensor object at 0x10f566fd0>()
+E        +      where <built-in method all of Tensor object at 0x10f566fd0> = tensor([[0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0002, 0.0000,\n         0.0000, 0.0000, 0.0000],\n   ...0],\n        [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n         0.0000, 0.0000, 0.0000]]) == 0.all
+
+tests/kaggriculture/test_teacher.py:156: AssertionError
+___ test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[mixed] ___
+
+case = 'mixed'
+
+    @pytest.mark.parametrize("case", CASES)
+    def test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support(
+        case: str,
+    ) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        with torch.no_grad():
+            same = _teacher_kl(model, model, obs, actions)
+        assert same.shape == (obs.still_playing.numel(), F, K)
+        assert torch.equal(same, torch.zeros_like(same))
+    
+        teacher = _tiny(seed=6).eval()
+        with torch.no_grad():
+            kl = _teacher_kl(model, teacher, obs, actions)
+        layout = _layout(obs, actions)
+        assert bool(torch.isfinite(kl).all())
+        # Non-negative up to FP32 rounding of sum p_T (log p_T - log p_S): near-equal
+        # distributions measured -5.6e-8 against terms of order 1e-5.
+        assert float(kl.min()) >= -1e-6, float(kl.min())
+        assert bool((kl[:, :, IMPLICIT_SLOTS] == 0).all())
+        unit = kl[:, :UNIT_FRAMES, list(ka.UNIT_POLICY_SLOTS)]
+        assert bool((unit[~layout["unit_live"]] == 0).all())
+        assert bool((unit[layout["unit_live"]] > 0).any())
+        # Frames after the market block hold nothing.
+        beyond = torch.arange(F)[None, :] > (layout["counts"] + layout["stop"])[:, None]
+>       assert bool((kl[beyond] == 0).all())
+E       assert False
+E        +  where False = bool(tensor(False))
+E        +    where tensor(False) = <built-in method all of Tensor object at 0x10f596da0>()
+E        +      where <built-in method all of Tensor object at 0x10f596da0> = tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]) == 0.all
+
+tests/kaggriculture/test_teacher.py:156: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[dense]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[mixed]
+2 failed, 2 passed in 0.46s
