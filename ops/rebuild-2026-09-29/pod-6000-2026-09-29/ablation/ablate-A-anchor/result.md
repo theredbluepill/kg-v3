@@ -78,3 +78,14 @@ iterations per game). In A, entropy peaks late in each game: 7.7 (it 10),
   rollout 6.4 s against 4.5 s per iteration, update 2.7 s in both. Rank 0's
   native step mean was 84 ms (control 38 ms over its whole run). The cause
   (pod contention, higher-entropy action mix, or other) was not measured.
+
+## Receipt close (2026-09-30)
+
+Closing summary for the frozen receipt; it restates facts recorded above and in `../final-report.md`.
+
+- **Outcome:** Execution PASS. Delayed collapse: banks 71,438 → 41,432 by game 4 (game 4 − game 1 −30,006; control −73,090).
+- **Denominators:** 46 complete iterations on both ranks; 736 optimizer steps (16 per iteration); 753,664 global env steps (46 × 16,384); 1,024 completed games (4 game phases × 256 envs, `train/total_games_played` 1024); 0 nonfinite metrics.
+- **W&B:** https://wandb.ai/spoon/kg-v3/runs/y8j6vzky
+- **Spend:** about $0.57 at $4.18/h on pod `aki4vy8kpfldpa`.
+- **Gaps:** single seed at env seed 0 (rank seeds 0/1), shared with every other arm, so seed variance is unknown; no held-out evaluation (`rl.eval_replay_games=0`), so there is no win rate or bank margin against any opponent and self-play banks are not strength; not Codex-verified; the final checkpoint stays on the pod only; all 46 iterations lie inside the 1,000-step LR warm-up (LR at iteration 46 is 0.736 of peak), so nothing here was measured at peak LR.
+- **Frozen:** this file is covered by `ablation/SHA256SUMS`; later corrections go in a new file.

@@ -170,3 +170,14 @@ steps combine.
 from BC, but not a repair of the economy. The next discriminating arm is
 probably D's BC critic combined with this anchor, which would test whether
 the anchor adds anything once the advantages are informative.
+
+## Receipt close (2026-09-30)
+
+Closing summary for the frozen receipt; it restates facts recorded above and in `../final-report.md`.
+
+- **Outcome:** Execution PASS. Decline: banks 73,460 → 66,810 by game 4 (−6,650) with teacher KL held at 0.22 at the game-4 end.
+- **Denominators:** 46 complete iterations on both ranks; 736 optimizer steps (16 per iteration); 753,664 global env steps (46 × 16,384); 1,024 completed games (4 game phases × 256 envs, `train/total_games_played` 1024); 0 nonfinite metrics.
+- **W&B:** https://wandb.ai/spoon/kg-v3/runs/nur61v3a
+- **Spend:** about $0.56 at $4.18/h on pod `aki4vy8kpfldpa`.
+- **Gaps:** single seed at env seed 0 (rank seeds 0/1), shared with every other arm, so seed variance is unknown; no held-out evaluation (`rl.eval_replay_games=0`), so there is no win rate or bank margin against any opponent and self-play banks are not strength; not Codex-verified; the final checkpoint stays on the pod only; all 46 iterations lie inside the 1,000-step LR warm-up (LR at iteration 46 is 0.736 of peak), so nothing here was measured at peak LR.
+- **Frozen:** this file is covered by `ablation/SHA256SUMS`; later corrections go in a new file.

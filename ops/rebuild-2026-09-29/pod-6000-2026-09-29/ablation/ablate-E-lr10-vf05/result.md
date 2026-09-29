@@ -159,3 +159,14 @@ drives the drift):
 critic, informative advantages, rising banks) rather than the value loss's
 *weight* in the trunk (E: small, mixed gain with a worse critic) as the
 stronger lever at LR / 10.
+
+## Receipt close (2026-09-30)
+
+Closing summary for the frozen receipt; it restates facts recorded above and in `../final-report.md`.
+
+- **Outcome:** Execution PASS. Decline: banks 75,198 → 66,989 by game 4 (−8,209), within the unsized spread of B; critic worse (EV mean −0.10).
+- **Denominators:** 46 complete iterations on both ranks; 736 optimizer steps (16 per iteration); 753,664 global env steps (46 × 16,384); 1,024 completed games (4 game phases × 256 envs, `train/total_games_played` 1024); 0 nonfinite metrics.
+- **W&B:** https://wandb.ai/spoon/kg-v3/runs/hi2lqsrx
+- **Spend:** about $0.52 at $4.18/h on pod `aki4vy8kpfldpa`.
+- **Gaps:** single seed at env seed 0 (rank seeds 0/1), shared with every other arm, so seed variance is unknown; no held-out evaluation (`rl.eval_replay_games=0`), so there is no win rate or bank margin against any opponent and self-play banks are not strength; not Codex-verified; the final checkpoint stays on the pod only; all 46 iterations lie inside the 1,000-step LR warm-up (LR at iteration 46 is 0.736 of peak), so nothing here was measured at peak LR.
+- **Frozen:** this file is covered by `ablation/SHA256SUMS`; later corrections go in a new file.

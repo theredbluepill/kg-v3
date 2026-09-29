@@ -94,3 +94,14 @@ The DIAGNOSTIC-ONLY hook recorded these in-run values after each listed iteratio
 - **Which action families drove J's game-4 drop.** Not measured per family. Unit-kind KL grew faster than market-kind KL.
 - **Self-play banks are not strength.** No held-out evaluation ran (`rl.eval_replay_games=0`), so there is no win rate or bank margin against BC or any other opponent.
 - **The cause of the rollout-time difference from D** (6.06 s against 5.10 s) was not investigated.
+
+## Receipt close (2026-09-30)
+
+Closing summary for the frozen receipt; it restates facts recorded above and in `../final-report.md`.
+
+- **Outcome:** Execution PASS. Recipe J at env seed 1,000,000: banks 72,033, 74,644, 79,219, 67,204 (game 4 − game 1 −4,829); D's game-3 rise reproduced, its game-4 rise did not.
+- **Denominators:** 46 complete iterations on both ranks; 736 optimizer steps (16 per iteration); 753,664 global env steps (46 × 16,384); 1,024 completed games (4 game phases × 256 envs, `train/total_games_played` 1024); 0 nonfinite metrics.
+- **W&B:** https://wandb.ai/spoon/kg-v3/runs/pkz85wlw
+- **Spend:** about $0.60 (main run and dry run) at $4.18/h on pod `aki4vy8kpfldpa`.
+- **Gaps:** one replicate at one new seed (env seed 1,000,000), so two draws for this recipe, not a variance estimate; no held-out evaluation (`rl.eval_replay_games=0`), so there is no win rate or bank margin against any opponent and self-play banks are not strength; not Codex-verified; the final checkpoint stays on the pod only; all 46 iterations lie inside the 1,000-step LR warm-up (LR at iteration 46 is 0.736 of peak), so nothing here was measured at peak LR.
+- **Frozen:** this file is covered by `ablation/SHA256SUMS`; later corrections go in a new file.

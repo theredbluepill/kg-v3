@@ -216,3 +216,14 @@ warm-up suggested. The next discriminating arm is the BC critic head (D's
 load) with this stop-gradient. That would keep D's informative advantages
 while removing the critic's pull on the trunk, and test whether the two
 together hold or raise the banks.
+
+## Receipt close (2026-09-30)
+
+Closing summary for the frozen receipt; it restates facts recorded above and in `../final-report.md`.
+
+- **Outcome:** Execution PASS. Decline: banks 70,118 → 63,414 by game 4 (−6,704); critic weaker (EV mean 0.16).
+- **Denominators:** 46 complete iterations on both ranks; 736 optimizer steps (16 per iteration); 753,664 global env steps (46 × 16,384); 1,024 completed games (4 game phases × 256 envs, `train/total_games_played` 1024); 0 nonfinite metrics.
+- **W&B:** https://wandb.ai/spoon/kg-v3/runs/yz34n7i6
+- **Spend:** about $0.71 (main run and dry runs) at $4.18/h on pod `aki4vy8kpfldpa`.
+- **Gaps:** single seed at env seed 0 (rank seeds 0/1), shared with every other arm, so seed variance is unknown; no held-out evaluation (`rl.eval_replay_games=0`), so there is no win rate or bank margin against any opponent and self-play banks are not strength; not Codex-verified; the final checkpoint stays on the pod only; all 46 iterations lie inside the 1,000-step LR warm-up (LR at iteration 46 is 0.736 of peak), so nothing here was measured at peak LR.
+- **Frozen:** this file is covered by `ablation/SHA256SUMS`; later corrections go in a new file.

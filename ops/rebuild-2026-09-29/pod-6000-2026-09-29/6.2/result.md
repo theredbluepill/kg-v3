@@ -121,3 +121,14 @@ the 16 steps per iteration all held. This run cannot tell the other
 candidates apart. The next discriminating runs would vary the teacher KL
 coefficient, keep the BC critic head, or freeze the actor while the critic
 warms up. Each is a new run statement, and none has been started.
+
+## Receipt close (2026-09-30)
+
+Closing summary for the frozen receipt; it restates facts recorded above and in `../ablation/final-report.md`.
+
+- **Outcome:** Execution PASS; learning FAIL. The self-play economy collapsed: game-end banks 73,182, 54,960, 7,484 and 92 at games 1–4, near zero afterwards.
+- **Denominators:** 235 complete iterations on both ranks; 3,760 optimizer steps (16 per iteration); 3,850,240 global env steps (235 × 16,384); 5,120 completed games (20 × 256 envs); 0 nonfinite metrics.
+- **W&B:** https://wandb.ai/spoon/kg-v3/runs/7k07gp7c
+- **Spend:** about $1.98 (1,704 s wall at $4.18/h) at $4.18/h on pod `aki4vy8kpfldpa`.
+- **Gaps:** the collapse's cause is attributed in `../ablation/final-report.md`, not here; single seed at env seed 0 (rank seeds 0/1), shared with every other arm, so seed variance is unknown; no held-out evaluation (`rl.eval_replay_games=0`), so there is no win rate or bank margin against any opponent and self-play banks are not strength; not Codex-verified; the final checkpoint stays on the pod only; the LR warm-up ended at iteration 63, so iterations 1–62 ran below the peak LR.
+- **Frozen:** this file is covered by `ablation/SHA256SUMS`; later corrections go in a new file.

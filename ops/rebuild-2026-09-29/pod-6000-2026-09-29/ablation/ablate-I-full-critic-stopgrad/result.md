@@ -105,3 +105,14 @@ In-run records are taken after the listed iteration's last optimizer step (`pod-
 - **Strength.** Self-play banks are not strength. No held-out opponent ran (`rl.eval_replay_games=0`).
 
 **Consequence.** Across the control, H and I, the full step size collapses the economy by game 4 whatever the critic head or the critic's access to the trunk. At full LR the lever is the step size (B, D, E, F, G all survive at LR / 10), not the value gradient's path. The critic's trunk gradient remains a secondary contributor to drift at LR / 10 only (G).
+
+## Receipt close (2026-09-30)
+
+Closing summary for the frozen receipt; it restates facts recorded above and in `../final-report.md`.
+
+- **Outcome:** Execution PASS. Collapse as in the control: banks 70,870 → 103 by game 4.
+- **Denominators:** 46 complete iterations on both ranks; 736 optimizer steps (16 per iteration); 753,664 global env steps (46 × 16,384); 1,024 completed games (4 game phases × 256 envs, `train/total_games_played` 1024); 0 nonfinite metrics.
+- **W&B:** https://wandb.ai/spoon/kg-v3/runs/o9c5ji4v
+- **Spend:** about $0.51 (main run and dry run) at $4.18/h on pod `aki4vy8kpfldpa`.
+- **Gaps:** single seed at env seed 0 (rank seeds 0/1), shared with every other arm, so seed variance is unknown; no held-out evaluation (`rl.eval_replay_games=0`), so there is no win rate or bank margin against any opponent and self-play banks are not strength; not Codex-verified; the final checkpoint stays on the pod only; all 46 iterations lie inside the 1,000-step LR warm-up (LR at iteration 46 is 0.736 of peak), so nothing here was measured at peak LR.
+- **Frozen:** this file is covered by `ablation/SHA256SUMS`; later corrections go in a new file.

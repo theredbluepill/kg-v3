@@ -75,3 +75,14 @@ Gradient audit (before the first optimizer step of each iteration, rank 0): acto
 - Teacher KL rose faster than the control's early (1.24 against 0.56 at 13) while banks were higher, again showing teacher KL alone does not rank arms.
 - Self-play banks are not strength; `rl.eval_replay_games=0`, no win rate or margin against another opponent.
 - Which LR between LR / 10 and full LR keeps D's rise is not measured.
+
+## Receipt close (2026-09-30)
+
+Closing summary for the frozen receipt; it restates facts recorded above and in `../final-report.md`.
+
+- **Outcome:** Execution PASS (attempt 2; attempt 1 failed before GPU work on a duplicate override). Collapse as in the control: banks 76,738 → 74 by game 4.
+- **Denominators:** 46 complete iterations on both ranks; 736 optimizer steps (16 per iteration); 753,664 global env steps (46 × 16,384); 1,024 completed games (4 game phases × 256 envs, `train/total_games_played` 1024); 0 nonfinite metrics.
+- **W&B:** https://wandb.ai/spoon/kg-v3/runs/ksqdtvm0
+- **Spend:** about $0.47 at $4.18/h on pod `aki4vy8kpfldpa`.
+- **Gaps:** single seed at env seed 0 (rank seeds 0/1), shared with every other arm, so seed variance is unknown; no held-out evaluation (`rl.eval_replay_games=0`), so there is no win rate or bank margin against any opponent and self-play banks are not strength; not Codex-verified; the final checkpoint stays on the pod only; all 46 iterations lie inside the 1,000-step LR warm-up (LR at iteration 46 is 0.736 of peak), so nothing here was measured at peak LR.
+- **Frozen:** this file is covered by `ablation/SHA256SUMS`; later corrections go in a new file.
