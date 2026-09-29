@@ -1057,8 +1057,9 @@ Every constructor argument is required. `config` is validated game-envelope
 JSON text. `n_envs` and `native_threads` are positive; even one thread uses an
 explicit native Rayon pool. `hire_limit` is the action-spec capacity, never a
 cash estimate. Native has no `pin_memory` argument: Python owns and pins its
-Torch allocations in Task 1.5. This constructor refinement was approved in the
-Task 1.4 brief's Q1; the contract document's wording remains for Claude review.
+Torch allocations in Task 1.5. This constructor refinement was approved as Q1
+of the Task 1.4 brief review, and contract v4.2
+(`docs/kaggriculture-contract.md`) incorporates it.
 
 The following are the 35 required keyword-only NumPy output parameters, in ABI
 order. The first 29 use the observation table above. The six transition outputs

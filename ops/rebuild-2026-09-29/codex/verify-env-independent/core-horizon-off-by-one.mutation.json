@@ -1,0 +1,53 @@
+{
+  "name": "horizon-off-by-one",
+  "path": "src/kaggriculture/env.rs",
+  "test": "default_horizon_terminates_at_719",
+  "reason": "Predict autoreset one turn late against the real kernel horizon.",
+  "original_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "classification": "killed_assertion",
+  "mutant_sha256": "564b3bbdfb2a20a5512febeeecca7945198a3ac83ae130ba396f1ee6ee3ffcc7",
+  "diff": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/core-horizon-off-by-one.diff",
+  "command": [
+    "/Users/poonszesen/kg-v3-env/.venv/bin/python",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/bounded.py",
+    "--seconds",
+    "115",
+    "--name",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/core-horizon-off-by-one",
+    "--",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--lib",
+    "default_horizon_terminates_at_719",
+    "--",
+    "--test-threads=1"
+  ],
+  "runner_exit_status": 101,
+  "bounded_receipt": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/core-horizon-off-by-one.json",
+  "bounded": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "default_horizon_terminates_at_719",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 2.61287029099185,
+    "sampled_process_group_peak_rss_bytes": 557105152,
+    "stop_reason": null,
+    "time_limit_seconds": 115.0,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "restored_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "restored_byte_exact": true,
+  "primary_unchanged": true,
+  "initial_classification": "compile_error",
+  "classification_correction": "Actual test result takes precedence over Cargo error: test failed trailer; no command rerun."
+}

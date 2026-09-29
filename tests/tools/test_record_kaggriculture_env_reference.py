@@ -4,6 +4,7 @@ import copy
 import importlib.util
 import io
 import json
+import re
 import zipfile
 from pathlib import Path
 
@@ -125,12 +126,129 @@ def test_source_drift_rejected(field: str, tmp_path: Path) -> None:
         "dones",
     ],
 )
-def test_transition_and_seed_inventory_is_complete(field: str) -> None:
+def test_array_change_without_manifest_refresh_fails_hash_custody(field: str) -> None:
     manifest, arrays = example()
     arrays[field].flat[-1] += 1 if arrays[field].dtype != np.bool_ else False
     if field == "dones":
         arrays[field][0, 0, 0] = True
-    with pytest.raises(ValueError, match="custody"):
+    with pytest.raises(ValueError, match="array hash/shape custody differs"):
+        recorder.validate_arrays(manifest, arrays)
+
+
+def _repack_lengths(arrays: dict[str, np.ndarray]) -> None:
+    """Rebuild offsets and packed tokens so only the length range is invalid."""
+    offsets = np.concatenate(
+        (np.zeros(1, dtype=np.int64), np.cumsum(arrays["lengths"].reshape(-1)))
+    )
+    arrays["program_offsets"] = offsets
+    arrays["tokens"] = np.zeros((int(offsets[-1]), 12), dtype=np.int64)
+
+
+def _length_zero(arrays: dict[str, np.ndarray]) -> None:
+    arrays["lengths"][3, 5, 1] = 0
+    _repack_lengths(arrays)
+
+
+def _length_too_long(arrays: dict[str, np.ndarray]) -> None:
+    arrays["lengths"][3, 5, 1] = 253
+    _repack_lengths(arrays)
+
+
+def _offset_shift(arrays: dict[str, np.ndarray]) -> None:
+    arrays["program_offsets"][1] += 1
+
+
+def _extra_token_row(arrays: dict[str, np.ndarray]) -> None:
+    arrays["tokens"] = np.concatenate(
+        (arrays["tokens"], np.zeros((1, 12), dtype=np.int64))
+    )
+
+
+def _transition_index(arrays: dict[str, np.ndarray]) -> None:
+    arrays["transition_indices"][2, 10] += 1
+
+
+def _autoreset_seed(arrays: dict[str, np.ndarray]) -> None:
+    arrays["autoreset_seed"][4] += 1
+
+
+def _next_seed(arrays: dict[str, np.ndarray]) -> None:
+    arrays["next_seed"][4] += 1
+
+
+def _terminal_step(arrays: dict[str, np.ndarray]) -> None:
+    arrays["terminal_steps"][6] = 718
+
+
+def _early_done(arrays: dict[str, np.ndarray]) -> None:
+    arrays["dones"][0, 0, 0] = True
+
+
+def _missing_terminal_done(arrays: dict[str, np.ndarray]) -> None:
+    arrays["dones"][5, -1, 1] = False
+
+
+def _terminal_econ(arrays: dict[str, np.ndarray]) -> None:
+    # Counter 20 feeds no coverage field, so only terminal consistency breaks.
+    arrays["terminal_econ"][2, 0, 20] += 1
+
+
+def _terminal_bank(arrays: dict[str, np.ndarray]) -> None:
+    arrays["terminal_banks"][2, 1] += 1.0
+
+
+def _terminal_winner(arrays: dict[str, np.ndarray]) -> None:
+    arrays["terminal_winner"][9] = 0
+
+
+def _econ_continuity(arrays: dict[str, np.ndarray]) -> None:
+    arrays["econ_before"][1, 7, 0, 20] += 1
+
+
+def _bank_continuity(arrays: dict[str, np.ndarray]) -> None:
+    arrays["banks_before"][1, 7, 0] += 1.0
+
+
+def _nonfinite_reward(arrays: dict[str, np.ndarray]) -> None:
+    arrays["rewards"][0, 3, 1] = np.nan
+
+
+def _decreasing_econ(arrays: dict[str, np.ndarray]) -> None:
+    # Step 0 has no predecessor, so continuity holds while the counter drops.
+    arrays["econ_before"][0, 0, 0, 20] = 1
+
+
+@pytest.mark.parametrize(
+    ("corrupt", "error"),
+    [
+        (_length_zero, "program lengths outside 1..252"),
+        (_length_too_long, "program lengths outside 1..252"),
+        (_offset_shift, "program offset inventory differs"),
+        (_extra_token_row, "packed token inventory differs"),
+        (_transition_index, "transition index inventory differs"),
+        (_autoreset_seed, "seed consumption differs"),
+        (_next_seed, "seed consumption differs"),
+        (_terminal_step, "terminal steps differ"),
+        (_early_done, "terminal done schedule differs"),
+        (_missing_terminal_done, "terminal done schedule differs"),
+        (_terminal_econ, "terminal values differ"),
+        (_terminal_bank, "terminal values differ"),
+        (_terminal_winner, "terminal winner differs"),
+        (_econ_continuity, "economic transition continuity differs"),
+        (_bank_continuity, "bank transition continuity differs"),
+        (_nonfinite_reward, "nonfinite rewards"),
+        (_decreasing_econ, "economic counters decrease"),
+    ],
+    ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+)
+def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+    corrupt, error: str
+) -> None:
+    manifest, arrays = example()
+    recorder.validate_arrays(manifest, arrays)
+    corrupt(arrays)
+    manifest["arrays"] = recorder.metadata(arrays)
+    with pytest.raises(ValueError, match=re.escape(error)):
         recorder.validate_arrays(manifest, arrays)
 
 

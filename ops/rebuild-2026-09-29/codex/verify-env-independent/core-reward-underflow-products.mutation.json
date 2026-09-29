@@ -1,0 +1,53 @@
+{
+  "name": "reward-underflow-products",
+  "path": "src/kaggriculture/reward.rs",
+  "test": "reward_admission_predicate_cases",
+  "reason": "Admit coefficients whose binary64 event products both underflow.",
+  "original_sha256": "87acb8ade72d0a5d60e7442bd2c4e80f45c793f9adb2f1523cfed39654e3a7f4",
+  "classification": "killed_assertion",
+  "mutant_sha256": "7b2788b061820de43193455b7b94f876902a2bd713038556dd4dc5de5402e3a2",
+  "diff": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/core-reward-underflow-products.diff",
+  "command": [
+    "/Users/poonszesen/kg-v3-env/.venv/bin/python",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/bounded.py",
+    "--seconds",
+    "115",
+    "--name",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/core-reward-underflow-products",
+    "--",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--lib",
+    "reward_admission_predicate_cases",
+    "--",
+    "--test-threads=1"
+  ],
+  "runner_exit_status": 101,
+  "bounded_receipt": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/core-reward-underflow-products.json",
+  "bounded": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "reward_admission_predicate_cases",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 1.7872079159715213,
+    "sampled_process_group_peak_rss_bytes": 565936128,
+    "stop_reason": null,
+    "time_limit_seconds": 115.0,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "restored_sha256": "87acb8ade72d0a5d60e7442bd2c4e80f45c793f9adb2f1523cfed39654e3a7f4",
+  "restored_byte_exact": true,
+  "primary_unchanged": true,
+  "initial_classification": "compile_error",
+  "classification_correction": "Actual test result takes precedence over Cargo error: test failed trailer; no command rerun."
+}

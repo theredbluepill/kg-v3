@@ -1,5 +1,22 @@
 # Change log
 
+## 2026-09-29 — Test each recorder inventory guard and close the stale constructor status (Codex verify r1)
+
+Codex's independent Task 1.4 verification approved with two P3 edits and found
+no production defect.
+
+- **Recorder tests.** The old inventory tests failed on the array hash before
+  reaching the semantic guards, so seven guards could be removed unnoticed. A
+  separate test keeps the hash check. Seventeen coherent probes refresh the
+  array metadata and assert the exact error. Removing any of the 14 guards now
+  fails a named test.
+- **API doc.** `docs/rl-api-specs.md` now says contract v4.2 incorporates the
+  approved Q1 constructor refinement.
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+records the evidence. Receipts: `ops/rebuild-2026-09-29/1.4/verify-r1-fixes/`
+and `ops/rebuild-2026-09-29/codex/verify-env-independent/`.
+
 ## 2026-09-29 — Qualify the Task 1.4 native env against the reference oracle (Claude review)
 
 Claude reviewed Codex's Task 1.4 implementation (`8d98ea8`, `9dc2d02`) against

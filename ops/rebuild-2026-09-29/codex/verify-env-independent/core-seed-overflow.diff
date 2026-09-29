@@ -1,0 +1,11 @@
+--- original/src/kaggriculture/env.rs
++++ mutant/src/kaggriculture/env.rs
+@@ -46,7 +46,7 @@
+         for (env, selected) in selected.iter().enumerate() {
+             seeds.push(if *selected {
+                 let seed = next;
+-                next = next.checked_add(self.stride).ok_or_else(|| {
++                next = Some(next.wrapping_add(self.stride)).ok_or_else(|| {
+                     EnvError::Overflow(format!("env={env} seed counter overflow"))
+                 })?;
+                 Some(seed)
