@@ -1,5 +1,18 @@
 # Change log
 
+## 2026-09-29 — Task 1.5 Stage 2: adapter, codec and tables on the real native binding
+
+Codex's Stage 2 (`d0d65f7`) runs the Stage 1 adapter, factory and codec against
+Task 1.4's binding and removes every `needs Task 1.4 binding` skip. It makes the
+strict `native_grammar_tables` the model default, builds the Kaggriculture
+evaluation env through `create_env`, and keeps `run_ppo`'s stop, which now names
+Task 3.1's missing rollout storage. The reward oracle's Stage 1 overflow
+rescaling was wrong against live native rewards and is removed. Claude's review
+killed four restored mutants, and full `just prepare` passes on the Mac. The
+[[references/native-game-semantics-use-v3-owned-buffers|native boundary Reference]]
+and [[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]]
+record the evidence. The pod DMA test and the two-rank smoke remain.
+
 ## 2026-09-29 — Merge Task 1.4 native environment into the Task 1.5 adapter branch
 
 `kg/rebuild-env` (`b6b722f`, Codex-approved) merges into `kg/rebuild-adapter`.

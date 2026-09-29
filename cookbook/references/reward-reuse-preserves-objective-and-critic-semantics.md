@@ -1,14 +1,38 @@
 ---
 type: "Reference"
 title: "Reward reuse preserves objective and critic semantics"
-description: "Task 1.5 Stage 1 makes six reward coefficients explicit and checks binary64 admission, independent capped-reward math and f32 rounding; native reward agreement and trainer/pod integration remain pending, while older recipes stay historical."
+description: "Task 1.5 makes six reward coefficients explicit, and native admission now agrees with Python on all eleven binary64 cases. The independent f64/f32 oracle matches the recorded 11,504-transition native fixture and three live extreme-coefficient games. Stage 2 corrected the oracle to native order at overflowing inner sums. Trainer and pod integration remain pending; older recipes stay historical."
 tags: ["kaggriculture-v3", "adaptation", "rewards"]
 status: "verified-scoped"
-generated: {"by": "openai/codex", "at": "2026-09-29"}
-sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/results.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank.yaml"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_4rank.yaml"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/plan.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/v3-port-checks.md"}, {"resource": "user-directive:2026-09-28:reuse-rewards-not-v2-model"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/ops/myolie-dagger-2026-09-22/selfplay.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/ffi.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/rewards.py"}, {"resource": "repository:python/owl/train/config.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_codec.py"}, {"resource": "repository:python/owl/kaggriculture/rewards.py"}, {"resource": "repository:python/owl/kaggriculture/config.py"}, {"resource": "repository:tests/kaggriculture/test_rewards.py"}, {"resource": "repository:tests/kaggriculture/test_configs.py"}, {"resource": "repository:configs/kaggriculture.yaml"}, {"resource": "repository:configs/kaggriculture_2rank.yaml"}, {"resource": "repository:configs/kaggriculture_4rank.yaml"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.4.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.5.md"}, {"resource": "repository:ops/rebuild-2026-09-29/stage1-adapter/results.md"}]
+generated: {"by": "openai/codex; revised by anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/results.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank.yaml"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_4rank.yaml"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/plan.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/v3-port-checks.md"}, {"resource": "user-directive:2026-09-28:reuse-rewards-not-v2-model"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/ops/myolie-dagger-2026-09-22/selfplay.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/ffi.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/rewards.py"}, {"resource": "repository:python/owl/train/config.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_codec.py"}, {"resource": "repository:python/owl/kaggriculture/rewards.py"}, {"resource": "repository:python/owl/kaggriculture/config.py"}, {"resource": "repository:tests/kaggriculture/test_rewards.py"}, {"resource": "repository:tests/kaggriculture/test_configs.py"}, {"resource": "repository:configs/kaggriculture.yaml"}, {"resource": "repository:configs/kaggriculture_2rank.yaml"}, {"resource": "repository:configs/kaggriculture_4rank.yaml"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.4.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.5.md"}, {"resource": "repository:ops/rebuild-2026-09-29/stage1-adapter/results.md"}, {"resource": "repository:src/kaggriculture/reward.rs"}, {"resource": "repository:src/kaggriculture/env_tests.rs"}, {"resource": "repository:tests/kaggriculture/test_native_env.py"}, {"resource": "repository:tests/fixtures/kaggriculture_env_reference_v1.json"}, {"resource": "repository:ops/rebuild-2026-09-29/stage2-adapter/final-report.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/stage2-adapter/claude-review/mutations.txt"}]
 ---
 
 # Reward reuse preserves objective and critic semantics
+
+## Task 1.5 Stage 2 — native agreement
+
+With Task 1.4 merged, `test_python_and_native_reward_admission_agree` runs all
+ten shared cases plus the strengthening case against the real
+`rs.KaggricultureEnv` constructor, and the Rust admission table in
+`src/kaggriculture/env_tests.rs` and Task 1.4's native Python table carry the
+same strengthening case. In Claude's review, Rust admission on raw event
+weights, or without the ineffective-cap check, each failed the native agreement
+test through the rebuilt extension. The oracle matches the recorded 16-game
+native fixture (11,504 transitions, custody-validated loader, unchanged
+one-f32-ULP allowance). Three live 96-transition games with extreme
+coefficients match native rewards exactly.
+
+One Stage 1 claim was wrong. The oracle rescaled W into the event weights when
+the inner death sum overflowed, to avoid "premature saturation". The live tiny-W
+game showed native rewards of ±.25 at step 71 against the oracle's ±1e-12:
+native binary64 order keeps the overflowed sum infinite and saturates at the
+cap. The rescaling is removed and the synthetic expectation corrected; native
+production rewards and admission did not change. Changed paths:
+`python/owl/kaggriculture/rewards.py`, `tests/kaggriculture/test_rewards.py`,
+`test_native_env.py`, `src/kaggriculture/env_tests.rs`. Full `just prepare`
+passes (Python 2,224 passed, 6 hardware skips). Trainer use of these rewards
+waits for Task 3.1.
 
 ## Task 1.5 Stage 1 — explicit configuration and independent oracle
 
@@ -35,8 +59,9 @@ suggested. The reviewed ABI is the implemented predicate.
 The independent float64 functions evaluate capped cumulative S0/D1/I2 penalties,
 rival-minus-own deltas and scaled terminal bank sign, rejecting malformed shapes,
 nonfinite banks and decreasing counters. Counters 3..31 carry no hidden weights.
-Disabled components short-circuit; safe overflow handling avoids 0*inf and
-premature saturation when tiny W rescales an overflowing inner sum. The transition
+Disabled components short-circuit, avoiding 0*inf. An overflowing inner death
+sum stays infinite and saturates at the cap even for tiny W, as native binary64
+order does (Stage 2 correction below). The transition
 oracle models economic f64→f32, terminal addition after promotion to f64, and
 final f32 rounding. A literal adjacent-f32 discriminator checks that order.
 Complete synthetic 719-transition paths cover both penalized seats, both winners,
@@ -63,9 +88,8 @@ with the review case they pass 66 with 12 binding skips.
 Full Python preparation passed 1,705 tests with 22 skips. Receipts retain actual
 commands, exits and intermediate lint failures, not inherited score evidence.
 
-Future consequence: Stage 2 must execute paired native admission and the native
-fixture oracle, confirm fixture custody/schema and extreme coefficient behavior,
-and preserve the native reward authority. Task 3.1 still owns runtime factory,
+Future consequence: Stage 2 (above) executed the native admission and fixture
+comparisons. Task 3.1 still owns runtime factory,
 action transport and buffer-retention integration; Tasks 3.2/3.3 already supply
 semantic guards but do not prove native execution. CUDA/pinned DMA and functional
 pod smoke remain pending. This stage selects no new recipe or performance/learning

@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Native game semantics use v3-owned buffers"
-description: "Task 1.4 adds the transactional native lifecycle, checked seed streams, rewards and codec/table bindings (16-game TrainingBatch oracle bit-exact, release overflow proof on the pod); Task 1.5 Stage 1 adds the typed Python adapter, one-buffer entry fence, config/factory and codec seam with CPU contracts, while Stage 2 native wiring, Task 3.1 integration and the pod DMA fence remain pending."
+description: "Task 1.4 adds the transactional native lifecycle, checked seed streams, rewards and codec/table bindings (16-game TrainingBatch oracle bit-exact, release overflow proof on the pod). Task 1.5 wires the typed adapter, one-buffer entry fence, factory, codec and strict native grammar tables to that binding with no missing-binding skip left; full just prepare passes. Task 3.1 rollout storage, the pod DMA fence test and the early two-rank smoke remain pending."
 tags: ["kaggriculture-v3", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex; revised by anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -106,9 +106,65 @@ sources:
   - resource: "repository:tests/kaggriculture/test_codec.py"
   - resource: "repository:tests/kaggriculture/test_game.py"
   - resource: "repository:ops/rebuild-2026-09-29/stage1-adapter/results.md"
+  - resource: "repository:python/owl/model/kaggriculture.py"
+  - resource: "repository:scripts/run_ppo.py"
+  - resource: "repository:tests/kaggriculture/test_native_tables.py"
+  - resource: "repository:tests/kaggriculture/test_gpu_grammar.py"
+  - resource: "repository:tests/scripts/test_run_ppo.py"
+  - resource: "repository:ops/rebuild-2026-09-29/stage2-adapter/final-report.txt"
+  - resource: "repository:ops/rebuild-2026-09-29/stage2-adapter/claude-review/mutations.txt"
+  - resource: "repository:ops/rebuild-2026-09-29/stage2-adapter/claude-review/just-prepare.log"
 ---
 
 # Native game semantics use v3-owned buffers
+
+## Task 1.5 Stage 2 — adapter on the real binding
+
+After merging Task 1.4 (`b6b722f`), Stage 2 drives the Stage 1 adapter, factory
+and codec through the real `owl.rs.KaggricultureEnv` and codec/table functions.
+The adapter code needed no runtime change. Real-binding tests now cover
+construction observe, reset, codec-encoded steps, a short terminal step with
+autoreset, terminal metrics, snapshots and seed state, identity-stable 35-buffer
+outputs, selected-row truncation that leaves unselected rows and all six
+transition tensors byte-identical, and an invalid action that leaves every
+buffer byte-identical. The G corpus round-trips through `codec.py` (321 accepted,
+43 rejected, rejected output untouched). World-2 factory streams consume 66
+exact, disjoint seeds per rank. No test carries the `needs Task 1.4 binding`
+skip any more; the pod DMA test keeps only its CUDA skip and now builds its
+actions with the native codec.
+
+`native_grammar_tables(device)` checks the constants (version 1, exact names and
+widths) before requesting the tables, then requires exactly eight C-contiguous
+bool arrays of `TABLE_SHAPES`, with no fallback. It is the model's default, loaded
+once per construction; explicit injection bypasses it and `expected_grammar_tables`
+is only a test oracle. The Kaggriculture evaluation env comes from `create_env`
+with `_evaluation_seed`, rank 0 and world 1; repeated evaluations reproduce their
+worlds and banks. `run_ppo` still stops for Kaggriculture before any allocation,
+now naming Task 3.1's missing rollout storage and action mapping, and policy
+evaluation stops before the Orbit-only mapper.
+
+Changed-path inventory: `python/owl/kaggriculture/gpu_grammar.py`,
+`rewards.py` (see the [[reward-reuse-preserves-objective-and-critic-semantics|reward Reference]]),
+`python/owl/model/kaggriculture.py`, `scripts/run_ppo.py`,
+`src/kaggriculture/env_tests.rs`, `tests/kaggriculture/test_env.py`,
+`test_env_cuda_fence.py`, `test_codec.py`, `test_game.py`, `test_rewards.py`,
+`test_gpu_grammar.py`, `test_native_env.py`, new `test_native_tables.py`,
+`tests/scripts/test_run_ppo.py` (Kaggriculture tests only), `README.md`,
+`docs/rl-api-specs.md`, `docs/model-architecture.md`, the Stage 2 sections of
+brief 1.5 and `ops/rebuild-2026-09-29/stage2-adapter/`.
+
+Checks: Claude's review restored four killed mutants: the fence without its
+pinned-buffer term, the model default reverted to the expected tables, and Rust
+admission on raw weights or without the ineffective-cap check (both through the
+rebuilt extension). Full `just prepare` on the Mac exits 0: Rust 274 passed with 5
+ignored, engine 69, Python 2,224 passed with 6 CUDA/backend skips, 1.78 GB peak.
+Codex's own runs used a 960 MiB watchdog that stopped the monolithic command;
+its bounded batches account for the same 2,230 cases.
+
+Remaining gaps: Task 3.1 rollout storage, action transport and policy-evaluation
+mapping; the pod DMA test with its fence-removal control; the pinned-observation
+tests; and the early two-rank smoke. Nothing here claims GPU, trainer, learning
+or throughput behavior.
 
 ## Task 1.5 Stage 1 — Python boundary before the Task 1.4 merge
 
@@ -164,16 +220,9 @@ and codec tests six with one. Import-red and subsequent green logs retain actual
 failures, including corrected fixture/test-helper mistakes. The receipt names
 commands, exits and all inherited versus new skips.
 
-Future consequence: Task 3.1 can consume the typed boundary after Task 1.4 and
-Stage 2 qualification. Stage 2 must remove the explicit binding skips and test
-real admission, reward fixture/schema, codec replay, seed consumption, live
-seat actions and rollback. Native table loading and the model's stand-in remain
-unchanged here. The pod DMA test is written with all 35 destination tensors
-allocated before the delayed copies and includes fence-removal mutation; it has
-not run. Native transactions, CUDA/pinned behavior, trainer integration and
-complete-work throughput remain unqualified. No Rust/engine bytes, runner,
-trainer, model, dependencies or Isaiah tests changed, and no build, training,
-GPU or performance run occurred.
+Stage 2 (above) closed the binding-dependent items this stage deferred. At
+Stage 1 no Rust/engine bytes, runner, trainer, model, dependencies or Isaiah tests
+changed, and no build, training, GPU or performance run occurred.
 
 ## Native lifecycle and bindings — current rebuild
 
