@@ -1,0 +1,19 @@
+Tue Sep 29 06:25:46 UTC 2026
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0 -- /workspace/kg-v3-rebuild/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/kg-v3-rebuild
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 7 items
+
+tests/owl/model/test_attn.py::test_flash_attention_backend_selection[cuda-dtype0-True-True] PASSED [ 14%]
+tests/owl/model/test_attn.py::test_flash_attention_backend_selection[cuda-dtype1-True-True] PASSED [ 28%]
+tests/owl/model/test_attn.py::test_flash_attention_backend_selection[cuda-dtype2-True-False] PASSED [ 42%]
+tests/owl/model/test_attn.py::test_flash_attention_backend_selection[cuda-dtype3-False-False] PASSED [ 57%]
+tests/owl/model/test_attn.py::test_flash_attention_backend_selection[cpu-dtype4-True-False] PASSED [ 71%]
+tests/owl/model/test_attn.py::test_varlen_attention_flash_backend PASSED [ 85%]
+tests/owl/model/test_attn.py::test_varlen_attention_matches_torch_sdpa_per_sequence PASSED [100%]
+
+============================== 7 passed in 1.82s ===============================
+exit=0

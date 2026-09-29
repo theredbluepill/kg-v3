@@ -140,3 +140,50 @@ Where our workloads sit, as rows × 709 tokens against L = 4,194,304 (2³¹/512)
 - flash-attn: absent on the pod. Install and verify it in Phase 6 (above).
 - bmm, persistent TMA, decompose-K, static compiles, and other torch/Triton versions: unchecked.
 - **For Task 2.3:** the comment at `python/owl/model/kaggriculture.py:53` should distinguish the observed overflow *above* the bound from the conservative rejection *at* equality. It is part of the docstring correction in brief §9 item 1 and out of scope for this evidence commit.
+
+## Phase 6.0 — flash-attn on the pod (2026-09-29, 06:16–06:27Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+
+Run statement: `run-statements/pod-flash-attn-setup.md`. Receipts: `flash-attn-setup-2026-09-29/` (README has identities and hashes). Wall ≈ 11 min of the 90-min budget (≈ $0.8 at $4.18/h); no new billable resource; pod left running and idle.
+
+**Outcome: the blocker is cleared for the forward path.** A separate v3 environment, `/workspace/kg-v3-rebuild` (`kg/isaiah-gap-closure` @ `69397da`, via git bundle; `.venv` from `uv sync --frozen --group dev --extra flash-attn`), has torch 2.9.0+cu128, triton 3.5.0 and flash-attn 2.8.3, and the model's forced packed FlashAttention path runs on sm_120.
+- **Install:** the extra's sdist build (`FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE`, no build isolation) downloaded the prebuilt release wheel `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` in 7.5 s. No compile, so no `MAX_JOBS`/arch settings were needed. Wheel sha256 `4e2f9e39…0810` equals the GitHub release digest. The installed `flash_attn_2_cuda` `.so` (sha256 `8ca052bf…5807`) is byte-identical to the wheel's.
+- **sm_120 support:** flash-attn 2.8.3's `setup.py` includes `120` in its default arch list (CUDA ≥ 12.8). The installed `.so` carries 72 sm_120 cubins, alongside sm_80/90/100 (`cuobjdump --list-elf`). Not a blocker.
+- **Rust extension:** `maturin develop` (justfile `build`, dev profile) → `owl.rs` sha256 `35239d1b…93b8`. `owl` and `owl.model.kaggriculture` import from the new checkout, and `flash_attn_available()` is True.
+
+**(a) Kernel vs SDPA.** `flash_attn_varlen_func` ran on BF16 packed q/k/v with 8 heads × head_dim 32, 256 sequences of 214–709 tokens, 173,518 tokens in total. Against per-sequence fp32 SDPA:
+- max |Δ| is 0.00359 and mean |Δ| is 1.07e-4. BF16 SDPA vs fp32 SDPA gives the same max |Δ| (0.00359, mean 1.06e-4), so the flash error equals BF16 output rounding.
+- The flash output differs from BF16 SDPA by at most 0.0039 (one BF16 ulp at |ref| ≈ 1.38).
+- No element falls outside `0.02 + 0.02|ref|`. The profiler records `flash::flash_fwd_kernel<…bfloat16…>`.
+
+**(b) Model trunk.** Setup: preset `configs/model/kaggriculture.yaml` (width 256, depth 8, 8 heads, `force_flash_attn: true`), fp32 params, `autocast(bfloat16)`, TF32 via `configure_torch()`. Batch: `make_obs` with 128 envs = 256 rows, 173,108 present tokens, lengths 221–709, padded length 709.
+
+| Comparison (present tokens, 44.3M elements) | max \|Δ\| | mean \|Δ\| | outside tol |
+|---|---|---|---|
+| compiled flash vs eager flash | 0.0872 | 0.00542 | 0.018 % |
+| eager flash vs eager padded SDPA | 0.0805 | 0.00498 | 0.021 % |
+| compiled flash vs eager padded SDPA | 0.0775 | 0.00546 | 0.019 % |
+| compiled vs eager, second shape (64 rows) | 0.0872 | 0.00542 | 0.017 % |
+
+Output magnitudes reach about 4.0, where one BF16 ulp is 0.03. All three paths differ from one another by the same amount, which fits BF16 accumulation over 8 layers rather than a path-specific error. All outputs are finite, masked positions are exactly zero, and repeated compiled calls agree exactly (Δ = 0).
+
+Evidence that the flash path ran:
+- `use_flash_attn(x)` is True with x in bfloat16.
+- `pack_sequence` was called exactly once per forward, as (173,108 tokens, max_seqlen 709), in both eager and compiled.
+- In eager mode, the Python-level `varlen_attention` ran 8 times, one per block.
+- The CUDA profiler shows `flash::flash_fwd_kernel` in both the eager and the compiled forward. The compiled forward also shows 12 Triton kernels.
+- Compile: `compile_transformer_trunk("max-autotune-no-cudagraphs")`, dynamic. The first call took 20.6 s, including autotune. Autotune picked Triton templates for the 173,108-row mms.
+- Control: the padded path (dispatch patched off) made no pack calls and launched no flash kernel. It used PyTorch's mem-efficient `fmha_cutlassF_bf16…sm80` kernel. The JSON field `eager_padded_use_flash_attn_x: true` reports the unpatched `owl.model.attn.use_flash_attn`, not the patched dispatch.
+- Peak allocated memory was 1.72 GiB.
+
+**(c) Tests.** On the pod, `uv run --frozen pytest tests/owl/model/test_attn.py` passed 7 of 7 with 0 skipped. That includes `test_varlen_attention_flash_backend` and `test_varlen_attention_matches_torch_sdpa_per_sequence`, which skip on the Mac. `tests/kaggriculture` passed 161 of 161.
+
+**Limits and handoffs:**
+- **Forward only.** The flash backward kernels, and compiled backward through the packed trunk, were not exercised. The actor heads don't exist yet (Task 2.3), and the model is not yet wired into `run_ppo`. So 6.1 still has to confirm flash in rollout, PPO update and evaluation, with backward included.
+- The timings above are single profiled forwards. They are not throughput evidence.
+- The Rust extension is a dev-profile (unoptimized) build. Build `--release` before any env-throughput measurement.
+- **Custody:** the torch 2.9 wheel is a release asset added on 2025-12-17, after the v2.8.3 tag. `setup.py` resolves it by URL, and `uv.lock` pins only the sdist hash. Record the asset digest above. A rebuilt pod that resolves a different asset would change the kernel without changing the lock.
+- **Pod state:**
+  - The new venv and cache take about 3 GB; disk is at 20 GB free (62 %).
+  - `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` also holds the 243 MB wheel re-download and a 55 MB Inductor cache.
+  - `/workspace/transfer-flash-attn-2026-09-29/v3.bundle` is kept for custody.
+  - `/workspace/kg-v3`, its `.venv`, and `/workspace/gemm-limits-src-1ddc71d` were not modified.
