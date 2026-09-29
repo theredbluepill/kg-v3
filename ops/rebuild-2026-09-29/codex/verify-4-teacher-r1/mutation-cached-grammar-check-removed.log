@@ -1,0 +1,32 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature ____
+
+    def test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature() -> None:
+        student = _tiny().eval()
+        with torch.no_grad():
+            student.actor.heads["market_kind"].out.bias[HIRE] = -30.0
+        obs = make_obs(envs=2, own_actors=(2, 3), rival_actors=(4, 1), order_limit=6)
+        actions = _sampled(student, obs)
+        assert int((actions.tokens[..., 7] == HIRE).sum()) == 0
+        matched = _tiny(seed=6).eval()
+        flipped = gg.expected_grammar_tables()
+        flipped.market_kind[HIRE] = False
+        no_hire = km.KaggricultureTransformer(
+            matched.config,
+            obs_spec=kt.KaggricultureObsConfig(),
+            action_spec=kt.KaggricultureActionConfig(),
+            grammar_tables=flipped,
+        ).eval()
+        no_hire.load_state_dict(matched.state_dict())
+        # Replay admission passes under both grammars.
+        foreign = no_hire.compute_teacher_distillation_targets(obs, actions)
+        reference = matched.compute_teacher_distillation_targets(obs, actions)
+>       with pytest.raises(ValueError, match="grammar"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_teacher.py:1154: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature
+1 failed in 0.36s

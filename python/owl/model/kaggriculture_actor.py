@@ -29,9 +29,10 @@ from owl.kaggriculture.gpu_grammar import (
     MARKET_HIRE,
     MARKET_NONE,
     GrammarTables,
+    grammar_tables_digest,
     validate_grammar_tables,
 )
-from owl.model.actor.common import OutputProjectionMLP
+from owl.model.actor.common import OutputProjectionMLP, categorical_kl_from_logits
 
 SLOT = {name: index for index, name in enumerate(kt.SLOT_NAMES)}
 UNIT_POLICY_SLOTS = (1, 3, 4, 5, 6)
@@ -57,6 +58,13 @@ class GrammarPolicyResult:
 
     ``valid[:, g]`` is flag group ``FLAG_GROUPS[g]`` per row; sampling is valid
     by construction and reports all-true flags.
+
+    Teacher distillation (Phase 4) fields, ``None`` unless requested:
+    ``slot_logits[k]`` holds each policy slot's density-dtype logits under the
+    replay-conditioned mask, filled with ``finfo(dtype).min`` outside it
+    (``[B, 241, W_k]`` unit slots, ``[B, 11, W_k]`` market slots); ``kl`` is
+    the per-slot ``KL(teacher || student)`` weighted by the same liveness as
+    ``log_probs`` and placed in the same ``[B, 252, 12]`` frame layout.
     """
 
     tokens: torch.Tensor  # int64 [B, 252, 12]
@@ -64,11 +72,33 @@ class GrammarPolicyResult:
     log_probs: torch.Tensor  # float [B, 252, 12]
     entropies: torch.Tensor  # float [B, 252, 12]
     valid: torch.Tensor  # bool [B, 3]
+    slot_logits: dict[int, torch.Tensor] | None = None
+    kl: torch.Tensor | None = None
 
 
 def _density_dtype(logits: torch.Tensor) -> torch.Tensor:
     """FP32 densities (FP64 kept for exactness tests)."""
     return logits if logits.dtype == torch.float64 else logits.float()
+
+
+def _min_filled(logits: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    """Isaiah's target-logit masking: the dtype minimum outside the support.
+
+    Finite in FP32 and FP64, so ``softmax`` gives exactly 0 there without
+    forming ``-inf`` (the density path keeps its ``-inf`` masking).
+    """
+    return logits.masked_fill(~mask, torch.finfo(logits.dtype).min)
+
+
+def _slot_kl(
+    teacher_logits: torch.Tensor,
+    student_logits: torch.Tensor,
+    mask: torch.Tensor,
+    weight: torch.Tensor,
+) -> torch.Tensor:
+    """Liveness-weighted ``KL(teacher || student)`` in the student's dtype."""
+    kl = categorical_kl_from_logits(teacher_logits, student_logits, mask)
+    return kl.to(dtype=student_logits.dtype) * weight
 
 
 def gumbel_perturb(masked_logits: torch.Tensor) -> torch.Tensor:
@@ -172,6 +202,9 @@ class KaggricultureGrammarActor(nn.Module):
             }
         )
         validate_grammar_tables(tables)
+        # Host identity of the tables, taken once: the buffers are never
+        # reassigned, and teacher targets compare it without a device sync.
+        self.tables_digest = grammar_tables_digest(tables)
         # Non-persistent: tables come from the grammar, never from checkpoints.
         for name, table in tables.as_dict().items():
             self.register_buffer(f"table_{name}", table.clone(), persistent=False)
@@ -238,11 +271,18 @@ class KaggricultureGrammarActor(nn.Module):
         supplied_tokens: torch.Tensor | None,
         supplied_lengths: torch.Tensor | None,
         deterministic: bool,
+        teacher_logits: dict[int, torch.Tensor] | None = None,
+        collect_logits: bool = False,
     ) -> GrammarPolicyResult:
         """Sample (``supplied_tokens is None``) or replay one row chunk.
 
         ``unit_input [B, 241, D]`` and ``market_input [B, D]`` are the outputs
         of the model's ``actor_input_proj``. Tensor-only; no host sync.
+
+        ``collect_logits`` returns every policy slot's masked logits (the
+        teacher side); ``teacher_logits`` (keyed by ``POLICY_SLOTS``, row
+        layout of this chunk) adds the per-slot KL against them, evaluated at
+        the same replayed prefix (the student side).
         """
         rows, actors, _ = unit_input.shape
         device = unit_input.device
@@ -264,6 +304,9 @@ class KaggricultureGrammarActor(nn.Module):
         unit_choice: dict[int, torch.Tensor] = {}
         unit_logp: dict[int, torch.Tensor] = {}
         unit_entropy: dict[int, torch.Tensor] = {}
+        collected: dict[int, torch.Tensor] = {}
+        unit_kl: dict[int, torch.Tensor] = {}
+        market_kl: dict[int, torch.Tensor] = {}
         delta_unit_kind = _delta0(tables.unit_kind.shape[0], device)
         for stage, slot in enumerate(UNIT_POLICY_SLOTS):
             if slot == SLOT["unit_kind"]:
@@ -293,6 +336,14 @@ class KaggricultureGrammarActor(nn.Module):
                 choice = masked.argmax(-1) if deterministic else gumbel_argmax(masked)
                 admitted = mask.gather(-1, choice.unsqueeze(-1)).squeeze(-1)
             logp, entropy, _ = _masked_density(logits, mask, choice)
+            if collect_logits or teacher_logits is not None:
+                floored = _min_filled(logits, mask)
+                if collect_logits:
+                    collected[slot] = floored
+                if teacher_logits is not None:
+                    unit_kl[slot] = _slot_kl(
+                        teacher_logits[slot], floored, mask, unit_live
+                    )
             support = support & admitted.all(dim=-1)
             unit_choice[slot] = choice
             unit_logp[slot] = logp * unit_live
@@ -339,6 +390,16 @@ class KaggricultureGrammarActor(nn.Module):
             kind == MARKET_NONE, positions[None, :], MARKET_POSITIONS
         ).amin(dim=-1)
         market_live = live[:, None] & (positions[None, :] <= stop_position[:, None])
+        if collect_logits or teacher_logits is not None:
+            # Logits are computed once per position: the final mask is the one
+            # the density uses.
+            floored = _min_filled(kind_logits, kind_mask)
+            if collect_logits:
+                collected[SLOT["market_kind"]] = floored
+            if teacher_logits is not None:
+                market_kl[SLOT["market_kind"]] = _slot_kl(
+                    teacher_logits[SLOT["market_kind"]], floored, kind_mask, market_live
+                )
         support = support & ((kind_admitted & kind_in_range) | ~market_live).all(dim=-1)
         market_choice = {SLOT["market_kind"]: kind}
         market_logp = {SLOT["market_kind"]: kind_logp * market_live}
@@ -361,6 +422,14 @@ class KaggricultureGrammarActor(nn.Module):
                 choice = masked.argmax(-1) if deterministic else gumbel_argmax(masked)
                 admitted = mask.gather(-1, choice.unsqueeze(-1)).squeeze(-1)
             logp, entropy, _ = _masked_density(logits, mask, choice)
+            if collect_logits or teacher_logits is not None:
+                floored = _min_filled(logits, mask)
+                if collect_logits:
+                    collected[slot] = floored
+                if teacher_logits is not None:
+                    market_kl[slot] = _slot_kl(
+                        teacher_logits[slot], floored, mask, market_live
+                    )
             support = support & (admitted | ~market_live).all(dim=-1)
             market_choice[slot] = choice
             market_logp[slot] = logp * market_live
@@ -428,6 +497,8 @@ class KaggricultureGrammarActor(nn.Module):
             log_probs=log_probs,
             entropies=entropies,
             valid=valid,
+            slot_logits=collected if collect_logits else None,
+            kl=place(unit_kl, market_kl) if teacher_logits is not None else None,
         )
 
 

@@ -1,5 +1,23 @@
 # Change log
 
+## 2026-09-29 — Merge Phase 4 teacher distillation onto the Task 1.3 integration
+
+Phase 4 (Codex APPROVE at `8fde43c`) forked from Task 3.1 at `4cac1a1`, before
+Tasks 3.2–3.4, the cuBLAS-only compile claim and Task 1.3 merged. Four files
+conflicted. `scripts/run_ppo.py` keeps both imports (`terminal_seat_banks` and
+`KaggricultureObsConfig`); `docs/rl-api-specs.md` places Phase 4's Teacher
+targets bullet before the integration's Environment line and native sections;
+this log and the references index keep both sides, integration first. The
+auto-merged teacher paths all encode through `_run_trunk`, so the cuBLAS-only
+check covers them. An unskipped probe (`ops/rebuild-2026-09-29/merge-teacher/skip-probe.log`)
+shows the four skipped trainer and run_ppo tests still fail, on the trainer's
+missing `KaggricultureActionMask` mapping and run_ppo's no-env stop. Their skip
+reasons now name those seams instead of the merged configs branch, and the
+[[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]]
+records it. No Rust changed; `docs/rules-parity-coverage.md` records the merged
+counts. Full `just prepare`: engine 69, root Rust 254 with four ignored, Python
+1,673 passed with 11 skips; receipt `ops/rebuild-2026-09-29/merge-teacher/prepare.log`.
+
 ## 2026-09-29 — Capture every engine build input in observation-oracle custody
 
 Codex verification r1 of the Task 1.3 merge (`e197528`, REJECT) found that the
@@ -293,6 +311,23 @@ Codex rejected Task 3.4 (`ops/rebuild-2026-09-29/codex/verify-3.4-r1.md`). The f
 ## 2026-09-29 — Add Kaggriculture configs that follow Isaiah's scaling_6m recipe
 
 Rebuild Task 3.4 adds `configs/kaggriculture_2rank.yaml` (128 envs/rank, spm 8) and `configs/kaggriculture_4rank.yaml` (64/4), deliberately aligned to Isaiah per the [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|recipe Decision]] (its Limits now link them). They use his multi-GPU rule, so the global workload equals `scaling_6m`; the optimizer, PPO, teacher and compile settings are his. A local CPU config and a tiny CPU model preset are added for Task 3.5. The startup workload check (`python/owl/model/kaggriculture_workload.py`) sizes rollout, minibatch, teacher-chunk and evaluation rows against the model's trunk and head chunking and logs the headroom; at 2 ranks the 16,384-row teacher chunk runs in at most 3 trunk calls (full padding). Tests validate the observation, action, model, optimizer and PPO sections against their schemas; env keys and reward-shaping values get exact key and value assertions only. FullConfig loading and model construction are skipped until Task 3.1. `py-prepare`: 1,324 passed, 10 skipped. No GPU or training run. See the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]].
+
+## 2026-09-29 — Implement the T19b launch/resume tests and scope Orbit-only teacher rules (Phase 4 verification r1)
+
+Codex's r1 verification of Phases 4.1–4.3 (APPROVE WITH EDITS) found that T19b was a placeholder: a docstring and an unconditional `AssertionError`. T19b is now three skipped tests: run_ppo resume restores the teacher from `checkpoint_last_best.pt`, a fresh launch from weights activates it, and trainer checkpoints hold no teacher cache. The resume and fresh-launch pair passes a dry run with config validation bypassed, and four `run_ppo.py` mutations each fail one of them. The skip now names the Task 3.1 run_ppo game seam as well as `kg/rebuild-configs`. `docs/model-architecture.md` scopes the discrete_targets-only cached KL and the launch-mode rule to Orbit (P3). The [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|Phase 4 teacher Reference]] records the tests, the dry run and `py-prepare` (1,372 passed, 8 skipped); Phase 4 remains incomplete.
+
+## 2026-09-29 — Wire Kaggriculture teacher distillation through Isaiah's cached-teacher path (Phase 4.3)
+
+`KaggricultureTransformer` now supports both cached distillation paths. The cached path admits targets before any kernel, including the grammar signature. It is bit-for-bit the combined path on CPU FP32. The model owns the value CE (`BaseModelAPI.teacher_value_cross_entropy`): Isaiah's joint-distribution sum stays the default and replaces the removed free function, while Kaggriculture averages each live seat's CE. PPO's two teacher wrappers dispatch statelessly (review P1-1) and log `teacher/cache_bytes`. `run_ppo._teacher_obs_spec_for_student` dispatches by game. The [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|Phase 4 teacher Reference]] records T12–T19a, three more killed mutations, `py-prepare` with 1,372 passed and Isaiah's suites at 1,048 passed. It also states that Phase 4 is not complete: T18 and T19b are skipped on the Task 3.1/3.2 trainer seams and `kg/rebuild-configs`, and 4.4 waits on that merge. The [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|stream C Reference]]'s two open limits are revised in place: the trainer is protocol-typed, and Orbit alone keeps the asymmetric `concat`.
+
+## 2026-09-29 — Cache Kaggriculture teacher targets under the TeacherTargets protocol (Phase 4.2)
+
+`KaggricultureTeacherTargets` caches the teacher's per-slot masked logits and winner probabilities in the rollout lead layout. It uses 102,208 B per seat row, a constant derived from the contract widths. Its `concat` validates symmetrically, and it carries the teacher's grammar signature: a table SHA-256 taken at construction plus `hire_limit`. `BaseModelAPI`, `ppo.py` and the DDP adapter now type the cached-teacher API by the protocol, and Isaiah's model narrows it with `TypeError`. The protocol gains `nbytes`. The [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|Phase 4 teacher Reference]] records T7–T11, four more killed mutations and `py-prepare` with 1,360 passed.
+
+## 2026-09-29 — Expose replay-conditioned per-slot logits and KL in the Kaggriculture grammar core (Phase 4.1)
+
+The Phase 4 brief is now v2 after Codex's REVISE review (`ops/rebuild-2026-09-29/codex/brief-4-review.md`). The changes are stateless teacher dispatch, a grammar signature on the cached path, one KL dtype rule, and phase completion gated on the trainer tests. Task 4.1 follows it. `policy_core` returns each slot's masked logits and the liveness-weighted per-slot KL in the log-prob layout. Isaiah's `categorical_kl_from_logits` promotes instead of demoting FP64. The shared test helpers moved to `tests/kaggriculture/helpers.py`. The new [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|Phase 4 teacher Reference]] lists the checks: T1–T6, a brute-force oracle, four killed mutations and `py-prepare` with 1,343 passed. It also lists three test-level deviations: an FP32 rounding bound, `assert_close` for head chunking, and a small HIRE oracle case.
+
 ## 2026-09-29 — Reconcile the compiled-GEMM Reference with Task 3.1's registration
 
 Codex verified `e1458d2...aadba6d` (APPROVE WITH EDITS, no functional defect; `ops/rebuild-2026-09-29/codex/verify-3.1-rest-r2.md`). Its one finding: the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] still said Kaggriculture was absent from `ModelConfig` and the factory and that `configure_model_compile` rejected its trunk target. The Reference now links the [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] for registration and the guarded trunk dispatch, and keeps the limits: CPU recording stand-ins only, `FullConfig` still rejects the model, and integrated workloads and real Inductor/CUDA compilation are unverified. Its description and index line match.

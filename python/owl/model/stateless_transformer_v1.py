@@ -303,6 +303,23 @@ class CachedTeacherDistillationTargets(TeacherTargets):
             winner_probabilities=winner_probabilities,
         )
 
+    def nbytes(self) -> int:
+        """Bytes held by the cached tensors (tensor metadata only; no sync)."""
+        total = 0
+        if self.action_params is not None:
+            params = self.action_params
+            total += (
+                params.target_logits.nbytes
+                + params.size_mix_logits.nbytes
+                + params.size_mu.nbytes
+                + params.size_scale.nbytes
+            )
+            if params.continue_logits is not None:
+                total += params.continue_logits.nbytes
+        if self.winner_probabilities is not None:
+            total += self.winner_probabilities.nbytes
+        return total
+
 
 @dataclass(frozen=True)
 class _StudentDistillationEval:
@@ -1291,13 +1308,18 @@ class StatelessTransformerV1(BaseModelAPI, TrunkCompileAPI):
         self,
         obs: ObsBatch,
         actions: ModelActions,
-        teacher_targets: CachedTeacherDistillationTargets,
+        teacher_targets: TeacherTargets,
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
         compute_teacher_action_kl: bool = True,
         compute_teacher_value: bool = True,
     ) -> ModelTeacherEvaluation:
+        if not isinstance(teacher_targets, CachedTeacherDistillationTargets):
+            raise TypeError(
+                "StatelessTransformerV1 needs CachedTeacherDistillationTargets, "
+                f"got {type(teacher_targets).__name__}"
+            )
         flat_obs, sequence_shape = _flatten_obs_time_if_sequence(obs)
         flat_actions = _flatten_actions_time_if_sequence(actions, sequence_shape)
         student_eval = self._evaluate_student_for_distillation(

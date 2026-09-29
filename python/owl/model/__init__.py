@@ -18,6 +18,10 @@ from owl.model.kaggriculture import (
     KaggricultureTransformer,
     KaggricultureTransformerConfig,
 )
+from owl.model.kaggriculture_teacher import (
+    GrammarSignature,
+    KaggricultureTeacherTargets,
+)
 from owl.model.lora import (
     LoRAApplication,
     apply_lora_to_stateless_transformer,
@@ -59,7 +63,9 @@ __all__ = [
     "CachedTeacherDistillationTargets",
     "DiscreteTargetActions",
     "DiscreteTargetBinActions",
+    "GrammarSignature",
     "InputLayer",
+    "KaggricultureTeacherTargets",
     "KaggricultureTransformer",
     "KaggricultureTransformerConfig",
     "LoRAApplication",

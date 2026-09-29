@@ -1,0 +1,17 @@
+mutation: python/owl/model/kaggriculture.py: '        if targets.grammar != self.grammar_signature():' -> '        if False:' (1 site(s))
+exit 1
+FAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel
+FAILED tests/kaggriculture/test_teacher.py::test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature
+2 failed, 46 passed, 2 skipped in 5.07s
+== (e) above: cached admission without the grammar-signature check
+mutation: python/owl/train/ppo.py: '    # Stateless dispatch as _model_evaluate_actions (see above).\n    if hidden_state is None:' -> '    # Stateless dispatch as _model_evaluate_actions (see above).\n    if False:' (1 site(s))
+exit 1
+FAILED tests/kaggriculture/test_teacher.py::test_ppo_teacher_wrappers_dispatch_statelessly
+1 failed, 47 passed, 2 skipped in 5.22s
+== (f) above: cached-teacher wrapper always passes dones (pre-review behavior)
+mutation: python/owl/model/kaggriculture.py: '        return (per_seat * live).sum(dim=-1) / live.sum(dim=-1).clamp_min(1.0)' -> '        return (per_seat * live).sum(dim=-1)' (1 site(s))
+exit 1
+FAILED tests/kaggriculture/test_teacher.py::test_a_copied_teacher_gives_zero_kl_and_the_student_winner_entropy
+FAILED tests/kaggriculture/test_teacher.py::test_value_cross_entropy_is_the_live_seat_mean
+2 failed, 46 passed, 2 skipped in 5.59s
+== (g) above: value CE sums seats instead of the live-seat mean

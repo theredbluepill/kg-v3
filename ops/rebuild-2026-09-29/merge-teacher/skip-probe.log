@@ -1,0 +1,28 @@
+# Probe: the four skipped Phase 4 trainer/launch tests with their skip marks removed, on the merge tree (base b8747b6 + 8fde43c, uncommitted merge).
+# Command: sed -E 's/^@pytest\.mark\.skip\(reason=NEEDS_[A-Z_]+\)$//' tests/kaggriculture/test_teacher.py > tests/kaggriculture/test_zz_probe_teacher.py (deleted afterwards); OMP_NUM_THREADS=2 uv run pytest -q -p no:cacheprovider <copy> -k 'trainer_precomputes or run_ppo_resume or run_ppo_fresh or trainer_checkpoint_after' --tb=line
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+E   TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+/Users/poonszesen/kg-v3-m-teacher/python/owl/train/ppo.py:2140: TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+E   RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom minibatch: 8 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 1.188e+04x headroom, <= 1 call(s)); heads 177536 rows/call (2.219e+04x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 5941x headroom, <= 1 call(s)); heads 177536 rows/call (1.11e+04x headroom, 1 call(s))
+GEMM workload headroom evaluation: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+/Users/poonszesen/kg-v3-m-teacher/python/owl/train/config.py:57: RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+E   RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom minibatch: 8 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 1.188e+04x headroom, <= 1 call(s)); heads 177536 rows/call (2.219e+04x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 5941x headroom, <= 1 call(s)); heads 177536 rows/call (1.11e+04x headroom, 1 call(s))
+GEMM workload headroom evaluation: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+/Users/poonszesen/kg-v3-m-teacher/python/owl/train/config.py:57: RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+E   TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+/Users/poonszesen/kg-v3-m-teacher/python/owl/train/ppo.py:2140: TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_zz_probe_teacher.py::test_trainer_precomputes_once_and_logs_teacher_metrics
+FAILED tests/kaggriculture/test_zz_probe_teacher.py::test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best
+FAILED tests/kaggriculture/test_zz_probe_teacher.py::test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher
+FAILED tests/kaggriculture/test_zz_probe_teacher.py::test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache
+4 failed, 48 deselected in 0.14s

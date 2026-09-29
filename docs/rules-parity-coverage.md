@@ -453,7 +453,12 @@ engine **69, none ignored**, root **254 passed, four ignored** (two
 `rl::action_spec` audits plus Task 1.3's explicit oracle generation and
 optimized cost diagnostic), Python **1,618 passed, seven skipped** (Task 1.3's
 two CUDA-only pinned-memory cases added); receipt
-`ops/rebuild-2026-09-29/merge-1.3/prepare.log`. The trim
+`ops/rebuild-2026-09-29/merge-1.3/prepare.log`. After merging Phase 4's
+teacher distillation (`kg/merge-teacher`), which changes no Rust, full
+`just prepare` passes with the same engine **69** and root **254 passed, four
+ignored**, and Python **1,673 passed, 11 skipped** (Phase 4's two trainer-seam
+and two run_ppo-seam tests added); receipt
+`ops/rebuild-2026-09-29/merge-teacher/prepare.log`. The trim
 checker's fixed authored set is now exactly the replay-parity test plus the
 generated-trace manifest. The native `grammar_tables()` matches all 964 bits of the Python
 heads' `expected_grammar_tables` in a merge-time cross-check, but no Python

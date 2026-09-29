@@ -700,7 +700,14 @@ action-head divergences back to the player-step before applying
 `rl.teacher_kl_coef`. The value term uses cross-entropy from the teacher winner
 distribution to the student winner distribution over active player slots, then
 averages that per-state value over active states before applying
-`rl.teacher_value_coef`. `rl.teacher_schedule.mode` defaults to `none`; with
+`rl.teacher_value_coef`. The per-state reduction is the model's
+`teacher_value_cross_entropy(student_log_probs, teacher_probs, *, value_mask)`:
+the `BaseModelAPI` default is Isaiah's sum over the joint player-slot
+distribution, and a game with one distribution per seat overrides it. PPO's
+`_model_evaluate_actions_with_teacher` and
+`_model_evaluate_actions_with_cached_teacher` dispatch statelessly like
+`_model_evaluate_actions`: without hidden state they pass neither
+`hidden_state` nor `dones`. `rl.teacher_schedule.mode` defaults to `none`; with
 `linear_decay`, PPO multiplies both teacher coefficients by a linear
 optimizer-step schedule from `1.0` to `decay_min_ratio` over `decay_steps`.
 The teacher trunk runs once per iteration over the stored rollout segments, not
@@ -710,28 +717,43 @@ teachers that require recurrent hidden state.
 When a teacher is active, PPO precomputes the teacher's contribution after
 rollout via `compute_teacher_distillation_targets(...)`: a chunked
 `torch.no_grad()` pass (chunk size `rl.teacher_segments_per_minibatch` segments) that
-caches the teacher action-distribution params (`DiscreteTargetPolicyParams`) and
-winner probabilities as a `CachedTeacherDistillationTargets` in segment-major
-layout. The cached targets implement the `TeacherTargets` protocol
+caches the teacher's action targets and winner probabilities in segment-major
+layout: Orbit's `StatelessTransformerV1` caches its action-distribution params
+(`DiscreteTargetPolicyParams`) as a `CachedTeacherDistillationTargets`, and the
+Kaggriculture transformer caches its replay-conditioned per-slot logits as a
+`KaggricultureTeacherTargets` (see
+[Kaggriculture Transformer](#kaggriculture-transformer)). The cached targets implement the `TeacherTargets` protocol
 (`python/owl/model/teacher_targets.py`): PPO joins the chunks with
 `type(chunks[0]).concat(chunks)` and slices each minibatch with
-`targets.index(idx)`, both along the segment dimension. `concat` follows the
-first chunk's layout: it raises when a later chunk lacks an optional target
-(action params, continuation logits or winner probabilities) that the first
-chunk carries, but silently drops a target that only later chunks carry. This
-asymmetry is inherited from Isaiah's free function; rebuild Phase 4 decides
-whether to validate symmetrically. The PPO loop requests the same targets from
-the same teacher for every chunk. Each update minibatch
+`targets.index(idx)`, both along the segment dimension, and reports the cache
+size with `nbytes()` (tensor metadata only). `BaseModelAPI` types
+`compute_teacher_distillation_targets` and `evaluate_actions_with_cached_teacher`
+by the protocol; each model returns its own target type and narrows the
+argument with `isinstance`, raising `TypeError` for another model's targets
+before any kernel (the DDP adapter and PPO pass the protocol type through).
+`CachedTeacherDistillationTargets.concat` follows the first chunk's layout: it
+raises when a later chunk lacks an optional target (action params, continuation
+logits or winner probabilities) that the first chunk carries, but silently drops
+a target that only later chunks carry. Phase 4 keeps this inherited asymmetry
+for Orbit (the trainer never builds mixed chunks);
+`KaggricultureTeacherTargets.concat` validates every chunk symmetrically. The
+PPO loop requests the same targets from the same teacher for every chunk. Each update minibatch
 then calls `evaluate_actions_with_cached_teacher(...)`,
 which encodes the student once (with grad), returns the normal PPO replay
 log-probs, entropy, and values from that encoding, and computes the action KL
-against the cached teacher params via the actor's
-`kl_divergence_from_teacher_params(...)` — without re-running the teacher trunk.
+against the cached teacher targets without re-running the teacher trunk. Orbit
+computes it with the actor's `kl_divergence_from_teacher_params(...)`;
+Kaggriculture computes it inside the grammar `policy_core`, per policy slot at
+the replayed prefix, from the cached logits.
+`categorical_kl_from_logits` computes in `promote_types(teacher, student, float32)`: BF16/FP16 are upcast to FP32 as before, and FP64 is kept rather than demoted, so a `finfo(dtype).min` mask fill stays finite and FP64 gradient checks stay exact.
 The combined `evaluate_actions_with_teacher(...)` path (one student pass plus a
 no-grad teacher pass) is retained and is bit-for-bit equivalent to the cached
-path. The cached action-KL path supports only the discrete_targets actor without
-player-count adapters; a fixed teacher (`rl.teacher_mode: fixed`) must
-additionally share the student's launch mode. Value distillation
+path. For Orbit's `StatelessTransformerV1`, the cached action-KL path supports
+only the discrete_targets actor without player-count adapters, and a fixed
+teacher (`rl.teacher_mode: fixed`) must additionally share the student's launch
+mode. The Kaggriculture transformer supports the cached action-KL and value
+paths for its grammar actor and has no launch mode; its teacher must share the
+student's grammar signature (tables and `hire_limit`). Value distillation
 (`rl.teacher_value_coef` > 0) only uses the critic winner distribution and does
 not require actor KL support, but the trainer still requires matching action
 specs and non-adapter models. `evaluate_action_kl(...)` remains as a
@@ -773,6 +795,9 @@ not penalized. Per-action KL portions are logged as components such as
   - `evaluate_actions` replays the tokens teacher-forced through the same core. It checks shapes and dtypes before any kernel, uses clamped temporary indices for every replay-derived gather, table lookup and embedding, and computes three device flag groups: support, length, and element-for-element canonical equality (actor ordinals, reserved target, cross-kind fields, STOP bits, padding, inactive rows). One compact host transfer follows, outside the tensor core, and raises `GrammarReplayError` naming the failing groups. Sampling adds no policy-validation host synchronization: `forward` never runs the replay check. The encode itself is not sync-free, because packed trunk dispatch sizes its packing on the host (`build_packed_sequence`) and, when the padded bound could overflow, transfers per-row token counts to plan chunks.
   - Outputs: `KaggricultureActions(tokens [E,2,252,12], lengths [E,2])`. `log_probs.event` and `entropies.event` are `[E,2,252,12]` per-frame, per-slot values, zero for the implicit slots 0/2/11; `per_player_entity = event.sum(-1)`, `launch` is zeros, and `entropies.components[name] = event[..., slot]`. Values and winner probabilities come from the critic in the same encode.
   - **Head-extent guard:** the heads run eager in production (`compile_transformer_trunk` compiles the trunk only). The actor still chunks rows so `rows × 252 × max(3D, D, widest head) < 2^31` (`head_rows_per_chunk`, 11,096 rows at D = 256), so a future compiled head core cannot silently corrupt outputs.
+  - **Teacher distillation (Phase 4.1):** `policy_core` takes two trailing arguments. `collect_logits=True` returns every policy slot's logits in the density dtype, masked with the replay-conditioned mask and filled with `finfo(dtype).min` outside it (`slot_logits[k]`: `[B, 241, W_k]` for unit slots, `[B, 11, W_k]` for market slots; `market_kind` uses the final HIRE-capacity mask). `teacher_logits` (the same layout, keyed by `POLICY_SLOTS`) adds `kl`: per slot, `categorical_kl_from_logits(teacher, student, mask)` = `KL(teacher ‖ student)` at the replayed prefix, weighted by `unit_live` or `market_live` exactly like the log-probs and placed in the same `[B, 252, 12]` layout. Slots 0/2/11, dead frames, positions after STOP, the forced sentinel and inactive rows are exactly 0. It is Isaiah's teacher-forced estimator (like his size KL at the selected target), not an unbiased joint-program KL. Both sides must share the grammar tables and `hire_limit`; replay admission does not check that. `_policy` slices `teacher_logits` per head chunk and joins `slot_logits` and `kl`.
+  - **Teacher targets (Phase 4.2):** `compute_teacher_distillation_targets` runs one `encode_observations` and `_policy(collect_logits=True)` under `no_grad`, so the trunk overflow guard and head row chunking apply. It admits the replay under the teacher's own grammar (`check_replay_flags`, one host sync) and returns `KaggricultureTeacherTargets` (`python/owl/model/kaggriculture_teacher.py`) in the observation lead layout: `slot_logits[k]` (`[*lead, 241 | 11, W_k]`, density dtype), FP32 `winner_probabilities [*lead, 2]` and the teacher's `GrammarSignature`. The signature is the SHA-256 of the eight tables (`grammar_tables_digest`), taken once when the actor is built, plus the live `action_spec.hire_limit`. Replay admission cannot see a teacher grammar that differs but still admits the program, so the student compares signatures. Rollout masks are not cached. At contract widths a seat row costs `TEACHER_TARGET_BYTES_PER_ROW` = 102,208 B (FP32), so 1,674,575,872 B for a 2-rank rollout of 16,384 rows and 837,287,936 B for 8,192 rows.
+  - **Teacher paths (Phase 4.3):** `supports_cached_teacher_distillation` and `supports_cached_value_distillation` return `True`. `evaluate_actions_with_cached_teacher` admits before any kernel: stateless checks, `isinstance(KaggricultureTeacherTargets)` (else `TypeError`), required targets present, grammar signature equal, slot keys equal to `POLICY_SLOTS`, FP32/FP64 slot dtypes and exact shapes (each else `ValueError`). It then encodes the student once and replays with the cached logits viewed in row layout. The student `ModelEvaluation` is exactly `evaluate_actions`'s (`_evaluation_from`), and `action_kl` carries `event [*lead,252,12]`, `per_player_entity = event.sum(-1)`, zero `launch` and per-slot `components`. The combined `evaluate_actions_with_teacher` also rejects a non-Kaggriculture teacher, a different `action_spec`, a different signature or any table that is not `torch.equal`. It feeds the no-grad teacher's row-layout logits straight to the student and is bit-for-bit equal to the cached path on CPU FP32. `teacher_value_cross_entropy` takes each seat's CE over (self, opponent) and averages over live seats (`value_mask = still_playing`): the mean keeps one CE per state, as Isaiah's joint distribution does, so `teacher_value_coef` keeps its meaning. A state with no live seat gives 0.
 - **Initialization:** `market_position.weight` and every slot-embedding `.weight` are listed by `get_input_layers` and initialized as Isaiah's token parameters (normal, std `D^-0.5`). Every head `.out` is in `get_output_layers` and gets `_init_linear(gain=0.01)` (Isaiah's actor-head gain); `critic_head.out` keeps 1.0.
 - **Muon:** stem inputs, token parameters, slot and position embeddings, `critic_head.out` and every head `.out` are excluded, as in `StatelessTransformerV1`; stem outputs, trunk matrices, `actor_input_proj.weight`, `critic_head.up` and every head `.up` use Muon.
 - **Size:** the preset has 6,252,223 parameters (actor input projection and heads 873,406), inside the owner's 6–10M budget at depth 8.

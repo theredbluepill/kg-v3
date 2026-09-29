@@ -1,0 +1,1003 @@
+FFFFFFFFFFFFFFFFFFF                                                      [100%]
+=================================== FAILURES ===================================
+___ test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[dense] ___
+
+case = 'dense'
+
+    @pytest.mark.parametrize("case", CASES)
+    def test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support(
+        case: str,
+    ) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        with torch.no_grad():
+>           same = _teacher_kl(model, model, obs, actions)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:82: in _teacher_kl
+    logits = _collect(teacher, obs, actions).slot_logits
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 5, 5, 0, 3, 0, 3, 2, 3, 5, 2, 1, 4, 5, 4, 0, 2, 0, 5, 3, 2, 3, 4,
+       ... True]],
+
+        [[True, True, True,  ..., True, True, True],
+         [True, True, True,  ..., True, True, True]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 1,  8,  0,  ...,  0,  0,  0],
+      ...  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  0,  0,  0]]]]), lengths=tensor([[250, 247],
+        [248, 242]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+_ test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[hire_capacity] _
+
+case = 'hire_capacity'
+
+    @pytest.mark.parametrize("case", CASES)
+    def test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support(
+        case: str,
+    ) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        with torch.no_grad():
+>           same = _teacher_kl(model, model, obs, actions)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:82: in _teacher_kl
+    logits = _collect(teacher, obs, actions).slot_logits
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 4, 2,  ..., 5, 2, 2],
+         [2, 1, 3,  ..., 1, 4, 2]],
+
+        [[3, 2...      [[ True,  True,  True,  ...,  True,  True,  True],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 1,  8,  0,  ...,  0,  0,  0],
+      ...0],
+          [ 0,  0,  0,  ...,  0,  0,  0]]]]), lengths=tensor([[249, 250],
+        [251,  12],
+        [252, 247]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+_ test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[stop_every_position] _
+
+case = 'stop_every_position'
+
+    @pytest.mark.parametrize("case", CASES)
+    def test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support(
+        case: str,
+    ) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        with torch.no_grad():
+>           same = _teacher_kl(model, model, obs, actions)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:82: in _teacher_kl
+    logits = _collect(teacher, obs, actions).slot_logits
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 2, 5,  ..., 1, 1, 5],
+         [4, 0, 1,  ..., 2, 3, 2]],
+
+        [[2, 1...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  0,  0,  1],
+      ...[ 7,  7],
+        [ 9,  8],
+        [ 8,  9],
+        [10, 10],
+        [12, 11],
+        [11, 12],
+        [13, 13]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+___ test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[mixed] ___
+
+case = 'mixed'
+
+    @pytest.mark.parametrize("case", CASES)
+    def test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support(
+        case: str,
+    ) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        with torch.no_grad():
+>           same = _teacher_kl(model, model, obs, actions)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:82: in _teacher_kl
+    logits = _collect(teacher, obs, actions).slot_logits
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 2, 5,  ..., 1, 0, 2],
+         [0, 2, 5,  ..., 2, 3, 2]],
+
+        [[1, 2...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  2, 23,  0],
+      ....,  0,  0,  0]]]]), lengths=tensor([[ 4, 10],
+        [ 0,  6],
+        [10,  5],
+        [ 3,  0],
+        [11,  6]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+________ test_collected_logits_reproduce_the_replay_density[fp32-dense] ________
+
+case = 'dense', double = False
+
+    @pytest.mark.parametrize("case", CASES)
+    @pytest.mark.parametrize("double", [False, True], ids=["fp32", "fp64"])
+    def test_collected_logits_reproduce_the_replay_density(case: str, double: bool) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        if double:
+            model = model.double()
+            obs = _obs_double(obs)
+        with torch.no_grad():
+>           result = _collect(model, obs, actions)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 5, 5, 0, 3, 0, 3, 2, 3, 5, 2, 1, 4, 5, 4, 0, 2, 0, 5, 3, 2, 3, 4,
+       ... True]],
+
+        [[True, True, True,  ..., True, True, True],
+         [True, True, True,  ..., True, True, True]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 1,  8,  0,  ...,  0,  0,  0],
+      ...  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  0,  0,  0]]]]), lengths=tensor([[250, 247],
+        [248, 242]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+____ test_collected_logits_reproduce_the_replay_density[fp32-hire_capacity] ____
+
+case = 'hire_capacity', double = False
+
+    @pytest.mark.parametrize("case", CASES)
+    @pytest.mark.parametrize("double", [False, True], ids=["fp32", "fp64"])
+    def test_collected_logits_reproduce_the_replay_density(case: str, double: bool) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        if double:
+            model = model.double()
+            obs = _obs_double(obs)
+        with torch.no_grad():
+>           result = _collect(model, obs, actions)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 4, 2,  ..., 5, 2, 2],
+         [2, 1, 3,  ..., 1, 4, 2]],
+
+        [[3, 2...      [[ True,  True,  True,  ...,  True,  True,  True],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 1,  8,  0,  ...,  0,  0,  0],
+      ...0],
+          [ 0,  0,  0,  ...,  0,  0,  0]]]]), lengths=tensor([[249, 250],
+        [251,  12],
+        [252, 247]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+_ test_collected_logits_reproduce_the_replay_density[fp32-stop_every_position] _
+
+case = 'stop_every_position', double = False
+
+    @pytest.mark.parametrize("case", CASES)
+    @pytest.mark.parametrize("double", [False, True], ids=["fp32", "fp64"])
+    def test_collected_logits_reproduce_the_replay_density(case: str, double: bool) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        if double:
+            model = model.double()
+            obs = _obs_double(obs)
+        with torch.no_grad():
+>           result = _collect(model, obs, actions)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 2, 5,  ..., 1, 1, 5],
+         [4, 0, 1,  ..., 2, 3, 2]],
+
+        [[2, 1...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  0,  0,  1],
+      ...[ 7,  7],
+        [ 9,  8],
+        [ 8,  9],
+        [10, 10],
+        [12, 11],
+        [11, 12],
+        [13, 13]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+________ test_collected_logits_reproduce_the_replay_density[fp32-mixed] ________
+
+case = 'mixed', double = False
+
+    @pytest.mark.parametrize("case", CASES)
+    @pytest.mark.parametrize("double", [False, True], ids=["fp32", "fp64"])
+    def test_collected_logits_reproduce_the_replay_density(case: str, double: bool) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        if double:
+            model = model.double()
+            obs = _obs_double(obs)
+        with torch.no_grad():
+>           result = _collect(model, obs, actions)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 2, 5,  ..., 1, 0, 2],
+         [0, 2, 5,  ..., 2, 3, 2]],
+
+        [[1, 2...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  2, 23,  0],
+      ....,  0,  0,  0]]]]), lengths=tensor([[ 4, 10],
+        [ 0,  6],
+        [10,  5],
+        [ 3,  0],
+        [11,  6]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+________ test_collected_logits_reproduce_the_replay_density[fp64-dense] ________
+
+case = 'dense', double = True
+
+    @pytest.mark.parametrize("case", CASES)
+    @pytest.mark.parametrize("double", [False, True], ids=["fp32", "fp64"])
+    def test_collected_logits_reproduce_the_replay_density(case: str, double: bool) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        if double:
+            model = model.double()
+            obs = _obs_double(obs)
+        with torch.no_grad():
+>           result = _collect(model, obs, actions)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 5, 5, 0, 3, 0, 3, 2, 3, 5, 2, 1, 4, 5, 4, 0, 2, 0, 5, 3, 2, 3, 4,
+       ... True]],
+
+        [[True, True, True,  ..., True, True, True],
+         [True, True, True,  ..., True, True, True]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 1,  8,  0,  ...,  0,  0,  0],
+      ...  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  0,  0,  0]]]]), lengths=tensor([[250, 247],
+        [248, 242]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+____ test_collected_logits_reproduce_the_replay_density[fp64-hire_capacity] ____
+
+case = 'hire_capacity', double = True
+
+    @pytest.mark.parametrize("case", CASES)
+    @pytest.mark.parametrize("double", [False, True], ids=["fp32", "fp64"])
+    def test_collected_logits_reproduce_the_replay_density(case: str, double: bool) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        if double:
+            model = model.double()
+            obs = _obs_double(obs)
+        with torch.no_grad():
+>           result = _collect(model, obs, actions)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 4, 2,  ..., 5, 2, 2],
+         [2, 1, 3,  ..., 1, 4, 2]],
+
+        [[3, 2...      [[ True,  True,  True,  ...,  True,  True,  True],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 1,  8,  0,  ...,  0,  0,  0],
+      ...0],
+          [ 0,  0,  0,  ...,  0,  0,  0]]]]), lengths=tensor([[249, 250],
+        [251,  12],
+        [252, 247]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+_ test_collected_logits_reproduce_the_replay_density[fp64-stop_every_position] _
+
+case = 'stop_every_position', double = True
+
+    @pytest.mark.parametrize("case", CASES)
+    @pytest.mark.parametrize("double", [False, True], ids=["fp32", "fp64"])
+    def test_collected_logits_reproduce_the_replay_density(case: str, double: bool) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        if double:
+            model = model.double()
+            obs = _obs_double(obs)
+        with torch.no_grad():
+>           result = _collect(model, obs, actions)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 2, 5,  ..., 1, 1, 5],
+         [4, 0, 1,  ..., 2, 3, 2]],
+
+        [[2, 1...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  0,  0,  1],
+      ...[ 7,  7],
+        [ 9,  8],
+        [ 8,  9],
+        [10, 10],
+        [12, 11],
+        [11, 12],
+        [13, 13]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+________ test_collected_logits_reproduce_the_replay_density[fp64-mixed] ________
+
+case = 'mixed', double = True
+
+    @pytest.mark.parametrize("case", CASES)
+    @pytest.mark.parametrize("double", [False, True], ids=["fp32", "fp64"])
+    def test_collected_logits_reproduce_the_replay_density(case: str, double: bool) -> None:
+        model, obs = _replay_case(case)
+        model.eval()
+        actions = _sampled(model, obs)
+        if double:
+            model = model.double()
+            obs = _obs_double(obs)
+        with torch.no_grad():
+>           result = _collect(model, obs, actions)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 2, 5,  ..., 1, 0, 2],
+         [0, 2, 5,  ..., 2, 3, 2]],
+
+        [[1, 2...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  2, 23,  0],
+      ....,  0,  0,  0]]]]), lengths=tensor([[ 4, 10],
+        [ 0,  6],
+        [10,  5],
+        [ 3,  0],
+        [11,  6]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+_______ test_forward_and_evaluate_actions_leave_the_teacher_fields_unset _______
+
+    def test_forward_and_evaluate_actions_leave_the_teacher_fields_unset() -> None:
+        model = _tiny().eval()
+        obs, actions = _base_case()
+        with torch.no_grad():
+            encoded = model.encode_observations(obs)
+            plain = model._policy(
+                encoded, model._grammar_context(obs), actions, deterministic=False
+            )
+>       assert plain.slot_logits is None
+               ^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarPolicyResult' object has no attribute 'slot_logits'
+
+tests/kaggriculture/test_teacher.py:220: AttributeError
+____ test_kl_matches_a_brute_force_oracle_over_the_admissible_values[base] _____
+
+case = 'base'
+
+    @pytest.mark.parametrize("case", ["base", "hire"])
+    def test_kl_matches_a_brute_force_oracle_over_the_admissible_values(case: str) -> None:
+        if case == "base":
+            student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+            obs, actions = _base_case()
+        else:
+            student, teacher, obs = _small_hire_case()
+            actions = _sampled(student, obs)
+            hires = (actions.tokens[..., 7] == HIRE).sum(-1).reshape(-1)
+            budget = 5 - obs.actor_mask[..., : kt.MAX_ACTORS].sum(-1).reshape(-1)
+            assert bool((hires == budget).all()), (hires, budget)
+        with torch.no_grad():
+>           kl = _teacher_kl(student, teacher, obs, actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:82: in _teacher_kl
+    logits = _collect(teacher, obs, actions).slot_logits
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3, 1, 1, 4, 5, 0, 4, 4, 2, 5, 4, 5, 1, 3, 2, 0, 5, 0, 0, 0, 0,
+       ...se, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[0, 6, 0,  ..., 0, 0, 0],
+          [1, 1, 0,  ..., 0, 0, 0],
+          [0, 0, 0...,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0]]]]), lengths=tensor([[5, 7]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+____ test_kl_matches_a_brute_force_oracle_over_the_admissible_values[hire] _____
+
+case = 'hire'
+
+    @pytest.mark.parametrize("case", ["base", "hire"])
+    def test_kl_matches_a_brute_force_oracle_over_the_admissible_values(case: str) -> None:
+        if case == "base":
+            student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+            obs, actions = _base_case()
+        else:
+            student, teacher, obs = _small_hire_case()
+            actions = _sampled(student, obs)
+            hires = (actions.tokens[..., 7] == HIRE).sum(-1).reshape(-1)
+            budget = 5 - obs.actor_mask[..., : kt.MAX_ACTORS].sum(-1).reshape(-1)
+            assert bool((hires == budget).all()), (hires, budget)
+        with torch.no_grad():
+>           kl = _teacher_kl(student, teacher, obs, actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:82: in _teacher_kl
+    logits = _collect(teacher, obs, actions).slot_logits
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 2, 4, 1, 4, 3, 4, 5, 1, 3, 4, 5, 5, 2, 2, 5, 3, 1, 0, 4, 2, 0, 2,
+       ...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 1,  8,  0,  ...,  0,  0,  0],
+      ...  0,  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  0,  0,  0]]]]), lengths=tensor([[10,  9],
+        [11, 11]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+_____________ test_head_and_trunk_chunking_match_the_unchunked_kl ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110c566f0>
+
+    def test_head_and_trunk_chunking_match_the_unchunked_kl(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs = make_obs(envs=3, own_actors=(1, 4, 2), rival_actors=(3, 1, 5), order_limit=3)
+        actions = _sampled(student, obs)
+        with torch.no_grad():
+>           whole_teacher = _collect(teacher, obs, actions).slot_logits
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:395: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[3, 2, 5,  ..., 0, 3, 5],
+         [4, 1, 5,  ..., 2, 3, 2]],
+
+        [[5, 0...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ..., 18,  5,  0],
+      ....,  0,  0,  0],
+          [ 0,  0,  0,  ...,  0,  0,  0]]]]), lengths=tensor([[5, 6],
+        [6, 5],
+        [5, 9]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+________ test_fullgraph_captured_core_matches_eager_with_teacher_logits ________
+
+    def test_fullgraph_captured_core_matches_eager_with_teacher_logits() -> None:
+        student, teacher = _tiny(), _tiny(seed=6).eval()
+        obs, actions = _base_case()
+        with torch.no_grad():
+>           teacher_logits = _collect(teacher, obs, actions).slot_logits
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3, 1, 1, 4, 5, 0, 4, 4, 2, 5, 4, 5, 1, 3, 2, 0, 5, 0, 0, 0, 0,
+       ...se, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[0, 6, 0,  ..., 0, 0, 0],
+          [1, 1, 0,  ..., 0, 0, 0],
+          [0, 0, 0...,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0]]]]), lengths=tensor([[5, 7]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+_____ test_kl_gradients_reach_every_student_head_and_no_teacher_parameter ______
+
+    def test_kl_gradients_reach_every_student_head_and_no_teacher_parameter() -> None:
+        student, teacher = _tiny(), _tiny(seed=6).eval()
+        teacher.requires_grad_(False)
+        obs, actions = _base_case()
+        with torch.no_grad():
+>           teacher_logits = _collect(teacher, obs, actions).slot_logits
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:498: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3, 1, 1, 4, 5, 0, 4, 4, 2, 5, 4, 5, 1, 3, 2, 0, 5, 0, 0, 0, 0,
+       ...se, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[0, 6, 0,  ..., 0, 0, 0],
+          [1, 1, 0,  ..., 0, 0, 0],
+          [0, 0, 0...,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0]]]]), lengths=tensor([[5, 7]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+_____________ test_kl_gradient_matches_finite_differences_in_fp64 ______________
+
+    def test_kl_gradient_matches_finite_differences_in_fp64() -> None:
+        student, teacher = _tiny().double(), _tiny(seed=6).double().eval()
+        obs, actions = _base_case()
+        obs = _obs_double(obs)
+        with torch.no_grad():
+>           teacher_logits = _collect(teacher, obs, actions).slot_logits
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:519: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3, 1, 1, 4, 5, 0, 4, 4, 2, 5, 4, 5, 1, 3, 2, 0, 5, 0, 0, 0, 0,
+       ...se, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[0, 6, 0,  ..., 0, 0, 0],
+          [1, 1, 0,  ..., 0, 0, 0],
+          [0, 0, 0...,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0]]]]), lengths=tensor([[5, 7]]))
+
+    def _collect(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> ka.GrammarPolicyResult:
+        encoded = model.encode_observations(obs)
+>       return model._policy(
+            encoded,
+            model._grammar_context(obs),
+            actions,
+            deterministic=False,
+            collect_logits=True,
+        )
+E       TypeError: KaggricultureTransformer._policy() got an unexpected keyword argument 'collect_logits'
+
+tests/kaggriculture/test_teacher.py:53: TypeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[dense]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[hire_capacity]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[stop_every_position]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[mixed]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-dense]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-hire_capacity]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-stop_every_position]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-mixed]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-dense]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-hire_capacity]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-stop_every_position]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-mixed]
+FAILED tests/kaggriculture/test_teacher.py::test_forward_and_evaluate_actions_leave_the_teacher_fields_unset
+FAILED tests/kaggriculture/test_teacher.py::test_kl_matches_a_brute_force_oracle_over_the_admissible_values[base]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_matches_a_brute_force_oracle_over_the_admissible_values[hire]
+FAILED tests/kaggriculture/test_teacher.py::test_head_and_trunk_chunking_match_the_unchunked_kl
+FAILED tests/kaggriculture/test_teacher.py::test_fullgraph_captured_core_matches_eager_with_teacher_logits
+FAILED tests/kaggriculture/test_teacher.py::test_kl_gradients_reach_every_student_head_and_no_teacher_parameter
+FAILED tests/kaggriculture/test_teacher.py::test_kl_gradient_matches_finite_differences_in_fp64
+19 failed in 1.03s

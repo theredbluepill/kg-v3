@@ -285,10 +285,16 @@ The frozen teacher trunk runs once per iteration in a chunked `no_grad` pass
 after rollout (chunk size
 `rl.teacher_segments_per_minibatch`, default `32` segments); its distribution
 targets are cached and each update minibatch consumes them without re-running
-the teacher trunk. The cached action-KL path supports only the `discrete_targets`
+the teacher trunk. `teacher/cache_bytes` logs this rank's cached target bytes
+each iteration (0 without an active teacher). For Orbit, the cached action-KL path supports only the `discrete_targets`
 actor without player-count adapters (a fixed teacher must also match the
-student's launch mode). Value distillation does not use the actor KL path, but
-the trainer still requires matching action specs and non-adapter models.
+student's launch mode); `KaggricultureTransformer` supports both cached paths.
+Value distillation does not use the actor KL path, but
+the trainer still requires matching action specs and non-adapter models. The
+model owns the per-state value cross-entropy reduction
+(`teacher_value_cross_entropy`): Orbit's joint winner distribution gives one CE
+per state, while Kaggriculture averages each live seat's CE. Stateless student
+models receive neither `hidden_state` nor `dones` on the teacher paths.
 `rl.teacher_kl_coef` and `rl.teacher_value_coef` weight the action KL and
 per-state winner-distribution cross-entropy stabilization losses; both default
 to `0.001`. `rl.teacher_schedule.mode` defaults to `none`; set it to

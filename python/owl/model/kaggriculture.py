@@ -14,7 +14,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypeVar
 
 import torch
 import torch.nn.functional as F
@@ -30,10 +30,12 @@ from owl.model.base import (
     BaseModelAPI,
     InputLayer,
     ModelActionEntropies,
+    ModelActionKLDivergences,
     ModelActionLogProbs,
     ModelEvaluation,
     ModelHiddenState,
     ModelOutput,
+    ModelTeacherEvaluation,
     TrunkCompileAPI,
 )
 from owl.model.compile_gemm import (
@@ -46,6 +48,11 @@ from owl.model.kaggriculture_actor import (
     GrammarPolicyResult,
     KaggricultureGrammarActor,
     check_replay_flags,
+)
+from owl.model.kaggriculture_teacher import (
+    GrammarSignature,
+    KaggricultureTeacherTargets,
+    slot_frames,
 )
 from owl.model.stateless_transformer_v1 import (
     _ACTOR_HEAD_INIT_GAIN,
@@ -62,6 +69,9 @@ from owl.model.stateless_transformer_v1 import (
     pack_sequence,
     unpack_sequence,
 )
+from owl.model.teacher_targets import TeacherTargets
+
+_T = TypeVar("_T")
 
 KAGGRICULTURE_TRANSFORMER: Literal["kaggriculture_transformer"] = (
     "kaggriculture_transformer"
@@ -574,6 +584,15 @@ class KaggricultureTransformer(
             winner_probabilities=winner_log_probs.exp(),
         )
 
+    def _require_stateless_replay(
+        self, hidden_state: ModelHiddenState | None, dones: torch.Tensor | None
+    ) -> None:
+        self._require_stateless(hidden_state)
+        if dones is not None:
+            raise ValueError(
+                "KaggricultureTransformer is stateless; dones must be None"
+            )
+
     def evaluate_actions(
         self,
         obs: kt.KaggricultureObsBatch,
@@ -588,17 +607,22 @@ class KaggricultureTransformer(
         native ``step``): Python shape/dtype checks before any kernel, then the
         support, length and canonical flag groups with one host transfer.
         """
-        self._require_stateless(hidden_state)
-        if dones is not None:
-            raise ValueError(
-                "KaggricultureTransformer is stateless; dones must be None"
-            )
+        self._require_stateless_replay(hidden_state, dones)
         _check_action_layout(actions, obs.still_playing.shape)
         encoded = self.encode_observations(obs)
         result = self._policy(
             encoded, self._grammar_context(obs), actions, deterministic=False
         )
         check_replay_flags(result.valid)
+        return self._evaluation_from(result, encoded, obs)
+
+    def _evaluation_from(
+        self,
+        result: GrammarPolicyResult,
+        encoded: KaggricultureEncoded,
+        obs: kt.KaggricultureObsBatch,
+    ) -> ModelEvaluation:
+        """The replay ``ModelEvaluation``, shared by the plain and teacher paths."""
         _, log_probs, entropies = self._policy_outputs(result, obs)
         values, winner_log_probs = self._values(encoded, obs)
         return ModelEvaluation(
@@ -608,6 +632,294 @@ class KaggricultureTransformer(
             winner_probabilities=winner_log_probs.exp(),
             winner_log_probabilities=winner_log_probs,
         )
+
+    # --- teacher distillation (Phase 4) ------------------------------------------
+
+    def grammar_signature(self) -> GrammarSignature:
+        """The tables' construction-time digest and the live ``hire_limit``."""
+        return GrammarSignature(
+            tables_sha256=self.actor.tables_digest,
+            hire_limit=self.action_spec.hire_limit,
+        )
+
+    def compute_teacher_distillation_targets(
+        self,
+        obs: kt.KaggricultureObsBatch,
+        actions: kt.KaggricultureActions,
+        *,
+        compute_action_kl: bool = True,
+        compute_value: bool = True,
+    ) -> KaggricultureTeacherTargets:
+        """Frozen-teacher targets in the observation lead layout, under no_grad.
+
+        One encode through ``_run_trunk``'s guards; the heads run through
+        ``_policy``'s row chunking with ``collect_logits``. The replay is
+        admitted under this model's own grammar (one host sync); a grammar that
+        differs but still admits the program is caught by the student through
+        ``grammar``.
+        """
+        _check_action_layout(actions, obs.still_playing.shape)
+        lead = tuple(obs.still_playing.shape)
+        slot_logits: dict[int, torch.Tensor] | None = None
+        winner_probabilities: torch.Tensor | None = None
+        with torch.no_grad():
+            encoded = self.encode_observations(obs)
+            if compute_action_kl:
+                result = self._policy(
+                    encoded,
+                    self._grammar_context(obs),
+                    actions,
+                    deterministic=False,
+                    collect_logits=True,
+                )
+                check_replay_flags(result.valid)
+                slot_logits = {
+                    slot: logits.reshape(*lead, *logits.shape[1:])
+                    for slot, logits in _require(result.slot_logits).items()
+                }
+            if compute_value:
+                winner_probabilities = (
+                    self._winner_log_probabilities(encoded)
+                    .exp()
+                    .reshape(*lead, kt.PLAYERS)
+                )
+        return KaggricultureTeacherTargets(
+            slot_logits=slot_logits,
+            winner_probabilities=winner_probabilities,
+            grammar=self.grammar_signature(),
+        )
+
+    def supports_cached_teacher_distillation(self) -> bool:
+        return True
+
+    def supports_cached_value_distillation(self) -> bool:
+        # The critic is always the masked winner softmax.
+        return True
+
+    def evaluate_actions_with_cached_teacher(
+        self,
+        obs: kt.KaggricultureObsBatch,
+        actions: kt.KaggricultureActions,
+        teacher_targets: TeacherTargets,
+        *,
+        hidden_state: ModelHiddenState | None = None,
+        dones: torch.Tensor | None = None,
+        compute_teacher_action_kl: bool = True,
+        compute_teacher_value: bool = True,
+    ) -> ModelTeacherEvaluation:
+        """Replay evaluation plus the per-slot KL against cached teacher logits.
+
+        Admission runs before any kernel: stateless checks, the target type,
+        required targets, the grammar signature (replay admission cannot see a
+        teacher grammar that differs but admits the program), slot keys,
+        dtypes and shapes. The student encodes once; its ``ModelEvaluation``
+        is exactly ``evaluate_actions``'s.
+        """
+        self._require_stateless_replay(hidden_state, dones)
+        if not isinstance(teacher_targets, KaggricultureTeacherTargets):
+            raise TypeError(
+                "KaggricultureTransformer needs KaggricultureTeacherTargets, got "
+                f"{type(teacher_targets).__name__}"
+            )
+        lead = tuple(obs.still_playing.shape)
+        _check_action_layout(actions, lead)
+        teacher_logits = (
+            self._admit_cached_slot_logits(teacher_targets, lead)
+            if compute_teacher_action_kl
+            else None
+        )
+        teacher_winner: torch.Tensor | None = None
+        if compute_teacher_value:
+            teacher_winner = teacher_targets.winner_probabilities
+            if teacher_winner is None:
+                raise ValueError("cached teacher value targets are missing")
+            if tuple(teacher_winner.shape) != (*lead, kt.PLAYERS):
+                raise ValueError(
+                    "cached teacher winner_probabilities must have shape "
+                    f"{(*lead, kt.PLAYERS)}, got {tuple(teacher_winner.shape)}"
+                )
+        encoded = self.encode_observations(obs)
+        return self._teacher_evaluation(
+            obs, actions, encoded, teacher_logits, teacher_winner
+        )
+
+    def _admit_cached_slot_logits(
+        self, targets: KaggricultureTeacherTargets, lead: tuple[int, ...]
+    ) -> dict[int, torch.Tensor]:
+        """Validate cached slot logits and view them in row layout (no copy)."""
+        slot_logits = targets.slot_logits
+        if slot_logits is None:
+            raise ValueError("cached teacher action targets are missing")
+        if targets.grammar != self.grammar_signature():
+            raise ValueError(
+                "cached teacher targets were computed under a different grammar "
+                f"(teacher {targets.grammar}, student {self.grammar_signature()}); "
+                "replay admission cannot detect this, so the KL would compare "
+                "different supports"
+            )
+        if set(slot_logits) != set(POLICY_SLOTS):
+            raise ValueError(
+                f"cached teacher slot keys must be {sorted(POLICY_SLOTS)}, "
+                f"got {sorted(slot_logits)}"
+            )
+        rows = math.prod(lead)
+        flat: dict[int, torch.Tensor] = {}
+        for slot in POLICY_SLOTS:
+            logits = slot_logits[slot]
+            if logits.dtype not in (torch.float32, torch.float64):
+                raise ValueError(
+                    f"cached teacher slot {slot} logits must have dtype float32 "
+                    f"or float64, got {logits.dtype}"
+                )
+            frames, width = slot_frames(slot), kt.SLOT_WIDTHS[slot]
+            if tuple(logits.shape) != (*lead, frames, width):
+                raise ValueError(
+                    f"cached teacher slot {slot} logits must have shape "
+                    f"{(*lead, frames, width)}, got {tuple(logits.shape)}"
+                )
+            flat[slot] = logits.reshape(rows, frames, width)
+        return flat
+
+    def evaluate_actions_with_teacher(
+        self,
+        obs: kt.KaggricultureObsBatch,
+        actions: kt.KaggricultureActions,
+        teacher: BaseModelAPI[
+            kt.KaggricultureObsBatch,
+            kt.KaggricultureActions,
+            kt.KaggricultureActionConfig,
+        ],
+        *,
+        hidden_state: ModelHiddenState | None = None,
+        dones: torch.Tensor | None = None,
+        compute_teacher_action_kl: bool = True,
+        compute_teacher_value: bool = True,
+    ) -> ModelTeacherEvaluation:
+        """Combined path: one student pass plus a no-grad teacher pass.
+
+        The teacher's row-layout logits go straight into the student's core,
+        without the lead reshape or a ``TeacherTargets`` round trip; the result
+        is bit-for-bit equal to the cached path. Admission (teacher type,
+        ``action_spec``, grammar signature and per-table equality) runs before
+        any kernel.
+        """
+        self._require_stateless_replay(hidden_state, dones)
+        if not isinstance(teacher, KaggricultureTransformer):
+            raise ValueError(
+                "teacher must be a KaggricultureTransformer, got "
+                f"{type(teacher).__name__}"
+            )
+        if teacher.action_spec != self.action_spec:
+            raise ValueError(
+                f"teacher action_spec {teacher.action_spec} must match the "
+                f"student's {self.action_spec}"
+            )
+        if teacher.grammar_signature() != self.grammar_signature():
+            raise ValueError(
+                f"teacher grammar {teacher.grammar_signature()} differs from the "
+                f"student's {self.grammar_signature()}"
+            )
+        teacher_tables = teacher.actor.tables().as_dict()
+        for name, table in self.actor.tables().as_dict().items():
+            if not torch.equal(teacher_tables[name], table):
+                raise ValueError(
+                    f"teacher grammar table {name} differs from the student's"
+                )
+        lead = tuple(obs.still_playing.shape)
+        _check_action_layout(actions, lead)
+        encoded = self.encode_observations(obs)
+        teacher_logits: dict[int, torch.Tensor] | None = None
+        teacher_winner: torch.Tensor | None = None
+        if compute_teacher_action_kl or compute_teacher_value:
+            with torch.no_grad():
+                teacher_encoded = teacher.encode_observations(obs)
+                if compute_teacher_action_kl:
+                    teacher_result = teacher._policy(
+                        teacher_encoded,
+                        teacher._grammar_context(obs),
+                        actions,
+                        deterministic=False,
+                        collect_logits=True,
+                    )
+                    check_replay_flags(teacher_result.valid)
+                    teacher_logits = _require(teacher_result.slot_logits)
+                if compute_teacher_value:
+                    teacher_winner = (
+                        teacher._winner_log_probabilities(teacher_encoded)
+                        .exp()
+                        .reshape(*lead, kt.PLAYERS)
+                    )
+        return self._teacher_evaluation(
+            obs, actions, encoded, teacher_logits, teacher_winner
+        )
+
+    def _teacher_evaluation(
+        self,
+        obs: kt.KaggricultureObsBatch,
+        actions: kt.KaggricultureActions,
+        encoded: KaggricultureEncoded,
+        teacher_logits: dict[int, torch.Tensor] | None,
+        teacher_winner: torch.Tensor | None,
+    ) -> ModelTeacherEvaluation:
+        """Student replay with the per-slot KL, assembled for PPO."""
+        result = self._policy(
+            encoded,
+            self._grammar_context(obs),
+            actions,
+            deterministic=False,
+            teacher_logits=teacher_logits,
+        )
+        check_replay_flags(result.valid)
+        student = self._evaluation_from(result, encoded, obs)
+        action_kl: ModelActionKLDivergences | None = None
+        if teacher_logits is not None:
+            lead = tuple(obs.still_playing.shape)
+            event = _require(result.kl).reshape(*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+            per_frame = event.sum(dim=-1)
+            action_kl = ModelActionKLDivergences(
+                launch=torch.zeros_like(per_frame),
+                event=event,
+                per_player_entity=per_frame,
+                components={
+                    kt.SLOT_NAMES[slot]: event[..., slot] for slot in POLICY_SLOTS
+                },
+                target=None,
+            )
+        return ModelTeacherEvaluation(
+            student=student,
+            action_kl=action_kl,
+            teacher_winner_probabilities=teacher_winner,
+            student_winner_log_probabilities=student.winner_log_probabilities,
+        )
+
+    def teacher_value_cross_entropy(
+        self,
+        student_winner_log_probabilities: torch.Tensor,
+        teacher_winner_probabilities: torch.Tensor,
+        *,
+        value_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        """Per-seat CE over (self, opponent), averaged over live seats per state.
+
+        Each seat carries its own full winner distribution, so a mean keeps one
+        CE per state (Isaiah's scale for ``teacher_value_coef``); a sum would
+        double it. A non-live seat is excluded; a state with no live seat gives
+        0, and PPO's state weight is 0 there too.
+        """
+        expected = (*value_mask.shape, kt.PLAYERS)
+        for name, tensor in (
+            ("student winner log-probabilities", student_winner_log_probabilities),
+            ("teacher winner probabilities", teacher_winner_probabilities),
+        ):
+            if tuple(tensor.shape) != expected:
+                raise ValueError(
+                    f"{name} must have shape {expected}, got {tuple(tensor.shape)}"
+                )
+        per_seat = (
+            -teacher_winner_probabilities.detach() * student_winner_log_probabilities
+        ).sum(dim=-1)
+        live = value_mask.to(dtype=per_seat.dtype)
+        return (per_seat * live).sum(dim=-1) / live.sum(dim=-1).clamp_min(1.0)
 
     @staticmethod
     def _grammar_context(obs: kt.KaggricultureObsBatch) -> GrammarContext:
@@ -627,8 +939,14 @@ class KaggricultureTransformer(
         actions: kt.KaggricultureActions | None,
         *,
         deterministic: bool,
+        teacher_logits: dict[int, torch.Tensor] | None = None,
+        collect_logits: bool = False,
     ) -> GrammarPolicyResult:
-        """Run the heads in row chunks below the head GEMM-extent limit."""
+        """Run the heads in row chunks below the head GEMM-extent limit.
+
+        ``teacher_logits`` (row layout, keyed by ``POLICY_SLOTS``) is sliced
+        per chunk; ``slot_logits`` and ``kl`` are joined across chunks.
+        """
         rows = context.live.shape[0]
         tokens = (
             None
@@ -645,17 +963,31 @@ class KaggricultureTransformer(
                 lengths,
                 slice(start, min(start + chunk, rows)),
                 deterministic=deterministic,
+                teacher_logits=teacher_logits,
+                collect_logits=collect_logits,
             )
             for start in range(0, max(rows, 1), chunk)
         ]
         if len(results) == 1:
             return results[0]
+        slot_logits: dict[int, torch.Tensor] | None = None
+        if collect_logits:
+            slot_logits = {
+                slot: torch.cat([_require(r.slot_logits)[slot] for r in results])
+                for slot in POLICY_SLOTS
+            }
         return GrammarPolicyResult(
             tokens=torch.cat([r.tokens for r in results]),
             lengths=torch.cat([r.lengths for r in results]),
             log_probs=torch.cat([r.log_probs for r in results]),
             entropies=torch.cat([r.entropies for r in results]),
             valid=torch.cat([r.valid for r in results]),
+            slot_logits=slot_logits,
+            kl=(
+                None
+                if teacher_logits is None
+                else torch.cat([_require(r.kl) for r in results])
+            ),
         )
 
     def _policy_chunk(
@@ -667,7 +999,33 @@ class KaggricultureTransformer(
         rows: slice,
         *,
         deterministic: bool,
+        teacher_logits: dict[int, torch.Tensor] | None = None,
+        collect_logits: bool = False,
     ) -> GrammarPolicyResult:
+        unit_input, market_input = self._actor_inputs(encoded, rows)
+        core = self._compiled_actor_core or self.actor.policy_core
+        return core(
+            unit_input,
+            market_input,
+            context.actor_counts[rows],
+            context.order_limits[rows],
+            context.live[rows],
+            self.action_spec.hire_limit,
+            None if tokens is None else tokens[rows],
+            None if lengths is None else lengths[rows],
+            deterministic,
+            (
+                None
+                if teacher_logits is None
+                else {slot: logits[rows] for slot, logits in teacher_logits.items()}
+            ),
+            collect_logits,
+        )
+
+    def _actor_inputs(
+        self, encoded: KaggricultureEncoded, rows: slice
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """``actor_input_proj`` outputs: unit ``[B, 241, D]``, market ``[B, D]``."""
         entity = encoded.own_actor_hidden[rows]
         player = encoded.player_hidden[rows, 0]  # this seat's own player token
         plan = encoded.actor_plan_hidden[rows, 0]
@@ -684,18 +1042,7 @@ class KaggricultureTransformer(
         )
         # No market entity exists: the plan hidden stands in for it.
         market_input = self.actor_input_proj(torch.cat((plan, player, plan), dim=-1))
-        core = self._compiled_actor_core or self.actor.policy_core
-        return core(
-            unit_input,
-            market_input,
-            context.actor_counts[rows],
-            context.order_limits[rows],
-            context.live[rows],
-            self.action_spec.hire_limit,
-            None if tokens is None else tokens[rows],
-            None if lengths is None else lengths[rows],
-            deterministic,
-        )
+        return unit_input, market_input
 
     @staticmethod
     def _policy_outputs(
@@ -771,6 +1118,12 @@ class KaggricultureTransformer(
             ~encoded.critic_value_mask, torch.finfo(logits.dtype).min
         )
         return F.log_softmax(masked_logits, dim=-1)
+
+
+def _require(value: _T | None) -> _T:
+    if value is None:
+        raise RuntimeError("a requested policy-core output is missing")
+    return value
 
 
 def _check_action_layout(

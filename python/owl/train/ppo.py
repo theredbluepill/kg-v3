@@ -15,7 +15,6 @@ from owl.kaggriculture.types import KaggricultureObsBatch
 from owl.model import (
     ActorDiscreteTargetsConfig,
     BaseModelAPI,
-    CachedTeacherDistillationTargets,
     ModelActionKLDivergences,
     ModelActions,
     ModelEvaluation,
@@ -23,6 +22,7 @@ from owl.model import (
     ModelOutput,
     ModelTeacherEvaluation,
     StatelessTransformerV1,
+    TeacherTargets,
     load_model_state_dict_allowing_lora,
 )
 from owl.rl import (
@@ -628,15 +628,16 @@ class PPOTrainer:
                 device=self.device,
             )
             student_model = unwrap_model(self.model)
-            # The action-KL path runs through the discrete_targets actor.
+            # The action-KL path runs through each model's cached action-KL support.
             if self.config.teacher_kl_coef > 0.0 and not (
                 student_model.supports_cached_teacher_distillation()
                 and teacher_model.supports_cached_teacher_distillation()
             ):
                 raise ValueError(
                     "teacher action-KL distillation (rl.teacher_kl_coef > 0) "
-                    "requires the discrete_targets actor without player-count "
-                    "adapters for both the student and the teacher model"
+                    "requires cached action-KL support (for StatelessTransformerV1, "
+                    "the discrete_targets actor without player-count adapters) for "
+                    "both the student and the teacher model"
                 )
             if self.config.teacher_value_coef > 0.0 and not (
                 student_model.supports_cached_value_distillation()
@@ -670,7 +671,7 @@ class PPOTrainer:
         rollout_elapsed = max(perf_counter() - rollout_start, 1e-12)
         env_metrics = self._last_env_metrics
         segments = self.rollout.segment_major()
-        teacher_targets: CachedTeacherDistillationTargets | None = None
+        teacher_targets: TeacherTargets | None = None
         teacher_elapsed = 0.0
         teacher_model = self.teacher_model if self.teacher_active else None
         teacher_kl_coef, teacher_value_coef = _scheduled_teacher_coefficients(
@@ -761,6 +762,10 @@ class PPOTrainer:
         update_steps = self.config.horizon * sampled_segments
         metrics["time/rollout_seconds"] = float(rollout_elapsed)
         metrics["time/teacher_seconds"] = float(teacher_elapsed)
+        # This rank's cached teacher targets (tensor metadata; no sync).
+        metrics["teacher/cache_bytes"] = (
+            float(teacher_targets.nbytes()) if teacher_targets is not None else 0.0
+        )
         metrics["time/update_seconds"] = float(update_elapsed)
         metrics["time/iteration_seconds"] = float(elapsed)
         metrics["perf/rollout_sps"] = float(rollout_steps / rollout_elapsed)
@@ -997,7 +1002,7 @@ class PPOTrainer:
     def _precompute_teacher_targets(
         self,
         segments: _PPORolloutSegments,
-    ) -> CachedTeacherDistillationTargets | None:
+    ) -> TeacherTargets | None:
         """Run the frozen teacher trunk once per iteration over the rollout.
 
         Caches the teacher's action-distribution params and winner probabilities
@@ -1020,7 +1025,7 @@ class PPOTrainer:
         if not (compute_action_kl or compute_value):
             return None
         chunk_size = self.config.teacher_segments_per_minibatch
-        chunks: list[CachedTeacherDistillationTargets] = []
+        chunks: list[TeacherTargets] = []
         for start in range(0, self.n_envs, chunk_size):
             stop = min(start + chunk_size, self.n_envs)
             chunk_idx = torch.arange(start, stop, device=segments.logp.device)
@@ -1076,7 +1081,7 @@ class PPOTrainer:
         returns: torch.Tensor,
         policy_mask: torch.Tensor,
         value_mask: torch.Tensor,
-        teacher_targets: CachedTeacherDistillationTargets | None,
+        teacher_targets: TeacherTargets | None,
         winner_targets: torch.Tensor | None,
     ) -> tuple[dict[str, float], int]:
         loss_metrics: list[_PPOLossMetrics] = []
@@ -1195,7 +1200,7 @@ class PPOTrainer:
         value_mask: torch.Tensor,
         indices: torch.Tensor,
         *,
-        teacher_targets: CachedTeacherDistillationTargets | None = None,
+        teacher_targets: TeacherTargets | None = None,
         winner_targets: torch.Tensor | None = None,
         value_clip_anchor: torch.Tensor,
         loss_scale: float = 1.0,
@@ -1328,9 +1333,14 @@ class PPOTrainer:
             elif student_winner_log_probabilities is None:
                 raise RuntimeError("student winner log probabilities were not computed")
             else:
-                teacher_value_loss_values = _teacher_value_cross_entropy(
-                    student_winner_log_probabilities.view_as(batch_old_values),
-                    teacher_winner_probabilities.view_as(batch_old_values),
+                # The reduction depends on the game's winner layout, so the
+                # model owns it; it runs outside autocast like the other losses.
+                teacher_value_loss_values = unwrap_model(
+                    self.model
+                ).teacher_value_cross_entropy(
+                    student_winner_log_probabilities,
+                    teacher_winner_probabilities,
+                    value_mask=batch_value_mask,
                 )
 
         loss_kwargs = {
@@ -2779,6 +2789,16 @@ def _model_evaluate_actions_with_teacher(
     compute_teacher_action_kl: bool,
     compute_teacher_value: bool,
 ) -> ModelTeacherEvaluation:
+    # Stateless dispatch as _model_evaluate_actions: a stateless model gets
+    # neither hidden_state nor dones (Kaggriculture rejects non-None dones).
+    if hidden_state is None:
+        return model.evaluate_actions_with_teacher(
+            obs,
+            actions,
+            teacher,
+            compute_teacher_action_kl=compute_teacher_action_kl,
+            compute_teacher_value=compute_teacher_value,
+        )
     return model.evaluate_actions_with_teacher(
         obs,
         actions,
@@ -2794,13 +2814,22 @@ def _model_evaluate_actions_with_cached_teacher(
     model: BaseModelAPI,
     obs: ObsBatch,
     actions: ModelActions,
-    teacher_targets: CachedTeacherDistillationTargets,
+    teacher_targets: TeacherTargets,
     *,
     hidden_state: ModelHiddenState | None,
     dones: torch.Tensor,
     compute_teacher_action_kl: bool,
     compute_teacher_value: bool,
 ) -> ModelTeacherEvaluation:
+    # Stateless dispatch as _model_evaluate_actions (see above).
+    if hidden_state is None:
+        return model.evaluate_actions_with_cached_teacher(
+            obs,
+            actions,
+            teacher_targets,
+            compute_teacher_action_kl=compute_teacher_action_kl,
+            compute_teacher_value=compute_teacher_value,
+        )
     return model.evaluate_actions_with_cached_teacher(
         obs,
         actions,
@@ -2810,15 +2839,6 @@ def _model_evaluate_actions_with_cached_teacher(
         compute_teacher_action_kl=compute_teacher_action_kl,
         compute_teacher_value=compute_teacher_value,
     )
-
-
-def _teacher_value_cross_entropy(
-    student_winner_log_probabilities: torch.Tensor,
-    teacher_winner_probabilities: torch.Tensor,
-) -> torch.Tensor:
-    return (
-        -teacher_winner_probabilities.detach() * student_winner_log_probabilities
-    ).sum(dim=-1)
 
 
 def _output_actions(output: ModelOutput) -> ModelActions:

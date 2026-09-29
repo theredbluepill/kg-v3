@@ -1018,15 +1018,33 @@ def _validate_teacher_specs(
 
 
 def _teacher_obs_spec_for_student(
-    teacher_obs_spec: ObsConfig,
+    teacher_obs_spec: ObsConfig | KaggricultureObsConfig,
     *,
-    student_obs_spec: ObsConfig,
+    student_obs_spec: ObsConfig | KaggricultureObsConfig,
     checkpoint_path: Path,
-) -> ObsConfig:
+) -> ObsConfig | KaggricultureObsConfig:
+    """The teacher's obs spec as the student will feed it.
+
+    Orbit entity-based specs must match except ``max_entities`` (the teacher
+    takes the student's); Kaggriculture specs must match exactly. Mixing games
+    raises ``TypeError``.
+    """
+    if isinstance(teacher_obs_spec, KaggricultureObsConfig) and isinstance(
+        student_obs_spec, KaggricultureObsConfig
+    ):
+        if teacher_obs_spec != student_obs_spec:
+            raise ValueError(
+                f"teacher obs_spec must match student exactly: {checkpoint_path}"
+            )
+        return teacher_obs_spec
     if not isinstance(teacher_obs_spec, EntityBasedBaseConfig) or not isinstance(
         student_obs_spec, EntityBasedBaseConfig
     ):
-        raise TypeError("teacher and student obs_spec must be entity-based")
+        raise TypeError(
+            "teacher and student obs_spec must both be entity-based or both "
+            f"KaggricultureObsConfig, got {type(teacher_obs_spec).__name__} and "
+            f"{type(student_obs_spec).__name__}"
+        )
 
     adjusted_teacher_obs_spec = type(teacher_obs_spec).model_validate(
         {
