@@ -43,7 +43,7 @@ sources: [{"resource": "user-directive:2026-09-29:make-sure-all-v3-experiments-w
     - offline without credentials passes the gate, prints the banner and stops at the existing not-wired error;
     - the session writes one receipt per telemetry mode, with the outage line only for outages;
     - a main rank without an identity is rejected.
-- **Full preparation.** `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 uvx --from rust-just just prepare` exited 0 (`ops/rebuild-2026-09-29/wandb-2026-09-29/prepare.log`): ruff, format, mypy (64 files), docs-lint, Rust 254 passed and 4 ignored, engine 69 passed, Python 1,718 passed and 11 skipped, docs-fresh.
+- **Full preparation.** `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 uvx --from rust-just just prepare` exited 0 on the committed r1-fix tree `b90286a` (`ops/rebuild-2026-09-29/wandb-2026-09-29/prepare.log`, which names the commit): ruff, format, mypy (65 files), docs-lint, Rust 254 passed and 4 ignored, engine 69 passed, Python 1,741 passed and 11 skipped, docs-fresh. The first commit `05cbd88` also passed (1,718 Python).
 - **Codex.** Round 1 (`ops/rebuild-2026-09-29/codex/verify-wandb-r1.md`, REQUEST CHANGES) ran 34 mutations: 32 were killed, and the attempt-order check and config-read-before-gate mutants survived. It also reported:
   - four P2 findings: the `awk` netrc copy, blank or padded keys, an empty `WANDB_MODE` and URLs bypassing the gate, loose receipt types, and URL credentials in error text;
   - three P3 findings.

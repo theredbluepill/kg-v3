@@ -7,7 +7,7 @@ The owner asked "why BC training has nop W&B report? make sure all v3 experiment
 - Offline or debug telemetry takes an explicit flag, prints a loud banner, and is recorded with source commit and config hash in `attempts.jsonl`.
 - The code record is [[references/v3-launchers-fail-fast-without-wandb-credentials|v3 launchers fail fast without W&B credentials]]. The new [[workflows/install-the-wandb-credential-before-any-pod-launch|pod credential Workflow]] is the setup step.
 - BC code was not edited. `train_bc` needs the same gate; the follow-up is listed in the audit.
-- Codex `verify-wandb-r1` requested changes: the `awk` netrc copy could take a second credential, blank keys, an empty `WANDB_MODE` and malformed URLs slipped past the gate, receipts were loosely typed, and URL credentials could appear in errors. All are fixed with tests, and the pod copy now uses `scripts/export_wandb_netrc_entry.py`.
+- Codex `verify-wandb-r1` requested changes: the `awk` netrc copy could take a second credential, blank keys, an empty `WANDB_MODE` and malformed URLs slipped past the gate, receipts were loosely typed, and URL credentials could appear in errors. All are fixed with tests, and the pod copy now uses `scripts/export_wandb_netrc_entry.py`. `just prepare` on `b90286a`: 1,741 Python passed, 11 skipped; Rust 254 passed, engine 69 passed.
 
 ## 2026-09-29 — Apply the value-gap r1 edits and a custody-manifest schema fix on the custody branch
 
