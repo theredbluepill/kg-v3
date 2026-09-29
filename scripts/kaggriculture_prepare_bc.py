@@ -1,8 +1,10 @@
 """Kaggle episode archives -> ``kaggriculture-bc-shard-v1`` BC shards (Task 5.1).
 
 Lean preparation for the owner's BC data: every episode of the chosen days
-(default 2026-09-21..27), imitating one seat per episode, the winner by final
-bank (both seats on a draw).
+(default 2026-09-22..28), imitating one seat per episode, the winner by final
+bank (both seats on a draw). ``--team NAME`` restricts imitation to one
+player: only that team's seats are policy seats, winning ones only unless
+``--include-losses``; episodes without such a seat are rejected and counted.
 
 Input is a directory of day archives ``kaggriculture-episodes-YYYY-MM-DD.zip``
 whose members are ``<episode_id>.json`` Kaggle episodes. On the RunPod volume
@@ -16,7 +18,8 @@ Per episode (one worker process each, one ZIP member in memory at a time):
 1. Envelope: 720 steps of two seats, ``info.EpisodeId`` equal to the member
    name, an integer ``info.seed`` (custody only, never encoded), both final
    statuses ``DONE``, the full Rust config key set.
-2. Winner seat(s) by final bank ``farms[s].money`` at the last step.
+2. Winner seat(s) by final bank ``farms[s].money`` at the last step,
+   intersected with the ``--team`` seats (by ``info.TeamNames``) when given.
 3. For each kept turn ``t`` in ``0..718`` (all turns unless ``--turn-stride``),
    the observation is ``steps[t]`` (seat 1's shared keys come from seat 0) and
    the label of seat ``s`` is ``steps[t + 1][s].action``: Kaggle records the
@@ -39,7 +42,8 @@ skips those (resumable), and ``manifest.json`` is written once at the end.
 ``records/identity.json`` binds the records to the source checkout, the
 label-affecting settings and every archive's SHA-256; a rerun whose identity
 differs fails instead of reusing stale labels or winners.
-Agent and team names are never read.
+Team names are read only for ``--team`` and compared by SHA-256; no name is
+ever written to records, manifest or identity (the command is redacted).
 
 ``--pairing-sample N`` first steps N episodes through kaggle-environments' own
 Kaggriculture interpreter (with the recorded ``info.seed``) from every
@@ -120,6 +124,8 @@ class EpisodeTask:
     episode_id: str
     split: bc_data.Split
     turn_stride: int
+    team_sha256: str | None = None
+    include_losses: bool = False
 
 
 # --- pure helpers (unit tested) ---------------------------------------------------
@@ -142,6 +148,39 @@ def kept_turns(episode_id: str, stride: int) -> list[int]:
 def winner_seats(banks: Sequence[float]) -> tuple[bool, bool]:
     """Policy seats: the larger final bank, both on a draw."""
     return (banks[0] >= banks[1], banks[1] >= banks[0])
+
+
+def name_sha256(name: str) -> str:
+    return hashlib.sha256(name.encode("utf-8")).hexdigest()
+
+
+def policy_seats(
+    banks: Sequence[float],
+    team_names: object,
+    team_sha256: str | None,
+    *,
+    include_losses: bool,
+) -> tuple[bool, bool]:
+    """Winner seats, or the ``--team`` seats (winning ones unless include_losses)."""
+    winners = winner_seats(banks)
+    if team_sha256 is None:
+        return winners
+    if (
+        not isinstance(team_names, list)
+        or len(team_names) != 2
+        or not all(isinstance(n, str) for n in team_names)
+    ):
+        raise EpisodeRejected("info.TeamNames is not two strings")
+    mine = [name_sha256(n) == team_sha256 for n in team_names]
+    if not any(mine):
+        raise EpisodeRejected("team absent")
+    seats = (
+        mine[0] and (include_losses or winners[0]),
+        mine[1] and (include_losses or winners[1]),
+    )
+    if not any(seats):
+        raise EpisodeRejected("team lost")
+    return seats
 
 
 def check_envelope(data: dict[str, Any], episode_id: str) -> None:
@@ -431,7 +470,12 @@ def process_episode(task: EpisodeTask, out_dir: Path) -> dict[str, Any]:
         record |= {"source_sha256": sha256, "source_bytes": size}
         check_envelope(data, task.episode_id)
         banks = final_banks(data)
-        policy = winner_seats(banks)
+        policy = policy_seats(
+            banks,
+            data["info"].get("TeamNames"),
+            task.team_sha256,
+            include_losses=task.include_losses,
+        )
         turns = kept_turns(task.episode_id, task.turn_stride)
         arrays = encode_observations(data, turns)
         admitted, tokens, lengths, rejections, normalizations = admit_turns(
@@ -762,6 +806,24 @@ def _bind_identity(out_dir: Path, identity: dict[str, Any]) -> None:
     )
 
 
+def _redact_team(argv: Sequence[str]) -> list[str]:
+    """The command line with any ``--team`` value replaced (names never persist)."""
+    out: list[str] = []
+    redact = False
+    for arg in argv:
+        if redact:
+            out.append("<team>")
+            redact = False
+        elif arg == "--team":
+            out.append(arg)
+            redact = True
+        elif arg.startswith("--team="):
+            out.append("--team=<team>")
+        else:
+            out.append(arg)
+    return out
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("archives", type=Path, help="directory of day archive ZIPs")
@@ -782,6 +844,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         default=None,
         help="derive the turn stride so all turn rows fit this host-memory budget",
     )
+    parser.add_argument(
+        "--team", default=None, help="imitate only this team's seats (by TeamNames)"
+    )
+    parser.add_argument(
+        "--include-losses",
+        action="store_true",
+        help="with --team, also imitate the team's losing seats",
+    )
     parser.add_argument("--limit-episodes", type=int, default=None)
     parser.add_argument("--pairing-sample", type=int, default=0)
     parser.add_argument("--pairing-only", action="store_true")
@@ -790,6 +860,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise ValueError("--validation-fraction must be in (0, 1)")
     if args.workers < 1:
         raise ValueError("--workers must be >= 1")
+    if args.include_losses and args.team is None:
+        raise ValueError("--include-losses needs --team")
+    team_sha256 = None if args.team is None else name_sha256(args.team)
     repo = Path(__file__).resolve().parents[1]
     out_dir: Path = args.out_dir.resolve()
     if out_dir.is_relative_to(repo):
@@ -813,7 +886,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.resident_budget_gib is not None:
         turn_stride = stride_for_budget(len(tasks), args.resident_budget_gib)
     tasks = [
-        EpisodeTask(t.archive, t.member, t.day, t.episode_id, t.split, turn_stride)
+        EpisodeTask(
+            t.archive,
+            t.member,
+            t.day,
+            t.episode_id,
+            t.split,
+            turn_stride,
+            team_sha256,
+            args.include_losses,
+        )
         for t in tasks
     ]
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -831,6 +913,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "turn_stride": turn_stride,
             "hire_limit": HIRE_LIMIT,
             "label_pairing": LABEL_PAIRING,
+            "team_sha256": team_sha256,
+            "include_losses": args.include_losses,
             "archive_sha256": archive_sha256,
         },
     )
@@ -872,14 +956,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         {
             "run": run
             | {
-                "command": [sys.executable, *sys.argv],
+                "command": [sys.executable, *_redact_team(sys.argv)],
                 "workers": args.workers,
                 "hire_limit": HIRE_LIMIT,
                 "turn_stride": turn_stride,
                 "bytes_per_turn_row": resident_bytes_per_turn(),
                 "validation_fraction": args.validation_fraction,
                 "label_pairing": LABEL_PAIRING,
-                "policy_seats": "winner by final bank; both on a draw",
+                "policy_seats": (
+                    "winner by final bank; both on a draw"
+                    if team_sha256 is None
+                    else "the --team seats (by TeamNames SHA-256)"
+                    + ("" if args.include_losses else " that won; both on a draw")
+                ),
+                "team_sha256": team_sha256,
+                "include_losses": args.include_losses,
             },
             "source": {
                 "archives": str(args.archives),

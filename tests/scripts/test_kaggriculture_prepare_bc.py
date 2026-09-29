@@ -272,3 +272,98 @@ def test_end_to_end_writes_loadable_winner_shards_and_resumes(
     monkeypatch.setattr(prepare, "_source_identity", lambda _repo: {"git_head": "u"})
     with pytest.raises(RuntimeError, match=r"\['archive_sha256', 'run'\]"):
         prepare.main(argv[:-2])
+
+
+def test_team_seats_filter_by_name_hash_and_outcome() -> None:
+    a = prepare.name_sha256("A")
+    assert prepare.policy_seats(
+        (10.0, 5.0), ["A", "B"], None, include_losses=False
+    ) == (
+        True,
+        False,
+    )
+    assert prepare.policy_seats((10.0, 5.0), ["A", "B"], a, include_losses=False) == (
+        True,
+        False,
+    )
+    assert prepare.policy_seats((5.0, 10.0), ["A", "B"], a, include_losses=True) == (
+        True,
+        False,
+    )
+    assert prepare.policy_seats((7.0, 7.0), ["A", "A"], a, include_losses=False) == (
+        True,
+        True,
+    )
+    with pytest.raises(prepare.EpisodeRejected, match="team lost"):
+        prepare.policy_seats((5.0, 10.0), ["A", "B"], a, include_losses=False)
+    with pytest.raises(prepare.EpisodeRejected, match="team absent"):
+        prepare.policy_seats((10.0, 5.0), ["B", "C"], a, include_losses=False)
+    with pytest.raises(prepare.EpisodeRejected, match="TeamNames"):
+        prepare.policy_seats((10.0, 5.0), ["A"], a, include_losses=False)
+
+
+def test_redact_team_hides_the_name() -> None:
+    argv = ["x.py", "--team", "Secret", "--team=Secret", "--days", "22-28"]
+    assert prepare._redact_team(argv) == [
+        "x.py",
+        "--team",
+        "<team>",
+        "--team=<team>",
+        "--days",
+        "22-28",
+    ]
+
+
+def test_end_to_end_team_filter_keeps_only_that_teams_winning_seat(
+    played: dict[str, Any], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(prepare, "_source_identity", lambda _repo: {"git_head": "t"})
+    banks = [f["money"] for f in played["steps"][-1][0]["observation"]["farms"]]
+    assert banks[0] != banks[1], "fixture needs a decisive game"
+    winner = 0 if banks[0] > banks[1] else 1
+    won_id, lost_id, absent_id = _ids("train", 3)
+    won = _episode(played, won_id)
+    won["info"]["TeamNames"] = ["x", "x"]
+    won["info"]["TeamNames"][winner] = _SECRET_NAME
+    lost = _episode(played, lost_id)
+    lost["info"]["TeamNames"] = ["x", "x"]
+    lost["info"]["TeamNames"][1 - winner] = _SECRET_NAME
+    valid_id = _ids("validation", 1)[0]
+    valid = _episode(played, valid_id)
+    valid["info"]["TeamNames"] = ["x", "x"]
+    valid["info"]["TeamNames"][winner] = _SECRET_NAME
+    absent = _episode(played, absent_id)
+    absent["info"]["TeamNames"] = ["x", "y"]
+    archives = tmp_path / "archives"
+    _archive(
+        archives, 22, {won_id: won, lost_id: lost, absent_id: absent, valid_id: valid}
+    )
+    out = tmp_path / "bc"
+    argv = [
+        str(archives),
+        str(out),
+        "--days",
+        "22",
+        "--workers",
+        "1",
+        "--turn-stride",
+        "7",
+        "--team",
+        _SECRET_NAME,
+    ]
+    monkeypatch.setattr(sys, "argv", ["prepare.py", *argv])
+    assert prepare.main(argv) == 0
+
+    manifest = json.loads((out / MANIFEST_NAME).read_text())
+    kept = {r["episode_id"]: r for r in manifest["episodes"]}
+    assert set(kept) == {won_id, valid_id}
+    assert all(r["policy_seats"] == [winner] for r in kept.values())
+    assert manifest["episode_rejections"] == {"team absent": 1, "team lost": 1}
+    assert manifest["run"]["team_sha256"] == prepare.name_sha256(_SECRET_NAME)
+    for path in out.rglob("*"):
+        if path.is_file() and path.suffix in {".json", ".txt"}:
+            assert _SECRET_NAME not in path.read_text(), path
+    dataset = load_bc_dataset(out)
+    batch = dataset.train.gather(np.arange(dataset.train.num_rows))
+    expected = [s == winner for s in (0, 1)]
+    assert batch.policy_seat.tolist() == [expected] * dataset.train.num_rows
