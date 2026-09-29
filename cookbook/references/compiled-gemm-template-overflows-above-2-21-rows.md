@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Compiled GEMM template overflows above 2^21 rows"
-description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. The rebuilt trunk guard is measured correct at L−1 and rejects L; production compliance is unproven."
+description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. At `1ddc71d` the rebuilt trunk guard was measured correct at L−1 and rejected L; the packed path now chunks instead of rejecting (CPU-tested). Production compliance is unproven."
 tags: ["kaggriculture-v3", "cuda", "compile"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -46,14 +46,14 @@ Inferred, not measured:
 ## Consequences
 
 - **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
-  - For the trunk that width is 512, which is `gemm_kmax`.
-  - Nothing enforces the bound outside the trunk. The stems are eager today, but the full stem is 371→512→256. The heads and the planned 768-wide `actor_input_proj` are not implemented yet; compiled, `actor_input_proj` would exceed L_in at 2,796,203 rows × frames.
+  - For the trunk that width is 512, computed by `trunk_gemm_width` (formerly `gemm_kmax`) from the actual Linear layers.
+  - Outside the trunk: the stems run eager (the full stem is 371→512→256) and have no guard of their own. Task 2.3 implements the heads and the 768-wide `actor_input_proj`; they run eager in production and chunk rows so `rows × 252 × max(3D, D, widest head) < 2^31` (11,096 rows at D = 256). Compiled, `actor_input_proj` alone would exceed L_in at 2,796,203 rows × frames. None of this is measured on the GPU.
 - **Production compliance is unproven.** Kaggriculture is not yet in `ModelConfig` or the model factory, and `configure_model_compile` rejects it for `model_compile="trunk"`. Integrated rollout, PPO recompute, evaluation, BC and teacher workloads stay unverified until Task 3.1 and Phase 6.
 - **Size margins against 2³¹/width, not against observed faults.** A passing test above the bound is not evidence of safety.
 - **Workload margins against the trunk L:**
   - Rollout at 256 rows: 23.1× headroom, forward measured correct.
   - PPO minibatch at 1,024 rows: 5.78×, arithmetic only.
-  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. It needs `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunking. The guard would raise, not corrupt.
+  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. At the probed commit `1ddc71d` the packed guard would have raised, not corrupted. Since Task 2.3 the packed path chunks at row boundaries, so a teacher chunk of this size runs in several trunk calls (CPU-tested; not measured on the GPU).
 - **Log-ratio alarm:** treat a non-zero log-ratio at the first minibatch (before any optimizer step) as a correctness failure and abort, recording the batch shape.
 - **Upgrades:** don't upgrade torch or drivers as a remedy without a separate measured decision. Rerun both probes after any upgrade.
 

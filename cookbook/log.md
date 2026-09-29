@@ -1,5 +1,12 @@
 # Change log
 
+## 2026-09-29 — Reconcile overflow notes after merging the heads and GEMM evidence
+
+Codex verified the staged merge of Task 2.3 and the GEMM-limit evidence (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md`).
+- The overflow comment in `python/owl/model/kaggriculture.py` and `docs/model-architecture.md` now cites the measured input-side limit, with `rows × max(in, out) < 2^31` as the training design bound.
+- The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] now records that the Task 2.3 heads exist and chunk.
+- The Reference scopes the "rejects L" measurement to `1ddc71d`, because the packed path now chunks instead (CPU-tested). Its index line matches.
+
 ## 2026-09-29 — Merge live parity with the hardened rules-kernel checker
 
 Task 1.1b (Codex APPROVE at `16e56b6`) and Task 1.1's verification hardening

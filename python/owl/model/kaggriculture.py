@@ -62,10 +62,10 @@ KAGGRICULTURE_TRANSFORMER: Literal["kaggriculture_transformer"] = (
     "kaggriculture_transformer"
 )
 
-# Compiled mm/addmm templates in torch 2.9 form A-load and output-store offsets
-# in int32, so every compiled GEMM needs rows x max(K, N_out, fused-epilogue row
-# stride) < 2**31 (cookbook reference
-# compiled-gemm-template-overflows-above-2-21-rows).
+# Compiled mm/addmm templates in torch 2.9 can form the A-load offset in int32
+# (measured: corruption once rows x input width > 2**31). Backward reads forward
+# outputs as inputs, so compiled regions keep rows x max(in, out) < 2**31
+# (cookbook reference compiled-gemm-template-overflows-above-2-21-rows).
 _GEMM_ELEMENT_LIMIT = 2**31
 _OVERFLOW_REFERENCE = (
     "cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md"
