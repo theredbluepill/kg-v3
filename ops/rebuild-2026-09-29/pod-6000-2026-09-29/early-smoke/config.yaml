@@ -1,0 +1,74 @@
+# Early 2-rank functional smoke (brief 1.5 "Draft pod run statement for Claude").
+# Task 3.4's 2-rank recipe (configs/kaggriculture_2rank.yaml) with the brief's
+# diagnostic overrides: tiny random-init eager model, 32-transition games
+# (episodeSteps 33), native_threads 1, no teacher, no evaluation or replay,
+# target_kl null, bf16, no compile. Not a throughput or policy-quality config.
+env:
+  n_envs: 128
+  seed: 23000
+  config:
+    episodeSteps: 33
+  obs_spec:
+    obs_spec: kaggriculture
+    schema_version: 3
+  action_spec:
+    action_spec: kaggriculture
+    hire_limit: 241
+  reward_mode: win_loss
+  reward_shaping:
+    econ_shaping: 0.2
+    econ_starvation_weight: 4.0
+    econ_drought_weight: 1.0
+    econ_cap: 0.25
+    econ_ineffective_weight: 0.0
+    econ_ineffective_cap: 0.1
+  pin_memory: true
+  native_threads: 1
+
+model:
+  model_arch: kaggriculture_transformer
+  embed_dim: 32
+  depth: 1
+  n_heads: 1
+  mlp_ratio: 2.0
+  activation: gelu
+  n_scratch_tokens: 0
+  force_flash_attn: false
+
+optimizer:
+  optimizer: muon
+  adamw_lr: 0.0001
+  adamw_eps: 1.0e-05
+  weight_decay: 0.0
+  muon_lr: 0.002
+  muon_weight_decay: 0.01
+  muon_momentum: 0.95
+  lr_schedule:
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 1000
+    decay_steps: 400_000
+    lr_min_ratio: 0.01
+
+rl:
+  horizon: 64
+  checkpoint_freq: null
+  ppo_epochs: 1
+  segments_per_minibatch: 8
+  gradient_accumulation_steps: 1
+  gamma: 1.0
+  gae_lambda: 0.9
+  clip_coef: 0.2
+  vf_clip_coef: null
+  vf_coef: 2.0
+  ent_coef: 1e-6
+  max_grad_norm: 10.0
+  target_kl: null
+  ppo_clip_mode: per_player
+  normalize_advantages: true
+  eval_replay_games: 0
+  teacher_mode: null
+  teacher_kl_coef: 0.0
+  teacher_value_coef: 0.0
+  compile_mode: null
+  model_compile: none
+  dtype: bfloat16
