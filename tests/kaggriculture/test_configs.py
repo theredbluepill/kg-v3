@@ -191,12 +191,18 @@ def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
     ours = _sections(name)
     assert ours.optimizer == scaling.optimizer
     # Only the per-rank minibatch differs; target_kl, teacher, compile, dtype
-    # and checkpoint cadence are scaling_6m's.
+    # and checkpoint cadence are scaling_6m's. Replay export stays off until
+    # Task 7.3 adds it for Kaggriculture (a positive count fails at startup).
     assert ours.rl.gradient_accumulation_steps == 1
     assert ours.rl.target_kl is None
+    assert ours.rl.eval_replay_games == 0
+    assert scaling.rl.eval_replay_games == 8
     assert (
         ours.rl.model_copy(
-            update={"segments_per_minibatch": scaling.rl.segments_per_minibatch}
+            update={
+                "segments_per_minibatch": scaling.rl.segments_per_minibatch,
+                "eval_replay_games": scaling.rl.eval_replay_games,
+            }
         )
         == scaling.rl
     )

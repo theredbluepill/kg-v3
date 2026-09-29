@@ -158,9 +158,10 @@ Training presets live in `configs/`:
   model cannot chunk) before creating the run directory. The canonical PPO
   collector, rollout buffer and update loop support both games through typed
   observation, action and mask mapping. Kaggriculture uses the native adapter
-  with caller-owned buffers. Set `rl.eval_replay_games=0` for these presets until
-  Task 7.3 adds Kaggriculture replay export; a positive value fails at startup
-  before creating the run directory, environment or model.
+  with caller-owned buffers. The presets set `rl.eval_replay_games: 0` until
+  Task 7.3 adds Kaggriculture replay export (restoring `scaling_6m`'s 8); a
+  positive value fails at startup before creating the run directory,
+  environment or model.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.
@@ -318,7 +319,7 @@ launch on a suitable training host:
 
 ```sh
 uv run python scripts/run_ppo.py configs/kaggriculture.yaml runs \
-  --wandb-mode online -o rl.eval_replay_games=0
+  --wandb-mode online
 ```
 
 `--wandb-mode {online,offline}` defaults to `online`. Kaggriculture W&B runs use
@@ -326,7 +327,8 @@ project `kg-v3`, job type and group `ppo`, tags `kaggriculture-v3` and `ppo`,
 and name `ppo-<run-directory-name>`. Both training and evaluation metrics use
 the shared logger calls. For hosts without a W&B key, `--wandb-mode offline`
 saves telemetry under the run directory for a later `wandb sync`. Offline mode
-is explicit; online failures do not silently switch to it. Resume requires
+is explicit; online failures do not silently switch to it, and it requires
+`--log-mode wandb` (debug logging with offline mode fails). Resume requires
 online W&B logging and rejects
 `--wandb-mode offline` before allocating a run. Orbit keeps its existing online
 W&B initialization.
@@ -337,7 +339,10 @@ The budget reserves construction and trainer-reset seeds, allows both an
 auto-reset and a truncation per environment step, and includes a full update
 of stopping-point overshoot. An excessive `--max-env-steps` fails before run
 allocation; omitting it uses the safe ceiling. The admitted environment-step
-counter also remains in `_evaluation_seed`'s `[0, 2**61)` domain.
+counter also remains in `_evaluation_seed`'s `[0, 2**61)` domain. A resumed
+Kaggriculture launch starts its rollout seeds at `env.seed + 4 * env_steps`,
+using the checkpoint's saved steps, past every seed its checkpoint trained on.
+It therefore does not replay the first launch's worlds.
 
 `rl.model_compile` defaults to `trunk`, which compiles the stateless
 self-attention transformer trunk as one dynamic-shape callable after

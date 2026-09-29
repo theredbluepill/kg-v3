@@ -173,8 +173,19 @@ def main() -> None:
             cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
         )
         _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+        # A resumed Kaggriculture launch continues the rollout seed stream past
+        # every seed its checkpoint trained on, so it reads the saved step first.
+        rollout_start_env_steps = (
+            _checkpoint_env_steps(launch.checkpoint_path)
+            if isinstance(launch, ResumeLaunch)
+            and isinstance(cfg.env, KaggricultureEnvConfig)
+            else 0
+        )
         max_env_steps = _kaggriculture_step_limit(
-            cfg, distributed, max_env_steps=args.max_env_steps
+            cfg,
+            distributed,
+            max_env_steps=args.max_env_steps,
+            start_env_steps=rollout_start_env_steps,
         )
         if isinstance(cfg.env, KaggricultureEnvConfig) and cfg.rl.eval_replay_games > 0:
             raise ValueError(
@@ -203,7 +214,9 @@ def main() -> None:
             env = create_env(
                 env_config,
                 n_envs=env_config.n_envs,
-                base_seed=env_config.seed,
+                base_seed=_kaggriculture_rollout_base_seed(
+                    env_config.seed, start_env_steps=rollout_start_env_steps
+                ),
                 rank=distributed.rank,
                 world_size=distributed.world_size,
                 pin_memory=env_config.pin_memory,
@@ -264,6 +277,15 @@ def main() -> None:
             checkpoint_metadata = trainer.load_checkpoint(launch.checkpoint_path)
             resume_run_id = _resume_wandb_run_id(checkpoint_metadata, args.log_mode)
             start_env_steps = checkpoint_metadata.env_steps
+            if (
+                isinstance(env_config, KaggricultureEnvConfig)
+                and start_env_steps != rollout_start_env_steps
+            ):
+                raise RuntimeError(
+                    f"resume checkpoint {launch.checkpoint_path} changed during "
+                    f"startup: env_steps {rollout_start_env_steps} became "
+                    f"{start_env_steps}"
+                )
             last_best_model = _create_eval_model_for_config(
                 cfg,
                 device=device,
@@ -666,6 +688,8 @@ def _validate_args(args: argparse.Namespace) -> None:
         raise ValueError(
             "resume launches do not support --wandb-mode offline; use online"
         )
+    if args.wandb_mode == "offline" and args.log_mode != LogMode.WANDB:
+        raise ValueError("--wandb-mode offline requires --log-mode wandb")
 
 
 def _resolve_launch(args: argparse.Namespace) -> Launch:
@@ -1653,28 +1677,57 @@ def _evaluation_seed(*, base_seed: int, env_steps: int) -> int:
     )
 
 
+def _kaggriculture_rollout_base_seed(seed: int, *, start_env_steps: int) -> int:
+    """First rollout seed of a Kaggriculture launch that starts at ``start_env_steps``.
+
+    A launch from global step ``S0`` to ``S1`` draws its seeds from
+    ``[base, base + 2 * global_envs + 2 * (S1 - S0))``: construction and the
+    trainer reset, then at most an auto-reset and a truncation per transition.
+    With ``base = seed + 4 * S0``, the next resume base ``seed + 4 * S1`` lies past
+    all of them whenever ``S1 - S0 >= global_envs``, which one update
+    (``global_envs * horizon`` steps) guarantees. By induction a resumed launch
+    never replays a world its checkpoint trained on, across any number of
+    resumes and world-size changes. A fresh launch starts at ``seed``.
+    """
+    return seed + 4 * start_env_steps
+
+
 def _kaggriculture_step_limit(
     cfg: FullConfig,
     distributed: DistributedContext,
     *,
     max_env_steps: int | None,
+    start_env_steps: int = 0,
 ) -> int | None:
     """Reserve a whole launch below the evaluation seed band before allocation.
 
-    Construction and the trainer's reset each consume global_envs seeds. Allow
-    both an autoreset and a truncation per transition, and the loop's final
-    full-update overshoot. This conservative bound also keeps evaluation's
-    global step counter inside its 61-bit domain, including resumed launches.
-    Native seed admission and evaluation seed consumption remain unchanged.
+    The launch's rollout seeds start at
+    ``_kaggriculture_rollout_base_seed(seed, start_env_steps)``. Construction and
+    the trainer's reset each consume global_envs seeds. Allow both an autoreset
+    and a truncation per transition, and the loop's final full-update overshoot.
+    This conservative bound also keeps evaluation's global step counter inside
+    its 61-bit domain, including resumed launches. Native seed admission and
+    evaluation seed consumption remain unchanged.
     """
     if not isinstance(cfg.env, KaggricultureEnvConfig):
         return max_env_steps
     if not 0 <= cfg.env.seed < 1 << _EVAL_SEED_BITS:
         raise ValueError("Kaggriculture env.seed must be in [0, 2**61) for evaluation")
+    if start_env_steps < 0:
+        raise ValueError(f"start_env_steps must be >= 0, got {start_env_steps}")
     global_envs = cfg.env.n_envs * distributed.world_size
     update_steps = global_envs * cfg.rl.horizon
-    seed_steps = (_EVAL_SEED_FLOOR - cfg.env.seed - 2 * global_envs) // 2
+    # Seeds stay below seed + 4*S0 + 2*global_envs + 2*(S_end - S0)
+    # = seed + 2*global_envs + 2*S0 + 2*S_end.
+    seed_steps = (
+        _EVAL_SEED_FLOOR - cfg.env.seed - 2 * global_envs - 2 * start_env_steps
+    ) // 2
     safe_limit = min(seed_steps, (1 << _EVAL_SEED_BITS) - 1) - (update_steps - 1)
+    if start_env_steps > safe_limit:
+        raise ValueError(
+            f"Kaggriculture rollout seed budget: a launch resumed at env step "
+            f"{start_env_steps} cannot stay below 2**62 (safe limit {safe_limit})"
+        )
     if safe_limit < 1 or (max_env_steps is not None and max_env_steps > safe_limit):
         raise ValueError(
             "Kaggriculture rollout seed budget requires --max-env-steps <= "

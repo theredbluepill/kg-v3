@@ -868,7 +868,7 @@ The Kaggriculture game uses the same shared training path through its own observ
 - **Actions** `KaggricultureActions`: `tokens [E,2,252,12]` and `lengths [E,2]` (one unit frame per own actor, then up to `order_limits` market frames, then STOP). The slot widths and action enums are pinned in the contract; the native grammar supplies syntax/support masks.
 - **Model outputs** (`KaggricultureTransformer`, Task 2.3): `forward` returns sampled `KaggricultureActions` with `log_probs.event` and `entropies.event` of shape `[E,2,252,12]` (per frame and slot; implicit slots 0/2/11 are zero), `per_player_entity = event.sum(-1)` `[E,2,252]`, zero `launch`, per-slot entropy `components`, `values [E,2]` and `winner_probabilities [E,2,2]`. `evaluate_actions` requires `int64` tokens/lengths of exactly these shapes, rejects non-canonical or out-of-support programs itself (`GrammarReplayError` naming the support, length or canonical group), and requires `hidden_state` and `dones` to be `None`.
 - **Teacher targets** (`KaggricultureTeacherTargets`, Phase 4): in the observation lead layout (segment-major `[N,T,2]` in PPO), `slot_logits[k]` is `[*lead, 241, W_k]` for unit slots 1/3/4/5/6 and `[*lead, 11, W_k]` for market slots 7–10 (FP32, `finfo.min` outside the replay-conditioned mask), `winner_probabilities` is FP32 `[*lead, 2]`, and `grammar` is the teacher's `GrammarSignature`. `evaluate_actions_with_cached_teacher` returns `action_kl.event [*lead,252,12]`, `per_player_entity [*lead,252]`, zero `launch`, per-slot `components` and `target=None`; `teacher_value_cross_entropy` reduces `[*lead, 2]` distributions to `[*lead[:-1]]` per state. 102,208 B per seat row.
-- **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks (equal banks draw), and truncation keeps the transition's economic reward and bootstraps from the critic. Each evaluation seeds its games with `_evaluation_seed(base_seed, env_steps)` (`scripts/run_ppo.py`), a reproducible mix placed in `[2**62, 2**62 + 2**61)` that is distinct per evaluation step for a fixed base seed (and per base seed for a fixed step) and leaves int64 headroom for the seeds one evaluation consumes. It is not injective over `(base_seed, env_steps)` pairs, and consecutive seeds consumed by different evaluations or runs may overlap. The trainer admits a rollout seed budget at startup so `base_seed + rank + k * world_size < 2**62` throughout the launch (see the trainer seam below); this is not a native admission cap. The approved Task 1.4 native ABI accepts nonnegative i64 seeds for both training and evaluation, with checked consumption as specified below.
+- **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks (equal banks draw), and truncation keeps the transition's economic reward and bootstraps from the critic. Each evaluation seeds its games with `_evaluation_seed(base_seed, env_steps)` (`scripts/run_ppo.py`), a reproducible mix placed in `[2**62, 2**62 + 2**61)` that is distinct per evaluation step for a fixed base seed (and per base seed for a fixed step) and leaves int64 headroom for the seeds one evaluation consumes. It is not injective over `(base_seed, env_steps)` pairs, and consecutive seeds consumed by different evaluations or runs may overlap. The trainer admits a rollout seed budget at startup so `base_seed + rank + k * world_size < 2**62` throughout the launch, and a resumed launch's `base_seed` starts past the seeds its checkpoint trained on (see the trainer seam below); this is not a native admission cap. The approved Task 1.4 native ABI accepts nonnegative i64 seeds for both training and evaluation, with checked consumption as specified below.
 
 ### Python adapter, factory and reward configuration (Task 1.5 Stage 2)
 
@@ -993,8 +993,9 @@ iterate `type(obs).model_fields`, rebuild the same batch type and preserve
 optional `None` fields; nested masks and action bundles dispatch through typed
 unions and `isinstance` narrowing. Both `ObsBatch` and `KaggricultureObsBatch`
 use those helpers for device transfer, indexing, time flattening, segment-major
-batches and in-place rollout copies. Unsupported field types or incompatible
-batch/mask types fail explicitly.
+batches and in-place rollout copies. Unsupported field types, action-bundle
+types or incompatible batch/mask types fail explicitly, as does a rollout buffer
+pairing one game's observation spec with the other game's action spec.
 
 Kaggriculture storage preserves `KaggricultureActionMask.can_act` as bool
 `[H,E,2,252]`, action tokens as int64 `[H,E,2,252,12]` and lengths as int64
@@ -1004,17 +1005,34 @@ int64 action tensors before `env.step`; the adapter performs no implicit cast,
 layout repair or device transfer. Orbit storage and action-family layouts retain
 Isaiah's shapes and dtypes.
 
-Kaggriculture rollouts call `owl.game.create_env` with `base_seed=cfg.env.seed`,
-the distributed rank and world size, and `transfer_device=distributed.device`.
-Orbit retains its original `VectorizedEnv` constructor call. The trainer accepts
-Kaggriculture base seeds only in `[0, 2**61)` and computes a conservative step
-budget before allocating a run: construction plus the trainer reset, up to two
-new seeds per global environment step (auto-reset and truncation), and a full
-update of stopping-point overshoot must keep all rollout seeds below `2**62`.
-The admitted environment-step counter also remains below `2**61` for evaluation
-seed hashing. An explicit step limit beyond the safe budget fails at startup;
-a launch without one uses the computed ceiling. Native/factory seed admission
-remains the wider nonnegative i64 contract.
+For Kaggriculture, `train/max_entities` is the largest live-actor count of one
+seat (`actor_mask` per `[env, seat]`); tiles, shops and market tokens have fixed
+counts and are not included. Orbit keeps its `entity_mask` count. The
+`train/{n}p_rate` metrics run up to the game's seat count, so Kaggriculture logs
+only `1p` and `2p`. `PPOTrainer` rejects `value_loss='winner_ce'` for a
+Kaggriculture environment, because the update keeps its per-seat winner
+log-probabilities unreshaped; `FullConfig` also rejects it.
+
+Kaggriculture rollouts call `owl.game.create_env` with
+`base_seed=_kaggriculture_rollout_base_seed(cfg.env.seed, start_env_steps)`
+(`cfg.env.seed + 4 * start_env_steps`), the distributed rank and world size, and
+`transfer_device=distributed.device`. A fresh launch starts at `cfg.env.seed`. A
+resume reads the checkpoint's global `env_steps` before allocation, so its
+stream starts past every seed of the launches its checkpoint trained on. A
+launch from step `S0` to `S1` draws below `base + 2 * global_envs + 2 * (S1 -
+S0)`, and one update gives `S1 - S0 >= global_envs`. The rule holds across
+repeated resumes and world-size changes. A `--load-model-weights` fresh launch
+starts at `cfg.env.seed`. Orbit retains its original `VectorizedEnv` constructor
+call. The trainer accepts Kaggriculture base seeds only in `[0, 2**61)` and
+computes a conservative step budget before allocating a run. From the launch's
+base, construction plus the trainer reset, up to two new seeds per global
+environment step (auto-reset and truncation), and a full update of
+stopping-point overshoot must keep all rollout seeds below `2**62`. A resume
+whose saved step leaves no budget fails at startup. The admitted
+environment-step counter also remains below `2**61` for evaluation seed hashing.
+An explicit step limit beyond the safe budget fails at startup; a launch without
+one uses the computed ceiling. Native/factory seed admission remains the wider
+nonnegative i64 contract.
 
 `run_ppo._evaluate_games` maps both games through those same helpers and mixes
 the candidate and last-best actions by seat. Its Kaggriculture branch drives

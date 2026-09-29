@@ -13,6 +13,7 @@ action-mask type. Failure ordering and error wording are not compared.
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, Literal
 
 import pytest
@@ -34,6 +35,7 @@ from owl.rl import (
     PureActionMask,
 )
 from owl.train import ppo
+from owl.train.advantages import compute_gae
 from pydantic import BaseModel
 
 MaskKind = Literal["pure", "discrete_target", "discrete_target_bin"]
@@ -635,21 +637,29 @@ def test_kaggriculture_storage_and_every_mapping_preserve_schema() -> None:
     assert rollout.actions.lengths.dtype == torch.int64
     assert rollout.logp.shape == (3, 2, 2)
     assert rollout.entity_logp.shape == (3, 2, 2, 252)
-    actions = kt.KaggricultureActions(
-        tokens=torch.randint(0, 8, (2, 2, 252, 12), generator=generator),
-        lengths=torch.tensor([[2, 3], [4, 5]]),
-    )
+    # Distinct actions per step and seat, so a time or seat swap is visible.
+    step_actions = [
+        kt.KaggricultureActions(
+            tokens=torch.randint(0, 8, (2, 2, 252, 12), generator=generator),
+            lengths=torch.tensor([[2, 3], [4, 5]]) + 10 * step,
+        )
+        for step in range(3)
+    ]
+    actions = step_actions[1]
     for step in range(3):
         rollout.write_step(
             step,
             obs=source,
-            actions=actions,
+            actions=step_actions[step],
             logp=torch.ones(2, 2),
             entity_logp=torch.ones(2, 2, 252),
             values=torch.zeros(2, 2),
             rewards=torch.zeros(2, 2),
             dones=torch.zeros(2, 2, dtype=torch.bool),
         )
+    for step, written in enumerate(step_actions):
+        assert torch.equal(rollout.actions.tokens[step], written.tokens)
+        assert torch.equal(rollout.actions.lengths[step], written.lengths)
     _assert_identical(ppo._obs_index(rollout.obs, torch.tensor(1)), source)
     mapped = ppo._obs_to_device(source, torch.device("cpu"))
     _assert_identical(mapped, source)
@@ -670,7 +680,122 @@ def test_kaggriculture_storage_and_every_mapping_preserve_schema() -> None:
     assert torch.equal(
         flat_actions.tokens.reshape(2, 3, 2, 252, 12)[0, 1], actions.tokens[1]
     )
+    assert torch.equal(
+        flat_actions.lengths.reshape(2, 3, 2)[0, 2], step_actions[2].lengths[1]
+    )
     assert ppo._observation_tensor_shapes(source) == _expected_shapes(source)
+
+
+@pytest.mark.parametrize(
+    ("obs_spec", "action_spec", "match"),
+    [
+        (
+            kt.KaggricultureObsConfig(),
+            ActionPureConfig(),
+            "Kaggriculture observations require Kaggriculture actions",
+        ),
+        (
+            EntityBasedConfig(),
+            kt.KaggricultureActionConfig(),
+            "Orbit observations require Orbit actions",
+        ),
+    ],
+)
+def test_rollout_buffer_rejects_mixed_game_specs(
+    obs_spec: Any, action_spec: Any, match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        ppo._PPORolloutBuffer(
+            horizon=2,
+            n_envs=1,
+            obs_spec=obs_spec,
+            action_spec=action_spec,
+            device=torch.device("cpu"),
+        )
+
+
+def test_copy_actions_time_step_rejects_an_unknown_action_bundle() -> None:
+    @dataclass
+    class _OtherActions:
+        tokens: torch.Tensor
+
+    dst = _OtherActions(tokens=torch.zeros(2, 3))
+    with pytest.raises(TypeError, match="unsupported action bundle _OtherActions"):
+        ppo._copy_actions_time_step(
+            dst,  # type: ignore[arg-type]
+            0,
+            _OtherActions(tokens=torch.ones(3)),  # type: ignore[arg-type]
+        )
+
+
+def _hand_gae(
+    rewards: list[float], values: list[float], last_value: float, lam: float
+) -> list[float]:
+    """Undiscounted (gamma 1) GAE for one seat, no terminals, written out."""
+    advantages = [0.0] * len(rewards)
+    running = 0.0
+    for t in reversed(range(len(rewards))):
+        next_value = last_value if t == len(rewards) - 1 else values[t + 1]
+        delta = rewards[t] + next_value - values[t]
+        running = delta + lam * running
+        advantages[t] = running
+    return advantages
+
+
+def test_kaggriculture_rollout_keeps_each_seat_and_step_through_gae() -> None:
+    horizon, lam = 3, 0.5
+    rollout = ppo._PPORolloutBuffer(
+        horizon=horizon,
+        n_envs=1,
+        obs_spec=kt.KaggricultureObsConfig(),
+        action_spec=kt.KaggricultureActionConfig(),
+        device=torch.device("cpu"),
+    )
+    source = allocate_observation_buffers(1, pin_memory=False)
+    actions = kt.KaggricultureActions(
+        tokens=torch.zeros(1, 2, 252, 12, dtype=torch.int64),
+        lengths=torch.ones(1, 2, dtype=torch.int64),
+    )
+    # Distinct marks per [step, seat]: seat 0 in the ones, seat 1 in the tens.
+    rewards = [[0.1, 1.0], [0.2, 2.0], [0.3, 3.0]]
+    values = [[0.01, 0.4], [0.02, 0.5], [0.03, 0.6]]
+    last_values = [0.07, 0.9]
+    for step in range(horizon):
+        rollout.write_step(
+            step,
+            obs=source,
+            actions=actions,
+            logp=torch.zeros(1, 2),
+            values=torch.tensor([values[step]]),
+            rewards=torch.tensor([rewards[step]]),
+            dones=torch.zeros(1, 2, dtype=torch.bool),
+        )
+    segments = rollout.segment_major()
+    assert segments.rewards.shape == (1, horizon, 2)
+    assert torch.equal(segments.rewards[0], torch.tensor(rewards))
+    assert torch.equal(segments.values[0], torch.tensor(values))
+    advantages, returns = compute_gae(
+        rewards=segments.rewards,
+        values=segments.values,
+        dones=segments.dones,
+        last_values=torch.tensor([last_values]),
+        gamma=1.0,
+        gae_lambda=lam,
+        truncated=segments.truncated,
+        bootstrap_values=segments.bootstrap_values,
+    )
+    for seat in range(2):
+        expected = _hand_gae(
+            [row[seat] for row in rewards],
+            [row[seat] for row in values],
+            last_values[seat],
+            lam,
+        )
+        assert advantages[0, :, seat].tolist() == pytest.approx(expected)
+        assert returns[0, :, seat].tolist() == pytest.approx(
+            [a + row[seat] for a, row in zip(expected, values, strict=True)]
+        )
+    assert not torch.allclose(advantages[..., 0], advantages[..., 1])
 
 
 def test_kaggriculture_actions_to_cpu_materializes_contiguous_int64() -> None:
@@ -696,11 +821,21 @@ def base_ppo() -> Any:
     import subprocess
     import sys
     import types
+    from pathlib import Path
 
-    source = subprocess.check_output(
-        ["git", "show", "49a4835:python/owl/train/ppo.py"],
-        text=True,
-    )
+    # The oracle is git history, not a vendored copy: resolve it from this
+    # checkout wherever pytest runs, and skip loudly in a tree without it (a
+    # shallow clone or an rsynced copy without .git).
+    repo_root = Path(__file__).resolve().parents[3]
+    try:
+        source = subprocess.run(
+            ["git", "-C", str(repo_root), "show", "49a4835:python/owl/train/ppo.py"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError) as error:
+        pytest.skip(f"Orbit base oracle needs git history with commit 49a4835: {error}")
     module = types.ModuleType("_ppo_base_49a4835")
     sys.modules[module.__name__] = module
     exec(compile(source, "49a4835:python/owl/train/ppo.py", "exec"), module.__dict__)
@@ -794,3 +929,24 @@ def test_orbit_storage_and_actions_equal_base_49a4835(
         _assert_actions_identical(
             getattr(ppo, name)(*args), getattr(base_ppo, name)(*args)
         )
+
+
+def test_max_entity_count_is_one_seats_actors_for_kaggriculture() -> None:
+    obs = allocate_observation_buffers(2, pin_memory=False)
+    obs.still_playing.fill_(True)
+    obs.shop_mask.fill_(True)
+    obs.actor_mask.zero_()
+    obs.actor_mask[0, 0, :2] = True
+    obs.actor_mask[1, 1, :5] = True
+    obs.actor_mask[1, 0, :3] = True
+    # Five actors of env 1's second seat: not seats (2), not shops, not a sum.
+    assert int(ppo._max_entity_count(obs)) == 5
+
+
+def test_player_count_rates_follow_the_games_seats() -> None:
+    two_seat = torch.tensor([[True, True], [True, False]])
+    assert set(ppo._player_count_rates(two_seat)) == {"train/1p_rate", "train/2p_rate"}
+    four_seat = torch.tensor([[True, True, True, False]])
+    rates = ppo._player_count_rates(four_seat)
+    assert set(rates) == {f"train/{n}p_rate" for n in range(1, 5)}
+    assert float(rates["train/3p_rate"]) == 1.0

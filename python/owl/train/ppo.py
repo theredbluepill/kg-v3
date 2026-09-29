@@ -602,6 +602,18 @@ class PPOTrainer:
             raise ValueError("model and env action_spec must match")
         if teacher_model is not None and teacher_model.action_spec != env.action_spec:
             raise ValueError("teacher model and env action_spec must match")
+        if (
+            isinstance(env.obs_spec, KaggricultureObsConfig)
+            and config.value_loss == "winner_ce"
+        ):
+            # The update skips Orbit's winner reshape for Kaggriculture's
+            # per-seat [B*T, 2, 2] winner log-probabilities, so winner_ce could
+            # broadcast silently; FullConfig rejects it too, this guards direct
+            # construction.
+            raise ValueError(
+                "Kaggriculture training requires rl.value_loss='mse', "
+                "got value_loss='winner_ce'"
+            )
         self._compute_gae = compile_compute_gae(config.compile_mode)
         self._ppo_loss = _compile_ppo_loss(config.compile_mode)
         self.optimizer = optimizer
@@ -747,15 +759,7 @@ class PPOTrainer:
             teacher_start = perf_counter()
             teacher_targets = self._precompute_teacher_targets(segments)
             teacher_elapsed = max(perf_counter() - teacher_start, 1e-12)
-        max_entities_seen = (
-            (
-                segments.obs.actor_mask
-                if isinstance(segments.obs, KaggricultureObsBatch)
-                else segments.obs.entity_mask
-            )
-            .sum(dim=-1)
-            .max()
-        )
+        max_entities_seen = _max_entity_count(segments.obs)
         value_mask = segments.obs.still_playing
         policy_mask = _policy_mask(segments.obs)
         model_tokens = self._sum_int(
@@ -2326,6 +2330,8 @@ def _copy_actions_time_step(dst: GameActions, step: int, src: GameActions) -> No
     ):
         dst.target[step].copy_(src.target)
         dst.fleet_bin[step].copy_(src.fleet_bin)
+    else:
+        raise TypeError(f"unsupported action bundle {type(dst).__name__}")
 
 
 def _segment_major_tensor(tensor: torch.Tensor) -> torch.Tensor:
@@ -3076,11 +3082,23 @@ def _policy_mask(obs: GameObsBatch) -> torch.Tensor:
     return obs.still_playing & can_act
 
 
+def _max_entity_count(obs: GameObsBatch) -> torch.Tensor:
+    """Largest entity-token count in one observation row (``train/max_entities``).
+
+    Orbit counts ``entity_mask`` tokens per env step. Kaggriculture counts the
+    live actors of one seat (``actor_mask`` per ``[env, seat]``); its tiles,
+    shops and market are fixed-size and not counted.
+    """
+    mask = obs.actor_mask if isinstance(obs, KaggricultureObsBatch) else obs.entity_mask
+    return mask.sum(dim=-1).max()
+
+
 def _player_count_rates(still_playing: torch.Tensor) -> dict[str, torch.Tensor]:
+    """Fraction of rows with each live-player count, up to the game's seats."""
     alive_counts = still_playing.sum(dim=-1)
     return {
         f"train/{player_count}p_rate": alive_counts.eq(player_count).float().mean()
-        for player_count in range(1, OUTER_PLAYER_SLOTS + 1)
+        for player_count in range(1, still_playing.shape[-1] + 1)
     }
 
 
