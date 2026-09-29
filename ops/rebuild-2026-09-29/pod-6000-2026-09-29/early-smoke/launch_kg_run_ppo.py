@@ -13,6 +13,9 @@ observes them:
 - KaggricultureVectorizedEnv.__init__/step: seed and stride per construction,
   native step wall time (synchronous: fence + native step + buffer publish),
   and terminal-record counts plus the first terminal metrics sample.
+- KG_PROBE_STOP_ON_NONFINITE=1: after each iteration, raise (a coordinated
+  stop: every rank sees the same reduced metrics) when any logged metric is
+  nonfinite. This enforces the run statement's stopping condition only.
 - KG_PROBE_FAIL_BEFORE_UPDATE=1: raise inside the first _update call before
   any minibatch runs (isolated failure-status probe; no model or native state
   is corrupted).
@@ -25,6 +28,7 @@ from __future__ import annotations
 import atexit
 import importlib.util
 import json
+import math
 import os
 import sys
 import time
@@ -36,6 +40,7 @@ import wandb
 
 RANK = int(os.environ.get("RANK", "0"))
 _FAIL_BEFORE_UPDATE = os.environ.get("KG_PROBE_FAIL_BEFORE_UPDATE") == "1"
+_STOP_ON_NONFINITE = os.environ.get("KG_PROBE_STOP_ON_NONFINITE") == "1"
 _PHASE_PEAKS: dict[str, dict[str, int]] = {}
 _STEP = {"calls": 0, "seconds": 0.0, "terminal_records": 0, "sample_logged": 0}
 _ITER = {"n": 0}
@@ -124,13 +129,19 @@ def _instrument_trainer() -> None:
         start = time.perf_counter()
         metrics = original_iteration(self)
         keep = dict(metrics)
+        nonfinite = sorted(
+            k for k, v in keep.items() if isinstance(v, float) and not math.isfinite(v)
+        )
         emit(
             "iteration",
             iteration=_ITER["n"],
             wall_seconds=time.perf_counter() - start,
             optimizer_steps=self.optimizer_steps,
             metrics=keep,
+            nonfinite=nonfinite,
         )
+        if nonfinite and _STOP_ON_NONFINITE:
+            raise RuntimeError(f"KG_PROBE_STOP_ON_NONFINITE: nonfinite metrics {nonfinite}")
         return metrics
 
     trainer.train_iteration = train_iteration
