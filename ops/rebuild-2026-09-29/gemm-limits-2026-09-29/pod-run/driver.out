@@ -1,0 +1,48 @@
+{"case": "trunk_packed", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_trunk.py", "--path", "packed", "--points", "sparse:256;dense:256;dense:5914;dense:5915;packed:4194303;packed:4194304;dense:5916;dense:11830", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/trunk_packed.jsonl"], "status": "launch", "t": 0.0}
+{"case": "trunk_packed", "attempt": 0, "rc": 0, "targets_done": 8, "status": "exit", "t": 30.5}
+{"case": "mlp_256_512_256", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "mlp:256:512:256", "--ms", "4190208,4194304,4194305,4198400,8388608", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/mlp_256_512_256.jsonl"], "status": "launch", "t": 30.5}
+{"case": "mlp_256_512_256", "attempt": 0, "rc": 1, "targets_done": 4, "status": "exit", "t": 69.5}
+{"case": "mlp_256_512_256", "status": "fault", "at": {"case": "mlp:256:512:256", "label": "target", "M": 8388608}, "t": 69.5}
+{"case": "lin_256_512", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "lin:256:512", "--ms", "4190208,4194304,4194305,4198400,8388608", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/lin_256_512.jsonl"], "status": "launch", "t": 69.5}
+{"case": "lin_256_512", "attempt": 0, "rc": 0, "targets_done": 5, "status": "exit", "t": 90.4}
+{"case": "lin_512_256", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "lin:512:256", "--ms", "4190208,4194304,4194305,4198400,8388608", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/lin_512_256.jsonl"], "status": "launch", "t": 90.4}
+{"case": "lin_512_256", "attempt": 0, "rc": 1, "targets_done": 4, "status": "exit", "t": 107.9}
+{"case": "lin_512_256", "status": "fault", "at": {"case": "lin:512:256", "label": "target", "M": 8388608}, "t": 107.9}
+{"case": "trunk_packed_bypass", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_trunk.py", "--path", "packed", "--bypass-guard", "--points", "packed:4194305;packed:4198400;dense:5916;dense:11830;dense:11832", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/trunk_packed_bypass.jsonl"], "status": "launch", "t": 107.9}
+{"case": "trunk_packed_bypass", "attempt": 0, "rc": 1, "targets_done": 3, "status": "exit", "t": 163.7}
+{"case": "trunk_packed_bypass", "status": "fault", "at": {"case": "trunk_packed_bypass", "label": "target", "spec": "dense:11830", "rows": 11830, "packed_tokens": 8387470}, "t": 163.7}
+{"case": "trunk_packed_bypass", "attempt": 1, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_trunk.py", "--path", "packed", "--bypass-guard", "--points", "dense:11832", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/trunk_packed_bypass.jsonl"], "status": "launch", "t": 163.7}
+{"case": "trunk_packed_bypass", "attempt": 1, "rc": 0, "targets_done": 1, "status": "exit", "t": 209.0}
+{"case": "trunk_padded", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_trunk.py", "--path", "padded", "--points", "sparse:256;dense:256;dense:5914;dense:5915;dense:5916;dense:11830", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/trunk_padded.jsonl"], "status": "launch", "t": 209.0}
+{"case": "trunk_padded", "attempt": 0, "rc": 0, "targets_done": 6, "status": "exit", "t": 286.2}
+{"case": "trunk_padded_bypass", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_trunk.py", "--path", "padded", "--bypass-guard", "--points", "dense:5916;dense:11830", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/trunk_padded_bypass.jsonl"], "status": "launch", "t": 286.2}
+{"case": "trunk_padded_bypass", "attempt": 0, "rc": 0, "targets_done": 2, "status": "exit", "t": 346.9}
+{"case": "lin_16_4096", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "lin:16:4096", "--ms", "520192,524288,524289,528384,1048576", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/lin_16_4096.jsonl"], "status": "launch", "t": 346.9}
+{"case": "lin_16_4096", "attempt": 0, "rc": 0, "targets_done": 5, "status": "exit", "t": 363.9}
+{"case": "lin_4096_16", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "lin:4096:16", "--ms", "520192,524288,524289,528384,1048576", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/lin_4096_16.jsonl"], "status": "launch", "t": 363.9}
+{"case": "lin_4096_16", "attempt": 0, "rc": 1, "targets_done": 2, "status": "exit", "t": 382.5}
+{"case": "lin_4096_16", "status": "fault", "at": {"case": "lin:4096:16", "label": "target", "M": 524289}, "t": 382.5}
+{"case": "lin_4096_16", "attempt": 1, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "lin:4096:16", "--ms", "528384,1048576", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/lin_4096_16.jsonl"], "status": "launch", "t": 382.5}
+{"case": "lin_4096_16", "attempt": 1, "rc": 1, "targets_done": 0, "status": "exit", "t": 390.9}
+{"case": "lin_4096_16", "status": "fault", "at": {"case": "lin:4096:16", "label": "target", "M": 528384}, "t": 390.9}
+{"case": "lin_4096_16", "attempt": 2, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "lin:4096:16", "--ms", "1048576", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/lin_4096_16.jsonl"], "status": "launch", "t": 390.9}
+{"case": "lin_4096_16", "attempt": 2, "rc": 1, "targets_done": 0, "status": "exit", "t": 399.4}
+{"case": "lin_4096_16", "status": "fault", "at": {"case": "lin:4096:16", "label": "target", "M": 1048576}, "t": 399.4}
+{"case": "lin_256_256", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "lin:256:256", "--ms", "8384512,8388608,8388609,8392704,16777216", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/lin_256_256.jsonl"], "status": "launch", "t": 399.4}
+{"case": "lin_256_256", "attempt": 0, "rc": 0, "targets_done": 5, "status": "exit", "t": 417.9}
+{"case": "lin_768_256", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "lin:768:256", "--ms", "2792106,2796202,2796203,2800298,5592404", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/lin_768_256.jsonl"], "status": "launch", "t": 417.9}
+{"case": "lin_768_256", "attempt": 0, "rc": 1, "targets_done": 2, "status": "exit", "t": 431.6}
+{"case": "lin_768_256", "status": "fault", "at": {"case": "lin:768:256", "label": "target", "M": 2796203}, "t": 431.6}
+{"case": "lin_768_256", "attempt": 1, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "lin:768:256", "--ms", "2800298,5592404", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/lin_768_256.jsonl"], "status": "launch", "t": 431.6}
+{"case": "lin_768_256", "attempt": 1, "rc": 1, "targets_done": 0, "status": "exit", "t": 440.7}
+{"case": "lin_768_256", "status": "fault", "at": {"case": "lin:768:256", "label": "target", "M": 2800298}, "t": 440.7}
+{"case": "lin_768_256", "attempt": 2, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "lin:768:256", "--ms", "5592404", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/lin_768_256.jsonl"], "status": "launch", "t": 440.7}
+{"case": "lin_768_256", "attempt": 2, "rc": 1, "targets_done": 0, "status": "exit", "t": 449.7}
+{"case": "lin_768_256", "status": "fault", "at": {"case": "lin:768:256", "label": "target", "M": 5592404}, "t": 449.7}
+{"case": "mlpbwd_256_512_256", "attempt": 0, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "mlpbwd:256:512:256", "--ms", "4190208,4194305,8388608", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/mlpbwd_256_512_256.jsonl"], "status": "launch", "t": 449.7}
+{"case": "mlpbwd_256_512_256", "attempt": 0, "rc": 1, "targets_done": 1, "status": "exit", "t": 475.5}
+{"case": "mlpbwd_256_512_256", "status": "fault", "at": {"case": "mlpbwd:256:512:256", "label": "target", "M": 4194305}, "t": 475.5}
+{"case": "mlpbwd_256_512_256", "attempt": 1, "cmd": ["/workspace/kg-v3/.venv/bin/python", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", "--case", "mlpbwd:256:512:256", "--ms", "8388608", "--out", "/workspace/kg-v3/runs/gemm-limits-2026-09-29/mlpbwd_256_512_256.jsonl"], "status": "launch", "t": 475.5}
+{"case": "mlpbwd_256_512_256", "attempt": 1, "rc": 1, "targets_done": 0, "status": "exit", "t": 514.0}
+{"case": "mlpbwd_256_512_256", "status": "fault", "at": {"case": "mlpbwd:256:512:256", "label": "target", "M": 8388608}, "t": 514.0}
+{"status": "driver_done", "elapsed_s": 514.0, "t": 514.0}

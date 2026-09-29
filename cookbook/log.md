@@ -93,6 +93,26 @@ Codex verified `0e989a1..5ec3af1` (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/c
 ## 2026-09-29 — Add the Kaggriculture grammar action heads (Task 2.3)
 
 The new [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|heads Reference]] records Task 2.3 as the approved brief v3 specifies. It covers Isaiah's `3D → D` actor input projection; a `KaggricultureGrammarActor` with nine `OutputProjectionMLP` slot heads and prefix embeddings; typed `GrammarTables`, with synthetic expected tables and a named native hook for Task 1.2; exact coupled-Gumbel HIRE sampling; and same-path replay with support, length and canonical flags checked in one host transfer. It also covers the §9 overflow guards (trunk width by enumeration, packed chunking, head-extent chunking). The preset has 6,252,223 parameters, inside the 6–10M budget at depth 8. `tests/kaggriculture`: 256 passed, 1 skipped (waiting on Task 1.2). `just py-prepare`: 979 passed, 4 skipped. Four deliberate mutations failed their tests and were restored byte-for-byte. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now says the packed path chunks instead of raising. On `kg/rebuild-heads`, pending Codex verification.
+## 2026-09-29 — Tighten the compiled-GEMM Reference after Codex's second review
+
+Codex re-verified the GEMM-limit evidence (APPROVE WITH EDITS, no blocking findings; `ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md`). The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] and `results.md` now:
+- separate the emitted `INDEX_DTYPE` (an all-buffer storage check) from the template size-arg dtype (output numel);
+- limit the "every failing graph" claim to kernels attributable from retained code, since two failures occurred during autotuning;
+- write L_in as floor(2³¹/K);
+- state the design bound as the strict < 2³¹ the guard implements.
+
+The run statement no longer implies Triton 3.5.0 was the installed version.
+
+## 2026-09-29 — Measure the compiled-GEMM limit at the rebuild's shapes (Codex-verified)
+
+A bounded probe ran on GPU 0 of the running pod (GEMM-limits run statement in `ops/rebuild-2026-09-29/run-statements/`). Codex verified it (`ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md`, APPROVE WITH EDITS), and all its findings are applied. This revises the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]:
+- **Input-side overflow.** At these shapes the overflow is on the input side: the A-load wraps once M·K > 2³¹ while the template size argument stays int32. Input-wide GEMMs failed at L_in+1, and output-wide GEMMs stayed correct to M·N = 2³². The universal `M·max(K, N)` rule is withdrawn. M × max(in, out) remains the design bound, justified by backward reading forward outputs as inputs.
+- **Silent in the trunk.** With the guard off, the real trunk corrupts silently at L+1. The guard is measured correct at L−1 and rejects L with zero trunk calls. Unguarded-at-L and real-trunk backward are inferred, not measured.
+- **Production compliance is unproven.** Kaggriculture is not yet wired through `ModelConfig`, the factory or `configure_model_compile`.
+- **No flash-attn on the pod.** The pod venv has no `flash-attn`, and its config had `force_flash_attn: false`. The plan's Phase 6 now installs and verifies it before any qualification.
+- **Analyzer and custody fixes.** `analyze_kernels.py` was fixed and its summaries regenerated. The git-archive hash was reconciled: `--prefix` accounts for the difference.
+
+Full evidence is in `ops/rebuild-2026-09-29/results.md`.
 
 ## 2026-09-29 — Close Codex's lane B re-verification edits on the model branch
 

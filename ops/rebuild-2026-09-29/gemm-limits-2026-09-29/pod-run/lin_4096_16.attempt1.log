@@ -1,0 +1,136 @@
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/backends/__init__.py:46: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /pytorch/aten/src/ATen/Context.cpp:80.)
+  self.setter(val)
+V0929 05:29:36.550000 117653 torch/_dynamo/guards.py:3687] [0/0] [__guards] GUARDS:
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] 
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] TREE_GUARD_MANAGER:
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] +- RootGuardManager
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- LAMBDA_GUARD: torch._functorch.aot_autograd.utils.top_saved_tensors_hooks ids == None  # _dynamo/output_graph.py:688 in init_ambient_guards
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- DEFAULT_DEVICE: utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:676 in init_ambient_guards
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- GLOBAL_STATE: ___check_global_state()
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- TORCH_FUNCTION_MODE_STACK: ___check_torch_function_mode_stack()
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- GuardManager: source=L['args'], accessed_by=FrameLocalsGuardAccessor(key='args', framelocals_idx=0), type=<class 'tuple'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- TYPE_MATCH: ___check_type_id(L['args'], 10759232)                       
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- LENGTH_CHECK: len(L['args']) == 1                                         
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- GuardManager: source=L['args'][0], accessed_by=TupleGetItemGuardAccessor(0), type=<class 'torch.Tensor'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- TENSOR_MATCH: check_tensor(L['args'][0], Tensor, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=False, size=[4096, 4096], stride=[4096, 1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- NO_HASATTR: hasattr(L['args'][0], '_dynamo_dynamic_indices') == False     # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- GuardManager: source=L['kwargs'], accessed_by=FrameLocalsGuardAccessor(key='kwargs', framelocals_idx=1), type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- TYPE_MATCH: ___check_type_id(L['kwargs'], 10737728)                     
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- DICT_LENGTH: not L['kwargs']                                             
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- GuardManager: source=G, accessed_by=GlobalsGuardAccessor, type=<class 'dict'>, tag_safe=(False, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_linear'], accessed_by=DictGetItemGuardAccessor('__import_torch_dot_nn_dot_modules_dot_linear'), type=<class 'module'>, tag_safe=(False, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- ID_MATCH: ___check_obj_id(G['__import_torch_dot_nn_dot_modules_dot_linear'], 130246186989696)  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_linear'].F, accessed_by=GetAttrGuardAccessor(F), type=<class 'module'>, tag_safe=(False, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- ID_MATCH: ___check_obj_id(G['__import_torch_dot_nn_dot_modules_dot_linear'].F, 130246186989616)  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_linear'].F.linear, accessed_by=GetAttrGuardAccessor(linear), type=<class 'builtin_function_or_method'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | +- ID_MATCH: ___check_obj_id(G['__import_torch_dot_nn_dot_modules_dot_linear'].F.linear, 130250002216288)  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module'], accessed_by=DictGetItemGuardAccessor('__import_torch_dot_nn_dot_modules_dot_module'), type=<class 'module'>, tag_safe=(False, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- ID_MATCH: ___check_obj_id(G['__import_torch_dot_nn_dot_modules_dot_module'], 130246190774320)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_hooks, accessed_by=GetAttrGuardAccessor(_global_forward_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_hooks, 10741888)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_hooks, accessed_by=GetAttrGuardAccessor(_global_backward_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_hooks, 10741888)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_pre_hooks, accessed_by=GetAttrGuardAccessor(_global_forward_pre_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_pre_hooks, 10741888)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_pre_hooks, accessed_by=GetAttrGuardAccessor(_global_backward_pre_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_pre_hooks, 10741888)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- GuardManager: source=L['fn'], accessed_by=FrameLocalsGuardAccessor(key='fn', framelocals_idx=2), type=<class 'torch.nn.modules.linear.Linear'>, tag_safe=(True, True)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- TYPE_MATCH: ___check_type_id(L['fn'], 544933056)                        
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- GuardManager: source=L['fn'].__dict__, accessed_by=GetGenericDictGuardAccessor, type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- DICT_CONTAINS: not ___dict_contains('forward', L['fn'].__dict__)           
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=L['fn']._parameters, accessed_by=DictGetItemGuardAccessor('_parameters'), type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(L['fn']._parameters, 10737728)               # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- GuardManager: source=L['fn']._parameters['bias'], accessed_by=DictGetItemGuardAccessor('bias'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | +- TENSOR_MATCH: check_tensor(L['fn']._parameters['bias'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[16], stride=[1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- GuardManager: source=L['fn']._parameters['weight'], accessed_by=DictGetItemGuardAccessor('weight'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | +- TENSOR_MATCH: check_tensor(L['fn']._parameters['weight'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[16, 4096], stride=[4096, 1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:36.551000 117653 torch/_dynamo/guards.py:3404] [0/0] [__guards] 
+V0929 05:29:36.561000 117653 torch/_dynamo/guards.py:3436] [0/0] [__guards] Guard eval latency = 32.11 us
+V0929 05:29:36.908000 117653 torch/_dynamo/guards.py:4181] [0/1] [__recompiles] Recompiling function inner in /workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/external_utils.py:66
+V0929 05:29:36.908000 117653 torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V0929 05:29:36.908000 117653 torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     - 0/0: tensor 'args[0]' size mismatch at index 0. expected 4096, actual 528384
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] C++ shape guard function: 
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] #include <algorithm>
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] #include <cstdint>
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] #include <cmath>
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] #include <c10/util/generic_math.h>
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] 
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] #if defined(_MSC_VER)
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] #  define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] #else
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] #  define EXTERN_DLL_EXPORT extern "C"
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] #endif
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] 
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] EXTERN_DLL_EXPORT int8_t guard(int64_t *int_values, double *float_values) {
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards]   int64_t L_args_0_size_0_ = int_values[0];
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] 
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards]   return (16L*L_args_0_size_0_ <= 2147483647L) && (2L <= L_args_0_size_0_);
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards] }
+V0929 05:29:36.956000 117653 torch/_dynamo/guards.py:2666] [0/1] [__guards]  ["16*L['args'][0].size()[0] <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)", "2 <= L['args'][0].size()[0]  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward (user code shown is first use of this value--the guard itself is not due user code but due to 0/1 specialization in the framework; to avoid specialization try torch._dynamo.mark_unbacked(tensor, dim))"]
+V0929 05:29:40.139000 117653 torch/_dynamo/guards.py:3687] [0/1] [__guards] GUARDS:
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] 
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] TREE_GUARD_MANAGER:
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] +- RootGuardManager
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | +- LAMBDA_GUARD: torch._functorch.aot_autograd.utils.top_saved_tensors_hooks ids == None  # _dynamo/output_graph.py:688 in init_ambient_guards
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | +- DEFAULT_DEVICE: utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:676 in init_ambient_guards
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | +- GLOBAL_STATE: ___check_global_state()
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | +- TORCH_FUNCTION_MODE_STACK: ___check_torch_function_mode_stack()
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | +- GuardManager: source=L['args'], accessed_by=FrameLocalsGuardAccessor(key='args', framelocals_idx=0), type=<class 'tuple'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- TYPE_MATCH: ___check_type_id(L['args'], 10759232)                       
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- LENGTH_CHECK: len(L['args']) == 1                                         
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- GuardManager: source=L['args'][0], accessed_by=TupleGetItemGuardAccessor(0), type=<class 'torch.Tensor'>, tag_safe=(False, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- TENSOR_MATCH: check_tensor(L['args'][0], Tensor, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=False, size=[None, 4096], stride=[4096, 1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- NO_HASATTR: hasattr(L['args'][0], '_dynamo_dynamic_indices') == False     # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- GuardManager: source=L['args'][0].size()[0], accessed_by=TensorPropertyGuardAccessor<TensorProperty::SIZE>(0), type=<class 'int'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- GuardManager: source=(0, L['args'][0].size()[0]), accessed_by=IndexedGuardAccesor(0), type=<class 'tuple'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | | +- SYMBOLIC_SHAPE_GUARD: 16*L['args'][0].size()[0] <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | | +- SYMBOLIC_SHAPE_GUARD: 2 <= L['args'][0].size()[0]  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward (user code shown is first use of this value--the guard itself is not due user code but due to 0/1 specialization in the framework; to avoid specialization try torch._dynamo.mark_unbacked(tensor, dim))
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | +- GuardManager: source=L['kwargs'], accessed_by=FrameLocalsGuardAccessor(key='kwargs', framelocals_idx=1), type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- TYPE_MATCH: ___check_type_id(L['kwargs'], 10737728)                     
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- DICT_LENGTH: not L['kwargs']                                             
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | +- GuardManager: source=G, accessed_by=GlobalsGuardAccessor, type=<class 'dict'>, tag_safe=(False, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_linear'], accessed_by=DictGetItemGuardAccessor('__import_torch_dot_nn_dot_modules_dot_linear'), type=<class 'module'>, tag_safe=(False, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- ID_MATCH: ___check_obj_id(G['__import_torch_dot_nn_dot_modules_dot_linear'], 130246186989696)  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_linear'].F, accessed_by=GetAttrGuardAccessor(F), type=<class 'module'>, tag_safe=(False, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- ID_MATCH: ___check_obj_id(G['__import_torch_dot_nn_dot_modules_dot_linear'].F, 130246186989616)  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_linear'].F.linear, accessed_by=GetAttrGuardAccessor(linear), type=<class 'builtin_function_or_method'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | | +- ID_MATCH: ___check_obj_id(G['__import_torch_dot_nn_dot_modules_dot_linear'].F.linear, 130250002216288)  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module'], accessed_by=DictGetItemGuardAccessor('__import_torch_dot_nn_dot_modules_dot_module'), type=<class 'module'>, tag_safe=(False, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- ID_MATCH: ___check_obj_id(G['__import_torch_dot_nn_dot_modules_dot_module'], 130246190774320)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_hooks, accessed_by=GetAttrGuardAccessor(_global_forward_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_hooks, 10741888)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_hooks, accessed_by=GetAttrGuardAccessor(_global_backward_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_hooks, 10741888)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_pre_hooks, accessed_by=GetAttrGuardAccessor(_global_forward_pre_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_pre_hooks, 10741888)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_pre_hooks, accessed_by=GetAttrGuardAccessor(_global_backward_pre_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_pre_hooks, 10741888)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | +- GuardManager: source=L['fn'], accessed_by=FrameLocalsGuardAccessor(key='fn', framelocals_idx=2), type=<class 'torch.nn.modules.linear.Linear'>, tag_safe=(True, True)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- TYPE_MATCH: ___check_type_id(L['fn'], 544933056)                        
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- GuardManager: source=L['fn'].__dict__, accessed_by=GetGenericDictGuardAccessor, type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- DICT_CONTAINS: not ___dict_contains('forward', L['fn'].__dict__)           
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- GuardManager: source=L['fn']._parameters, accessed_by=DictGetItemGuardAccessor('_parameters'), type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(L['fn']._parameters, 10737728)               # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- GuardManager: source=L['fn']._parameters['bias'], accessed_by=DictGetItemGuardAccessor('bias'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | | +- TENSOR_MATCH: check_tensor(L['fn']._parameters['bias'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[16], stride=[1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- GuardManager: source=L['fn']._parameters['weight'], accessed_by=DictGetItemGuardAccessor('weight'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | | +- TENSOR_MATCH: check_tensor(L['fn']._parameters['weight'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[16, 4096], stride=[4096, 1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:29:40.140000 117653 torch/_dynamo/guards.py:3404] [0/1] [__guards] 
+V0929 05:29:40.152000 117653 torch/_dynamo/guards.py:3436] [0/1] [__guards] Guard eval latency = 36.67 us
+Traceback (most recent call last):
+  File "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", line 172, in <module>
+    main()
+  File "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", line 165, in main
+    rec = run_point(model, fn, m, k, backward, args.seed)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", line 98, in run_point
+    torch.cuda.synchronize()
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/cuda/__init__.py", line 1083, in synchronize
+    return torch._C._cuda_synchronize()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.AcceleratorError: CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
