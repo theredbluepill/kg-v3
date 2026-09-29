@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Native game semantics use v3-owned buffers"
-description: "Task 1.4 adds the transactional native lifecycle, checked seed streams, rewards and codec/table bindings (16-game TrainingBatch oracle bit-exact, release overflow proof on the pod). Task 1.5 wires the typed adapter, one-buffer entry fence, factory, codec and strict native grammar tables to that binding with no missing-binding skip left; full just prepare passes. Task 3.1 rollout storage, the pod DMA fence test and the early two-rank smoke remain pending."
+description: "Task 1.4 adds the transactional native lifecycle, checked seed streams, rewards and codec/table bindings (16-game TrainingBatch oracle bit-exact, release overflow proof on the pod). Task 1.5 wires the typed adapter, one-buffer entry fence, factory, codec and strict native grammar tables to that binding with no missing-binding skip left; full just prepare passes. Since the Task 3.1 remainder (15ea55f) the canonical trainer and policy evaluation consume the adapter on CPU; the pod DMA fence test and the early two-rank smoke remain pending."
 tags: ["kaggriculture-v3", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex; revised by anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -139,9 +139,10 @@ bool arrays of `TABLE_SHAPES`, with no fallback. It is the model's default, load
 once per construction; explicit injection bypasses it and `expected_grammar_tables`
 is only a test oracle. The Kaggriculture evaluation env comes from `create_env`
 with `_evaluation_seed`, rank 0 and world 1; repeated evaluations reproduce their
-worlds and banks. `run_ppo` still stops for Kaggriculture before any allocation,
-now naming Task 3.1's missing rollout storage and action mapping, and policy
-evaluation stops before the Orbit-only mapper.
+worlds and banks. At Task 1.5, `run_ppo` still stopped before allocation and policy
+evaluation before the Orbit-only mapper; the Task 3.1 remainder (`15ea55f`) removed
+both stops, builds rollouts with `create_env(env.seed, rank, world, transfer_device)`
+and evaluates policies through the shared mapper ([[ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]).
 
 Changed-path inventory: `python/owl/kaggriculture/gpu_grammar.py`,
 `rewards.py` (see the [[reward-reuse-preserves-objective-and-critic-semantics|reward Reference]]),
@@ -161,8 +162,9 @@ ignored, engine 69, Python 2,224 passed with 6 CUDA/backend skips, 1.78 GB peak.
 Codex's own runs used a 960 MiB watchdog that stopped the monolithic command;
 its bounded batches account for the same 2,230 cases.
 
-Remaining gaps: Task 3.1 rollout storage, action transport and policy-evaluation
-mapping; the pod DMA test with its fence-removal control; the pinned-observation
+Remaining gaps: the Task 3.1 rollout storage, action transport and policy-evaluation
+mapping are CPU-tested since `15ea55f` (a native two-update `PPOTrainer` smoke), not on
+CUDA; the pod DMA test with its fence-removal control; the pinned-observation
 tests; and the early two-rank smoke. Nothing here claims GPU, trainer, learning
 or throughput behavior.
 
