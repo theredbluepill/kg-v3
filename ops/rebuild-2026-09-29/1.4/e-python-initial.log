@@ -1,0 +1,154 @@
+.....FFFFFF                                                              [100%]
+=================================== FAILURES ===================================
+_________ test_truncate_writes_only_selected_rows[mask_values0-False] __________
+
+terminal = False, mask_values = (False, True)
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    @pytest.mark.parametrize("mask_values", [(False, True), (True, False), (False, False)])
+    def test_truncate_writes_only_selected_rows(terminal: bool, mask_values: tuple[bool, bool]) -> None:
+        reward: rs.KaggricultureRewardDict = REWARD.copy()
+        reward["econ_ineffective_weight"] = 0.001
+        config = json.dumps({"episodeSteps": 2 if terminal else 20})
+        env = rs.KaggricultureEnv(2, 11, 2, config, reward, 1, hire_limit=241)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        # Fixed canonical program: seat 0's ineffective HARVEST and BUY_PRODUCT
+        # WHEAT(1) share a frame; seat 1 passes. No Python codec is introduced.
+        tokens[:, 0, 0, 1] = 10
+        tokens[:, 0, 0, 7] = 4
+        tokens[:, 0, 0, 8] = 1
+        tokens[:, 0, 0, 10] = 1
+>       env.step(tokens, lengths, **arrays)
+E       ValueError: env=0 seat=0 grammar support: frame 0 slot market_kind value 4
+
+tests/kaggriculture/test_native_env.py:473: ValueError
+__________ test_truncate_writes_only_selected_rows[mask_values0-True] __________
+
+terminal = True, mask_values = (False, True)
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    @pytest.mark.parametrize("mask_values", [(False, True), (True, False), (False, False)])
+    def test_truncate_writes_only_selected_rows(terminal: bool, mask_values: tuple[bool, bool]) -> None:
+        reward: rs.KaggricultureRewardDict = REWARD.copy()
+        reward["econ_ineffective_weight"] = 0.001
+        config = json.dumps({"episodeSteps": 2 if terminal else 20})
+        env = rs.KaggricultureEnv(2, 11, 2, config, reward, 1, hire_limit=241)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        # Fixed canonical program: seat 0's ineffective HARVEST and BUY_PRODUCT
+        # WHEAT(1) share a frame; seat 1 passes. No Python codec is introduced.
+        tokens[:, 0, 0, 1] = 10
+        tokens[:, 0, 0, 7] = 4
+        tokens[:, 0, 0, 8] = 1
+        tokens[:, 0, 0, 10] = 1
+>       env.step(tokens, lengths, **arrays)
+E       ValueError: env=0 seat=0 grammar support: frame 0 slot market_kind value 4
+
+tests/kaggriculture/test_native_env.py:473: ValueError
+_________ test_truncate_writes_only_selected_rows[mask_values1-False] __________
+
+terminal = False, mask_values = (True, False)
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    @pytest.mark.parametrize("mask_values", [(False, True), (True, False), (False, False)])
+    def test_truncate_writes_only_selected_rows(terminal: bool, mask_values: tuple[bool, bool]) -> None:
+        reward: rs.KaggricultureRewardDict = REWARD.copy()
+        reward["econ_ineffective_weight"] = 0.001
+        config = json.dumps({"episodeSteps": 2 if terminal else 20})
+        env = rs.KaggricultureEnv(2, 11, 2, config, reward, 1, hire_limit=241)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        # Fixed canonical program: seat 0's ineffective HARVEST and BUY_PRODUCT
+        # WHEAT(1) share a frame; seat 1 passes. No Python codec is introduced.
+        tokens[:, 0, 0, 1] = 10
+        tokens[:, 0, 0, 7] = 4
+        tokens[:, 0, 0, 8] = 1
+        tokens[:, 0, 0, 10] = 1
+>       env.step(tokens, lengths, **arrays)
+E       ValueError: env=0 seat=0 grammar support: frame 0 slot market_kind value 4
+
+tests/kaggriculture/test_native_env.py:473: ValueError
+__________ test_truncate_writes_only_selected_rows[mask_values1-True] __________
+
+terminal = True, mask_values = (True, False)
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    @pytest.mark.parametrize("mask_values", [(False, True), (True, False), (False, False)])
+    def test_truncate_writes_only_selected_rows(terminal: bool, mask_values: tuple[bool, bool]) -> None:
+        reward: rs.KaggricultureRewardDict = REWARD.copy()
+        reward["econ_ineffective_weight"] = 0.001
+        config = json.dumps({"episodeSteps": 2 if terminal else 20})
+        env = rs.KaggricultureEnv(2, 11, 2, config, reward, 1, hire_limit=241)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        # Fixed canonical program: seat 0's ineffective HARVEST and BUY_PRODUCT
+        # WHEAT(1) share a frame; seat 1 passes. No Python codec is introduced.
+        tokens[:, 0, 0, 1] = 10
+        tokens[:, 0, 0, 7] = 4
+        tokens[:, 0, 0, 8] = 1
+        tokens[:, 0, 0, 10] = 1
+>       env.step(tokens, lengths, **arrays)
+E       ValueError: env=0 seat=0 grammar support: frame 0 slot market_kind value 4
+
+tests/kaggriculture/test_native_env.py:473: ValueError
+_________ test_truncate_writes_only_selected_rows[mask_values2-False] __________
+
+terminal = False, mask_values = (False, False)
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    @pytest.mark.parametrize("mask_values", [(False, True), (True, False), (False, False)])
+    def test_truncate_writes_only_selected_rows(terminal: bool, mask_values: tuple[bool, bool]) -> None:
+        reward: rs.KaggricultureRewardDict = REWARD.copy()
+        reward["econ_ineffective_weight"] = 0.001
+        config = json.dumps({"episodeSteps": 2 if terminal else 20})
+        env = rs.KaggricultureEnv(2, 11, 2, config, reward, 1, hire_limit=241)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        # Fixed canonical program: seat 0's ineffective HARVEST and BUY_PRODUCT
+        # WHEAT(1) share a frame; seat 1 passes. No Python codec is introduced.
+        tokens[:, 0, 0, 1] = 10
+        tokens[:, 0, 0, 7] = 4
+        tokens[:, 0, 0, 8] = 1
+        tokens[:, 0, 0, 10] = 1
+>       env.step(tokens, lengths, **arrays)
+E       ValueError: env=0 seat=0 grammar support: frame 0 slot market_kind value 4
+
+tests/kaggriculture/test_native_env.py:473: ValueError
+__________ test_truncate_writes_only_selected_rows[mask_values2-True] __________
+
+terminal = True, mask_values = (False, False)
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    @pytest.mark.parametrize("mask_values", [(False, True), (True, False), (False, False)])
+    def test_truncate_writes_only_selected_rows(terminal: bool, mask_values: tuple[bool, bool]) -> None:
+        reward: rs.KaggricultureRewardDict = REWARD.copy()
+        reward["econ_ineffective_weight"] = 0.001
+        config = json.dumps({"episodeSteps": 2 if terminal else 20})
+        env = rs.KaggricultureEnv(2, 11, 2, config, reward, 1, hire_limit=241)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        # Fixed canonical program: seat 0's ineffective HARVEST and BUY_PRODUCT
+        # WHEAT(1) share a frame; seat 1 passes. No Python codec is introduced.
+        tokens[:, 0, 0, 1] = 10
+        tokens[:, 0, 0, 7] = 4
+        tokens[:, 0, 0, 8] = 1
+        tokens[:, 0, 0, 10] = 1
+>       env.step(tokens, lengths, **arrays)
+E       ValueError: env=0 seat=0 grammar support: frame 0 slot market_kind value 4
+
+tests/kaggriculture/test_native_env.py:473: ValueError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_truncate_writes_only_selected_rows[mask_values0-False]
+FAILED tests/kaggriculture/test_native_env.py::test_truncate_writes_only_selected_rows[mask_values0-True]
+FAILED tests/kaggriculture/test_native_env.py::test_truncate_writes_only_selected_rows[mask_values1-False]
+FAILED tests/kaggriculture/test_native_env.py::test_truncate_writes_only_selected_rows[mask_values1-True]
+FAILED tests/kaggriculture/test_native_env.py::test_truncate_writes_only_selected_rows[mask_values2-False]
+FAILED tests/kaggriculture/test_native_env.py::test_truncate_writes_only_selected_rows[mask_values2-True]
+6 failed, 5 passed, 328 deselected in 1.46s

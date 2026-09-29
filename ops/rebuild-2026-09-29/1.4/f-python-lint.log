@@ -1,0 +1,481 @@
+PT018 Assertion should be broken down into multiple parts
+  --> tests/kaggriculture/test_native_env.py:74:5
+   |
+72 |     batch.check_contract()
+73 |     assert env.seed_state() == (15, (11, 13))
+74 |     assert not arrays["dones"].any() and not arrays["rewards"].any()
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+75 |     np.testing.assert_array_equal(
+76 |         arrays["transition_banks_before"], arrays["transition_banks_after"]
+   |
+help: Break down assertion into multiple parts
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_env.py:126:24
+    |
+124 |     seeds = env.seed_state()
+125 |     state = env.state_snapshot(0)
+126 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+127 |         env.reset(**arrays)
+128 |     assert snapshot(arrays) == before
+    |
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_env.py:129:5
+    |
+127 |         env.reset(**arrays)
+128 |     assert snapshot(arrays) == before
+129 |     assert env.seed_state() == seeds and env.state_snapshot(0) == state
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: Break down assertion into multiple parts
+
+PT006 Wrong type passed to first argument of `pytest.mark.parametrize`; expected `tuple`
+   --> tests/kaggriculture/test_native_env.py:133:5
+    |
+132 | @pytest.mark.parametrize(
+133 |     "seed,stride,error",
+    |     ^^^^^^^^^^^^^^^^^^^
+134 |     [
+135 |         (True, 1, ValueError),
+    |
+help: Use a `tuple` for the first argument
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_env.py:163:5
+    |
+161 |             env.terminal_metrics(index)
+162 |     next_seed, seeds = env.seed_state()
+163 |     assert isinstance(next_seed, int) and isinstance(seeds, tuple)
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: Break down assertion into multiple parts
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/kaggriculture/test_native_env.py:185:42
+    |
+183 |     else:
+184 |         reward["econ_starvation_weight"] = reward["econ_drought_weight"] = 0
+185 |     with pytest.raises(ValueError, match="reward|econ|cap"):
+    |                                          ^^^^^^^^^^^^^^^^^
+186 |         rs.KaggricultureEnv(1, 0, 1, "{}", reward, 1, hire_limit=241)  # type: ignore[arg-type]
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+PT006 Wrong type passed to first argument of `pytest.mark.parametrize`; expected `tuple`
+   --> tests/kaggriculture/test_native_env.py:204:26
+    |
+204 | @pytest.mark.parametrize("n_envs,threads", [(0, 1), (1, 0), (2**63, 1)])
+    |                          ^^^^^^^^^^^^^^^^
+205 | def test_constructor_rejects_empty_or_unrepresentable_allocation(
+206 |     n_envs: int, threads: int
+    |
+help: Use a `tuple` for the first argument
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_env.py:208:24
+    |
+206 |     n_envs: int, threads: int
+207 | ) -> None:
+208 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+209 |         make_env(n_envs, threads=threads)
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_env.py:225:24
+    |
+223 |     arrays[name] = arrays[name].astype(arrays[name].dtype.newbyteorder("S"))
+224 |     before = snapshot(arrays)
+225 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+226 |         env.observe(**arrays)
+227 |     assert snapshot(arrays) == before
+    |
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/kaggriculture/test_native_env.py:271:42
+    |
+269 |     before = snapshot(arrays), diagnostics(env, 2)
+270 |     tokens[1, 1, 0, 1] = 2**62
+271 |     with pytest.raises(ValueError, match="env=1.*seat=1"):
+    |                                          ^^^^^^^^^^^^^^^
+272 |         env.step(tokens, lengths, **arrays)
+273 |     assert (snapshot(arrays), diagnostics(env, 2)) == before
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_env.py:296:5
+    |
+294 |     env.truncate_envs(np.array([False, True]), **arrays)
+295 |     assert env.seed_state() == (2**63 - 1, (2**63 - 4, 2**63 - 2))
+296 |     assert env.terminal_metrics(0) is not None and env.terminal_metrics(1) is None
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+297 |     for name in TRANSITIONS:
+298 |         assert arrays[name].tobytes() == before[0][name]
+    |
+help: Break down assertion into multiple parts
+
+PT012 `pytest.raises()` block should contain a single simple statement
+   --> tests/kaggriculture/test_native_env.py:333:5
+    |
+331 |           )
+332 |       before = snapshot(arrays), diagnostics(env, 2)
+333 | /     with pytest.raises(ValueError):
+334 | |         if name == "mask":
+335 | |             env.truncate_envs(inputs["mask"], **arrays)
+336 | |         else:
+337 | |             env.step(inputs["tokens"], inputs["lengths"], **arrays)
+    | |___________________________________________________________________^
+338 |       assert (snapshot(arrays), diagnostics(env, 2)) == before
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_env.py:333:24
+    |
+331 |         )
+332 |     before = snapshot(arrays), diagnostics(env, 2)
+333 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+334 |         if name == "mask":
+335 |             env.truncate_envs(inputs["mask"], **arrays)
+    |
+
+PT006 Wrong type passed to first argument of `pytest.mark.parametrize`; expected `tuple`
+   --> tests/kaggriculture/test_native_env.py:357:5
+    |
+356 | @pytest.mark.parametrize(
+357 |     "values,accepted",
+    |     ^^^^^^^^^^^^^^^^^
+358 |     [
+359 |         ((0.2, 4.0, 1.0, 0.25, 0.0, 0.0), True),
+    |
+help: Use a `tuple` for the first argument
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_env.py:388:28
+    |
+386 |         assert env.seed_state() == (1, (0,))
+387 |     else:
+388 |         with pytest.raises(ValueError):
+    |                            ^^^^^^^^^^
+389 |             rs.KaggricultureEnv(1, 0, 1, "{}", reward, 1, hire_limit=241)
+    |
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_env.py:396:5
+    |
+394 | ) -> tuple[int, int]:
+395 |     """The approved factory arithmetic, exercised against real native resets."""
+396 |     assert 0 <= rank < world_size and n_envs == 2
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+397 |     return base + rank, world_size
+    |
+help: Break down assertion into multiple parts
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/kaggriculture/test_native_env.py:420:50
+    |
+418 |             before = snapshot(arrays), diagnostics(env, n_envs)
+419 |             tokens[1, 1, 0, 1] = 2**62
+420 |             with pytest.raises(ValueError, match="env=1.*seat=1"):
+    |                                                  ^^^^^^^^^^^^^^^
+421 |                 env.step(tokens, lengths, **arrays)
+422 |             assert (snapshot(arrays), diagnostics(env, n_envs)) == before
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_env.py:454:9
+    |
+452 |             env.observe(**arrays)
+453 |             assert env.seed_state() == before_observe
+454 |         assert len(consumed) == 67 and len(set(consumed)) == 67
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+455 |         streams.append(consumed)
+456 |         del env  # Do not keep completed ranks' two-game batches alive.
+    |
+help: Break down assertion into multiple parts
+
+PT012 `pytest.raises()` block should contain a single simple statement
+   --> tests/kaggriculture/test_native_env.py:488:13
+    |
+486 |           before = snapshot(arrays), diagnostics(env, 2)
+487 |           for mask in (None, np.array([False, True]), np.array([True, True])):
+488 | /             with pytest.raises(OverflowError):
+489 | |                 if mask is None:
+490 | |                     env.reset(**arrays)
+491 | |                 else:
+492 | |                     env.truncate_envs(mask, **arrays)
+    | |_____________________________________________________^
+493 |               assert (snapshot(arrays), diagnostics(env, 2)) == before
+494 |           with pytest.raises(OverflowError):
+    |
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_env.py:518:5
+    |
+516 |             assert info["total_games_played"] == []
+517 |     assert env.seed_state() == (15, (13,))
+518 |     assert arrays["still_playing"].all() and arrays["can_act"].any()
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+519 |     assert (arrays["globals_int"][:, :, 0] == 0).all()
+520 |     np.testing.assert_array_equal(arrays["banks"], initial_banks)
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_env.py:543:9
+    |
+541 |       for seat in range(2):
+542 |           econ = terminal["econ_0"] if seat == 0 else terminal["econ_1"]
+543 | /         assert (
+544 | |             econ.dtype == np.int64 and econ.flags.c_contiguous and econ.shape == (32,)
+545 | |         )
+    | |_________^
+546 |           np.testing.assert_array_equal(econ, arrays["transition_econ_after"][0, seat])
+547 |       terminal["econ_0"][:] = -1
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_env.py:549:5
+    |
+547 |     terminal["econ_0"][:] = -1
+548 |     again = env.terminal_metrics(0)
+549 |     assert again is not None and (again["econ_0"] >= 0).all()
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+550 |     env.step(tokens, lengths, **arrays)
+551 |     assert env.terminal_metrics(0) is None
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+  --> tests/kaggriculture/test_native_grammar_bindings.py:46:5
+   |
+44 |     assert constants == (1, NAMES, WIDTHS)
+45 |     assert isinstance(constants, tuple)
+46 |     assert isinstance(constants[1], tuple) and isinstance(constants[2], tuple)
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+  --> tests/kaggriculture/test_native_grammar_bindings.py:56:9
+   |
+54 |     second = rs.kaggriculture_grammar_tables()
+55 |     for key, array in actual.items():
+56 |         assert array.dtype == np.bool_ and array.flags.c_contiguous
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+57 |         assert array.shape == TABLE_SHAPES[key]
+58 |         np.testing.assert_array_equal(array, expected[key].numpy())
+   |
+help: Break down assertion into multiple parts
+
+PT006 Wrong type passed to first argument of `pytest.mark.parametrize`; expected `tuple`
+  --> tests/kaggriculture/test_native_grammar_bindings.py:68:5
+   |
+67 | @pytest.mark.parametrize(
+68 |     "action,actors,length",
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+69 |     [
+70 |         (PASS, 1, 2),
+   |
+help: Use a `tuple` for the first argument
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_grammar_bindings.py:108:24
+    |
+106 |     out = np.full((252, 12), 91, dtype=np.int64)
+107 |     before = out.tobytes()
+108 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+109 |         rs.kaggriculture_encode(action_json, 1, 10, 241, out)
+110 |     assert out.size == 3024 and out.tobytes() == before
+    |
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_grammar_bindings.py:110:5
+    |
+108 |     with pytest.raises(ValueError):
+109 |         rs.kaggriculture_encode(action_json, 1, 10, 241, out)
+110 |     assert out.size == 3024 and out.tobytes() == before
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: Break down assertion into multiple parts
+
+PT006 Wrong type passed to first argument of `pytest.mark.parametrize`; expected `tuple`
+   --> tests/kaggriculture/test_native_grammar_bindings.py:114:5
+    |
+113 | @pytest.mark.parametrize(
+114 |     "actors,order_limit,hire_limit",
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+115 |     [
+116 |         (0, 10, 241),
+    |
+help: Use a `tuple` for the first argument
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_grammar_bindings.py:129:24
+    |
+127 |     out = np.full((252, 12), 91, dtype=np.int64)
+128 |     before = out.tobytes()
+129 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+130 |         rs.kaggriculture_encode(json.dumps(PASS), actors, order_limit, hire_limit, out)
+131 |     assert out.tobytes() == before
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_grammar_bindings.py:132:24
+    |
+130 |         rs.kaggriculture_encode(json.dumps(PASS), actors, order_limit, hire_limit, out)
+131 |     assert out.tobytes() == before
+132 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+133 |         rs.kaggriculture_decode(_pass_tokens(), 2, actors, order_limit, hire_limit)
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_grammar_bindings.py:164:24
+    |
+162 |     out = _invalid_array(kind)
+163 |     before = out.tobytes()
+164 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+165 |         rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+166 |     assert out.tobytes() == before
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_grammar_bindings.py:167:24
+    |
+165 |         rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+166 |     assert out.tobytes() == before
+167 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+168 |         rs.kaggriculture_decode(out, 2, 1, 10, 241)
+169 |     assert out.tobytes() == before
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_grammar_bindings.py:176:24
+    |
+174 |     out.setflags(write=False)
+175 |     before = out.tobytes()
+176 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+177 |         rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+178 |     assert out.tobytes() == before
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_grammar_bindings.py:183:24
+    |
+181 | @pytest.mark.parametrize("length", [-1, 0, 1, 3, 253, 2**63 - 1])
+182 | def test_decode_rejects_invalid_length(length: int) -> None:
+183 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+184 |         rs.kaggriculture_decode(_pass_tokens(), length, 1, 10, 241)
+    |
+
+PT006 Wrong type passed to first argument of `pytest.mark.parametrize`; expected `tuple`
+   --> tests/kaggriculture/test_native_grammar_bindings.py:188:5
+    |
+187 | @pytest.mark.parametrize(
+188 |     "frame,slot,value", [(2, 0, 1), (251, 11, 1), (252 - 1, 1, -1), (0, 1, 2**62)]
+    |     ^^^^^^^^^^^^^^^^^^
+189 | )
+190 | def test_decode_rejects_dirty_tail_and_wide_tokens(
+    |
+help: Use a `tuple` for the first argument
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_grammar_bindings.py:196:24
+    |
+194 |     tokens[frame, slot] = value
+195 |     before = tokens.tobytes()
+196 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+197 |         rs.kaggriculture_decode(tokens, 2, 1, 10, 241)
+198 |     assert tokens.tobytes() == before
+    |
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_grammar_bindings.py:209:5
+    |
+207 |       rows = [json.loads(line) for line in payload.splitlines()]
+208 |       assert rows[0]["type"] == "header"
+209 | /     assert rows[0]["slot_names"] == list(NAMES) and rows[0]["slot_widths"] == list(
+210 | |         WIDTHS
+211 | |     )
+    | |_____^
+212 |       assert rows[0]["reference_commit"] == manifest["reference_commit"]
+213 |       accepted = scheduled = dense = dense_full = 0
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_grammar_bindings.py:216:9
+    |
+214 |     rejected: set[str] = set()
+215 |     for row in rows[1:]:
+216 |         assert row["type"] == "program" and row["source"] != "replay_rejected"
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+217 |         shape = row["shape"]
+218 |         actors, orders, hire = (
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_grammar_bindings.py:235:17
+    |
+233 |               assert actual == expected, row["id"]
+234 |               for source in ("sampler", "training_decoder", "python_codec"):
+235 | /                 assert row[source]["accepted"] and actual == row[source]["action"], (
+236 | |                     row["id"],
+237 | |                     source,
+238 | |                 )
+    | |_________________^
+239 |               out = np.full((252, 12), 91, dtype=np.int64)
+240 |               assert (
+    |
+help: Break down assertion into multiple parts
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_native_grammar_bindings.py:251:32
+    |
+249 |                 dense_full += actors == 241 and length == 252
+250 |         else:
+251 |             with pytest.raises(ValueError):
+    |                                ^^^^^^^^^^
+252 |                 rs.kaggriculture_decode(tokens, length, actors, orders, hire)
+253 |             rejected.add(row["category"])
+    |
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_grammar_bindings.py:266:5
+    |
+264 |     backing = np.full(3024 + 8, 91, dtype=np.int64)
+265 |     out = backing[4:-4].reshape(252, 12)
+266 |     assert not out.flags.owndata and out.flags.c_contiguous
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+267 |     assert rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out) == 2
+268 |     np.testing.assert_array_equal(out, _pass_tokens())
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_native_grammar_bindings.py:269:5
+    |
+267 |     assert rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out) == 2
+268 |     np.testing.assert_array_equal(out, _pass_tokens())
+269 |     assert (backing[:4] == 91).all() and (backing[-4:] == 91).all()
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: Break down assertion into multiple parts
+
+Found 42 errors.
+No fixes available (22 hidden fixes can be enabled with the `--unsafe-fixes` option).

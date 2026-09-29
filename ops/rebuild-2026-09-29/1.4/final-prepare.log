@@ -1,0 +1,35 @@
+uv run maturin develop
+📦 Including license file `LICENSE`
+🍹 Building a mixed python/rust project
+🔗 Found pyo3 bindings with abi3 support
+🐍 Found CPython 3.12 at /Users/poonszesen/kg-v3-env/.venv/bin/python
+📡 Using build options features from pyproject.toml
+Audited 9 packages in 26ms
+Resolved 44 packages in 9ms
+Audited 44 packages in 0.55ms
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.40s
+📦 Built wheel for abi3 Python ≥ 3.11 to /Users/poonszesen/kg-v3-env/.codex-tmp/.tmp83lnZg/owl-0.1.0-cp311-abi3-macosx_11_0_arm64.whl
+✏️ Setting installed package as editable
+🛠 Installed owl-0.1.0
+uv run python scripts/check_engine_trim.py
+engine trim manifest: OK
+cargo fmt
+cargo fmt --manifest-path engine_rs/Cargo.toml --check
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+122 files left unchanged
+cargo clippy --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+# Six pinned upstream style findings; see ops/rebuild-2026-09-29/1.1/results.md.
+cargo clippy --manifest-path engine_rs/Cargo.toml --all-targets --locked -- -D warnings -A clippy::too_many_arguments -A clippy::collapsible_if -A clippy::needless_range_loop
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uvx pymarkdownlnt scan *.md
+uvx pymarkdownlnt scan --recurse python/ scripts/ tests/ src/ docs/
+/Users/poonszesen/kg-v3-env/docs/rules-parity-coverage.md:522:1: MD012: Multiple consecutive blank lines [Expected: 1, Actual: 2] (no-multiple-blanks)
+/Users/poonszesen/kg-v3-env/docs/rules-parity-coverage.md:523:1: MD022: Headings should be surrounded by blank lines. [Expected: 1; Actual: 2; Above] (blanks-around-headings,blanks-around-headers)
+error: recipe `docs-lint` failed on line 11 with exit code 1

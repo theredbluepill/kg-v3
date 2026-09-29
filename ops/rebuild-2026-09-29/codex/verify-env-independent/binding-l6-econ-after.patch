@@ -1,0 +1,12 @@
+--- src/kaggriculture/env.rs
++++ src/kaggriculture/env.rs.mutant
+@@ -137,8 +137,7 @@
+             .copy_from_slice(&self.transition_banks_after);
+         out.transition_econ_before
+             .copy_from_slice(&self.transition_econ_before);
+-        out.transition_econ_after
+-            .copy_from_slice(&self.transition_econ_after);
++        // MUTANT: omit publication of transition_econ_after.
+     }
+ }
+ impl TransitionBuffersMut<'_> {

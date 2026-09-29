@@ -1,0 +1,44 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_archive_digest_mismatch_rejected_before_numpy_load[expanded_sha256-expanded fixture hash differs] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-102/test_archive_digest_mismatch_r1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107858230>
+field = 'expanded_sha256', error = 'expanded fixture hash differs'
+
+    @pytest.mark.parametrize(
+        ("field", "error"),
+        [
+            ("fixture_sha256", "fixture hash differs"),
+            ("expanded_sha256", "expanded fixture hash differs"),
+        ],
+    )
+    def test_archive_digest_mismatch_rejected_before_numpy_load(
+        tmp_path: Path, monkeypatch, field: str, error: str
+    ) -> None:
+        """Only the named digest is wrong; sizes, arrays and sources stay coherent."""
+        path = publish_example(tmp_path)
+        _rewrite_manifest(path, **{field: "0" * 64})
+        _forbid_numpy_load(monkeypatch)
+        with pytest.raises(ValueError, match=re.escape(error)):
+>           recorder.load_fixture(path)
+
+tests/tools/test_record_kaggriculture_env_reference.py:331: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:433: in load_fixture
+    with np.load(path, allow_pickle=False) as loaded:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_a = (PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-102/test_archive_digest_mismatch_r1/oracle.npz'),)
+_k = {'allow_pickle': False}
+
+>       np, "load", lambda *_a, **_k: pytest.fail("numpy loaded before custody")
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: numpy loaded before custody
+
+tests/tools/test_record_kaggriculture_env_reference.py:257: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_archive_digest_mismatch_rejected_before_numpy_load[expanded_sha256-expanded fixture hash differs]
+1 failed, 1 passed, 56 deselected in 1.25s

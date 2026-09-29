@@ -1,0 +1,11 @@
+--- src/kaggriculture/bindings.rs
++++ src/kaggriculture/bindings.rs.mutant
+@@ -1220,7 +1220,7 @@
+ pub(super) fn kaggriculture_grammar_tables(py: Python<'_>) -> PyResult<Bound<'_, PyDict>> {
+     let tables = grammar::grammar_tables().map_err(PyRuntimeError::new_err)?;
+     let result = PyDict::new(py);
+-    result.set_item("unit_kind", bool_table(py, &[20], tables.unit_kind)?)?;
++    result.set_item("unit_kind", bool_table(py, &[20], tables.unit_kind.map(|v| !v))?)?;
+     result.set_item(
+         "unit_item",
+         bool_table(py, &[20, 16], tables.unit_item.into_iter().flatten())?,

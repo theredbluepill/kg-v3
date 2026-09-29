@@ -1,0 +1,563 @@
+........................................................................ [ 18%]
+........................................................................ [ 37%]
+...................................................................F.... [ 56%]
+........................................................................ [ 75%]
+..........................FFF........................................... [ 94%]
+..................FFF.                                                   [100%]
+=================================== FAILURES ===================================
+_____ test_every_destination_rejected_before_any_write[overlap-tile_kind] ______
+
+name = 'tile_kind', kind = 'overlap'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+        with pytest.raises(ValueError, match=name):
+>           env.reset(**arrays)
+E           ValueError: tile_crop: writable borrow failed: The given array is already borrowed
+
+tests/kaggriculture/test_native_env.py:128: ValueError
+
+During handling of the above exception, another exception occurred:
+
+name = 'tile_kind', kind = 'overlap'
+
+    @pytest.mark.parametrize("name", DESTINATIONS)
+    @pytest.mark.parametrize(
+        "kind", ["shape", "dtype", "readonly", "stride", "fortran", "unaligned", "overlap"]
+    )
+    def test_every_destination_rejected_before_any_write(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        original = arrays[name]
+        if kind == "shape":
+            arrays[name] = np.zeros((1, *original.shape[1:]), dtype=original.dtype)
+        elif kind == "dtype":
+            arrays[name] = np.zeros(original.shape, dtype=np.uint8)
+        elif kind == "readonly":
+            original.setflags(write=False)
+        elif kind == "stride":
+            arrays[name] = np.zeros(
+                (*original.shape[:-1], original.shape[-1] * 2), dtype=original.dtype
+            )[..., ::2]
+        elif kind == "fortran":
+            arrays[name] = np.asfortranarray(original)
+        elif kind == "unaligned":
+            if original.dtype.itemsize == 1:
+                # bool has alignment one; a nonnative dtype is invalid instead.
+                arrays[name] = np.zeros(original.shape, dtype=np.int8)
+            else:
+                arrays[name] = np.ndarray(
+                    original.shape,
+                    dtype=original.dtype,
+                    buffer=bytearray(original.nbytes + 1),
+                    offset=1,
+                )
+        else:
+            peer = next(other for other in DESTINATIONS if other != name)
+            backing = bytearray(max(original.nbytes, arrays[peer].nbytes))
+            arrays[name] = np.ndarray(original.shape, dtype=original.dtype, buffer=backing)
+            arrays[peer] = np.ndarray(
+                arrays[peer].shape, dtype=arrays[peer].dtype, buffer=backing
+            )
+        before = snapshot(arrays)
+        seeds = env.seed_state()
+        state = env.state_snapshot(0)
+>       with pytest.raises(ValueError, match=name):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'tile_kind'
+E         Actual message: 'tile_crop: writable borrow failed: The given array is already borrowed'
+
+tests/kaggriculture/test_native_env.py:127: AssertionError
+______ test_native_input_admission_preserves_every_output[overlap-tokens] ______
+
+name = 'tokens', kind = 'overlap'
+
+    @pytest.mark.parametrize("name", ["tokens", "lengths", "mask"])
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "endian", "overlap"])
+    def test_native_input_admission_preserves_every_output(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        inputs = {"tokens": tokens, "lengths": lengths, "mask": np.array([False, True])}
+        array = inputs[name]
+        if kind == "dtype":
+            inputs[name] = array.astype(np.int8)
+        elif kind == "shape":
+            inputs[name] = array[:1]
+        elif kind == "stride":
+            inputs[name] = np.zeros(
+                (*array.shape[:-1], array.shape[-1] * 2), dtype=array.dtype
+            )[..., ::2]
+        elif kind == "endian":
+            inputs[name] = array.astype(
+                np.int8 if name == "mask" else array.dtype.newbyteorder("S")
+            )
+        else:
+            backing = bytearray(max(array.nbytes, arrays["tile_kind"].nbytes))
+            inputs[name] = np.ndarray(array.shape, dtype=array.dtype, buffer=backing)
+            arrays["tile_kind"] = np.ndarray(
+                arrays["tile_kind"].shape, dtype=np.int64, buffer=backing
+            )
+        before = snapshot(arrays), diagnostics(env, 2)
+        if name == "mask":
+            with pytest.raises(ValueError, match=name):
+                env.truncate_envs(inputs["mask"], **arrays)
+        else:
+            with pytest.raises(ValueError, match=name):
+>               env.step(inputs["tokens"], inputs["lengths"], **arrays)
+E               ValueError: tile_kind: writable borrow failed: The given array is already borrowed
+
+tests/kaggriculture/test_native_env.py:342: ValueError
+
+During handling of the above exception, another exception occurred:
+
+name = 'tokens', kind = 'overlap'
+
+    @pytest.mark.parametrize("name", ["tokens", "lengths", "mask"])
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "endian", "overlap"])
+    def test_native_input_admission_preserves_every_output(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        inputs = {"tokens": tokens, "lengths": lengths, "mask": np.array([False, True])}
+        array = inputs[name]
+        if kind == "dtype":
+            inputs[name] = array.astype(np.int8)
+        elif kind == "shape":
+            inputs[name] = array[:1]
+        elif kind == "stride":
+            inputs[name] = np.zeros(
+                (*array.shape[:-1], array.shape[-1] * 2), dtype=array.dtype
+            )[..., ::2]
+        elif kind == "endian":
+            inputs[name] = array.astype(
+                np.int8 if name == "mask" else array.dtype.newbyteorder("S")
+            )
+        else:
+            backing = bytearray(max(array.nbytes, arrays["tile_kind"].nbytes))
+            inputs[name] = np.ndarray(array.shape, dtype=array.dtype, buffer=backing)
+            arrays["tile_kind"] = np.ndarray(
+                arrays["tile_kind"].shape, dtype=np.int64, buffer=backing
+            )
+        before = snapshot(arrays), diagnostics(env, 2)
+        if name == "mask":
+            with pytest.raises(ValueError, match=name):
+                env.truncate_envs(inputs["mask"], **arrays)
+        else:
+>           with pytest.raises(ValueError, match=name):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E             Expected regex: 'tokens'
+E             Actual message: 'tile_kind: writable borrow failed: The given array is already borrowed'
+
+tests/kaggriculture/test_native_env.py:341: AssertionError
+_____ test_native_input_admission_preserves_every_output[overlap-lengths] ______
+
+name = 'lengths', kind = 'overlap'
+
+    @pytest.mark.parametrize("name", ["tokens", "lengths", "mask"])
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "endian", "overlap"])
+    def test_native_input_admission_preserves_every_output(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        inputs = {"tokens": tokens, "lengths": lengths, "mask": np.array([False, True])}
+        array = inputs[name]
+        if kind == "dtype":
+            inputs[name] = array.astype(np.int8)
+        elif kind == "shape":
+            inputs[name] = array[:1]
+        elif kind == "stride":
+            inputs[name] = np.zeros(
+                (*array.shape[:-1], array.shape[-1] * 2), dtype=array.dtype
+            )[..., ::2]
+        elif kind == "endian":
+            inputs[name] = array.astype(
+                np.int8 if name == "mask" else array.dtype.newbyteorder("S")
+            )
+        else:
+            backing = bytearray(max(array.nbytes, arrays["tile_kind"].nbytes))
+            inputs[name] = np.ndarray(array.shape, dtype=array.dtype, buffer=backing)
+            arrays["tile_kind"] = np.ndarray(
+                arrays["tile_kind"].shape, dtype=np.int64, buffer=backing
+            )
+        before = snapshot(arrays), diagnostics(env, 2)
+        if name == "mask":
+            with pytest.raises(ValueError, match=name):
+                env.truncate_envs(inputs["mask"], **arrays)
+        else:
+            with pytest.raises(ValueError, match=name):
+>               env.step(inputs["tokens"], inputs["lengths"], **arrays)
+E               ValueError: tile_kind: writable borrow failed: The given array is already borrowed
+
+tests/kaggriculture/test_native_env.py:342: ValueError
+
+During handling of the above exception, another exception occurred:
+
+name = 'lengths', kind = 'overlap'
+
+    @pytest.mark.parametrize("name", ["tokens", "lengths", "mask"])
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "endian", "overlap"])
+    def test_native_input_admission_preserves_every_output(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        inputs = {"tokens": tokens, "lengths": lengths, "mask": np.array([False, True])}
+        array = inputs[name]
+        if kind == "dtype":
+            inputs[name] = array.astype(np.int8)
+        elif kind == "shape":
+            inputs[name] = array[:1]
+        elif kind == "stride":
+            inputs[name] = np.zeros(
+                (*array.shape[:-1], array.shape[-1] * 2), dtype=array.dtype
+            )[..., ::2]
+        elif kind == "endian":
+            inputs[name] = array.astype(
+                np.int8 if name == "mask" else array.dtype.newbyteorder("S")
+            )
+        else:
+            backing = bytearray(max(array.nbytes, arrays["tile_kind"].nbytes))
+            inputs[name] = np.ndarray(array.shape, dtype=array.dtype, buffer=backing)
+            arrays["tile_kind"] = np.ndarray(
+                arrays["tile_kind"].shape, dtype=np.int64, buffer=backing
+            )
+        before = snapshot(arrays), diagnostics(env, 2)
+        if name == "mask":
+            with pytest.raises(ValueError, match=name):
+                env.truncate_envs(inputs["mask"], **arrays)
+        else:
+>           with pytest.raises(ValueError, match=name):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E             Expected regex: 'lengths'
+E             Actual message: 'tile_kind: writable borrow failed: The given array is already borrowed'
+
+tests/kaggriculture/test_native_env.py:341: AssertionError
+_______ test_native_input_admission_preserves_every_output[overlap-mask] _______
+
+name = 'mask', kind = 'overlap'
+
+    @pytest.mark.parametrize("name", ["tokens", "lengths", "mask"])
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "endian", "overlap"])
+    def test_native_input_admission_preserves_every_output(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        inputs = {"tokens": tokens, "lengths": lengths, "mask": np.array([False, True])}
+        array = inputs[name]
+        if kind == "dtype":
+            inputs[name] = array.astype(np.int8)
+        elif kind == "shape":
+            inputs[name] = array[:1]
+        elif kind == "stride":
+            inputs[name] = np.zeros(
+                (*array.shape[:-1], array.shape[-1] * 2), dtype=array.dtype
+            )[..., ::2]
+        elif kind == "endian":
+            inputs[name] = array.astype(
+                np.int8 if name == "mask" else array.dtype.newbyteorder("S")
+            )
+        else:
+            backing = bytearray(max(array.nbytes, arrays["tile_kind"].nbytes))
+            inputs[name] = np.ndarray(array.shape, dtype=array.dtype, buffer=backing)
+            arrays["tile_kind"] = np.ndarray(
+                arrays["tile_kind"].shape, dtype=np.int64, buffer=backing
+            )
+        before = snapshot(arrays), diagnostics(env, 2)
+        if name == "mask":
+            with pytest.raises(ValueError, match=name):
+>               env.truncate_envs(inputs["mask"], **arrays)
+E               ValueError: tile_kind: writable borrow failed: The given array is already borrowed
+
+tests/kaggriculture/test_native_env.py:339: ValueError
+
+During handling of the above exception, another exception occurred:
+
+name = 'mask', kind = 'overlap'
+
+    @pytest.mark.parametrize("name", ["tokens", "lengths", "mask"])
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "endian", "overlap"])
+    def test_native_input_admission_preserves_every_output(name: str, kind: str) -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+        inputs = {"tokens": tokens, "lengths": lengths, "mask": np.array([False, True])}
+        array = inputs[name]
+        if kind == "dtype":
+            inputs[name] = array.astype(np.int8)
+        elif kind == "shape":
+            inputs[name] = array[:1]
+        elif kind == "stride":
+            inputs[name] = np.zeros(
+                (*array.shape[:-1], array.shape[-1] * 2), dtype=array.dtype
+            )[..., ::2]
+        elif kind == "endian":
+            inputs[name] = array.astype(
+                np.int8 if name == "mask" else array.dtype.newbyteorder("S")
+            )
+        else:
+            backing = bytearray(max(array.nbytes, arrays["tile_kind"].nbytes))
+            inputs[name] = np.ndarray(array.shape, dtype=array.dtype, buffer=backing)
+            arrays["tile_kind"] = np.ndarray(
+                arrays["tile_kind"].shape, dtype=np.int64, buffer=backing
+            )
+        before = snapshot(arrays), diagnostics(env, 2)
+        if name == "mask":
+>           with pytest.raises(ValueError, match=name):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E             Expected regex: 'mask'
+E             Actual message: 'tile_kind: writable borrow failed: The given array is already borrowed'
+
+tests/kaggriculture/test_native_env.py:338: AssertionError
+___________ test_decode_rejects_dirty_tail_and_wide_tokens[251-1--1] ___________
+
+frame = 251, slot = 1, value = -1
+
+    @pytest.mark.parametrize(
+        ("frame", "slot", "value"),
+        [(2, 0, 1), (251, 11, 1), (252 - 1, 1, -1), (0, 1, 2**62)],
+    )
+    def test_decode_rejects_dirty_tail_and_wide_tokens(
+        frame: int, slot: int, value: int
+    ) -> None:
+        tokens = _pass_tokens()
+        tokens[frame, slot] = value
+        before = tokens.tobytes()
+        with pytest.raises(ValueError, match=r"padding|grammar"):
+>           rs.kaggriculture_decode(tokens, 2, 1, 10, 241)
+E           ValueError: vocabulary frame 251 slot unit_kind value -1 outside 0..20
+
+tests/kaggriculture/test_native_grammar_bindings.py:204: ValueError
+
+During handling of the above exception, another exception occurred:
+
+frame = 251, slot = 1, value = -1
+
+    @pytest.mark.parametrize(
+        ("frame", "slot", "value"),
+        [(2, 0, 1), (251, 11, 1), (252 - 1, 1, -1), (0, 1, 2**62)],
+    )
+    def test_decode_rejects_dirty_tail_and_wide_tokens(
+        frame: int, slot: int, value: int
+    ) -> None:
+        tokens = _pass_tokens()
+        tokens[frame, slot] = value
+        before = tokens.tobytes()
+>       with pytest.raises(ValueError, match=r"padding|grammar"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'padding|grammar'
+E         Actual message: 'vocabulary frame 251 slot unit_kind value -1 outside 0..20'
+
+tests/kaggriculture/test_native_grammar_bindings.py:203: AssertionError
+___ test_decode_rejects_dirty_tail_and_wide_tokens[0-1-4611686018427387904] ____
+
+frame = 0, slot = 1, value = 4611686018427387904
+
+    @pytest.mark.parametrize(
+        ("frame", "slot", "value"),
+        [(2, 0, 1), (251, 11, 1), (252 - 1, 1, -1), (0, 1, 2**62)],
+    )
+    def test_decode_rejects_dirty_tail_and_wide_tokens(
+        frame: int, slot: int, value: int
+    ) -> None:
+        tokens = _pass_tokens()
+        tokens[frame, slot] = value
+        before = tokens.tobytes()
+        with pytest.raises(ValueError, match=r"padding|grammar"):
+>           rs.kaggriculture_decode(tokens, 2, 1, 10, 241)
+E           ValueError: vocabulary frame 0 slot unit_kind value 4611686018427387904 outside 0..20
+
+tests/kaggriculture/test_native_grammar_bindings.py:204: ValueError
+
+During handling of the above exception, another exception occurred:
+
+frame = 0, slot = 1, value = 4611686018427387904
+
+    @pytest.mark.parametrize(
+        ("frame", "slot", "value"),
+        [(2, 0, 1), (251, 11, 1), (252 - 1, 1, -1), (0, 1, 2**62)],
+    )
+    def test_decode_rejects_dirty_tail_and_wide_tokens(
+        frame: int, slot: int, value: int
+    ) -> None:
+        tokens = _pass_tokens()
+        tokens[frame, slot] = value
+        before = tokens.tobytes()
+>       with pytest.raises(ValueError, match=r"padding|grammar"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'padding|grammar'
+E         Actual message: 'vocabulary frame 0 slot unit_kind value 4611686018427387904 outside 0..20'
+
+tests/kaggriculture/test_native_grammar_bindings.py:203: AssertionError
+______ test_recorded_grammar_corpus_including_dense_and_rejection_classes ______
+
+    def test_recorded_grammar_corpus_including_dense_and_rejection_classes() -> None:
+        compressed = (FIXTURES / "grammar-v4-reference.jsonl.gz").read_bytes()
+        manifest = json.loads((FIXTURES / "grammar-v4-reference.manifest.json").read_text())
+        assert hashlib.sha256(compressed).hexdigest() == manifest["compressed_sha256"]
+        payload = gzip.decompress(compressed)
+        assert hashlib.sha256(payload).hexdigest() == manifest["uncompressed_sha256"]
+        rows = [json.loads(line) for line in payload.splitlines()]
+        assert rows[0]["type"] == "header"
+        assert rows[0]["slot_names"] == list(NAMES)
+        assert rows[0]["slot_widths"] == list(WIDTHS)
+        assert rows[0]["reference_commit"] == manifest["reference_commit"]
+        accepted = scheduled = dense = dense_full = 0
+        rejected: set[str] = set()
+        for row in rows[1:]:
+            assert row["type"] == "program"
+            assert row["source"] != "replay_rejected"
+            shape = row["shape"]
+            actors, orders, hire = (
+                shape["actors"],
+                shape["order_limit"],
+                shape["hire_limit"],
+            )
+            tokens = np.zeros((252, 12), dtype=np.int64)
+            tokens.reshape(-1)[: len(row["tokens"])] = row["tokens"]
+            for frame, slot, value in row["padding_edits"]:
+                tokens[frame, slot] = value
+            length = row["length"]
+            if row["v4_expected"]["accepted"]:
+                expected = row["v4_expected"]["action"]
+                actual = json.loads(
+                    rs.kaggriculture_decode(tokens, length, actors, orders, hire)
+                )
+                assert actual == expected, row["id"]
+                for source in ("sampler", "training_decoder", "python_codec"):
+                    assert row[source]["accepted"], (row["id"], source)
+                    assert actual == row[source]["action"], (row["id"], source)
+                out = np.full((252, 12), 91, dtype=np.int64)
+                assert (
+                    rs.kaggriculture_encode(json.dumps(expected), actors, orders, hire, out)
+                    == length
+                ), row["id"]
+                np.testing.assert_array_equal(out, tokens, err_msg=row["id"])
+                accepted += 1
+                if row["source"] in {"sampled", "replay"}:
+                    scheduled += 1
+                    dense += actors == 241
+                    dense_full += actors == 241 and length == 252
+            else:
+                with pytest.raises(ValueError, match=r"grammar|padding|STOP|length|token"):
+>                   rs.kaggriculture_decode(tokens, length, actors, orders, hire)
+E                   ValueError: vocabulary frame 0 slot unit_kind value -1 outside 0..20
+
+tests/kaggriculture/test_native_grammar_bindings.py:257: ValueError
+
+During handling of the above exception, another exception occurred:
+
+    def test_recorded_grammar_corpus_including_dense_and_rejection_classes() -> None:
+        compressed = (FIXTURES / "grammar-v4-reference.jsonl.gz").read_bytes()
+        manifest = json.loads((FIXTURES / "grammar-v4-reference.manifest.json").read_text())
+        assert hashlib.sha256(compressed).hexdigest() == manifest["compressed_sha256"]
+        payload = gzip.decompress(compressed)
+        assert hashlib.sha256(payload).hexdigest() == manifest["uncompressed_sha256"]
+        rows = [json.loads(line) for line in payload.splitlines()]
+        assert rows[0]["type"] == "header"
+        assert rows[0]["slot_names"] == list(NAMES)
+        assert rows[0]["slot_widths"] == list(WIDTHS)
+        assert rows[0]["reference_commit"] == manifest["reference_commit"]
+        accepted = scheduled = dense = dense_full = 0
+        rejected: set[str] = set()
+        for row in rows[1:]:
+            assert row["type"] == "program"
+            assert row["source"] != "replay_rejected"
+            shape = row["shape"]
+            actors, orders, hire = (
+                shape["actors"],
+                shape["order_limit"],
+                shape["hire_limit"],
+            )
+            tokens = np.zeros((252, 12), dtype=np.int64)
+            tokens.reshape(-1)[: len(row["tokens"])] = row["tokens"]
+            for frame, slot, value in row["padding_edits"]:
+                tokens[frame, slot] = value
+            length = row["length"]
+            if row["v4_expected"]["accepted"]:
+                expected = row["v4_expected"]["action"]
+                actual = json.loads(
+                    rs.kaggriculture_decode(tokens, length, actors, orders, hire)
+                )
+                assert actual == expected, row["id"]
+                for source in ("sampler", "training_decoder", "python_codec"):
+                    assert row[source]["accepted"], (row["id"], source)
+                    assert actual == row[source]["action"], (row["id"], source)
+                out = np.full((252, 12), 91, dtype=np.int64)
+                assert (
+                    rs.kaggriculture_encode(json.dumps(expected), actors, orders, hire, out)
+                    == length
+                ), row["id"]
+                np.testing.assert_array_equal(out, tokens, err_msg=row["id"])
+                accepted += 1
+                if row["source"] in {"sampled", "replay"}:
+                    scheduled += 1
+                    dense += actors == 241
+                    dense_full += actors == 241 and length == 252
+            else:
+>               with pytest.raises(ValueError, match=r"grammar|padding|STOP|length|token"):
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Regex pattern did not match.
+E                 Expected regex: 'grammar|padding|STOP|length|token'
+E                 Actual message: 'vocabulary frame 0 slot unit_kind value -1 outside 0..20'
+
+tests/kaggriculture/test_native_grammar_bindings.py:256: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[overlap-tile_kind]
+FAILED tests/kaggriculture/test_native_env.py::test_native_input_admission_preserves_every_output[overlap-tokens]
+FAILED tests/kaggriculture/test_native_env.py::test_native_input_admission_preserves_every_output[overlap-lengths]
+FAILED tests/kaggriculture/test_native_env.py::test_native_input_admission_preserves_every_output[overlap-mask]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_dirty_tail_and_wide_tokens[251-1--1]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_dirty_tail_and_wide_tokens[0-1-4611686018427387904]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_recorded_grammar_corpus_including_dense_and_rejection_classes
+7 failed, 375 passed in 2.23s

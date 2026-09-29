@@ -1,0 +1,55 @@
+........................................................................ [ 14%]
+........................................................................ [ 28%]
+........................................................................ [ 43%]
+........................................................................ [ 57%]
+........................................................................ [ 72%]
+.......................F...................................F............ [ 86%]
+...................................................................      [100%]
+=================================== FAILURES ===================================
+_____________ test_native_matches_training_batch_16_complete_games _____________
+
+    def test_native_matches_training_batch_16_complete_games() -> None:
+        recorder = _recorder()
+>       manifest, fixture = recorder.load_fixture()
+                            ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_env_reference.py:123: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:375: in load_fixture
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+reason = 'Task 1.4 complete 16-game reference fixture is missing: /Users/poonszesen/kg-v3-env/tests/fixtures/kaggriculture_env_reference_v1.npz; run the approved recorder on the pod if the Mac watchdog cannot fit it'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: Task 1.4 complete 16-game reference fixture is missing: /Users/poonszesen/kg-v3-env/tests/fixtures/kaggriculture_env_reference_v1.npz; run the approved recorder on the pod if the Mac watchdog cannot fit it
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+______________ test_frozen_fixture_custody_and_complete_coverage _______________
+
+    def test_frozen_fixture_custody_and_complete_coverage() -> None:
+>       manifest, arrays = recorder.load_fixture()
+                           ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/tools/test_record_kaggriculture_env_reference.py:312: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:375: in load_fixture
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+reason = 'Task 1.4 complete 16-game reference fixture is missing: /Users/poonszesen/kg-v3-env/tests/fixtures/kaggriculture_env_reference_v1.npz; run the approved recorder on the pod if the Mac watchdog cannot fit it'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: Task 1.4 complete 16-game reference fixture is missing: /Users/poonszesen/kg-v3-env/tests/fixtures/kaggriculture_env_reference_v1.npz; run the approved recorder on the pod if the Mac watchdog cannot fit it
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_env_reference.py::test_native_matches_training_batch_16_complete_games
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_frozen_fixture_custody_and_complete_coverage
+2 failed, 497 passed in 8.90s

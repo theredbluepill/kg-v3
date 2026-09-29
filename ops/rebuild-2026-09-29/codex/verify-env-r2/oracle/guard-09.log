@@ -1,0 +1,38 @@
+......................F...                                               [100%]
+=================================== FAILURES ===================================
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[econ_continuity-economic transition continuity differs] _
+
+corrupt = <function _econ_continuity at 0x1095567a0>
+error = 'economic transition continuity differs'
+
+>   ???
+
+/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:252: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/private/tmp/kg-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:260: in validate_arrays
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'economic counters decrease'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: economic counters decrease
+
+/private/tmp/kg-env-r2-oracle/scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+corrupt = <function _econ_continuity at 0x1095567a0>
+error = 'economic transition continuity differs'
+
+>   ???
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'economic\\ transition\\ continuity\\ differs'
+E     Actual message: 'economic counters decrease'
+
+/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py:251: AssertionError
+=========================== short test summary info ============================
+FAILED ../../../private/tmp/kg-env-r2-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[econ_continuity-economic transition continuity differs]
+1 failed, 25 passed, 27 deselected in 1.01s

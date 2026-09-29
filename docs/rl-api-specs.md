@@ -866,7 +866,7 @@ The Kaggriculture game uses the same shared training path through its own observ
   - Only input channel widths and the grammar action heads are game-specific. Seat rows are encoded independently.
 - **Actions** `KaggricultureActions`: `tokens [E,2,252,12]` and `lengths [E,2]` (one unit frame per own actor, then up to `order_limits` market frames, then STOP). The slot widths and action enums are pinned in the contract; the native grammar supplies syntax/support masks.
 - **Model outputs** (`KaggricultureTransformer`, Task 2.3): `forward` returns sampled `KaggricultureActions` with `log_probs.event` and `entropies.event` of shape `[E,2,252,12]` (per frame and slot; implicit slots 0/2/11 are zero), `per_player_entity = event.sum(-1)` `[E,2,252]`, zero `launch`, per-slot entropy `components`, `values [E,2]` and `winner_probabilities [E,2,2]`. `evaluate_actions` requires `int64` tokens/lengths of exactly these shapes, rejects non-canonical or out-of-support programs itself (`GrammarReplayError` naming the support, length or canonical group), and requires `hidden_state` and `dones` to be `None`.
-- **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks (equal banks draw), and truncation keeps the transition's economic reward and bootstraps from the critic. Each evaluation seeds its games with `_evaluation_seed(base_seed, env_steps)` (`scripts/run_ppo.py`), a reproducible mix placed in `[2**62, 2**62 + 2**61)` that is distinct per evaluation step for a fixed base seed (and per base seed for a fixed step) and leaves int64 headroom for the seeds one evaluation consumes. It is not injective over `(base_seed, env_steps)` pairs, and consecutive seeds consumed by different evaluations or runs may overlap. Training seeds stay below the band only while `base_seed + rank + k * world_size < 2**62`, which the native env seam (Tasks 1.4/1.5) must enforce.
+- **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks (equal banks draw), and truncation keeps the transition's economic reward and bootstraps from the critic. Each evaluation seeds its games with `_evaluation_seed(base_seed, env_steps)` (`scripts/run_ppo.py`), a reproducible mix placed in `[2**62, 2**62 + 2**61)` that is distinct per evaluation step for a fixed base seed (and per base seed for a fixed step) and leaves int64 headroom for the seeds one evaluation consumes. It is not injective over `(base_seed, env_steps)` pairs, and consecutive seeds consumed by different evaluations or runs may overlap. Training seeds stay below the band only while `base_seed + rank + k * world_size < 2**62`. Enforcing any training-only band separation belongs to the training factory; it is not a native admission cap. The approved Task 1.4 native ABI accepts nonnegative i64 seeds for both training and evaluation, with checked consumption as specified below.
 
 ### Python adapter, factory and reward configuration (Task 1.5 Stage 1)
 
@@ -1015,8 +1015,9 @@ NumPy admission runs on each binding call before making Rust mutable slices:
 exact native dtype, complete shape, C-contiguous and aligned layout, fallible
 writable borrowing, and pairwise disjoint byte ranges. Distinct Torch/NumPy base
 objects do not bypass overlap checks. Publication gives no authorization to
-overwrite data still in use by a reader; Task 1.4 owns lifecycle rollback and
-reuse fencing.
+overwrite data still in use by a reader. Task 1.4 implements lifecycle
+rollback; the Task 1.5 Python adapter owns the entry fence for pinned CUDA
+readers described below.
 
 The explicit-header seam in the existing `owl.rs` extension is:
 
@@ -1046,8 +1047,9 @@ arrays. Parsing and prepared snapshots still allocate scratch storage.
 and prepares both seat views from one public snapshot. Exact count/rank tensors,
 strict engine-shaped tiles and wide intermediate arithmetic preserve admitted
 facts; positive hire costs use exact integer Fibonacci products before floating
-conversion. The one-shot writer always sets `still_playing=true`; live reset,
-transition rewards/dones, terminal records and seed allocation belong to Task 1.4.
+conversion. The one-shot writer always sets `still_playing=true`; Task 1.4
+uses it for live and synchronously reset games while publishing completed-game
+rewards, dones, transition counters and terminal records separately.
 Native `check_row` is a diagnostic validator outside the write hot path. The
 Python schema's range checks do not replace semantic/privacy assertions.
 
@@ -1092,7 +1094,7 @@ exactly the three action keys and every actor in order, preserves omitted unit
 quantities, explicit market zero and EMPTY positions, writes zero padding and
 returns the active frame count. Encoding uses the same cursor and leaves the
 output untouched on every rejection. These functions return field/frame/slot
-errors; future PyO3 admission adds env/seat context.
+errors; native environment step admission adds env/seat context.
 
 Actor order is an integration invariant: frame `i`, `unit_actor i`, own
 observation `actor_slot i` and engine unit `i` all mean farmer first, followed
@@ -1119,14 +1121,15 @@ kind rows have singleton-zero placeholders; callers still apply `unit_kind`.
 any admitted high digit yields a different low support. Runtime actor order,
 phase, queue availability, HIRE prefix and STOP overlays remain necessary.
 
-The Task 1.4 binding contract is `kaggriculture_grammar_tables()` returning
-exactly these keys as owned C-contiguous `numpy.bool_` arrays, copied once at
-initialization, plus `kaggriculture_grammar_constants()` returning
-`(GRAMMAR_TABLES_VERSION=1, SLOT_NAMES, SLOT_WIDTHS)`. Task 1.5 checks that
-metadata and maps same-name arrays to device `torch.bool` tensors once per
-model/device. Task 2.3 consumes these shapes directly. The bindings and actual
-model integration are later work; no Python grammar reconstruction or binary
-DFA runtime compatibility layer is introduced here.
+Task 1.4 implements `kaggriculture_grammar_tables()` returning exactly these
+keys as independent C-contiguous `numpy.bool_` arrays on every call, plus
+`kaggriculture_grammar_constants()` returning a tuple of
+`(GRAMMAR_TABLES_VERSION=1, SLOT_NAMES, SLOT_WIDTHS)` with tuple names and widths.
+Task 1.5 will check that metadata and map same-name arrays to device
+`torch.bool` tensors once per model/device. Task 2.3 consumes these shapes
+directly. The Python codec and `native_grammar_tables(device)` integration
+remain Task 1.5; no Python grammar reconstruction or binary DFA runtime layer
+is introduced here.
 
 The root builds this source under edition 2021. Task 1.3 created the first
 production root → engine dependency, unified the Serde feature graph (L4 repair
@@ -1134,4 +1137,220 @@ in `docs/rules-engine.md`) and retired the temporary engine include: kernel
 acceptance and replay-state tests run in root integration
 (`src/kaggriculture/grammar_kernel_tests.rs`). CPU checked token admission
 addresses a separate indexing hazard; it does not qualify the L6 Inductor
-GEMM overflow fix, CUDA/BF16 replay, batching transactions or buffer lifetimes.
+GEMM overflow fix or CUDA/BF16 replay. Native lifecycle transactions and CPU
+buffer admission have separate Task 1.4 checks below; the pinned CUDA reuse
+fence remains a Task 1.5 obligation.
+
+### Native environment lifecycle (Task 1.4)
+
+`owl.rs.KaggricultureEnv` is implemented in root `src/kaggriculture/env.rs`,
+`reward.rs`, `admission.rs` and `bindings.rs`. The merged module root remains
+`src/kaggriculture/mod.rs`; it registers the class and four grammar functions
+through the existing `add_to_module` route and preserves the Task 1.3 header
+encoder. Vendored kernel bytes are unchanged. There is no public lifecycle
+state-import API.
+
+```python
+KaggricultureEnv(
+    n_envs: int, seed: int, seed_stride: int, config: str,
+    reward_config: KaggricultureRewardDict, native_threads: int,
+    *, hire_limit: int,
+)
+```
+
+Every constructor argument is required. `config` is validated game-envelope
+JSON text. `n_envs` and `native_threads` are positive; even one thread uses an
+explicit native Rayon pool. `hire_limit` is the action-spec capacity, never a
+cash estimate. Native has no `pin_memory` argument: Python owns and pins its
+Torch allocations in Task 1.5. This constructor refinement was approved as Q1
+of the Task 1.4 brief review, and contract v4.2
+(`docs/kaggriculture-contract.md`) incorporates it.
+
+The following are the 35 required keyword-only NumPy output parameters, in ABI
+order. The first 29 use the observation table above. The six transition outputs
+complete the common argument list:
+
+```text
+tile_kind, tile_crop, tile_animal, tile_cell, tile_role,
+tiles_int, tiles_float, actor_slot, actor_cell, actor_role,
+actor_mask, actor_inventory, actor_inventory_rank, actors_float,
+player_features, storage_counts, storage_rank, banks,
+shop_type, shop_slot, shop_mask, market_product, market_float, market_int,
+global_features, globals_int, still_playing, order_limits, can_act,
+rewards, dones, transition_banks_before, transition_banks_after,
+transition_econ_before, transition_econ_after
+```
+
+| Transition output | NumPy dtype | Full shape |
+| --- | --- | --- |
+| `rewards` | float32 | `[E,2]` |
+| `dones` | bool | `[E,2]` |
+| `transition_banks_before`, `transition_banks_after` | float64 | `[E,2]` |
+| `transition_econ_before`, `transition_econ_after` | int64 | `[E,2,32]` |
+
+There is no `econ_counters` alias. Each method below takes exactly those 35
+keywords; `buffers` in this call notation is the caller's dictionary expanded
+into them, not an additional ABI argument. `python/owl/rs.pyi` lists every typed
+parameter explicitly.
+
+```python
+env.observe(**buffers) -> None
+env.reset(**buffers) -> None
+env.step(tokens, lengths, **buffers) -> dict[str, list[float]]
+env.truncate_envs(mask, **buffers) -> None
+```
+
+`tokens` is native-endian int64 `[E,2,252,12]`, `lengths` is int64 `[E,2]`, and
+`mask` is bool `[E]`. Inputs may be read-only. Every supplied array must be
+aligned and C-contiguous; outputs must also be writable, with exact shape and
+dtype. All supplied input and output byte regions must be pairwise disjoint.
+Fortran-only, strided, internally overlapping and foreign-endian storage is
+rejected. Disjoint contiguous views of caller storage are accepted. Native
+retains borrow guards until the call returns, keeps no array references, and
+never substitutes output arrays. Callers must not access outputs or
+mutate/resize inputs during a call.
+They must copy values they retain across later writes.
+
+Construction consumes exactly E seeds and prepares live games. `observe`
+publishes cached current observations and transition values without consuming
+seeds or taking a step; the adapter will use it immediately after allocation.
+`reset` consumes E new seeds, clears terminal records, and writes all rows and
+padding. It publishes zero rewards/dones, current banks in both bank outputs,
+and zero counters in both counter outputs.
+
+`step` validates every action and buffer before advancing candidates. Games,
+seed reservations, terminal records, observations and transition values remain
+unpublished until every worker succeeds and the return dictionary is allocated.
+Expected input/engine failures raise `ValueError`; checked i64 seed extraction
+or counter advancement raises `OverflowError`; caught worker panics raise
+`RuntimeError`. Failure preserves every supplied output byte and every live
+game, seed and terminal record. Native work releases the GIL.
+
+A terminal transition captures completed-game rewards, dones, banks and counters
+before synchronously constructing one new game for that environment. Observation
+rows then describe the reset game: clock zero and live masks. Default
+`episodeSteps=720` ends on transition 719; settings 1 and 2 end after one
+transition. The returned dictionary always has exactly `total_games_played`,
+`terminal_bank_0`, `terminal_bank_1`, `terminal_margin_0`. Its lists are empty
+without completions; each completed environment contributes one entry in
+ascending environment order, with `1.0` in `total_games_played`.
+
+`truncate_envs` reserves seeds only for true mask entries, in ascending
+environment order. Its separate infallible commit copies only those environments'
+29 observation rows, including padding. Unselected observation bytes and all
+six transition buffers remain byte-identical, including actual terminal dones.
+Only selected terminal records are cleared. An all-false mask changes nothing.
+There is no `clear_transition` option or artificial terminal winner. The trainer
+must evaluate/copy the pre-reset bootstrap observation before truncating and
+retain its economic reward; native tests establish buffer behavior, not trainer
+or GPU integration.
+
+The Task 1.5 adapter will own one persistent Torch allocation and NumPy view per
+output. Before `reset`, `step` or `truncate_envs`, it must call
+`torch.cuda.current_stream(transfer_device).synchronize()` exactly when the
+buffers are pinned and the transfer device is CUDA. CPU or unpinned use makes
+no CUDA call. Every asynchronous reader must finish or join that stream before
+reuse. This fence and the adapter are not implemented by Task 1.4.
+
+Cold diagnostics are `terminal_metrics(i)`, `state_snapshot(i)` and
+`seed_state()`. A terminal record contains finite float64-valued Python floats
+`bank_0`, `bank_1`, `margin_0`, Python int `episode_steps`, winner 0/1/-1 from raw
+bank comparison, and independent C-contiguous int64 `[32]` arrays `econ_0` and
+`econ_1`. Each read returns fresh containers. The record is `None` before a
+terminal transition, after the next successful nonterminal step, or after a
+selected explicit reset; failed calls preserve it. `state_snapshot(i)` returns
+JSON text for diagnosis, never policy input. `seed_state()` returns the nested
+tuple `(next_seed, (current_env_seed, ...))`.
+
+Seeds, next counter and stride are i64: seed in `[0, 2**63-1]`, stride in
+`[1, 2**63-1]`. Booleans, floats and strings are rejected; negative seeds raise
+`ValueError`. Every consumption must also leave a representable successor, so
+consuming `2**63-1` fails even at stride one. The native class never adds rank.
+The factory rule is initial seed `base_seed + rank`, stride `world_size`, giving
+`base_seed + rank + k * world_size`. Native tests exercise world sizes 2 and 8,
+67 seeds per rank across construction and all reset routes. Rank batches run
+sequentially on the Mac; this is a stream arithmetic test, not a distributed run.
+
+`reward_config` must be a plain dict with exactly `reward_mode="win_loss"`,
+`econ_shaping`, `econ_starvation_weight`, `econ_drought_weight`, `econ_cap`,
+`econ_ineffective_weight`, `econ_ineffective_cap`; all six numeric coefficients
+are explicit, finite, nonnegative float64 values. Active caps must sum below
+one. With `W=econ_shaping`, `s=econ_starvation_weight`,
+`d=econ_drought_weight`, the additional admission predicate is evaluated with
+separate IEEE-754 binary64 multiplications: if `W>0`, require `econ_cap>0` and
+`(W*s>0 or W*d>0)`; if `econ_ineffective_weight>0`, require
+`econ_ineffective_cap>0`. Inactive components impose no positive-cap condition.
+Thus `W=s=d=1e-300` is rejected when both products underflow to zero. This
+per-component rule intentionally strengthens the pinned reference's admission.
+
+For each seat, only its cumulative starvation, drought and ineffective counters
+(indices 0, 1 and 2 of the 32-counter vector) enter the penalty:
+
+```text
+P(c) = min(econ_cap, W * (s*S + d*D))
+     + min(econ_ineffective_cap, econ_ineffective_weight * I)
+delta = P(after) - P(before)
+economic_reward = delta_opponent - delta_self
+terminal_scale = 1 - (econ_cap if W>0 else 0)
+                   - (econ_ineffective_cap if econ_ineffective_weight>0 else 0)
+```
+
+Disabled components short-circuit. Economic reward is computed in float64 and
+rounded to float32 first; on terminal steps that float32 value is promoted to
+float64, the raw-bank sign times `terminal_scale` is added, then the result is
+rounded to float32 again. Counter monotonicity and representability, finite
+banks and final rewards are checked before publication. Full undiscounted
+untruncated real-arithmetic returns telescope within [-1,1]; this does not bound
+bootstrap-augmented partial returns. Python `rewards.py` and its independent
+oracle belong to Task 1.5.
+
+The root release profile enables overflow checks for `kaggriculture-engine`;
+caught arithmetic panics roll the candidate batch back. The cast audit identifies
+two reachable unbounded HIRE cash casts, guarded using exact Fibonacci costs
+for executed hires before commit. No additional game-envelope caps are imposed.
+On the pod, the release overflow test passes with the override and fails with
+`--config 'profile.release.package.kaggriculture-engine.overflow-checks=false'`.
+Optimized phase medians (fat LTO, one env, one thread) for a dense 241-actor
+state:
+
+| Phase | Median |
+| --- | --- |
+| outer clone | 159.5 µs |
+| kernel step including its inner clone | 270.3 µs |
+| snapshot | 171.7 µs |
+| composed clone/step/prepare/write | 747.6 µs |
+
+The same composed work on an early state takes 54.8 µs. Engine overflow checks
+cost no measurable time. These are component timings, not complete-update
+throughput. Receipts are in `ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/`.
+Codex's Mac attempts, which stopped at the memory watchdog, are in
+`ops/rebuild-2026-09-29/1.4/timing.json`.
+
+The four cold grammar functions are also exported through `owl.rs`:
+
+```python
+kaggriculture_encode(action_json: str, actors: int, order_limit: int,
+                     hire_limit: int, out: numpy.ndarray[int64]) -> int
+kaggriculture_decode(tokens: numpy.ndarray[int64], length: int, actors: int,
+                     order_limit: int, hire_limit: int) -> str
+kaggriculture_grammar_tables() -> dict[str, numpy.ndarray[bool]]
+kaggriculture_grammar_constants() -> tuple[int, tuple[str, ...], tuple[int, ...]]
+```
+
+Codec arrays have exact shape `[252,12]`; encode requires writable storage and
+leaves all 3,024 cells unchanged on failure. Decode permits read-only input,
+checks the full row including zero padding, and returns canonical action JSON.
+Both call the existing root grammar. Constants are version 1, names
+`("unit_actor", "unit_kind", "unit_target", "unit_item", "unit_quantity_present",
+"unit_quantity_high", "unit_quantity", "market_kind", "market_item",
+"market_quantity_high", "market_quantity", "stop")`, and widths
+`(241,20,128,16,2,32,32,8,16,32,32,2)`. Cold JSON does not enter live `step`.
+Qualification is tracked in `ops/rebuild-2026-09-29/1.4/`: Codex's `results.md`
+and Claude's `claude-review/review.md`. The pinned reference TrainingBatch was
+recorded on the pod: 16 games, seeds 17000–17015, 719 transitions each, fixture
+`tests/fixtures/kaggriculture_env_reference_v1.{npz,json}`.
+`tests/kaggriculture/test_env_reference.py` replays it through this native env
+and requires every reward, done, bank, counter, seed and terminal record to be
+bit-identical over all 11,504 transitions. It passes on the pod and on the Mac.
+Inverting native `dones` makes it fail at game 0, step 0. Native environment and
+grammar suites pass 387 cases (344 + 43). Full `just prepare` passes.

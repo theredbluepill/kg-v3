@@ -1,0 +1,11 @@
+--- original/src/kaggriculture/admission.rs
++++ mutant/src/kaggriculture/admission.rs
+@@ -18,7 +18,7 @@
+     hires_before: [usize; 2],
+     executed: [u64; 2],
+ ) -> Result<(), String> {
+-    if multiplier < 0 {
++    if false && multiplier < 0 {
+         return Err("farmHandCostMult must be nonnegative".into());
+     }
+     if multiplier == 0 {

@@ -1,0 +1,11 @@
+--- original/src/kaggriculture/env.rs
++++ mutant/src/kaggriculture/env.rs
+@@ -467,7 +467,7 @@
+             let terminal: Vec<bool> = self
+                 .slots
+                 .iter()
+-                .map(|s| i128::from(s.steps) >= i128::from(self.episode_steps) - 2)
++                .map(|s| i128::from(s.steps) >= i128::from(self.episode_steps) - 1)
+                 .collect();
+             let (seeds, stream) = self.stream.reserve(&terminal)?;
+             let mut actions = Vec::with_capacity(n);

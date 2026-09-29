@@ -1,0 +1,33 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r3-core)
+warning: unused variable: `dense`
+ --> src/kaggriculture/lifecycle_timing_tests.rs:7:12
+  |
+7 | fn fixture(dense: bool) -> (ObservationGame, Vec<Value>, String) {
+  |            ^^^^^ help: if this is intentional, prefix it with an underscore: `_dense`
+  |
+  = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `owl` (lib test) generated 1 warning (run `cargo fix --lib -p owl --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.72s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 1 test
+test kaggriculture::lifecycle_timing_tests::lifecycle_timing_fixtures_step_and_prepare ... FAILED
+
+failures:
+
+---- kaggriculture::lifecycle_timing_tests::lifecycle_timing_fixtures_step_and_prepare stdout ----
+
+thread 'kaggriculture::lifecycle_timing_tests::lifecycle_timing_fixtures_step_and_prepare' (11917425) panicked at src/kaggriculture/lifecycle_timing_tests.rs:24:9:
+assertion `left == right` failed
+  left: 0
+ right: 240
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::lifecycle_timing_tests::lifecycle_timing_fixtures_step_and_prepare
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 278 filtered out; finished in 0.14s
+
+error: test failed, to rerun pass `--lib`
