@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "PPO runs publish Kaggriculture telemetry to the v3 W&B project"
-description: "run_ppo's W&B logger sends Kaggriculture PPO runs to project kg-v3 (job type and group ppo, tags kaggriculture-v3 and ppo), where it had sent every run to Isaiah's orbit-wars; Orbit runs keep orbit-wars. --wandb-mode offline keeps a syncable run in the run directory and prints the outage. Tests with a fake wandb module and two killed mutations are the only checks; no live W&B call was made. The BC trainer (on its own branch) already uses kg-v3, and its A100 run has no W&B report because it ran offline for lack of a pod key."
+description: "run_ppo's W&B logger sends Kaggriculture PPO runs to project kg-v3 (job type and group ppo, tags kaggriculture-v3 and ppo), where it had sent every run to Isaiah's orbit-wars; Orbit runs keep orbit-wars. --wandb-mode offline keeps a syncable run in the run directory and prints the outage. Tests with a fake wandb module and two killed mutations are the only checks; no live W&B call was made. The BC trainer (on its own branch) already uses kg-v3; its A100 run statement plans offline mode for lack of a pod key, so that run's telemetry would reach W&B only through wandb sync (no launch receipt or offline artifact inspected)."
 tags: ["kaggriculture-v3", "training", "adaptation", "diagnostics"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -32,7 +32,7 @@ The owner asked why BC training had no W&B report and to "make sure all v3 exper
 
 ## Why the BC run has no W&B report
 
-This was a read-only inspection of `kg/rebuild-bc-now` at `f0b7a38`; that branch is run separately and was not changed. BC is wired: `python/owl/train/bc.py` opens `BCWandbLogger` under project `kg-v3` (`job_type="bc"`) with an online/offline mode. The A100 run statement (`ops/rebuild-2026-09-29/run-statements/bc-a100.md`) chose `--wandb-mode offline` because the pod had no W&B key. The run's telemetry therefore sits in its run directory and reaches W&B only after `wandb sync` from a machine with the owner's key, or after a key is provided on the pod. Supplying the credential is the owner's call.
+This was a read-only inspection of `kg/rebuild-bc-now` at `f0b7a38`; that branch is run separately and was not changed. BC is wired: `python/owl/train/bc.py` opens `BCWandbLogger` under project `kg-v3` (`job_type="bc"`) with an online/offline mode. The A100 run statement (`ops/rebuild-2026-09-29/run-statements/bc-a100.md`) plans `--wandb-mode offline` because the pod had no W&B key. That statement records the intended launch configuration; no launch receipt or offline-run artifact was inspected here. If the run was launched as stated, its telemetry sits in its run directory and reaches W&B only through `wandb sync` with the owner's key. Providing a key on the pod does not upload existing offline telemetry on its own: `wandb sync` is still required, and only later online launches publish directly. Supplying the credential is the owner's call.
 
 ## Checks (this version, CPU only)
 
