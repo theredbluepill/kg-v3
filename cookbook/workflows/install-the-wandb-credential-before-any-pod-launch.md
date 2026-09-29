@@ -5,7 +5,7 @@ description: "Pod setup step for every v3 launch: copy only the operator's api.w
 tags: ["kaggriculture-v3", "workflows", "telemetry", "pods"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
-sources: [{"resource": "user-directive:2026-09-29:make-sure-all-v3-experiments-wired-to-wandb"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-audit.md"}, {"resource": "repository:scripts/export_wandb_netrc_entry.py"}, {"resource": "repository:tests/scripts/test_export_wandb_netrc_entry.py"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-2026-09-29/install-simulation.log"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-wandb-r1.md"}, {"resource": "repository:python/owl/train/logging.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/owl/train/test_logging.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}]
+sources: [{"resource": "user-directive:2026-09-29:make-sure-all-v3-experiments-wired-to-wandb"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-audit.md"}, {"resource": "repository:scripts/export_wandb_netrc_entry.py"}, {"resource": "repository:tests/scripts/test_export_wandb_netrc_entry.py"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-2026-09-29/install-simulation.log"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-wandb-r1.md"}, {"resource": "repository:python/owl/train/logging.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/owl/train/test_logging.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/claude-verify-wandb-r2.md"}]
 ---
 
 # Install the W&B credential before any pod launch
@@ -67,7 +67,7 @@ The operator must also:
 - tell the owner in the same message that reports the launch;
 - once synced (`wandb sync <run_dir>/wandb/offline-run-*`), record the sync and the W&B URL in the run's evidence.
 
-A sync does not change the recorded mode. A resume reopens the saved W&B run ID with `resume="must"`. To resume an offline run online, sync it first; otherwise the online `wandb.init` fails because the run does not exist remotely. To continue the outage deliberately, resume with `--wandb-mode offline`.
+A sync does not change the recorded mode. A resume passes the saved W&B run ID with `resume="must"`; online, that reopens the run. To resume an offline run online, sync it first; otherwise the online `wandb.init` fails because the run does not exist remotely. To continue the outage deliberately, resume with `--wandb-mode offline`. wandb 0.26.1 ignores `resume` offline (`wandb/sdk/wandb_init.py`): it warns "`resume` will be ignored" and starts a new offline segment with the same run ID, so each offline attempt adds its own `offline-run-*` folder. How `wandb sync` handles several same-ID segments is unverified; after syncing them, check the W&B run's history covers every attempt before recording the sync.
 
 ## Launcher contract
 
@@ -100,4 +100,5 @@ All v3 launchers on integration (today only `run_ppo`) use this shared path from
 ## Limits
 
 - Steps 1 and 2 have not yet run on a pod. The first pod that uses them should confirm `stat -c` (GNU) and the venv path, and record the result here.
+- An offline resume adds a same-ID `offline-run-*` segment (wandb ignores `resume` offline). Syncing several segments of one run has not been checked; the first such sync should confirm the W&B history covers every attempt and record the result here.
 - Neither the presence check nor `default_entity` proves that metrics arrive during a run; step 3's live read does. Multi-node launches would need the key on the rank-0 node only; none is planned.

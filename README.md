@@ -323,10 +323,14 @@ the config, rank 0 checks telemetry: `--log-mode wandb` with the default
 the fix: install the credential with
 `cookbook/workflows/install-the-wandb-credential-before-any-pod-launch.md`,
 which copies only that entry with `scripts/export_wandb_netrc_entry.py`. In
-either W&B mode (online or offline) the same startup check also rejects what
-`wandb.init` would reject later: a set `WANDB_MODE`, even an empty one, that
-differs from `--wandb-mode`, a `WANDB_BASE_URL` that is set but empty or is not
-such a URL, and a set `WANDB_API_KEY` that is blank or padded. Once the run
+either W&B mode (online or offline) the same startup check also rejects, before
+the config, env or model exist, three environment settings that `wandb.init`
+would otherwise reject later: a set `WANDB_MODE`, even an empty one, that
+differs from `--wandb-mode`; a `WANDB_BASE_URL` that is set but empty, is not
+such a URL, or fails the installed wandb's own `Settings` validation (for
+example `https://wandb.ai` or `http://api.wandb.ai`; the error withholds the
+value); and a set `WANDB_API_KEY` that is blank, padded or fails that
+validation. Other W&B settings are not pre-checked. Once the run
 starts, the logger stops if W&B reports a mode other than the requested one, so
 the receipt records the mode the run actually used. Running without live
 telemetry takes an explicit flag, either `--wandb-mode offline` (metrics stay in
@@ -348,11 +352,15 @@ history. The W&B run uses the experiment ID as its group, `ppo` as its job type,
 and tags `kaggriculture-v3`, `ppo` and the game. It stores `v3.experiment_id`
 and `v3.job_type` in its config, and the attempt's `v3/*` fields in its summary.
 
-A resume reopens the saved W&B run ID with `resume="must"` in the chosen mode.
-To resume a run whose earlier attempts were offline in online mode, first `wandb
-sync` its `wandb/offline-run-*` folders; otherwise the online `wandb.init` fails
-because the run does not exist remotely. To keep the outage deliberately, resume
-with `--wandb-mode offline` instead.
+A resume passes the saved W&B run ID with `resume="must"` in the chosen mode.
+Online, that reopens the run. To resume a run whose earlier attempts were
+offline in online mode, first `wandb sync` its `wandb/offline-run-*` folders;
+otherwise the online `wandb.init` fails because the run does not exist
+remotely. To keep the outage deliberately, resume with `--wandb-mode offline`.
+wandb 0.26.1 ignores `resume` offline: it warns and starts a new offline segment
+with the same run ID, so the run directory then holds one `offline-run-*`
+folder per offline attempt. How `wandb sync` merges several same-ID segments
+has not been verified; check the synced run's history before relying on it.
 
 `rl.model_compile` defaults to `trunk`, which compiles the stateless
 self-attention transformer trunk as one dynamic-shape callable after

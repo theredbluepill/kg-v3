@@ -113,6 +113,11 @@ def _check_environment_key(environ: Mapping[str, str]) -> bool:
             "WANDB_API_KEY is set but blank or padded with whitespace; unset "
             "it or set the exact key"
         )
+    if (reason := _wandb_settings_rejection(api_key=key)) is not None:
+        raise MissingWandbCredentialsError(
+            f"WANDB_API_KEY is not a key wandb accepts ({reason}); unset it or "
+            "set the exact key"
+        )
     return True
 
 
@@ -184,10 +189,11 @@ def check_telemetry(
 ) -> TelemetryMode:
     """Startup gate: online needs credentials; an outage is announced loudly.
 
-    Either W&B mode also rejects, before any config, env or model, the
-    settings ``wandb.init`` would reject later in that mode: a ``WANDB_MODE``
-    that contradicts the flag, a malformed or empty ``WANDB_BASE_URL`` and a
-    blank or padded ``WANDB_API_KEY``. Debug logging never starts wandb.
+    Either W&B mode also rejects, before any config, env or model, a
+    ``WANDB_MODE`` that contradicts the flag, and a ``WANDB_BASE_URL`` or
+    ``WANDB_API_KEY`` that is empty, blank, padded, embeds credentials or fails
+    the installed wandb's own ``Settings`` validation, which ``wandb.init``
+    applies in every mode. Debug logging never starts wandb.
     """
     mode = telemetry_mode(log_mode, wandb_mode)
     if mode is not TelemetryMode.DISABLED:
@@ -237,7 +243,7 @@ def wandb_host(environ: Mapping[str, str]) -> str:
     """The netrc machine name wandb uses: the base URL's host and port.
 
     Rejects, without quoting it, a base URL that is set but empty, is not
-    http(s) with a host or embeds credentials.
+    http(s) with a host, embeds credentials or fails wandb's own validation.
     """
     if "WANDB_BASE_URL" not in environ:
         base_url = DEFAULT_WANDB_BASE_URL
@@ -254,7 +260,31 @@ def wandb_host(environ: Mapping[str, str]) -> str:
         raise ValueError("WANDB_BASE_URL must not embed credentials; use netrc")
     if parts.scheme not in ("http", "https") or not parts.hostname:
         raise ValueError("WANDB_BASE_URL must be an http(s) URL with a host")
+    if (reason := _wandb_settings_rejection(base_url=base_url)) is not None:
+        raise ValueError(
+            f"WANDB_BASE_URL is not a server address wandb accepts ({reason}); "
+            f"for W&B cloud use {DEFAULT_WANDB_BASE_URL} or unset it"
+        )
     return parts.netloc
+
+
+def _wandb_settings_rejection(**settings: str) -> str | None:
+    """Why the installed wandb's own ``Settings`` rejects ``settings``, if it does.
+
+    ``wandb.init`` runs the same validation in every mode, offline included.
+    The reason is wandb's error type only: its messages quote the value.
+    """
+    import pydantic
+    import wandb
+    from wandb.errors import UsageError
+
+    try:
+        wandb.Settings(**settings)
+    except pydantic.ValidationError as error:
+        return ", ".join(sorted({str(detail["type"]) for detail in error.errors()}))
+    except UsageError:
+        return "UsageError"
+    return None
 
 
 # --- v3 run identity ---------------------------------------------------------

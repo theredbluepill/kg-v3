@@ -1,5 +1,14 @@
 # Change log
 
+## 2026-09-30 — Close claude-verify-wandb-r2: gate W&B URL and key with wandb's own validator, correct the offline-resume claim
+
+`claude-verify-wandb-r2` (`ops/rebuild-2026-09-29/codex/claude-verify-wandb-r2.md`; a Claude subagent standing in for Codex, REQUEST CHANGES at `6d4ef48`) found r1's F2 and F3 resolved and F1 partial. On `kg/rebuild-wandb`:
+- R1 (P2): `wandb_host` and the key check now also run the installed wandb's `Settings` validator for `WANDB_BASE_URL` and `WANDB_API_KEY`, in both W&B modes, and report only wandb's error type because its messages quote the value. `https://wandb.ai`, `http://api.wandb.ai`, `https://app.wandb.ai` and `https://ho st.example` now fail before config load (tested in both modes); `https://api.wandb.ai`, `https://w.example:8443/` and `http://localhost:8080` still pass. The README, the [[references/v3-launchers-fail-fast-without-wandb-credentials|W&B Reference]] and its index line now name the three checked variables instead of every setting `wandb.init` could reject.
+- R2 (P3): a host-less `https://` is tested; mutant N7 is killed.
+- R3 (P3): the README, the [[workflows/install-the-wandb-credential-before-any-pod-launch|pod credential Workflow]] and the audit now say wandb 0.26.1 ignores `resume` offline and starts a same-ID offline segment; syncing several segments is marked unverified.
+- R4 (P3): `tests/kaggriculture/test_model_heads.py` alone peaks at 1,037 MB RSS (reviewer's measurement; not from this branch), recorded in `ops/rebuild-2026-09-29/wandb-2026-09-29/prepare-claude-r2-fix.log` for the prepare watchdog.
+- Claude's own recheck kills N7 and the removal of either wandb validator (`ops/rebuild-2026-09-29/wandb-2026-09-29/claude-verify-r2-fix-mutations.log`); not independent. No independent APPROVE yet.
+
 ## 2026-09-30 — Close claude-verify-wandb-r1: gate both W&B modes, test main's receipts, scope to integration
 
 `claude-verify-wandb-r1` (`ops/rebuild-2026-09-29/codex/claude-verify-wandb-r1.md`; a Claude subagent standing in for Codex at its usage limit, REQUEST CHANGES at `06a50d8`) found three P2s and four P3s. On `kg/rebuild-wandb`:

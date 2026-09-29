@@ -67,4 +67,4 @@
 
 - Everything here runs on CPU with W&B test doubles. No live W&B run was created by this change. The only network call was the read-only `wandb.Api()` check above, which used this Mac's `~/.netrc` and printed no credential.
 - The online-mode credential check mirrors wandb 0.26.1's lookup (`wandb/sdk/lib/wbauth/wbnetrc.py`: `NETRC`, then `~/.netrc`, host from the base URL). It proves a key is present, not that it is valid. That is why the pod workflow requires `wandb.Api()` before any launch.
-- Offline resume (`resume="must"` with `mode="offline"`) is unchanged Isaiah behavior and was not exercised.
+- Offline resume (`resume="must"` with `mode="offline"`) is unchanged Isaiah behavior. wandb 0.26.1 ignores `resume` offline (`wandb/sdk/wandb_init.py`, probed by `claude-verify-wandb-r2`): it warns and starts a new offline segment with the same run ID. Syncing several same-ID segments was not exercised.

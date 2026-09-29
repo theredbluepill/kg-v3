@@ -408,6 +408,10 @@ def test_base_url_is_validated_first_and_never_quoted(tmp_path: Path) -> None:
         ("api.wandb.ai", "http\\(s\\) URL with a host"),
         (f"ftp://{_SECRET}.example", "http\\(s\\) URL with a host"),
         (f"https://{_SECRET}.example:99999", "not a valid URL"),
+        ("https://", "http\\(s\\) URL with a host"),
+        # wandb's own validator quotes the value; the gate must not.
+        (f"https://{_SECRET}.wandb.ai", "not a server address wandb accepts"),
+        (f"https://{_SECRET} x.example", "not a server address wandb accepts"),
     ):
         environ = {"WANDB_BASE_URL": url, "WANDB_API_KEY": _SECRET}
         with pytest.raises(ValueError, match=message) as info:
@@ -596,6 +600,28 @@ def test_resume_forwards_the_saved_run_id_with_resume_must(
             ValueError,
             "http\\(s\\) URL with a host",
         ),
+        # wandb 0.26.1's own Settings validator rejects these server addresses.
+        (
+            {"WANDB_BASE_URL": "https://wandb.ai"},
+            ValueError,
+            "not a server address wandb accepts",
+        ),
+        (
+            {"WANDB_BASE_URL": "http://api.wandb.ai"},
+            ValueError,
+            "not a server address wandb accepts",
+        ),
+        (
+            {"WANDB_BASE_URL": "https://app.wandb.ai"},
+            ValueError,
+            "not a server address wandb accepts",
+        ),
+        (
+            {"WANDB_BASE_URL": "https://ho st.example"},
+            ValueError,
+            "not a server address wandb accepts",
+        ),
+        ({"WANDB_BASE_URL": "https://"}, ValueError, "http\\(s\\) URL with a host"),
         ({"WANDB_API_KEY": "  "}, MissingWandbCredentialsError, "blank or padded"),
         ({"WANDB_API_KEY": ""}, MissingWandbCredentialsError, "blank or padded"),
         (
@@ -629,6 +655,43 @@ def test_debug_logging_ignores_wandb_settings_it_never_uses(tmp_path: Path) -> N
         check_telemetry(LogMode.DEBUG, WandbMode.ONLINE, environ=environ, home=tmp_path)
         is TelemetryMode.DISABLED
     )
+
+
+def test_gate_applies_wandbs_own_key_validation_without_quoting_the_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import wandb
+    from wandb.errors import UsageError
+
+    real_settings = wandb.Settings
+
+    def settings(**kwargs: str) -> object:
+        if "api_key" in kwargs:
+            raise UsageError(f"bad key {kwargs['api_key']}")
+        return real_settings(**kwargs)
+
+    monkeypatch.setattr(wandb, "Settings", settings)
+    for wandb_mode in (WandbMode.ONLINE, WandbMode.OFFLINE):
+        with pytest.raises(
+            MissingWandbCredentialsError, match="not a key wandb accepts"
+        ) as info:
+            check_telemetry(
+                LogMode.WANDB,
+                wandb_mode,
+                environ={"WANDB_API_KEY": _SECRET},
+                home=tmp_path,
+            )
+        assert _SECRET not in str(info.value)
+        assert info.value.__cause__ is None
+
+
+@pytest.mark.parametrize(
+    "url", ["https://api.wandb.ai", "https://w.example:8443/", "http://localhost:8080"]
+)
+def test_gate_accepts_server_addresses_wandb_accepts(tmp_path: Path, url: str) -> None:
+    environ = {"WANDB_BASE_URL": url, "WANDB_API_KEY": _SECRET}
+    for wandb_mode in (WandbMode.ONLINE, WandbMode.OFFLINE):
+        check_telemetry(LogMode.WANDB, wandb_mode, environ=environ, home=tmp_path)
 
 
 def test_offline_gate_accepts_a_valid_key_and_url_without_netrc(tmp_path: Path) -> None:

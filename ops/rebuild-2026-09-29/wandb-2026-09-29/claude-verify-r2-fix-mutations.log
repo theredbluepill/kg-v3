@@ -1,0 +1,8 @@
+# Claude's own recheck of the claude-verify-wandb-r2 fix (not independent)
+# tree: kg/rebuild-wandb at 6d4ef48 plus the uncommitted r2 fix; wandb 0.26.1
+# suite: pytest tests/owl/train/test_logging.py tests/scripts/test_run_ppo.py tests/scripts/test_export_wandb_netrc_entry.py -m 'not slow' -q
+# baseline:
+204 passed in 2.01s
+N7: 3 failed, 201 passed in 1.70s -> killed; restored
+V1-no-wandb-url-validator: 9 failed, 195 passed in 1.54s -> killed; restored
+V2-no-wandb-key-validator: 1 failed, 203 passed in 1.50s -> killed; restored
