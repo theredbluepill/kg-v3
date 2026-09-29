@@ -302,6 +302,7 @@ The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cov
 
 ## Phase 8 — Docs and closeout
 
+- [ ] **8.1a (owner, 2026-09-29: "treat that cookbook as phase8 deliverable will be good.")** The phase-based record is a Phase 8 deliverable: `ops/rebuild-2026-09-29/phase-status.md` (living tracker, updated at every landing) plus the phase-grouped `cookbook/references/index.md`, finalized and re-verified against git and Codex reports at closeout.
 - [ ] **8.1** Rewrite the cookbook References for the rebuilt tree; they currently describe the reference branch. Record the deliberate differences (truncation reward, raw-bank winners, per-evaluation seeds) in `docs/rl-api-specs.md`.
 - [ ] **8.2** Results inventory, `just prepare`, PR checklist, merge. The owner decides any push, force-push or submission.
 
