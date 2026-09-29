@@ -2,16 +2,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generic, TypeAlias
+from typing import Generic, TypeAlias
 
 import torch
 from torch import nn
 from typing_extensions import TypeVar
 
+from owl.model.teacher_targets import TeacherTargets
 from owl.rl import ActionBundle, ActionConfig, ObsBatch
-
-if TYPE_CHECKING:
-    from owl.model.stateless_transformer_v1 import CachedTeacherDistillationTargets
 
 InputLayer = nn.Module | nn.Parameter
 ModelActions: TypeAlias = ActionBundle
@@ -172,7 +170,11 @@ class BaseModelAPI(nn.Module, ABC, Generic[ObsT, ActT, ActSpecT]):
         *,
         compute_action_kl: bool = True,
         compute_value: bool = True,
-    ) -> CachedTeacherDistillationTargets:
+    ) -> TeacherTargets:
+        """Frozen-teacher targets for ``obs``/``actions`` (``TeacherTargets``).
+
+        Implementations may return their concrete target type.
+        """
         raise NotImplementedError(
             f"{type(self).__name__} does not implement teacher distillation targets"
         )
@@ -181,13 +183,19 @@ class BaseModelAPI(nn.Module, ABC, Generic[ObsT, ActT, ActSpecT]):
         self,
         obs: ObsT,
         actions: ActT,
-        teacher_targets: CachedTeacherDistillationTargets,
+        teacher_targets: TeacherTargets,
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
         compute_teacher_action_kl: bool = True,
         compute_teacher_value: bool = True,
     ) -> ModelTeacherEvaluation:
+        """Student evaluation plus the distillation terms against cached targets.
+
+        Implementations narrow ``teacher_targets`` to the type their
+        ``compute_teacher_distillation_targets`` returns with ``isinstance``
+        and raise ``TypeError`` for any other type, before any kernel.
+        """
         raise NotImplementedError(
             f"{type(self).__name__} does not implement cached teacher evaluation"
         )

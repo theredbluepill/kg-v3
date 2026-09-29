@@ -1,0 +1,25 @@
+mutation: python/owl/model/kaggriculture_teacher.py: '            if (chunk.winner_probabilities is None) != (\n                first.winner_probabilities is None\n            ):' -> '            if chunk.winner_probabilities is None and (\n                first.winner_probabilities is not None\n            ):' (1 site(s))
+exit 1
+FAILED tests/kaggriculture/test_teacher.py::test_concat_validates_every_chunk_symmetrically
+1 failed, 34 passed in 4.16s
+== (a) above: concat validates winner presence only against the first chunk (Isaiah's asymmetric rule)
+mutation: python/owl/model/kaggriculture_teacher.py: 'else {slot: t[indices] for slot, t in self.slot_logits.items()}' -> 'else {slot: t[:, indices] for slot, t in self.slot_logits.items()}' (1 site(s))
+exit 1
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[1-both]
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[1-kl]
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[2-both]
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[2-kl]
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[3-both]
+FAILED tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[3-kl]
+6 failed, 29 passed in 4.26s
+== (b) above: index slices dim 1
+mutation: python/owl/model/kaggriculture_teacher.py: '            if chunk.grammar != first.grammar:' -> '            if False:' (1 site(s))
+exit 1
+FAILED tests/kaggriculture/test_teacher.py::test_concat_validates_every_chunk_symmetrically
+1 failed, 34 passed in 4.05s
+== (c) above: grammar dropped from concat's check
+mutation: python/owl/model/kaggriculture_teacher.py: '            total += self.winner_probabilities.nbytes' -> '            total += 0' (1 site(s))
+exit 1
+FAILED tests/kaggriculture/test_teacher.py::test_nbytes_counts_every_cached_tensor
+1 failed, 34 passed in 3.98s
+== (d) above: nbytes counts only slot logits

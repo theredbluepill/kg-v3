@@ -13,11 +13,13 @@ class TeacherTargets(Protocol):
 
     The PPO trainer computes them in segment chunks, joins the chunks with
     ``concat`` and slices each update minibatch with ``index``. Both act on the
-    leading (segment) dimension of every tensor. The protocol does not require
+    leading (segment) dimension of every tensor. ``nbytes`` reports the cache
+    size for the ``teacher/cache_bytes`` metric. The protocol does not require
     ``concat`` to validate that chunks carry the same optional targets; see each
     implementation. ``CachedTeacherDistillationTargets.concat`` follows the first
     chunk: it raises when a later chunk lacks an optional target the first chunk
     carries, but silently drops a target that only later chunks carry.
+    ``KaggricultureTeacherTargets.concat`` validates every chunk symmetrically.
     """
 
     def index(self, indices: torch.Tensor) -> Self:
@@ -27,4 +29,8 @@ class TeacherTargets(Protocol):
     @classmethod
     def concat(cls, chunks: Sequence[Self]) -> Self:
         """Concatenate chunks along the leading (segment) dimension."""
+        ...
+
+    def nbytes(self) -> int:
+        """Bytes held by the cached tensors (tensor metadata only; no sync)."""
         ...

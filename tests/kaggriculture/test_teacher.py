@@ -6,6 +6,7 @@ the replay-conditioned per-slot KL computed inside ``policy_core``.
 
 from __future__ import annotations
 
+import dataclasses
 from typing import Any
 
 import pytest
@@ -15,6 +16,11 @@ from owl.kaggriculture import gpu_grammar as gg
 from owl.kaggriculture import types as kt
 from owl.model import kaggriculture as km
 from owl.model import kaggriculture_actor as ka
+from owl.model import kaggriculture_teacher as kt_teacher
+from owl.model.stateless_transformer_v1 import (
+    CachedTeacherDistillationTargets,
+    DiscreteTargetPolicyParams,
+)
 
 from tests.kaggriculture.conftest import make_obs
 from tests.kaggriculture.helpers import (
@@ -23,8 +29,11 @@ from tests.kaggriculture.helpers import (
     F,
     K,
     _base_case,
+    _map_obs,
     _obs_double,
     _replay_case,
+    _take_actions,
+    _take_obs,
     _tiny,
 )
 
@@ -542,3 +551,313 @@ def test_kl_gradient_matches_finite_differences_in_fp64() -> None:
         minus = float(total())
         weight[item, 0] += epsilon
     assert analytic == pytest.approx((plus - minus) / (2 * epsilon), rel=1e-6)
+
+
+# === 4.2 targets and cache ===========================================================
+
+SEGMENTS, HORIZON = 3, 2
+
+
+def _segment_major(
+    model: Any,
+) -> tuple[kt.KaggricultureObsBatch, kt.KaggricultureActions]:
+    """A segment-major ``[N=3, T=2, 2]`` batch with actions sampled by ``model``."""
+    flat = make_obs(
+        envs=SEGMENTS * HORIZON,
+        own_actors=(1, 4, 2, 241, 3, 5),
+        rival_actors=(3, 1, 5, 2, 241, 4),
+        order_limit=4,
+    )
+    flat.still_playing[4, 1] = False
+    actions = _sampled(model, flat)
+
+    def lead(t: torch.Tensor) -> torch.Tensor:
+        return t.reshape(SEGMENTS, HORIZON, *t.shape[1:])
+
+    return _map_obs(flat, lead), kt.KaggricultureActions(
+        tokens=lead(actions.tokens), lengths=lead(actions.lengths)
+    )
+
+
+def _unit_or_market(slot: int) -> int:
+    return UNIT_FRAMES if slot in ka.UNIT_POLICY_SLOTS else POSITIONS
+
+
+def _target_tensors(targets: kt_teacher.KaggricultureTeacherTargets) -> dict[str, Any]:
+    tensors: dict[str, Any] = {"winner": targets.winner_probabilities}
+    if targets.slot_logits is None:
+        tensors["slots"] = None
+    else:
+        for slot, logits in targets.slot_logits.items():
+            tensors[f"slot{slot}"] = logits
+    return tensors
+
+
+def _assert_targets_equal(actual: Any, expected: Any, *, exact: bool = True) -> None:
+    assert type(actual) is type(expected)
+    assert actual.grammar == expected.grammar
+    got, want = _target_tensors(actual), _target_tensors(expected)
+    assert set(got) == set(want)
+    for name, tensor in want.items():
+        if tensor is None:
+            assert got[name] is None, name
+        elif exact:
+            assert torch.equal(got[name], tensor), name
+        else:
+            torch.testing.assert_close(got[name], tensor, msg=name)
+
+
+def test_targets_have_the_lead_layout_dtypes_and_optional_fields() -> None:
+    model = _tiny().eval()
+    obs, actions = _segment_major(model)
+    targets = model.compute_teacher_distillation_targets(obs, actions)
+    assert isinstance(targets, kt_teacher.KaggricultureTeacherTargets)
+    assert targets.slot_logits is not None
+    assert set(targets.slot_logits) == set(ka.POLICY_SLOTS)
+    for slot, logits in targets.slot_logits.items():
+        width = kt.SLOT_WIDTHS[slot]
+        assert logits.shape == (SEGMENTS, HORIZON, 2, _unit_or_market(slot), width)
+        assert logits.dtype == torch.float32
+        assert not logits.requires_grad
+    assert targets.winner_probabilities is not None
+    assert targets.winner_probabilities.shape == (SEGMENTS, HORIZON, 2, 2)
+    assert targets.winner_probabilities.dtype == torch.float32
+    assert not targets.winner_probabilities.requires_grad
+    torch.testing.assert_close(
+        targets.winner_probabilities.sum(-1), torch.ones(SEGMENTS, HORIZON, 2)
+    )
+    assert targets.grammar == model.grammar_signature()
+    kl_only = model.compute_teacher_distillation_targets(
+        obs, actions, compute_value=False
+    )
+    assert kl_only.winner_probabilities is None
+    assert kl_only.slot_logits is not None
+    value_only = model.compute_teacher_distillation_targets(
+        obs, actions, compute_action_kl=False
+    )
+    assert value_only.slot_logits is None
+    assert value_only.winner_probabilities is not None
+
+
+def test_teacher_targets_reject_programs_the_teacher_grammar_does_not_admit() -> None:
+    model = _tiny().eval()
+    obs, actions = _base_case()
+    bad = kt.KaggricultureActions(
+        tokens=actions.tokens.clone(), lengths=actions.lengths.clone()
+    )
+    bad.lengths[0, 0] += 1
+    with pytest.raises(ka.GrammarReplayError, match="length"):
+        model.compute_teacher_distillation_targets(obs, bad)
+    # A student (hire_limit 241) samples 3+ HIREs; a hire_limit-3 teacher with
+    # 2 own actors admits one.
+    student = _tiny().eval()
+    with torch.no_grad():
+        student.actor.heads["market_kind"].out.bias[HIRE] = 8.0
+        student.actor.heads["market_kind"].out.bias[NONE] = -8.0
+    hires_obs = make_obs(envs=1, own_actors=2, rival_actors=2, order_limit=6)
+    sampled = _sampled(student, hires_obs)
+    assert int((sampled.tokens[0, 0, :, 7] == HIRE).sum()) >= 3
+    teacher = _tiny(hire_limit=3, seed=6).eval()
+    with pytest.raises(ka.GrammarReplayError) as error:
+        teacher.compute_teacher_distillation_targets(hires_obs, sampled)
+    assert "support" in error.value.groups
+    # Value-only targets never replay the program.
+    teacher.compute_teacher_distillation_targets(
+        hires_obs, sampled, compute_action_kl=False
+    )
+
+
+@pytest.mark.parametrize("layout", ["both", "kl", "value"])
+@pytest.mark.parametrize("chunk", [1, 2, 3])
+def test_index_then_concat_restores_the_targets(layout: str, chunk: int) -> None:
+    model = _tiny().eval()
+    obs, actions = _segment_major(model)
+    targets = model.compute_teacher_distillation_targets(
+        obs,
+        actions,
+        compute_action_kl=layout != "value",
+        compute_value=layout != "kl",
+    )
+    pieces = [
+        targets.index(torch.arange(start, min(start + chunk, SEGMENTS)))
+        for start in range(0, SEGMENTS, chunk)
+    ]
+    joined = kt_teacher.KaggricultureTeacherTargets.concat(pieces)
+    _assert_targets_equal(joined, targets)
+    if len(pieces) == 1:
+        assert joined is pieces[0]
+    picked = targets.index(torch.tensor([2, 0]))
+    for name, tensor in _target_tensors(targets).items():
+        if tensor is not None:
+            assert torch.equal(
+                _target_tensors(picked)[name], tensor[torch.tensor([2, 0])]
+            ), name
+
+
+def test_concat_validates_every_chunk_symmetrically() -> None:
+    model = _tiny().eval()
+    obs, actions = _segment_major(model)
+    both = model.compute_teacher_distillation_targets(obs, actions)
+    kl_only = model.compute_teacher_distillation_targets(
+        obs, actions, compute_value=False
+    )
+    value_only = model.compute_teacher_distillation_targets(
+        obs, actions, compute_action_kl=False
+    )
+    concat = kt_teacher.KaggricultureTeacherTargets.concat
+    for first, second, field in (
+        (both, kl_only, "winner_probabilities"),
+        (kl_only, both, "winner_probabilities"),
+        (both, value_only, "slot_logits"),
+        (value_only, both, "slot_logits"),
+    ):
+        with pytest.raises(ValueError, match=field):
+            concat([first, second])
+    assert both.slot_logits is not None
+    fewer = dataclasses.replace(
+        both, slot_logits={k: v for k, v in both.slot_logits.items() if k != 7}
+    )
+    for pair in ([both, fewer], [fewer, both]):
+        with pytest.raises(ValueError, match="slot_logits keys"):
+            concat(pair)
+    other = dataclasses.replace(
+        both, grammar=kt_teacher.GrammarSignature(both.grammar.tables_sha256, 5)
+    )
+    for pair in ([both, other], [other, both]):
+        with pytest.raises(ValueError, match="grammar"):
+            concat(pair)
+    with pytest.raises(ValueError, match="empty"):
+        concat([])
+
+
+def test_grammar_signature_tracks_tables_and_hire_limit() -> None:
+    base = _tiny()
+    assert _tiny(seed=6).grammar_signature() == base.grammar_signature()
+    assert _tiny(hire_limit=5).grammar_signature() != base.grammar_signature()
+    flipped = gg.expected_grammar_tables()
+    flipped.market_kind[HIRE] = False
+    no_hire = km.KaggricultureTransformer(
+        base.config,
+        obs_spec=kt.KaggricultureObsConfig(),
+        action_spec=kt.KaggricultureActionConfig(hire_limit=241),
+        grammar_tables=flipped,
+    )
+    signature = no_hire.grammar_signature()
+    assert signature.hire_limit == base.grammar_signature().hire_limit
+    assert signature.tables_sha256 != base.grammar_signature().tables_sha256
+
+
+def test_nbytes_counts_every_cached_tensor() -> None:
+    model = _tiny().eval()
+    obs, actions = _segment_major(model)
+    targets = model.compute_teacher_distillation_targets(obs, actions)
+    tensors = [t for t in _target_tensors(targets).values() if t is not None]
+    assert targets.nbytes() == sum(t.nbytes for t in tensors)
+    rows = SEGMENTS * HORIZON * 2
+    assert targets.nbytes() == rows * kt_teacher.TEACHER_TARGET_BYTES_PER_ROW
+    value_only = model.compute_teacher_distillation_targets(
+        obs, actions, compute_action_kl=False
+    )
+    assert value_only.nbytes() == rows * 2 * 4
+    isaiah = CachedTeacherDistillationTargets(
+        action_params=DiscreteTargetPolicyParams(
+            target_logits=torch.zeros(2, 3, 4, 7, 7),
+            size_mix_logits=torch.zeros(2, 3, 4, 7, 7, 2),
+            size_mu=torch.zeros(2, 3, 4, 7, 7, 2),
+            size_scale=torch.zeros(2, 3, 4, 7, 7, 2),
+            continue_logits=torch.zeros(2, 3, 4, 7),
+        ),
+        winner_probabilities=torch.zeros(2, 3, 4),
+    )
+    params = isaiah.action_params
+    assert params is not None
+    assert params.continue_logits is not None
+    assert isaiah.nbytes() == sum(
+        t.nbytes
+        for t in (
+            params.target_logits,
+            params.size_mix_logits,
+            params.size_mu,
+            params.size_scale,
+            params.continue_logits,
+            torch.zeros(2, 3, 4),
+        )
+    )
+    no_continue = dataclasses.replace(
+        isaiah, action_params=dataclasses.replace(params, continue_logits=None)
+    )
+    assert no_continue.nbytes() == isaiah.nbytes() - params.continue_logits.nbytes
+
+
+def test_cache_bytes_per_row_follow_the_contract_widths() -> None:
+    unit = sum(kt.SLOT_WIDTHS[s] for s in ka.UNIT_POLICY_SLOTS)
+    market = sum(kt.SLOT_WIDTHS[s] for s in ka.MARKET_POLICY_SLOTS)
+    assert (unit, market) == (102, 88)
+    assert kt_teacher.TEACHER_TARGET_BYTES_PER_ROW == 102_208
+    two_rank_rows = 128 * 64 * 2
+    four_rank_rows = 64 * 64 * 2
+    assert two_rank_rows * kt_teacher.TEACHER_TARGET_BYTES_PER_ROW == 1_674_575_872
+    assert four_rank_rows * kt_teacher.TEACHER_TARGET_BYTES_PER_ROW == 837_287_936
+
+
+def test_chunked_precompute_equals_one_whole_batch_call() -> None:
+    model = _tiny().eval()
+    obs, actions = _segment_major(model)
+    whole = model.compute_teacher_distillation_targets(obs, actions)
+    chunks = []
+    for start in range(SEGMENTS):
+        index = torch.tensor([start])
+        chunks.append(
+            model.compute_teacher_distillation_targets(
+                _take_obs(obs, index), _take_actions(actions, index)
+            )
+        )
+    joined = kt_teacher.KaggricultureTeacherTargets.concat(chunks)
+    # The trunk and head batch sizes differ, so GEMM blocking may differ.
+    _assert_targets_equal(joined, whole, exact=False)
+
+
+def test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from owl.model.stateless_transformer_v1 import (
+        ActorDiscreteTargetsConfig,
+        StatelessTransformerV1Config,
+    )
+    from owl.rl import ActionDiscreteTargetsConfig, EntityBasedConfig
+
+    from tests.owl.model.test_stateless_transformer_v1 import (
+        MAX_COMETS,
+        MAX_PLANETS,
+        _model,
+        _obs_batch,
+    )
+
+    obs_spec = EntityBasedConfig(max_entities=MAX_PLANETS + MAX_COMETS + 2)
+    action_spec = ActionDiscreteTargetsConfig(
+        max_per_planet_launches=1, min_fleet_size=2
+    )
+    config = StatelessTransformerV1Config(
+        actor=ActorDiscreteTargetsConfig(n_action_mixtures=3, entropy_ship_quantiles=8),
+        embed_dim=32,
+        depth=2,
+        n_heads=4,
+    )
+    student = _model(config, obs_spec=obs_spec, action_spec=action_spec).eval()
+    obs = _obs_batch(batch_size=2, obs_spec=obs_spec, action_spec=action_spec)
+    with torch.no_grad():
+        actions = student(obs).actions
+    calls: list[int] = []
+    original = student.encode_observations
+
+    def spy(*args: Any, **kwargs: Any) -> Any:
+        calls.append(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(student, "encode_observations", spy)
+    kaggriculture = _tiny().eval()
+    k_obs, k_actions = _base_case()
+    foreign = kaggriculture.compute_teacher_distillation_targets(k_obs, k_actions)
+    with pytest.raises(TypeError, match="CachedTeacherDistillationTargets"):
+        student.evaluate_actions_with_cached_teacher(obs, actions, foreign)
+    assert calls == []

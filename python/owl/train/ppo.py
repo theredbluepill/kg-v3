@@ -14,7 +14,6 @@ from owl.config import BaseConfig
 from owl.model import (
     ActorDiscreteTargetsConfig,
     BaseModelAPI,
-    CachedTeacherDistillationTargets,
     ModelActionKLDivergences,
     ModelActions,
     ModelEvaluation,
@@ -22,6 +21,7 @@ from owl.model import (
     ModelOutput,
     ModelTeacherEvaluation,
     StatelessTransformerV1,
+    TeacherTargets,
     load_model_state_dict_allowing_lora,
 )
 from owl.rl import (
@@ -669,7 +669,7 @@ class PPOTrainer:
         rollout_elapsed = max(perf_counter() - rollout_start, 1e-12)
         env_metrics = self._last_env_metrics
         segments = self.rollout.segment_major()
-        teacher_targets: CachedTeacherDistillationTargets | None = None
+        teacher_targets: TeacherTargets | None = None
         teacher_elapsed = 0.0
         teacher_model = self.teacher_model if self.teacher_active else None
         teacher_kl_coef, teacher_value_coef = _scheduled_teacher_coefficients(
@@ -996,7 +996,7 @@ class PPOTrainer:
     def _precompute_teacher_targets(
         self,
         segments: _PPORolloutSegments,
-    ) -> CachedTeacherDistillationTargets | None:
+    ) -> TeacherTargets | None:
         """Run the frozen teacher trunk once per iteration over the rollout.
 
         Caches the teacher's action-distribution params and winner probabilities
@@ -1019,7 +1019,7 @@ class PPOTrainer:
         if not (compute_action_kl or compute_value):
             return None
         chunk_size = self.config.teacher_segments_per_minibatch
-        chunks: list[CachedTeacherDistillationTargets] = []
+        chunks: list[TeacherTargets] = []
         for start in range(0, self.n_envs, chunk_size):
             stop = min(start + chunk_size, self.n_envs)
             chunk_idx = torch.arange(start, stop, device=segments.logp.device)
@@ -1075,7 +1075,7 @@ class PPOTrainer:
         returns: torch.Tensor,
         policy_mask: torch.Tensor,
         value_mask: torch.Tensor,
-        teacher_targets: CachedTeacherDistillationTargets | None,
+        teacher_targets: TeacherTargets | None,
         winner_targets: torch.Tensor | None,
     ) -> tuple[dict[str, float], int]:
         loss_metrics: list[_PPOLossMetrics] = []
@@ -1194,7 +1194,7 @@ class PPOTrainer:
         value_mask: torch.Tensor,
         indices: torch.Tensor,
         *,
-        teacher_targets: CachedTeacherDistillationTargets | None = None,
+        teacher_targets: TeacherTargets | None = None,
         winner_targets: torch.Tensor | None = None,
         value_clip_anchor: torch.Tensor,
         loss_scale: float = 1.0,
@@ -2752,7 +2752,7 @@ def _model_evaluate_actions_with_cached_teacher(
     model: BaseModelAPI,
     obs: ObsBatch,
     actions: ModelActions,
-    teacher_targets: CachedTeacherDistillationTargets,
+    teacher_targets: TeacherTargets,
     *,
     hidden_state: ModelHiddenState | None,
     dones: torch.Tensor,

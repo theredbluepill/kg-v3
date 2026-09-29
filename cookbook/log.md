@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Cache Kaggriculture teacher targets under the TeacherTargets protocol (Phase 4.2)
+
+`KaggricultureTeacherTargets` caches the teacher's per-slot masked logits and winner probabilities in the rollout lead layout. It uses 102,208 B per seat row, a constant derived from the contract widths. Its `concat` validates symmetrically, and it carries the teacher's grammar signature: a table SHA-256 taken at construction plus `hire_limit`. `BaseModelAPI`, `ppo.py` and the DDP adapter now type the cached-teacher API by the protocol, and Isaiah's model narrows it with `TypeError`. The protocol gains `nbytes`. The [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|Phase 4 teacher Reference]] records T7–T11, four more killed mutations and `py-prepare` with 1,360 passed.
+
 ## 2026-09-29 — Expose replay-conditioned per-slot logits and KL in the Kaggriculture grammar core (Phase 4.1)
 
 The Phase 4 brief is now v2 after Codex's REVISE review (`ops/rebuild-2026-09-29/codex/brief-4-review.md`). The changes are stateless teacher dispatch, a grammar signature on the cached path, one KL dtype rule, and phase completion gated on the trainer tests. Task 4.1 follows it. `policy_core` returns each slot's masked logits and the liveness-weighted per-slot KL in the log-prob layout. Isaiah's `categorical_kl_from_logits` promotes instead of demoting FP64. The shared test helpers moved to `tests/kaggriculture/helpers.py`. The new [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|Phase 4 teacher Reference]] lists the checks: T1–T6, a brute-force oracle, four killed mutations and `py-prepare` with 1,343 passed. It also lists three test-level deviations: an FP32 rounding bound, `assert_close` for head chunking, and a small HIRE oracle case.

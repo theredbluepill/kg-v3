@@ -29,6 +29,7 @@ from owl.kaggriculture.gpu_grammar import (
     MARKET_HIRE,
     MARKET_NONE,
     GrammarTables,
+    grammar_tables_digest,
     validate_grammar_tables,
 )
 from owl.model.actor.common import OutputProjectionMLP, categorical_kl_from_logits
@@ -201,6 +202,9 @@ class KaggricultureGrammarActor(nn.Module):
             }
         )
         validate_grammar_tables(tables)
+        # Host identity of the tables, taken once: the buffers are never
+        # reassigned, and teacher targets compare it without a device sync.
+        self.tables_digest = grammar_tables_digest(tables)
         # Non-persistent: tables come from the grammar, never from checkpoints.
         for name, table in tables.as_dict().items():
             self.register_buffer(f"table_{name}", table.clone(), persistent=False)

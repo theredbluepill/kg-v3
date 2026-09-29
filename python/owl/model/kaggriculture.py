@@ -43,6 +43,10 @@ from owl.model.kaggriculture_actor import (
     KaggricultureGrammarActor,
     check_replay_flags,
 )
+from owl.model.kaggriculture_teacher import (
+    GrammarSignature,
+    KaggricultureTeacherTargets,
+)
 from owl.model.stateless_transformer_v1 import (
     _ACTOR_HEAD_INIT_GAIN,
     _CRITIC_HEAD_INIT_GAIN,
@@ -597,6 +601,62 @@ class KaggricultureTransformer(
             values=values,
             winner_probabilities=winner_log_probs.exp(),
             winner_log_probabilities=winner_log_probs,
+        )
+
+    # --- teacher distillation (Phase 4) ------------------------------------------
+
+    def grammar_signature(self) -> GrammarSignature:
+        """The tables' construction-time digest and the live ``hire_limit``."""
+        return GrammarSignature(
+            tables_sha256=self.actor.tables_digest,
+            hire_limit=self.action_spec.hire_limit,
+        )
+
+    def compute_teacher_distillation_targets(
+        self,
+        obs: kt.KaggricultureObsBatch,
+        actions: kt.KaggricultureActions,
+        *,
+        compute_action_kl: bool = True,
+        compute_value: bool = True,
+    ) -> KaggricultureTeacherTargets:
+        """Frozen-teacher targets in the observation lead layout, under no_grad.
+
+        One encode through ``_run_trunk``'s guards; the heads run through
+        ``_policy``'s row chunking with ``collect_logits``. The replay is
+        admitted under this model's own grammar (one host sync); a grammar that
+        differs but still admits the program is caught by the student through
+        ``grammar``.
+        """
+        _check_action_layout(actions, obs.still_playing.shape)
+        lead = tuple(obs.still_playing.shape)
+        slot_logits: dict[int, torch.Tensor] | None = None
+        winner_probabilities: torch.Tensor | None = None
+        with torch.no_grad():
+            encoded = self.encode_observations(obs)
+            if compute_action_kl:
+                result = self._policy(
+                    encoded,
+                    self._grammar_context(obs),
+                    actions,
+                    deterministic=False,
+                    collect_logits=True,
+                )
+                check_replay_flags(result.valid)
+                slot_logits = {
+                    slot: logits.reshape(*lead, *logits.shape[1:])
+                    for slot, logits in _require(result.slot_logits).items()
+                }
+            if compute_value:
+                winner_probabilities = (
+                    self._winner_log_probabilities(encoded)
+                    .exp()
+                    .reshape(*lead, kt.PLAYERS)
+                )
+        return KaggricultureTeacherTargets(
+            slot_logits=slot_logits,
+            winner_probabilities=winner_probabilities,
+            grammar=self.grammar_signature(),
         )
 
     @staticmethod

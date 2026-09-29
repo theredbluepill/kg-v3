@@ -16,6 +16,7 @@ the two once :func:`native_grammar_tables` is implemented.
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 
@@ -119,6 +120,23 @@ def validate_grammar_tables(tables: GrammarTables) -> GrammarTables:
     if not bool(others.any()):
         raise ValueError("grammar table market_kind must admit a kind other than HIRE")
     return tables
+
+
+def grammar_tables_digest(tables: GrammarTables) -> str:
+    """SHA-256 over every table's name, shape and values, in ``TABLE_SHAPES`` order.
+
+    A host-side identity of the grammar: two models whose digests (and
+    ``hire_limit``) agree build identical replay masks. Reading the tables
+    copies them to the host, so callers take it once, at construction.
+    """
+    digest = hashlib.sha256()
+    fields = tables.as_dict()
+    for name in TABLE_SHAPES:
+        table = fields[name].detach().to(device="cpu", dtype=torch.bool)
+        digest.update(name.encode())
+        digest.update(repr(tuple(table.shape)).encode())
+        digest.update(table.contiguous().numpy().tobytes())
+    return digest.hexdigest()
 
 
 def grammar_tables_from_arrays(

@@ -15,7 +15,6 @@ from torch.nn.parallel import DistributedDataParallel
 
 from owl.model import (
     BaseModelAPI,
-    CachedTeacherDistillationTargets,
     InputLayer,
     ModelActionKLDivergences,
     ModelActions,
@@ -24,6 +23,7 @@ from owl.model import (
     ModelOutput,
     ModelTeacherEvaluation,
     StatelessTransformerV1,
+    TeacherTargets,
 )
 from owl.rl import ObsBatch
 
@@ -264,7 +264,7 @@ class _DistributedModelDispatch(nn.Module):
             return self.model.evaluate_actions_with_cached_teacher(
                 cast(ObsBatch, obs),
                 cast(ModelActions, actions),
-                cast(CachedTeacherDistillationTargets, cached_teacher),
+                cast(TeacherTargets, cached_teacher),
                 hidden_state=hidden_state,
                 dones=cast(torch.Tensor | None, dones),
                 compute_teacher_action_kl=compute_teacher_action_kl,
@@ -388,7 +388,7 @@ class DistributedModelAdapter(BaseModelAPI):
         self,
         obs: ObsBatch,
         actions: ModelActions,
-        teacher_targets: CachedTeacherDistillationTargets,
+        teacher_targets: TeacherTargets,
         *,
         hidden_state: ModelHiddenState | None = None,
         dones: torch.Tensor | None = None,
