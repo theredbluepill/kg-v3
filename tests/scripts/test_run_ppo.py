@@ -1001,9 +1001,11 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
             path: Path,
             *,
             load_optimizer: bool = False,
+            fresh_state_keys: frozenset[str] = frozenset(),
         ) -> run_ppo.PPOCheckpointMetadata:
             assert path == checkpoint_path
             assert not load_optimizer
+            assert fresh_state_keys == frozenset()
             loaded_model = self.model
             assert isinstance(loaded_model, torch.nn.Linear)
             loaded_model.weight.data.fill_(7.0)

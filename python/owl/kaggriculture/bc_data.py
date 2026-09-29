@@ -115,8 +115,11 @@ class BCEpisode:
 
 @dataclass(frozen=True)
 class BCBatch:
-    """Gathered rows. ``final_banks`` is float64 ``[rows, 2]`` in seat order;
-    ``policy_seat`` is bool ``[rows, 2]`` (seat rows that are policy targets)."""
+    """Gathered rows.
+
+    ``final_banks`` is float64 ``[rows, 2]`` in seat order; ``policy_seat`` is
+    bool ``[rows, 2]`` (seat rows that are policy targets).
+    """
 
     obs: kt.KaggricultureObsBatch
     actions: kt.KaggricultureActions

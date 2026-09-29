@@ -164,7 +164,12 @@ When `--load-model-weights` is set, the fresh trainer then replaces those
 parameters from the checkpoint. Set
 `--load-model-weights-mode model_and_optimizer` to also load optimizer
 moment/momentum state while keeping the fresh optimizer hyperparameters and
-scheduler state.
+scheduler state. `--load-model-weights-mode model_fresh_critic_head`
+(Kaggriculture only) loads every model tensor except the critic head
+(`critic_head.*`), which keeps the fresh launch's initialization; the optimizer
+starts fresh as in `model_only`. The checkpoint must still hold every model
+tensor, and any checkpoint key or model tensor the trainer does not save is
+rejected.
 resume launches load checkpoint weights and optimizer state without resetting
 the model first.
 Set `model.lora` on stateless transformer configs to run PPO as a LoRA
@@ -482,9 +487,14 @@ stopping step on a deterministic device. Every `eval_interval_steps` all
 validation rows are evaluated; the lowest held-out NLL is saved as
 `checkpoint_bc_best.pt` with exactly `run_ppo.py`'s checkpoint keys (`env_steps`
 0), beside the PPO `config.yaml`, so PPO can start from it with
-`--load-model-weights` or `rl.teacher_init` once `run_ppo.py` runs
+`--load-model-weights` once `run_ppo.py` runs
 Kaggriculture (it stops before the environment until Tasks 1.4 and 3.1 land;
-the loaders accept the checkpoint today). Training stops after
+the loaders accept the checkpoint today). Start PPO from it with
+`--load-model-weights <run>/checkpoint_bc_best.pt --load-model-weights-mode
+model_fresh_critic_head`: the BC critic learned the winner of the imitated
+team's games and saturates (|value| > 1 - 2e-6 on 97% of one held-out game's
+turns), where the MSE value loss has almost no gradient, so PPO keeps the BC
+trunk and actor and starts the critic head fresh. Training stops after
 `patience_evals` evaluations without an improvement of more than `min_delta`
 over the last such improvement, at `max_steps` or at `--max-runtime-hours`;
 `min_delta` sets only that patience count, and every strict new minimum still

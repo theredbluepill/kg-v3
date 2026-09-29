@@ -10,6 +10,7 @@ import copy
 import importlib.util
 import json
 import math
+import os
 import sys
 from collections.abc import Iterator
 from pathlib import Path
@@ -19,12 +20,14 @@ from typing import Any, cast
 import numpy as np
 import pytest
 import torch
+from owl.kaggriculture import bc_data as bc_data_module
 from owl.kaggriculture import types as kt
 from owl.kaggriculture.bc_data import (
     MANIFEST_NAME,
     OBS_FIELDS,
     SHARD_SCHEMA,
     BCEpisode,
+    BCManifest,
     load_bc_dataset,
     write_bc_episode,
     write_bc_manifest,
@@ -55,7 +58,7 @@ from owl.train.bc import (
 from owl.train.distributed import DistributedContext
 from owl.train.logging import DebugLogger
 from owl.train.optimizer import AdamWConfig, create_lr_scheduler, create_optimizer
-from owl.train.ppo import _checkpoint_metadata
+from owl.train.ppo import PPOTrainer, _checkpoint_metadata
 
 from tests.kaggriculture.conftest import make_obs
 from tests.kaggriculture.helpers import _cat_obs, _tiny
@@ -911,6 +914,303 @@ def test_best_checkpoint_loads_through_run_ppo(tmp_path: Path) -> None:
         b = teacher.evaluate_actions(batch.obs, batch.actions)
     assert torch.equal(a.log_probs.event, b.log_probs.event)
     assert torch.equal(a.values, b.values)
+
+
+# The BC run's PPO config and the ranked configs Phase 6.2 starts from; the
+# model section must match exactly for the BC best to load without surprises.
+_BC_RUN_PPO_CONFIG = _REPO / "configs" / "kaggriculture_1gpu_eager.yaml"
+_RANKED_PPO_CONFIGS = sorted((_REPO / "configs").glob("kaggriculture_*rank.yaml"))
+
+
+def _cpu_model_config(cfg: FullConfig) -> FullConfig:
+    """``force_flash_attn`` needs CUDA; it selects a kernel, not parameters."""
+    return cfg.model_copy(
+        update={"model": cfg.model.model_copy(update={"force_flash_attn": False})}
+    )
+
+
+def _ppo_model(cfg: FullConfig, *, seed: int) -> Any:
+    """The model a fresh ``run_ppo`` launch builds before loading weights."""
+    torch.manual_seed(seed)
+    model = run_ppo._create_model(
+        cfg.model, obs_spec=cfg.env.obs_spec, action_spec=cfg.env.action_spec
+    )
+    model.reset_parameters()
+    return model
+
+
+def _ppo_trainer(model: Any, cfg: FullConfig) -> PPOTrainer:
+    """The trainer state ``PPOTrainer.load_model_weights`` touches."""
+    trainer = PPOTrainer.__new__(PPOTrainer)
+    trainer.model = model
+    trainer.optimizer = create_optimizer(model, cfg.optimizer)
+    trainer.device = torch.device("cpu")
+    trainer.player_step_total = 0
+    trainer.total_games_played = 0
+    trainer.total_active_entities = 0
+    return trainer
+
+
+@pytest.fixture(scope="module")
+def bc_best(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, Any, Path]:
+    """A BC best checkpoint of the BC run's model written by the BC trainer's saver.
+
+    One optimizer step gives the optimizer real moment/momentum state. Returns
+    the checkpoint path, the source model (eval mode) and the dataset root.
+    """
+    tmp_path = tmp_path_factory.mktemp("bc-best")
+    cfg = _cpu_model_config(FullConfig.from_file(_BC_RUN_PPO_CONFIG))
+    data = _dataset_root(tmp_path)
+    dataset = load_bc_dataset(data)
+    model = _ppo_model(cfg, seed=3)
+    optimizer = create_optimizer(model, cfg.optimizer)
+    batch = dataset.train.gather(np.array([0, 1, 2]))
+    terms = bc_terms(model.evaluate_actions(batch.obs, batch.actions), batch)
+    bc_loss(terms, value_coef=1.0).backward()
+    optimizer.step()
+    optimizer.zero_grad()
+    run_dir = tmp_path / "bc-run"
+    run_dir.mkdir()
+    bc_module._save_best(
+        run_dir,
+        model=model,
+        optimizer=optimizer,
+        step=1,
+        nll=1.0,
+        wandb_run_id=None,
+        dataset=dataset,
+        provenance={"source_commit": "test"},
+    )
+    return run_dir / CHECKPOINT_BC_BEST, model.eval(), data
+
+
+def test_ranked_ppo_configs_share_the_bc_run_model() -> None:
+    bc_run = FullConfig.from_file(_BC_RUN_PPO_CONFIG)
+    assert [p.name for p in _RANKED_PPO_CONFIGS][:2] == [
+        "kaggriculture_2rank.yaml",
+        "kaggriculture_4rank.yaml",
+    ]
+    for path in _RANKED_PPO_CONFIGS:
+        ranked = FullConfig.from_file(path)
+        assert ranked.model == bc_run.model, path
+        assert ranked.env.obs_spec == bc_run.env.obs_spec, path
+        assert ranked.env.action_spec == bc_run.env.action_spec, path
+    flash = run_ppo._create_model(
+        bc_run.model,
+        obs_spec=bc_run.env.obs_spec,
+        action_spec=bc_run.env.action_spec,
+    )
+    cpu = _cpu_model_config(bc_run)
+    no_flash = run_ppo._create_model(
+        cpu.model, obs_spec=cpu.env.obs_spec, action_spec=cpu.env.action_spec
+    )
+    assert {k: v.shape for k, v in flash.state_dict().items()} == {
+        k: v.shape for k, v in no_flash.state_dict().items()
+    }
+
+
+@pytest.mark.parametrize(
+    "config_path",
+    [_BC_RUN_PPO_CONFIG, *_RANKED_PPO_CONFIGS],
+    ids=lambda p: p.stem,
+)
+@pytest.mark.parametrize(
+    "mode", ["model_only", "model_and_optimizer", "model_fresh_critic_head"]
+)
+def test_bc_best_loads_through_ppo_load_model_weights(
+    bc_best: tuple[Path, Any, Path], config_path: Path, mode: str
+) -> None:
+    best_path, source, data = bc_best
+    cfg = _cpu_model_config(FullConfig.from_file(config_path))
+    model = _ppo_model(cfg, seed=5)
+    fresh_critic = {k: v.clone() for k, v in model.critic_head.state_dict().items()}
+    trainer = _ppo_trainer(model, cfg)
+    metadata = trainer.load_model_weights(
+        best_path,
+        load_optimizer=mode == "model_and_optimizer",
+        fresh_state_keys=run_ppo._fresh_state_keys_for_mode(model, mode),
+    )
+    assert metadata.env_steps == 0
+    model.eval()
+    batch = load_bc_dataset(data).validation.gather(np.array([0, 1, 2]))
+    with torch.no_grad():
+        want = source.evaluate_actions(batch.obs, batch.actions)
+        got = model.evaluate_actions(batch.obs, batch.actions)
+    assert torch.equal(
+        got.log_probs.per_player_entity, want.log_probs.per_player_entity
+    )
+    assert torch.equal(got.log_probs.event, want.log_probs.event)
+    for name, value in model.state_dict().items():
+        expected = (
+            fresh_critic[name.removeprefix("critic_head.")]
+            if mode == "model_fresh_critic_head" and name.startswith("critic_head.")
+            else source.state_dict()[name]
+        )
+        assert torch.equal(value, expected), name
+    if mode == "model_fresh_critic_head":
+        assert not torch.equal(got.values, want.values)
+    else:
+        assert torch.equal(got.values, want.values)
+        assert torch.equal(got.winner_probabilities, want.winner_probabilities)
+    loaded = _optimizer_state_tensors(trainer.optimizer.state_dict())
+    saved = _optimizer_state_tensors(
+        torch.load(best_path, weights_only=False)["optimizer"]
+    )
+    assert saved
+    if mode == "model_and_optimizer":
+        assert len(loaded) == len(saved)
+        assert all(torch.equal(a, b) for a, b in zip(loaded, saved, strict=True))
+    else:
+        assert not loaded
+
+
+def _optimizer_state_tensors(state_dict: dict[str, Any]) -> list[torch.Tensor]:
+    """Every moment/momentum tensor of a (composite) optimizer state dict."""
+    return [
+        value
+        for optimizer in state_dict["optimizers"]
+        for _, param_state in sorted(optimizer["state"].items())
+        for _, value in sorted(param_state.items())
+        if isinstance(value, torch.Tensor) and value.numel() > 1
+    ]
+
+
+def test_ppo_load_rejects_prohibited_checkpoint_state(
+    tmp_path: Path, bc_best: tuple[Path, Any, Path]
+) -> None:
+    cfg = _cpu_model_config(FullConfig.from_file(_BC_RUN_PPO_CONFIG))
+    best_path = bc_best[0]
+    clean = torch.load(best_path, weights_only=False)
+
+    def load(checkpoint: dict[str, Any], name: str) -> None:
+        path = tmp_path / name
+        torch.save(checkpoint, path)
+        model = _ppo_model(cfg, seed=5)
+        _ppo_trainer(model, cfg).load_model_weights(path)
+
+    # Identity-bearing or carried state beside the weights is not ignored.
+    for extra in ("opponent_id", "hidden_state"):
+        with pytest.raises(ValueError, match=f"unexpected keys \\['{extra}'\\]"):
+            load({**clean, extra: torch.zeros(1)}, f"{extra}.pt")
+        with pytest.raises(ValueError, match=extra):
+            run_ppo._checkpoint_metadata({**clean, extra: 0}, path=best_path)
+    # Nor inside the model state: an opponent embedding has no place to load.
+    tainted = {
+        **clean,
+        "model": {**clean["model"], "opponent_embedding.weight": torch.zeros(3, 4)},
+    }
+    with pytest.raises(RuntimeError, match=r"opponent_embedding\.weight"):
+        load(tainted, "tainted.pt")
+    torch.save(tainted, tmp_path / "tainted-teacher.pt")
+    with pytest.raises(RuntimeError, match=r"opponent_embedding\.weight"):
+        run_ppo._load_model_weights(
+            _ppo_model(cfg, seed=5),
+            path=tmp_path / "tainted-teacher.pt",
+            device=torch.device("cpu"),
+        )
+    # A fresh critic head still requires the checkpoint's critic tensors.
+    no_critic = {
+        **clean,
+        "model": {
+            k: v for k, v in clean["model"].items() if not k.startswith("critic_head.")
+        },
+    }
+    torch.save(no_critic, tmp_path / "no-critic.pt")
+    model = _ppo_model(cfg, seed=5)
+    with pytest.raises(RuntimeError, match="missing non-LoRA model state_dict keys"):
+        _ppo_trainer(model, cfg).load_model_weights(
+            tmp_path / "no-critic.pt",
+            fresh_state_keys=run_ppo._fresh_state_keys_for_mode(
+                model, "model_fresh_critic_head"
+            ),
+        )
+
+
+def test_fresh_critic_head_mode_is_explicit(bc_best: tuple[Path, Any, Path]) -> None:
+    cfg = _cpu_model_config(FullConfig.from_file(_BC_RUN_PPO_CONFIG))
+    model = _ppo_model(cfg, seed=5)
+    assert run_ppo._fresh_state_keys_for_mode(model, "model_only") == frozenset()
+    assert run_ppo._fresh_state_keys_for_mode(
+        model, "model_fresh_critic_head"
+    ) == frozenset(
+        {
+            "critic_head.up.weight",
+            "critic_head.up.bias",
+            "critic_head.out.weight",
+            "critic_head.out.bias",
+        }
+    )
+    assert "model_fresh_critic_head" in run_ppo.LOAD_MODEL_WEIGHTS_MODES
+    with pytest.raises(ValueError, match="KaggricultureTransformer only"):
+        run_ppo._fresh_state_keys_for_mode(
+            torch.nn.Linear(2, 1), "model_fresh_critic_head"
+        )
+    with pytest.raises(ValueError, match="not model state keys"):
+        _ppo_trainer(model, cfg).load_model_weights(
+            bc_best[0], fresh_state_keys=frozenset({"critic_head.missing"})
+        )
+
+
+_REAL_BC_BEST = "KG_V3_BC_BEST"
+_REAL_BC_SHARDS = "KG_V3_BC_SHARDS"
+_REAL_BC_BEST_SHA256 = (
+    "fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51"
+)
+
+
+@pytest.mark.skipif(
+    not (os.environ.get(_REAL_BC_BEST) and os.environ.get(_REAL_BC_SHARDS)),
+    reason=f"set {_REAL_BC_BEST} and {_REAL_BC_SHARDS} to check the real BC best",
+)
+def test_real_bc_best_loads_and_forwards_on_a_real_shard() -> None:
+    """Custody check of the A100 BC best (bc-20260929-142216, step 3200).
+
+    ``KG_V3_BC_SHARDS`` is a directory holding the run's ``manifest.json`` and at
+    least one of its validation shards; the shard's SHA-256 is checked.
+    """
+    best_path = Path(os.environ[_REAL_BC_BEST])
+    shards = Path(os.environ[_REAL_BC_SHARDS])
+    assert bc_module.file_sha256(best_path) == _REAL_BC_BEST_SHA256
+    manifest = BCManifest.model_validate_json((shards / MANIFEST_NAME).read_bytes())
+    present = tuple(
+        e
+        for e in manifest.episodes
+        if e.split == "validation" and (shards / e.shard_path).is_file()
+    )
+    assert present
+    split = bc_data_module._load_split(
+        shards,
+        "validation",
+        manifest.model_copy(update={"episodes": present[:1]}),
+        rank=0,
+        world_size=1,
+    )
+    batch = split.gather(np.arange(0, split.rank_rows[0], 10, dtype=np.int64))
+    outputs = {}
+    for mode in ("model_only", "model_fresh_critic_head"):
+        cfg = _cpu_model_config(
+            FullConfig.from_file(_REPO / "configs" / "kaggriculture_2rank.yaml")
+        )
+        model = _ppo_model(cfg, seed=0)
+        _ppo_trainer(model, cfg).load_model_weights(
+            best_path,
+            fresh_state_keys=run_ppo._fresh_state_keys_for_mode(model, mode),
+        )
+        model.eval()
+        with torch.no_grad():
+            outputs[mode] = model.evaluate_actions(batch.obs, batch.actions)
+        for tensor in (
+            outputs[mode].values,
+            outputs[mode].winner_probabilities,
+            outputs[mode].log_probs.per_player_entity,
+        ):
+            assert bool(torch.isfinite(tensor).all()), mode
+    kept, fresh = outputs["model_only"], outputs["model_fresh_critic_head"]
+    assert torch.equal(
+        kept.log_probs.per_player_entity, fresh.log_probs.per_player_entity
+    )
+    nll = -kept.log_probs.per_player_entity.float().sum(-1) / batch.actions.lengths
+    assert float(nll[batch.policy_seat].mean()) < 1.0
 
 
 # --- configs and the script ---------------------------------------------------------

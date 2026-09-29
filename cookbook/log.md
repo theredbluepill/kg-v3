@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Start PPO from the BC best with a fresh critic head
+
+Phase 6.2 needs the A100 BC best (`fd854587…`) to start PPO. On CPU it loads through `PPOTrainer.load_model_weights` into the eager, 2-, 4- and 8-rank models, whose model sections are equal, with equal and finite outputs on a real validation shard. Its critic saturates (|value| > 1 − 2e-6 on 97 % of a held-out game's rows from turn 20), because all 523 BC games were the imitated seat's wins, and saturation starves the MSE value gradient. Isaiah had no imitation start, and his warm starts load the whole model. So `run_ppo.py` gains `--load-model-weights-mode model_fresh_critic_head`, which loads everything but `critic_head.*`. `ppo._checkpoint_metadata` now also rejects unknown top-level keys such as `opponent_id`, which `load_model_weights` used to ignore. `just py-prepare`: 2,193 passed, 12 skipped. See [[references/bc-best-starts-ppo-with-a-fresh-critic-head|handoff Reference]]; evidence in `ops/rebuild-2026-09-29/bc-handoff/`.
+
 ## 2026-09-29 — Record the top-1 team BC checkpoint (selection only)
 
 The owner asked to train BC on the 7-day top-1 team data within 1.5–2 h. `configs/bc/kaggriculture_1gpu_eager.yaml` and `configs/kaggriculture_1gpu_eager.yaml` adapt the 2-rank BC config to one A100: same global batch, eager because the pod's driver is outside the probed compile stack. The run (`f0b7a38`, run statement `ops/rebuild-2026-09-29/run-statements/bc-a100.md`) stopped by the L9 rule at step 5,200. Its best held-out NLL was 0.480 at step 3,200. The checkpoint stays on the pod volume. See [[references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only|BC checkpoint Reference]]; receipts are in `ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/`.

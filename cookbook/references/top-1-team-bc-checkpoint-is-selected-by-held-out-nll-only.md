@@ -28,6 +28,6 @@ The first real run of the [[kaggriculture-bc-trainer-warm-starts-ppo-from-the-he
 - **Selection, not qualification.** The same 16 episodes select the checkpoint and report its NLL. No separate held-out set, no game play, no legality check in live play and no PPO warm-start comparison exists.
 - There is one seed. The LR was still at its post-warmup plateau when the run stopped. The small train set (507 episodes) overfit after about 9 epochs at these settings. Other data, stride or regularization were not tried.
 - W&B telemetry is offline only (no key on the pod; run `kvl4rfda`, not synced).
-- The saved `config.yaml` is the eager 1-GPU PPO config. Loading the weights into `kaggriculture_2rank.yaml` with `--load-model-weights` is expected to work because the model sections match, but that load has not been run.
+- The saved `config.yaml` is the eager 1-GPU PPO config. The weights load through `run_ppo`'s `--load-model-weights` path into the 2-, 4- and 8-rank models with equal outputs (CPU). Its critic is saturated, so PPO starts with a fresh critic head: see [[bc-best-starts-ppo-with-a-fresh-critic-head|BC-to-PPO handoff Reference]].
 
 Reopen this note when the checkpoint is evaluated in play or used to start PPO.

@@ -1,0 +1,20 @@
+# OMP_NUM_THREADS=2 uv run python ops/rebuild-2026-09-29/bc-handoff/critic_probe.py  (source 218a05b + working tree)
+bc_head winner_probabilities shape (360, 2, 2) values shape (360, 2)
+  frac |value|>1-2e-6: 0.9722  |value| mean 0.9936
+   row 0 turn 0 values [-0.055565, -0.055565]
+   row 10 turn 20 values [-1.0, 1.0]
+   row 50 turn 100 values [-1.0, 1.0]
+   row 100 turn 200 values [-1.0, 1.0]
+   row 200 turn 400 values [-1.0, 1.0]
+   row 359 turn 718 values [-1.0, 0.999999]
+  MSE loss vs flipped outcome 3.9038 critic_head grad norm 0.11801639199256897
+fresh_head winner_probabilities shape (360, 2, 2) values shape (360, 2)
+  frac |value|>1-2e-6: 0.0  |value| mean 0.4682
+   row 0 turn 0 values [-0.015111, -0.015111]
+   row 10 turn 20 values [-0.411607, 0.720618]
+   row 50 turn 100 values [-0.378204, 0.472831]
+   row 100 turn 200 values [-0.77004, 0.426435]
+   row 200 turn 400 values [-0.671028, 0.322626]
+   row 359 turn 718 values [-0.5493, -0.069125]
+  MSE loss vs flipped outcome 2.2157 critic_head grad norm 12.364378929138184
+  actor log-probs identical to bc_head model: True

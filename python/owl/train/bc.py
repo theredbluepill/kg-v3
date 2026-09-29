@@ -929,8 +929,10 @@ def _train_step(
     step: int,
     losses: torch.Tensor,
 ) -> None:
-    """One optimizer step; adds [policy NLL sum, value CE sum, grad norm, seat
-    rows, policy seat rows]."""
+    """One optimizer step.
+
+    Adds [policy NLL sum, value CE sum, grad norm, seat rows, policy seat rows].
+    """
     optimizer.zero_grad(set_to_none=True)
     accumulation = config.gradient_accumulation_steps
     for micro in range(accumulation):
