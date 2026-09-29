@@ -16,6 +16,7 @@ from owl.kaggriculture.env import (
     KaggricultureVectorizedEnv,
     allocate_observation_buffers,
 )
+from owl.kaggriculture.telemetry import self_play_bank_metrics
 from owl.kaggriculture.types import (
     ACTION_SLOTS,
     MAX_FRAMES,
@@ -831,6 +832,8 @@ class PPOTrainer:
                 self.total_games_played
             )
         metrics.update(env_metrics_logged)
+        if isinstance(self._obs, KaggricultureObsBatch):
+            metrics.update(self._self_play_bank_metrics(env_metrics))
         elapsed = self._max_float(max(perf_counter() - start, 1e-12))
         rollout_elapsed = self._max_float(rollout_elapsed)
         teacher_elapsed = self._max_float(teacher_elapsed)
@@ -956,6 +959,32 @@ class PPOTrainer:
         self.total_games_played = metadata.total_games_played
         self.total_active_entities = metadata.total_active_entities
         return metadata
+
+    def _self_play_bank_metrics(
+        self, env_metrics: dict[str, list[float]]
+    ) -> dict[str, float]:
+        """Learner-perspective raw-bank telemetry over this update's completed games.
+
+        Gathers every rank's per-game terminal banks (the native step always
+        returns both lists, empty without completions) so percentiles cover the
+        global interval. Telemetry only: nothing here reaches the model,
+        rewards, losses or normalization.
+        """
+        missing = {"terminal_bank_0", "terminal_bank_1"} - env_metrics.keys()
+        if missing:
+            raise ValueError(
+                f"Kaggriculture step metrics lack {sorted(missing)}; the native "
+                "step returns both terminal bank lists on every step"
+            )
+        local = (
+            list(env_metrics["terminal_bank_0"]),
+            list(env_metrics["terminal_bank_1"]),
+        )
+        gathered = all_gather_object(local, self.distributed_context)
+        return self_play_bank_metrics(
+            [bank for rank_banks in gathered for bank in rank_banks[0]],
+            [bank for rank_banks in gathered for bank in rank_banks[1]],
+        )
 
     def _collect_rollout(self) -> torch.Tensor:
         self.rollout.rewards.zero_()

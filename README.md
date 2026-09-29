@@ -500,9 +500,17 @@ checkpoint write and barrier complete) and `eval/promotion_threshold` (0.7).
 Kaggriculture evaluation games are won by the higher raw final bank (equal
 banks draw), never by the shaped training return, and log
 `eval/candidate_bank`, `eval/last_best_bank` and `eval/candidate_bank_margin`
-from the candidate's seat. Each Kaggriculture evaluation seeds its games
-with `_evaluation_seed(base_seed, env_steps)`, a reproducible seed that differs
-per evaluation step within a run (the seed ranges of different evaluations or
+from the candidate's seat. Learner-perspective raw-bank telemetry follows
+(`docs/rl-api-specs.md`): each evaluation adds `eval/bank_games` and the mean
+and p10/p50/p90 of `eval/own_bank_*`, `eval/opponent_bank_*` and the signed
+`eval/margin_*` (candidate minus last-best, unlike the seat-0 `eval/margin_0`); each training update adds `train/bank_games`,
+`train/own_bank_{mean,p10,p50,p90}` over both learner seats,
+`train/margin_abs_{mean,p50}`, `train/winner_bank_mean`,
+`train/loser_bank_mean` and `train/draw_rate` over its completed games. The
+training margin is absolute because a signed self-play margin is identically
+zero. These keys are telemetry only and absent for Orbit. Each Kaggriculture
+evaluation seeds its games with `_evaluation_seed(base_seed, env_steps)`, a
+reproducible seed that differs per evaluation step within a run (the seed ranges of different evaluations or
 runs are not guaranteed disjoint), in the non-negative int64 band
 `[2**62, 2**62 + 2**61)`. `_create_eval_env` now constructs an independent native
 Kaggriculture adapter through `owl.game.create_env`, with rank 0, world size 1

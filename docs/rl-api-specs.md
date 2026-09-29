@@ -1046,6 +1046,47 @@ draws; the returned reset observation's banks never score the completed game.
 Last-best teacher load/refresh uses the shared model and checkpoint path, and
 teacher caches remain outside checkpoints. Replay export is Task 7.3.
 
+#### Learner-perspective bank telemetry (W&B)
+
+Kaggriculture PPO logs raw final banks (money, not normalized) from the
+learner's side, beside and without changing the seat-ordered
+`train/terminal_bank_0`, `train/terminal_bank_1`, `train/terminal_margin_0` and
+the evaluation's `eval/candidate_bank`, `eval/last_best_bank`,
+`eval/candidate_bank_margin`. `owl.kaggriculture.telemetry` computes them;
+percentiles interpolate linearly between order statistics (`torch.quantile`).
+They are telemetry only: they never enter model inputs, rewards, losses,
+advantage or return normalization, or checkpoint selection (promotion keeps the
+raw-bank win rate). Orbit logs none of these keys.
+
+Training, per update over the games completed in that rollout. `PPOTrainer`
+reads the native step's per-game `terminal_bank_0`/`terminal_bank_1` lists and
+gathers them from every rank, so the percentiles cover the global interval.
+Truncated games are not completed and contribute nothing.
+
+| Key | Meaning |
+| --- | --- |
+| `train/bank_games` | Completed games in the update (the denominator); always logged, `0` when none completed. |
+| `train/own_bank_{mean,p10,p50,p90}` | Each learner seat's raw final bank, both seats of every game (two values per game). |
+| `train/margin_abs_{mean,p50}` | Per game, `abs(bank_0 - bank_1)`. |
+| `train/winner_bank_mean`, `train/loser_bank_mean` | Higher and lower bank over decisive games; omitted when every game drew. |
+| `train/draw_rate` | Fraction of games with equal banks. |
+
+Every key but `train/bank_games` is omitted when no game completed; none is NaN.
+The training margin is absolute because both seats of a self-play game are the
+learner. One game contributes `+m` from one seat and `-m` from the other, so a
+signed learner margin is identically zero, and `train/terminal_margin_0` only
+measures seat asymmetry. `abs` measures how decisive games are.
+
+Evaluation against last-best, per evaluation over its games, with the candidate
+as "own": `eval/bank_games` (games, equal to `eval/games`) and the mean and
+p10/p50/p90 of `eval/own_bank_*` (candidate bank), `eval/opponent_bank_*`
+(last-best bank) and the signed `eval/margin_*` (own minus opponent). The means
+equal the existing candidate metrics. Do not read `eval/margin_mean` as
+`eval/margin_0`: the latter is the seat-0 mean `bank_0 - bank_1`, whichever
+model held seat 0, and says nothing about the candidate. `run_ppo` has no fixed-opponent panel
+yet; a panel reuses `opponent_bank_metrics` with the opponent's name only in
+the key prefix (a label), never as a model input.
+
 ### Structured native observation buffers (Task 1.3)
 
 The root `src/kaggriculture/` boundary uses the following named buffers. Every

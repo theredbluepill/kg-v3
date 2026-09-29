@@ -9,6 +9,7 @@ import pytest
 import torch
 from owl.kaggriculture.env import KaggricultureVectorizedEnv
 from owl.kaggriculture.rewards import KaggricultureRewardConfig
+from owl.kaggriculture.telemetry import self_play_bank_metrics
 from owl.kaggriculture.types import (
     KaggricultureActionConfig,
     KaggricultureGameConfig,
@@ -110,6 +111,22 @@ def test_no_teacher_two_updates(tmp_path: Path) -> None:
         terminal["train/terminal_margin_0"],
         terminal["train/terminal_bank_0"] - terminal["train/terminal_bank_1"],
     )
+    # Learner-perspective bank telemetry: both seats are the learner, so the
+    # pooled own-bank mean is the seat-mean and the margin is absolute.
+    records = trainer._last_env_metrics
+    assert records["terminal_bank_0"] == [terminal["train/terminal_bank_0"]]
+    expected = self_play_bank_metrics(
+        records["terminal_bank_0"], records["terminal_bank_1"]
+    )
+    assert {key: terminal[key] for key in expected} == expected
+    assert terminal["train/bank_games"] == 1.0
+    assert math.isclose(
+        terminal["train/own_bank_mean"],
+        (terminal["train/terminal_bank_0"] + terminal["train/terminal_bank_1"]) / 2,
+    )
+    assert math.isclose(
+        terminal["train/margin_abs_mean"], abs(terminal["train/terminal_margin_0"])
+    )
     assert trainer.optimizer_steps == 2
     assert trainer.player_step_total == 8
     assert trainer.total_games_played == 2
@@ -202,6 +219,12 @@ def test_truncation_bootstraps_through_the_native_trainer(
     assert bool(torch.stack(raw_rewards).ne(0).all())
     # Each truncation resets through the native seed stream.
     assert env.seed_state()[0] > seeds_before
+    # Truncated games are not completed: an explicit zero count, no bank values.
+    assert metrics["train/bank_games"] == 0.0
+    assert not any(
+        key.startswith(("train/own_bank", "train/margin_abs", "train/draw_rate"))
+        for key in metrics
+    )
 
 
 def test_trainer_rejects_winner_ce_for_kaggriculture() -> None:

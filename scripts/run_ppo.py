@@ -22,6 +22,7 @@ from owl.game import GameActions, GameObsBatch, GameVectorizedEnv, create_env
 from owl.kaggriculture.config import KaggricultureEnvConfig
 from owl.kaggriculture.env import KaggricultureVectorizedEnv
 from owl.kaggriculture.evaluation import terminal_seat_banks
+from owl.kaggriculture.telemetry import opponent_bank_metrics
 from owl.kaggriculture.types import (
     KaggricultureActionConfig,
     KaggricultureActions,
@@ -1677,6 +1678,15 @@ def _evaluate_against_last_best(
     metrics = _eval_env_metrics(env_metrics)
     metrics["eval/win_rate_against_last_best"] = stats.win_rate(MODEL_CURRENT)
     metrics["eval/games"] = float(stats.model_games[MODEL_CURRENT])
+    if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+        # Telemetry only; promotion above reads the raw-bank win rate alone.
+        metrics.update(
+            opponent_bank_metrics(
+                env_metrics["candidate_bank"],
+                env_metrics["last_best_bank"],
+                prefix="eval/",
+            )
+        )
     for player_count, player_stats in stats_by_player_count.items():
         if player_stats.model_games[MODEL_CURRENT] == 0:
             continue
