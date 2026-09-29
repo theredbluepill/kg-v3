@@ -8,11 +8,14 @@ environment admission and tests, not the model hot path.
 
 from __future__ import annotations
 
+import json
+import math
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Self, TypeAlias
 
 import torch
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import JsonValue as _JsonValue
 
 from owl.config import BaseConfig
 
@@ -68,6 +71,89 @@ MARKET_FLOAT_CHANNELS = 2
 GLOBAL_FEATURE_CHANNELS = 15
 GLOBAL_INT_CHANNELS = 16
 MAX_ORDER_LIMIT = 10
+
+
+JsonValue: TypeAlias = _JsonValue
+_I64_MAX = 2**63 - 1
+
+
+class KaggricultureGameConfig(BaseConfig):
+    """Supported native game envelope; framework metadata never seeds games.
+
+    Integral JSON floats are explicitly canonicalized to integers, matching the
+    pinned kernel. Native admission still checks each state's representability.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, allow_inf_nan=False)
+
+    board_size: int = Field(default=10, alias="boardSize", ge=10, le=10)
+    episode_steps: int = Field(default=720, alias="episodeSteps", ge=1, le=_I64_MAX)
+    starting_money: int = Field(default=3000, alias="startingMoney", ge=0, le=_I64_MAX)
+    max_market_orders_per_turn: int = Field(
+        default=10, alias="maxMarketOrdersPerTurn", ge=1, le=10
+    )
+    turns_per_day: int = Field(default=24, alias="turnsPerDay", ge=1, le=_I64_MAX)
+    shed_capacity: int = Field(default=100, alias="shedCapacity", ge=1, le=_I64_MAX)
+    weed_spawn_chance: float = Field(default=0.005, alias="weedSpawnChance", ge=0)
+    town_shop_unlock_interval: int = Field(
+        default=3, alias="townShopUnlockInterval", ge=1, le=_I64_MAX
+    )
+    town_shop_sell_interval: int = Field(
+        default=4, alias="townShopSellInterval", ge=1, le=_I64_MAX
+    )
+    town_center_sell_interval: int = Field(
+        default=24, alias="townCenterSellInterval", ge=1, le=_I64_MAX
+    )
+    farm_hand_cost_mult: int = Field(
+        default=1, alias="farmHandCostMult", ge=0, le=_I64_MAX
+    )
+    market_params: dict[str, JsonValue] = Field(
+        default_factory=dict, alias="marketParams", max_length=0
+    )
+    act_timeout: JsonValue = Field(default=None, alias="actTimeout")
+    run_timeout: JsonValue = Field(default=None, alias="runTimeout")
+    seed: JsonValue = None
+
+    @field_validator(
+        "board_size",
+        "episode_steps",
+        "starting_money",
+        "max_market_orders_per_turn",
+        "turns_per_day",
+        "shed_capacity",
+        "town_shop_unlock_interval",
+        "town_shop_sell_interval",
+        "town_center_sell_interval",
+        "farm_hand_cost_mult",
+        mode="before",
+    )
+    @classmethod
+    def _canonical_integer(cls, value: object) -> int:
+        if type(value) is int:
+            return value
+        if type(value) is float and math.isfinite(value) and value.is_integer():
+            return int(value)
+        raise ValueError("game count must be a finite integral JSON number")
+
+    @field_validator("weed_spawn_chance", mode="before")
+    @classmethod
+    def _numeric_weed_chance(cls, value: object) -> int | float:
+        if type(value) not in (int, float):
+            raise ValueError("weedSpawnChance must be a finite nonnegative number")
+        assert isinstance(value, int | float)
+        return value
+
+    @model_validator(mode="after")
+    def _validate_day_orders(self) -> Self:
+        if self.turns_per_day * self.max_market_orders_per_turn > 240:
+            raise ValueError("turnsPerDay * maxMarketOrdersPerTurn must be <= 240")
+        return self
+
+    def to_native_json(self) -> str:
+        """Serialize resolved aliases and supplied non-null framework metadata."""
+        return json.dumps(
+            self.model_dump(by_alias=True, exclude_none=True), allow_nan=False
+        )
 
 
 class KaggricultureObsConfig(BaseConfig):

@@ -1,5 +1,18 @@
 # Change log
 
+## 2026-09-29 — Implement Task 1.5 Stage 1 Python adapter and game seam
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native boundary Reference]]
+and [[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]]
+now record the one-buffer Python adapter/fence, strict game/factory seam,
+required reward coefficients and independent rounding oracle, cold native-only
+codec, verbatim Task 1.4 stub and explicit YAML cap. Task 3.4's observation-tag
+union, reward field names and trainer stop remain. CPU test-first evidence and
+full Python preparation pass (1,705 tests, 22 skips); native lifecycle/replay,
+Stage 2 tables, Task 3.1 runtime and pod DMA remain open. No native build or
+training ran. Reconciliations are appended to brief 1.5; exact command receipts
+and skipped-test inventory are in `ops/rebuild-2026-09-29/stage1-adapter/results.md`.
+
 ## 2026-09-29 — Merge Task 1.3 structured observations onto the trainer-lane integration
 
 Task 1.3 (Codex APPROVE at `dc6b200`) forked from `f464c3d`, after the Task 1.2

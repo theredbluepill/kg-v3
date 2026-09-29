@@ -868,6 +868,111 @@ The Kaggriculture game uses the same shared training path through its own observ
 - **Model outputs** (`KaggricultureTransformer`, Task 2.3): `forward` returns sampled `KaggricultureActions` with `log_probs.event` and `entropies.event` of shape `[E,2,252,12]` (per frame and slot; implicit slots 0/2/11 are zero), `per_player_entity = event.sum(-1)` `[E,2,252]`, zero `launch`, per-slot entropy `components`, `values [E,2]` and `winner_probabilities [E,2,2]`. `evaluate_actions` requires `int64` tokens/lengths of exactly these shapes, rejects non-canonical or out-of-support programs itself (`GrammarReplayError` naming the support, length or canonical group), and requires `hidden_state` and `dones` to be `None`.
 - **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks (equal banks draw), and truncation keeps the transition's economic reward and bootstraps from the critic. Each evaluation seeds its games with `_evaluation_seed(base_seed, env_steps)` (`scripts/run_ppo.py`), a reproducible mix placed in `[2**62, 2**62 + 2**61)` that is distinct per evaluation step for a fixed base seed (and per base seed for a fixed step) and leaves int64 headroom for the seeds one evaluation consumes. It is not injective over `(base_seed, env_steps)` pairs, and consecutive seeds consumed by different evaluations or runs may overlap. Training seeds stay below the band only while `base_seed + rank + k * world_size < 2**62`, which the native env seam (Tasks 1.4/1.5) must enforce.
 
+### Python adapter, factory and reward configuration (Task 1.5 Stage 1)
+
+**Stage 1 status: native binding pending.** The adapter and cold codec wrappers
+are implemented against the reviewed Task 1.4 stub. The built extension here
+exports only `encode_kaggriculture_headers_into` for Kaggriculture. Exact-signature
+fake tests qualify forwarding, ownership and fence ordering; the real Task 1.3
+encoder qualifies allocation and seat-private isolation. Native lifecycle,
+codec fixture replay, reward agreement and seed consumption await Task 1.4.
+`run_ppo` still deliberately stops before creating a Kaggriculture environment;
+Task 3.1 owns trainer/factory adoption. Native grammar-table loading and the
+model's temporary default remain Stage 2 work.
+
+`owl.train.config.GameEnvConfig` remains the single config union, discriminated
+by `env.obs_spec.obs_spec`; absent observation tags select Isaiah's Orbit schema.
+There is no additional `game` field. `owl.game.create_env(env_config, *, n_envs,
+base_seed, rank, world_size, pin_memory, transfer_device)` dispatches by validated
+config class. It checks strict integer rank/world/base values and i64 addition;
+Kaggriculture receives `seed=base_seed+rank`, `seed_stride=world_size`. It does
+not reset after construction. Orbit receives exactly its original constructor's
+`n_envs`, specs, `two_player_weight`, `reward_mode` and `pin_memory` keywords.
+This factory constructs neither a model nor a trainer.
+
+`KaggricultureEnvConfig` remains in `owl.kaggriculture.config`; `n_envs` may be
+one, seed defaults to zero in `0..2**63-1`, `native_threads` is required, and
+all three are strict integers excluding booleans. `config` defaults to a
+`KaggricultureGameConfig`: board size 10, episode steps 720, money 3000, ten
+orders, 24 turns/day, shed 100, weed chance .005, shop unlock/sell intervals 3/4,
+town sell interval 24, hire multiplier 1 and empty market params. Integer counts
+admit finite integral JSON floats and canonicalize them to integers; strings and
+booleans reject. Counts fit i64, orders are 1..10 and orders times turns/day must
+not exceed 240. Weed chance is finite/nonnegative with no upper bound of one.
+Unknown fields and nonempty market params reject. Native JSON uses camel-case
+aliases; only supplied non-null `actTimeout`, `runTimeout` and `seed` framework
+metadata is preserved. Framework seed metadata has no lifecycle effect.
+`hire_limit` is owned only by `action_spec` and is passed to native unchanged.
+
+The six reward coefficients have a single definition in
+`owl.kaggriculture.rewards.KaggricultureRewardConfig`; all are required, finite
+and nonnegative. The existing `reward_shaping` field holds them, while the
+single top-level `reward_mode` remains `win_loss`. A complete example is:
+
+```yaml
+env:
+  n_envs: 2
+  seed: 0
+  obs_spec: {obs_spec: kaggriculture}
+  action_spec: {action_spec: kaggriculture, hire_limit: 241}
+  config: {episodeSteps: 720}
+  native_threads: 1
+  pin_memory: false
+  reward_mode: win_loss
+  reward_shaping:
+    econ_shaping: 0.2
+    econ_starvation_weight: 4.0
+    econ_drought_weight: 1.0
+    econ_cap: 0.25
+    econ_ineffective_weight: 0.0
+    econ_ineffective_cap: 0.1
+```
+
+Inactive caps may be zero; enabled caps sum strictly below one. Positive
+`econ_shaping` requires positive `econ_cap` and at least one positive binary64
+product `econ_shaping * econ_starvation_weight` or
+`econ_shaping * econ_drought_weight`. Positive ineffective weight requires a
+positive ineffective cap. `terminal_scale` is one minus enabled caps. This
+per-component predicate intentionally strengthens the reference, including
+underflow cases. `to_native_dict(reward_mode)` produces the seven exact native
+keys. The float64 economic/terminal oracles validate shapes, finite banks and
+monotonic int64 cumulative counters; only S0/D1/I2 contribute. The transition
+oracle casts the economic difference to f32, promotes to f64 for terminal
+addition, then casts to f32. Rust remains the live reward authority. Complete
+719-transition synthetic paths test the telescoping bound with a sum of output
+rounding ULP allowances; this does not bound bootstrapped partial returns.
+
+`allocate_observation_buffers(n_envs, *, pin_memory)` allocates the 29 buffers
+listed below, nesting `can_act` under `obs.action_mask`. The adapter allocates
+six more outputs: rewards f32 `[E,2]`, dones bool `[E,2]`, transition banks before
+and after f64 `[E,2]`, and transition economic counters before and after int64
+`[E,2,32]`. Each has one retained C-contiguous NumPy view in `NativeArrays`.
+Every native lifecycle call receives all 35 keywords explicitly. Construction
+calls `observe`, not `reset`. Returned tensor/batch identities stay stable.
+`truncate_envs` updates selected observation rows in place while all transition
+outputs and unselected rows stay unchanged under the native contract.
+
+`reset`, `step` and `truncate_envs` fence first: CUDA plus pinned storage calls
+`torch.cuda.current_stream(transfer_device).synchronize()` before any native
+write. CPU or unpinned reuse makes no CUDA call. Other-stream readers must join
+the current stream before reuse; CPU readers retaining values must copy them.
+Requested unavailable pinning fails explicitly. Actions must contain exact
+C-contiguous CPU int64 tokens `[E,2,252,12]` and lengths `[E,2]`; truncate masks
+must be C-contiguous CPU bool `[E]`. Each fresh input gets one zero-copy NumPy
+view per call. There is no casting, device transfer, repair or live JSON codec.
+Native failures propagate without adapter writes; native transaction atomicity
+is a separate Task 1.4 obligation.
+
+Diagnostics delegate lazily: `terminal_metrics(i)` is the stub's typed dict or
+None (float banks/margin, integer steps/winner, two int64 `[32]` counter arrays),
+`state_snapshot(i)` parses a JSON object and `seed_state()` returns
+`tuple[int, tuple[int, ...]]`. Snapshots are never model inputs. The four cold
+codec functions call native encode/decode only; actor counts come from this
+seat's first 241 mask entries, order limits from its observation and hire limit
+from the action spec. Batch encoding publishes a newly allocated result only
+when every row succeeds. Table constants/provenance remain the Task 1.2 grammar
+and pending Task 1.4 exports, with no Python grammar fallback.
+
 ### Structured native observation buffers (Task 1.3)
 
 The root `src/kaggriculture/` boundary uses the following named buffers. Every

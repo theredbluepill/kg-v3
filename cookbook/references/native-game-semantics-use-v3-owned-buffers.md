@@ -1,14 +1,74 @@
 ---
 type: "Reference"
 title: "Native game semantics use v3-owned buffers"
-description: "Task 1.2 rebuilds the observation-local grammar and strict native codec; historical adapter and GPU evidence remains scoped to the reference branch."
+description: "Task 1.5 Stage 1 supplies the typed Python adapter, one-buffer fence, config/factory and codec seam with CPU contracts; Task 1.4 native lifecycle, Stage 2 tables/replay and Task 3.1/pod integration remain pending."
 tags: ["kaggriculture-v3", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex", "at": "2026-09-29"}
-sources: [{"resource": "repository:ops/rebuild-2026-09-29/briefs/1.2.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/claude_review_mutations.py"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/checks.json"}, {"resource": "repository:ops/rebuild-2026-09-29/merge-1.2/results.md"}, {"resource": "repository:python/owl/kaggriculture/gpu_grammar.py"}, {"resource": "repository:src/kaggriculture/grammar.rs"}, {"resource": "repository:src/kaggriculture/grammar_tests.rs"}, {"resource": "repository:src/kaggriculture/grammar_kernel_tests.rs"}, {"resource": "repository:engine_rs/TRIM_MANIFEST.json"}, {"resource": "repository:scripts/check_engine_trim.py"}, {"resource": "repository:tests/tools/test_check_engine_trim.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/training.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/README.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/benchmark.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_codec.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/v3-port-checks.md"}, {"resource": "user-directive:2026-09-28:record-every-adaptation"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/V3_IMPORT.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/VENDORED_FROM.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/Cargo.toml"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/ffi.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_features.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_sampler.rs"}, {"resource": "repository:Cargo.toml"}, {"resource": "repository:src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/src/kaggriculture.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/types.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/native_bridge.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/actor_codec.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/gpu_sampling_grammar.py"}, {"resource": "repository:Cargo.lock"}, {"resource": "repository:python/owl/rs.pyi"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:src/rules_engine/generation.rs"}, {"resource": "repository:docs/rules-engine.md"}, {"resource": "repository:docs/rules-parity-coverage.md"}]
+sources: [{"resource": "repository:ops/rebuild-2026-09-29/briefs/1.2.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/claude_review_mutations.py"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/checks.json"}, {"resource": "repository:ops/rebuild-2026-09-29/merge-1.2/results.md"}, {"resource": "repository:python/owl/kaggriculture/gpu_grammar.py"}, {"resource": "repository:src/kaggriculture/grammar.rs"}, {"resource": "repository:src/kaggriculture/grammar_tests.rs"}, {"resource": "repository:src/kaggriculture/grammar_kernel_tests.rs"}, {"resource": "repository:engine_rs/TRIM_MANIFEST.json"}, {"resource": "repository:scripts/check_engine_trim.py"}, {"resource": "repository:tests/tools/test_check_engine_trim.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/training.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/README.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/benchmark.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_codec.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/v3-port-checks.md"}, {"resource": "user-directive:2026-09-28:record-every-adaptation"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/V3_IMPORT.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/VENDORED_FROM.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/Cargo.toml"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/ffi.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_features.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_sampler.rs"}, {"resource": "repository:Cargo.toml"}, {"resource": "repository:src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/src/kaggriculture.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/types.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/native_bridge.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/actor_codec.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/gpu_sampling_grammar.py"}, {"resource": "repository:Cargo.lock"}, {"resource": "repository:python/owl/rs.pyi"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:src/rules_engine/generation.rs"}, {"resource": "repository:docs/rules-engine.md"}, {"resource": "repository:docs/rules-parity-coverage.md"}, {"resource": "repository:python/owl/kaggriculture/env.py"}, {"resource": "repository:python/owl/kaggriculture/codec.py"}, {"resource": "repository:python/owl/kaggriculture/types.py"}, {"resource": "repository:python/owl/kaggriculture/config.py"}, {"resource": "repository:python/owl/game.py"}, {"resource": "repository:tests/kaggriculture/fake_env.py"}, {"resource": "repository:tests/kaggriculture/test_env.py"}, {"resource": "repository:tests/kaggriculture/test_env_cuda_fence.py"}, {"resource": "repository:tests/kaggriculture/test_codec.py"}, {"resource": "repository:tests/kaggriculture/test_game.py"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.4.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.5.md"}, {"resource": "repository:ops/rebuild-2026-09-29/stage1-adapter/results.md"}]
 ---
 
 # Native game semantics use v3-owned buffers
+
+## Task 1.5 Stage 1 — Python boundary, native lifecycle pending
+
+On base `e197528` the real extension exposes only the Task 1.3 header encoder;
+Task 1.2 grammar is Rust-internal. The owner explicitly limits this episode to
+Python work that can be checked before Task 1.4 merges. Existing-concept search
+covered caller-owned buffers, adapter, codec, seed streams, fences, rollback,
+reward and negative GPU evidence; this Reference and the reward Reference own
+the adaptation. No new concept, Lesson or result board is warranted.
+
+The adapter allocates one set of 29 structured observation and six transition
+tensors, with one NumPy view per output. Exact native keyword calls fill those
+buffers; construction observes without another reset. Every reset/step/truncate
+fences the current CUDA stream first when storage is pinned. CPU/unpinned
+methods make no CUDA call. Requested unavailable pinning fails before the Mac's
+unsafe allocator path. Strict CPU int64 actions and bool masks are borrowed
+through one zero-copy input view per call; no Python rewards or grammar enter
+the live path. Diagnostics delegate lazily and full snapshots stay outside
+policy inputs. The native contract preserves outputs on error and selected-row
+truncate behavior; fake checks establish only the adapter's lack of extra writes.
+
+The factory retains Isaiah's exact Orbit constructor and Task 3.4's single
+observation-tag config union. Kaggriculture receives `base_seed+rank` and
+`world_size` stride, the existing `reward_shaping` field, top-level reward mode,
+and action-owned hire limit. Seed/count validation is strict; the game envelope
+explicitly canonicalizes integral JSON floats, as the real header encoder
+independently confirms. The cold codec delegates grammar to pending native
+functions and publishes batch output only after every seat succeeds. The Task
+1.4 stub is copied verbatim; a stub is not a runtime binding.
+
+Changed-path inventory: `python/owl/kaggriculture/env.py`, `codec.py`, `types.py`,
+`config.py`, `python/owl/game.py`, `python/owl/rs.pyi`;
+`tests/kaggriculture/fake_env.py`, `test_env.py`, `test_env_cuda_fence.py`,
+`test_codec.py`, `test_game.py`; `docs/rl-api-specs.md`, the appended Stage 1
+reconciliation in `ops/rebuild-2026-09-29/briefs/1.5.md`, this Reference/index/log
+and receipts in `ops/rebuild-2026-09-29/stage1-adapter/`. Reward/config migration
+paths and their checks are inventoried in [[reward-reuse-preserves-objective-and-critic-semantics|the reward Reference]].
+
+Independent evidence: the exact-signature fake rejects incorrect keyword calls;
+all 35 shapes/dtypes, disjoint storage and stable views are asserted, input
+pointers share caller tensors, and fence ordering/conditions are exercised with
+CPU spies. The real Task 1.3 encoder proves seat 1 private inventory cannot
+change seat 0's allocated row. Factory tests establish 64 implied seeds/rank are
+disjoint and demonstrate the rejected finite-offset collision. Full Python
+preparation passed with 1,705 tests and 22 skips, including unchanged Isaiah
+suites; focused adapter tests passed 29 with two skips, game tests 26 with one,
+and codec tests six with one. Import-red and subsequent green logs retain actual
+failures, including corrected fixture/test-helper mistakes. The receipt names
+commands, exits and all inherited versus new skips.
+
+Future consequence: Task 3.1 can consume the typed boundary after Task 1.4 and
+Stage 2 qualification. Stage 2 must remove the explicit binding skips and test
+real admission, reward fixture/schema, codec replay, seed consumption, live
+seat actions and rollback. Native table loading and the model's stand-in remain
+unchanged here. The pod DMA test is written with all 35 destination tensors
+allocated before the delayed copies and includes fence-removal mutation; it has
+not run. Native transactions, CUDA/pinned behavior, trainer integration and
+complete-work throughput remain unqualified. No Rust/engine bytes, runner,
+trainer, model, dependencies or Isaiah tests changed, and no build, training,
+GPU or performance run occurred.
 
 ## Task 1.2 — current rebuild
 
