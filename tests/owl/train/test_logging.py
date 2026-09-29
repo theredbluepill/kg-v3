@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -19,14 +21,17 @@ from owl.train.logging import (
     TelemetryMode,
     WandbLogger,
     WandbMode,
+    WandbRunFacts,
     check_telemetry,
     config_sha256,
     create_logger,
     create_metric_logger,
+    git_source_commit,
     plan_attempt,
     read_attempts,
     record_attempt,
     require_wandb_credentials,
+    resolve_source_commit,
     telemetry_mode,
     wandb_credential_source,
     wandb_host,
@@ -297,7 +302,13 @@ class _FakeRun:
         self.project = kwargs["project"]
         self.entity = "team"
         self.url = None if kwargs["mode"] == "offline" else "https://wandb.ai/x"
+        self.offline = kwargs["mode"] == "offline"
+        self.disabled = False
         self.summary: dict[str, Any] = {}
+        self.finished: list[int] = []
+
+    def finish(self, *, exit_code: int = 0) -> None:
+        self.finished.append(exit_code)
 
 
 @pytest.mark.parametrize(
@@ -569,3 +580,191 @@ def test_resume_forwards_the_saved_run_id_with_resume_must(
     assert run.kwargs["id"] == "abc123"
     assert run.kwargs["resume"] == "must"
     assert run.kwargs["mode"] == mode
+
+
+# --- claude-verify-wandb-r1 ----------------------------------------------------
+
+
+@pytest.mark.parametrize("wandb_mode", [WandbMode.ONLINE, WandbMode.OFFLINE])
+@pytest.mark.parametrize(
+    ("environ", "error", "message"),
+    [
+        # wandb 0.26.1 rejects each inside wandb.init, even in offline mode.
+        ({"WANDB_BASE_URL": ""}, ValueError, "WANDB_BASE_URL is set but empty"),
+        (
+            {"WANDB_BASE_URL": "api.wandb.ai"},
+            ValueError,
+            "http\\(s\\) URL with a host",
+        ),
+        ({"WANDB_API_KEY": "  "}, MissingWandbCredentialsError, "blank or padded"),
+        ({"WANDB_API_KEY": ""}, MissingWandbCredentialsError, "blank or padded"),
+        (
+            {"WANDB_API_KEY": f" {_SECRET}"},
+            MissingWandbCredentialsError,
+            "blank or padded",
+        ),
+    ],
+)
+def test_gate_rejects_settings_wandb_init_would_reject_in_both_modes(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    wandb_mode: WandbMode,
+    environ: dict[str, str],
+    error: type[Exception],
+    message: str,
+) -> None:
+    # A valid netrc so only the rejected setting can fail the online gate.
+    _netrc(tmp_path, f"machine api.wandb.ai login user password {_SECRET}\n")
+
+    with pytest.raises(error, match=message) as info:
+        check_telemetry(LogMode.WANDB, wandb_mode, environ=environ, home=tmp_path)
+
+    assert _SECRET not in str(info.value)
+    assert "OUTAGE" not in capsys.readouterr().err
+
+
+def test_debug_logging_ignores_wandb_settings_it_never_uses(tmp_path: Path) -> None:
+    environ = {"WANDB_BASE_URL": "", "WANDB_API_KEY": "  "}
+    assert (
+        check_telemetry(LogMode.DEBUG, WandbMode.ONLINE, environ=environ, home=tmp_path)
+        is TelemetryMode.DISABLED
+    )
+
+
+def test_offline_gate_accepts_a_valid_key_and_url_without_netrc(tmp_path: Path) -> None:
+    environ = {"WANDB_BASE_URL": "https://w.example:8443", "WANDB_API_KEY": _SECRET}
+    assert (
+        check_telemetry(
+            LogMode.WANDB, WandbMode.OFFLINE, environ=environ, home=tmp_path
+        )
+        is TelemetryMode.WANDB_OFFLINE
+    )
+
+
+def test_record_rejects_a_wandb_logger_under_disabled_telemetry(
+    tmp_path: Path,
+) -> None:
+    class _WandbFactsLogger(_Logger):
+        def wandb_run_facts(self) -> WandbRunFacts | None:
+            return WandbRunFacts(project="kg-v3", entity=None, url=None)
+
+    identity = _plan(tmp_path, telemetry=TelemetryMode.DISABLED)
+    with pytest.raises(RuntimeError, match="does not match telemetry_mode=disabled"):
+        record_attempt(tmp_path, identity, _WandbFactsLogger("r1"), start_env_steps=0)
+    assert not (tmp_path / ATTEMPTS_FILE).exists()
+
+
+def _git_repo(path: Path) -> str:
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", "-c", "user.name=t", "-c", "user.email=t@example.com", *args],
+            check=True,
+            capture_output=True,
+            text=True,
+            cwd=path,
+        ).stdout.strip()
+
+    git("init", "-q")
+    (path / "tracked.txt").write_text("a\n")
+    git("add", "tracked.txt")
+    git("commit", "-q", "-m", "init")
+    return git("rev-parse", "HEAD")
+
+
+def test_git_source_commit_marks_tracked_edits_dirty(tmp_path: Path) -> None:
+    head = _git_repo(tmp_path)
+    assert git_source_commit(tmp_path) == head
+
+    (tmp_path / "untracked.txt").write_text("ignored by the dirty check\n")
+    assert git_source_commit(tmp_path) == head
+
+    (tmp_path / "tracked.txt").write_text("b\n")
+    assert git_source_commit(tmp_path) == f"{head}-dirty"
+
+
+def test_git_source_commit_is_none_without_git_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path.parent))
+    assert git_source_commit(tmp_path) is None
+
+
+def test_source_commit_flag_is_only_for_checkouts_without_git(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    head = _git_repo(tmp_path)
+    assert resolve_source_commit(tmp_path, override=None) == head
+    # Matching the checkout is harmless; a different value is rejected.
+    assert resolve_source_commit(tmp_path, override=head) == head
+    with pytest.raises(ValueError, match="disagrees with git"):
+        resolve_source_commit(tmp_path, override="0" * 40)
+    (tmp_path / "tracked.txt").write_text("b\n")
+    with pytest.raises(ValueError, match="disagrees with git"):
+        resolve_source_commit(tmp_path, override=head)
+
+    no_git = tmp_path / "no-git"
+    no_git.mkdir()
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
+    assert resolve_source_commit(no_git, override="v3-src-abc") == "v3-src-abc"
+    with pytest.raises(RuntimeError, match="pass --source-commit"):
+        resolve_source_commit(no_git, override=None)
+    for bad in ("", " abc", "a b"):
+        with pytest.raises(ValueError, match="--source-commit must be"):
+            resolve_source_commit(no_git, override=bad)
+
+
+@pytest.mark.parametrize("started_at", ["", "yesterday", "2026-09-29T12:00:00", 7])
+def test_receipts_need_a_timezone_aware_started_at(
+    tmp_path: Path, started_at: object
+) -> None:
+    records = _receipt_lines(tmp_path)
+    assert datetime.fromisoformat(records[0]["started_at"]).tzinfo is not None
+    records[1]["started_at"] = started_at
+    path = tmp_path / "attempts.jsonl"
+    _write_receipts(path, records)
+
+    with pytest.raises(ValueError, match="malformed fields: started_at"):
+        read_attempts(path)
+
+
+def test_netrc_entry_export_fills_a_missing_login(tmp_path: Path) -> None:
+    _netrc(tmp_path, f"machine api.wandb.ai password {_SECRET}\n")
+
+    assert wandb_netrc_entry({}, home=tmp_path) == (
+        f"machine api.wandb.ai login user password {_SECRET}\n"
+    )
+
+
+@pytest.mark.parametrize(
+    ("requested", "offline", "disabled", "observed"),
+    [
+        (TelemetryMode.WANDB_ONLINE, True, False, "offline"),
+        (TelemetryMode.WANDB_ONLINE, False, True, "disabled"),
+        (TelemetryMode.WANDB_OFFLINE, False, False, "online"),
+        (TelemetryMode.WANDB_OFFLINE, True, True, "disabled"),
+    ],
+)
+def test_wandb_logger_rejects_a_run_the_sdk_started_in_another_mode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    requested: TelemetryMode,
+    offline: bool,
+    disabled: bool,
+    observed: str,
+) -> None:
+    runs: list[_FakeRun] = []
+
+    def init(**kwargs: Any) -> _FakeRun:
+        runs.append(_FakeRun(kwargs))
+        runs[-1].offline = offline
+        runs[-1].disabled = disabled
+        return runs[-1]
+
+    monkeypatch.setitem(sys.modules, "wandb", SimpleNamespace(init=init, run=None))
+    identity = _plan(tmp_path, telemetry=requested)
+
+    with pytest.raises(RuntimeError, match=f"started the run {observed}"):
+        create_metric_logger(tmp_path, config={}, game="orbit", identity=identity)
+
+    (run,) = runs
+    assert run.finished == [1]

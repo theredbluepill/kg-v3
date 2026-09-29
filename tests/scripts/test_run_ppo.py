@@ -11,6 +11,7 @@ from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 
+import owl.train.logging as train_logging
 import pytest
 import torch
 from owl.checkpoint_quantization import (
@@ -3691,7 +3692,9 @@ def test_main_fails_fast_without_wandb_credentials(
     monkeypatch.setattr(
         run_ppo.FullConfig, "from_file", reached("FullConfig.from_file")
     )
-    monkeypatch.setattr(run_ppo, "git_source_commit", reached("git_source_commit"))
+    monkeypatch.setattr(
+        run_ppo, "resolve_source_commit", reached("resolve_source_commit")
+    )
 
     with pytest.raises(
         MissingWandbCredentialsError, match=re.escape("api.wandb.ai")
@@ -3802,3 +3805,223 @@ def test_run_training_session_requires_the_main_rank_identity(
             max_runtime_seconds=None,
             distributed=DistributedContext.single_process_cpu(),
         )
+
+
+# --- main-level receipt wiring (claude-verify-wandb-r1 F2) ---------------------
+
+
+class _StartupTrainer:
+    def __init__(self, **kwargs: object) -> None:
+        self.model = kwargs["model"]
+
+    def load_checkpoint(self, path: Path) -> run_ppo.PPOCheckpointMetadata:
+        assert path.name == run_ppo.CHECKPOINT_FINAL
+        return run_ppo.PPOCheckpointMetadata(env_steps=64, wandb_run_id="off1")
+
+    def set_teacher_model(self, *_args: object, **_kwargs: object) -> None:
+        return None
+
+
+def _patch_orbit_startup(
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+    *,
+    envs_built: list[int],
+    session: dict[str, object],
+) -> None:
+    """Stub everything past plan_attempt so main's receipt wiring is observable."""
+
+    class FakeEnv:
+        def __init__(self, *, n_envs: int, **_kwargs: object) -> None:
+            envs_built.append(n_envs)
+            self.n_envs = n_envs
+
+    monkeypatch.setattr(sys, "argv", ["run_ppo.py", *argv])
+    monkeypatch.setattr(run_ppo, "assert_release_build", lambda: None)
+    monkeypatch.setattr(run_ppo, "configure_torch", lambda: None)
+    monkeypatch.setattr(
+        run_ppo,
+        "distributed_session",
+        lambda: nullcontext(DistributedContext.single_process_cpu()),
+    )
+    monkeypatch.setattr(run_ppo, "VectorizedEnv", FakeEnv)
+    monkeypatch.setattr(
+        run_ppo, "_create_model", lambda *_a, **_k: torch.nn.Linear(1, 1)
+    )
+    monkeypatch.setattr(run_ppo, "configure_model_compile", lambda *_args: 0)
+    monkeypatch.setattr(
+        run_ppo,
+        "create_optimizer",
+        lambda model, _cfg: torch.optim.SGD(model.parameters(), lr=0.1),
+    )
+    monkeypatch.setattr(run_ppo, "create_lr_scheduler", lambda *_args: None)
+    monkeypatch.setattr(run_ppo, "PPOTrainer", _StartupTrainer)
+    monkeypatch.setattr(
+        run_ppo, "_create_eval_model_for_config", lambda *_a, **_k: None
+    )
+    monkeypatch.setattr(
+        run_ppo,
+        "_load_model_from_checkpoint",
+        lambda *_a, **_k: run_ppo.PPOCheckpointMetadata(
+            env_steps=64, wandb_run_id="off1"
+        ),
+    )
+    monkeypatch.setattr(run_ppo, "_compile_eval_model", lambda *_a, **_k: None)
+    monkeypatch.setattr(
+        run_ppo, "_run_training_session", lambda **kwargs: session.update(kwargs)
+    )
+    for name in ("WANDB_API_KEY", "NETRC", "WANDB_BASE_URL", "WANDB_MODE"):
+        monkeypatch.delenv(name, raising=False)
+
+
+def _without_git(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A checkout without git metadata, where --source-commit is the identity."""
+    monkeypatch.setattr(train_logging, "git_source_commit", lambda _cwd: None)
+
+
+def test_main_fresh_launch_plans_attempt_zero_with_the_flags(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    _full_config().to_file(config_path)
+    envs_built: list[int] = []
+    session: dict[str, object] = {}
+    _patch_orbit_startup(
+        monkeypatch,
+        [
+            str(config_path),
+            str(tmp_path / "runs"),
+            "--log-mode",
+            "debug",
+            "--experiment-id",
+            "exp-fresh",
+            "--source-commit",
+            "v3-src-1",
+        ],
+        envs_built=envs_built,
+        session=session,
+    )
+    _without_git(monkeypatch)
+
+    run_ppo.main()
+
+    identity = session["identity"]
+    assert isinstance(identity, RunIdentity)
+    assert identity.experiment_id == "exp-fresh"
+    assert identity.job_type == "ppo"
+    assert identity.attempt == 0
+    assert identity.source_commit == "v3-src-1"
+    assert identity.attempt_source_commits == ("v3-src-1",)
+    assert identity.telemetry is TelemetryMode.DISABLED
+    cfg = session["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert identity.config_sha256 == train_logging.config_sha256(cfg)
+    run_dir = session["run_dir"]
+    assert isinstance(run_dir, Path)
+    assert identity.config_sha256 == train_logging.config_sha256(
+        FullConfig.from_file(run_dir / "config.yaml")
+    )
+    assert envs_built == [2]
+
+
+def test_main_rejects_a_source_commit_that_disagrees_with_git(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    _full_config().to_file(config_path)
+    envs_built: list[int] = []
+    _patch_orbit_startup(
+        monkeypatch,
+        [
+            str(config_path),
+            str(tmp_path / "runs"),
+            "--log-mode",
+            "debug",
+            "--source-commit",
+            "not-the-checkout",
+        ],
+        envs_built=envs_built,
+        session={},
+    )
+    monkeypatch.setattr(train_logging, "git_source_commit", lambda _cwd: "abc123")
+
+    with pytest.raises(ValueError, match="disagrees with git"):
+        run_ppo.main()
+
+    assert envs_built == []
+    assert not (tmp_path / "runs").exists()
+
+
+def _resumable_run_dir(tmp_path: Path, *, with_receipt: bool) -> Path:
+    run_dir = tmp_path / "runs" / "20260930-000000"
+    run_dir.mkdir(parents=True)
+    cfg = run_ppo._with_runtime_gpus(_full_config(), 1)
+    cfg.to_file(run_dir / "config.yaml")
+    (run_dir / run_ppo.CHECKPOINT_FINAL).write_bytes(b"stub")
+    (run_dir / run_ppo.CHECKPOINT_LAST_BEST).write_bytes(b"stub")
+    if with_receipt:
+        identity = train_logging.plan_attempt(
+            run_dir,
+            job_type="ppo",
+            resume=False,
+            experiment_id="exp-resume",
+            source_commit="v3-src-0",
+            config_sha256=train_logging.config_sha256(cfg),
+            telemetry=TelemetryMode.WANDB_OFFLINE,
+        )
+        train_logging.record_attempt(
+            run_dir, identity, _FakeWandbLogger(run_id="off1"), start_env_steps=0
+        )
+    return run_dir
+
+
+def test_main_resume_with_a_receipt_plans_attempt_one(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = _resumable_run_dir(tmp_path, with_receipt=True)
+    envs_built: list[int] = []
+    session: dict[str, object] = {}
+    _patch_orbit_startup(
+        monkeypatch,
+        [
+            str(run_dir),
+            "--wandb-mode",
+            "offline",
+            "--source-commit",
+            "v3-src-1",
+        ],
+        envs_built=envs_built,
+        session=session,
+    )
+    _without_git(monkeypatch)
+
+    run_ppo.main()
+
+    identity = session["identity"]
+    assert isinstance(identity, RunIdentity)
+    assert identity.attempt == 1
+    assert identity.experiment_id == "exp-resume"
+    assert identity.attempt_source_commits == ("v3-src-0", "v3-src-1")
+    assert identity.telemetry is TelemetryMode.WANDB_OFFLINE
+    assert session["resume_run_id"] == "off1"
+    assert session["start_env_steps"] == 64
+    assert envs_built == [2]
+
+
+def test_main_resume_without_receipts_fails_before_the_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = _resumable_run_dir(tmp_path, with_receipt=False)
+    envs_built: list[int] = []
+    _patch_orbit_startup(
+        monkeypatch,
+        [str(run_dir), "--wandb-mode", "offline", "--source-commit", "v3-src-1"],
+        envs_built=envs_built,
+        session={},
+    )
+    _without_git(monkeypatch)
+
+    with pytest.raises(FileNotFoundError, match="resume needs the run's attempt"):
+        run_ppo.main()
+
+    assert envs_built == []

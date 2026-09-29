@@ -88,9 +88,9 @@ from owl.train.logging import (
     check_telemetry,
     config_sha256,
     create_logger,
-    git_source_commit,
     plan_attempt,
     record_attempt,
+    resolve_source_commit,
     telemetry_mode,
     validate_experiment_id,
 )
@@ -182,7 +182,7 @@ def main() -> None:
         # Before any config, env or model: online W&B without a key fails here.
         telemetry = _check_launch_telemetry(args, distributed)
         source_commit = (
-            args.source_commit or git_source_commit(_SCRIPT_DIR)
+            resolve_source_commit(_SCRIPT_DIR, override=args.source_commit)
             if distributed.is_main_process
             else None
         )
@@ -667,7 +667,10 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source-commit",
         default=None,
-        help="This attempt's source identity when the checkout has no git metadata",
+        help=(
+            "This attempt's source identity when the checkout has no git "
+            "metadata; rejected when it disagrees with the checkout's git commit"
+        ),
     )
     parser.add_argument(
         "-o",

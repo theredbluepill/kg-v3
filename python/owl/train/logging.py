@@ -87,13 +87,7 @@ def wandb_credential_source(environ: Mapping[str, str], *, home: Path) -> str | 
     environment key) fail here instead. Never returns or prints the key.
     """
     host = wandb_host(environ)
-    if "WANDB_API_KEY" in environ:
-        key = environ["WANDB_API_KEY"]
-        if not key or key != key.strip():
-            raise MissingWandbCredentialsError(
-                "WANDB_API_KEY is set but blank or padded with whitespace; unset "
-                "it or set the exact key"
-            )
+    if _check_environment_key(environ):
         return "WANDB_API_KEY"
     netrc_path = _netrc_path(environ, home=home)
     parsed = _read_netrc(netrc_path)
@@ -103,6 +97,23 @@ def wandb_credential_source(environ: Mapping[str, str], *, home: Path) -> str | 
     if entry is None or not entry[2]:
         return None
     return str(netrc_path)
+
+
+def _check_environment_key(environ: Mapping[str, str]) -> bool:
+    """Whether ``WANDB_API_KEY`` is set; a blank or padded one is rejected.
+
+    wandb reads a set key before netrc and rejects a blank one in every mode,
+    offline included, so it can neither be ignored nor hidden by netrc.
+    """
+    if "WANDB_API_KEY" not in environ:
+        return False
+    key = environ["WANDB_API_KEY"]
+    if not key or key != key.strip():
+        raise MissingWandbCredentialsError(
+            "WANDB_API_KEY is set but blank or padded with whitespace; unset "
+            "it or set the exact key"
+        )
+    return True
 
 
 def _read_netrc(path: Path) -> netrc.netrc | None:
@@ -171,15 +182,24 @@ def check_telemetry(
     environ: Mapping[str, str],
     home: Path,
 ) -> TelemetryMode:
-    """Startup gate: online needs credentials; an outage is announced loudly."""
+    """Startup gate: online needs credentials; an outage is announced loudly.
+
+    Either W&B mode also rejects, before any config, env or model, the
+    settings ``wandb.init`` would reject later in that mode: a ``WANDB_MODE``
+    that contradicts the flag, a malformed or empty ``WANDB_BASE_URL`` and a
+    blank or padded ``WANDB_API_KEY``. Debug logging never starts wandb.
+    """
     mode = telemetry_mode(log_mode, wandb_mode)
-    if mode is not TelemetryMode.DISABLED and "WANDB_MODE" in environ:
-        env_mode = environ["WANDB_MODE"]
-        if env_mode != wandb_mode:
-            raise ValueError(
-                f"WANDB_MODE={env_mode!r} disagrees with --wandb-mode {wandb_mode}; "
-                "unset WANDB_MODE and choose the mode with the flag"
-            )
+    if mode is not TelemetryMode.DISABLED:
+        if "WANDB_MODE" in environ:
+            env_mode = environ["WANDB_MODE"]
+            if env_mode != wandb_mode:
+                raise ValueError(
+                    f"WANDB_MODE={env_mode!r} disagrees with --wandb-mode "
+                    f"{wandb_mode}; unset WANDB_MODE and choose the mode with the flag"
+                )
+        wandb_host(environ)
+        _check_environment_key(environ)
     if mode is TelemetryMode.WANDB_ONLINE:
         require_wandb_credentials(environ, home=home)
     else:
@@ -216,10 +236,15 @@ def _netrc_path(environ: Mapping[str, str], *, home: Path) -> Path:
 def wandb_host(environ: Mapping[str, str]) -> str:
     """The netrc machine name wandb uses: the base URL's host and port.
 
-    Rejects, without quoting it, a base URL that is not http(s) with a host or
-    that embeds credentials.
+    Rejects, without quoting it, a base URL that is set but empty, is not
+    http(s) with a host or embeds credentials.
     """
-    base_url = environ.get("WANDB_BASE_URL") or DEFAULT_WANDB_BASE_URL
+    if "WANDB_BASE_URL" not in environ:
+        base_url = DEFAULT_WANDB_BASE_URL
+    elif not (base_url := environ["WANDB_BASE_URL"]):
+        raise ValueError(
+            "WANDB_BASE_URL is set but empty; unset it or set the full URL"
+        )
     try:
         parts = urlsplit(base_url)
         parts.port  # noqa: B018 - raises for a malformed port
@@ -267,16 +292,44 @@ def config_sha256(cfg: FullConfig) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def git_source_commit(cwd: Path) -> str:
-    """``HEAD`` of the checkout at ``cwd``, suffixed ``-dirty`` for tracked edits."""
+def git_source_commit(cwd: Path) -> str | None:
+    """``HEAD`` of the checkout at ``cwd``, suffixed ``-dirty`` for tracked edits.
+
+    ``None`` when git or the checkout's git metadata is unavailable.
+    """
     try:
         commit = _git(("rev-parse", "HEAD"), cwd=cwd)
         status = _git(("status", "--porcelain", "--untracked-files=no"), cwd=cwd)
-    except (OSError, subprocess.CalledProcessError) as error:
-        raise RuntimeError(
-            f"cannot read the source commit with git in {cwd}; pass --source-commit"
-        ) from error
+    except (OSError, subprocess.CalledProcessError):
+        return None
     return f"{commit}-dirty" if status else commit
+
+
+_SOURCE_COMMIT_RE = re.compile(r"\S+")
+
+
+def resolve_source_commit(cwd: Path, *, override: str | None) -> str:
+    """This attempt's source identity: git's, or ``override`` without git.
+
+    ``override`` (``--source-commit``) exists for checkouts without git
+    metadata. Where git answers, a different override is rejected rather than
+    recorded, so a stale or mistyped value cannot become the receipt's source.
+    """
+    if override is not None and not _SOURCE_COMMIT_RE.fullmatch(override):
+        raise ValueError("--source-commit must be a non-empty value without whitespace")
+    commit = git_source_commit(cwd)
+    if commit is None:
+        if override is None:
+            raise RuntimeError(
+                f"cannot read the source commit with git in {cwd}; pass --source-commit"
+            )
+        return override
+    if override is not None and override != commit:
+        raise ValueError(
+            f"--source-commit {override!r} disagrees with git's {commit!r} in "
+            f"{cwd}; drop the flag, which is only for checkouts without git"
+        )
+    return commit
 
 
 def _git(args: tuple[str, ...], *, cwd: Path) -> str:
@@ -418,7 +471,7 @@ def _check_attempt_types(record: dict[str, Any], *, where: str) -> None:
         "telemetry_mode": record["telemetry_mode"] in set(TelemetryMode),
         "start_env_steps": is_int(record["start_env_steps"])
         and record["start_env_steps"] >= 0,
-        "started_at": is_text(record["started_at"]),
+        "started_at": _is_aware_timestamp(record["started_at"]),
         **{
             key: record[key] is None or is_text(record[key])
             for key in ("wandb_project", "wandb_entity", "wandb_run_id", "wandb_url")
@@ -427,6 +480,16 @@ def _check_attempt_types(record: dict[str, Any], *, where: str) -> None:
     bad = sorted(key for key, ok in checks.items() if not ok)
     if bad:
         raise ValueError(f"{where} has malformed fields: {', '.join(bad)}")
+
+
+def _is_aware_timestamp(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return False
+    return parsed.tzinfo is not None
 
 
 def record_attempt(
@@ -547,6 +610,14 @@ class WandbLogger(MetricLogger):
             mode=_wandb_init_mode(mode),
             **init_kwargs,
         )
+        observed = _observed_wandb_mode(self._run)
+        if observed != _wandb_init_mode(mode):
+            # The receipt records the requested mode, so it must be the real one.
+            self._run.finish(exit_code=1)
+            raise RuntimeError(
+                f"W&B started the run {observed}, not {mode} as requested; "
+                "check WANDB_* settings and wandb's login state"
+            )
         for key, value in identity.wandb_summary().items():
             self._run.summary[key] = value
 
@@ -582,6 +653,12 @@ def _wandb_init_mode(mode: WandbMode) -> Literal["online", "offline"]:
             return "offline"
         case _:
             assert_never(mode)
+
+
+def _observed_wandb_mode(run: Any) -> str:
+    if run.disabled:
+        return "disabled"
+    return "offline" if run.offline else "online"
 
 
 def _game(cfg: FullConfig) -> str:

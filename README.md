@@ -322,8 +322,13 @@ the config, rank 0 checks telemetry: `--log-mode wandb` with the default
 `api.wandb.ai`; an http(s) URL without embedded credentials). The error names
 the fix: install the credential with
 `cookbook/workflows/install-the-wandb-credential-before-any-pod-launch.md`,
-which copies only that entry with `scripts/export_wandb_netrc_entry.py`. A set
-`WANDB_MODE`, even an empty one, must equal `--wandb-mode`. Running without live
+which copies only that entry with `scripts/export_wandb_netrc_entry.py`. In
+either W&B mode (online or offline) the same startup check also rejects what
+`wandb.init` would reject later: a set `WANDB_MODE`, even an empty one, that
+differs from `--wandb-mode`, a `WANDB_BASE_URL` that is set but empty or is not
+such a URL, and a set `WANDB_API_KEY` that is blank or padded. Once the run
+starts, the logger stops if W&B reports a mode other than the requested one, so
+the receipt records the mode the run actually used. Running without live
 telemetry takes an explicit flag, either `--wandb-mode offline` (metrics stay in
 the run directory's `wandb/` folder until `wandb sync`) or `--log-mode debug`
 (stdout only). Either prints a `W&B TELEMETRY OUTAGE` banner to stderr at
@@ -332,11 +337,12 @@ startup.
 Each launch or resume appends one record to the run directory's
 `attempts.jsonl`. The record holds `attempt`, `experiment_id`
 (`--experiment-id`, default the run directory name; resumes keep it), `job_type`
-`ppo`, `source_commit` (`git HEAD`, `-dirty` for tracked edits, or
-`--source-commit`), every attempt's commit so far, `config_sha256` (canonical
+`ppo`, `source_commit` (`git HEAD`, `-dirty` for tracked edits;
+`--source-commit` only where the checkout has no git metadata, and rejected when
+it disagrees with git), every attempt's commit so far, `config_sha256` (canonical
 JSON of the resolved config), `telemetry_mode` (`wandb-online`, `wandb-offline`
 or `disabled`), the W&B project, entity, run ID and URL, `start_env_steps` and
-`started_at`. Resume needs the run's `attempts.jsonl` and validates every field,
+`started_at` (a timezone-aware ISO time). Resume needs the run's `attempts.jsonl` and validates every field,
 the attempt order, a constant experiment ID and job type, and the source-commit
 history. The W&B run uses the experiment ID as its group, `ppo` as its job type,
 and tags `kaggriculture-v3`, `ppo` and the game. It stores `v3.experiment_id`
