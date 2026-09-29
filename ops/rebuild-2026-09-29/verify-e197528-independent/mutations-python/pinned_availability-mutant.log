@@ -1,0 +1,23 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_pinned_guard_never_enables_allocator_without_cuda[False] _________
+
+cuda = False
+
+    @pytest.mark.parametrize("cuda", [False, True])
+    def test_pinned_guard_never_enables_allocator_without_cuda(cuda):
+        path=Path(__file__).parent / "tests/kaggriculture/test_observe.py"
+        tree=ast.parse(path.read_text())
+        node=next(n.value for n in tree.body if isinstance(n, ast.Assign) and any(isinstance(t,ast.Name) and t.id=="_CUDA_PINNED" for t in n.targets))
+        torch=SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: cuda))
+        marker=eval(compile(ast.Expression(node),str(path),"eval"), {"pytest":pytest,"torch":torch})
+        assert marker.values == (True,)
+        skip,=marker.marks
+        assert skip.name == "skipif"
+>       assert skip.args[0] is (not cuda)
+E       assert False is not False
+
+test_pinned_guard.py:16: AssertionError
+=========================== short test summary info ============================
+FAILED test_pinned_guard.py::test_pinned_guard_never_enables_allocator_without_cuda[False]
+1 failed, 1 passed in 0.02s

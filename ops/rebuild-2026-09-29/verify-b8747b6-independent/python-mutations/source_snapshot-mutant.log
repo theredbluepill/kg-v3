@@ -1,0 +1,350 @@
+FFFFFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+_ test_regeneration_source_identity_rejects_changes_between_phases[producer-src/kaggriculture/oracle_corpus.rs] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-72/test_regeneration_source_ident0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af58dd0>
+phase = 'producer', path = 'src/kaggriculture/oracle_corpus.rs'
+
+    @pytest.mark.parametrize(
+        ("phase", "path"),
+        [
+            ("producer", "src/kaggriculture/oracle_corpus.rs"),
+            ("export", "scripts/kaggriculture_observation_oracle/record.rs"),
+            ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+            ("admission", "Cargo.lock"),
+            ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+            ("producer", "engine_rs/src/py_random.rs"),
+            ("admission", "engine_rs/Cargo.toml"),
+            ("export", "engine_rs/src/econ_attrib.rs"),
+            ("reference", "HEAD"),
+        ],
+    )
+    def test_regeneration_source_identity_rejects_changes_between_phases(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, path: str
+    ) -> None:
+        _root, calls = regeneration_harness(
+            tmp_path, monkeypatch, drift_phase=phase, drift_path=path
+        )
+        output = tmp_path / "final"
+>       with pytest.raises(ValueError, match=r"source.*changed|source.*identity"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:632: Failed
+_ test_regeneration_source_identity_rejects_changes_between_phases[export-scripts/kaggriculture_observation_oracle/record.rs] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-72/test_regeneration_source_ident1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af58e30>
+phase = 'export', path = 'scripts/kaggriculture_observation_oracle/record.rs'
+
+    @pytest.mark.parametrize(
+        ("phase", "path"),
+        [
+            ("producer", "src/kaggriculture/oracle_corpus.rs"),
+            ("export", "scripts/kaggriculture_observation_oracle/record.rs"),
+            ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+            ("admission", "Cargo.lock"),
+            ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+            ("producer", "engine_rs/src/py_random.rs"),
+            ("admission", "engine_rs/Cargo.toml"),
+            ("export", "engine_rs/src/econ_attrib.rs"),
+            ("reference", "HEAD"),
+        ],
+    )
+    def test_regeneration_source_identity_rejects_changes_between_phases(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, path: str
+    ) -> None:
+        _root, calls = regeneration_harness(
+            tmp_path, monkeypatch, drift_phase=phase, drift_path=path
+        )
+        output = tmp_path / "final"
+        with pytest.raises(ValueError, match=r"source.*changed|source.*identity"):
+>           oracle.regenerate(output, oracle.PIN)
+
+tests/tools/test_observation_oracle_custody.py:633: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/kaggriculture_observation_oracle/regenerate.py:1104: in regenerate
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = 'recorder identity changed while copying pinned source'
+
+    def require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: recorder identity changed while copying pinned source
+
+scripts/kaggriculture_observation_oracle/regenerate.py:95: ValueError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-72/test_regeneration_source_ident1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af58e30>
+phase = 'export', path = 'scripts/kaggriculture_observation_oracle/record.rs'
+
+    @pytest.mark.parametrize(
+        ("phase", "path"),
+        [
+            ("producer", "src/kaggriculture/oracle_corpus.rs"),
+            ("export", "scripts/kaggriculture_observation_oracle/record.rs"),
+            ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+            ("admission", "Cargo.lock"),
+            ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+            ("producer", "engine_rs/src/py_random.rs"),
+            ("admission", "engine_rs/Cargo.toml"),
+            ("export", "engine_rs/src/econ_attrib.rs"),
+            ("reference", "HEAD"),
+        ],
+    )
+    def test_regeneration_source_identity_rejects_changes_between_phases(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, path: str
+    ) -> None:
+        _root, calls = regeneration_harness(
+            tmp_path, monkeypatch, drift_phase=phase, drift_path=path
+        )
+        output = tmp_path / "final"
+>       with pytest.raises(ValueError, match=r"source.*changed|source.*identity"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'source.*changed|source.*identity'
+E         Actual message: 'recorder identity changed while copying pinned source'
+
+tests/tools/test_observation_oracle_custody.py:632: AssertionError
+_ test_regeneration_source_identity_rejects_changes_between_phases[reference-scripts/kaggriculture_observation_oracle/regenerate.py] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-72/test_regeneration_source_ident2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af5d130>
+phase = 'reference'
+path = 'scripts/kaggriculture_observation_oracle/regenerate.py'
+
+    @pytest.mark.parametrize(
+        ("phase", "path"),
+        [
+            ("producer", "src/kaggriculture/oracle_corpus.rs"),
+            ("export", "scripts/kaggriculture_observation_oracle/record.rs"),
+            ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+            ("admission", "Cargo.lock"),
+            ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+            ("producer", "engine_rs/src/py_random.rs"),
+            ("admission", "engine_rs/Cargo.toml"),
+            ("export", "engine_rs/src/econ_attrib.rs"),
+            ("reference", "HEAD"),
+        ],
+    )
+    def test_regeneration_source_identity_rejects_changes_between_phases(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, path: str
+    ) -> None:
+        _root, calls = regeneration_harness(
+            tmp_path, monkeypatch, drift_phase=phase, drift_path=path
+        )
+        output = tmp_path / "final"
+>       with pytest.raises(ValueError, match=r"source.*changed|source.*identity"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:632: Failed
+_ test_regeneration_source_identity_rejects_changes_between_phases[admission-Cargo.lock] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-72/test_regeneration_source_ident3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af590a0>
+phase = 'admission', path = 'Cargo.lock'
+
+    @pytest.mark.parametrize(
+        ("phase", "path"),
+        [
+            ("producer", "src/kaggriculture/oracle_corpus.rs"),
+            ("export", "scripts/kaggriculture_observation_oracle/record.rs"),
+            ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+            ("admission", "Cargo.lock"),
+            ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+            ("producer", "engine_rs/src/py_random.rs"),
+            ("admission", "engine_rs/Cargo.toml"),
+            ("export", "engine_rs/src/econ_attrib.rs"),
+            ("reference", "HEAD"),
+        ],
+    )
+    def test_regeneration_source_identity_rejects_changes_between_phases(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, path: str
+    ) -> None:
+        _root, calls = regeneration_harness(
+            tmp_path, monkeypatch, drift_phase=phase, drift_path=path
+        )
+        output = tmp_path / "final"
+>       with pytest.raises(ValueError, match=r"source.*changed|source.*identity"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:632: Failed
+_ test_regeneration_source_identity_rejects_changes_between_phases[admission-engine_rs/fixtures/episode-95324500.jsonl.gz] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-72/test_regeneration_source_ident4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af55850>
+phase = 'admission', path = 'engine_rs/fixtures/episode-95324500.jsonl.gz'
+
+    @pytest.mark.parametrize(
+        ("phase", "path"),
+        [
+            ("producer", "src/kaggriculture/oracle_corpus.rs"),
+            ("export", "scripts/kaggriculture_observation_oracle/record.rs"),
+            ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+            ("admission", "Cargo.lock"),
+            ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+            ("producer", "engine_rs/src/py_random.rs"),
+            ("admission", "engine_rs/Cargo.toml"),
+            ("export", "engine_rs/src/econ_attrib.rs"),
+            ("reference", "HEAD"),
+        ],
+    )
+    def test_regeneration_source_identity_rejects_changes_between_phases(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, path: str
+    ) -> None:
+        _root, calls = regeneration_harness(
+            tmp_path, monkeypatch, drift_phase=phase, drift_path=path
+        )
+        output = tmp_path / "final"
+>       with pytest.raises(ValueError, match=r"source.*changed|source.*identity"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:632: Failed
+_ test_regeneration_source_identity_rejects_changes_between_phases[producer-engine_rs/src/py_random.rs] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-72/test_regeneration_source_ident5')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af5bfe0>
+phase = 'producer', path = 'engine_rs/src/py_random.rs'
+
+    @pytest.mark.parametrize(
+        ("phase", "path"),
+        [
+            ("producer", "src/kaggriculture/oracle_corpus.rs"),
+            ("export", "scripts/kaggriculture_observation_oracle/record.rs"),
+            ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+            ("admission", "Cargo.lock"),
+            ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+            ("producer", "engine_rs/src/py_random.rs"),
+            ("admission", "engine_rs/Cargo.toml"),
+            ("export", "engine_rs/src/econ_attrib.rs"),
+            ("reference", "HEAD"),
+        ],
+    )
+    def test_regeneration_source_identity_rejects_changes_between_phases(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, path: str
+    ) -> None:
+        _root, calls = regeneration_harness(
+            tmp_path, monkeypatch, drift_phase=phase, drift_path=path
+        )
+        output = tmp_path / "final"
+>       with pytest.raises(ValueError, match=r"source.*changed|source.*identity"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:632: Failed
+_ test_regeneration_source_identity_rejects_changes_between_phases[admission-engine_rs/Cargo.toml] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-72/test_regeneration_source_ident6')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af574d0>
+phase = 'admission', path = 'engine_rs/Cargo.toml'
+
+    @pytest.mark.parametrize(
+        ("phase", "path"),
+        [
+            ("producer", "src/kaggriculture/oracle_corpus.rs"),
+            ("export", "scripts/kaggriculture_observation_oracle/record.rs"),
+            ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+            ("admission", "Cargo.lock"),
+            ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+            ("producer", "engine_rs/src/py_random.rs"),
+            ("admission", "engine_rs/Cargo.toml"),
+            ("export", "engine_rs/src/econ_attrib.rs"),
+            ("reference", "HEAD"),
+        ],
+    )
+    def test_regeneration_source_identity_rejects_changes_between_phases(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, path: str
+    ) -> None:
+        _root, calls = regeneration_harness(
+            tmp_path, monkeypatch, drift_phase=phase, drift_path=path
+        )
+        output = tmp_path / "final"
+>       with pytest.raises(ValueError, match=r"source.*changed|source.*identity"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:632: Failed
+_ test_regeneration_source_identity_rejects_changes_between_phases[export-engine_rs/src/econ_attrib.rs] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-72/test_regeneration_source_ident7')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af5bc80>
+phase = 'export', path = 'engine_rs/src/econ_attrib.rs'
+
+    @pytest.mark.parametrize(
+        ("phase", "path"),
+        [
+            ("producer", "src/kaggriculture/oracle_corpus.rs"),
+            ("export", "scripts/kaggriculture_observation_oracle/record.rs"),
+            ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+            ("admission", "Cargo.lock"),
+            ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+            ("producer", "engine_rs/src/py_random.rs"),
+            ("admission", "engine_rs/Cargo.toml"),
+            ("export", "engine_rs/src/econ_attrib.rs"),
+            ("reference", "HEAD"),
+        ],
+    )
+    def test_regeneration_source_identity_rejects_changes_between_phases(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, path: str
+    ) -> None:
+        _root, calls = regeneration_harness(
+            tmp_path, monkeypatch, drift_phase=phase, drift_path=path
+        )
+        output = tmp_path / "final"
+>       with pytest.raises(ValueError, match=r"source.*changed|source.*identity"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:632: Failed
+_ test_regeneration_source_identity_rejects_changes_between_phases[reference-HEAD] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-72/test_regeneration_source_ident8')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10af55e20>
+phase = 'reference', path = 'HEAD'
+
+    @pytest.mark.parametrize(
+        ("phase", "path"),
+        [
+            ("producer", "src/kaggriculture/oracle_corpus.rs"),
+            ("export", "scripts/kaggriculture_observation_oracle/record.rs"),
+            ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
+            ("admission", "Cargo.lock"),
+            ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+            ("producer", "engine_rs/src/py_random.rs"),
+            ("admission", "engine_rs/Cargo.toml"),
+            ("export", "engine_rs/src/econ_attrib.rs"),
+            ("reference", "HEAD"),
+        ],
+    )
+    def test_regeneration_source_identity_rejects_changes_between_phases(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, path: str
+    ) -> None:
+        _root, calls = regeneration_harness(
+            tmp_path, monkeypatch, drift_phase=phase, drift_path=path
+        )
+        output = tmp_path / "final"
+>       with pytest.raises(ValueError, match=r"source.*changed|source.*identity"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:632: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[producer-src/kaggriculture/oracle_corpus.rs]
+FAILED tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[export-scripts/kaggriculture_observation_oracle/record.rs]
+FAILED tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[reference-scripts/kaggriculture_observation_oracle/regenerate.py]
+FAILED tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[admission-Cargo.lock]
+FAILED tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[admission-engine_rs/fixtures/episode-95324500.jsonl.gz]
+FAILED tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[producer-engine_rs/src/py_random.rs]
+FAILED tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[admission-engine_rs/Cargo.toml]
+FAILED tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[export-engine_rs/src/econ_attrib.rs]
+FAILED tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[reference-HEAD]
+9 failed in 0.28s

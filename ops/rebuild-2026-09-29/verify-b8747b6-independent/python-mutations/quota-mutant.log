@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_final_quota_cannot_be_satisfied_by_dense_states _____________
+
+    def test_final_quota_cannot_be_satisfied_by_dense_states() -> None:
+        counts = {name: 100 for name in oracle.COVERAGE_TAGS}
+        counts["actor_gt16_states"] = 0
+>       with pytest.raises(ValueError, match=r"actor_gt16_states.*0.*4"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:216: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_observation_oracle_custody.py::test_final_quota_cannot_be_satisfied_by_dense_states
+1 failed in 0.03s

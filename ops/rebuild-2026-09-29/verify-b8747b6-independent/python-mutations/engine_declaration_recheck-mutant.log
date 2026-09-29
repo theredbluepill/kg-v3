@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________________ test_recheck_declares_new_sources _______________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-94/test_recheck_declares_new_sour0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106e670e0>
+
+    def test_recheck_declares_new_sources(tmp_path,monkeypatch):
+        _engine(tmp_path)
+        monkeypatch.setattr(oracle,"ROOT",tmp_path)
+        monkeypatch.setattr(oracle,"run",lambda *args,**kwargs: b"a"*40)
+        oracle.check_source_snapshot(("a"*40, ()))
+        (tmp_path/"engine_rs/src/unlisted.rs").write_bytes(b"source")
+>       with pytest.raises(ValueError,match="undeclared engine source"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+test_snapshot_inventory.py:30: Failed
+=========================== short test summary info ============================
+FAILED test_snapshot_inventory.py::test_recheck_declares_new_sources - Failed...
+1 failed in 0.02s

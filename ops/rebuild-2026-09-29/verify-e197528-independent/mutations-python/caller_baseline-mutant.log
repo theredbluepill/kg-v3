@@ -1,0 +1,93 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_preexisting_caller_memory_is_not_charged_to_the_child __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ba6cc20>
+
+    def test_preexisting_caller_memory_is_not_charged_to_the_child(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # A large caller (pytest with torch under `just prepare`) already holds more
+        # than the budget before launch; only growth after launch counts.
+        real = oracle.group_rss
+        caller = os.getpgrp()
+        monkeypatch.setattr(
+            oracle,
+            "group_rss",
+            lambda group: 1_500_000_000 if group == caller else real(group),
+        )
+>       assert oracle.run([sys.executable, "-c", "print('ok')"]) == b"ok\n"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/tools/test_observation_oracle_custody.py:338: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+argv = ['/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python', '-c', "print('ok')"]
+
+    def run(
+        argv: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None
+    ) -> bytes:
+        """Hard wall/process-group cleanup; sampled aggregate RSS stays below 1 GB.
+    
+        The budget charges the child group plus caller-group growth after launch.
+        Memory the caller already held (for example pytest with torch loaded under
+        `just prepare`) is the caller's, not this command's.
+        """
+        if time.monotonic() >= RUN_DEADLINE:
+            raise RuntimeError("shared oracle execution deadline expired before launch")
+        caller_baseline = 0
+        with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
+            start = time.monotonic()
+            peak = 0
+            reason = None
+            process = subprocess.Popen(
+                argv, cwd=cwd, env=env, stdout=stdout, stderr=stderr, start_new_session=True
+            )
+            try:
+                while process.poll() is None:
+                    # Include the driver/caller group as well as this new child group.
+                    caller_growth = max(0, group_rss(os.getpgrp()) - caller_baseline)
+                    peak = max(peak, group_rss(process.pid) + caller_growth)
+                    now = time.monotonic()
+                    if peak >= 1_000_000_000 or now - start >= 120 or now >= RUN_DEADLINE:
+                        reason = (
+                            "aggregate RSS"
+                            if peak >= 1_000_000_000
+                            else "shared execution deadline"
+                            if now >= RUN_DEADLINE
+                            else "120-second wall limit"
+                        )
+                        os.killpg(process.pid, signal.SIGKILL)
+                        break
+                    time.sleep(0.05)
+                code = process.wait()
+            except BaseException:
+                with contextlib.suppress(ProcessLookupError):
+                    os.killpg(process.pid, signal.SIGKILL)
+                process.wait()
+                raise
+            stdout.seek(0)
+            result = stdout.read()
+            stderr.seek(0)
+            errors = stderr.read()
+            COMMAND_RECEIPTS.append(
+                {
+                    "argv": argv,
+                    "exit_status": code,
+                    "wall_seconds": time.monotonic() - start,
+                    "sampled_child_group_and_caller_growth_peak_rss_bytes": peak,
+                    "stop_reason": reason,
+                }
+            )
+            if code != 0 or reason is not None:
+>               raise RuntimeError(
+                    f"bounded offline command failed: {argv}; exit={code}; "
+                    f"reason={reason}; peak_rss={peak}; "
+                    f"stdout={result!r}; stderr={errors!r}"
+                )
+E               RuntimeError: bounded offline command failed: ['/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python', '-c', "print('ok')"]; exit=-9; reason=aggregate RSS; peak_rss=1500655360; stdout=b''; stderr=b''
+
+scripts/kaggriculture_observation_oracle/regenerate.py:873: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/tools/test_observation_oracle_custody.py::test_preexisting_caller_memory_is_not_charged_to_the_child
+1 failed in 0.04s

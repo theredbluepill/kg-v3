@@ -1,0 +1,1 @@
+Independent verification of e197528 against b51b0c0...HEAD. Target: preserve both parent implementations and tests, reject deliberate mutations via new oracles and guards, verify required suites. Stop on completed checks plus reviewed findings or concrete environment limit. No tracked edits. Artifacts in this folder; preexisting verify-merge-1.3 artifacts are not this run.

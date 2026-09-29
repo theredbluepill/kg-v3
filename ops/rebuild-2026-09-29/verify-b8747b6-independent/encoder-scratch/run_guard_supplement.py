@@ -1,0 +1,16 @@
+from pathlib import Path
+source=(Path(__file__).parent/'run_mutations.py').read_text()
+exec(source[:source.index('tracked=subprocess')])
+OUT=OUT/'guard-supplement';OUT.mkdir(exist_ok=True)
+jobs=[]
+add('config-positive-integers',BASE+'config.rs','if value < i64::from(positive) {','if false && value < i64::from(positive) {','config_rejects_envelope_violations_without_output_writes')
+add('public-clock',BASE+'observe.rs','if day != step / config.turns_per_day {','if false && day != step / config.turns_per_day {','config_rejects_farm_count_clock_and_nonfinite_derived_context_transactionally')
+add('strict-tile-keys',BASE+'observe.rs','if tile.len() != keys.len() || keys.iter().any(|key| !tile.contains_key(*key)) {','if false && (tile.len() != keys.len() || keys.iter().any(|key| !tile.contains_key(*key))) {','tile_strict_constructor_keys_reject_stale_null_missing_and_unknown_fields')
+add('tile-sentinel-integers',BASE+'observe.rs','if value < minimum {','if false && value < minimum {','tile_integer_fields_reject_fractional_wrong_types_ranges_and_negative_counts')
+add('actor-inventory-cardinality',BASE+'observe.rs','if private.inventories.len() != farm.hands.len() + 1 {','if false && private.inventories.len() != farm.hands.len() + 1 {','actors_reject_malformed_positions_cardinality_and_private_counts_atomically')
+add('private-negative-count',BASE+'observe.rs','if *count < 0 {','if false && *count < 0 {','storage_rejects_unknown_items_negative_counts_and_bad_quadrants_atomically')
+add('duplicate-quadrants',BASE+'observe.rs','if seen[index] {','if false && seen[index] {','storage_rejects_unknown_items_negative_counts_and_bad_quadrants_atomically')
+add('market-integer-representation',BASE+'observe.rs','value.as_i64().ok_or_else(|| {','value.as_i64().or_else(|| value.as_f64().map(|v| v as i64)).ok_or_else(|| {','context_market_rejects_missing_unknown_fractional_and_wrong_type_values')
+add('producer-order-comparator',BASE+'oracle_corpus.rs','if a.keys().ne(b.keys()) {','if false && a.keys().ne(b.keys()) {','producer_comparator_detects_values_nested_orders_and_money_bits')
+add('producer-gzip-exact-eof',BASE+'oracle_corpus.rs','self.fill_buf()?.is_empty(),','{ io::copy(&mut self, &mut io::sink())?; true },','producer_gzip_stream_requires_eof_and_success')
+exec(source[source.index('tracked=subprocess'):])

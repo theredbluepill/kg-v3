@@ -1,0 +1,65 @@
+[
+  {
+    "name": "heads-noncompiled",
+    "argv": [
+      "uv",
+      "run",
+      "--no-sync",
+      "pytest",
+      "tests/kaggriculture/test_model_heads.py",
+      "-q",
+      "-k",
+      "not fullgraph_captured_core",
+      "--tb=short"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 4.7093616659999995,
+    "sampled_process_group_peak_rss_bytes": 994820096,
+    "stop_reason": null,
+    "time_limit_seconds": 120.0,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "summary": "................................................................         [100%]\n64 passed, 1 deselected in 3.51s\n"
+  },
+  {
+    "name": "heads-compiled",
+    "argv": [
+      "uv",
+      "run",
+      "--no-sync",
+      "pytest",
+      "tests/kaggriculture/test_model_heads.py::test_fullgraph_captured_core_matches_eager_density_and_gradients",
+      "-q",
+      "--tb=short"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 3.757669042,
+    "sampled_process_group_peak_rss_bytes": 415907840,
+    "stop_reason": null,
+    "time_limit_seconds": 120.0,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "summary": ".                                                                        [100%]\n1 passed in 2.66s\n"
+  },
+  {
+    "name": "custody",
+    "argv": [
+      "uv",
+      "run",
+      "--no-sync",
+      "pytest",
+      "tests/tools/test_observation_oracle_custody.py",
+      "tests/tools/test_check_engine_trim.py",
+      "-q",
+      "--tb=short"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 3.4344333750000002,
+    "sampled_process_group_peak_rss_bytes": 112984064,
+    "stop_reason": null,
+    "time_limit_seconds": 120.0,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "summary": "........................................................................ [ 58%]\n....................................................                     [100%]\n124 passed in 3.22s\n"
+  }
+]

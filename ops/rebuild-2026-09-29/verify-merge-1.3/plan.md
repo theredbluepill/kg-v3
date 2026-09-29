@@ -1,0 +1,1 @@
+Independent verification of e197528 against b51b0c0 and dc6b200. No tracked modification. Required baseline checks use 120s/1GB sampled process-group bounds; shard Python if needed. Scratch mutations must fail the intended semantic/guard assertion, restore exact SHA256, and pass on restoration. Stop each diagnostic at completion/resource bound. GPU/timing not under qualification.

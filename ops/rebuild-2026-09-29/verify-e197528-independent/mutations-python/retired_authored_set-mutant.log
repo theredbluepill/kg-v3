@@ -1,0 +1,56 @@
+...F.                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_task_authored_inventory_requires_exact_authored_set[paths3-Engine authored set: missing=\\[\\]; extra=.*grammar_kernel.rs] _
+
+paths = ['engine_rs/tests/replay_parity.rs', 'engine_rs/fixtures/generated/MANIFEST.json', 'engine_rs/tests/grammar_kernel.rs']
+message = 'Engine authored set: missing=\\[\\]; extra=.*grammar_kernel.rs'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            (
+                [],
+                r"Engine authored set: missing=.*MANIFEST.json.*replay_parity",
+            ),
+            (
+                [checker.GENERATED_MANIFEST],
+                r"Engine authored set: missing=.*replay_parity",
+            ),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Engine authored set: missing=.*generated/MANIFEST.json",
+            ),
+            (
+                # Contract v4.1 retired the grammar bridge into root integration.
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    checker.GENERATED_MANIFEST,
+                    "engine_rs/tests/grammar_kernel.rs",
+                ],
+                r"Engine authored set: missing=\[\]; extra=.*grammar_kernel.rs",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    checker.GENERATED_MANIFEST,
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Engine authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_authored_set(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:113: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_authored_set[paths3-Engine authored set: missing=\\[\\]; extra=.*grammar_kernel.rs]
+1 failed, 4 passed in 0.03s

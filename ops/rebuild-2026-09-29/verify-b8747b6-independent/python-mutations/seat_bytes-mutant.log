@@ -1,0 +1,77 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_custody_rejects_corruption_even_with_rehashed_files[byte] ________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-54/test_custody_rejects_corruptio0')
+damage = 'byte'
+
+    @pytest.mark.parametrize(
+        "damage",
+        [
+            "byte",
+            "header_order",
+            "duplicate",
+            "missing",
+            "seat_swap",
+            "length",
+            "version",
+            "unknown",
+            "source",
+            "duplicate_json_key",
+            "coverage",
+        ],
+    )
+    def test_custody_rejects_corruption_even_with_rehashed_files(
+        tmp_path: Path, damage: str
+    ) -> None:
+        manifest, rows, features = fixture(tmp_path)
+        if damage == "byte":
+            features = bytes([features[0] ^ 1]) + features[1:]
+        elif damage == "header_order":
+            inv = rows[0]["header"]["initial"]["privates"][0]["shed"]
+            key = next(iter(inv))
+            inv[key] = inv.pop(key)
+        elif damage == "duplicate":
+            rows[1]["record_id"] = rows[0]["record_id"]
+            manifest["records"][1]["record_id"] = rows[0]["record_id"]
+        elif damage == "missing":
+            rows.pop()
+        elif damage == "seat_swap":
+            features = features[32704:65408] + features[:32704] + features[65408:]
+        elif damage == "length":
+            features = features[:-4]
+        elif damage == "version":
+            manifest["schema_version"] = 2
+        elif damage == "unknown":
+            manifest["unreviewed"] = True
+        elif damage == "source":
+            rows[0]["source"]["kind"] = "borrowed"
+        elif damage == "coverage":
+            manifest["coverage"]["non_synthetic"]["actor_gt16_states"] += 4
+        install(tmp_path, manifest, rows, features)
+        if damage == "duplicate_json_key":
+            text = (tmp_path / "manifest.json").read_text()
+            (tmp_path / "manifest.json").write_text(
+                text.replace('"schema_version":1', '"schema_version":1,"schema_version":1')
+            )
+        errors = {
+            "byte": "feature block hash mismatch",
+            "header_order": "header bytes/key-order hash mismatch",
+            "duplicate": "duplicate record id",
+            "missing": "missing/extra records",
+            "seat_swap": "feature block hash mismatch",
+            "length": "reference byte length mismatch",
+            "version": "unsupported schema/contract version",
+            "unknown": "manifest: exact schema keys",
+            "source": "invalid source tag",
+            "duplicate_json_key": "duplicate JSON key",
+            "coverage": "coverage counts disagree",
+        }
+>       with pytest.raises(ValueError, match=errors[damage]):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:209: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[byte]
+1 failed in 0.04s

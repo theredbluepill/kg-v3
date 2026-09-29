@@ -1,0 +1,45 @@
+{
+  "head": "7b5eacd0d393ef65f6bec0998184ed3ae160d378",
+  "base_and_merge_base": "f464c3db45449ce362fde25c5d9b37f88ad20e5e",
+  "reference": "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0",
+  "engine": {
+    "passed": 87,
+    "failed": 0,
+    "ignored": 0
+  },
+  "root": {
+    "passed": 244,
+    "failed": 0,
+    "ignored": 4,
+    "require_parity_fixtures": true
+  },
+  "orbit_python": {
+    "passed": 787,
+    "skipped": 3,
+    "files": 22,
+    "execution": "one pytest process per file"
+  },
+  "kaggriculture_python": {
+    "passed": 311,
+    "skipped": 1,
+    "deselected": 2,
+    "execution": "file-sharded; two native pinned cases deselected after reproducible SIGSEGV",
+    "complete_green": false
+  },
+  "custody_python": {
+    "passed": 45
+  },
+  "mutant": {
+    "mutation": "swap inventory and price only in production write_shops_and_market",
+    "before_sha256": "0d84eb9df01f699767fc674996e5eae14be31c09f70b058b5af35fce36365749",
+    "restored_sha256": "0d84eb9df01f699767fc674996e5eae14be31c09f70b058b5af35fce36365749",
+    "byte_exact_restored": true,
+    "mutant_exit_status": 101
+  },
+  "limits": [
+    "optimized timing not reattempted: documented memory-limited handoff",
+    "pinned-host cases unqualified; runtime probe crashes this host",
+    "combined pytest was stopped at the 1 GB guard; file inputs were unchanged"
+  ],
+  "verdict": "APPROVE WITH EDITS"
+}

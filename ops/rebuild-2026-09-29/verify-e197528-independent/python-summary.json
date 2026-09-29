@@ -1,0 +1,42 @@
+{
+  "counts": {
+    "tests": 1625,
+    "skipped": 7,
+    "failures": 0,
+    "errors": 0,
+    "passed": 1618
+  },
+  "unique_testcases": 1625,
+  "successful_shards": 45,
+  "guarded_attempts": [],
+  "skips": [
+    [
+      "tests.kaggriculture.test_gpu_grammar::test_native_tables_match_expected_tables",
+      "Task 1.2/1.4 native grammar binding not available: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists"
+    ],
+    [
+      "tests.kaggriculture.test_observe::test_native_writer_uses_real_schema_and_keeps_all_pointers[pinned-1]",
+      "pinned host memory requires CUDA"
+    ],
+    [
+      "tests.kaggriculture.test_observe::test_native_writer_uses_real_schema_and_keeps_all_pointers[pinned-2]",
+      "pinned host memory requires CUDA"
+    ],
+    [
+      "tests.owl.model.test_attn::test_varlen_attention_flash_backend",
+      "flash-attn CUDA backend is not available"
+    ],
+    [
+      "tests.owl.model.test_attn::test_varlen_attention_matches_torch_sdpa_per_sequence",
+      "flash-attn CUDA backend is not available"
+    ],
+    [
+      "tests.owl.test_int8_emulation::test_int8_emulated_model_matches_x86_dynamic_quantization_except_output",
+      "x86 torch quantized backend is unavailable: qnnpack"
+    ],
+    [
+      "tests.scripts.test_run_ppo::test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds",
+      "Needs the native Kaggriculture environment and its EnvConfig seed (rebuild Tasks 1.4/1.5)."
+    ]
+  ]
+}

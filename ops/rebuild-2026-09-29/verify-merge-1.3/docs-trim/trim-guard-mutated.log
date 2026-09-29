@@ -1,0 +1,66 @@
+....F.                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_task_authored_inventory_requires_exact_authored_set[paths3-Engine authored set: missing=\\[\\]; extra=.*grammar_kernel.rs] _
+
+paths = ['engine_rs/tests/replay_parity.rs', 'engine_rs/fixtures/generated/MANIFEST.json', 'engine_rs/tests/grammar_kernel.rs']
+message = 'Engine authored set: missing=\\[\\]; extra=.*grammar_kernel.rs'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            (
+                [],
+                r"Engine authored set: missing=.*MANIFEST.json.*replay_parity",
+            ),
+            (
+                [checker.GENERATED_MANIFEST],
+                r"Engine authored set: missing=.*replay_parity",
+            ),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Engine authored set: missing=.*generated/MANIFEST.json",
+            ),
+            (
+                # Contract v4.1 retired the grammar bridge into root integration.
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    checker.GENERATED_MANIFEST,
+                    "engine_rs/tests/grammar_kernel.rs",
+                ],
+                r"Engine authored set: missing=\[\]; extra=.*grammar_kernel.rs",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    checker.GENERATED_MANIFEST,
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Engine authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_authored_set(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:113: Failed
+=============================== warnings summary ===============================
+../../.venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:475
+  /Users/poonszesen/kg-v3-m-1-3/.venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:475: PytestCacheWarning: could not create cache path /dev/.pytest_cache/v/cache/nodeids: [Errno 1] Operation not permitted: '/dev/pytest-cache-files-a9fr4i_v'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+../../.venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:429
+  /Users/poonszesen/kg-v3-m-1-3/.venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:429: PytestCacheWarning: could not create cache path /dev/.pytest_cache/v/cache/lastfailed: [Errno 1] Operation not permitted: '/dev/pytest-cache-files-xbjg9dgk'
+    config.cache.set("cache/lastfailed", self.lastfailed)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../dev::test_task_authored_inventory_requires_exact_authored_set[paths3-Engine authored set: missing=\\[\\]; extra=.*grammar_kernel.rs]
+1 failed, 5 passed, 73 deselected, 2 warnings in 0.02s

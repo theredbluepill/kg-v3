@@ -1,0 +1,68 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_changed_live_engine_dependency_must_not_be_installed[engine_rs/src/py_random.rs] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-47/test_changed_live_engine_depen0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ae6cc0>
+path = 'engine_rs/src/py_random.rs'
+
+    @pytest.mark.parametrize('path', ['engine_rs/src/py_random.rs', 'engine_rs/Cargo.toml'])
+    def test_changed_live_engine_dependency_must_not_be_installed(tmp_path, monkeypatch, path):
+        root,calls=mod.regeneration_harness(tmp_path,monkeypatch,drift_phase='producer',drift_path=path)
+        source=root/path
+        source.parent.mkdir(parents=True,exist_ok=True)
+        source.write_bytes(b'original live producer dependency\n')
+        before=mod.oracle.hash_file(source)
+        snapshot=mod.oracle.source_snapshot()
+        output=tmp_path/'final'
+        caught=None
+        try:
+            mod.oracle.regenerate(output,mod.oracle.PIN)
+        except ValueError as error:
+            caught=error
+        evidence={'path':path, 'before':before, 'after':mod.oracle.hash_file(source),
+          'listed_in_snapshot':path in dict(snapshot[1]), 'output_installed':output.exists(),
+          'caught':str(caught) if caught else None,
+          'source_identity':json.loads((output/'manifest.json').read_text())['source_identity'] if output.exists() else None}
+        out=SCRATCH.parents[1]/'ops/rebuild-2026-09-29/verify-e197528-independent/mutations-python'
+        (out/('source-gap-'+source.name+'.json')).write_text(json.dumps(evidence,indent=2)+'\n')
+>       assert caught is not None, f'changed live dependency {path} was not detected; output installed={output.exists()}'
+E       AssertionError: changed live dependency engine_rs/src/py_random.rs was not detected; output installed=True
+E       assert None is not None
+
+.codex-tmp/verify-e197528-python/test_source_gap.py:30: AssertionError
+_ test_changed_live_engine_dependency_must_not_be_installed[engine_rs/Cargo.toml] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-47/test_changed_live_engine_depen1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106b0f4a0>
+path = 'engine_rs/Cargo.toml'
+
+    @pytest.mark.parametrize('path', ['engine_rs/src/py_random.rs', 'engine_rs/Cargo.toml'])
+    def test_changed_live_engine_dependency_must_not_be_installed(tmp_path, monkeypatch, path):
+        root,calls=mod.regeneration_harness(tmp_path,monkeypatch,drift_phase='producer',drift_path=path)
+        source=root/path
+        source.parent.mkdir(parents=True,exist_ok=True)
+        source.write_bytes(b'original live producer dependency\n')
+        before=mod.oracle.hash_file(source)
+        snapshot=mod.oracle.source_snapshot()
+        output=tmp_path/'final'
+        caught=None
+        try:
+            mod.oracle.regenerate(output,mod.oracle.PIN)
+        except ValueError as error:
+            caught=error
+        evidence={'path':path, 'before':before, 'after':mod.oracle.hash_file(source),
+          'listed_in_snapshot':path in dict(snapshot[1]), 'output_installed':output.exists(),
+          'caught':str(caught) if caught else None,
+          'source_identity':json.loads((output/'manifest.json').read_text())['source_identity'] if output.exists() else None}
+        out=SCRATCH.parents[1]/'ops/rebuild-2026-09-29/verify-e197528-independent/mutations-python'
+        (out/('source-gap-'+source.name+'.json')).write_text(json.dumps(evidence,indent=2)+'\n')
+>       assert caught is not None, f'changed live dependency {path} was not detected; output installed={output.exists()}'
+E       AssertionError: changed live dependency engine_rs/Cargo.toml was not detected; output installed=True
+E       assert None is not None
+
+.codex-tmp/verify-e197528-python/test_source_gap.py:30: AssertionError
+=========================== short test summary info ============================
+FAILED .codex-tmp/verify-e197528-python/test_source_gap.py::test_changed_live_engine_dependency_must_not_be_installed[engine_rs/src/py_random.rs]
+FAILED .codex-tmp/verify-e197528-python/test_source_gap.py::test_changed_live_engine_dependency_must_not_be_installed[engine_rs/Cargo.toml]
+2 failed in 0.07s

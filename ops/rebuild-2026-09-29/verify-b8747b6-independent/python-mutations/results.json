@@ -1,0 +1,1325 @@
+[
+  {
+    "name": "seat_bytes",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "and sha(block)\n                        == digest(meta[\"seat_sha256\"][seat], \"seat hash\"),",
+      "new": "and True,"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.206,
+      "log": "seat_bytes-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[byte]"
+      ]
+    },
+    "mutant_sha256": "287b945f5a8f904220ee484529148391a6c710b60cbcb4e599a6c8d5050b5563",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.172,
+      "log": "seat_bytes-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[byte]"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.156,
+      "log": "seat_bytes-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[byte]"
+      ]
+    }
+  },
+  {
+    "name": "header_order",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "digest(meta[\"header_sha256\"], \"header hash\")\n                    == sha(header_bytes(raw)),",
+      "new": "True,"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.15,
+      "log": "header_order-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[header_order]"
+      ]
+    },
+    "mutant_sha256": "77c5fe5f1b915182dccb69a3b81b25dedd354e38e8955059408ea4a399460156",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.194,
+      "log": "header_order-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[header_order]"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.161,
+      "log": "header_order-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[header_order]"
+      ]
+    }
+  },
+  {
+    "name": "schema_version",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "manifest[\"schema_version\"] == 1",
+      "new": "manifest[\"schema_version\"] in (1, 2)"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.145,
+      "log": "schema_version-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[version]"
+      ]
+    },
+    "mutant_sha256": "13896f157edd2f39d0e87fc5213b0a91d02d804d7fe3a7575710e9d79d618d46",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.24,
+      "log": "schema_version-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[version]"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.189,
+      "log": "schema_version-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[version]"
+      ]
+    }
+  },
+  {
+    "name": "duplicate_record",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "row[\"record_id\"] not in found_ids, \"duplicate record id\"",
+      "new": "True, \"duplicate record id\""
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.176,
+      "log": "duplicate_record-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[duplicate]"
+      ]
+    },
+    "mutant_sha256": "b11e21368ceb07bdecf638eb13f91f25171a68a871616476cfc8acb1ba19b0cc",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.19,
+      "log": "duplicate_record-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[duplicate]"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.19,
+      "log": "duplicate_record-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_custody_rejects_corruption_even_with_rehashed_files[duplicate]"
+      ]
+    }
+  },
+  {
+    "name": "source_header_step",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "row[\"source\"][\"step\"] == row[\"header\"][\"initial\"][\"public\"][\"step\"],",
+      "new": "True,"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.154,
+      "log": "source_header_step-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_record_source_step_cannot_disagree_with_header"
+      ]
+    },
+    "mutant_sha256": "43b94e33a7d83d92951fc7baaf5e089027dbb9b14350bffd60e8f3bde3c56de0",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.175,
+      "log": "source_header_step-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_record_source_step_cannot_disagree_with_header"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.145,
+      "log": "source_header_step-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_record_source_step_cannot_disagree_with_header"
+      ]
+    }
+  },
+  {
+    "name": "quota",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "counts = coverage[\"non_synthetic\"]",
+      "new": "counts = coverage[\"dense\"]"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.132,
+      "log": "quota-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_final_quota_cannot_be_satisfied_by_dense_states"
+      ]
+    },
+    "mutant_sha256": "c27fd661c5e890d054efa99aac6f2e7d94d4e880eaeafcc2554d07246be7b3b0",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.145,
+      "log": "quota-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_final_quota_cannot_be_satisfied_by_dense_states"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.133,
+      "log": "quota-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_final_quota_cannot_be_satisfied_by_dense_states"
+      ]
+    }
+  },
+  {
+    "name": "byteplanes",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "raw[plane::4] = src.read(length)",
+      "new": "raw[(plane + 1) % 4::4] = src.read(length)"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.157,
+      "log": "byteplanes-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_byteplane_round_trip_preserves_float_bits"
+      ]
+    },
+    "mutant_sha256": "a00a9fd85564eb14bd2188cbca6ee7bec5904782959f38baa5c3f2c4db783251",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.18,
+      "log": "byteplanes-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_byteplane_round_trip_preserves_float_bits"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.158,
+      "log": "byteplanes-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_byteplane_round_trip_preserves_float_bits"
+      ]
+    }
+  },
+  {
+    "name": "source_snapshot",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "def check_source_snapshot(snapshot: SourceSnapshot) -> None:\n",
+      "new": "def check_source_snapshot(snapshot: SourceSnapshot) -> None:\n    return\n"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.272,
+      "log": "source_snapshot-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases"
+      ]
+    },
+    "mutant_sha256": "49e220b553ffd8dca81f566684137b989911a434a6a88b4445800c61859b4f6d",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.42,
+      "log": "source_snapshot-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.248,
+      "log": "source_snapshot-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases"
+      ]
+    }
+  },
+  {
+    "name": "archive_custody",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "hash_file(directory / path) == expected,",
+      "new": "True,"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.15,
+      "log": "archive_custody-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_reference_export_checks_archive_bytes_against_git_show[True]"
+      ]
+    },
+    "mutant_sha256": "6b849fc210562f7680aae3a8b202aa7a03735275898ccec3d24178095141c307",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.173,
+      "log": "archive_custody-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_reference_export_checks_archive_bytes_against_git_show[True]"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.153,
+      "log": "archive_custody-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_reference_export_checks_archive_bytes_against_git_show[True]"
+      ]
+    }
+  },
+  {
+    "name": "recorder_copy",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "hash_file(example) == recorder_sha,",
+      "new": "True,"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.159,
+      "log": "recorder_copy-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_exported_recorder_must_match_preexecution_source[copy]"
+      ]
+    },
+    "mutant_sha256": "7e7bb8fd7ddabfc268b139eda28d13839f35a25d588bc995ee48e3c58e22e997",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.178,
+      "log": "recorder_copy-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_exported_recorder_must_match_preexecution_source[copy]"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.151,
+      "log": "recorder_copy-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_exported_recorder_must_match_preexecution_source[copy]"
+      ]
+    }
+  },
+  {
+    "name": "caller_baseline",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "caller_baseline = group_rss(os.getpgrp())",
+      "new": "caller_baseline = 0"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.194,
+      "log": "caller_baseline-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_preexisting_caller_memory_is_not_charged_to_the_child"
+      ]
+    },
+    "mutant_sha256": "10f279ac9fb880e01828f76d53c4c938804c6202cd876bd8e5deef93add6ee2b",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.146,
+      "log": "caller_baseline-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_preexisting_caller_memory_is_not_charged_to_the_child"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.195,
+      "log": "caller_baseline-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_preexisting_caller_memory_is_not_charged_to_the_child"
+      ]
+    }
+  },
+  {
+    "name": "caller_growth",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "caller_growth = max(0, group_rss(os.getpgrp()) - caller_baseline)",
+      "new": "caller_growth = 0"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.131,
+      "log": "caller_growth-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_caller_growth_after_launch_still_counts"
+      ]
+    },
+    "mutant_sha256": "1b9e3d756d3e18bee09dab87abba3f64472190e775d77335a9703639802f9a13",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 30.175,
+      "log": "caller_growth-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_caller_growth_after_launch_still_counts"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.129,
+      "log": "caller_growth-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_caller_growth_after_launch_still_counts"
+      ]
+    }
+  },
+  {
+    "name": "shared_deadline",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "or now >= RUN_DEADLINE:",
+      "new": ":"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.236,
+      "log": "shared_deadline-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_shared_deadline_stops_child_group_before_outer_limit"
+      ]
+    },
+    "mutant_sha256": "0e918d1b714a239401ec3625b5d516b8888384eb693ba3da8c997572e3dfa5bd",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 30.209,
+      "log": "shared_deadline-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_shared_deadline_stops_child_group_before_outer_limit"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.254,
+      "log": "shared_deadline-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_shared_deadline_stops_child_group_before_outer_limit"
+      ]
+    }
+  },
+  {
+    "name": "retired_authored_set",
+    "path": "scripts/check_engine_trim.py",
+    "before_sha256": "ed1e1a50d7fcc346fb9b917124a086d1b7cb9535a6fdf079534b527cbfa8cba5",
+    "mutation": {
+      "old": "[\"engine_rs/tests/replay_parity.rs\", GENERATED_MANIFEST],",
+      "new": "[\"engine_rs/tests/replay_parity.rs\", GENERATED_MANIFEST, \"engine_rs/tests/grammar_kernel.rs\"],"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.13,
+      "log": "retired_authored_set-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_authored_set"
+      ]
+    },
+    "mutant_sha256": "47dbcbc656d8030b7fde1664cfb512643b845c359266c38f53f4acf41cec2591",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.137,
+      "log": "retired_authored_set-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_authored_set"
+      ]
+    },
+    "restored_sha256": "ed1e1a50d7fcc346fb9b917124a086d1b7cb9535a6fdf079534b527cbfa8cba5",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.123,
+      "log": "retired_authored_set-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_authored_set"
+      ]
+    }
+  },
+  {
+    "name": "bridge_retirement",
+    "path": "engine_rs/tests/grammar_kernel.rs",
+    "before_sha256": null,
+    "mutation": {
+      "old": null,
+      "new": "// Independent verifier mutation: bridge reintroduced\n"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.121,
+      "log": "bridge_retirement-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_check_engine_trim.py::test_grammar_bridge_is_retired_to_root_integration"
+      ]
+    },
+    "mutant_sha256": "faa6fa44426e0c27452685499af82ed390596d1933c6a72047766c9363b5b8fd",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.132,
+      "log": "bridge_retirement-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_check_engine_trim.py::test_grammar_bridge_is_retired_to_root_integration"
+      ]
+    },
+    "restored_sha256": null,
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.122,
+      "log": "bridge_retirement-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_check_engine_trim.py::test_grammar_bridge_is_retired_to_root_integration"
+      ]
+    }
+  },
+  {
+    "name": "pinned_availability",
+    "path": "tests/kaggriculture/test_observe.py",
+    "before_sha256": "c440377b9c0979cb850a3fc8f4b0ed257b8b9e574b9e5ce759176e5c3fe20608",
+    "mutation": {
+      "old": "not torch.cuda.is_available(), reason=\"pinned host memory requires CUDA\"",
+      "new": "False, reason=\"pinned host memory requires CUDA\""
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.114,
+      "log": "pinned_availability-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/test_pinned_guard.py"
+      ]
+    },
+    "mutant_sha256": "0798413434cac105714dcaaf8c8031818af9ef715fa6fe1942b16d9060358457",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.122,
+      "log": "pinned_availability-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/test_pinned_guard.py"
+      ]
+    },
+    "restored_sha256": "c440377b9c0979cb850a3fc8f4b0ed257b8b9e574b9e5ce759176e5c3fe20608",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.115,
+      "log": "pinned_availability-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/test_pinned_guard.py"
+      ]
+    }
+  },
+  {
+    "name": "engine_cargo_source_omitted",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "    *ENGINE_SOURCE_PATHS,\n)",
+      "new": "    *(p for p in ENGINE_SOURCE_PATHS if p != \"engine_rs/Cargo.toml\"),\n)"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.165,
+      "log": "engine_cargo_source_omitted-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[admission-engine_rs/Cargo.toml]"
+      ]
+    },
+    "mutant_sha256": "470fd2104603090bc54a1c72a7cc8ceeac682c012f66d7dcf524ae513ec8100f",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.169,
+      "log": "engine_cargo_source_omitted-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[admission-engine_rs/Cargo.toml]"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.149,
+      "log": "engine_cargo_source_omitted-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[admission-engine_rs/Cargo.toml]"
+      ]
+    }
+  },
+  {
+    "name": "engine_random_source_omitted",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "    *ENGINE_SOURCE_PATHS,\n)",
+      "new": "    *(p for p in ENGINE_SOURCE_PATHS if p != \"engine_rs/src/py_random.rs\"),\n)"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.143,
+      "log": "engine_random_source_omitted-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[producer-engine_rs/src/py_random.rs]"
+      ]
+    },
+    "mutant_sha256": "93a3e4a1891af3ecb0121dc877d8356e80cc296b933581ac7eaf6e0e6c5d9cf2",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.183,
+      "log": "engine_random_source_omitted-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[producer-engine_rs/src/py_random.rs]"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.149,
+      "log": "engine_random_source_omitted-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[producer-engine_rs/src/py_random.rs]"
+      ]
+    }
+  },
+  {
+    "name": "engine_econ_source_omitted",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "    *ENGINE_SOURCE_PATHS,\n)",
+      "new": "    *(p for p in ENGINE_SOURCE_PATHS if p != \"engine_rs/src/econ_attrib.rs\"),\n)"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.147,
+      "log": "engine_econ_source_omitted-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[export-engine_rs/src/econ_attrib.rs]"
+      ]
+    },
+    "mutant_sha256": "20e2f09d935ef504f4619dd719866bf56b496120ac48a5363f3267ba82e5412d",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.174,
+      "log": "engine_econ_source_omitted-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[export-engine_rs/src/econ_attrib.rs]"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.149,
+      "log": "engine_econ_source_omitted-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_observation_oracle_custody.py::test_regeneration_source_identity_rejects_changes_between_phases[export-engine_rs/src/econ_attrib.rs]"
+      ]
+    }
+  },
+  {
+    "name": "engine_declaration_capture",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "    require_declared_engine_sources(ROOT)\n    commit = run",
+      "new": "    commit = run"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.125,
+      "log": "engine_declaration_capture-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/test_snapshot_inventory.py::test_capture_declares_sources_before_executing_any_command"
+      ]
+    },
+    "mutant_sha256": "fab0dbf00f68a78282cb0aae4592e3d8182e920913556e51ff08f5c260303f52",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.136,
+      "log": "engine_declaration_capture-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/test_snapshot_inventory.py::test_capture_declares_sources_before_executing_any_command"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.128,
+      "log": "engine_declaration_capture-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/test_snapshot_inventory.py::test_capture_declares_sources_before_executing_any_command"
+      ]
+    }
+  },
+  {
+    "name": "engine_declaration_recheck",
+    "path": "scripts/kaggriculture_observation_oracle/regenerate.py",
+    "before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "mutation": {
+      "old": "    commit, files = snapshot\n    require_declared_engine_sources(ROOT)",
+      "new": "    commit, files = snapshot"
+    },
+    "baseline": {
+      "exit": 0,
+      "wall_seconds": 0.123,
+      "log": "engine_declaration_recheck-baseline.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/test_snapshot_inventory.py::test_recheck_declares_new_sources"
+      ]
+    },
+    "mutant_sha256": "caf935fa490f4345102dd2aec2d88106e6d7613942534e6dfd6ec44ba77a847a",
+    "mutant": {
+      "exit": 1,
+      "wall_seconds": 0.141,
+      "log": "engine_declaration_recheck-mutant.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/test_snapshot_inventory.py::test_recheck_declares_new_sources"
+      ]
+    },
+    "restored_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+    "restoration_exact": true,
+    "restored": {
+      "exit": 0,
+      "wall_seconds": 0.127,
+      "log": "engine_declaration_recheck-restored.log",
+      "argv": [
+        "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-c",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+        "--confcutdir",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+        "-q",
+        "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/test_snapshot_inventory.py::test_recheck_declares_new_sources"
+      ]
+    }
+  }
+]

@@ -1,0 +1,58 @@
+{
+  "name": "header_order_independent",
+  "source_before_sha256": "e7b39e4e9bbe439e40d9818c3f0cde06e19479d6ed09f1badb919fff7e9a5472",
+  "distinction": "Recompute coverage after header order corruption so the hash guard is the sole rejection.",
+  "baseline": {
+    "exit": 0,
+    "argv": [
+      "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-c",
+      "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+      "--confcutdir",
+      "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+      "-q",
+      "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_header_order_independent.py::test_custody_rejects_corruption_even_with_rehashed_files[header_order]"
+    ],
+    "log": "header_order_independent-baseline.log",
+    "wall_seconds": 0.142
+  },
+  "mutant": {
+    "exit": 1,
+    "argv": [
+      "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-c",
+      "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+      "--confcutdir",
+      "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+      "-q",
+      "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_header_order_independent.py::test_custody_rejects_corruption_even_with_rehashed_files[header_order]"
+    ],
+    "log": "header_order_independent-mutant.log",
+    "wall_seconds": 0.179
+  },
+  "restored": {
+    "exit": 0,
+    "argv": [
+      "/Users/poonszesen/kg-v3-m-1-3/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-c",
+      "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/pytest.ini",
+      "--confcutdir",
+      "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch",
+      "-q",
+      "/Users/poonszesen/kg-v3-m-1-3/ops/rebuild-2026-09-29/verify-b8747b6-independent/python-mutations/scratch/tests/tools/test_header_order_independent.py::test_custody_rejects_corruption_even_with_rehashed_files[header_order]"
+    ],
+    "log": "header_order_independent-restored.log",
+    "wall_seconds": 0.145
+  },
+  "scratch_restored_exact": true,
+  "repository_source_unchanged": true
+}

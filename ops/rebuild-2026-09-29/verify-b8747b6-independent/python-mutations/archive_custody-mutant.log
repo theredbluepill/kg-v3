@@ -1,0 +1,43 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_reference_export_checks_archive_bytes_against_git_show[True] _______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-m-1-3/.codex-tmp/pytest-of-poonszesen/pytest-75/test_reference_export_checks_a0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ad44aa0>
+corrupt = True
+
+    @pytest.mark.parametrize("corrupt", [False, True])
+    def test_reference_export_checks_archive_bytes_against_git_show(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, corrupt: bool
+    ) -> None:
+        path = "engine_rs/src/myolie_features.rs"
+        original = b"reference encoder\n"
+        buffer = io.BytesIO()
+        with tarfile.open(fileobj=buffer, mode="w") as archive:
+            directory = tarfile.TarInfo("engine_rs/")
+            directory.type = tarfile.DIRTYPE
+            archive.addfile(directory)
+            file = tarfile.TarInfo(path)
+            content = b"changed" if corrupt else original
+            file.size = len(content)
+            archive.addfile(file, io.BytesIO(content))
+    
+        def fake_git(argv: list[str]) -> bytes:
+            if argv[1] == "archive":
+                return buffer.getvalue()
+            if argv[1] == "ls-tree":
+                return (path + "\n").encode()
+            assert argv[1] == "show"
+            return original
+    
+        monkeypatch.setattr(oracle, "run", fake_git)
+        monkeypatch.setattr(oracle, "FEATURE_SHA", sha(original))
+        if corrupt:
+>           with pytest.raises(ValueError, match="reference export bytes changed"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_observation_oracle_custody.py:476: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_observation_oracle_custody.py::test_reference_export_checks_archive_bytes_against_git_show[True]
+1 failed in 0.04s

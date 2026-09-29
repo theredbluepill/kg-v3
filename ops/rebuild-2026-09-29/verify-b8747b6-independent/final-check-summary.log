@@ -1,0 +1,65 @@
+{
+  "head": "b8747b6e8acece5f561d09a75bb914364a60ac05",
+  "counts": {
+    "passed": 1625,
+    "skipped": 7
+  },
+  "unique_cases": 1632,
+  "source_test_files": 45,
+  "successful_invocations": 55,
+  "guarded_attempts": [
+    {
+      "name": "shard-07-test_model_heads",
+      "reason": "memory",
+      "rss": 1008746496
+    },
+    {
+      "name": "shard-37-test_kaggriculture_parity",
+      "reason": "memory",
+      "rss": 1007435776
+    }
+  ],
+  "skips": [
+    {
+      "class": "tests.kaggriculture.test_gpu_grammar",
+      "name": "test_native_tables_match_expected_tables",
+      "reason": "Task 1.2/1.4 native grammar binding not available: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists"
+    },
+    {
+      "class": "tests.kaggriculture.test_observe",
+      "name": "test_native_writer_uses_real_schema_and_keeps_all_pointers[pinned-1]",
+      "reason": "pinned host memory requires CUDA"
+    },
+    {
+      "class": "tests.kaggriculture.test_observe",
+      "name": "test_native_writer_uses_real_schema_and_keeps_all_pointers[pinned-2]",
+      "reason": "pinned host memory requires CUDA"
+    },
+    {
+      "class": "tests.owl.model.test_attn",
+      "name": "test_varlen_attention_flash_backend",
+      "reason": "flash-attn CUDA backend is not available"
+    },
+    {
+      "class": "tests.owl.model.test_attn",
+      "name": "test_varlen_attention_matches_torch_sdpa_per_sequence",
+      "reason": "flash-attn CUDA backend is not available"
+    },
+    {
+      "class": "tests.owl.test_int8_emulation",
+      "name": "test_int8_emulated_model_matches_x86_dynamic_quantization_except_output",
+      "reason": "x86 torch quantized backend is unavailable: qnnpack"
+    },
+    {
+      "class": "tests.scripts.test_run_ppo",
+      "name": "test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds",
+      "reason": "Needs the native Kaggriculture environment and its EnvConfig seed (rebuild Tasks 1.4/1.5)."
+    }
+  ]
+}
+{
+  "head": "b8747b6e8acece5f561d09a75bb914364a60ac05",
+  "tracked_file_count": 1633,
+  "changed_tracked_files": [],
+  "tracked_status": ""
+}

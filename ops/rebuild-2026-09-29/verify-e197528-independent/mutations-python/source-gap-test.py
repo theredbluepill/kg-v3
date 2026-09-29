@@ -1,0 +1,37 @@
+import importlib.util
+import json
+from pathlib import Path
+import pytest
+SCRATCH=Path(__file__).parent
+SPEC=importlib.util.spec_from_file_location('custody_tests', SCRATCH/'tests/tools/test_observation_oracle_custody.py')
+mod=importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+@pytest.mark.parametrize('path', ['engine_rs/src/py_random.rs', 'engine_rs/Cargo.toml'])
+def test_changed_live_engine_dependency_must_not_be_installed(tmp_path, monkeypatch, path):
+    root,calls=mod.regeneration_harness(tmp_path,monkeypatch,drift_phase='producer',drift_path=path)
+    for dependency in ('engine_rs/src/py_random.rs', 'engine_rs/Cargo.toml'):
+        candidate=root/dependency
+        candidate.parent.mkdir(parents=True,exist_ok=True)
+        candidate.write_bytes(b'original live producer dependency\n')
+    source=root/path
+    source.parent.mkdir(parents=True,exist_ok=True)
+    source.write_bytes(b'original live producer dependency\n')
+    before=mod.oracle.hash_file(source)
+    snapshot=mod.oracle.source_snapshot()
+    output=tmp_path/'final'
+    caught=None
+    try:
+        mod.oracle.regenerate(output,mod.oracle.PIN)
+    except ValueError as error:
+        caught=error
+    evidence={'path':path, 'before':before, 'after':mod.oracle.hash_file(source),
+      'listed_in_snapshot':path in dict(snapshot[1]), 'output_installed':output.exists(),
+      'caught':str(caught) if caught else None,
+      'source_identity':json.loads((output/'manifest.json').read_text())['source_identity'] if output.exists() else None}
+    source.write_bytes(b'original live producer dependency\n')
+    evidence['restored']=mod.oracle.hash_file(source)
+    evidence['restoration_exact']=evidence['restored']==before
+    out=SCRATCH.parents[1]/'ops/rebuild-2026-09-29/verify-e197528-independent/mutations-python'
+    (out/('source-gap-'+source.name+'.json')).write_text(json.dumps(evidence,indent=2)+'\n')
+    assert caught is not None, f'changed live dependency {path} was not detected; output installed={output.exists()}'
