@@ -1,0 +1,25 @@
+eval_interval_steps: 200
+gradient_accumulation_steps: 1
+max_grad_norm: 10.0
+max_steps: 100000
+min_delta: 0.0
+optimizer:
+  adamw_eps: 1.0e-05
+  adamw_lr: 0.0001
+  lr_schedule:
+    decay_steps: 100000
+    lr_min_ratio: 0.01
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 1000
+  muon_lr: 0.002
+  muon_momentum: 0.95
+  muon_weight_decay: 0.01
+  optimizer: muon
+  weight_decay: 0.0
+patience_evals: 10
+ppo_config: config.yaml
+preflight_train_replay: true
+rows_per_rank: 512
+seed: 20260929
+validation_rows_per_forward: 256
+value_coef: 1.0
