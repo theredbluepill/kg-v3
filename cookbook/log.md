@@ -1,5 +1,14 @@
 # Change log
 
+## 2026-09-29 — Close the startup-assertion gap in the grammar-heads Reference
+
+Codex's merge verification (`ops/rebuild-2026-09-29/codex/verify-merge-trainer-lanes-r1.md`,
+P3) found the [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|grammar-heads Reference]]
+still listing the Task 3.4 startup workload assertion as open after the merge.
+It now links that completed check to the
+[[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]]
+and keeps trainer integration (Task 3.1) as the open gap.
+
 ## 2026-09-29 — Record the merged trainer-lane check counts
 
 After merging Tasks 3.1, 3.2/3.3, 3.4 and the 1.4/1.5 briefs onto the Task 1.2
