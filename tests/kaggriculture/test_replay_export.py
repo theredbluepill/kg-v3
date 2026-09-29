@@ -535,3 +535,35 @@ def test_direct_native_api_rejects_invalid_framework_time_budgets(
     episode["info"].pop("v3_native_replay")
     with pytest.raises(ValueError, match=r"configuration"):
         replay_export.rs.verify_kaggriculture_episode(json.dumps(episode), None)
+
+
+@pytest.mark.parametrize(
+    ("transitions", "complete", "exports"),
+    [(2, True, True), (1, False, True), (2, False, False)],
+)
+def test_every_successful_native_export_verifies(
+    transitions: int, complete: bool, exports: bool
+) -> None:
+    # episodeSteps=3 reaches DONE after two transitions. A false completion
+    # claim on a DONE tape must fail export rather than emit unverifiable bytes.
+    header, tape = _native_replay_input()
+    tape = {"complete": complete, "transitions": tape["transitions"][:transitions]}
+    if not exports:
+        with pytest.raises(ValueError, match="reached DONE while completion not claimed"):
+            replay_export.rs.export_kaggriculture_episode(
+                json.dumps(header), json.dumps(tape)
+            )
+        return
+    episode_json = replay_export.rs.export_kaggriculture_episode(
+        json.dumps(header), json.dumps(tape)
+    )
+    report = json.loads(
+        replay_export.rs.verify_kaggriculture_episode(episode_json, None)
+    )
+    assert report["ok"] is True
+    assert report["mode"] == "byte"
+    assert report["transitions"] == transitions
+    assert report["canonical_json"] == episode_json
+    assert (
+        json.loads(episode_json)["info"]["v3_native_replay"]["complete"] is complete
+    )

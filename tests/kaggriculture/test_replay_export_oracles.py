@@ -357,6 +357,15 @@ def test_native_byte_round_trip_and_wide_seed(
         seat["observation"]["farms"][0]["money"] = 3000
     message = _reject(mutated, "native byte round trip float money spelled as integer")
     assert "/steps/0/0/observation/farms/0/money" in message
+    # Same number kind, different spelling: only the canonical-byte guard sees it.
+    needle = '"money":3000.0'
+    assert needle in exported
+    respelled = exported.replace(needle, '"money":3.0e3', 1)
+    assert json.loads(respelled) == json.loads(exported)
+    with pytest.raises(ValueError, match="canonical number bytes differ") as error:
+        rs.verify_kaggriculture_episode(respelled, None)
+    print(f"mutation native byte round trip float respelled: {error.value}")
+    assert "/steps/0/0/observation/farms/0/money" in str(error.value)
 
 
 def test_captured_evidence_is_independent_of_replay(

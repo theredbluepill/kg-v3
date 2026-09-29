@@ -322,10 +322,20 @@ pub fn replay_from_seed(header: &SeedHeader, tape: &ActionTape) -> Result<Vec<St
         }
         snapshots.push(next);
     }
-    if tape.complete && !snapshots.last().expect("initial snapshot").done {
+    let done = snapshots.last().expect("initial snapshot").done;
+    if tape.complete && !done {
         return Err(Divergence::new(
             "/transitions",
             "tape shorter than game while completion claimed",
+        )
+        .at(tape.transitions.len().checked_sub(1)));
+    }
+    // Completion is a claim about the tape, so it must agree with the game both
+    // ways: a DONE replay exported as partial would fail its own import.
+    if !tape.complete && done {
+        return Err(Divergence::new(
+            "/complete",
+            "tape reached DONE while completion not claimed",
         )
         .at(tape.transitions.len().checked_sub(1)));
     }

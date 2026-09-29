@@ -94,11 +94,17 @@ fn replay_rejects_invalid_seed_config_counts_and_completion() {
     let mut t = tape_json(1, false);
     t["transitions"][0]["actions"] = json!([action()]);
     assert!(ActionTape::parse(&t).is_err());
-    for (n, complete, needle) in [(5, true, "shorter"), (7, true, "DONE")] {
+    for (n, complete, needle) in [
+        (5, true, "shorter"),
+        (7, true, "DONE"),
+        (6, false, "reached DONE while completion not claimed"),
+    ] {
         let err =
             replay_from_seed(&h, &ActionTape::parse(&tape_json(n, complete)).unwrap()).unwrap_err();
         assert!(err.to_string().contains(needle), "{err}");
     }
+    // A partial tape that stops before DONE stays a valid truncated replay.
+    assert!(replay_from_seed(&h, &ActionTape::parse(&tape_json(5, false)).unwrap()).is_ok());
 }
 
 #[test]
