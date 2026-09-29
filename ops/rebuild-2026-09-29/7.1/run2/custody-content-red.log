@@ -1,0 +1,229 @@
+...........................................F.....F.F......               [100%]
+=================================== FAILURES ===================================
+________ test_rehashed_oracle_manifest_attacks_fail[bool_count-integer] ________
+
+attack = 'bool_count', message = 'integer'
+
+    @pytest.mark.parametrize(
+        ("attack", "message"),
+        [
+            ("unknown_key", "schema keys"),
+            ("missing_trace", "inventory"),
+            ("wrong_hash", "sha256"),
+            ("bool_count", "integer"),
+            ("wrong_budget", "budget"),
+            ("negative_coverage", "negative coverage"),
+            ("unsafe_trace", "path"),
+        ],
+    )
+    def test_rehashed_oracle_manifest_attacks_fail(attack: str, message: str) -> None:
+        manifest, originals, current = fixture()
+        generated = json.loads(current[checker.ORACLE_MANIFEST])
+        entry = generated["traces"][0]
+        if attack == "unknown_key":
+            entry["unknown"] = 1
+        elif attack == "missing_trace":
+            generated["traces"] = []
+        elif attack == "wrong_hash":
+            entry["sha256"] = "0" * 64
+        elif attack == "bool_count":
+            entry["transitions"] = True
+        elif attack == "wrong_budget":
+            generated["byte_budget"] += 1
+        elif attack == "negative_coverage":
+            entry["coverage"][0]["hires"] = -1
+        elif attack == "unsafe_trace":
+            entry["path"] = "../test.jsonl.gz"
+        current[checker.ORACLE_MANIFEST] = json.dumps(generated).encode()
+        refresh_authored(manifest, current)
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_opponent_import.py:294: Failed
+______ test_rehashed_trace_content_attacks_fail[bool_transitions-integer] ______
+
+attack = 'bool_transitions', message = 'integer'
+
+    @pytest.mark.parametrize(
+        ("attack", "message"),
+        [
+            ("wrong_seed", "seed"),
+            ("wrong_policies", "policies"),
+            ("bool_transitions", "integer"),
+            ("custom_configuration", "non-default configuration"),
+            ("malformed_configuration", "configuration: expected object"),
+            ("wrong_step", "non-contiguous"),
+            ("unknown_record", "unknown record"),
+            ("wrong_action_seats", "both seats"),
+            ("missing_record", "transitions"),
+        ],
+    )
+    def test_rehashed_trace_content_attacks_fail(attack: str, message: str) -> None:
+        manifest, originals, current = fixture()
+        entry = manifest["oracle_traces"][0]
+        records = [json.loads(line) for line in gzip.decompress(current[entry["path"]]).splitlines()]
+        if attack == "wrong_seed":
+            records[0]["seed"] += 1
+        elif attack == "wrong_policies":
+            records[0]["source"]["policies"].reverse()
+        elif attack == "bool_transitions":
+            records[0]["transitions"] = True
+        elif attack == "custom_configuration":
+            records[0]["configuration"]["farmHandCostMult"] = 2
+        elif attack == "malformed_configuration":
+            records[0]["configuration"] = []
+        elif attack == "wrong_step":
+            records[1]["from_step"] += 1
+        elif attack == "unknown_record":
+            records[1]["type"] = "unknown"
+        elif attack == "wrong_action_seats":
+            records[1]["actions"].pop()
+        elif attack == "missing_record":
+            records.pop()
+        current[entry["path"]] = encode(records)
+        entry["sha256"] = checker.sha(current[entry["path"]])
+        entry["bytes"] = len(current[entry["path"]])
+        generated = json.loads(current[checker.ORACLE_MANIFEST])
+        generated["traces"][0]["sha256"] = entry["sha256"]
+        generated["traces"][0]["bytes"] = entry["bytes"]
+        current[checker.ORACLE_MANIFEST] = json.dumps(generated).encode()
+        refresh_authored(manifest, current)
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_opponent_import.py:342: Failed
+_ test_rehashed_trace_content_attacks_fail[malformed_configuration-configuration: expected object] _
+
+attack = 'malformed_configuration', message = 'configuration: expected object'
+
+    @pytest.mark.parametrize(
+        ("attack", "message"),
+        [
+            ("wrong_seed", "seed"),
+            ("wrong_policies", "policies"),
+            ("bool_transitions", "integer"),
+            ("custom_configuration", "non-default configuration"),
+            ("malformed_configuration", "configuration: expected object"),
+            ("wrong_step", "non-contiguous"),
+            ("unknown_record", "unknown record"),
+            ("wrong_action_seats", "both seats"),
+            ("missing_record", "transitions"),
+        ],
+    )
+    def test_rehashed_trace_content_attacks_fail(attack: str, message: str) -> None:
+        manifest, originals, current = fixture()
+        entry = manifest["oracle_traces"][0]
+        records = [json.loads(line) for line in gzip.decompress(current[entry["path"]]).splitlines()]
+        if attack == "wrong_seed":
+            records[0]["seed"] += 1
+        elif attack == "wrong_policies":
+            records[0]["source"]["policies"].reverse()
+        elif attack == "bool_transitions":
+            records[0]["transitions"] = True
+        elif attack == "custom_configuration":
+            records[0]["configuration"]["farmHandCostMult"] = 2
+        elif attack == "malformed_configuration":
+            records[0]["configuration"] = []
+        elif attack == "wrong_step":
+            records[1]["from_step"] += 1
+        elif attack == "unknown_record":
+            records[1]["type"] = "unknown"
+        elif attack == "wrong_action_seats":
+            records[1]["actions"].pop()
+        elif attack == "missing_record":
+            records.pop()
+        current[entry["path"]] = encode(records)
+        entry["sha256"] = checker.sha(current[entry["path"]])
+        entry["bytes"] = len(current[entry["path"]])
+        generated = json.loads(current[checker.ORACLE_MANIFEST])
+        generated["traces"][0]["sha256"] = entry["sha256"]
+        generated["traces"][0]["bytes"] = entry["bytes"]
+        current[checker.ORACLE_MANIFEST] = json.dumps(generated).encode()
+        refresh_authored(manifest, current)
+        with pytest.raises(ValueError, match=message):
+>           checker.verify(manifest, originals, current)
+
+tests/tools/test_check_opponent_import.py:343: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_opponent_import.py:618: in verify
+    _verify_traces(traces, current)
+scripts/check_opponent_import.py:535: in _verify_traces
+    _trace_content(current[entry["path"]], entry, generated)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\x13l\xbd[\xaf\xf6\xd7q\xdc\xf9U\x0c][\xce:\x1f|\xe7\t\x1c8\x18xl\xd8\xceM\x82\x...e2o\xff\x8f\xcf\xbd\xe5\xfd_\xfe\x8d\xef\xbe\xfaO_~\xf7\xbc\xd4\x9a\x95_\xfd\xf9\x9f\xfc\x17\xa0\x1a[\x0ca\xe9\x01\x00'
+entry = {'bytes': 54387, 'compared_actions': [1, 1], 'path': 'opponents_rs/fixtures/oracle/test.jsonl.gz', 'policies': ['builtin:starter', 'sibling:r04'], ...}
+generated = {'available_actions': [1, 1], 'bytes': 54387, 'config_variant': 'default', 'coverage': [{'day_resets': 0, 'hires': 0, ...0, 'market_shortages': 0, ...}, {'day_resets': 0, 'hires': 0, 'late_liquidation': 0, 'market_shortages': 0, ...}], ...}
+
+    def _trace_content(
+        data: bytes, entry: Mapping[str, Any], generated: Mapping[str, Any]
+    ) -> None:
+        path = entry["path"]
+        with gzip.GzipFile(fileobj=io.BytesIO(data)) as stream:
+            expanded = stream.read(MAX_TRACE_EXPANSION + 1)
+        _require(
+            len(expanded) <= MAX_TRACE_EXPANSION,
+            f"{path}: trace expansion exceeds safety bound",
+        )
+        records = [_loads(line) for line in expanded.splitlines()]
+        _require(bool(records), f"{path}: empty trace")
+        header = _object(
+            records[0],
+            (
+                "type",
+                "format",
+                "source",
+                "seed",
+                "configuration",
+                "shop_schedule",
+                "rng_schedule",
+                "initial",
+                "terminal_banks",
+                "transitions",
+            ),
+            f"{path}: header",
+        )
+        _require(
+            header["type"] == "header" and header["format"] == TRACE_FORMAT,
+            f"{path}: trace format",
+        )
+        source = _object(
+            header["source"],
+            (
+                "generator",
+                "module_version",
+                "engine_sha256",
+                "name",
+                "policies",
+                "policy_seed",
+                "config_variant",
+            ),
+            f"{path}: source",
+        )
+        _require(
+            source["generator"] == GENERATOR
+            and source["module_version"] == KAGGLE_VERSION
+            and source["engine_sha256"] == PYTHON_ENGINE_SHA256,
+            f"{path}: source pin",
+        )
+        _require(header["seed"] == entry["seed"], f"{path}: seed differs from header")
+        _require(
+            source["policies"] == entry["policies"], f"{path}: policies differ from header"
+        )
+        _require(
+            source["config_variant"] == "default", f"{path}: config_variant must be default"
+        )
+        _require(source["policy_seed"] == generated["policy_seed"], f"{path}: policy_seed")
+        configuration = dict(DEFAULT_CONFIGURATION)
+>       if header["configuration"].get("seed") is not None:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'list' object has no attribute 'get'
+
+scripts/check_opponent_import.py:402: AttributeError
+=========================== short test summary info ============================
+FAILED tests/tools/test_check_opponent_import.py::test_rehashed_oracle_manifest_attacks_fail[bool_count-integer]
+FAILED tests/tools/test_check_opponent_import.py::test_rehashed_trace_content_attacks_fail[bool_transitions-integer]
+FAILED tests/tools/test_check_opponent_import.py::test_rehashed_trace_content_attacks_fail[malformed_configuration-configuration: expected object]
+3 failed, 55 passed in 0.55s

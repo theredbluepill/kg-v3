@@ -29,7 +29,7 @@ This is a working record of which local rebuild evidence was committed and which
 | Class | Files | Bytes | Why |
 |---|---:|---:|---|
 | MANIFEST | 262 (261 still local) | 67,738,146 | Bulky or reconstructible; kept at the listed local path |
-| DEFER | 90 (75 still deferred) | 16,890,641 | Evidence for in-progress work; lands with its own merge |
+| DEFER | 90 (62 still deferred) | 16,890,641 | Evidence for in-progress work; lands with its own merge. Task 7.1 landed: 11 committed, 2 transcripts above 512 KiB stay local |
 | EXCLUDE | 3 | not recorded | Failed secret triage; only path and reason are recorded |
 | SKIP | 21 | 1,375,311 | Already tracked on integration with identical content |
 
@@ -52,7 +52,9 @@ This is a working record of which local rebuild evidence was committed and which
 | Task | Files | Status |
 |---|---:|---|
 | 5.x BC | 30 | Deferred |
-| Phase 7 (7.1, 7.3, 7.4) | 24 | Deferred |
+| Phase 7 (7.3, 7.4) | 11 | Deferred |
+| Phase 7 (7.1) | 11 | Committed with `kg/merge-7-1` (see "Task 7.1 landing") |
+| Phase 7 (7.1) | 2 | Local: `task-7.1-impl-transcript.log` and `task-7.1-impl-r2-transcript.log` exceed 512 KiB |
 | 1.4 native env | 18 | Deferred |
 | 1.5 Python adapter | 3 | Deferred |
 | GPU checks (gpu-receipts) | 6 | Already tracked on BASE, identical (landed with `kg/merge-gpu-receipts`) |
@@ -63,9 +65,17 @@ This is a working record of which local rebuild evidence was committed and which
 - `verify-flash-attn-r2-transcript.log` and `verify-merge-evidence-r2-transcript.log` contain the pod's unredacted SSH host and port, which the tracked flash-attn evidence deliberately redacts.
 - `verify-merge-1.1b-r2-transcript.log` contains opaque Fernet-style encrypted blobs from Codex session records, which cannot be shown to be non-secret.
 
+## Task 7.1 landing
+
+`kg/merge-7-1` merged `kg/rebuild-7-1` (Codex `verify-7.1-r2` APPROVE at `908c73f`) and committed its compact evidence. The JSON's `committed.landed_with_task_7_1` lists every file with source, bytes and SHA-256.
+
+- **Promoted from DEFER:** 11 of the 13 Task 7.1 entries (677,342 B): the implementation and verification prompts and reports, the view-probe source and the two verification transcripts (431,881 B and 217,598 B, under the 512 KiB cap). Each source re-hashed equal to this manifest. The two implementation transcripts (1,140,805 B and 1,197,029 B) stay local in the main checkout; their entries now say so.
+- **Written after the inventory:** Codex's `verify-7.1-r2/` evidence directory in `/Users/poonszesen/kg-v3-t71` was unclassified. 46 compact files (115,127 B) are committed at the same paths. 12 files (2,287,580 B) stay local: the two tracked-file inventories (reconstructible from git) and the regenerated oracle, oracle manifest and replay copies, which `regeneration/byte-comparison.json` records as byte-equal to the committed fixtures.
+- **Copy-time checks:** every copy hashed equal to its source; the strict credential patterns, Fernet blobs and the pod SSH host and port matched nothing.
+
 ## Custody gaps
 
 - **Local-only copies.** MANIFEST and DEFER files exist only in the listed worktrees. Removing a worktree before its evidence lands (DEFER) or is archived elsewhere (MANIFEST) loses it. The JSON keeps SHA-256 values so that a later copy can be checked.
 - **Coverage cutoff.** The inventory is a snapshot from 13:48:20Z. Files created or changed after that are not classified here. One example is `verify-7.3-r2-transcript.log`, a DEFER entry whose source changed after the inventory; later Codex reports in the main checkout are others.
 - **Integration-side finding.** The inventory found that the integration already tracks `flash-attn-setup-2026-09-29/post-run/extract_operator_transcript.py`, whose redaction map contains the pod's literal public SSH host. That host is not a credential. This sweep does not change it.
-- **Missing citations.** Of 66 `ops/` paths that integration cookbook notes cite but the integration lacks, 41 now resolve in this tree: 40 from the COMMIT copies and `codex/verify-gpu-bundle-r3.md` from the promoted DEFER files. 22 exist only on `kg/reference-2026-09-29` and 3 wait for their in-progress landings: `brief-7.4-review.md`, `task-1.5-s1-report.md` and `task-7.1-impl-report.md`. The inventory's `cited_but_missing` lists them all; this was rechecked against this tree.
+- **Missing citations.** Of 66 `ops/` paths that integration cookbook notes cite but the integration lacks, 41 now resolve in this tree: 40 from the COMMIT copies and `codex/verify-gpu-bundle-r3.md` from the promoted DEFER files. 22 exist only on `kg/reference-2026-09-29` and 3 waited for their in-progress landings: `brief-7.4-review.md`, `task-1.5-s1-report.md` and `task-7.1-impl-report.md`. The inventory's `cited_but_missing` lists them all; this was rechecked against this tree. `task-7.1-impl-report.md` resolves since the Task 7.1 landing; the other two still wait.

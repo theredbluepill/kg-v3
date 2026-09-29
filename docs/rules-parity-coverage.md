@@ -270,6 +270,134 @@ changed between merge commit `7f797a3` and this HEAD.
 
 ## Kaggriculture Rules Kernel
 
+### Task 7.1 Opponents: Snapshot View and Original-Submission Parity
+
+`opponents_rs` is a standalone edition-2024 crate holding byte-exact Starter,
+R04, EcoBot and E776 controller sources plus E776 policy data from reference
+`65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`. Its authored `Game` owns the
+frozen engine behind an opaque sibling module, exposes current snapshot
+accessors, and derives only Starter's hire-cost multiplier through serde. An
+authored BigInt `fib` port supplies the imported helper. Full snapshots are
+cloned after construction and successful steps; this evaluation path has no
+Mac performance claim and is not the training hot path. `from_engine` requires
+the caller to supply that engine's original configuration.
+
+The view includes both private states, public state, statuses and rewards.
+Rival-private perturbation checks therefore remain necessary. Engine RNG,
+seed and hidden counters cannot be reached or perturbed through the view.
+A test-first correction removed derived `Debug` from the opaque engine holder:
+`Game` now formats only snapshot/config, so formatting cannot reveal engine
+seed/counter fields. The regression failed before that correction and passes
+in the final 12-test unit suite (`run2/closure.log`).
+Tests clone controllers/views at seven steps for each bot and both seats,
+change rival-private state and require unchanged actions; own money/seeds/shed
+perturbations provide a positive control. The seat wrapper owns independent
+controller state, resets explicitly and rejects repeated/skipped steps,
+wrong-seat calls and use with another episode. Same-seed replay preserves
+complete action hashes and raw banks; a different seed changes the sequence.
+
+The match runner supports only default configuration and sends official
+`farmer`/`hands`/`market` JSON through the engine without grammar truncation.
+It records the applied action, joint engine acceptance per seat, controller
+errors, raw banks and winner. Acceptance is not proof that every individual
+order executed; engine market metrics are available only as joint aggregates.
+The native crate's 22 tests pass: 12 unit tests (including Starter's five
+pinned inline cases), five lifecycle/match integration tests and five oracle
+tests (comparator regression, original-Python parity, per-seat tampering,
+original-Python mid-episode replay and its tampering checks).
+
+**Original-submission parity (Claude review).** The oracle corpus holds eight
+default-config games generated from Kaggle 1.32.7's Python engine on CPython
+3.11.15, seeds `20260929`–`20260936`, pairs rotating Starter–R04, R04–EcoBot,
+EcoBot–E776 and E776–Starter so each bot plays both seats twice. Seat policies
+are Kaggle's Starter and the hash-pinned original R04, EcoBot and E776
+submissions at sibling commit `e8884aae82eddeb7a1aeae99ecceeca7c830d67e`, each
+a fresh module per seat and game. Native controllers, fed native state rebuilt
+from configuration and seed, match every recorded Python action:
+
+| Bot | Seat 0 compared / matched | Seat 1 compared / matched |
+| --- | --- | --- |
+| Starter | 1,438 / 1,438 | 1,438 / 1,438 |
+| R04 | 1,438 / 1,438 | 1,438 / 1,438 |
+| EcoBot | 1,438 / 1,438 | 1,438 / 1,438 |
+| E776 | 1,438 / 1,438 | 1,438 / 1,438 |
+
+All 5,752 transitions also match public/private state (including key order),
+statuses, rewards and terminal banks. Tampering either seat's first recorded
+action fails each trace. Actions and state compare JSON numbers strictly;
+rewards are typed f64, as in the existing kernel comparator.
+
+**Runtime.** Codex's first oracle ran on CPython 3.12.13 and failed at R04 step
+12 (`hands[2][0]`: native `WEST`, Python `NORTH`). `run2/r04-mismatch.md`
+localized it to `sum()` over 25 weights of 0.35: CPython 3.12's compensated
+float `sum()` gives `8.75`, sequential accumulation `8.749999999999996`,
+moving an anchor threshold. The native port reproduces sequential summation,
+which is CPython 3.11 behavior. Kaggle's simulation image
+(`gcr.io/kaggle-images/python:v163`, read directly in v2's container Reference)
+runs CPython 3.11.13, so the generator, custody checker and Rust test now
+require a 3.11 oracle. The 3.12 trace, preserved at commit `7ae9bbf`, is a
+negative control. If Kaggle's runtime moves to 3.12 or later, R04 parity must
+be reopened.
+
+Coverage of the Python traces, per seat-game (eight games, 16 seat-games):
+openings 1 and day resets 29 in every seat-game; own-farm weeds in all;
+hires in every R04, EcoBot and E776 seat-game and none for Starter; day-29
+SELL orders in every R04, EcoBot and E776 seat-game and none for Starter.
+No trace has a whole-step rejection or a BUY_PRODUCT above the inventory index.
+`buy_quantity_above_inventory_index` compares a quantity to a price index, not
+stock, so engine-confirmed shortages and individual-order rejection are
+uncovered. The contiguous traces' `mid_episode_replay` count stays zero; replay
+has its own oracle below. Explicit reset is checked natively (lifecycle test).
+
+**Original-submission mid-episode replay (verify r1).** The generator's
+`opponent-replay` preset rebuilds fresh controllers in both seats (a fresh
+module per original submission) from each frozen oracle's recorded prefix:
+every prefix observation is presented, the controller must choose the recorded
+action, recorded actions drive Kaggle's engine and the rebuilt public/private
+state must equal the trace. The controllers then act on their own for 24 steps.
+Reconstruction points are step 37 (day 1 hour 13), step 360 (a day reset) and
+step 695, whose window covers the whole final day. All eight oracles at all
+three points give 24 cases, so every bot resumes in both seats at every point.
+`opponents_rs/fixtures/replay/REPLAY.json.gz` (23,323 bytes, CPython 3.11.15,
+bound to the oracle MANIFEST SHA-256) freezes the resumed actions and final
+public/private state and statuses; regeneration was byte-identical. Native
+controllers, rebuilt through the same step-zero lifecycle from the same prefix,
+match **1,152 / 1,152** resumed actions (576 per seat) and all 24 final states.
+Tampering the first resumed action of either seat in each step-37 case, the
+last resumed action of one case and one final state each fails with the exact
+case, step and seat. A restored scratch controller mutation at step 700 failed
+all eight step-695 cases on resume (`verify-r1/replay-controller-mutation.log`).
+Limit: each prefix is the controllers' own recorded play, so every resumed
+action also equals the contiguous trace; states the controllers did not
+create (foreign prefixes) are untested.
+
+The eight compressed oracles use **1,779,187 / 4,000,000 bytes**; their
+SHA-256s are in `opponents_rs/fixtures/oracle/MANIFEST.json` and
+`opponents_rs/OPPONENT_MANIFEST.json`. E776's separately pinned executable
+tape is policy data, not part of this oracle budget.
+
+The dedicated opponent manifest/checker owns imported/authored file inventory,
+source hashes, Python source provenance and oracle trace hashes/size/budget.
+Its default mode, run by `just prepare`, needs no sibling repository: it pins
+the original entry hashes structurally. `--original-sources` re-reads every
+original file (owner's machine only); Claude's review split the modes because
+the first version made `just prepare` require the owner's sibling tree.
+EcoBot/E776 explicitly declare no software license and must not be redistributed;
+engine licensing does not resolve that notice gap. No original Python submission
+source is copied. Learned-seat integration tests are explicitly skipped: Task 1.4's
+`KaggricultureEnv` has landed but has no `opponents_rs` seat hook, so no
+substitute binding is introduced. Default-config
+CPU qualification establishes neither custom-config support nor playing strength.
+
+Run 1 at `21d0f45` stopped on private `fib`, private `Game.config` and missing
+accessors under Claude's original placement prompt. Its compiler/source receipts
+remain unchanged. The revised view resolves that placement boundary without
+editing the frozen engine, restoring `policy_rows`, copying the reference
+all-controller dispatcher or adding a root-crate dependency. The trim updater
+accepts the committed run-1 manifest and preserves retained/authored entries.
+
+### Kernel Inventory
+
 Task 1.1 retains a standalone `engine_rs` package pinned to reference commit
 `65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`. Its compatibility target is
 `kaggle-environments==1.32.7`, Python engine SHA-256
@@ -604,7 +732,14 @@ recorder tests added) and Python **2,319 passed, 10 skipped** (both sides'
 suites; Task 1.5 un-skips the native-table and evaluation-env tests, while
 the four teacher trainer/run_ppo seam tests, CUDA, pinned-memory, flash-attn and
 x86 quantization cases stay skipped); receipt
-`ops/rebuild-2026-09-29/merge-env-adapter/prepare.log`. The trim
+`ops/rebuild-2026-09-29/merge-env-adapter/prepare.log`. After merging Task 7.1's
+opponents (`kg/merge-7-1`), which adds the standalone `opponents_rs` crate and
+changes no engine or root-crate Rust, full `just prepare` passes with engine
+**69**, root **274 passed, five ignored**, opponents **22** (12 unit, five
+lifecycle, five oracle), and Python **2,400 passed, 21 skipped** (Task 7.1 adds
+81 tests and 11 skips: nine learned-seat checks awaiting an `opponents_rs` seat
+in the native env, one broad regeneration and one original-source reread);
+receipt `ops/rebuild-2026-09-29/merge-7.1/prepare-on-5b43062.log`. The trim
 checker's fixed authored set is now exactly the replay-parity test plus the
 generated-trace manifest. The native `grammar_tables()` matches all 964 bits of the Python
 heads' `expected_grammar_tables` in that merge-time cross-check. Task 1.4 now

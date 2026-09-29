@@ -1,0 +1,130 @@
+   Compiling kaggriculture-opponents v0.1.0 (/Users/poonszesen/kg-v3-t71/opponents_rs)
+warning: method `debug` is never used
+    --> src/native_agents/ecobot.rs:2888:12
+     |
+2810 | impl EcoBotController {
+     | --------------------- method in this implementation
+...
+2888 |     pub fn debug(&self) -> &Value {
+     |            ^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `debug` is never used
+   --> src/native_agents/e776.rs:931:12
+    |
+281 | impl E776Controller {
+    | ------------------- method in this implementation
+...
+931 |     pub fn debug(&self) -> &Value {
+    |            ^^^^^
+
+warning: field `farm_hand_cost_mult` is never read
+  --> src/lib.rs:44:5
+   |
+43 | struct ControllerConfig {
+   |        ---------------- field in this struct
+44 |     farm_hand_cost_mult: CostMult,
+   |     ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `ControllerConfig` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `0` is never read
+  --> src/lib.rs:48:17
+   |
+48 | struct CostMult(BigInt);
+   |        -------- ^^^^^^
+   |        |
+   |        field in this struct
+   |
+   = help: consider removing this field
+   = note: `CostMult` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: field `config` is never read
+  --> src/lib.rs:70:5
+   |
+69 | pub struct Game {
+   |            ---- field in this struct
+70 |     config: ControllerConfig,
+   |     ^^^^^^
+   |
+   = note: `Game` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: function `fib` is never used
+   --> src/lib.rs:129:4
+    |
+129 | fn fib(index: usize) -> BigInt {
+    |    ^^^
+
+warning: function `carrot_cycle_step` is never used
+   --> src/native_agents/starter.rs:124:8
+    |
+124 | pub fn carrot_cycle_step(game: &Game, seat: usize, x: i64, y: i64) -> Result<Value, String> {
+    |        ^^^^^^^^^^^^^^^^^
+
+warning: function `hire_step` is never used
+   --> src/native_agents/starter.rs:167:8
+    |
+167 | pub fn hire_step(game: &Game, seat: usize) -> Result<Value, String> {
+    |        ^^^^^^^^^
+
+warning: method `debug` is never used
+   --> src/native_agents/starter.rs:214:12
+    |
+192 | impl StarterController {
+    | ---------------------- method in this implementation
+...
+214 |     pub fn debug(&self) -> &Value {
+    |            ^^^^^
+
+warning: method `debug` is never used
+    --> src/native_agents/ecobot.rs:2888:12
+     |
+2810 | impl EcoBotController {
+     | --------------------- method in this implementation
+...
+2888 |     pub fn debug(&self) -> &Value {
+     |            ^^^^^
+
+warning: `kaggriculture-opponents` (lib) generated 9 warnings (1 duplicate)
+warning: `kaggriculture-opponents` (lib test) generated 2 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.61s
+     Running unittests src/lib.rs (opponents_rs/target/debug/deps/kaggriculture_opponents-c15c6cc20a17684c)
+
+running 11 tests
+test native_agents::starter::tests::a_farmer_who_cannot_afford_a_seed_passes_with_an_empty_market ... ok
+test native_agents::starter::tests::carrot_cycle_step_is_the_starter_rule_at_the_assigned_tile ... ok
+test native_agents::starter::tests::carrot_loop_follows_the_kit_starter_across_the_first_four_days ... ok
+test native_agents::starter::tests::hands_are_always_empty_even_for_a_farm_with_hands ... ok
+test native_agents::starter::tests::hire_step_requests_one_hand_when_affordable_and_not_at_the_days_end ... ok
+test view_tests::e776_visibility ... visibility e776: 7 checkpoints per seat; positive changes [4, 4]
+ok
+test view_tests::ecobot_visibility ... visibility ecobot: 7 checkpoints per seat; positive changes [7, 7]
+ok
+test view_tests::fibonacci_and_config_are_exact ... ok
+test view_tests::r04_visibility ... visibility r04: 7 checkpoints per seat; positive changes [6, 6]
+ok
+test view_tests::snapshot_refreshes_only_after_success ... ok
+test view_tests::starter_visibility ... visibility starter: 7 checkpoints per seat; positive changes [7, 7]
+ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.42s
+
+     Running tests/lifecycle.rs (opponents_rs/target/debug/deps/lifecycle-74fb322d277ff2f5)
+
+running 5 tests
+test changed_seed_changes_actions ... ok
+test independent_seats_and_mid_episode_replay ... ok
+test matches_reject_nondefault_configuration ... ok
+test registry_and_lifecycle_fail_explicitly ... ok
+test same_seed_has_identical_action_hashes_banks_and_execution ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.88s
+
+   Doc-tests kaggriculture_opponents
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

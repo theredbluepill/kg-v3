@@ -1,0 +1,124 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+__ UpdaterTests.test_accepts_both_committed_inputs_and_preserves_engine_bytes __
+
+self = <test_update_trim_manifest.UpdaterTests testMethod=test_accepts_both_committed_inputs_and_preserves_engine_bytes>
+
+    def test_accepts_both_committed_inputs_and_preserves_engine_bytes(self) -> None:
+>       result = self.render(self.base)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+
+ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_update_trim_manifest.UpdaterTests testMethod=test_accepts_both_committed_inputs_and_preserves_engine_bytes>
+current = b'{\n  "retained": [\n    {\n      "path": "engine_rs/src/lib.rs",\n      "sha256": "kept"\n    }\n  ],\n  "authored":...   }\n  ],\n  "non_engine_changes": [\n    {\n      "path": "docs/example.md",\n      "reason": "old"\n    }\n  ]\n}\n'
+
+    def render(self, current: bytes) -> bytes:
+>       return updater.render(current, self.base, self.stopped, self.updates)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: render() takes 3 positional arguments but 4 were given
+
+ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py:42: TypeError
+_ UpdaterTests.test_exactly_five_excluded_reasons_register_the_byte_exact_copies _
+
+self = <test_update_trim_manifest.UpdaterTests testMethod=test_exactly_five_excluded_reasons_register_the_byte_exact_copies>
+
+    def test_exactly_five_excluded_reasons_register_the_byte_exact_copies(self) -> None:
+>       result = json.loads(self.render(self.stopped))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_update_trim_manifest.UpdaterTests testMethod=test_exactly_five_excluded_reasons_register_the_byte_exact_copies>
+current = b'{\n  "retained": [\n    {\n      "path": "engine_rs/src/lib.rs",\n      "sha256": "kept"\n    }\n  ],\n  "authored":...ason": "old"\n    },\n    {\n      "path": "ops/run-1.log",\n      "reason": "preserve stopped probe"\n    }\n  ]\n}\n'
+
+    def render(self, current: bytes) -> bytes:
+>       return updater.render(current, self.base, self.stopped, self.updates)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: render() takes 3 positional arguments but 4 were given
+
+ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py:42: TypeError
+_________ UpdaterTests.test_missing_imported_reference_path_is_refused _________
+
+self = <test_update_trim_manifest.UpdaterTests testMethod=test_missing_imported_reference_path_is_refused>
+
+    def test_missing_imported_reference_path_is_refused(self) -> None:
+        for missing in range(5):
+            base = json.loads(self.base)
+            stopped = json.loads(self.stopped)
+            base["excluded"].pop(missing)
+            stopped["excluded"].pop(missing)
+            with pytest.raises(ValueError, match="imported reference"):
+>               updater.render(encode(stopped), encode(base), encode(stopped), {})
+E               TypeError: render() takes 3 positional arguments but 4 were given
+
+ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py:92: TypeError
+____ UpdaterTests.test_real_committed_run_one_manifest_is_an_accepted_input ____
+
+self = <test_update_trim_manifest.UpdaterTests testMethod=test_real_committed_run_one_manifest_is_an_accepted_input>
+
+    def test_real_committed_run_one_manifest_is_an_accepted_input(self) -> None:
+        def git(revision: str) -> bytes:
+            return subprocess.run(
+                ["git", "show", f"{revision}:engine_rs/TRIM_MANIFEST.json"],
+                cwd=updater.ROOT,
+                check=True,
+                capture_output=True,
+            ).stdout
+    
+        base, stopped = git("b8747b6"), git("21d0f45")
+>       result = updater.render(stopped, base, stopped, updater.CHANGES)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: render() takes 3 positional arguments but 4 were given
+
+ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py:104: TypeError
+____________ UpdaterTests.test_second_application_is_byte_identical ____________
+
+self = <test_update_trim_manifest.UpdaterTests testMethod=test_second_application_is_byte_identical>
+
+    def test_second_application_is_byte_identical(self) -> None:
+>       first = self.render(self.stopped)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_update_trim_manifest.UpdaterTests testMethod=test_second_application_is_byte_identical>
+current = b'{\n  "retained": [\n    {\n      "path": "engine_rs/src/lib.rs",\n      "sha256": "kept"\n    }\n  ],\n  "authored":...ason": "old"\n    },\n    {\n      "path": "ops/run-1.log",\n      "reason": "preserve stopped probe"\n    }\n  ]\n}\n'
+
+    def render(self, current: bytes) -> bytes:
+>       return updater.render(current, self.base, self.stopped, self.updates)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: render() takes 3 positional arguments but 4 were given
+
+ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py:42: TypeError
+_______ UpdaterTests.test_unexpected_input_is_refused_in_every_inventory _______
+
+self = <test_update_trim_manifest.UpdaterTests testMethod=test_unexpected_input_is_refused_in_every_inventory>
+
+    def test_unexpected_input_is_refused_in_every_inventory(self) -> None:
+>       for current in (self.base, self.stopped, self.render(self.stopped)):
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_update_trim_manifest.UpdaterTests testMethod=test_unexpected_input_is_refused_in_every_inventory>
+current = b'{\n  "retained": [\n    {\n      "path": "engine_rs/src/lib.rs",\n      "sha256": "kept"\n    }\n  ],\n  "authored":...ason": "old"\n    },\n    {\n      "path": "ops/run-1.log",\n      "reason": "preserve stopped probe"\n    }\n  ]\n}\n'
+
+    def render(self, current: bytes) -> bytes:
+>       return updater.render(current, self.base, self.stopped, self.updates)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: render() takes 3 positional arguments but 4 were given
+
+ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py:42: TypeError
+=========================== short test summary info ============================
+FAILED ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py::UpdaterTests::test_accepts_both_committed_inputs_and_preserves_engine_bytes
+FAILED ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py::UpdaterTests::test_exactly_five_excluded_reasons_register_the_byte_exact_copies
+FAILED ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py::UpdaterTests::test_missing_imported_reference_path_is_refused
+FAILED ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py::UpdaterTests::test_real_committed_run_one_manifest_is_an_accepted_input
+FAILED ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py::UpdaterTests::test_second_application_is_byte_identical
+FAILED ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py::UpdaterTests::test_unexpected_input_is_refused_in_every_inventory
+6 failed in 0.04s
