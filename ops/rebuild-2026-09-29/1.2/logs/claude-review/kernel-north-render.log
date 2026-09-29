@@ -1,0 +1,27 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --locked --test grammar_kernel decoded_command_matrices_execute_both_seats -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: 'Self::North => "NORTH",' -> 'Self::North => "SOUTH",'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test decoded_command_matrices_execute_both_seats ... FAILED
+
+failures:
+
+---- decoded_command_matrices_execute_both_seats stdout ----
+
+thread 'decoded_command_matrices_execute_both_seats' (10230556) panicked at tests/grammar_kernel.rs:202:5:
+assertion `left == right` failed: canonical action: NORTH
+  left: Object {"farmer": Array [String("SOUTH")], "hands": Array [], "market": Array []}
+ right: Object {"farmer": Array [String("NORTH")], "hands": Array [], "market": Array []}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    decoded_command_matrices_execute_both_seats
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+     Running tests/grammar_kernel.rs (engine_rs/target/debug/deps/grammar_kernel-88e2fbe693fab574)
+error: test failed, to rerun pass `--test grammar_kernel`

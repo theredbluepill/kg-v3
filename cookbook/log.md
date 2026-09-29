@@ -1,5 +1,13 @@
 # Change log
 
+## 2026-09-29 — Claude review of the Task 1.2 grammar with per-oracle mutation controls
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native semantics Reference]]
+now records Claude's review: no production defect; 20 of 20 restored source
+mutations fail their named grammar, kernel, checker or recorder test; the
+reference oracle reproduces byte-for-byte; and the brief's nonexistent `reference`
+extra is corrected. Replay-rejection categories remain synthetic-only.
+
 ## 2026-09-29 — Rebuild the native grammar under the reviewed Task 1.2 contract
 
 The [[references/native-game-semantics-use-v3-owned-buffers|native semantics Reference]]

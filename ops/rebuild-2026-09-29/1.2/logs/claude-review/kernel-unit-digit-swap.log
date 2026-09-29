@@ -1,0 +1,27 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --locked --test grammar_kernel decoded_transfer_quantities_have_inventory_effects -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: 'QUANTITY_BASE * frame[Slot::UnitQuantityHigh as usize]\n                + frame[Slot::UnitQuantity as usize],' -> 'QUANTITY_BASE * frame[Slot::UnitQuantity as usize]\n                + frame[Slot::UnitQuantityHigh as usize],'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test decoded_transfer_quantities_have_inventory_effects ... FAILED
+
+failures:
+
+---- decoded_transfer_quantities_have_inventory_effects stdout ----
+
+thread 'decoded_transfer_quantities_have_inventory_effects' (10230793) panicked at tests/grammar_kernel.rs:202:5:
+assertion `left == right` failed: canonical action: PICKUP
+  left: Object {"farmer": Array [String("PICKUP"), String("WHEAT"), Number(32)], "hands": Array [], "market": Array []}
+ right: Object {"farmer": Array [String("PICKUP"), String("WHEAT"), Number(1)], "hands": Array [], "market": Array []}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    decoded_transfer_quantities_have_inventory_effects
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.61s
+
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+     Running tests/grammar_kernel.rs (engine_rs/target/debug/deps/grammar_kernel-88e2fbe693fab574)
+error: test failed, to rerun pass `--test grammar_kernel`

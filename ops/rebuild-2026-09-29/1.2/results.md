@@ -273,3 +273,41 @@ table upload, actual model sampling/replay and GPU behavior remain later tasks.
 5. CPU syntax/kernel checks do not qualify native batch atomicity, PyO3 buffer
    lifetime, CUDA/BF16/model behavior, learning strength or the distinct L6 GEMM
    overflow repair. No training, GPU/network operation or throughput claim ran.
+
+## Claude review (2026-09-29, at `75169be`)
+
+Reviewer: Claude, against `briefs/1.2.md` (R1–R5, questions 1–5), contract
+v4.1 and plan C3. Every changed path in `git diff kg/isaiah-gap-closure...HEAD`
+was read. Verdict: **approve; no production defect found.**
+
+- `grammar.rs` matches reference `myolie_sampler.rs` `allows`/`advance`
+  slot by slot (including Product/Animal/Sell → Seed, the high-zero low digit
+  rule, `A + h < H` and HIRE increment only at slot 11). It adds the checked
+  i64 transport, zero-padding admission, strict encoder and table extraction
+  specified in §2. No `crate::` path, `unsafe`, `unwrap` or `#[allow]`.
+- Contract v4.1, `rl-api-specs.md`, `rules-parity-coverage.md` and the plan
+  text agree with the implemented signatures and admission order.
+- One mutation per oracle, then exact byte restore (`claude_review_mutations.py`,
+  `logs/claude-review/`): 20 of 20 controls make their named test fail at
+  an assertion, not at compilation. They cover all nine shared grammar tests,
+  all nine kernel tests, the trim-checker tests and the recorder validator.
+  Each restore is SHA-256 checked. The kernel BUY_LAND→HIRE control fails on
+  the bank assertion (line 222) before JSON equality.
+- `record_reference.py verify` against the scratch reference reproduced the
+  fixture (compressed `fa26a81f…`, uncompressed `36d87a61…`) and every count
+  (`logs/claude-review/oracle-verify.log`, exit 0).
+- The brief's §6 Python command named a nonexistent `reference` extra. It is
+  corrected in place to the selection Codex actually ran.
+- After these edits, `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 uvx --from rust-just just prepare`
+  exits 0 (`logs/claude-review/prepare.log`): root Rust 164 passed / 2 ignored;
+  engine 41 + 18 + 9 + 9 passed; Python 1,045 passed / 3 skipped; trim
+  checker OK; docs fresh. `git diff --check` is clean and pinned engine bytes
+  are unchanged.
+
+Residual risks (not Task 1.2 defects): the four traces contain no replay
+codec rejection, so the encoder's rejection categories are checked only on
+synthetic inputs; Task 5.1 must measure its own admission table. Most kernel
+tests assert canonical JSON before effects, so a renderer fault fails there;
+the effect assertions are independently discriminating only where a control
+shows it (BUY_LAND bank effect). L4, bindings, device tables and GPU behavior
+remain later tasks, as listed above.

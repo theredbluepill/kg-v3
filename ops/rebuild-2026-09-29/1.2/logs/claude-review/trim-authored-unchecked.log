@@ -1,0 +1,235 @@
+$ uv run --offline pytest tests/tools/test_check_engine_trim.py -q -p no:cacheprovider
+# mutation scripts/check_engine_trim.py: '        "Task 1.2 authored set",\n    )' -> '        "Task 1.2 authored set",\n    ) if False else None'
+# exit 1; restored sha256 f3f026cf48731c3b1f8249c0c5ff5f33d0b4bb02e79b61d00a7b67a7cb5f5357
+..FFFF.............................................FFF........           [100%]
+=================================== FAILURES ===================================
+_ test_task_authored_inventory_requires_exact_two_tests[paths0-Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity] _
+
+paths = []
+message = 'Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:101: Failed
+_ test_task_authored_inventory_requires_exact_two_tests[paths1-Task 1.2 authored set: missing=.*grammar_kernel] _
+
+paths = ['engine_rs/tests/replay_parity.rs']
+message = 'Task 1.2 authored set: missing=.*grammar_kernel'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:101: Failed
+_ test_task_authored_inventory_requires_exact_two_tests[paths2-Task 1.2 authored set: missing=.*replay_parity] _
+
+paths = ['engine_rs/tests/grammar_kernel.rs']
+message = 'Task 1.2 authored set: missing=.*replay_parity'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:101: Failed
+_ test_task_authored_inventory_requires_exact_two_tests[paths3-Task 1.2 authored set: .*extra=.*other.rs] _
+
+paths = ['engine_rs/tests/replay_parity.rs', 'engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/other.rs']
+message = 'Task 1.2 authored set: .*extra=.*other.rs'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:101: Failed
+__________ test_check_rejects_omitted_authored_test[replay_parity.rs] __________
+
+trimmed = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-431/test_check_rejects_omitted_aut0')
+name = 'replay_parity.rs'
+
+    @pytest.mark.parametrize("name", ["replay_parity.rs", "grammar_kernel.rs"])
+    def test_check_rejects_omitted_authored_test(trimmed: Path, name: str) -> None:
+        """Deleting both the test and its declaration cannot weaken the inventory."""
+        path = f"engine_rs/tests/{name}"
+        (trimmed / path).unlink()
+        manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["authored"] = [
+            entry for entry in manifest["authored"] if entry["path"] != path
+        ]
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+>       with pytest.raises(ValueError, match=f"Task 1.2 authored set: missing=.*{name}"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:365: Failed
+_________ test_check_rejects_omitted_authored_test[grammar_kernel.rs] __________
+
+trimmed = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-431/test_check_rejects_omitted_aut1')
+name = 'grammar_kernel.rs'
+
+    @pytest.mark.parametrize("name", ["replay_parity.rs", "grammar_kernel.rs"])
+    def test_check_rejects_omitted_authored_test(trimmed: Path, name: str) -> None:
+        """Deleting both the test and its declaration cannot weaken the inventory."""
+        path = f"engine_rs/tests/{name}"
+        (trimmed / path).unlink()
+        manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["authored"] = [
+            entry for entry in manifest["authored"] if entry["path"] != path
+        ]
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+>       with pytest.raises(ValueError, match=f"Task 1.2 authored set: missing=.*{name}"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:365: Failed
+____________ test_check_rejects_self_declared_third_authored_source ____________
+
+trimmed = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-431/test_check_rejects_self_declar0')
+
+    def test_check_rejects_self_declared_third_authored_source(trimmed: Path) -> None:
+        path = "engine_rs/tests/third.rs"
+        data = b"// Extra authored source is outside the fixed inventory.\n"
+        (trimmed / path).write_bytes(data)
+        manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["authored"].append(
+            {"path": path, "sha256": checker.sha(data), "reason": "self-declared third"}
+        )
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+>       with pytest.raises(ValueError, match=r"Task 1.2 authored set: .*extra=.*third.rs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:379: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_two_tests[paths0-Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity]
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_two_tests[paths1-Task 1.2 authored set: missing=.*grammar_kernel]
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_two_tests[paths2-Task 1.2 authored set: missing=.*replay_parity]
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_two_tests[paths3-Task 1.2 authored set: .*extra=.*other.rs]
+FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_omitted_authored_test[replay_parity.rs]
+FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_omitted_authored_test[grammar_kernel.rs]
+FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_self_declared_third_authored_source
+7 failed, 55 passed in 1.91s
+   Building owl @ file:///Users/poonszesen/kg-v3-grammar
+      Built owl @ file:///Users/poonszesen/kg-v3-grammar
+Uninstalled 1 package in 0.86ms
+Installed 1 package in 1ms

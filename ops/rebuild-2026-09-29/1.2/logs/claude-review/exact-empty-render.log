@@ -1,0 +1,27 @@
+$ cargo test --locked --lib kaggriculture::grammar::tests::grammar_exact_commands -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: 'let mut command = if kind == MarketKind::Empty {' -> 'let mut command = if kind == MarketKind::None {'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test kaggriculture::grammar::tests::grammar_exact_commands ... FAILED
+
+failures:
+
+---- kaggriculture::grammar::tests::grammar_exact_commands stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_exact_commands' (10227220) panicked at src/kaggriculture/grammar_tests.rs:825:9:
+assertion `left == right` failed
+  left: Object {"farmer": Array [String("PASS")], "hands": Array [], "market": Array [Array [String("EMPTY")], Array [String("HIRE")], Array [String("EMPTY")]]}
+ right: Object {"farmer": Array [String("PASS")], "hands": Array [], "market": Array [Array [], Array [String("HIRE")], Array []]}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::grammar::tests::grammar_exact_commands
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 165 filtered out; finished in 0.03s
+
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-grammar)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.56s
+     Running unittests src/lib.rs (target/debug/deps/rs-70d11de31c3178d2)
+error: test failed, to rerun pass `--lib`
