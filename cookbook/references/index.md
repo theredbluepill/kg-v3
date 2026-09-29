@@ -11,7 +11,7 @@ Grouped by rebuild phase. Task state per phase: `ops/rebuild-2026-09-29/phase-st
 
 ## Phase 2 — model
 
-- [[kaggriculture-encoder-reuses-isaiah-stateless-layers|Kaggriculture encoder reuses Isaiah's stateless layers]] — The rebuilt encoder uses Isaiah's StatelessTransformerV1 classes, token roles, packing, compile hook and initialization; only stem input widths are game-specific, and guards chunk both the padded and packed compiled GEMMs below 2^31. Describes the current tree; registration and the masked critic are in the Task 3.1 model-side Reference.
+- [[kaggriculture-encoder-reuses-isaiah-stateless-layers|Kaggriculture encoder reuses Isaiah's stateless layers]] — The rebuilt encoder uses Isaiah's StatelessTransformerV1 classes, token roles, packing, compile hook and initialization; only stem input widths are game-specific, and guards chunk both the padded and packed compiled GEMMs below 2^31. Describes the current tree; registration and the masked critic are in the Task 3.1 model-side Reference. An architecture image pinned to `8093d51`, before the actor heads merged, separates implemented components from the target training pipeline.
 - [[kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|Kaggriculture grammar heads sit behind Isaiah's actor projection]] — Task 2.3 adds the 3D→D actor projection and batched grammar heads with exact coupled-Gumbel HIRE sampling, same-path replay with support/length/canonical flags and one host check, head GEMM-extent chunking, and a 6,252,223-parameter preset; synthetic grammar tables stand in until the Task 1.4 binding exposes the Task 1.2 native tables (which exist and match the stand-in bit-for-bit). Describes the current tree.
 
 ## Phase 3 — trainer
