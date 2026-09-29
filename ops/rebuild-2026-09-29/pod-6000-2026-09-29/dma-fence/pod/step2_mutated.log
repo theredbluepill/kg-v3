@@ -1,0 +1,47 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0 -- /root/kg-v3/.venv/bin/python
+rootdir: /root/fence-scratch
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 1 item
+
+tests/kaggriculture/test_env_cuda_fence.py::test_step_does_not_overwrite_pending_dma FAILED [100%]
+
+=================================== FAILURES ===================================
+___________________ test_step_does_not_overwrite_pending_dma ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x791f147582f0>
+
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is unavailable")
+    def test_step_does_not_overwrite_pending_dma(monkeypatch):
+        device = torch.device("cuda")
+        env = make_env(pin_memory=True, transfer_device=device)
+    
+        def delayed_read():
+            actions = native_actions(env)
+            buffers = output_tensors(env)
+            before = {name: value.clone() for name, value in buffers.items()}
+            copies = {
+                name: torch.empty_like(value, device=device)
+                for name, value in buffers.items()
+            }
+            torch.cuda.synchronize(device)
+            torch.cuda._sleep(200_000_000)
+            for name, value in buffers.items():
+                copies[name].copy_(value, non_blocking=True)
+            env.step(actions)
+            torch.cuda.synchronize(device)
+            return before, {name: value.cpu() for name, value in copies.items()}
+    
+        before, after = delayed_read()
+        for name in before:
+>           assert torch.equal(before[name], after[name]), name
+E           AssertionError: market_float
+E           assert False
+E            +  where False = <built-in method equal of type object at 0x7920ff97fc40>(tensor([[[[1.0000, 0.1000],\n          [1.0000, 0.1400],\n          [1.0000, 0.2400],\n          [1.0000, 0.4800],\n          [1.0000, 1.0000],\n          [1.0000, 0.2000],\n          [1.0000, 0.6400],\n          [1.0000, 0.8000],\n          [1.0000, 0.4000]],\n\n         [[1.0000, 0.1000],\n          [1.0000, 0.1400],\n          [1.0000, 0.2400],\n          [1.0000, 0.4800],\n          [1.0000, 1.0000],\n          [1.0000, 0.2000],\n          [1.0000, 0.6400],\n          [1.0000, 0.8000],\n          [1.0000, 0.4000]]],\n\n\n        [[[1.0000, 0.1000],\n          [1.0000, 0.1400],\n          [1.0000, 0.2400],\n          [1.0000, 0.4800],\n          [1.0000, 1.0000],\n          [1.0000, 0.2000],\n          [1.0000, 0.6400],\n          [1.0000, 0.8000],\n          [1.0000, 0.4000]],\n\n         [[1.0000, 0.1000],\n          [1.0000, 0.1400],\n          [1.0000, 0.2400],\n          [1.0000, 0.4800],\n          [1.0000, 1.0000],\n          [1.0000, 0.2000],\n          [1.0000, 0.6400],\n          [1.0000, 0.8000],\n          [1.0000, 0.4000]]]]), tensor([[[[0.9999, 0.1040],\n          [0.9999, 0.1400],\n          [0.9999, 0.2400],\n          [0.9999, 0.5120],\n          [0.9999, 1.0240],\n          [0.9999, 0.2000],\n          [0.9999, 0.6760],\n          [0.9999, 0.8240],\n          [1.0000, 0.4000]],\n\n         [[0.9999, 0.1040],\n          [0.9999, 0.1400],\n          [0.9999, 0.2400],\n          [0.9999, 0.5120],\n          [0.9999, 1.0240],\n          [0.9999, 0.2000],\n          [0.9999, 0.6760],\n          [0.9999, 0.8240],\n          [1.0000, 0.4000]]],\n\n\n        [[[0.9999, 0.1040],\n          [0.9999, 0.1400],\n          [0.9999, 0.2400],\n          [0.9999, 0.5120],\n          [0.9999, 1.0240],\n          [0.9999, 0.2000],\n          [0.9999, 0.6760],\n          [0.9999, 0.8240],\n          [1.0000, 0.4000]],\n\n         [[0.9999, 0.1040],\n          [0.9999, 0.1400],\n          [0.9999, 0.2400],\n          [0.9999, 0.5120],\n          [0.9999, 1.0240],\n          [0.9999, 0.2000],\n          [0.9999, 0.6760],\n          [0.9999, 0.8240],\n          [1.0000, 0.4000]]]]))
+E            +    where <built-in method equal of type object at 0x7920ff97fc40> = torch.equal
+
+../kg-v3/tests/kaggriculture/test_env_cuda_fence.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_env_cuda_fence.py::test_step_does_not_overwrite_pending_dma
+============================== 1 failed in 0.41s ===============================
