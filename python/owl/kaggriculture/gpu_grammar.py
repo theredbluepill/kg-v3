@@ -8,10 +8,9 @@ STOP marginalization) are applied by the heads, not stored here.
 
 The native grammar (Task 1.2's ``grammar_tables()`` exposed by Task 1.4's
 ``kaggriculture_grammar_tables`` binding) is the single source of truth.
-Until that binding exists, :func:`expected_grammar_tables` builds the same
-tables from the support rules the Task 2.3 brief re-derives from the reference
-grammar (``myolie_sampler.rs`` ``State::allows``/``advance``); a test compares
-the two once :func:`native_grammar_tables` is implemented.
+:func:`native_grammar_tables` validates that ABI before copying its tables.
+:func:`expected_grammar_tables` independently builds the same tables from the
+reference support rules as a test oracle only.
 """
 
 from __future__ import annotations
@@ -23,6 +22,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
+from owl import rs
 from owl.kaggriculture import types as kt
 
 UNIT_KIND_WIDTH = kt.SLOT_WIDTHS[1]
@@ -176,7 +176,7 @@ def _mask(width: int, allowed: Collection[int]) -> list[bool]:
 def expected_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
     """The tables the Task 2.3 brief derives from the reference grammar rules.
 
-    Synthetic stand-in until :func:`native_grammar_tables` exists:
+    Independent test oracle for :func:`native_grammar_tables`:
 
     - unit kind ``1..18`` (PASS … DIG)
     - unit item ``1..12`` for PICKUP/PLACE (6/7), ``1..5`` for PLANT (8), else
@@ -245,18 +245,45 @@ def expected_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables
 
 
 def native_grammar_tables(device: torch.device | str = "cpu") -> GrammarTables:
-    """Hook for the native builder: tables extracted from the Rust grammar plans.
+    """Validate and copy the native grammar's tables to the requested device.
 
-    Task 1.2 adds ``grammar_tables()`` in Rust and Task 1.4 binds it as
-    ``owl.rs.kaggriculture_grammar_tables() -> dict[str, numpy.ndarray]`` (plus
-    ``kaggriculture_grammar_constants()`` for version/name/width checks). The
-    implementation is then ``grammar_tables_from_arrays(binding(), device=...)``
-    after the constants check. Until then this raises instead of silently
-    substituting :func:`expected_grammar_tables`.
+    Constants are admitted before table retrieval. The native arrays must
+    match the exact boolean C layout; malformed or missing bindings fail.
+    Call once at model construction, not for individual observations.
     """
-    del device
-    raise NotImplementedError(
-        "native grammar tables arrive with Task 1.2/1.4 "
-        "(owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables "
-        "until the binding exists"
-    )
+    version, names, widths = rs.kaggriculture_grammar_constants()
+    if (
+        type(version) is not int
+        or version != 1
+        or not isinstance(names, tuple)
+        or names != kt.SLOT_NAMES
+        or not isinstance(widths, tuple)
+        or any(type(width) is not int for width in widths)
+        or widths != kt.SLOT_WIDTHS
+    ):
+        raise ValueError(
+            "native grammar constants must match version 1 and the exact "
+            f"slot names/widths; got {(version, names, widths)!r}"
+        )
+    arrays = rs.kaggriculture_grammar_tables()
+    missing = sorted(set(TABLE_SHAPES) - set(arrays))
+    extra = sorted(set(arrays) - set(TABLE_SHAPES))
+    if missing or extra:
+        raise ValueError(
+            f"native grammar tables need exactly {sorted(TABLE_SHAPES)}; "
+            f"missing {missing}, unexpected {extra}"
+        )
+    for name, shape in TABLE_SHAPES.items():
+        array = arrays[name]
+        if not isinstance(array, np.ndarray):
+            raise ValueError(f"native grammar table {name} must be a NumPy array")
+        if array.dtype != np.bool_:
+            raise ValueError(f"native grammar table {name} must be bool")
+        if array.shape != shape:
+            raise ValueError(
+                f"native grammar table {name} must have shape {shape}, "
+                f"got {array.shape}"
+            )
+        if not array.flags.c_contiguous:
+            raise ValueError(f"native grammar table {name} must be C-contiguous")
+    return grammar_tables_from_arrays(arrays, device=device)

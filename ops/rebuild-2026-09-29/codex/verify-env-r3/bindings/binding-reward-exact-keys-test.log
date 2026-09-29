@@ -1,0 +1,34 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r3-bindings/python/owl/rs.abi3.so
+.F.....                                                                  [100%]
+=================================== FAILURES ===================================
+________________ test_reward_dict_rejects_invalid_config[extra] ________________
+
+kind = 'extra'
+
+    @pytest.mark.parametrize(
+        "kind", ["missing", "extra", "mode", "nan", "negative", "caps", "inert"]
+    )
+    def test_reward_dict_rejects_invalid_config(kind: str) -> None:
+        reward: dict[str, Any] = dict(REWARD)
+        if kind == "missing":
+            del reward["econ_cap"]
+        elif kind == "extra":
+            reward["unexpected"] = 0
+        elif kind == "mode":
+            reward["reward_mode"] = "share"
+        elif kind == "nan":
+            reward["econ_cap"] = float("nan")
+        elif kind == "negative":
+            reward["econ_drought_weight"] = -1
+        elif kind == "caps":
+            reward["econ_cap"] = 1.0
+        else:
+            reward["econ_starvation_weight"] = reward["econ_drought_weight"] = 0
+>       with pytest.raises(ValueError, match=r"reward|econ|cap"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:190: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_reward_dict_rejects_invalid_config[extra]
+1 failed, 6 passed, 337 deselected in 0.07s

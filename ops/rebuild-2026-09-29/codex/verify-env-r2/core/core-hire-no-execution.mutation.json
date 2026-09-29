@@ -1,0 +1,51 @@
+{
+  "name": "hire-no-execution",
+  "path": "src/kaggriculture/admission.rs",
+  "test": "hire_cash_no_execution_does_not_cap_configuration",
+  "reason": "Inspect unaffordable/unexecuted past-cost indices and overrestrict the envelope.",
+  "original_sha256": "980ba16662360fd2a9a73978703616a5cbf04eef37f42f7497e7501c8ab0827a",
+  "classification": "killed_assertion",
+  "mutant_sha256": "c4ac207b55b15a8bdd45e5734c40bc3359fad209e36675c3d58d6d5535cfa0ba",
+  "diff": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-hire-no-execution.diff",
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/bounded.py",
+    "--seconds",
+    "115",
+    "--name",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-hire-no-execution",
+    "--",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--lib",
+    "hire_cash_no_execution_does_not_cap_configuration",
+    "--",
+    "--test-threads=1"
+  ],
+  "runner_exit_status": 101,
+  "bounded_receipt": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-hire-no-execution.json",
+  "bounded": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "hire_cash_no_execution_does_not_cap_configuration",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 2.169966292,
+    "sampled_process_group_peak_rss_bytes": 595673088,
+    "stop_reason": null,
+    "time_limit_seconds": 115.0,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "restored_sha256": "980ba16662360fd2a9a73978703616a5cbf04eef37f42f7497e7501c8ab0827a",
+  "restored_byte_exact": true,
+  "primary_unchanged": true
+}

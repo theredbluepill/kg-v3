@@ -1,0 +1,23 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env)
+warning: variant `Panic` is never constructed
+ --> src/kaggriculture/env.rs:6:54
+  |
+6 | pub enum EnvError { Value(String), Overflow(String), Panic(String) }
+  |          -------- variant in this enum               ^^^^^
+  |
+  = note: `EnvError` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `owl` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.46s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 5 tests
+test kaggriculture::env_tests::reward_admission_predicate_cases ... ok
+test kaggriculture::env_tests::reward_episode_telescopes_with_explicit_output_rounding_budget ... ok
+test kaggriculture::env_tests::reward_rejects_invalid_coefficients_and_handles_huge_counts ... ok
+test kaggriculture::env_tests::reward_uses_only_own_counters_and_raw_banks ... ok
+test kaggriculture::env_tests::seed_construction_reset_stride_and_overflow ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 258 filtered out; finished in 0.01s
+

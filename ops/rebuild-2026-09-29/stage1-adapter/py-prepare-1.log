@@ -1,0 +1,173 @@
+uvx ruff check python/ scripts/ tests/ --select I --fix
+Found 3 errors (3 fixed, 0 remaining).
+uvx ruff format python/ scripts/ tests/
+6 files reformatted, 120 files left unchanged
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+E501 Line too long (89 > 88)
+  --> python/owl/kaggriculture/rewards.py:68:89
+   |
+66 |         if self.econ_ineffective_weight > 0 and self.econ_ineffective_cap <= 0:
+67 |             raise ValueError(
+68 |                 "positive econ_ineffective_weight requires positive econ_ineffective_cap"
+   |                                                                                         ^
+69 |             )
+70 |         return self
+   |
+
+E501 Line too long (90 > 88)
+   --> python/owl/rs.pyi:622:89
+    |
+620 |         transition_econ_after: NDArray[np.int64],
+621 |     ) -> None: ...
+622 |     def terminal_metrics(self, env_index: int) -> KaggricultureTerminalMetrics | None: ...
+    |                                                                                         ^^
+623 |     def state_snapshot(self, env_index: int) -> str: ...
+624 |     def seed_state(self) -> tuple[int, tuple[int, ...]]: ...
+    |
+
+E501 Line too long (90 > 88)
+   --> python/owl/rs.pyi:627:89
+    |
+626 | def kaggriculture_grammar_tables() -> dict[str, NDArray[np.bool_]]: ...
+627 | def kaggriculture_grammar_constants() -> tuple[int, tuple[str, ...], tuple[int, ...]]: ...
+    |                                                                                         ^^
+628 | def kaggriculture_encode(action_json: str, actors: int, order_limit: int,
+629 |                          hire_limit: int, out: NDArray[np.int64]) -> int: ...
+    |
+
+RET501 [*] Do not explicitly `return None` in function if it is the only possible return value
+   --> tests/kaggriculture/fake_env.py:395:9
+    |
+393 |     def terminal_metrics(self, env_index: int):
+394 |         self.events.append(f"terminal_metrics:{env_index}")
+395 |         return None
+    |         ^^^^^^^^^^^
+396 |
+397 |     def state_snapshot(self, env_index: int) -> str:
+    |
+help: Remove explicit `return None`
+
+B008 Do not perform function call `torch.device` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+  --> tests/kaggriculture/test_env.py:80:51
+   |
+80 | def make_env(*, pin_memory=False, transfer_device=torch.device("cpu")):
+   |                                                   ^^^^^^^^^^^^^^^^^^^
+81 |     return KaggricultureVectorizedEnv(
+82 |         n_envs=2,
+   |
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_env.py:134:5
+    |
+132 |     obs.check_contract()
+133 |     result, rewards, dones, metrics = env.step(pass_actions())
+134 |     assert result is obs and rewards is env.rewards and dones is env.dones
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+135 |     assert metrics == {"fake_metric": [1.0]}
+136 |     obs.check_contract()
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_env.py:150:5
+    |
+148 |         assert torch.equal(tensors[key][1], tensor)
+149 |     first = native.outputs[0]
+150 |     assert set(first) == set(OUTPUTS) and len(first) == 35
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+151 |     for arrays in native.outputs:
+152 |         for name, (dtype, shape) in OUTPUTS.items():
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_env.py:155:13
+    |
+153 |             arr = arrays[name]
+154 |             assert arr is first[name]
+155 |             assert arr.dtype == dtype and arr.shape == shape
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+156 |             assert arr.flags.c_contiguous and arr.flags.writeable and arr.flags.aligned
+157 |             assert arr.__array_interface__["data"][0] == tensors[name].data_ptr()
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_env.py:156:13
+    |
+154 |             assert arr is first[name]
+155 |             assert arr.dtype == dtype and arr.shape == shape
+156 |             assert arr.flags.c_contiguous and arr.flags.writeable and arr.flags.aligned
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+157 |             assert arr.__array_interface__["data"][0] == tensors[name].data_ptr()
+158 |     for index, left in enumerate(first.values()):
+    |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+   --> tests/kaggriculture/test_env.py:161:5
+    |
+159 |         for right in list(first.values())[index + 1 :]:
+160 |             assert not np.shares_memory(left, right)
+161 |     assert env.n_envs == 2 and env.reward_mode == "win_loss"
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+162 |     assert env.obs_spec == KaggricultureObsConfig()
+163 |     assert env.action_spec == KaggricultureActionConfig()
+    |
+help: Break down assertion into multiple parts
+
+PT012 `pytest.raises()` block should contain a single simple statement
+   --> tests/kaggriculture/test_env.py:346:5
+    |
+344 |       before = {key: tensor.clone() for key, tensor in output_tensors(fake).items()}
+345 |       fake._native.fail = True
+346 | /     with pytest.raises(ValueError, match="injected native failure"):
+347 | |         if operation == "reset":
+348 | |             fake.reset()
+349 | |         elif operation == "step":
+350 | |             fake.step(pass_actions())
+351 | |         else:
+352 | |             fake.truncate_envs(torch.tensor([True, False]))
+    | |___________________________________________________________^
+353 |       for key, tensor in output_tensors(fake).items():
+354 |           assert torch.equal(tensor, before[key])
+    |
+
+E501 Line too long (89 > 88)
+  --> tests/kaggriculture/test_env_cuda_fence.py:36:89
+   |
+34 |         before, after = delayed_read()
+35 |         assert any(not torch.equal(before[name], after[name]) for name in before), (
+36 |             "fence removal must expose pending DMA overwrite; increase the queued delay "
+   |                                                                                         ^
+37 |             "if this pod completes it before native step"
+38 |         )
+   |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_rewards.py:124:28
+    |
+122 |                 dict(zip(_COEFFICIENTS, coefficients, strict=True))
+123 |             )
+124 |         with pytest.raises(ValueError):
+    |                            ^^^^^^^^^^
+125 |             rs.KaggricultureEnv(1, 0, 1, "{}", case, 1, hire_limit=241)
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_rewards.py:297:28
+    |
+295 |             terminal_rewards(bad, config)
+296 |     for bad in (counts.expand(2, 2, 32), counts[..., :31]):
+297 |         with pytest.raises(ValueError):
+    |                            ^^^^^^^^^^
+298 |             economic_rewards(counts, bad, config)
+299 |     previous = counts.clone()
+    |
+
+Found 14 errors.
+[*] 1 fixable with the `--fix` option (5 hidden fixes can be enabled with the `--unsafe-fixes` option).
+error: recipe `py-lint` failed on line 23 with exit code 1
+
+EXIT_CODE=1

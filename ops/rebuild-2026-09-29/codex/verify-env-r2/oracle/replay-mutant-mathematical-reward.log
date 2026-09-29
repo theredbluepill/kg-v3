@@ -1,0 +1,88 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_native_matches_training_batch_16_complete_games _____________
+
+    def test_native_matches_training_batch_16_complete_games() -> None:
+        recorder = _recorder()
+        manifest, fixture = recorder.load_fixture()
+        assert manifest["games"] == 16
+        assert manifest["steps_per_game"] == 719
+        assert fixture["lengths"].shape == (16, 719, 2)
+        compared = 0
+        for game in range(16):
+            reward = recorder.reward_config(game)
+            env = rs.KaggricultureEnv(1, 17000 + game, 1, "{}", reward, 1, hire_limit=241)
+            out = buffers(1)
+            env.observe(**out)
+            for step in range(719):
+                assert int(fixture["transition_indices"][game, step]) == step
+                tokens = np.zeros((1, 2, 252, 12), dtype=np.int64)
+                lengths = fixture["lengths"][game, step].reshape(1, 2).copy()
+                for seat in range(2):
+                    index = (game * 719 + step) * 2 + seat
+                    start, end = fixture["program_offsets"][index : index + 2]
+                    assert end - start == lengths[0, seat]
+                    tokens[0, seat, : lengths[0, seat]] = fixture["tokens"][start:end]
+                actors = out["globals_int"][0, :, 14].copy()
+                limits = out["order_limits"][0].copy()
+                metrics = env.step(tokens, lengths, **out)
+                for published, recorded in [
+                    ("rewards", "rewards"),
+                    ("dones", "dones"),
+                    ("transition_banks_before", "banks_before"),
+                    ("transition_banks_after", "banks_after"),
+                    ("transition_econ_before", "econ_before"),
+                    ("transition_econ_after", "econ_after"),
+                ]:
+                    _same(
+                        published,
+                        out[published][0],
+                        fixture[recorded][game, step],
+                        game,
+                        step,
+                        tokens,
+                        lengths,
+                        actors,
+                        limits,
+                    )
+                # For this recipe terminal scales are .65/.75 and a per-step
+                # economic term is bounded by .35/.25. A non-draw terminal result
+                # has magnitude >=.30/.50, so rounding the economic term first
+                # contributes <= half an output ULP; final rounding adds <= half.
+                # Draws/nonterminal steps have only one rounding in either formula.
+                mathematical = _math_reward(
+                    out["transition_econ_before"][0],
+                    out["transition_econ_after"][0],
+                    out["transition_banks_after"][0],
+                    step == 718,
+                    reward,
+                )
+                ulp = np.maximum(
+                    np.abs(
+                        np.nextafter(
+                            mathematical, np.float32(np.inf), dtype=np.float32
+                        ).astype(np.float64)
+                        - mathematical
+                    ),
+                    np.abs(
+                        mathematical.astype(np.float64)
+                        - np.nextafter(mathematical, np.float32(-np.inf), dtype=np.float32)
+                    ),
+                )
+>               assert np.all(
+                    np.abs(out["rewards"][0].astype(np.float64) - mathematical) <= ulp
+                ), (game, step, "mathematical reward")
+E               AssertionError: (0, 0, 'mathematical reward')
+E               assert np.False_
+E                +  where np.False_ = <function all at 0x107068ef0>(array([0.01, 0.01]) <= array([9.31322575e-10, 9.31322575e-10]))
+E                +    where <function all at 0x107068ef0> = np.all
+E                +    and   array([0.01, 0.01]) = <ufunc 'absolute'>((array([0., 0.]) - array([0.01, 0.01], dtype=float32)))
+E                +      where <ufunc 'absolute'> = np.abs
+E                +      and   array([0., 0.]) = <built-in method astype of numpy.ndarray object at 0x10b53a550>(<class 'numpy.float64'>)
+E                +        where <built-in method astype of numpy.ndarray object at 0x10b53a550> = array([0., 0.], dtype=float32).astype
+E                +        and   <class 'numpy.float64'> = np.float64
+
+tests/kaggriculture/test_env_reference.py:188: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_env_reference.py::test_native_matches_training_batch_16_complete_games
+1 failed in 0.53s

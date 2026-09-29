@@ -1,0 +1,114 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_native_matches_training_batch_16_complete_games _____________
+
+    def test_native_matches_training_batch_16_complete_games() -> None:
+        recorder = _recorder()
+        manifest, fixture = recorder.load_fixture()
+        assert manifest["games"] == 16
+        assert manifest["steps_per_game"] == 719
+        assert fixture["lengths"].shape == (16, 719, 2)
+        compared = 0
+        for game in range(16):
+            reward = recorder.reward_config(game)
+            env = rs.KaggricultureEnv(1, 17000 + game, 1, "{}", reward, 1, hire_limit=241)
+            out = buffers(1)
+            env.observe(**out)
+            for step in range(719):
+                assert int(fixture["transition_indices"][game, step]) == step
+                tokens = np.zeros((1, 2, 252, 12), dtype=np.int64)
+                lengths = fixture["lengths"][game, step].reshape(1, 2).copy()
+                for seat in range(2):
+                    index = (game * 719 + step) * 2 + seat
+                    start, end = fixture["program_offsets"][index : index + 2]
+                    assert end - start == lengths[0, seat]
+                    tokens[0, seat, : lengths[0, seat]] = fixture["tokens"][start:end]
+                actors = out["globals_int"][0, :, 14].copy()
+                limits = out["order_limits"][0].copy()
+                metrics = env.step(tokens, lengths, **out)
+                out["transition_econ_before"].flat[0] += 1
+                for published, recorded in [
+                    ("rewards", "rewards"),
+                    ("dones", "dones"),
+                    ("transition_banks_before", "banks_before"),
+                    ("transition_banks_after", "banks_after"),
+                    ("transition_econ_before", "econ_before"),
+                    ("transition_econ_after", "econ_after"),
+                ]:
+>                   _same(
+                        published,
+                        out[published][0],
+                        fixture[recorded][game, step],
+                        game,
+                        step,
+                        tokens,
+                        lengths,
+                        actors,
+                        limits,
+                    )
+
+tests/kaggriculture/test_env_reference.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+field = 'transition_econ_before'
+actual = array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+expected = array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+game = 0, step = 0
+tokens = array([[[[0, 1, 0, ..., 0, 0, 0],
+         [0, 0, 0, ..., 0, 2, 0],
+         [0, 0, 0, ..., 0, 1, 0],
+         ...,
+  ... [0, 0, 0, ..., 0, 0, 0],
+         [0, 0, 0, ..., 0, 0, 0],
+         [0, 0, 0, ..., 0, 0, 0]]]], shape=(1, 2, 252, 12))
+lengths = array([[7, 3]]), actors = array([1, 1]), limits = array([10, 10])
+
+    def _same(
+        field: str,
+        actual: np.ndarray,
+        expected: np.ndarray,
+        game: int,
+        step: int,
+        tokens: np.ndarray,
+        lengths: np.ndarray,
+        actors: np.ndarray,
+        limits: np.ndarray,
+    ) -> None:
+        assert actual.shape == expected.shape
+        assert actual.dtype == expected.dtype
+        # Equality is bitwise, including signed zero and all float64 bank mantissas.
+        got = (
+            actual.view(np.uint32 if actual.dtype == np.float32 else np.uint64)
+            if actual.dtype.kind == "f"
+            else actual
+        )
+        want = expected.view(got.dtype)
+        if np.array_equal(got, want):
+            return
+        first = tuple(int(i) for i in np.argwhere(got != want)[0])
+        seat = first[0]
+        action = rs.kaggriculture_decode(
+            tokens[0, seat],
+            int(lengths[0, seat]),
+            int(actors[seat]),
+            int(limits[seat]),
+            241,
+        )
+>       raise AssertionError(
+            f"first divergence game={game} seed={17000 + game} "
+            f"step={step} seat={seat} action={action} "
+            f"field={field}{first} actual={actual[first]} "
+            f"expected={expected[first]}"
+        )
+E       AssertionError: first divergence game=0 seed=17000 step=0 seat=0 action={"farmer":["PASS"],"hands":[],"market":[["BUY_SEED","WHEAT",2],["BUY_ANIMAL","GOOSE",1],["BUY_PRODUCT","WHEAT",3],["HIRE"],["BUY_LAND"]]} field=transition_econ_before(0, 0) actual=1 expected=0
+
+tests/kaggriculture/test_env_reference.py:113: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_env_reference.py::test_native_matches_training_batch_16_complete_games
+1 failed in 0.57s

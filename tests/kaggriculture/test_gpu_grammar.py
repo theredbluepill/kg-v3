@@ -165,10 +165,7 @@ def test_from_arrays_round_trips_numpy_and_rejects_bad_keys_or_dtypes() -> None:
 
 def test_native_tables_match_expected_tables() -> None:
     """Brief §7.2: every table row matches the native plans (after Task 1.2)."""
-    try:
-        native = gg.native_grammar_tables()
-    except NotImplementedError as error:
-        pytest.skip(f"Task 1.2/1.4 native grammar binding not available: {error}")
+    native = gg.native_grammar_tables()
     expected = gg.expected_grammar_tables()
     for name, table in native.as_dict().items():
         assert torch.equal(table, expected.as_dict()[name]), name

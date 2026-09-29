@@ -872,8 +872,9 @@ NEEDS_TRAINER_SEAM = (
     "mapping in ppo.py; the merged trainer rejects KaggricultureActionMask)"
 )
 NEEDS_RUN_PPO_GAME_SEAM = (
-    "needs the Task 3.1 run_ppo game seam and the Task 1.4 native env (the merged "
-    "configs load, but run_ppo stops because no Kaggriculture environment exists)"
+    "needs the Task 3.1 run_ppo game seam (the merged configs load and the "
+    "Task 1.4/1.5 native env exists, but run_ppo stops for Kaggriculture until "
+    "Task 3.1 rollout storage and action mapping land)"
 )
 
 

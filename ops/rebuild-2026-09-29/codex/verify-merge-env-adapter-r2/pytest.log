@@ -1,0 +1,220 @@
+........................................................................ [  3%]
+........................................................................ [  6%]
+.............................................s.......................... [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 15%]
+........................................................................ [ 18%]
+........................................................................ [ 21%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 34%]
+.ss..................................................................... [ 37%]
+........................................................................ [ 40%]
+s..sss.................................................................. [ 43%]
+........................................................................ [ 46%]
+........................................................................ [ 49%]
+........ss.............................................................. [ 52%]
+........................................................................ [ 55%]
+........................................................................ [ 58%]
+.................................................................s...... [ 61%]
+........................................................................ [ 64%]
+........................................................................ [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 80%]
+........................................................................ [ 83%]
+........................................................................ [ 86%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+....................................................FFFF................ [ 95%]
+........................................................................ [ 98%]
+.........................                                                [100%]
+=================================== FAILURES ===================================
+____________ test_bounded_command_reports_process_group_memory_stop ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13fe4f9e0>
+
+    def test_bounded_command_reports_process_group_memory_stop(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(oracle, "group_rss", lambda _group: 1_000_000_000)
+        with pytest.raises(RuntimeError, match="reason=aggregate RSS"):
+>           oracle.run([sys.executable, "-c", "import time; time.sleep(30)"])
+
+tests/tools/test_observation_oracle_custody.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+argv = ['/Users/poonszesen/kg-v3-m-env-adapter-r2/.venv/bin/python', '-c', 'import time; time.sleep(30)']
+
+    def run(
+        argv: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None
+    ) -> bytes:
+        """Hard wall/process-group cleanup; sampled aggregate RSS stays below 1 GB.
+    
+        The budget charges the child group plus caller-group growth after launch.
+        Memory the caller already held (for example pytest with torch loaded under
+        `just prepare`) is the caller's, not this command's.
+        """
+        if time.monotonic() >= RUN_DEADLINE:
+>           raise RuntimeError("shared oracle execution deadline expired before launch")
+E           RuntimeError: shared oracle execution deadline expired before launch
+
+scripts/kaggriculture_observation_oracle/regenerate.py:827: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13fe4f9e0>
+
+    def test_bounded_command_reports_process_group_memory_stop(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(oracle, "group_rss", lambda _group: 1_000_000_000)
+>       with pytest.raises(RuntimeError, match="reason=aggregate RSS"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'reason=aggregate RSS'
+E         Actual message: 'shared oracle execution deadline expired before launch'
+
+tests/tools/test_observation_oracle_custody.py:313: AssertionError
+__________________ test_bounded_command_returns_exact_stdout ___________________
+
+    def test_bounded_command_returns_exact_stdout() -> None:
+        assert (
+>           oracle.run(
+                [sys.executable, "-c", "import sys; sys.stdout.buffer.write(b'\\x00\\x80')"]
+            )
+            == b"\x00\x80"
+        )
+
+tests/tools/test_observation_oracle_custody.py:319: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+argv = ['/Users/poonszesen/kg-v3-m-env-adapter-r2/.venv/bin/python', '-c', "import sys; sys.stdout.buffer.write(b'\\x00\\x80')"]
+
+    def run(
+        argv: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None
+    ) -> bytes:
+        """Hard wall/process-group cleanup; sampled aggregate RSS stays below 1 GB.
+    
+        The budget charges the child group plus caller-group growth after launch.
+        Memory the caller already held (for example pytest with torch loaded under
+        `just prepare`) is the caller's, not this command's.
+        """
+        if time.monotonic() >= RUN_DEADLINE:
+>           raise RuntimeError("shared oracle execution deadline expired before launch")
+E           RuntimeError: shared oracle execution deadline expired before launch
+
+scripts/kaggriculture_observation_oracle/regenerate.py:827: RuntimeError
+__________ test_preexisting_caller_memory_is_not_charged_to_the_child __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13fe58980>
+
+    def test_preexisting_caller_memory_is_not_charged_to_the_child(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # A large caller (pytest with torch under `just prepare`) already holds more
+        # than the budget before launch; only growth after launch counts.
+        real = oracle.group_rss
+        caller = os.getpgrp()
+        monkeypatch.setattr(
+            oracle,
+            "group_rss",
+            lambda group: 1_500_000_000 if group == caller else real(group),
+        )
+>       assert oracle.run([sys.executable, "-c", "print('ok')"]) == b"ok\n"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/tools/test_observation_oracle_custody.py:338: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+argv = ['/Users/poonszesen/kg-v3-m-env-adapter-r2/.venv/bin/python', '-c', "print('ok')"]
+
+    def run(
+        argv: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None
+    ) -> bytes:
+        """Hard wall/process-group cleanup; sampled aggregate RSS stays below 1 GB.
+    
+        The budget charges the child group plus caller-group growth after launch.
+        Memory the caller already held (for example pytest with torch loaded under
+        `just prepare`) is the caller's, not this command's.
+        """
+        if time.monotonic() >= RUN_DEADLINE:
+>           raise RuntimeError("shared oracle execution deadline expired before launch")
+E           RuntimeError: shared oracle execution deadline expired before launch
+
+scripts/kaggriculture_observation_oracle/regenerate.py:827: RuntimeError
+_________________ test_caller_growth_after_launch_still_counts _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13fe7b230>
+
+    def test_caller_growth_after_launch_still_counts(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        caller = os.getpgrp()
+        samples = iter([0])
+        monkeypatch.setattr(
+            oracle,
+            "group_rss",
+            lambda group: next(samples, 1_000_000_000) if group == caller else 0,
+        )
+        with pytest.raises(RuntimeError, match="reason=aggregate RSS"):
+>           oracle.run([sys.executable, "-c", "import time; time.sleep(30)"])
+
+tests/tools/test_observation_oracle_custody.py:352: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+argv = ['/Users/poonszesen/kg-v3-m-env-adapter-r2/.venv/bin/python', '-c', 'import time; time.sleep(30)']
+
+    def run(
+        argv: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None
+    ) -> bytes:
+        """Hard wall/process-group cleanup; sampled aggregate RSS stays below 1 GB.
+    
+        The budget charges the child group plus caller-group growth after launch.
+        Memory the caller already held (for example pytest with torch loaded under
+        `just prepare`) is the caller's, not this command's.
+        """
+        if time.monotonic() >= RUN_DEADLINE:
+>           raise RuntimeError("shared oracle execution deadline expired before launch")
+E           RuntimeError: shared oracle execution deadline expired before launch
+
+scripts/kaggriculture_observation_oracle/regenerate.py:827: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13fe7b230>
+
+    def test_caller_growth_after_launch_still_counts(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        caller = os.getpgrp()
+        samples = iter([0])
+        monkeypatch.setattr(
+            oracle,
+            "group_rss",
+            lambda group: next(samples, 1_000_000_000) if group == caller else 0,
+        )
+>       with pytest.raises(RuntimeError, match="reason=aggregate RSS"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'reason=aggregate RSS'
+E         Actual message: 'shared oracle execution deadline expired before launch'
+
+tests/tools/test_observation_oracle_custody.py:351: AssertionError
+=========================== short test summary info ============================
+SKIPPED [1] tests/kaggriculture/test_env_cuda_fence.py:11: CUDA is unavailable
+SKIPPED [2] tests/kaggriculture/test_observe.py:288: pinned host memory requires CUDA
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1356: needs Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping in ppo.py; the merged trainer rejects KaggricultureActionMask)
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1625: needs the Task 3.1 run_ppo game seam (the merged configs load and the Task 1.4/1.5 native env exists, but run_ppo stops for Kaggriculture until Task 3.1 rollout storage and action mapping land)
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1654: needs the Task 3.1 run_ppo game seam (the merged configs load and the Task 1.4/1.5 native env exists, but run_ppo stops for Kaggriculture until Task 3.1 rollout storage and action mapping land)
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1690: needs Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping in ppo.py; the merged trainer rejects KaggricultureActionMask)
+SKIPPED [1] tests/owl/model/test_attn.py:60: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/model/test_attn.py:80: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/test_int8_emulation.py:15: x86 torch quantized backend is unavailable: qnnpack
+FAILED tests/tools/test_observation_oracle_custody.py::test_bounded_command_reports_process_group_memory_stop
+FAILED tests/tools/test_observation_oracle_custody.py::test_bounded_command_returns_exact_stdout
+FAILED tests/tools/test_observation_oracle_custody.py::test_preexisting_caller_memory_is_not_charged_to_the_child
+FAILED tests/tools/test_observation_oracle_custody.py::test_caller_growth_after_launch_still_counts
+4 failed, 2315 passed, 10 skipped in 170.92s (0:02:50)

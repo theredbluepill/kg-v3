@@ -1,0 +1,124 @@
+PT018 Assertion should be broken down into multiple parts
+  --> scripts/record_kaggriculture_env_reference.py:69:5
+   |
+67 |     spec = importlib.util.spec_from_file_location(name, path)
+68 |     require(spec is not None and spec.loader is not None, f"cannot load {path}")
+69 |     assert spec is not None and spec.loader is not None
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+70 |     module = importlib.util.module_from_spec(spec)
+71 |     spec.loader.exec_module(module)
+   |
+help: Break down assertion into multiple parts
+
+E501 Line too long (146 > 88)
+   --> scripts/record_kaggriculture_env_reference.py:376:89
+    |
+374 | …
+375 | …).is_file(),
+376 | …re is missing: {path}; run the approved recorder on the pod if the Mac watchdog cannot fit it",
+    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+377 | …
+378 | ….read_bytes())
+    |
+
+PT018 Assertion should be broken down into multiple parts
+   --> scripts/record_kaggriculture_env_reference.py:458:5
+    |
+457 | def exchange(process: subprocess.Popen[str], request: dict[str, Any]) -> dict[str, Any]:
+458 |     assert process.stdin is not None and process.stdout is not None
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+459 |     process.stdin.write(json.dumps(request, separators=(",", ":")) + "\n")
+460 |     process.stdin.flush()
+    |
+help: Break down assertion into multiple parts
+
+E501 Line too long (94 > 88)
+   --> scripts/record_kaggriculture_env_reference.py:627:89
+    |
+625 |                 )
+626 |                 print(
+627 |                     f"reference game {game + 1}/16: 719 transitions; coverage={coverage[-1]}",
+    |                                                                                         ^^^^^^
+628 |                     flush=True,
+629 |                 )
+    |
+
+E501 Line too long (123 > 88)
+   --> scripts/record_kaggriculture_env_reference.py:744:89
+    |
+742 |     if code != 0 or reason is not None:
+743 |         raise SystemExit(
+744 |             f"PENDING (pod): bounded reference recording failed: exit={code}, reason={reason}; no partial fixture accepted"
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+745 |         )
+    |
+
+PT018 Assertion should be broken down into multiple parts
+  --> tests/tools/test_record_kaggriculture_env_reference.py:17:1
+   |
+15 |     "env_reference", ROOT / "scripts/record_kaggriculture_env_reference.py"
+16 | )
+17 | assert SPEC is not None and SPEC.loader is not None
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 | recorder = importlib.util.module_from_spec(SPEC)
+19 | SPEC.loader.exec_module(recorder)
+   |
+help: Break down assertion into multiple parts
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/tools/test_record_kaggriculture_env_reference.py:132:24
+    |
+130 |     if field == "dones":
+131 |         arrays[field][0, 0, 0] = True
+132 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+133 |         recorder.validate_arrays(manifest, arrays)
+    |
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_record_kaggriculture_env_reference.py:145:46
+    |
+143 |         manifest[field] = size
+144 |         path.with_suffix(".json").write_text(json.dumps(manifest))
+145 |         with pytest.raises(ValueError, match="size|budget"):
+    |                                              ^^^^^^^^^^^^^
+146 |             recorder.load_fixture(path)
+147 |         path = publish_example(tmp_path)
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+ARG005 Unused lambda argument: `a`
+   --> tests/tools/test_record_kaggriculture_env_reference.py:156:29
+    |
+154 |     path.write_bytes(path.read_bytes() + b"corrupt")
+155 |     monkeypatch.setattr(
+156 |         np, "load", lambda *a, **k: pytest.fail("numpy loaded before custody")
+    |                             ^
+157 |     )
+158 |     with pytest.raises(ValueError, match="hash|size"):
+    |
+
+ARG005 Unused lambda argument: `k`
+   --> tests/tools/test_record_kaggriculture_env_reference.py:156:34
+    |
+154 |     path.write_bytes(path.read_bytes() + b"corrupt")
+155 |     monkeypatch.setattr(
+156 |         np, "load", lambda *a, **k: pytest.fail("numpy loaded before custody")
+    |                                  ^
+157 |     )
+158 |     with pytest.raises(ValueError, match="hash|size"):
+    |
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_record_kaggriculture_env_reference.py:158:42
+    |
+156 |         np, "load", lambda *a, **k: pytest.fail("numpy loaded before custody")
+157 |     )
+158 |     with pytest.raises(ValueError, match="hash|size"):
+    |                                          ^^^^^^^^^^^
+159 |         recorder.load_fixture(path)
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+Found 11 errors.
+No fixes available (3 hidden fixes can be enabled with the `--unsafe-fixes` option).

@@ -1,0 +1,213 @@
+{
+  "baseline_cases": 113,
+  "baseline_selectors": [
+    {
+      "selector": "reward-bool",
+      "passes": 6
+    },
+    {
+      "selector": "strict-seeds",
+      "passes": 11
+    },
+    {
+      "selector": "reward-plain-dict",
+      "passes": 1
+    },
+    {
+      "selector": "reward-exact-keys",
+      "passes": 7
+    },
+    {
+      "selector": "overlap",
+      "passes": 1
+    },
+    {
+      "selector": "table-bit",
+      "passes": 1
+    },
+    {
+      "selector": "constants-version",
+      "passes": 1
+    },
+    {
+      "selector": "c-layout",
+      "passes": 35
+    },
+    {
+      "selector": "alignment",
+      "passes": 35
+    },
+    {
+      "selector": "shape",
+      "passes": 1
+    },
+    {
+      "selector": "codec-tail",
+      "passes": 7
+    },
+    {
+      "selector": "l6-econ-after",
+      "passes": 4
+    },
+    {
+      "selector": "seed-stride",
+      "passes": 2
+    },
+    {
+      "selector": "native-dones-oracle",
+      "passes": 1
+    }
+  ],
+  "mutations": [
+    {
+      "name": "reward-bool",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_shaping]",
+        "FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_starvation_weight]",
+        "FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_drought_weight]",
+        "FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_cap]",
+        "FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_ineffective_weight]",
+        "FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_ineffective_cap]"
+      ]
+    },
+    {
+      "name": "strict-seeds",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[True-1-ValueError]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[1.0-1-ValueError]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[1-1-ValueError0]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[1-True-ValueError]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[1-1.0-ValueError]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[1-1-ValueError1]"
+      ]
+    },
+    {
+      "name": "reward-plain-dict",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_native_env.py::test_reward_config_requires_plain_dict"
+      ]
+    },
+    {
+      "name": "reward-exact-keys",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_native_env.py::test_reward_dict_rejects_invalid_config[extra]"
+      ]
+    },
+    {
+      "name": "overlap",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_native_env.py::test_distinct_numpy_bases_with_shared_storage_are_rejected"
+      ]
+    },
+    {
+      "name": "table-bit",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_tables_are_copied_bool_support"
+      ]
+    },
+    {
+      "name": "constants-version",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_exact_grammar_constants"
+      ]
+    },
+    {
+      "name": "c-layout",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tile_kind]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tile_crop]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tile_animal]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tile_cell]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tile_role]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tiles_int]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-tiles_float]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_slot]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_cell]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_role]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_mask]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_inventory]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actor_inventory_rank]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-actors_float]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-player_features]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-storage_counts]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-storage_rank]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-banks]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-shop_type]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-shop_slot]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-shop_mask]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-market_product]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-market_float]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-market_int]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-global_features]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-globals_int]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-still_playing]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-order_limits]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-can_act]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-rewards]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-dones]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-transition_banks_before]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-transition_banks_after]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-transition_econ_before]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_every_destination_rejected_before_any_write[fortran-transition_econ_after]"
+      ]
+    },
+    {
+      "name": "alignment",
+      "status": "survived",
+      "failure_lines": []
+    },
+    {
+      "name": "shape",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_independent_binding_probe.py::test_same_cell_count_shape_is_rejected_transactionally"
+      ]
+    },
+    {
+      "name": "codec-tail",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action0-1-2]",
+        "FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action1-1-4]",
+        "FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action2-1-4]",
+        "FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action3-1-2]",
+        "FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action4-1-2]",
+        "FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action5-1-2]",
+        "FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action6-3-4]"
+      ]
+    },
+    {
+      "name": "l6-econ-after",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_native_env.py::test_calls_overwrite_every_output_byte_of_the_same_buffer_set[observe]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_calls_overwrite_every_output_byte_of_the_same_buffer_set[reset]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_calls_overwrite_every_output_byte_of_the_same_buffer_set[step]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_calls_overwrite_every_output_byte_of_the_same_buffer_set[terminal_step]"
+      ]
+    },
+    {
+      "name": "seed-stride",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_native_env.py::test_seed_partition_across_constructor_full_partial_and_terminal_resets[2]",
+        "FAILED tests/kaggriculture/test_native_env.py::test_seed_partition_across_constructor_full_partial_and_terminal_resets[8]"
+      ]
+    },
+    {
+      "name": "native-dones-oracle",
+      "status": "killed",
+      "failure_lines": [
+        "FAILED tests/kaggriculture/test_env_reference.py::test_native_matches_training_batch_16_complete_games"
+      ]
+    }
+  ]
+}

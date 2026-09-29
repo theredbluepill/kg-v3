@@ -1,0 +1,58 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_duplicate_or_object_zip_members_rejected _________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-104/test_duplicate_or_object_zip_m0')
+
+    def test_duplicate_or_object_zip_members_rejected(tmp_path: Path) -> None:
+        path = publish_example(tmp_path)
+        with zipfile.ZipFile(path, "a") as archive:
+            content = io.BytesIO()
+            np.save(content, np.array([object()], dtype=object))
+            archive.writestr("unexpected.npy", content.getvalue())
+        manifest = json.loads(path.with_suffix(".json").read_text())
+        manifest["compressed_bytes"] = path.stat().st_size
+        manifest["fixture_sha256"] = recorder.sha(path.read_bytes())
+        path.with_suffix(".json").write_text(json.dumps(manifest))
+        with pytest.raises(ValueError, match="inventory"):
+>           recorder.load_fixture(path)
+
+tests/tools/test_record_kaggriculture_env_reference.py:345: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:397: in load_fixture
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'expanded size budget differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: expanded size budget differs
+
+scripts/record_kaggriculture_env_reference.py:63: ValueError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-104/test_duplicate_or_object_zip_m0')
+
+    def test_duplicate_or_object_zip_members_rejected(tmp_path: Path) -> None:
+        path = publish_example(tmp_path)
+        with zipfile.ZipFile(path, "a") as archive:
+            content = io.BytesIO()
+            np.save(content, np.array([object()], dtype=object))
+            archive.writestr("unexpected.npy", content.getvalue())
+        manifest = json.loads(path.with_suffix(".json").read_text())
+        manifest["compressed_bytes"] = path.stat().st_size
+        manifest["fixture_sha256"] = recorder.sha(path.read_bytes())
+        path.with_suffix(".json").write_text(json.dumps(manifest))
+>       with pytest.raises(ValueError, match="inventory"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'inventory'
+E         Actual message: 'expanded size budget differs'
+
+tests/tools/test_record_kaggriculture_env_reference.py:344: AssertionError
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_duplicate_or_object_zip_members_rejected
+1 failed, 57 deselected in 0.71s

@@ -1,0 +1,24 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env)
+error[E0432]: unresolved import `super::validate_hire_cash`
+ --> src/kaggriculture/admission.rs:5:9
+  |
+5 |     use super::validate_hire_cash;
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^ no `validate_hire_cash` in `kaggriculture::admission`
+
+warning: unused import: `ObservationGame`
+   --> src/kaggriculture/env_tests.rs:111:45
+    |
+111 | use super::{grammar, ObsRowMut, ObsStaging, ObservationGame};
+    |                                             ^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `Config` and `TraceHeader`
+   --> src/kaggriculture/env_tests.rs:112:28
+    |
+112 | use kaggriculture_engine::{Config, TraceHeader};
+    |                            ^^^^^^  ^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0432`.
+warning: `owl` (lib test) generated 2 warnings
+error: could not compile `owl` (lib test) due to 1 previous error; 2 warnings emitted

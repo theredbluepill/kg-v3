@@ -1,0 +1,10 @@
+--- original/src/kaggriculture/reward.rs
++++ mutant/src/kaggriculture/reward.rs
+@@ -113,6 +113,6 @@
+         if r.iter().any(|v| !v.is_finite()) {
+             return Err("nonfinite reward".into());
+         }
+-        Ok(r)
++        Ok([0.0; 2])
+     }
+ }

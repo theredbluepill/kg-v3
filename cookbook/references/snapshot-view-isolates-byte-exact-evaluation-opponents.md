@@ -152,8 +152,10 @@ oracle above. Starter never hires in these games.
 
 Default-config-only support is deliberate: the controllers hardcode calendar
 and rule constants. Custom configs accepted by the general v4.1 environment
-contract are not thereby supported by these opponents. Task 1.4 still gates
-learned-seat binding checks; explicit skipped tests describe that future API.
+contract are not thereby supported by these opponents. Learned-seat binding
+checks stay skipped: Task 1.4's `KaggricultureEnv` has landed but has no hook
+that puts an `opponents_rs` controller in the other seat, and the skipped tests
+describe that future API.
 No playing-strength, held-out panel or generality result follows from bounded
 CPU qualification.
 

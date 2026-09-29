@@ -1,0 +1,65 @@
+[
+  {
+    "name": "rewards-configs-final",
+    "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py tests/kaggriculture/test_configs.py -q",
+    "exit_code": 0,
+    "wall_seconds": 1.9,
+    "log": "rewards-configs-final.log"
+  },
+  {
+    "name": "focused-final",
+    "command": "uv run --offline pytest tests/kaggriculture/test_rewards.py tests/kaggriculture/test_configs.py tests/kaggriculture/test_game.py tests/kaggriculture/test_env.py tests/kaggriculture/test_env_cuda_fence.py tests/kaggriculture/test_codec.py -q",
+    "exit_code": 0,
+    "wall_seconds": 1.638,
+    "log": "focused-final.log"
+  },
+  {
+    "name": "env-contract-final",
+    "command": "uv run --offline pytest tests/kaggriculture/test_env.py -k checks_contract -q",
+    "exit_code": 0,
+    "wall_seconds": 1.203,
+    "log": "env-contract-final.log"
+  },
+  {
+    "name": "env-fence-final",
+    "command": "uv run --offline pytest tests/kaggriculture/test_env.py -k fence -q",
+    "exit_code": 0,
+    "wall_seconds": 1.241,
+    "log": "env-fence-final.log"
+  },
+  {
+    "name": "py-prepare-final",
+    "command": "uvx --offline --from rust-just just py-prepare",
+    "exit_code": 0,
+    "wall_seconds": 44.536,
+    "log": "py-prepare-final.log"
+  },
+  {
+    "name": "abi-check-final",
+    "command": "uv run --offline python /Users/poonszesen/kg-v3-adapter/ops/rebuild-2026-09-29/stage1-adapter/check_contract.py",
+    "exit_code": 0,
+    "wall_seconds": 0.054,
+    "log": "abi-check-final.log"
+  },
+  {
+    "name": "docs-lint-final",
+    "command": "uvx --offline pymarkdownlnt scan docs/rl-api-specs.md",
+    "exit_code": 0,
+    "wall_seconds": 0.293,
+    "log": "docs-lint-final.log"
+  },
+  {
+    "name": "orbit-diff-final",
+    "command": "git diff --stat -- tests/owl tests/scripts tests/tools",
+    "exit_code": 0,
+    "wall_seconds": 0.008,
+    "log": "orbit-diff-final.log"
+  },
+  {
+    "name": "diff-check-final",
+    "command": "git diff --check",
+    "exit_code": 0,
+    "wall_seconds": 0.014,
+    "log": "diff-check-final.log"
+  }
+]

@@ -1,0 +1,126 @@
+PT018 Assertion should be broken down into multiple parts
+  --> tests/kaggriculture/test_env_reference.py:23:5
+   |
+21 |     assert path.is_file(), "Task 1.4 reference recorder is missing"
+22 |     spec = importlib.util.spec_from_file_location("env_reference_recorder_test", path)
+23 |     assert spec is not None and spec.loader is not None
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 |     module = importlib.util.module_from_spec(spec)
+25 |     sys.modules[spec.name] = module
+   |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+  --> tests/kaggriculture/test_env_reference.py:53:5
+   |
+51 |           step: int, tokens: np.ndarray, lengths: np.ndarray,
+52 |           actors: np.ndarray, limits: np.ndarray) -> None:
+53 |     assert actual.shape == expected.shape and actual.dtype == expected.dtype
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+54 |     # Equality is bitwise, including signed zero and all float64 bank mantissas.
+55 |     got = actual.view(np.uint32 if actual.dtype == np.float32 else np.uint64) if actual.dtype.kind == "f" else actual
+   |
+help: Break down assertion into multiple parts
+
+E501 Line too long (117 > 88)
+  --> tests/kaggriculture/test_env_reference.py:55:89
+   |
+53 |     assert actual.shape == expected.shape and actual.dtype == expected.dtype
+54 |     # Equality is bitwise, including signed zero and all float64 bank mantissas.
+55 |     got = actual.view(np.uint32 if actual.dtype == np.float32 else np.uint64) if actual.dtype.kind == "f" else actual
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+56 |     want = expected.view(got.dtype)
+57 |     if np.array_equal(got, want):
+   |
+
+PT018 Assertion should be broken down into multiple parts
+  --> tests/kaggriculture/test_env_reference.py:72:5
+   |
+70 |     recorder = _recorder()
+71 |     manifest, fixture = recorder.load_fixture()
+72 |     assert manifest["games"] == 16 and manifest["steps_per_game"] == 719
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+73 |     assert fixture["lengths"].shape == (16, 719, 2)
+74 |     compared = 0
+   |
+help: Break down assertion into multiple parts
+
+E501 Line too long (136 > 88)
+   --> tests/kaggriculture/test_env_reference.py:111:89
+    |
+109 | …ransition_banks_after"][0],
+110 | …= 718, reward)
+111 | …er(mathematical, np.float32(np.inf), dtype=np.float32).astype(np.float64) - mathematical),
+    |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+112 | …al.astype(np.float64) - np.nextafter(mathematical, np.float32(-np.inf), dtype=np.float32)))
+113 | …][0].astype(np.float64) - mathematical) <= ulp), (game, step, "mathematical reward")
+    |
+
+E501 Line too long (137 > 88)
+   --> tests/kaggriculture/test_env_reference.py:112:89
+    |
+110 | … 718, reward)
+111 | …r(mathematical, np.float32(np.inf), dtype=np.float32).astype(np.float64) - mathematical),
+112 | …l.astype(np.float64) - np.nextafter(mathematical, np.float32(-np.inf), dtype=np.float32)))
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+113 | …[0].astype(np.float64) - mathematical) <= ulp), (game, step, "mathematical reward")
+114 | …s_played", "terminal_bank_0", "terminal_bank_1", "terminal_margin_0"}
+    |
+
+E501 Line too long (130 > 88)
+   --> tests/kaggriculture/test_env_reference.py:113:89
+    |
+111 | …     ulp = np.maximum(np.abs(np.nextafter(mathematical, np.float32(np.inf), dtype=np.float32).astype(np.float64) - mathematical),
+112 | …                      np.abs(mathematical.astype(np.float64) - np.nextafter(mathematical, np.float32(-np.inf), dtype=np.float32)))
+113 | …     assert np.all(np.abs(out["rewards"][0].astype(np.float64) - mathematical) <= ulp), (game, step, "mathematical reward")
+    |                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+114 | …     assert set(metrics) == {"total_games_played", "terminal_bank_0", "terminal_bank_1", "terminal_margin_0"}
+115 | …     if step < 718:
+    |
+
+E501 Line too long (116 > 88)
+   --> tests/kaggriculture/test_env_reference.py:114:89
+    |
+112 | …                      np.abs(mathematical.astype(np.float64) - np.nextafter(mathematical, np.float32(-np.inf), dtype=np.float32)))
+113 | …     assert np.all(np.abs(out["rewards"][0].astype(np.float64) - mathematical) <= ulp), (game, step, "mathematical reward")
+114 | …     assert set(metrics) == {"total_games_played", "terminal_bank_0", "terminal_bank_1", "terminal_margin_0"}
+    |                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+115 | …     if step < 718:
+116 | …         assert all(value == [] for value in metrics.values())
+    |
+
+E501 Line too long (93 > 88)
+   --> tests/kaggriculture/test_env_reference.py:122:89
+    |
+120 |                 record = env.terminal_metrics(0)
+121 |                 assert record is not None
+122 |                 assert record["episode_steps"] == int(fixture["terminal_steps"][game]) == 719
+    |                                                                                         ^^^^^
+123 |                 assert record["winner"] == int(fixture["terminal_winner"][game])
+124 |                 expected_banks = fixture["terminal_banks"][game]
+    |
+
+E501 Line too long (97 > 88)
+   --> tests/kaggriculture/test_env_reference.py:125:89
+    |
+123 |                 assert record["winner"] == int(fixture["terminal_winner"][game])
+124 |                 expected_banks = fixture["terminal_banks"][game]
+125 |                 actual_banks = np.asarray([record["bank_0"], record["bank_1"]], dtype=np.float64)
+    |                                                                                         ^^^^^^^^^
+126 |                 _same("terminal_banks", actual_banks, expected_banks, game, step,
+127 |                       tokens, lengths, actors, limits)
+    |
+
+E501 Line too long (126 > 88)
+   --> tests/kaggriculture/test_env_reference.py:128:89
+    |
+126 |                 _same("terminal_banks", actual_banks, expected_banks, game, step,
+127 |                       tokens, lengths, actors, limits)
+128 |                 assert np.float64(record["margin_0"]).tobytes() == np.float64(expected_banks[0] - expected_banks[1]).tobytes()
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+129 |                 _same("terminal_econ", np.stack([record["econ_0"], record["econ_1"]]),
+130 |                       fixture["terminal_econ"][game], game, step, tokens, lengths,
+    |
+
+Found 11 errors.
+No fixes available (3 hidden fixes can be enabled with the `--unsafe-fixes` option).

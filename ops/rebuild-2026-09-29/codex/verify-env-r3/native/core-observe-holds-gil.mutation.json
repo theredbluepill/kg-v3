@@ -1,0 +1,51 @@
+{
+  "name": "observe-holds-gil",
+  "path": "src/kaggriculture/bindings.rs",
+  "test": "native_observe_releases_gil_with_controlled_latch",
+  "reason": "Keep the interpreter attached while the actual observation latch waits.",
+  "original_sha256": "2e418e1a527980e2d7ad47042095f458a211752322fe495196b63297f4d50e02",
+  "classification": "killed_assertion",
+  "mutant_sha256": "bbe2bc50c4a8923c7cdc7a47ec29d720d4506410688e64ecb55210030970ada7",
+  "diff": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r3/native/core-observe-holds-gil.diff",
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r3/native/bounded.py",
+    "--seconds",
+    "115",
+    "--name",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r3/native/core-observe-holds-gil",
+    "--",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--lib",
+    "native_observe_releases_gil_with_controlled_latch",
+    "--",
+    "--test-threads=1"
+  ],
+  "runner_exit_status": 101,
+  "bounded_receipt": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r3/native/core-observe-holds-gil.json",
+  "bounded": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "native_observe_releases_gil_with_controlled_latch",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 5.642484458,
+    "sampled_process_group_peak_rss_bytes": 641597440,
+    "stop_reason": null,
+    "time_limit_seconds": 115.0,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "restored_sha256": "2e418e1a527980e2d7ad47042095f458a211752322fe495196b63297f4d50e02",
+  "restored_byte_exact": true,
+  "primary_unchanged": true
+}

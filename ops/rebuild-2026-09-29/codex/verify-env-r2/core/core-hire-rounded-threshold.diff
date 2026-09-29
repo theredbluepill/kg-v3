@@ -1,0 +1,11 @@
+--- original/src/kaggriculture/admission.rs
++++ mutant/src/kaggriculture/admission.rs
+@@ -37,7 +37,7 @@
+         let (mut a, mut b) = (BigInt::from(1), BigInt::from(1));
+         for index in 0..end {
+             let cost = (&multiplier * &a).to_f64();
+-            if cost.is_none_or(|cost| !cost.is_finite() || cost >= UINT64_CASH_LIMIT) {
++            if cost.is_none_or(|cost| !cost.is_finite() || cost > UINT64_CASH_LIMIT) {
+                 // Fibonacci costs never decrease. If the threshold is reached
+                 // before the first executed index, that first hire is unsafe
+                 // too; stop without constructing arbitrarily large integers.

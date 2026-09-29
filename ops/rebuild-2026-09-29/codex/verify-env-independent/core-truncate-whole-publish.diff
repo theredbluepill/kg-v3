@@ -1,0 +1,12 @@
+--- original/src/kaggriculture/env.rs
++++ mutant/src/kaggriculture/env.rs
+@@ -662,7 +662,8 @@
+             return Err(EnvError::Value("publication n_envs mismatch".into()));
+         }
+         if let Some(selected) = &pending.selected {
+-            commit_selected_rows(&mut pending.staging.buffers_mut(), out, selected);
++            let _ = selected;
++            pending.staging.publish(out)?;
+         } else {
+             pending.staging.publish(out)?;
+         }

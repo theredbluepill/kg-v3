@@ -1,0 +1,525 @@
+FF.................FFFFF....s.s                                          [100%]
+=================================== FAILURES ===================================
+_______________________ test_every_batch_checks_contract _______________________
+
+fake = <owl.kaggriculture.env.KaggricultureVectorizedEnv object at 0x10eeedc40>
+
+    def test_every_batch_checks_contract(fake):
+        env = fake
+        obs = env.observations
+        assert isinstance(obs, KaggricultureObsBatch)
+        assert isinstance(obs.action_mask, KaggricultureActionMask)
+        obs.check_contract()
+        tensors = output_tensors(env)
+        ptrs = {key: value.data_ptr() for key, value in tensors.items()}
+        native = env._native
+        assert native.calls == ["observe"]  # construction never consumes another reset
+        assert env.reset() is obs
+        obs.check_contract()
+>       result, rewards, dones, metrics = env.step(pass_actions())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_env.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:339: in step
+    metrics = self._native.step(
+tests/kaggriculture/fake_env.py:285: in step
+    self._call("step", arrays, (tokens, lengths))
+tests/kaggriculture/fake_env.py:49: in _call
+    _write(json.dumps(headers), arrays)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+headers = '[{"format": "kaggriculture-re-parity-v1", "seed": 42, "configuration": {"episodeSteps": 720, "boardSize": 10, "starti..."seeds": {}, "inventories": [{}]}]}, "shop_schedule": [], "rng_schedule": [], "terminal_banks": [], "transitions": 0}]'
+arrays = {'actor_cell': array([[[27,  0,  0, ...,  0,  0,  0],
+        [72,  0,  0, ...,  0,  0,  0]],
+
+       [[27,  0,  0, .....e, ..., False, False, False],
+        [ True, False, False, ..., False, False, False]]],
+      shape=(2, 2, 482)), ...}
+
+    def _write(headers: str, arrays: dict[str, Any]) -> None:
+>       rs.encode_kaggriculture_headers_into(
+            headers,
+            tile_kind=arrays["tile_kind"],
+            tile_crop=arrays["tile_crop"],
+            tile_animal=arrays["tile_animal"],
+            tile_cell=arrays["tile_cell"],
+            tile_role=arrays["tile_role"],
+            tiles_int=arrays["tiles_int"],
+            tiles_float=arrays["tiles_float"],
+            actor_slot=arrays["actor_slot"],
+            actor_cell=arrays["actor_cell"],
+            actor_role=arrays["actor_role"],
+            actor_mask=arrays["actor_mask"],
+            actor_inventory=arrays["actor_inventory"],
+            actor_inventory_rank=arrays["actor_inventory_rank"],
+            actors_float=arrays["actors_float"],
+            player_features=arrays["player_features"],
+            storage_counts=arrays["storage_counts"],
+            storage_rank=arrays["storage_rank"],
+            banks=arrays["banks"],
+            shop_type=arrays["shop_type"],
+            shop_slot=arrays["shop_slot"],
+            shop_mask=arrays["shop_mask"],
+            market_product=arrays["market_product"],
+            market_float=arrays["market_float"],
+            market_int=arrays["market_int"],
+            global_features=arrays["global_features"],
+            globals_int=arrays["globals_int"],
+            still_playing=arrays["still_playing"],
+            order_limits=arrays["order_limits"],
+            can_act=arrays["can_act"],
+        )
+E       ValueError: env=0 public.day: must equal step / turnsPerDay
+
+tests/kaggriculture/test_observe.py:112: ValueError
+_______________ test_action_and_mask_inputs_are_zero_copy_views ________________
+
+fake = <owl.kaggriculture.env.KaggricultureVectorizedEnv object at 0x10ef3b170>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ef3b890>
+
+    def test_action_and_mask_inputs_are_zero_copy_views(fake, monkeypatch):
+        original = torch.Tensor.numpy
+        seen = []
+        def numpy_spy(tensor):
+            seen.append(tensor)
+            return original(tensor)
+        monkeypatch.setattr(torch.Tensor, "numpy", numpy_spy)
+        for _ in range(2):
+            actions = pass_actions()
+            mask = torch.tensor([False, True])
+>           fake.step(actions)
+
+tests/kaggriculture/test_env.py:166: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:339: in step
+    metrics = self._native.step(
+tests/kaggriculture/fake_env.py:285: in step
+    self._call("step", arrays, (tokens, lengths))
+tests/kaggriculture/fake_env.py:49: in _call
+    _write(json.dumps(headers), arrays)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+headers = '[{"format": "kaggriculture-re-parity-v1", "seed": 42, "configuration": {"episodeSteps": 720, "boardSize": 10, "starti..."seeds": {}, "inventories": [{}]}]}, "shop_schedule": [], "rng_schedule": [], "terminal_banks": [], "transitions": 0}]'
+arrays = {'actor_cell': array([[[27,  0,  0, ...,  0,  0,  0],
+        [72,  0,  0, ...,  0,  0,  0]],
+
+       [[27,  0,  0, .....e, ..., False, False, False],
+        [ True, False, False, ..., False, False, False]]],
+      shape=(2, 2, 482)), ...}
+
+    def _write(headers: str, arrays: dict[str, Any]) -> None:
+>       rs.encode_kaggriculture_headers_into(
+            headers,
+            tile_kind=arrays["tile_kind"],
+            tile_crop=arrays["tile_crop"],
+            tile_animal=arrays["tile_animal"],
+            tile_cell=arrays["tile_cell"],
+            tile_role=arrays["tile_role"],
+            tiles_int=arrays["tiles_int"],
+            tiles_float=arrays["tiles_float"],
+            actor_slot=arrays["actor_slot"],
+            actor_cell=arrays["actor_cell"],
+            actor_role=arrays["actor_role"],
+            actor_mask=arrays["actor_mask"],
+            actor_inventory=arrays["actor_inventory"],
+            actor_inventory_rank=arrays["actor_inventory_rank"],
+            actors_float=arrays["actors_float"],
+            player_features=arrays["player_features"],
+            storage_counts=arrays["storage_counts"],
+            storage_rank=arrays["storage_rank"],
+            banks=arrays["banks"],
+            shop_type=arrays["shop_type"],
+            shop_slot=arrays["shop_slot"],
+            shop_mask=arrays["shop_mask"],
+            market_product=arrays["market_product"],
+            market_float=arrays["market_float"],
+            market_int=arrays["market_int"],
+            global_features=arrays["global_features"],
+            globals_int=arrays["globals_int"],
+            still_playing=arrays["still_playing"],
+            order_limits=arrays["order_limits"],
+            can_act=arrays["can_act"],
+        )
+E       ValueError: env=0 public.day: must equal step / turnsPerDay
+
+tests/kaggriculture/test_observe.py:112: ValueError
+____________________ test_fence_precedes_every_native_write ____________________
+
+fake = <owl.kaggriculture.env.KaggricultureVectorizedEnv object at 0x10ef3bb60>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ef3ba10>
+
+    def test_fence_precedes_every_native_write(fake, monkeypatch):
+        events = fake._native.events
+        monkeypatch.setattr(fake, "_fence", lambda: events.append("fence"))
+        events.clear()
+        fake.reset()
+>       fake.step(pass_actions())
+
+tests/kaggriculture/test_env.py:236: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:339: in step
+    metrics = self._native.step(
+tests/kaggriculture/fake_env.py:285: in step
+    self._call("step", arrays, (tokens, lengths))
+tests/kaggriculture/fake_env.py:49: in _call
+    _write(json.dumps(headers), arrays)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+headers = '[{"format": "kaggriculture-re-parity-v1", "seed": 42, "configuration": {"episodeSteps": 720, "boardSize": 10, "starti..."seeds": {}, "inventories": [{}]}]}, "shop_schedule": [], "rng_schedule": [], "terminal_banks": [], "transitions": 0}]'
+arrays = {'actor_cell': array([[[27,  0,  0, ...,  0,  0,  0],
+        [72,  0,  0, ...,  0,  0,  0]],
+
+       [[27,  0,  0, .....e, ..., False, False, False],
+        [ True, False, False, ..., False, False, False]]],
+      shape=(2, 2, 482)), ...}
+
+    def _write(headers: str, arrays: dict[str, Any]) -> None:
+>       rs.encode_kaggriculture_headers_into(
+            headers,
+            tile_kind=arrays["tile_kind"],
+            tile_crop=arrays["tile_crop"],
+            tile_animal=arrays["tile_animal"],
+            tile_cell=arrays["tile_cell"],
+            tile_role=arrays["tile_role"],
+            tiles_int=arrays["tiles_int"],
+            tiles_float=arrays["tiles_float"],
+            actor_slot=arrays["actor_slot"],
+            actor_cell=arrays["actor_cell"],
+            actor_role=arrays["actor_role"],
+            actor_mask=arrays["actor_mask"],
+            actor_inventory=arrays["actor_inventory"],
+            actor_inventory_rank=arrays["actor_inventory_rank"],
+            actors_float=arrays["actors_float"],
+            player_features=arrays["player_features"],
+            storage_counts=arrays["storage_counts"],
+            storage_rank=arrays["storage_rank"],
+            banks=arrays["banks"],
+            shop_type=arrays["shop_type"],
+            shop_slot=arrays["shop_slot"],
+            shop_mask=arrays["shop_mask"],
+            market_product=arrays["market_product"],
+            market_float=arrays["market_float"],
+            market_int=arrays["market_int"],
+            global_features=arrays["global_features"],
+            globals_int=arrays["globals_int"],
+            still_playing=arrays["still_playing"],
+            order_limits=arrays["order_limits"],
+            can_act=arrays["can_act"],
+        )
+E       ValueError: env=0 public.day: must equal step / turnsPerDay
+
+tests/kaggriculture/test_observe.py:112: ValueError
+______________________ test_fence_condition[cpu-False-0] _______________________
+
+fake = <owl.kaggriculture.env.KaggricultureVectorizedEnv object at 0x10ef3d6a0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ef3dd00>
+device = 'cpu', pinned = False, expected = 0
+
+    @pytest.mark.parametrize(("device", "pinned", "expected"), [("cpu", False, 0), ("cpu", True, 0), ("cuda", False, 0), ("cuda", True, 3)])
+    def test_fence_condition(fake, monkeypatch, device, pinned, expected):
+        fake.transfer_device = torch.device(device)
+        fake._pin_memory_enabled = pinned
+        events = []
+        class Stream:
+            def synchronize(self): events.append("sync")
+        def current_stream(device):
+            events.append(device)
+            return Stream()
+        monkeypatch.setattr(torch.cuda, "current_stream", current_stream)
+        monkeypatch.setattr(torch.cuda, "is_available", lambda: pytest.fail("unexpected CUDA availability probe"))
+        fake.reset()
+>       fake.step(pass_actions())
+
+tests/kaggriculture/test_env.py:254: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:339: in step
+    metrics = self._native.step(
+tests/kaggriculture/fake_env.py:285: in step
+    self._call("step", arrays, (tokens, lengths))
+tests/kaggriculture/fake_env.py:49: in _call
+    _write(json.dumps(headers), arrays)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+headers = '[{"format": "kaggriculture-re-parity-v1", "seed": 42, "configuration": {"episodeSteps": 720, "boardSize": 10, "starti..."seeds": {}, "inventories": [{}]}]}, "shop_schedule": [], "rng_schedule": [], "terminal_banks": [], "transitions": 0}]'
+arrays = {'actor_cell': array([[[27,  0,  0, ...,  0,  0,  0],
+        [72,  0,  0, ...,  0,  0,  0]],
+
+       [[27,  0,  0, .....e, ..., False, False, False],
+        [ True, False, False, ..., False, False, False]]],
+      shape=(2, 2, 482)), ...}
+
+    def _write(headers: str, arrays: dict[str, Any]) -> None:
+>       rs.encode_kaggriculture_headers_into(
+            headers,
+            tile_kind=arrays["tile_kind"],
+            tile_crop=arrays["tile_crop"],
+            tile_animal=arrays["tile_animal"],
+            tile_cell=arrays["tile_cell"],
+            tile_role=arrays["tile_role"],
+            tiles_int=arrays["tiles_int"],
+            tiles_float=arrays["tiles_float"],
+            actor_slot=arrays["actor_slot"],
+            actor_cell=arrays["actor_cell"],
+            actor_role=arrays["actor_role"],
+            actor_mask=arrays["actor_mask"],
+            actor_inventory=arrays["actor_inventory"],
+            actor_inventory_rank=arrays["actor_inventory_rank"],
+            actors_float=arrays["actors_float"],
+            player_features=arrays["player_features"],
+            storage_counts=arrays["storage_counts"],
+            storage_rank=arrays["storage_rank"],
+            banks=arrays["banks"],
+            shop_type=arrays["shop_type"],
+            shop_slot=arrays["shop_slot"],
+            shop_mask=arrays["shop_mask"],
+            market_product=arrays["market_product"],
+            market_float=arrays["market_float"],
+            market_int=arrays["market_int"],
+            global_features=arrays["global_features"],
+            globals_int=arrays["globals_int"],
+            still_playing=arrays["still_playing"],
+            order_limits=arrays["order_limits"],
+            can_act=arrays["can_act"],
+        )
+E       ValueError: env=0 public.day: must equal step / turnsPerDay
+
+tests/kaggriculture/test_observe.py:112: ValueError
+_______________________ test_fence_condition[cpu-True-0] _______________________
+
+fake = <owl.kaggriculture.env.KaggricultureVectorizedEnv object at 0x10ef3b7d0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ef3bef0>
+device = 'cpu', pinned = True, expected = 0
+
+    @pytest.mark.parametrize(("device", "pinned", "expected"), [("cpu", False, 0), ("cpu", True, 0), ("cuda", False, 0), ("cuda", True, 3)])
+    def test_fence_condition(fake, monkeypatch, device, pinned, expected):
+        fake.transfer_device = torch.device(device)
+        fake._pin_memory_enabled = pinned
+        events = []
+        class Stream:
+            def synchronize(self): events.append("sync")
+        def current_stream(device):
+            events.append(device)
+            return Stream()
+        monkeypatch.setattr(torch.cuda, "current_stream", current_stream)
+        monkeypatch.setattr(torch.cuda, "is_available", lambda: pytest.fail("unexpected CUDA availability probe"))
+        fake.reset()
+>       fake.step(pass_actions())
+
+tests/kaggriculture/test_env.py:254: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:339: in step
+    metrics = self._native.step(
+tests/kaggriculture/fake_env.py:285: in step
+    self._call("step", arrays, (tokens, lengths))
+tests/kaggriculture/fake_env.py:49: in _call
+    _write(json.dumps(headers), arrays)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+headers = '[{"format": "kaggriculture-re-parity-v1", "seed": 42, "configuration": {"episodeSteps": 720, "boardSize": 10, "starti..."seeds": {}, "inventories": [{}]}]}, "shop_schedule": [], "rng_schedule": [], "terminal_banks": [], "transitions": 0}]'
+arrays = {'actor_cell': array([[[27,  0,  0, ...,  0,  0,  0],
+        [72,  0,  0, ...,  0,  0,  0]],
+
+       [[27,  0,  0, .....e, ..., False, False, False],
+        [ True, False, False, ..., False, False, False]]],
+      shape=(2, 2, 482)), ...}
+
+    def _write(headers: str, arrays: dict[str, Any]) -> None:
+>       rs.encode_kaggriculture_headers_into(
+            headers,
+            tile_kind=arrays["tile_kind"],
+            tile_crop=arrays["tile_crop"],
+            tile_animal=arrays["tile_animal"],
+            tile_cell=arrays["tile_cell"],
+            tile_role=arrays["tile_role"],
+            tiles_int=arrays["tiles_int"],
+            tiles_float=arrays["tiles_float"],
+            actor_slot=arrays["actor_slot"],
+            actor_cell=arrays["actor_cell"],
+            actor_role=arrays["actor_role"],
+            actor_mask=arrays["actor_mask"],
+            actor_inventory=arrays["actor_inventory"],
+            actor_inventory_rank=arrays["actor_inventory_rank"],
+            actors_float=arrays["actors_float"],
+            player_features=arrays["player_features"],
+            storage_counts=arrays["storage_counts"],
+            storage_rank=arrays["storage_rank"],
+            banks=arrays["banks"],
+            shop_type=arrays["shop_type"],
+            shop_slot=arrays["shop_slot"],
+            shop_mask=arrays["shop_mask"],
+            market_product=arrays["market_product"],
+            market_float=arrays["market_float"],
+            market_int=arrays["market_int"],
+            global_features=arrays["global_features"],
+            globals_int=arrays["globals_int"],
+            still_playing=arrays["still_playing"],
+            order_limits=arrays["order_limits"],
+            can_act=arrays["can_act"],
+        )
+E       ValueError: env=0 public.day: must equal step / turnsPerDay
+
+tests/kaggriculture/test_observe.py:112: ValueError
+______________________ test_fence_condition[cuda-False-0] ______________________
+
+fake = <owl.kaggriculture.env.KaggricultureVectorizedEnv object at 0x10ef3ea20>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ef3da60>
+device = 'cuda', pinned = False, expected = 0
+
+    @pytest.mark.parametrize(("device", "pinned", "expected"), [("cpu", False, 0), ("cpu", True, 0), ("cuda", False, 0), ("cuda", True, 3)])
+    def test_fence_condition(fake, monkeypatch, device, pinned, expected):
+        fake.transfer_device = torch.device(device)
+        fake._pin_memory_enabled = pinned
+        events = []
+        class Stream:
+            def synchronize(self): events.append("sync")
+        def current_stream(device):
+            events.append(device)
+            return Stream()
+        monkeypatch.setattr(torch.cuda, "current_stream", current_stream)
+        monkeypatch.setattr(torch.cuda, "is_available", lambda: pytest.fail("unexpected CUDA availability probe"))
+        fake.reset()
+>       fake.step(pass_actions())
+
+tests/kaggriculture/test_env.py:254: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:339: in step
+    metrics = self._native.step(
+tests/kaggriculture/fake_env.py:285: in step
+    self._call("step", arrays, (tokens, lengths))
+tests/kaggriculture/fake_env.py:49: in _call
+    _write(json.dumps(headers), arrays)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+headers = '[{"format": "kaggriculture-re-parity-v1", "seed": 42, "configuration": {"episodeSteps": 720, "boardSize": 10, "starti..."seeds": {}, "inventories": [{}]}]}, "shop_schedule": [], "rng_schedule": [], "terminal_banks": [], "transitions": 0}]'
+arrays = {'actor_cell': array([[[27,  0,  0, ...,  0,  0,  0],
+        [72,  0,  0, ...,  0,  0,  0]],
+
+       [[27,  0,  0, .....e, ..., False, False, False],
+        [ True, False, False, ..., False, False, False]]],
+      shape=(2, 2, 482)), ...}
+
+    def _write(headers: str, arrays: dict[str, Any]) -> None:
+>       rs.encode_kaggriculture_headers_into(
+            headers,
+            tile_kind=arrays["tile_kind"],
+            tile_crop=arrays["tile_crop"],
+            tile_animal=arrays["tile_animal"],
+            tile_cell=arrays["tile_cell"],
+            tile_role=arrays["tile_role"],
+            tiles_int=arrays["tiles_int"],
+            tiles_float=arrays["tiles_float"],
+            actor_slot=arrays["actor_slot"],
+            actor_cell=arrays["actor_cell"],
+            actor_role=arrays["actor_role"],
+            actor_mask=arrays["actor_mask"],
+            actor_inventory=arrays["actor_inventory"],
+            actor_inventory_rank=arrays["actor_inventory_rank"],
+            actors_float=arrays["actors_float"],
+            player_features=arrays["player_features"],
+            storage_counts=arrays["storage_counts"],
+            storage_rank=arrays["storage_rank"],
+            banks=arrays["banks"],
+            shop_type=arrays["shop_type"],
+            shop_slot=arrays["shop_slot"],
+            shop_mask=arrays["shop_mask"],
+            market_product=arrays["market_product"],
+            market_float=arrays["market_float"],
+            market_int=arrays["market_int"],
+            global_features=arrays["global_features"],
+            globals_int=arrays["globals_int"],
+            still_playing=arrays["still_playing"],
+            order_limits=arrays["order_limits"],
+            can_act=arrays["can_act"],
+        )
+E       ValueError: env=0 public.day: must equal step / turnsPerDay
+
+tests/kaggriculture/test_observe.py:112: ValueError
+______________________ test_fence_condition[cuda-True-3] _______________________
+
+fake = <owl.kaggriculture.env.KaggricultureVectorizedEnv object at 0x10ef3f5f0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ef3d9a0>
+device = 'cuda', pinned = True, expected = 3
+
+    @pytest.mark.parametrize(("device", "pinned", "expected"), [("cpu", False, 0), ("cpu", True, 0), ("cuda", False, 0), ("cuda", True, 3)])
+    def test_fence_condition(fake, monkeypatch, device, pinned, expected):
+        fake.transfer_device = torch.device(device)
+        fake._pin_memory_enabled = pinned
+        events = []
+        class Stream:
+            def synchronize(self): events.append("sync")
+        def current_stream(device):
+            events.append(device)
+            return Stream()
+        monkeypatch.setattr(torch.cuda, "current_stream", current_stream)
+        monkeypatch.setattr(torch.cuda, "is_available", lambda: pytest.fail("unexpected CUDA availability probe"))
+        fake.reset()
+>       fake.step(pass_actions())
+
+tests/kaggriculture/test_env.py:254: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:339: in step
+    metrics = self._native.step(
+tests/kaggriculture/fake_env.py:285: in step
+    self._call("step", arrays, (tokens, lengths))
+tests/kaggriculture/fake_env.py:49: in _call
+    _write(json.dumps(headers), arrays)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+headers = '[{"format": "kaggriculture-re-parity-v1", "seed": 42, "configuration": {"episodeSteps": 720, "boardSize": 10, "starti..."seeds": {}, "inventories": [{}]}]}, "shop_schedule": [], "rng_schedule": [], "terminal_banks": [], "transitions": 0}]'
+arrays = {'actor_cell': array([[[27,  0,  0, ...,  0,  0,  0],
+        [72,  0,  0, ...,  0,  0,  0]],
+
+       [[27,  0,  0, .....e, ..., False, False, False],
+        [ True, False, False, ..., False, False, False]]],
+      shape=(2, 2, 482)), ...}
+
+    def _write(headers: str, arrays: dict[str, Any]) -> None:
+>       rs.encode_kaggriculture_headers_into(
+            headers,
+            tile_kind=arrays["tile_kind"],
+            tile_crop=arrays["tile_crop"],
+            tile_animal=arrays["tile_animal"],
+            tile_cell=arrays["tile_cell"],
+            tile_role=arrays["tile_role"],
+            tiles_int=arrays["tiles_int"],
+            tiles_float=arrays["tiles_float"],
+            actor_slot=arrays["actor_slot"],
+            actor_cell=arrays["actor_cell"],
+            actor_role=arrays["actor_role"],
+            actor_mask=arrays["actor_mask"],
+            actor_inventory=arrays["actor_inventory"],
+            actor_inventory_rank=arrays["actor_inventory_rank"],
+            actors_float=arrays["actors_float"],
+            player_features=arrays["player_features"],
+            storage_counts=arrays["storage_counts"],
+            storage_rank=arrays["storage_rank"],
+            banks=arrays["banks"],
+            shop_type=arrays["shop_type"],
+            shop_slot=arrays["shop_slot"],
+            shop_mask=arrays["shop_mask"],
+            market_product=arrays["market_product"],
+            market_float=arrays["market_float"],
+            market_int=arrays["market_int"],
+            global_features=arrays["global_features"],
+            globals_int=arrays["globals_int"],
+            still_playing=arrays["still_playing"],
+            order_limits=arrays["order_limits"],
+            can_act=arrays["can_act"],
+        )
+E       ValueError: env=0 public.day: must equal step / turnsPerDay
+
+tests/kaggriculture/test_observe.py:112: ValueError
+=========================== short test summary info ============================
+SKIPPED [1] tests/kaggriculture/test_env.py:286: needs Task 1.4 binding
+SKIPPED [1] tests/kaggriculture/test_env_cuda_fence.py:10: CUDA is unavailable
+FAILED tests/kaggriculture/test_env.py::test_every_batch_checks_contract - Va...
+FAILED tests/kaggriculture/test_env.py::test_action_and_mask_inputs_are_zero_copy_views
+FAILED tests/kaggriculture/test_env.py::test_fence_precedes_every_native_write
+FAILED tests/kaggriculture/test_env.py::test_fence_condition[cpu-False-0] - V...
+FAILED tests/kaggriculture/test_env.py::test_fence_condition[cpu-True-0] - Va...
+FAILED tests/kaggriculture/test_env.py::test_fence_condition[cuda-False-0] - ...
+FAILED tests/kaggriculture/test_env.py::test_fence_condition[cuda-True-3] - V...
+7 failed, 22 passed, 2 skipped in 0.12s
+
+EXIT_CODE=1

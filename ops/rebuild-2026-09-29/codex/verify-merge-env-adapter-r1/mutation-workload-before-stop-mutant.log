@@ -1,0 +1,114 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___ test_main_rejects_unserviceable_kaggriculture_workload_before_allocation ___
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-760/test_main_rejects_unserviceabl0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112bc2420>
+capsys = <_pytest.capture.CaptureFixture object at 0x112bc2690>
+
+    def test_main_rejects_unserviceable_kaggriculture_workload_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        # Trunk width 2 * 2**21 x 709 padded tokens exceeds 2**31 for one row.
+        calls: list[str] = []
+        argv = [
+            str(_CONFIGS / "kaggriculture_2rank.yaml"),
+            str(tmp_path / "runs"),
+            "-o",
+            f"model.embed_dim={2**21}",
+            f"model.n_heads={2**16}",
+        ]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(ValueError, match="one padded row of 709 tokens"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3457: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:181: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Launched with the following raw manual overrides: '['model.embed_dim=2097152', 'model.n_heads=65536']'
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-760/test_main_loads_kaggriculture_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112bbfa70>
+capsys = <_pytest.capture.CaptureFixture object at 0x112bbfc20>
+name = 'kaggriculture_8rank.yaml', rollout_rows = 64, teacher_rows = 4096
+teacher_calls = 1
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+            ("kaggriculture_8rank.yaml", 64, 4_096, 1),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+            run_ppo.main()
+    
+        assert calls == []
+        assert not (tmp_path / "runs").exists()
+        headroom = _headroom_lines(capsys.readouterr().out)
+>       assert [line.split(":")[0] for line in headroom] == [
+            "GEMM workload headroom rollout",
+            "GEMM workload headroom minibatch",
+            "GEMM workload headroom teacher_chunk",
+            "GEMM workload headroom evaluation",
+        ]
+E       AssertionError: assert [] == ['GEMM worklo...m evaluation']
+E         
+E         Right contains 4 more items, first extra item: 'GEMM workload headroom rollout'
+E         Use -v to get more diff
+
+tests/scripts/test_run_ppo.py:3491: AssertionError
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_main_rejects_unserviceable_kaggriculture_workload_before_allocation
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]
+2 failed in 0.24s

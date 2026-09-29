@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_overflow_rescaling_keeps_float64_caps __________________
+
+    def test_overflow_rescaling_keeps_float64_caps() -> None:
+        config = _config(
+            econ_shaping=1e308,
+            econ_starvation_weight=1e308,
+            econ_drought_weight=0,
+            econ_cap=0.7,
+        )
+        counts = torch.zeros((2, 32), dtype=torch.int64)
+        counts[0, 0] = 2
+        penalty = economic_penalty(counts, config)
+        assert penalty.dtype == torch.float64
+>       assert penalty.tolist() == [0.7, 0.0]
+E       assert [0.699999988079071, 0.0] == [0.7, 0.0]
+E         
+E         At index 0 diff: 0.699999988079071 != 0.7
+E         Use -v to get more diff
+
+tests/kaggriculture/test_rewards.py:354: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_rewards.py::test_overflow_rescaling_keeps_float64_caps
+1 failed, 36 deselected in 0.02s
+
+EXIT_CODE=1

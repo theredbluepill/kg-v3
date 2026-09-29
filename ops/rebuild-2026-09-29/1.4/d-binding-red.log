@@ -1,0 +1,31 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____________________ test_step_and_malformed_peer_rollback _____________________
+
+    def test_step_and_malformed_peer_rollback() -> None:
+        env = make_env(2)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+>       assert env.step(tokens, lengths, **arrays) == {
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "total_games_played": [], "terminal_bank_0": [], "terminal_bank_1": [], "terminal_margin_0": [],
+        }
+E       ValueError: step transaction not implemented (Task D)
+
+tests/kaggriculture/test_native_env.py:209: ValueError
+____________ test_reset_truncate_seed_exhaustion_publishes_nothing _____________
+
+    def test_reset_truncate_seed_exhaustion_publishes_nothing() -> None:
+        env = make_env(2, seed=2**63-6, stride=1, config='{"episodeSteps":2}')
+        arrays = buffers(2)
+        env.observe(**arrays)
+        tokens, lengths = pass_actions(2)
+>       env.step(tokens, lengths, **arrays)
+E       ValueError: step transaction not implemented (Task D)
+
+tests/kaggriculture/test_native_env.py:226: ValueError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_step_and_malformed_peer_rollback
+FAILED tests/kaggriculture/test_native_env.py::test_reset_truncate_seed_exhaustion_publishes_nothing
+2 failed, 315 deselected in 0.04s

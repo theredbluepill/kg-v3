@@ -1,0 +1,42 @@
+{
+  "status": "PENDING (pod)",
+  "profile": "release",
+  "fat_lto": true,
+  "codegen_units": 1,
+  "attempt": {
+    "argv": [
+      "cargo",
+      "test",
+      "--release",
+      "--offline",
+      "--locked",
+      "--lib",
+      "measure_lifecycle",
+      "--",
+      "--ignored",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "exit_status": -9,
+    "wall_seconds": 7.839792958,
+    "sampled_process_group_peak_rss_bytes": 1018937344,
+    "stop_reason": "memory",
+    "time_limit_seconds": 115,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "build_completed": false,
+  "build_elapsed_before_stop_seconds": 7.839792958,
+  "phase_costs": null,
+  "debug_phase_costs_substituted": false,
+  "fixture_validation": {
+    "receipt": "g-timing-fixtures.json",
+    "passed": 1
+  },
+  "pending_commands": [
+    "cargo test --release --offline --locked --lib release_dependency_overflow_is_caught",
+    "KG_OVERFLOW_CHECKS_LABEL=enabled cargo test --release --offline --locked --lib measure_lifecycle -- --ignored --nocapture --test-threads=1",
+    "KG_OVERFLOW_CHECKS_LABEL=disabled cargo --config 'profile.release.package.kaggriculture-engine.overflow-checks=false' test --release --offline --locked --lib measure_lifecycle -- --ignored --nocapture --test-threads=1"
+  ],
+  "paired_cost_requirement": "Compare the same early and 241-actor header hashes, source hashes and 20 warmups/200 samples; preserve each LIFECYCLE_TIMING JSON line plus build/RSS receipt. Neither enabled nor disabled phase costs were obtained on this Mac."
+}

@@ -1,0 +1,110 @@
+[
+  {
+    "name": "engine-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "engine_rs/Cargo.toml",
+      "--locked",
+      "--offline"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-env-adapter",
+    "returncode": 0,
+    "elapsed_seconds": 5.035,
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "OMP_NUM_THREADS": "2"
+    },
+    "log_sha256": "fdfc512f753945d1cfe84e490cf71830eb0542a89545a9fd1a8055d1bb616ff6"
+  },
+  {
+    "name": "root-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-env-adapter",
+    "returncode": 0,
+    "elapsed_seconds": 7.604,
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "OMP_NUM_THREADS": "2"
+    },
+    "log_sha256": "cd6685c145cb4202978bc3afa91738841beb92963ba8b994d339f32b23cf7dd9"
+  },
+  {
+    "name": "engine-trim",
+    "argv": [
+      "uv",
+      "run",
+      "python",
+      "scripts/check_engine_trim.py"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-env-adapter",
+    "returncode": 0,
+    "elapsed_seconds": 1.034,
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "OMP_NUM_THREADS": "2"
+    },
+    "log_sha256": "fef502d13bbb709eb13457e1a485293ab0e2bb93b174680479e409ce3e814af8"
+  },
+  {
+    "name": "pytest",
+    "argv": [
+      "uv",
+      "run",
+      "pytest",
+      "tests",
+      "-m",
+      "not slow",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-env-adapter",
+    "returncode": 0,
+    "elapsed_seconds": 69.682,
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "OMP_NUM_THREADS": "2"
+    },
+    "log_sha256": "6dbd1dd3e4cbb3776d7ca8e902e894a07711138345026c118b5dd7010ef7ea45"
+  },
+  {
+    "name": "mypy",
+    "argv": [
+      "uv",
+      "run",
+      "mypy",
+      "python/owl",
+      "scripts"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-env-adapter",
+    "returncode": 0,
+    "elapsed_seconds": 0.533,
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "OMP_NUM_THREADS": "2"
+    },
+    "log_sha256": "a734d82216576d140b6330546b1d6097a6ff28ab45d0a3f71bb6f364fa137aba"
+  },
+  {
+    "name": "docs-fresh",
+    "argv": [
+      "uv",
+      "run",
+      "python",
+      "scripts/check_doc_freshness.py"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-env-adapter",
+    "returncode": 0,
+    "elapsed_seconds": 0.091,
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "OMP_NUM_THREADS": "2"
+    },
+    "log_sha256": "debc556da782b522f8bd4483a4c34455dea0905973677e1a8b0a92a20acdda55"
+  }
+]

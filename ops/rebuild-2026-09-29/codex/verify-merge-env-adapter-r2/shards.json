@@ -1,0 +1,31 @@
+[
+  {
+    "name": "pytest-oracle-shard",
+    "command": [
+      "uv",
+      "run",
+      "pytest",
+      "tests/tools/test_observation_oracle_custody.py",
+      "-m",
+      "not slow",
+      "-q"
+    ],
+    "exit_code": 0,
+    "seconds": 2.208
+  },
+  {
+    "name": "pytest-rest-shard",
+    "command": [
+      "uv",
+      "run",
+      "pytest",
+      "tests",
+      "--ignore=tests/tools/test_observation_oracle_custody.py",
+      "-m",
+      "not slow",
+      "-q"
+    ],
+    "exit_code": 0,
+    "seconds": 94.056
+  }
+]

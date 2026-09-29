@@ -1,0 +1,26 @@
+{"argv": ["cargo", "test", "--locked", "--offline", "--lib", "hire_cash_no_execution_does_not_cap_configuration", "--", "--test-threads=1"], "exit_status": 101, "wall_seconds": 2.169966292, "sampled_process_group_peak_rss_bytes": 595673088, "stop_reason": null, "time_limit_seconds": 115.0, "rss_limit_bytes": 1006632960, "rss_sampling_seconds": 0.1}
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.49s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 1 test
+test kaggriculture::admission::tests::hire_cash_no_execution_does_not_cap_configuration ... FAILED
+
+failures:
+
+---- kaggriculture::admission::tests::hire_cash_no_execution_does_not_cap_configuration stdout ----
+
+thread 'kaggriculture::admission::tests::hire_cash_no_execution_does_not_cap_configuration' (11825812) panicked at src/kaggriculture/admission.rs:61:9:
+assertion `left == right` failed
+  left: Err("seat 0: executed hire index 240 exceeds uint64 cash conversion range")
+ right: Ok(())
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::admission::tests::hire_cash_no_execution_does_not_cap_configuration
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 278 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+

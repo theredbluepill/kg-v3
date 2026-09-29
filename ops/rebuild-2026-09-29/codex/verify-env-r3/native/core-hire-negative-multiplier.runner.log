@@ -1,0 +1,24 @@
+{"argv": ["cargo", "test", "--locked", "--offline", "--lib", "hire_cash_rejects_negative_multiplier_explicitly", "--", "--test-threads=1"], "exit_status": 101, "wall_seconds": 3.095729542, "sampled_process_group_peak_rss_bytes": 556990464, "stop_reason": null, "time_limit_seconds": 115.0, "rss_limit_bytes": 1006632960, "rss_sampling_seconds": 0.1}
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r3-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.97s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 1 test
+test kaggriculture::admission::tests::hire_cash_rejects_negative_multiplier_explicitly ... FAILED
+
+failures:
+
+---- kaggriculture::admission::tests::hire_cash_rejects_negative_multiplier_explicitly stdout ----
+
+thread 'kaggriculture::admission::tests::hire_cash_rejects_negative_multiplier_explicitly' (11914970) panicked at src/kaggriculture/admission.rs:96:60:
+called `Result::unwrap_err()` on an `Ok` value: ()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::admission::tests::hire_cash_rejects_negative_multiplier_explicitly
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 278 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+

@@ -1,0 +1,127 @@
+........FF...................                                            [100%]
+=================================== FAILURES ===================================
+_ test_codec_decode_batch_rejects_malformed_tensors_before_native[tokens-bad0-CPU int64] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11072dbe0>
+field = 'tokens'
+bad = tensor([[[[0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          ...[0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0]]]], dtype=torch.int32)
+message = 'CPU int64'
+
+    @pytest.mark.parametrize(
+        ("field", "bad", "message"),
+        [
+            ("tokens", torch.zeros((2, 2, MAX_FRAMES, 12), dtype=torch.int32), "CPU int64"),
+            ("lengths", torch.ones((2, 2), dtype=torch.float32), "CPU int64"),
+            ("tokens", torch.zeros((2, 2, MAX_FRAMES, 11), dtype=torch.int64), "shape"),
+            ("lengths", torch.ones((2, 3), dtype=torch.int64), "shape"),
+            (
+                "tokens",
+                torch.zeros((2, 2, 12, MAX_FRAMES), dtype=torch.int64).transpose(-1, -2),
+                "C-contiguous",
+            ),
+            ("lengths", torch.ones((2, 2), dtype=torch.int64).t(), "C-contiguous"),
+        ],
+    )
+    def test_codec_decode_batch_rejects_malformed_tensors_before_native(
+        monkeypatch: pytest.MonkeyPatch, field: str, bad: torch.Tensor, message: str
+    ) -> None:
+        def decode(*_args: object) -> str:
+            raise AssertionError("native decode must not run for malformed tensors")
+    
+        monkeypatch.setattr(rs, "kaggriculture_decode", decode, raising=False)
+        valid = _valid_actions()
+        actions = KaggricultureActions(
+            tokens=bad if field == "tokens" else valid.tokens,
+            lengths=bad if field == "lengths" else valid.lengths,
+        )
+        with pytest.raises(ValueError, match=message):
+>           codec.decode_actions(actions, _observation(), action_spec=KaggricultureActionConfig())
+
+tests/kaggriculture/test_codec.py:316: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/codec.py:115: in decode_actions
+    decode_action(
+python/owl/kaggriculture/codec.py:57: in decode_action
+    rs.kaggriculture_decode(tokens, length, actors, order_limit, hire_limit)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = (array([[0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       ...,
+       [0...0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0]], shape=(252, 12), dtype=int32), 1, 1, 1, 241)
+
+    def decode(*_args: object) -> str:
+>       raise AssertionError("native decode must not run for malformed tensors")
+E       AssertionError: native decode must not run for malformed tensors
+
+tests/kaggriculture/test_codec.py:307: AssertionError
+_ test_codec_decode_batch_rejects_malformed_tensors_before_native[lengths-bad1-CPU int64] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110762510>
+field = 'lengths', bad = tensor([[1., 1.],
+        [1., 1.]])
+message = 'CPU int64'
+
+    @pytest.mark.parametrize(
+        ("field", "bad", "message"),
+        [
+            ("tokens", torch.zeros((2, 2, MAX_FRAMES, 12), dtype=torch.int32), "CPU int64"),
+            ("lengths", torch.ones((2, 2), dtype=torch.float32), "CPU int64"),
+            ("tokens", torch.zeros((2, 2, MAX_FRAMES, 11), dtype=torch.int64), "shape"),
+            ("lengths", torch.ones((2, 3), dtype=torch.int64), "shape"),
+            (
+                "tokens",
+                torch.zeros((2, 2, 12, MAX_FRAMES), dtype=torch.int64).transpose(-1, -2),
+                "C-contiguous",
+            ),
+            ("lengths", torch.ones((2, 2), dtype=torch.int64).t(), "C-contiguous"),
+        ],
+    )
+    def test_codec_decode_batch_rejects_malformed_tensors_before_native(
+        monkeypatch: pytest.MonkeyPatch, field: str, bad: torch.Tensor, message: str
+    ) -> None:
+        def decode(*_args: object) -> str:
+            raise AssertionError("native decode must not run for malformed tensors")
+    
+        monkeypatch.setattr(rs, "kaggriculture_decode", decode, raising=False)
+        valid = _valid_actions()
+        actions = KaggricultureActions(
+            tokens=bad if field == "tokens" else valid.tokens,
+            lengths=bad if field == "lengths" else valid.lengths,
+        )
+        with pytest.raises(ValueError, match=message):
+>           codec.decode_actions(actions, _observation(), action_spec=KaggricultureActionConfig())
+
+tests/kaggriculture/test_codec.py:316: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/codec.py:115: in decode_actions
+    decode_action(
+python/owl/kaggriculture/codec.py:57: in decode_action
+    rs.kaggriculture_decode(tokens, length, actors, order_limit, hire_limit)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = (array([[0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       ...,
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0]], shape=(252, 12)), 1, 1, 1, 241)
+
+    def decode(*_args: object) -> str:
+>       raise AssertionError("native decode must not run for malformed tensors")
+E       AssertionError: native decode must not run for malformed tensors
+
+tests/kaggriculture/test_codec.py:307: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_codec.py::test_codec_decode_batch_rejects_malformed_tensors_before_native[tokens-bad0-CPU int64]
+FAILED tests/kaggriculture/test_codec.py::test_codec_decode_batch_rejects_malformed_tensors_before_native[lengths-bad1-CPU int64]
+2 failed, 27 passed in 0.22s

@@ -1,0 +1,11 @@
+--- src/kaggriculture/env.rs
++++ src/kaggriculture/env.rs.mutant
+@@ -618,7 +618,7 @@
+             let mut metrics = Vec::new();
+             for (i, (slot, row)) in results.into_iter().enumerate() {
+                 transition.rewards[i * 2..i * 2 + 2].copy_from_slice(&row.rewards);
+-                transition.dones[i * 2..i * 2 + 2].fill(row.done);
++                transition.dones[i * 2..i * 2 + 2].fill(!row.done);
+                 transition.transition_banks_before[i * 2..i * 2 + 2]
+                     .copy_from_slice(&row.before_banks);
+                 transition.transition_banks_after[i * 2..i * 2 + 2]

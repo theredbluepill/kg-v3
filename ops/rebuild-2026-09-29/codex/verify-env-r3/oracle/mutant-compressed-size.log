@@ -1,0 +1,44 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_declared_size_mismatch_rejected_within_budget[compressed_bytes-fixture compressed size differs] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-99/test_declared_size_mismatch_re0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107291f10>
+field = 'compressed_bytes', error = 'fixture compressed size differs'
+
+    @pytest.mark.parametrize(
+        ("field", "error"),
+        [
+            ("compressed_bytes", "fixture compressed size differs"),
+            ("expanded_bytes", "expanded size budget differs"),
+        ],
+    )
+    def test_declared_size_mismatch_rejected_within_budget(
+        tmp_path: Path, monkeypatch, field: str, error: str
+    ) -> None:
+        path = publish_example(tmp_path)
+        manifest, _ = recorder.load_fixture(path)
+        _rewrite_manifest(path, **{field: manifest[field] + 1})
+        _forbid_numpy_load(monkeypatch)
+        with pytest.raises(ValueError, match=re.escape(error)):
+>           recorder.load_fixture(path)
+
+tests/tools/test_record_kaggriculture_env_reference.py:301: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:433: in load_fixture
+    with np.load(path, allow_pickle=False) as loaded:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_a = (PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-99/test_declared_size_mismatch_re0/oracle.npz'),)
+_k = {'allow_pickle': False}
+
+>       np, "load", lambda *_a, **_k: pytest.fail("numpy loaded before custody")
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: numpy loaded before custody
+
+tests/tools/test_record_kaggriculture_env_reference.py:257: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_declared_size_mismatch_rejected_within_budget[compressed_bytes-fixture compressed size differs]
+1 failed, 1 passed, 56 deselected in 1.18s

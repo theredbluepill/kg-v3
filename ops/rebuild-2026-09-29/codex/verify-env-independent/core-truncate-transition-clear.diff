@@ -1,0 +1,11 @@
+--- original/src/kaggriculture/env.rs
++++ mutant/src/kaggriculture/env.rs
+@@ -403,7 +403,7 @@
+             });
+             let candidates = results.into_iter().collect::<Result<Vec<_>, _>>()?;
+             let transition = if truncate {
+-                None
++                Some(TransitionCache::zeros(self.n_envs()))
+             } else {
+                 let mut t = TransitionCache::zeros(self.n_envs());
+                 for (i, rows) in staging.buffers_mut().envs_mut().enumerate() {

@@ -1,0 +1,11 @@
+--- src/kaggriculture/bindings.rs
++++ src/kaggriculture/bindings.rs.mutant
+@@ -318,7 +318,7 @@
+ }
+ 
+ fn integer_seed(value: &Bound<'_, PyAny>, name: &str) -> PyResult<i64> {
+-    if value.is_instance_of::<PyBool>() || !value.is_instance_of::<PyInt>() {
++    if false && (value.is_instance_of::<PyBool>() || !value.is_instance_of::<PyInt>()) {
+         return Err(PyValueError::new_err(format!(
+             "{name}: expected Python integer, not bool, float or string"
+         )));

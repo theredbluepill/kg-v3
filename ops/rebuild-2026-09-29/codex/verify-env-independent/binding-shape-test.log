@@ -1,0 +1,19 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-independent/python/owl/rs.abi3.so
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_same_cell_count_shape_is_rejected_transactionally ____________
+
+    def test_same_cell_count_shape_is_rejected_transactionally():
+        env = make_env(2)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        arrays["tiles_int"] = arrays["tiles_int"].reshape(2, 2, 7, 200)
+        before = snapshot(arrays), diagnostics(env, 2)
+>       with pytest.raises(ValueError, match="tiles_int"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_independent_binding_probe.py:12: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_independent_binding_probe.py::test_same_cell_count_shape_is_rejected_transactionally
+1 failed in 0.04s
