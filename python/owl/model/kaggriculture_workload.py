@@ -14,6 +14,10 @@ padded path's exact chunk size; the packed path plans chunks from actual token
 counts (``packed_row_chunks``), which never exceed padded tokens, so the reported
 trunk calls are an upper bound and the trunk headroom a lower bound. Head
 chunking depends only on rows, so head figures are exact.
+
+The teacher-precompute workload also carries the cached-target bytes it produces
+(``TEACHER_TARGET_BYTES_PER_ROW`` per seat row): the bytes of one precompute
+chunk and of the whole rollout's cache, which the trainer holds for one update.
 """
 
 from __future__ import annotations
@@ -29,14 +33,21 @@ from owl.model.kaggriculture import (
     sequence_length,
     trunk_gemm_width,
 )
+from owl.model.kaggriculture_teacher import TEACHER_TARGET_BYTES_PER_ROW
 
 
 @dataclass(frozen=True)
 class ForwardWorkload:
-    """Seat rows one model forward receives, per rank."""
+    """Seat rows one model forward receives, per rank.
+
+    ``cached_teacher_rows`` is set only on the teacher-precompute workload: the
+    seat rows whose teacher targets the trainer caches for one update (the whole
+    rollout, of which each forward computes one chunk of ``rows``).
+    """
 
     name: str
     rows: int
+    cached_teacher_rows: int | None = None
 
 
 @dataclass(frozen=True)
@@ -46,6 +57,21 @@ class WorkloadHeadroom:
     tokens_per_row: int
     trunk_rows_per_call: int
     head_rows_per_call: int
+    cached_teacher_rows: int | None = None
+
+    @property
+    def teacher_chunk_bytes(self) -> int | None:
+        """FP32 teacher-target bytes one precompute chunk produces."""
+        if self.cached_teacher_rows is None:
+            return None
+        return self.rows * TEACHER_TARGET_BYTES_PER_ROW
+
+    @property
+    def teacher_cache_bytes(self) -> int | None:
+        """FP32 teacher-target bytes cached for the whole rollout, per rank."""
+        if self.cached_teacher_rows is None:
+            return None
+        return self.cached_teacher_rows * TEACHER_TARGET_BYTES_PER_ROW
 
     @property
     def min_trunk_headroom(self) -> float:
@@ -70,7 +96,7 @@ class WorkloadHeadroom:
         return math.ceil(self.rows / self.head_rows_per_call)
 
     def log_line(self) -> str:
-        return (
+        line = (
             f"GEMM workload headroom {self.name}: {self.rows} rows x "
             f"{self.tokens_per_row} padded tokens; trunk "
             f"{self.trunk_rows_per_call} rows/call at full padding "
@@ -78,6 +104,13 @@ class WorkloadHeadroom:
             f"<= {self.max_trunk_calls} call(s)); heads "
             f"{self.head_rows_per_call} rows/call "
             f"({self.head_headroom:.4g}x headroom, {self.head_calls} call(s))"
+        )
+        if self.cached_teacher_rows is None:
+            return line
+        return (
+            f"{line}; teacher targets {self.teacher_chunk_bytes} B per chunk, "
+            f"{self.teacher_cache_bytes} B cached for {self.cached_teacher_rows} "
+            "rollout rows"
         )
 
 
@@ -94,7 +127,8 @@ def ppo_forward_workloads(
     - minibatch: one optimizer micro-step (``spm x horizon x 2``); gradient
       accumulation repeats it without widening it.
     - teacher_chunk: ``_precompute_teacher_targets`` slices ``n_envs`` into
-      chunks of ``teacher_segments_per_minibatch`` segments; ``None`` means no
+      chunks of ``teacher_segments_per_minibatch`` segments and caches the
+      targets of all ``n_envs x horizon x 2`` rollout rows; ``None`` means no
       teacher is configured and the workload is omitted.
     - evaluation: ``_evaluate_against_last_best`` plays ``n_envs`` games on
       ``n_envs`` envs; ``n_envs x 2`` bounds either model's rows.
@@ -118,7 +152,11 @@ def ppo_forward_workloads(
             )
         teacher_segments = min(teacher_segments_per_minibatch, n_envs)
         workloads.append(
-            ForwardWorkload("teacher_chunk", teacher_segments * horizon * kt.PLAYERS)
+            ForwardWorkload(
+                "teacher_chunk",
+                teacher_segments * horizon * kt.PLAYERS,
+                cached_teacher_rows=n_envs * horizon * kt.PLAYERS,
+            )
         )
     workloads.append(ForwardWorkload("evaluation", n_envs * kt.PLAYERS))
     return tuple(workloads)
@@ -153,6 +191,14 @@ def check_workload_headroom(
             raise ValueError(
                 f"workload {workload.name!r} has {workload.rows} rows; expected >= 1"
             )
+        if (
+            workload.cached_teacher_rows is not None
+            and workload.cached_teacher_rows < workload.rows
+        ):
+            raise ValueError(
+                f"workload {workload.name!r} caches {workload.cached_teacher_rows} "
+                f"teacher rows, fewer than its {workload.rows}-row chunk"
+            )
         reports.append(
             WorkloadHeadroom(
                 name=workload.name,
@@ -160,6 +206,7 @@ def check_workload_headroom(
                 tokens_per_row=tokens,
                 trunk_rows_per_call=trunk_rows,
                 head_rows_per_call=head_rows,
+                cached_teacher_rows=workload.cached_teacher_rows,
             )
         )
     return tuple(reports)

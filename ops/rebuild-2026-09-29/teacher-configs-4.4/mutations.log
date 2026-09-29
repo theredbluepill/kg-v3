@@ -1,0 +1,39 @@
+== M1 4-rank teacher_kl_coef 0.005 -> 0.001 (configs/kaggriculture_4rank.yaml) exit=1
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_4rank.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_teacher_settings_are_scaling_6ms_last_best_teacher[kaggriculture_4rank.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes
+3 failed, 56 passed in 0.72s
+restored sha256 43cc61f36ba9783c9f54f625863e6c0b0b33f0218615737c4c4ef1f9a803c3e3
+== M2 2-rank teacher_segments_per_minibatch 128 -> 64 (divided per rank) (configs/kaggriculture_2rank.yaml) exit=1
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_2rank.yaml-2]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_2rank.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_teacher_settings_are_scaling_6ms_last_best_teacher[kaggriculture_2rank.yaml]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes
+FAILED tests/kaggriculture/test_configs.py::test_two_rank_workloads_fit_the_model_chunking
+FAILED tests/kaggriculture/test_configs.py::test_teacher_chunk_reports_its_target_cache_bytes[kaggriculture_2rank.yaml-16384-1674575872]
+6 failed, 53 passed in 0.70s
+restored sha256 cacb0fc8a9b59cb9ae639ac7be77b6d093d73de35af1d91a29d7a96eaea34ce5
+== M3 run_ppo skips the teacher-source check (scripts/run_ppo.py) exit=1
+FAILED tests/scripts/test_run_ppo.py::test_main_rejects_a_kaggriculture_launch_without_a_teacher_checkpoint
+FAILED tests/scripts/test_run_ppo.py::test_main_rejects_a_missing_kaggriculture_teacher_init_checkpoint
+2 failed, 111 passed, 1 skipped in 0.35s
+restored sha256 347420acce21e4edb17fed569c7d7c910f12e4ebca1b343b6dae9ac2edd1ff78
+== M4 cache rows = chunk rows (python/owl/model/kaggriculture_workload.py) exit=1
+FAILED tests/kaggriculture/test_configs.py::test_teacher_cache_covers_the_rollout_when_it_spans_several_chunks
+1 failed, 58 passed in 0.69s
+restored sha256 31a5aaf91800c045dbd2a04e0f46a2a8f0144d5a86d22a77d0aa62ffaa1625ab
+== M5 W&B project always orbit-wars (python/owl/train/logging.py) exit=1
+FAILED tests/owl/train/test_logging.py::test_kaggriculture_runs_publish_under_the_v3_wandb_project
+FAILED tests/owl/train/test_logging.py::test_wandb_logger_initializes_the_v3_run_in_the_requested_mode[online]
+FAILED tests/owl/train/test_logging.py::test_wandb_logger_initializes_the_v3_run_in_the_requested_mode[offline]
+3 failed, 2 passed in 0.03s
+restored sha256 0108455ea26b6d55c68f577fc08a2981a18d22609e000e8d7976f169bc1fe272
+== M6 W&B mode not forwarded (python/owl/train/logging.py) exit=1
+FAILED tests/owl/train/test_logging.py::test_wandb_logger_initializes_the_v3_run_in_the_requested_mode[online]
+FAILED tests/owl/train/test_logging.py::test_wandb_logger_initializes_the_v3_run_in_the_requested_mode[offline]
+2 failed, 3 passed in 0.03s
+restored sha256 0108455ea26b6d55c68f577fc08a2981a18d22609e000e8d7976f169bc1fe272
+== M7 teacher_init existence not checked (scripts/run_ppo.py) exit=1
+FAILED tests/scripts/test_run_ppo.py::test_main_rejects_a_missing_kaggriculture_teacher_init_checkpoint
+1 failed, 112 passed, 1 skipped in 0.28s
+restored sha256 347420acce21e4edb17fed569c7d7c910f12e4ebca1b343b6dae9ac2edd1ff78

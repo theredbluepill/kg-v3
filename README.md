@@ -154,11 +154,15 @@ Training presets live in `configs/`:
   `FullConfig` selects when `env.obs_spec.obs_spec` is `kaggriculture`; it
   requires the `kaggriculture_transformer` model and the Kaggriculture training
   guards (`rl.gamma=1.0`, `rl.value_loss: mse`, `rl.ppo_clip_mode: per_player`).
+  Their teacher settings are `scaling_6m`'s (`last_best`, KL and value
+  coefficients `0.005`, `teacher_segments_per_minibatch: 128`, not divided by
+  the world size, as in Isaiah's per-rank configs).
   `run_ppo.py` prints their GEMM workload headroom (or rejects a workload the
-  model cannot chunk) before creating the run directory, then stops with an
-  explicit error: Task 3.1 rollout storage and action mapping are not implemented.
-  The native environment and Python adapter exist; canonical PPO adoption remains
-  Task 3.1.
+  model cannot chunk) and the teacher-target cache bytes per rank (1,674,575,872,
+  837,287,936 and 418,643,968 B) before creating the run directory, then stops
+  with an explicit error: Task 3.1 rollout storage and action mapping are not
+  implemented. The native environment and Python adapter exist; canonical PPO
+  adoption remains Task 3.1.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.
@@ -276,7 +280,12 @@ teacher. Fixed teachers do not seed `checkpoint_last_best.pt`; win-rate
 evaluation against last-best follows the same checkpoint lifecycle as a run
 without a teacher. `rl.teacher_init` points at a training checkpoint whose
 adjacent `config.yaml` is used to construct the teacher model before loading
-weights.
+weights. A fresh Kaggriculture launch with `teacher_mode: last_best` must name
+its teacher checkpoint: `--load-model-weights CHECKPOINT` (the BC best seeds the
+student and the last-best teacher) or `-o rl.teacher_init=CHECKPOINT`;
+`run_ppo.py` rejects it before the workload check otherwise (pass
+`-o rl.teacher_mode=null` to train without a teacher). No Kaggriculture config
+carries a checkpoint path. Orbit launches keep the scratch behavior above.
 For a fixed teacher, the architecture may differ from the student. A last-best
 teacher always uses the student's architecture so it can be refreshed in place.
 Observation specs must match except for `max_entities`, where the teacher model
@@ -413,6 +422,12 @@ samples from the weighted eval game set under
 ordinals are selected up front rather than taking the first games to finish.
 Each sampled eval game is written as its own JSONL file.
 
+`--log-mode wandb` (the default) publishes Kaggriculture runs to the W&B
+project `kg-v3` (job type and group `ppo`, tags `kaggriculture-v3` and `ppo`) and
+Orbit runs to `orbit-wars`. `--wandb-mode offline` keeps the W&B run under the
+run directory's `wandb/` for a later `wandb sync` (for a machine without a W&B
+key) and prints that the telemetry is offline; W&B ignores `resume` offline and
+starts a local run with the saved id.
 Exceptions escaping the training logger session, including `KeyboardInterrupt`
 and `SystemExit`, close W&B with exit code 1; normal completion closes it with
 exit code 0. The distributed session prints and flushes a rank-tagged traceback

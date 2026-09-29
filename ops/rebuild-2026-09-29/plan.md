@@ -280,7 +280,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cover: per-slot policy distributions with `slot_kl` (KL(teacher ‖ student) over masked categoricals); the `TeacherTargets` protocol refactor of Isaiah's cached targets (`.index` / `.concat`); Kaggriculture teacher targets; cached path bit-for-bit equal to the combined path; value distillation on the per-seat winner distribution (mean over seats); last-best refresh and resume tests; and the `scaling_6m` teacher coefficients (0.005 / 0.005, `teacher_segments_per_minibatch` 128).
 
-- [ ] 4.1 distributions and KL, 4.2 targets and cache, 4.3 model methods and trainer wiring, 4.4 configs. (4.1–4.3 merged at 8fde43c by a424d8c; 4.4 open, so the box stays unticked)
+- [ ] 4.1 distributions and KL, 4.2 targets and cache, 4.3 model methods and trainer wiring, 4.4 configs. (4.1–4.3 merged at 8fde43c by a424d8c; 4.4 merged at `4a662ad` by the staging merge; the box stays unticked until T18/T19b run)
 
 ## Phase 5 — BC (required)
 

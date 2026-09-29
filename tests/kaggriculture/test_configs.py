@@ -21,13 +21,20 @@ from owl.kaggriculture.config import KaggricultureEnvConfig
 from owl.kaggriculture.rewards import KaggricultureRewardConfig
 from owl.model import create_model
 from owl.model import kaggriculture as km
+from owl.model.kaggriculture_teacher import TEACHER_TARGET_BYTES_PER_ROW
 from owl.model.kaggriculture_workload import (
     ForwardWorkload,
     check_workload_headroom,
     headroom_log_lines,
     ppo_forward_workloads,
 )
-from owl.train import FullConfig, OptimizerConfig, PPOConfig, require_orbit_env
+from owl.train import (
+    FullConfig,
+    NoTeacherScheduleConfig,
+    OptimizerConfig,
+    PPOConfig,
+    require_orbit_env,
+)
 from owl.train.ppo import _minibatch_indices
 from pydantic import ValidationError
 
@@ -202,6 +209,37 @@ def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
     )
 
 
+# --- teacher settings (plan Task 4.4) -------------------------------------------
+
+_TEACHER_FIELDS = (
+    "teacher_mode",
+    "teacher_init",
+    "teacher_kl_coef",
+    "teacher_value_coef",
+    "teacher_schedule",
+    "teacher_segments_per_minibatch",
+)
+
+
+@pytest.mark.parametrize("name", _ALL)
+def test_teacher_settings_are_scaling_6ms_last_best_teacher(name: str) -> None:
+    # Named explicitly, so a future rl exemption in the whole-section equality
+    # tests cannot silently drop a teacher field. The chunk size stays 128 per
+    # rank (Isaiah's per-rank configs keep it), and no checkpoint path is
+    # configured: the teacher source is a launch-time input.
+    ours = {field: getattr(_sections(name).rl, field) for field in _TEACHER_FIELDS}
+    assert ours == {
+        "teacher_mode": "last_best",
+        "teacher_init": None,
+        "teacher_kl_coef": 0.005,
+        "teacher_value_coef": 0.005,
+        "teacher_schedule": NoTeacherScheduleConfig(),
+        "teacher_segments_per_minibatch": 128,
+    }
+    scaling = _scaling_6m().rl
+    assert ours == {field: getattr(scaling, field) for field in _TEACHER_FIELDS}
+
+
 def test_ranked_configs_differ_only_in_per_rank_shapes() -> None:
     two, four, eight = (_sections(name) for name in _RANKED)
     assert (two.env.n_envs, two.rl.segments_per_minibatch) == (128, 8)
@@ -307,6 +345,67 @@ def test_eight_rank_workloads_fit_the_model_chunking() -> None:
         "teacher_chunk": (4_096, 1, 1),
         "evaluation": (64, 1, 1),
     }
+
+
+@pytest.mark.parametrize(
+    ("name", "chunk_rows", "cache_bytes"),
+    [
+        ("kaggriculture_2rank.yaml", 16_384, 1_674_575_872),
+        ("kaggriculture_4rank.yaml", 8_192, 837_287_936),
+        ("kaggriculture_8rank.yaml", 4_096, 418_643_968),
+    ],
+)
+def test_teacher_chunk_reports_its_target_cache_bytes(
+    name: str, chunk_rows: int, cache_bytes: int
+) -> None:
+    # One whole-rollout chunk per rank at every world size, so the chunk and
+    # the cache hold the same n_envs x 64 x 2 seat rows of 102,208 B.
+    ours = _sections(name)
+    reports = check_workload_headroom(
+        ours.model,
+        ppo_forward_workloads(
+            n_envs=ours.env.n_envs,
+            horizon=ours.rl.horizon,
+            segments_per_minibatch=ours.rl.segments_per_minibatch,
+            teacher_segments_per_minibatch=ours.rl.teacher_segments_per_minibatch,
+        ),
+    )
+    by_name = {report.name: report for report in reports}
+    teacher = by_name["teacher_chunk"]
+    assert TEACHER_TARGET_BYTES_PER_ROW == 102_208
+    assert (teacher.rows, teacher.cached_teacher_rows) == (chunk_rows, chunk_rows)
+    assert teacher.teacher_chunk_bytes == cache_bytes
+    assert teacher.teacher_cache_bytes == cache_bytes
+    assert teacher.log_line().endswith(
+        f"; teacher targets {cache_bytes} B per chunk, {cache_bytes} B cached "
+        f"for {chunk_rows} rollout rows"
+    )
+    for other in ("rollout", "minibatch", "evaluation"):
+        assert by_name[other].teacher_cache_bytes is None
+        assert "teacher targets" not in by_name[other].log_line()
+
+
+def test_teacher_cache_covers_the_rollout_when_it_spans_several_chunks() -> None:
+    # 8 envs in chunks of 2 segments: each call computes 2 x 4 x 2 = 16 rows,
+    # and the cache holds all 8 x 4 x 2 = 64 rollout rows.
+    workloads = ppo_forward_workloads(
+        n_envs=8, horizon=4, segments_per_minibatch=2, teacher_segments_per_minibatch=2
+    )
+    (report,) = check_workload_headroom(
+        km.KaggricultureTransformerConfig(),
+        tuple(w for w in workloads if w.name == "teacher_chunk"),
+    )
+    assert (report.rows, report.cached_teacher_rows) == (16, 64)
+    assert report.teacher_chunk_bytes == 16 * 102_208
+    assert report.teacher_cache_bytes == 64 * 102_208
+
+
+def test_workload_check_rejects_a_teacher_cache_smaller_than_its_chunk() -> None:
+    with pytest.raises(ValueError, match="caches 8 teacher rows, fewer than its 16"):
+        check_workload_headroom(
+            km.KaggricultureTransformerConfig(),
+            (ForwardWorkload("teacher_chunk", 16, cached_teacher_rows=8),),
+        )
 
 
 def test_headroom_lines_label_the_padded_trunk_bounds() -> None:
