@@ -113,6 +113,10 @@ TeacherScheduleConfig: TypeAlias = Annotated[
 ]
 
 
+_FIRST_MINIBATCH_LOGRATIO_REFERENCE = (
+    "cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md"
+)
+
 # Any pydantic observation batch: Orbit's ``ObsBatch`` or a game-specific one.
 # The mapping helpers below iterate its declared fields instead of naming them.
 _ObservationT = TypeVar("_ObservationT", bound=BaseModel)
@@ -136,6 +140,13 @@ class PPOConfig(BaseConfig):
     ent_coef: float = Field(default=0.01, ge=0.0)
     max_grad_norm: float = Field(default=0.5, gt=0.0)
     target_kl: float | None = Field(default=0.03, gt=0.0)
+    # Correctness alarm: before the first optimizer step of each update, the
+    # replayed policy must reproduce the rollout log-probs. Abort when the first
+    # minibatch's policy-weighted mean log-ratio exceeds this many nats; None
+    # disables the check. See _FIRST_MINIBATCH_LOGRATIO_REFERENCE.
+    first_minibatch_logratio_limit: float | None = Field(
+        default=0.05, gt=0.0, allow_inf_nan=False
+    )
     ppo_clip_mode: PPOClipMode = "per_player"
     normalize_advantages: bool = False
     eval_replay_games: int = Field(default=0, ge=0)
@@ -1093,6 +1104,12 @@ class PPOTrainer:
                     loss_scale=1.0 / accumulation_steps,
                     step_optimizer=False,
                 )
+            if sample_index == 0:
+                self._check_first_minibatch_logratio(
+                    update.metrics.logratio_mean,
+                    segments=segments,
+                    minibatch_segments=int(sample_indices.numel()),
+                )
             loss_metrics.append(update.metrics)
             current_values[update.indices] = update.new_values
             target_kl_exceeded = target_kl_exceeded or update.target_kl_exceeded
@@ -1131,6 +1148,37 @@ class PPOTrainer:
             torch.tensor(sampled_segments, device=self.device)
         )
         return self._reduce_mean_metrics(metrics), sampled_segment_total
+
+    def _check_first_minibatch_logratio(
+        self,
+        logratio_mean: torch.Tensor,
+        *,
+        segments: _PPORolloutSegments,
+        minibatch_segments: int,
+    ) -> None:
+        """Fail fast when replay disagrees with the rollout before any update.
+
+        Runs after the first minibatch's backward and before any optimizer step
+        of the update, so parameters are unchanged when it raises. The mean is
+        already reduced across ranks, so every rank raises together.
+        """
+        limit = self.config.first_minibatch_logratio_limit
+        if limit is None:
+            return
+        observed = float(logratio_mean.item())
+        if abs(observed) <= limit:
+            return
+        raise RuntimeError(
+            f"first-minibatch PPO log-ratio mean {observed:+.4f} nats exceeds "
+            f"rl.first_minibatch_logratio_limit={limit} before any optimizer "
+            "step: replaying the rollout actions does not reproduce the rollout "
+            "log-probs. Rollout batch [segments, horizon, players]="
+            f"{tuple(segments.logp.shape)}, first minibatch "
+            f"{minibatch_segments} segments, observation tensors "
+            f"{_observation_tensor_shapes(segments.obs)}. Silent compiled-kernel "
+            "corruption produced this signature before; see "
+            f"{_FIRST_MINIBATCH_LOGRATIO_REFERENCE}"
+        )
 
     def _update_minibatch(
         self,
@@ -2077,6 +2125,16 @@ def _map_observation_value(
         f"observation field {field!r} has unsupported type {type(value).__name__}; "
         "expected a tensor, an action mask or None"
     )
+
+
+def _observation_tensor_shapes(obs: BaseModel) -> str:
+    """Describe an observation batch's tensor shapes for error messages."""
+    shapes = []
+    for field in type(obs).model_fields:
+        value = getattr(obs, field)
+        if isinstance(value, torch.Tensor):
+            shapes.append(f"{field}={tuple(value.shape)}")
+    return ", ".join(shapes)
 
 
 def _copy_observation_(

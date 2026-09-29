@@ -225,6 +225,12 @@ samples replay games from the same vectorized eval batch.
 joint action log-probability. Set it to `per_entity` to clip each controllable
 action entity independently before summing those clipped policy-loss terms back
 to the player-step.
+`rl.first_minibatch_logratio_limit` (default `0.05` nats) is a correctness
+alarm. Before the first optimizer step of each update, the policy-weighted mean
+log-ratio of the first minibatch (replayed versus rollout log-probs, reduced
+across ranks) must stay within the limit. Otherwise training raises a
+`RuntimeError` that reports the rollout batch and observation shapes, with
+parameters still unchanged. Set it to `null` to disable the check.
 PPO supports `pure`, `discrete_targets`, and `discrete_target_bins` action specs
 when the `StatelessTransformerV1` actor discriminator matches the environment
 action spec. The current discrete-target actor requires

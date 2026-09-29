@@ -1930,6 +1930,140 @@ def test_ppo_config_defaults_target_kl() -> None:
     assert ppo.PPOConfig().target_kl == pytest.approx(0.03)
 
 
+class ShiftedReplayModel(TinyOrbitModel):
+    """Replays actions with log-probs shifted from the ones it sampled with.
+
+    Models a sampling path and a replay path that disagree before any weight
+    change, as the reference's corrupted compiled rollouts did.
+    """
+
+    def __init__(self, shift: float, *, shift_from_call: int = 0) -> None:
+        super().__init__()
+        self.shift = shift
+        self.shift_from_call = shift_from_call
+        self.evaluate_calls = 0
+
+    def evaluate_actions(
+        self,
+        obs: ObsBatch,
+        actions: ActionBundle,
+    ) -> ModelEvaluation:
+        call = self.evaluate_calls
+        self.evaluate_calls += 1
+        evaluation = super().evaluate_actions(obs, actions)
+        if call < self.shift_from_call:
+            return evaluation
+        per_player = evaluation.log_probs.per_player_entity[:, :, 0] + self.shift
+        return replace(evaluation, log_probs=self._log_probs(per_player))
+
+
+def _logratio_alarm_trainer(
+    model: TinyOrbitModel,
+    *,
+    limit: float | None = 0.05,
+    gradient_accumulation_steps: int = 1,
+) -> ppo.PPOTrainer:
+    torch.manual_seed(12)
+    return ppo.PPOTrainer(
+        env=TinyOrbitEnv(n_envs=4, episode_length=3),
+        model=model,
+        optimizer=torch.optim.AdamW(model.parameters(), lr=0.05, eps=1e-5),
+        config=ppo.PPOConfig(
+            horizon=2,
+            segments_per_minibatch=1,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            target_kl=None,
+            first_minibatch_logratio_limit=limit,
+        ),
+        device=torch.device("cpu"),
+    )
+
+
+def test_ppo_config_defaults_first_minibatch_logratio_limit() -> None:
+    assert ppo.PPOConfig().first_minibatch_logratio_limit == pytest.approx(0.05)
+    assert (
+        ppo.PPOConfig(
+            first_minibatch_logratio_limit=None
+        ).first_minibatch_logratio_limit
+        is None
+    )
+
+
+@pytest.mark.parametrize("limit", [0.0, -0.05, float("nan"), float("inf")])
+def test_ppo_config_rejects_invalid_first_minibatch_logratio_limit(
+    limit: float,
+) -> None:
+    with pytest.raises(ValueError, match="first_minibatch_logratio_limit"):
+        ppo.PPOConfig(first_minibatch_logratio_limit=limit)
+
+
+@pytest.mark.parametrize("gradient_accumulation_steps", [1, 2])
+@pytest.mark.parametrize("shift", [-0.2, 0.2])
+def test_first_minibatch_logratio_alarm_raises_before_optimizer_step(
+    shift: float,
+    gradient_accumulation_steps: int,
+) -> None:
+    model = ShiftedReplayModel(shift)
+    trainer = _logratio_alarm_trainer(
+        model, gradient_accumulation_steps=gradient_accumulation_steps
+    )
+    before = [param.detach().clone() for param in model.parameters()]
+
+    with pytest.raises(RuntimeError) as raised:
+        trainer.train_iteration()
+
+    message = str(raised.value)
+    assert f"{shift:+.4f}" in message
+    assert "rl.first_minibatch_logratio_limit=0.05" in message
+    assert "(4, 2, 4)" in message
+    assert "global_features=(4, 2, 3)" in message
+    assert "compiled-gemm-template-overflows-above-2-21-rows" in message
+    assert model.evaluate_calls == 1
+    assert trainer.optimizer_steps == 0
+    for param, old in zip(model.parameters(), before, strict=True):
+        assert torch.equal(param, old)
+
+
+def test_first_minibatch_logratio_alarm_passes_matching_replay() -> None:
+    model = ShiftedReplayModel(0.0)
+    trainer = _logratio_alarm_trainer(model)
+
+    metrics = trainer.train_iteration()
+
+    assert trainer.optimizer_steps == 4
+    assert abs(metrics["policy/logratio_mean"]) < 0.05
+
+
+def test_first_minibatch_logratio_alarm_ignores_later_minibatches() -> None:
+    model = ShiftedReplayModel(0.2, shift_from_call=1)
+    trainer = _logratio_alarm_trainer(model)
+
+    trainer.train_iteration()
+
+    assert model.evaluate_calls == 4
+    assert trainer.optimizer_steps == 4
+
+
+def test_first_minibatch_logratio_alarm_checks_every_update() -> None:
+    model = ShiftedReplayModel(0.2, shift_from_call=4)
+    trainer = _logratio_alarm_trainer(model)
+    trainer.train_iteration()
+
+    with pytest.raises(RuntimeError, match="first-minibatch PPO log-ratio"):
+        trainer.train_iteration()
+
+    assert trainer.optimizer_steps == 4
+
+
+def test_first_minibatch_logratio_alarm_can_be_disabled() -> None:
+    model = ShiftedReplayModel(0.2)
+    trainer = _logratio_alarm_trainer(model, limit=None)
+
+    trainer.train_iteration()
+
+    assert trainer.optimizer_steps == 4
+
+
 def test_trainer_compile_mode_compiles_only_tensor_helpers(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
