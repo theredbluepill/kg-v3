@@ -15,7 +15,8 @@ fn header_json() -> Value {
             "player":{},"farms":{"shared":true},"private":{},
             "market":{"shared":true},"town":{"shared":true},
             "day":{"shared":true},"hour":{"shared":true}},
-            "action":{"default":{"farmer":["PASS"],"hands":[],"market":[]}}},
+            "action":{"default":{"farmer":["PASS"],"hands":[],"market":[]}},
+            "reward":{"default":0}},
         "envelope":{"id":"native-test","name":"kaggriculture","title":"Kaggriculture",
             "description":"test schema only","version":"0.1.0","module_version":"1.32.7","schema_version":1}})
 }
@@ -295,4 +296,85 @@ fn importer_rejects_incomplete_terminal_state_before_replay() {
 #[test]
 fn captured_empty_replay_returns_error() {
     assert!(compare_captured(&[], &json!({"initial":{}})).is_err());
+}
+
+// Claude review: Kaggle writes the schema reward default (integer 0) until DONE,
+// then float(money) (pinned kaggriculture.py:963). Native f64 0.0 is not that.
+#[test]
+fn active_rewards_use_the_kaggle_integer_default_and_done_rewards_are_floats() {
+    let h = SeedHeader::parse(&header_json()).unwrap();
+    let t = ActionTape::parse(&tape_json(6, true)).unwrap();
+    let e = export_kaggle_episode(&h, &t).unwrap();
+    for step in 0..6 {
+        for seat in 0..2 {
+            assert_eq!(
+                e["steps"][step][seat]["reward"].to_string(),
+                "0",
+                "step {step}"
+            );
+        }
+    }
+    assert_eq!(e["steps"][6][0]["reward"].to_string(), "3000.0");
+    assert_eq!(e["rewards"].to_string(), "[3000.0,3000.0]");
+}
+
+// Claude review: semantic equality may normalize decimal spelling but must not
+// conflate a JSON integer with a float (Kaggle rewards/money distinguish them).
+#[test]
+fn semantic_numbers_keep_integer_and_float_kinds_distinct() {
+    let number = |s: &str| serde_json::from_str::<Value>(s).unwrap();
+    for (a, b) in [("0", "0.0"), ("3000", "3000.0"), ("1", "1e0")] {
+        let err = compare_tree(&number(a), &number(b), "/number").unwrap_err();
+        assert_eq!(err.pointer, "/number", "{a} vs {b}");
+    }
+    for (a, b) in [("0.00001", "1e-5"), ("1e16", "1e+16"), ("12.50", "12.5")] {
+        assert!(
+            compare_tree(&number(a), &number(b), "/number").is_ok(),
+            "{a} vs {b}"
+        );
+    }
+}
+
+// Claude review: replay derives the grammar hire cap as turnsPerDay * orders + 1.
+// Hands clear at end of day, so that is the day's maximum actors + hires; a day
+// that hires on every order of every turn must still decode, and the cap is
+// reached exactly (actors + hires = cap - 1 before the last HIRE).
+#[test]
+fn derived_hire_cap_accepts_a_day_of_maximal_hiring() {
+    let mut raw = header_json();
+    raw["configuration"]["turnsPerDay"] = json!(2);
+    raw["configuration"]["maxMarketOrdersPerTurn"] = json!(2);
+    raw["configuration"]["episodeSteps"] = json!(4);
+    let h = SeedHeader::parse(&raw).unwrap();
+    let hire = |actors: usize| json!({"farmer":["PASS"],"hands":vec![json!(["PASS"]); actors - 1],"market":[["HIRE"],["HIRE"]]});
+    let mut tape = tape_json(2, false);
+    tape["transitions"][0]["actions"][0] = hire(1);
+    tape["transitions"][1]["actions"][0] = hire(3);
+    let snapshots = replay_from_seed(&h, &ActionTape::parse(&tape).unwrap()).unwrap();
+    assert_eq!(
+        snapshots[1].public.farms[0].hands.len(),
+        2,
+        "both day-one hires ran"
+    );
+    assert_eq!(
+        snapshots[2].public.farms[0].hands.len(),
+        0,
+        "hands clear at day end"
+    );
+    let derived = 2 * 2 + 1;
+    for t in 0..2 {
+        let actors = snapshots[t].public.farms[0].hands.len() + 1;
+        let row = |action: &Value, actors: usize| {
+            let plan = super::grammar::plan(i64::try_from(actors).unwrap(), 2, 241).unwrap();
+            let mut tokens = vec![0; super::grammar::TOKENS_PER_SEAT];
+            let length = super::grammar::encode(&plan, action, &mut tokens).unwrap();
+            json!({"tokens":tokens,"length":length})
+        };
+        let program = tape["transitions"][t]["actions"][0].clone();
+        tape["transitions"][t]["tokens"] = json!([row(&program, actors), row(&action(), 1)]);
+        if t == 1 {
+            assert_eq!(actors + 1, derived - 1, "last HIRE sits at the derived cap");
+        }
+    }
+    assert!(replay_from_seed(&h, &ActionTape::parse(&tape).unwrap()).is_ok());
 }

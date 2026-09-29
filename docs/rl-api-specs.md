@@ -995,7 +995,10 @@ are diagnostic scaffolding, never oracle answers. The tape has `complete` and
 `transitions`, each with exactly two seat-ordered engine `actions` and optional
 two-seat `tokens` records (`tokens`, `length`). Native `grammar::plan` and
 `grammar::decode` validate tokens against the pre-transition actor count and
-order limit, then compare their decoded action to the recorded action.
+order limit, then compare their decoded action to the recorded action. The
+grammar hire cap is derived as `turnsPerDay * maxMarketOrdersPerTurn + 1`: hands
+clear at the end of each day, so this is the day's maximum `actors + hires` and
+never rejects a reachable program.
 
 Episode `steps[0]` is initial state. Submitted action `t` appears beside its
 post-action observation in `steps[t+1][seat].action`. Each observation has only
@@ -1004,13 +1007,17 @@ from seat 1, while Kaggriculture's interpreter populates both copies of the five
 game-shared fields. Import restores only specification-marked shared fields
 from seat 0. Payload order, zero quantities, empty action entries and float64
 banks survive serialization. Top-level rewards/statuses mirror the last row;
-rewards are raw Kaggle rewards. `info.seed` retains the consumed seed and
+rewards are raw Kaggle rewards in Kaggle's representation: the schema default
+(integer `0`) while a seat is ACTIVE, `float(money)` once it is DONE (pinned
+`kaggriculture.py:963`). `info.seed` retains the consumed seed and
 `configuration.seed` is null. `info.v3_native_replay` explicitly identifies
 native production rather than Python-framework execution.
 
 Verification imports, replays from the seed and re-exports. Exporter-produced
 episodes require byte equality after canonical JSON reserialization. Foreign
 episodes use value equality followed by object-key insertion-order comparison.
+Value equality normalizes decimal spelling (`1e-05` equals `1e-5`) but keeps the
+JSON number kind: an integer never equals a float (`0` differs from `0.0`).
 Only these host/runtime fields are omitted from foreign comparison:
 
 - top-level `info` other than `seed`, including the native provenance added on
@@ -1024,7 +1031,8 @@ Only these host/runtime fields are omitted from foreign comparison:
 Schema-shared omission is normalized, and the observation wrapper uses schema
 order; nested payload order stays significant. No public/private state, action,
 seed, status or raw reward is allowlisted. A separate captured-evidence check
-accepts an `initial` snapshot, `terminal` snapshot, one post-transition bank
+accepts native `StepSnapshot` evidence, whose f64 `rewards` are parsed as
+floats; everything else compares strictly. It takes an `initial` snapshot, `terminal` snapshot, one post-transition bank
 pair per transition (`banks`), and indexed full successor snapshots
 (`snapshots: [{transition, snapshot}]`). Its report counts the evidence actually
 provided; replay agreement with itself is not independent certification.

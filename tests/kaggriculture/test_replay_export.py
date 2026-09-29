@@ -337,6 +337,24 @@ def test_malformed_selected_transition_creates_error_custody(
 
 
 @pytest.mark.parametrize(
+    "captured",
+    [{"step": 1}, {"public": {"farms": [{"money": 1.0}]}}, {"banks": [1.0]}],
+)
+def test_malformed_captured_evidence_creates_error_custody(
+    tmp_path: Path, captured: dict[str, Any]
+) -> None:
+    # Claude review: malformed evidence fails explicitly (ValueError, not a bare
+    # KeyError) and leaves error custody instead of an active half-recorded game.
+    recorder = _recorder(tmp_path)
+    _start(recorder)
+    with pytest.raises(ValueError, match="captured evidence"):
+        recorder.record_transition(0, _actions(), captured=captured)
+    sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+    assert sidecar["status"] == "error"
+    assert not (tmp_path / "game_000000.json").exists()
+
+
+@pytest.mark.parametrize(
     "checkpoints",
     [{}, {"candidate": "a" * 64}, {"candidate": "not-a-hash", "incumbent": "b" * 64}],
 )

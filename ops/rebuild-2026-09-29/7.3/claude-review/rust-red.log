@@ -1,0 +1,50 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-t73)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.98s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 15 tests
+test kaggriculture::replay_export_tests::captured_empty_replay_returns_error ... ok
+test kaggriculture::replay_export_tests::semantic_numbers_are_exact_without_float_seed_rounding ... ok
+test kaggriculture::replay_export_tests::native_step_error_is_explicit_and_never_shortened_success ... ok
+test kaggriculture::replay_export_tests::semantic_numbers_keep_integer_and_float_kinds_distinct ... FAILED
+test kaggriculture::replay_export_tests::replay_rejects_invalid_seed_config_counts_and_completion ... ok
+test kaggriculture::replay_export_tests::replay_seed_only_poison_and_exact_wide_seed ... ok
+test kaggriculture::replay_export_tests::active_rewards_use_the_kaggle_integer_default_and_done_rewards_are_floats ... FAILED
+test kaggriculture::replay_export_tests::typed_tape_rejects_token_seat_count_without_panicking ... ok
+test kaggriculture::replay_export_tests::token_decode_uses_the_recorded_hire_limit ... FAILED
+test kaggriculture::replay_export_tests::importer_rejects_incomplete_terminal_state_before_replay ... ok
+test kaggriculture::replay_export_tests::token_tape_uses_pre_step_native_decode ... ok
+test kaggriculture::replay_export_tests::native_byte_numeric_spelling_reports_the_first_pointer ... ok
+test kaggriculture::replay_export_tests::shifted_action_and_dropped_transition_are_detected ... ok
+test kaggriculture::replay_export_tests::import_rejections_and_captured_evidence_are_not_circular ... ok
+test kaggriculture::replay_export_tests::episode_timing_shared_privacy_quantities_and_byte_roundtrip ... ok
+
+failures:
+
+---- kaggriculture::replay_export_tests::semantic_numbers_keep_integer_and_float_kinds_distinct stdout ----
+
+thread 'kaggriculture::replay_export_tests::semantic_numbers_keep_integer_and_float_kinds_distinct' (12092301) panicked at src/kaggriculture/replay_export_tests.rs:323:67:
+called `Result::unwrap_err()` on an `Ok` value: ()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- kaggriculture::replay_export_tests::active_rewards_use_the_kaggle_integer_default_and_done_rewards_are_floats stdout ----
+
+thread 'kaggriculture::replay_export_tests::active_rewards_use_the_kaggle_integer_default_and_done_rewards_are_floats' (12092291) panicked at src/kaggriculture/replay_export_tests.rs:310:13:
+assertion `left == right` failed: step 0
+  left: "0.0"
+ right: "0"
+
+---- kaggriculture::replay_export_tests::token_decode_uses_the_recorded_hire_limit stdout ----
+
+thread 'kaggriculture::replay_export_tests::token_decode_uses_the_recorded_hire_limit' (12092303) panicked at src/kaggriculture/replay_export_tests.rs:368:77:
+called `Result::unwrap()` on an `Err` value: Divergence { pointer: "/transitions/1/tokens/0", transition: Some(1), message: "length value 4 must be in 2..=3" }
+
+
+failures:
+    kaggriculture::replay_export_tests::active_rewards_use_the_kaggle_integer_default_and_done_rewards_are_floats
+    kaggriculture::replay_export_tests::semantic_numbers_keep_integer_and_float_kinds_distinct
+    kaggriculture::replay_export_tests::token_decode_uses_the_recorded_hire_limit
+
+test result: FAILED. 12 passed; 3 failed; 0 ignored; 0 measured; 258 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `--lib`

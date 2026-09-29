@@ -421,6 +421,9 @@ canonical-byte round trip and Python/JSON/Rust wide-seed preservation separately
 This test also runs by default, with a two-minute/1 GB live-game bound.
 
 Foreign semantic comparison first checks values and then recursive key order.
+It keeps JSON number kinds distinct (integer `0` is not float `0.0`; exported
+ACTIVE rewards use Kaggle's integer default) and a mutation writing one ACTIVE
+framework reward as `0.0` fails at `/steps/1/0/reward`.
 It normalizes only specification-shared omissions and observation-wrapper order;
 nested payload order remains significant. Its exact allowlist, justified by the
 pinned framework's execution/serialization code, is top-level `info` except

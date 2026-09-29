@@ -255,10 +255,17 @@ def _semantic_payload(episode: dict[str, Any]) -> dict[str, Any]:
 
 
 def _ordered(value: Any) -> Any:
+    """Key order and JSON number kind are observable: 0 and 0.0 differ.
+
+    Kaggle keeps the schema reward default (integer 0) until DONE, then writes
+    float(money); Python's ``==`` would otherwise hide an int/float mismatch.
+    """
     if isinstance(value, dict):
         return tuple((key, _ordered(item)) for key, item in value.items())
     if isinstance(value, list):
         return tuple(_ordered(item) for item in value)
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return (type(value).__name__, value)
     return value
 
 
@@ -417,3 +424,15 @@ def test_official_inventory_key_order_mutation(
     message = _reject(episode, "fixture actor inventory key order reversed")
     assert "/steps/22/1/observation/private/inventories/3" in message
     assert "21" in message
+
+
+def test_framework_reward_number_kind_is_not_ignored(
+    framework_episode: dict[str, Any],
+) -> None:
+    # Claude review: Kaggle writes integer 0 before DONE; a float 0.0 is a
+    # representation change the semantic comparison must report.
+    assert type(framework_episode["steps"][1][0]["reward"]) is int
+    episode = copy.deepcopy(framework_episode)
+    episode["steps"][1][0]["reward"] = 0.0
+    message = _reject(episode, "framework ACTIVE reward 0 spelled as float 0.0")
+    assert "/steps/1/0/reward" in message

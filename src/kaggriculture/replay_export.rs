@@ -294,6 +294,10 @@ pub fn replay_from_seed(header: &SeedHeader, tape: &ActionTape) -> Result<Vec<St
             for (seat, token) in seats.iter().enumerate() {
                 let actors = i64::try_from(pre.public.farms[seat].hands.len() + 1)
                     .map_err(|e| Divergence::new(&p, e.to_string()))?;
+                // Hands are cleared at end of day (engine end_of_day), so
+                // actors + hires never reaches turnsPerDay * orders + 1 (<= 241 by
+                // the envelope): this cap never rejects a reachable program, and
+                // decode renders identically under any non-binding cap.
                 let plan = grammar::plan(
                     actors,
                     config.orders,
@@ -376,6 +380,25 @@ fn observation(header: &SeedHeader, snapshot: &StepSnapshot, seat: usize) -> Res
     Ok(Value::Object(obs))
 }
 
+/// Pinned kaggriculture.py:963 assigns `float(money)` only when a seat turns
+/// DONE; before that the framework keeps the schema reward default (integer 0).
+fn kaggle_reward(header: &SeedHeader, snapshot: &StepSnapshot, seat: usize) -> Result<Value> {
+    let reward = snapshot.rewards[seat];
+    match snapshot.statuses[seat].as_str() {
+        "DONE" => Ok(json!(reward)),
+        "ACTIVE" if reward == 0.0 => required(
+            &header.specification["reward"],
+            "default",
+            "/specification/reward",
+        )
+        .cloned(),
+        status => Err(Divergence::new(
+            "/snapshot/rewards",
+            format!("unexpected native reward {reward} for status {status}"),
+        )),
+    }
+}
+
 pub fn export_kaggle_episode(header: &SeedHeader, tape: &ActionTape) -> Result<Value> {
     let snapshots = replay_from_seed(header, tape)?;
     export_snapshots(header, tape, &snapshots)
@@ -400,7 +423,7 @@ fn export_snapshots(
                 tape.transitions[i - 1].actions[seat].clone()
             };
             seats.push(
-                json!({"action":action,"reward":snapshot.rewards[seat],"info":{},
+                json!({"action":action,"reward":kaggle_reward(header, snapshot, seat)?,"info":{},
                 "observation":observation(header,snapshot,seat)?,"status":snapshot.statuses[seat]}),
             );
         }
@@ -421,7 +444,10 @@ fn export_snapshots(
     result.insert("specification".into(), header.specification.clone());
     result.insert("steps".into(), Value::Array(steps));
     let last = snapshots.last().expect("initial snapshot");
-    result.insert("rewards".into(), json!(last.rewards));
+    let rewards = (0..2)
+        .map(|seat| kaggle_reward(header, last, seat))
+        .collect::<Result<Vec<_>>>()?;
+    result.insert("rewards".into(), Value::Array(rewards));
     result.insert("statuses".into(), json!(last.statuses));
     result.insert("schema_version".into(), json!(1));
     result.insert("info".into(),json!({"seed":header.seed,"v3_native_replay":{
@@ -602,6 +628,7 @@ pub fn import_kaggle_episode(episode: &Value) -> Result<(SeedHeader, ActionTape)
         );
         compare_tree(&episode[key], &expected, &format!("/{key}"))?;
     }
+    // Kaggle episodes record submitted actions, not token programs.
     let tape = ActionTape::parse(&json!({"complete":complete,"transitions":transitions}))?;
     let config = ObservationConfig::new(&header.configuration)
         .map_err(|e| Divergence::new("/configuration", e.to_string()))?;
@@ -627,6 +654,10 @@ fn child(p: &str, key: &str) -> String {
 }
 // JSON integers remain exact, including when compared with a float spelling.
 // Normalize decimal coefficient/exponent without ever converting to f64.
+/// JSON number kind: Python's json writes every float with '.' or an exponent.
+fn is_float_spelling(n: &Number) -> bool {
+    n.to_string().contains(['.', 'e', 'E'])
+}
 fn decimal(n: &Number) -> (String, num_bigint::BigInt) {
     let raw = n.to_string();
     let (mantissa, exponent) = raw
@@ -676,8 +707,9 @@ fn value_difference(actual: &Value, expected: &Value, p: &str) -> Option<Diverge
             }
             (a.len() != e.len()).then(|| Divergence::new(p, "array length differs"))
         },
-        (Value::Number(a), Value::Number(e)) => (decimal(a) != decimal(e))
-            .then(|| Divergence::new(p, format!("value differs: {a} != {e}"))),
+        (Value::Number(a), Value::Number(e)) => (is_float_spelling(a) != is_float_spelling(e)
+            || decimal(a) != decimal(e))
+        .then(|| Divergence::new(p, format!("value differs: {a} != {e}"))),
         _ => (actual != expected)
             .then(|| Divergence::new(p, format!("value differs: {actual} != {expected}"))),
     }
@@ -728,6 +760,27 @@ fn number_spelling_difference(actual: &Value, expected: &Value, p: &str) -> Opti
     }
 }
 
+/// Captured evidence is a native `StepSnapshot`, whose `rewards` are typed f64:
+/// parse them as f64 (Kaggle's integer default 0 becomes 0.0). Every other
+/// field keeps strict value, number-kind and key-order comparison.
+fn native_snapshot_evidence(evidence: &Value, p: &str) -> Result<Value> {
+    let mut evidence = object(evidence, p)?.clone();
+    let rewards = array(
+        required(&Value::Object(evidence.clone()), "rewards", p)?,
+        &format!("{p}/rewards"),
+    )?
+    .iter()
+    .enumerate()
+    .map(|(seat, reward)| {
+        reward.as_f64().map(|r| json!(r)).ok_or_else(|| {
+            Divergence::new(format!("{p}/rewards/{seat}"), "expected numeric reward")
+        })
+    })
+    .collect::<Result<Vec<_>>>()?;
+    evidence.insert("rewards".into(), Value::Array(rewards));
+    Ok(Value::Object(evidence))
+}
+
 /// Compare separately captured native evidence, never manufactured re-export
 /// evidence. Missing optional evidence is reported explicitly as uncovered.
 pub fn compare_captured(snapshots: &[StepSnapshot], captured: &Value) -> Result<Value> {
@@ -750,12 +803,14 @@ pub fn compare_captured(snapshots: &[StepSnapshot], captured: &Value) -> Result<
         serde_json::to_value(s).map_err(|e| Divergence::new("/captured", e.to_string()))
     };
     if let Some(initial) = map.get("initial") {
-        compare_tree(&value(&snapshots[0])?, initial, "/captured/initial")?;
+        let initial = native_snapshot_evidence(initial, "/captured/initial")?;
+        compare_tree(&value(&snapshots[0])?, &initial, "/captured/initial")?;
     }
     if let Some(terminal) = map.get("terminal") {
+        let terminal = native_snapshot_evidence(terminal, "/captured/terminal")?;
         compare_tree(
             &value(snapshots.last().expect("initial"))?,
-            terminal,
+            &terminal,
             "/captured/terminal",
         )
         .map_err(|e| e.at(snapshots.len().checked_sub(2)))?;
@@ -795,10 +850,11 @@ pub fn compare_captured(snapshots: &[StepSnapshot], captured: &Value) -> Result<
             if !seen.insert(t) {
                 return Err(Divergence::new(p, "duplicate snapshot transition"));
             }
+            let path = format!("{p}/snapshot");
             compare_tree(
                 &value(&snapshots[t + 1])?,
-                required(row, "snapshot", &p)?,
-                &format!("{p}/snapshot"),
+                &native_snapshot_evidence(required(row, "snapshot", &p)?, &path)?,
+                &path,
             )
             .map_err(|e| e.at(Some(t)))?;
         }

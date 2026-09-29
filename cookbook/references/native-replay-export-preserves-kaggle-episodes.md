@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Native replay export preserves Kaggle episodes"
-description: "Task 7.3 seed replay and selected-game custody pass four independent official-fixture round trips, the real pinned-framework oracle and canonical-byte checks; live evaluation wiring still awaits Task 1.4."
+description: "Task 7.3 seed replay and selected-game custody pass four independent official-fixture round trips, the real pinned-framework oracle and canonical-byte checks, with Kaggle reward representation and JSON number kinds compared strictly after Claude review; live evaluation wiring still awaits Task 1.4."
 tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex", "at": "2026-09-29"}
@@ -113,7 +113,9 @@ private state. The pinned framework omits shared `step` from seat 1; the game
 interpreter populates both copies of the other five shared fields. Import
 restores only specification-marked shared fields. Nested inventories, sheds,
 market maps and tile objects keep insertion order, including zero-valued keys.
-Money is float64, integers exact, and terminal rewards are raw banks.
+Money is float64 and integers exact. Rewards keep Kaggle's representation: the
+schema default integer `0` while a seat is ACTIVE and `float(money)` once DONE
+(pinned `kaggriculture.py:963`), not the native snapshot's f64 `0.0`.
 
 `info.seed` is the consumed seed; `configuration.seed` is null after resolution.
 Native provenance under `info.v3_native_replay` never claims Python-framework
@@ -122,7 +124,10 @@ documented placeholders and are poisoned in a regression to distinguish seed
 construction from loading oracle answers.
 
 Exporter-produced episodes require canonical serialization byte equality.
-Foreign episodes compare values before recursive key order. Semantic comparison
+Foreign episodes compare values before recursive key order. Value comparison
+normalizes decimal spelling (`1e-05` equals `1e-5`) but never equates a JSON
+integer with a float. Captured native evidence parses its typed f64 `rewards`
+as floats; everything else in it compares strictly. Semantic comparison
 normalizes specification-shared omissions and observation-wrapper order only;
 payload key order remains observable. Its explicit allowlist is:
 
@@ -194,6 +199,7 @@ The mutation receipts establish non-vacuity:
 | Seat 0 shed leaked into seat 1 | `/steps/1/1/observation/private/shed/WHEAT` | 0 |
 | Initial private seed-map keys reversed | `/steps/0/0/observation/private/seeds` | initial |
 | Fixture actor inventory keys reversed | `/steps/22/1/observation/private/inventories/3` | 21 |
+| Framework ACTIVE reward `0` written as `0.0` | `/steps/1/0/reward` | 0 |
 
 The updater suite has an actual missing-module collection red and then 11 green
 cases. Two later cases give **13 passed in 0.01 seconds** after a recorded
@@ -237,3 +243,27 @@ Full-state certification of future selected live games requires captured full
 snapshots at every transition or another independent oracle. Reopen the live
 claims when the native binding lands, and rerun source/hash checks if the pinned
 framework changes. No model-input path accepts replay host identity metadata.
+
+## Claude review corrections
+
+Claude's review of Codex's run (commit `517edc4`) found that native export wrote
+ACTIVE rewards as `0.0` where the pinned framework writes integer `0`. The
+semantic comparator and the Python oracle's structural equality both treated
+`0` and `0.0` as equal, so the framework oracle passed vacuously on that field.
+Export now takes the ACTIVE reward from the specification default. Both
+comparisons now distinguish number kinds. Recorded reds and greens are in
+`ops/rebuild-2026-09-29/7.3/claude-review/`: `rust-red.log`, `python-red.log`
+and `mutation-number-kind.log` (the new framework mutation passes once the kind
+check is removed).
+
+Replay derives the grammar hire cap as `turnsPerDay * maxMarketOrdersPerTurn + 1`
+instead of recording the policy's `hire_limit`. Engine `end_of_day` clears hands
+(`engine_rs/src/lib.rs:4505`), so the cap equals the day's maximum
+`actors + hires` and never rejects a reachable program. A test hires on every
+order of every turn and reaches the cap exactly. With the cap lowered by one,
+that test fails (`mutation-derived-cap.log`). Claude's first red for an explicit
+`hire_limit` field rested on a wrong premise (hands persisting across days); it
+is kept as `rust-red-attempt1.log`, and that change was reverted.
+
+Malformed captured evidence passed to the recorder now raises `ValueError` and
+writes error custody, instead of a bare `KeyError` that left the game active.

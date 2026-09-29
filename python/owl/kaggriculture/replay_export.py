@@ -385,13 +385,21 @@ class ReplayRecorder:
             transition["tokens"] = deepcopy(list(tokens))
         if captured is not None:
             evidence = deepcopy(dict(captured))
+            try:
+                if "public" in evidence:
+                    banks = [farm["money"] for farm in evidence["public"]["farms"]]
+                else:
+                    banks = evidence["banks"]
+                if not isinstance(banks, list) or len(banks) != 2:
+                    raise TypeError("expected two seat banks")
+            except (KeyError, TypeError) as error:
+                message = f"captured evidence needs a snapshot or two banks: {error}"
+                self.fail_game(game_ordinal, error=message)
+                raise ValueError(message) from error
             if "public" in evidence:
-                banks = [farm["money"] for farm in evidence["public"]["farms"]]
                 replay.captured.setdefault("snapshots", []).append(
                     {"transition": len(replay.transitions), "snapshot": evidence}
                 )
-            else:
-                banks = evidence["banks"]
             replay.captured.setdefault("banks", []).append(banks)
         replay.transitions.append(transition)
 

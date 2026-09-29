@@ -1,5 +1,22 @@
 # Change log
 
+## 2026-09-29 — Keep Kaggle reward representation in native replay export (Claude review)
+
+Claude's review of Codex's Task 7.3 run (`517edc4`) found that native export
+wrote ACTIVE rewards as `0.0` where the pinned framework writes integer `0`, and
+that both the Rust semantic comparator and the Python oracle treated `0` and
+`0.0` as equal, so the framework oracle passed vacuously on that field. Export
+now uses the specification's reward default before DONE; semantic comparison and
+the oracle keep integer/float kinds distinct; captured native evidence parses its
+typed f64 rewards. A new framework mutation (`0` written as `0.0`) fails at
+`/steps/1/0/reward` and passes when the kind check is removed. The derived grammar
+hire cap was confirmed non-binding because hands clear each day; a maximal-hiring
+test covers it. The recorder now fails explicitly on malformed captured evidence.
+The [[references/native-replay-export-preserves-kaggle-episodes|replay-export
+Reference]] and its index line are revised; receipts are in
+`ops/rebuild-2026-09-29/7.3/claude-review/`. `just prepare` passes: 1,741 Python
+tests / 16 skips, 269 root Rust / four ignored, 69 engine tests.
+
 ## 2026-09-29 — Add native seed replay export and selected-game custody
 
 Task 7.3 adds the [[references/native-replay-export-preserves-kaggle-episodes|native
