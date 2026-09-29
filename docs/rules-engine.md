@@ -220,3 +220,23 @@ The current downloaded reference episodes are:
   rule's 500-turn wording suggests.
 - Player 0 observations are the canonical replay observations. Later player
   observations may omit `step`.
+
+## Kaggriculture root feature integration
+
+Task 1.3 adds the standalone pinned `engine_rs` package as a root path dependency.
+Its `serde_json/arbitrary_precision` and `preserve_order` features are now shared
+with Orbit. The test-only `RandomCall::Uniform` fixture fields deserialize through
+`serde_json::Number` and reject non-finite conversions. A literal decimal regression
+passed before unification, failed afterward, then passed with this repair. Production
+Orbit generation and comparison tolerances are unchanged. The native observation
+writer lives entirely in root `src/kaggriculture/`; the kernel remains byte-pinned.
+Its config-bound wrapper uses the public snapshot API and forwards stepping only.
+Exact fields, strict tiles and both-seat privacy checks are observation coverage,
+not new Python-engine rules parity. Task 1.3 receipts, including the qualified
+512-state oracle and the pending pod timing, are in `ops/rebuild-2026-09-29/1.3/`.
+Contract v4.1 retires the temporary `engine_rs/tests/grammar_kernel.rs` bridge
+at the first production root-to-engine dependency, which Task 1.3 creates. Its
+nine kernel acceptance/replay-state tests now run in the root crate as
+`src/kaggriculture/grammar_kernel_tests.rs` against the pinned engine; the engine
+test file and its authored trim registration are removed. One integration route
+remains: the root crate.

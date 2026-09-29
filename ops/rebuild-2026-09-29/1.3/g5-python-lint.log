@@ -1,0 +1,79 @@
+E501 Line too long (111 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:361:89
+    |
+359 |         require(
+360 |             counts[name] >= minimum,
+361 |             f"R1 coverage {name}: actual {counts[name]}, required {minimum}; final corpus publication blocked",
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+362 |         )
+363 |     require(
+    |
+
+E501 Line too long (94 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:682:89
+    |
+680 |                         and sha(block)
+681 |                         == digest(meta["seat_sha256"][seat], "seat hash"),
+682 |                         f"record {row['record_id']} seat {seat}: feature block hash mismatch",
+    |                                                                                         ^^^^^^
+683 |                     )
+684 |                 actual_counts[row["source"]["kind"]] += 1
+    |
+
+E501 Line too long (112 > 88)
+   --> scripts/kaggriculture_observation_oracle/regenerate.py:712:89
+    |
+710 |     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+711 |         raise RuntimeError(
+712 |             f"bounded offline command failed: {argv}: {error}; stdout={error.stdout!r}; stderr={error.stderr!r}"
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^
+713 |         ) from error
+    |
+
+PT018 Assertion should be broken down into multiple parts
+  --> tests/tools/test_observation_oracle_custody.py:19:1
+   |
+17 |     ROOT / "scripts/kaggriculture_observation_oracle/regenerate.py",
+18 | )
+19 | assert SPEC is not None and SPEC.loader is not None
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 | oracle = importlib.util.module_from_spec(SPEC)
+21 | SPEC.loader.exec_module(oracle)
+   |
+help: Break down assertion into multiple parts
+
+E501 Line too long (93 > 88)
+  --> tests/tools/test_observation_oracle_custody.py:69:89
+   |
+67 |         "engine": {k: "b" * 64 for k in ("trim_manifest", "lib", "lock")},
+68 |         "reference_commit": "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0",
+69 |         "feature_sha256": "24a7d09f9ddf8196aed7e5dc3b18d7590562370d697c8407f95b4cc8b4f9a6ab",
+   |                                                                                         ^^^^^
+70 |         "recorder_sha256": "b" * 64,
+71 |         "driver_sha256": "b" * 64,
+   |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/tools/test_observation_oracle_custody.py:186:24
+    |
+184 |             text.replace('"schema_version":1', '"schema_version":1,"schema_version":1')
+185 |         )
+186 |     with pytest.raises(ValueError):
+    |                        ^^^^^^^^^^
+187 |         oracle.validate_corpus(tmp_path, expected_records=2)
+    |
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+   --> tests/tools/test_observation_oracle_custody.py:193:42
+    |
+191 |     counts = {name: 100 for name in oracle.COVERAGE_TAGS}
+192 |     counts["actor_gt16_states"] = 0
+193 |     with pytest.raises(ValueError, match="actor_gt16_states.*0.*4"):
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^
+194 |         oracle.require_coverage(
+195 |             {
+    |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+Found 7 errors.
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).

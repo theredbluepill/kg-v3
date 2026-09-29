@@ -1,0 +1,37 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-observe)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.39s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 7 tests
+test kaggriculture::oracle_corpus::reconstruction_byteplane_decode_preserves_bits_and_rejects_bad_lengths ... 
+thread 'kaggriculture::oracle_corpus::reconstruction_byteplane_decode_preserves_bits_and_rejects_bad_lengths' (10383656) panicked at src/kaggriculture/oracle_corpus.rs:1668:5:
+assertion `left == right` failed
+  left: []
+ right: [0, 0, 0, 0, 0, 0, 0, 128, 205, 204, 204, 61, 0, 0, 232, 192, 1, 0, 0, 0]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test kaggriculture::oracle_corpus::reconstruction_comparator_names_record_seat_group_offset_and_signed_zero ... ok
+test kaggriculture::oracle_corpus::reconstruction_coverage_rejects_duplicate_offset - should panic ... 
+thread 'kaggriculture::oracle_corpus::reconstruction_coverage_rejects_duplicate_offset' (10383658) panicked at src/kaggriculture/oracle_corpus.rs:1381:9:
+legacy offset 615 written twice
+ok
+test kaggriculture::oracle_corpus::reconstruction_coverage_rejects_unwritten_zero_hole - should panic ... 
+thread 'kaggriculture::oracle_corpus::reconstruction_coverage_rejects_unwritten_zero_hole' (10383659) panicked at src/kaggriculture/oracle_corpus.rs:1387:13:
+legacy offset 959 never reconstructed
+ok
+test kaggriculture::oracle_corpus::reconstruction_hand_anchors_cover_every_range_and_boundary ... ok
+test kaggriculture::oracle_corpus::reconstruction_old_day_rule_sentinel_age_and_clamping_are_explicit ... ok
+test kaggriculture::oracle_corpus::reconstruction_recorded_constants_and_duplicates_are_checked_independently ... 
+thread 'kaggriculture::oracle_corpus::reconstruction_recorded_constants_and_duplicates_are_checked_independently' (10383662) panicked at src/kaggriculture/oracle_corpus.rs:1654:9:
+missed offset 907
+FAILED
+
+failures:
+
+failures:
+    kaggriculture::oracle_corpus::reconstruction_byteplane_decode_preserves_bits_and_rejects_bad_lengths
+    kaggriculture::oracle_corpus::reconstruction_recorded_constants_and_duplicates_are_checked_independently
+
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 223 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`

@@ -1,0 +1,14 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-observe)
+error[E0507]: cannot move out of `row.globals_int` which is behind a shared reference
+    --> src/kaggriculture/oracle_corpus.rs:1397:13
+     |
+1397 |     let g = row.globals_int;
+     |             ^^^^^^^^^^^^^^^ move occurs because `row.globals_int` has type `&mut [i64; 16]`, which does not implement the `Copy` trait
+     |
+help: consider borrowing here
+     |
+1397 |     let g = &row.globals_int;
+     |             +
+
+For more information about this error, try `rustc --explain E0507`.
+error: could not compile `owl` (lib test) due to 1 previous error

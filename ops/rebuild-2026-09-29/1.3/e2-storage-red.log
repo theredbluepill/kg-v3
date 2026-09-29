@@ -1,0 +1,57 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 5 tests
+test kaggriculture::tests::storage_all_player_channels_use_public_roles_and_own_private_state ... FAILED
+test kaggriculture::tests::storage_native_zero_counts_have_all_twelve_insertion_ranks ... FAILED
+test kaggriculture::tests::storage_rank_remove_reinsert_changes_order_not_counts ... FAILED
+test kaggriculture::tests::storage_rejects_unknown_items_negative_counts_and_bad_quadrants_atomically ... FAILED
+test kaggriculture::tests::storage_room_uses_wide_nonnegative_remainder_without_clamping_used_ratio ... FAILED
+
+failures:
+
+---- kaggriculture::tests::storage_all_player_channels_use_public_roles_and_own_private_state stdout ----
+
+thread 'kaggriculture::tests::storage_all_player_channels_use_public_roles_and_own_private_state' (10095723) panicked at src/kaggriculture/tests.rs:2303:13:
+assertion `left == right` failed
+  left: [-5e-5, 0.012448133, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.008333334, 1e-5]
+ right: [-5e-5, 0.012448133, 0.5, 1.0, 0.0, 0.0, 1.0, 0.24, 0.75, 0.008333334, 1e-5]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- kaggriculture::tests::storage_native_zero_counts_have_all_twelve_insertion_ranks stdout ----
+
+thread 'kaggriculture::tests::storage_native_zero_counts_have_all_twelve_insertion_ranks' (10095724) panicked at src/kaggriculture/tests.rs:2252:13:
+assertion `left == right` failed
+  left: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+ right: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+---- kaggriculture::tests::storage_rank_remove_reinsert_changes_order_not_counts stdout ----
+
+thread 'kaggriculture::tests::storage_rank_remove_reinsert_changes_order_not_counts' (10095725) panicked at src/kaggriculture/tests.rs:2267:9:
+assertion `left == right` failed
+  left: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+ right: [2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 3, 0]
+
+---- kaggriculture::tests::storage_rejects_unknown_items_negative_counts_and_bad_quadrants_atomically stdout ----
+
+thread 'kaggriculture::tests::storage_rejects_unknown_items_negative_counts_and_bad_quadrants_atomically' (10095726) panicked at src/kaggriculture/tests.rs:938:24:
+called `Result::unwrap_err()` on an `Ok` value: ()
+
+---- kaggriculture::tests::storage_room_uses_wide_nonnegative_remainder_without_clamping_used_ratio stdout ----
+
+thread 'kaggriculture::tests::storage_room_uses_wide_nonnegative_remainder_without_clamping_used_ratio' (10095727) panicked at src/kaggriculture/tests.rs:2336:9:
+assertion `left == right` failed
+  left: [0.0, 0.0]
+ right: [0.0, 1.0]
+
+
+failures:
+    kaggriculture::tests::storage_all_player_channels_use_public_roles_and_own_private_state
+    kaggriculture::tests::storage_native_zero_counts_have_all_twelve_insertion_ranks
+    kaggriculture::tests::storage_rank_remove_reinsert_changes_order_not_counts
+    kaggriculture::tests::storage_rejects_unknown_items_negative_counts_and_bad_quadrants_atomically
+    kaggriculture::tests::storage_room_uses_wide_nonnegative_remainder_without_clamping_used_ratio
+
+test result: FAILED. 0 passed; 5 failed; 0 ignored; 0 measured; 200 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`

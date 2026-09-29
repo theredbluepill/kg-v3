@@ -1,0 +1,166 @@
+{
+  "original_sha256": "300528b2434c384136a86ea45909952c79fb3f85824b00656f968e1571270913",
+  "cases": [
+    {
+      "group": "summary-bank",
+      "receipt": "h13-m01-summary-bank",
+      "removed": "    // Temporary mutation receipt injection point: clean source has no mutation.\n",
+      "inserted": "    // Temporary mutation receipt injection point: clean source has no mutation.\n    row.banks[0] += 200000.0;\n",
+      "expected_first_offset": 3,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "705d82f8e3dd3c3ba623ea87a6efc41eced843d11964d51fca7e3d292e7cf928"
+    },
+    {
+      "group": "tile-category",
+      "receipt": "h13-m02-tile-category",
+      "removed": "    // Temporary mutation receipt injection point: clean source has no mutation.\n",
+      "inserted": "    // Temporary mutation receipt injection point: clean source has no mutation.\n    row.tile_crop[0] = 4;\n",
+      "expected_first_offset": 16,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "2e0511669a58f2a98808dbed61accabb8aa5950174383cd227f2eb2c493b0381"
+    },
+    {
+      "group": "first-actor-position",
+      "receipt": "h13-m03-first-actor-position",
+      "removed": "    // Temporary mutation receipt injection point: clean source has no mutation.\n",
+      "inserted": "    // Temporary mutation receipt injection point: clean source has no mutation.\n    row.actor_cell[0] = 28;\n",
+      "expected_first_offset": 616,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "12eb4b30e77f2d2b8c45e6f8b13ce7dc75e1307845d2c96969b65f0ec80d15cc"
+    },
+    {
+      "group": "first-inventory-prefix",
+      "receipt": "h13-m04-first-inventory-prefix",
+      "removed": "    // Temporary mutation receipt injection point: clean source has no mutation.\n",
+      "inserted": "    // Temporary mutation receipt injection point: clean source has no mutation.\n    row.actor_inventory[15][11] = 10;\n",
+      "expected_first_offset": 871,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "76606713b13f37f4fe198ef41ed8ea10477414fcf4294acaac522deb48206362"
+    },
+    {
+      "group": "storage-scaling",
+      "receipt": "h13-m05-storage-scaling",
+      "removed": "row.storage_counts[12 + crop] as f64 / 32.0",
+      "inserted": "row.storage_counts[12 + crop] as f64 / 31.0",
+      "expected_first_offset": 872,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "54d2a22129ccab04394f61f12b0e02313d50dc827867b86c662ba8a9dfd17d7a"
+    },
+    {
+      "group": "market-price",
+      "receipt": "h13-m06-market-price",
+      "removed": "    // Temporary mutation receipt injection point: clean source has no mutation.\n",
+      "inserted": "    // Temporary mutation receipt injection point: clean source has no mutation.\n    row.market_int[8][1] = 7778;\n",
+      "expected_first_offset": 906,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "446afeb2878335734bfb96d2ebbe258d1b116c842cfdc7eddd76b86f24abc9ff"
+    },
+    {
+      "group": "shop-slot-swap",
+      "receipt": "h13-m07-shop-slot-swap",
+      "removed": "    // Temporary mutation receipt injection point: clean source has no mutation.\n",
+      "inserted": "    // Temporary mutation receipt injection point: clean source has no mutation.\n    row.shop_slot.swap(0, 1);\n",
+      "expected_first_offset": 960,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "b6e270af0a048f1974c397df4822bdb44927f0b0ac1eb6e913ea865aafa59af1"
+    },
+    {
+      "group": "actor-count",
+      "receipt": "h13-m08-actor-count",
+      "removed": "out.put(1025 + role, count as f64);",
+      "inserted": "out.put(1025 + role, count as f64 + 1.0);",
+      "expected_first_offset": 1025,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "edf2faad6ada170f6e99de1a114974a4edd8fcf94d8482e35826c18ec9e188b1"
+    },
+    {
+      "group": "maintenance",
+      "receipt": "h13-m09-maintenance",
+      "removed": "                ints[5] as f64,",
+      "inserted": "                ints[5] as f64 + 1.0,",
+      "expected_first_offset": 1031,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "7a6a9eecf1a6ee3e2b8aace02d70169827afe7290807bd89cdc178e68c81966e"
+    },
+    {
+      "group": "last-actor-position",
+      "receipt": "h13-m10-last-actor-position",
+      "removed": "    // Temporary mutation receipt injection point: clean source has no mutation.\n",
+      "inserted": "    // Temporary mutation receipt injection point: clean source has no mutation.\n    row.actor_cell[481] = 86;\n",
+      "expected_first_offset": 5271,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "b8318146b78001c74471f8656e9bfa48a5d64d5ea31fab6b94e69ed97cbd2e4f"
+    },
+    {
+      "group": "last-actor-inventory",
+      "receipt": "h13-m11-last-actor-inventory",
+      "removed": "    // Temporary mutation receipt injection point: clean source has no mutation.\n",
+      "inserted": "    // Temporary mutation receipt injection point: clean source has no mutation.\n    row.actor_inventory[240][11] = 12;\n",
+      "expected_first_offset": 8164,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "b36d84e72ca4213af1a56d03fad4dc5009d5e6ae2ff58f07fb9507bcb8e3171e"
+    },
+    {
+      "group": "rule-suffix",
+      "receipt": "h13-m12-rule-suffix",
+      "removed": "    // Temporary mutation receipt injection point: clean source has no mutation.\n",
+      "inserted": "    // Temporary mutation receipt injection point: clean source has no mutation.\n    row.globals_int[7] = 8;\n",
+      "expected_first_offset": 8172,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "4c0411dddc6c7958efa63262512e4439d4a06f3c72355618d719e4b6a39c6d66"
+    },
+    {
+      "group": "ever-current-fertilizer",
+      "receipt": "h13-m13-ever-current-fertilizer",
+      "removed": "f64::from(ints[3] >= 0)",
+      "inserted": "f64::from(ints[3] >= g[1])",
+      "expected_first_offset": 18,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "5255a6a84267e81400f303463cc92eb04e113984ff6f29d7544c02d1a6003725"
+    },
+    {
+      "group": "dropped-positive-zero",
+      "receipt": "h13-m14-dropped-positive-zero",
+      "removed": "for offset in 907..960 {\n        out.put(offset, 0.0);",
+      "inserted": "for offset in 907..960 {\n        out.put(offset, -0.0);",
+      "expected_first_offset": 907,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "af904f8e5a27732413ae8c7a8db052833bd5ed8b6a6b5921dc55e29e36b73fc5"
+    },
+    {
+      "group": "availability-constant",
+      "receipt": "h13-m15-availability-constant",
+      "removed": "out.put(1024, 1.0);",
+      "inserted": "out.put(1024, 0.0);",
+      "expected_first_offset": 1024,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "38aa2216865fd495988a8f408c8725543f531daa6459dfcf770e9b7d82601439"
+    },
+    {
+      "group": "investment-constant",
+      "receipt": "h13-m16-investment-constant",
+      "removed": "out.put(8165, 1.0);",
+      "inserted": "out.put(8165, 0.0);",
+      "expected_first_offset": 8165,
+      "exit_status": 101,
+      "semantic_failure_observed": true,
+      "mutated_sha256": "01da7a6801e8281280d8bb4c8ad5c122dc9470a9576f47882f28e8d2026b83fd"
+    }
+  ],
+  "restored_sha256": "300528b2434c384136a86ea45909952c79fb3f85824b00656f968e1571270913"
+}

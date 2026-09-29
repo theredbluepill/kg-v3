@@ -1,0 +1,15 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-observe)
+error[E0432]: unresolved imports `super::ObsBuffersMut`, `super::ObsRowMut`, `super::ObsStaging`, `super::ObserveError`, `super::ObserveErrorKind`, `super::Seat`
+ --> src/kaggriculture/tests.rs:4:13
+  |
+4 | use super::{ObsBuffersMut, ObsRowMut, ObsStaging, ObserveError, ObserveErrorKind, Seat};
+  |             ^^^^^^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^  ^^^^ no `Seat` in `kaggriculture`
+  |             |              |          |           |             |
+  |             |              |          |           |             no `ObserveErrorKind` in `kaggriculture`
+  |             |              |          |           no `ObserveError` in `kaggriculture`
+  |             |              |          no `ObsStaging` in `kaggriculture`
+  |             |              no `ObsRowMut` in `kaggriculture`
+  |             no `ObsBuffersMut` in `kaggriculture`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `owl` (lib test) due to 1 previous error

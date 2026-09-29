@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_group_rss_measures_a_live_child_group __________________
+
+    def test_group_rss_measures_a_live_child_group() -> None:
+        process = subprocess.Popen(
+            [sys.executable, "-c", "import time; x=bytearray(32*1024**2); print('ready',flush=True); time.sleep(30)"],
+            stdout=subprocess.PIPE, start_new_session=True,
+        )
+        try:
+            assert process.stdout is not None
+            assert process.stdout.readline() == b"ready\n"
+>           assert oracle.group_rss(process.pid) >= 32 * 1024**2
+E           AssertionError: assert 0 >= (32 * (1024 ** 2))
+E            +  where 0 = <function group_rss at 0x109040680>(12462)
+E            +    where <function group_rss at 0x109040680> = oracle.group_rss
+E            +    and   12462 = <Popen: returncode: None args: ['/Users/poonszesen/kg-v3-observe/.venv/bin/p...>.pid
+
+tests/tools/test_observation_oracle_custody.py:333: AssertionError
+=========================== short test summary info ============================
+FAILED tests/tools/test_observation_oracle_custody.py::test_group_rss_measures_a_live_child_group
+1 failed, 32 deselected in 0.05s

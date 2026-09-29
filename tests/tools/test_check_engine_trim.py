@@ -21,10 +21,7 @@ _SPEC.loader.exec_module(checker)
 def fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, bytes]]:
     kept = "engine_rs/src/py_random.rs"
     omitted = "engine_rs/src/ffi.rs"
-    authored = (
-        "engine_rs/tests/replay_parity.rs",
-        "engine_rs/tests/grammar_kernel.rs",
-    )
+    authored = ("engine_rs/tests/replay_parity.rs",)
     originals = {kept: b"original\n", omitted: b"ffi\n"}
     current = {kept: originals[kept], **{path: b"test\n" for path in authored}}
     manifest = {
@@ -64,14 +61,10 @@ def test_valid_full_inventory_passes() -> None:
     checker.verify(*fixture())
 
 
-def test_task_authored_inventory_accepts_two_tests_and_generated_manifest() -> None:
+def test_task_authored_inventory_accepts_replay_test_and_generated_manifest() -> None:
     authored = [
         {"path": path, "sha256": checker.sha(b"x"), "reason": "authored"}
-        for path in (
-            "engine_rs/tests/replay_parity.rs",
-            "engine_rs/tests/grammar_kernel.rs",
-            checker.GENERATED_MANIFEST,
-        )
+        for path in ("engine_rs/tests/replay_parity.rs", checker.GENERATED_MANIFEST)
     ]
     checker.verify_task_authored(authored)
 
@@ -81,29 +74,32 @@ def test_task_authored_inventory_accepts_two_tests_and_generated_manifest() -> N
     [
         (
             [],
-            r"Task 1.2 authored set: missing=.*MANIFEST.json.*grammar_kernel"
-            r".*replay_parity",
+            r"Engine authored set: missing=.*MANIFEST.json.*replay_parity",
         ),
         (
-            ["engine_rs/tests/replay_parity.rs", checker.GENERATED_MANIFEST],
-            r"Task 1.2 authored set: missing=.*grammar_kernel",
+            [checker.GENERATED_MANIFEST],
+            r"Engine authored set: missing=.*replay_parity",
         ),
         (
-            ["engine_rs/tests/grammar_kernel.rs", checker.GENERATED_MANIFEST],
-            r"Task 1.2 authored set: missing=.*replay_parity",
+            ["engine_rs/tests/replay_parity.rs"],
+            r"Engine authored set: missing=.*generated/MANIFEST.json",
         ),
         (
-            ["engine_rs/tests/replay_parity.rs", "engine_rs/tests/grammar_kernel.rs"],
-            r"Task 1.2 authored set: missing=.*generated/MANIFEST.json",
+            # Contract v4.1 retired the grammar bridge into root integration.
+            [
+                "engine_rs/tests/replay_parity.rs",
+                checker.GENERATED_MANIFEST,
+                "engine_rs/tests/grammar_kernel.rs",
+            ],
+            r"Engine authored set: missing=\[\]; extra=.*grammar_kernel.rs",
         ),
         (
             [
                 "engine_rs/tests/replay_parity.rs",
-                "engine_rs/tests/grammar_kernel.rs",
                 checker.GENERATED_MANIFEST,
                 "engine_rs/tests/other.rs",
             ],
-            r"Task 1.2 authored set: .*extra=.*other.rs",
+            r"Engine authored set: .*extra=.*other.rs",
         ),
     ],
 )
@@ -363,11 +359,32 @@ def test_committed_package_passes_check() -> None:
     checker.check(_REPO)
 
 
+def test_grammar_bridge_is_retired_to_root_integration() -> None:
+    assert not (_REPO / "engine_rs/tests/grammar_kernel.rs").exists()
+    assert (_REPO / "src/kaggriculture/grammar_kernel_tests.rs").is_file()
+
+
+def test_check_rejects_redeclared_grammar_bridge(trimmed: Path) -> None:
+    path = "engine_rs/tests/grammar_kernel.rs"
+    data = b"// Retired bridge must not return.\n"
+    (trimmed / path).write_bytes(data)
+    manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["authored"].append(
+        {"path": path, "sha256": checker.sha(data), "reason": "retired bridge"}
+    )
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(
+        ValueError, match=r"Engine authored set: .*extra=.*grammar_kernel"
+    ):
+        checker.check(trimmed)
+
+
 def test_check_entry_point_passes_on_unmodified_copy(trimmed: Path) -> None:
     checker.check(trimmed)
 
 
-@pytest.mark.parametrize("name", ["replay_parity.rs", "grammar_kernel.rs"])
+@pytest.mark.parametrize("name", ["replay_parity.rs"])
 def test_check_rejects_omitted_authored_test(trimmed: Path, name: str) -> None:
     """Deleting both the test and its declaration cannot weaken the inventory."""
     path = f"engine_rs/tests/{name}"
@@ -378,7 +395,7 @@ def test_check_rejects_omitted_authored_test(trimmed: Path, name: str) -> None:
         entry for entry in manifest["authored"] if entry["path"] != path
     ]
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-    with pytest.raises(ValueError, match=f"Task 1.2 authored set: missing=.*{name}"):
+    with pytest.raises(ValueError, match=f"Engine authored set: missing=.*{name}"):
         checker.check(trimmed)
 
 
@@ -392,11 +409,11 @@ def test_check_rejects_self_declared_third_authored_source(trimmed: Path) -> Non
         {"path": path, "sha256": checker.sha(data), "reason": "self-declared third"}
     )
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-    with pytest.raises(ValueError, match=r"Task 1.2 authored set: .*extra=.*third.rs"):
+    with pytest.raises(ValueError, match=r"Engine authored set: .*extra=.*third.rs"):
         checker.check(trimmed)
 
 
-@pytest.mark.parametrize("name", ["replay_parity.rs", "grammar_kernel.rs"])
+@pytest.mark.parametrize("name", ["replay_parity.rs"])
 def test_check_rejects_wrong_authored_hash(trimmed: Path, name: str) -> None:
     path = f"engine_rs/tests/{name}"
     manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"

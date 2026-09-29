@@ -141,9 +141,9 @@ Task 1.1 retains a standalone `engine_rs` package pinned to reference commit
 `kaggle-environments==1.32.7`, Python engine SHA-256
 `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`.
 `engine_rs/TRIM_MANIFEST.json` accounts for all 125 reference files: 12 retained,
-113 excluded, plus exactly three authored files (the replay and grammar/kernel
-tests and the generated-trace `MANIFEST.json`) and the non-engine change
-inventory.
+113 excluded, plus exactly two authored files (the replay-parity test and the
+generated-trace `MANIFEST.json`; Task 1.3 retired the grammar/kernel bridge to
+root integration) and the non-engine change inventory.
 `python scripts/check_engine_trim.py` checks hashes, exhaustive inventory,
 declared original-line edits, exact Cargo removals and append-only provenance.
 Independently of manifest declarations, only `lib.rs`, `Cargo.toml`,
@@ -224,13 +224,14 @@ those three named lints after `-D warnings`; the authored replay test explicitly
 re-denies them. These exceptions preserve the required source hashes, and both
 raw failing checks are retained. They are tooling deviations from the reviewed
 brief, not changes to rules or weaker parity comparisons.
-The package has its own lockfile, no shared workspace and no root path dependency.
-This isolates its required `serde_json` arbitrary-precision/preserve-order
-features. Task 1.1 left root metadata and Rust sources unchanged; Task 1.2 adds
-the root grammar and promotes the existing Serde JSON dependency. Reopen L4's
-test-only `fixture_float` repair at the first compiled root consumer (potentially
-Task 1.3, certainly Task 1.4); selecting multiple packages together can unify
-features even with a newer Cargo resolver.
+The package keeps its own lockfile and remains outside the root workspace.
+Task 1.2 added the root grammar and promoted the existing Serde JSON dependency.
+Task 1.3 now adds a root path dependency, deliberately unifying arbitrary-precision and
+ordered JSON features. The test-only `RandomCall::Uniform` Number decoder repairs
+L4 without changing production rules or tolerances. The literal regression passes
+before dependencies, fails after feature unification, and passes after repair;
+root tests at the Task 1.3 A checkpoint are 157 passed and two ignored.
+Observation encoding does not expand rules parity.
 
 Task 1.1 parity was scoped to these four recorded worlds plus synthetic unit/RNG
 coverage. The trace headers' recorded RNG and shop schedules are not compared
@@ -443,11 +444,76 @@ and tooling pytest alone 106; receipts are in
 `just prepare` passes with the same engine **87** and root **164 passed, two
 ignored**, and Python **1,458 passed, five skipped** (the fifth skip waits for
 the native Kaggriculture evaluation env); receipt
-`ops/rebuild-2026-09-29/merge-trainer-lanes/prepare.log`. The trim checker's fixed authored set is
-now exactly the replay and grammar kernel tests plus the generated-trace
-manifest. The native `grammar_tables()` matches all 964 bits of the Python
+`ops/rebuild-2026-09-29/merge-trainer-lanes/prepare.log`. Those engine counts
+are historical: Task 1.3 retired the grammar bridge (below), so the engine suite
+is now 69 tests (41 retained unit, nine RNG, 19 replay-parity) and the nine
+kernel acceptance tests run in the root crate. After merging
+Task 1.3 onto that integration (`kg/merge-1-3`), full `just prepare` passes:
+engine **69, none ignored**, root **254 passed, four ignored** (two
+`rl::action_spec` audits plus Task 1.3's explicit oracle generation and
+optimized cost diagnostic), Python **1,618 passed, seven skipped** (Task 1.3's
+two CUDA-only pinned-memory cases added); receipt
+`ops/rebuild-2026-09-29/merge-1.3/prepare.log`. The trim
+checker's fixed authored set is now exactly the replay-parity test plus the
+generated-trace manifest. The native `grammar_tables()` matches all 964 bits of the Python
 heads' `expected_grammar_tables` in a merge-time cross-check, but no Python
 binding exists yet, so the heads still use the Python stand-in.
 CPU grammar admission does not qualify
 native batch transactions, PyO3 buffer ownership, the model sampler/replay,
 CUDA/BF16 behavior or L6's distinct Inductor GEMM overflow fix.
+
+## Kaggriculture Observation Coverage (Task 1.3)
+
+The root encoder adds hand-derived field, strict tile, exact integer/rank,
+privacy, role-order, finite-cost, buffer-reuse and transactional-output tests.
+The tile-shape scan checks 576,000 tiles across all 2,880 pinned official states.
+The tensor-only reconstructor covers all 8,176 legacy offsets with independent
+hand expectations and 16 failing/restored mutations; eight reconstruction
+controls and five added-fact tests pass. This is observation information
+coverage, not new Python-engine rules differential parity.
+
+The deterministic generator produces 512 input records. The original v1 seeded
+policy could not reach R1's quota of four non-synthetic states with more than 16
+actors: it produced zero, because end_of_day clears hands and v1 hires on at most
+two of every eight turns. Claude's reviewed `observation-corpus-v2` correction
+appends HIRE entries during hours 0–7, up to `min(M,4)` entries per turn, and
+stops at 16 hands. It changes no quota, and actual generation now yields six
+such states. Every other quota passes; only the reviewed dense d=31 case covers
+shed reordering.
+
+The pinned reference crate recorded all 1,024 seat rows (33,488,896 raw bytes,
+781,743 bytes compressed across both fixture files). The tensor-only
+reconstruction matches every row bitwise at all 8,176 offsets, with no
+tolerance. Regenerating at a later commit reproduced both compressed fixtures
+byte for byte.
+
+These checks discriminate:
+
+- Swapping the market inventory and price channels in the encoder fails the
+  comparison at offset 889.
+- A one-byte reference corruption fails custody validation.
+- Reversing shed ranks fails the real-schema Python corpus test.
+
+All three mutations were restored. Forty-five custody tests cover corruption,
+ordering, strict metadata, source drift and resource guards. The actual Task
+2.1 `check_contract()` runs on every binding batch and on all 512 records. The
+pinned-memory variants run only where CUDA is available, matching the starter's
+CUDA-only pinning, and then also assert that every buffer is pinned. Elsewhere
+they skip without touching the allocator: on macOS torch 2.9 routes pinned
+allocation to MPS, where a fill raises or kills the process (SIGSEGV observed in
+independent verification). Pinned and GPU behavior are therefore unqualified.
+
+The exactly-one-snapshot test passes after its two-acquisition mutation fails.
+The optimized timing build stops at the Mac memory limit before any phase runs,
+and no debug timing is substituted. The pod command is in
+`ops/rebuild-2026-09-29/1.3/timing.json`; phase costs remain unmeasured. Current
+qualification counts and receipts are in `ops/rebuild-2026-09-29/1.3/claude-review.md`
+and, for the verification round 1 fixes, `ops/rebuild-2026-09-29/1.3/r1-fixes/`.
+`ops/rebuild-2026-09-29/1.3/results.md` is the frozen, historical pre-integration
+handoff receipt (incomplete qualification).
+
+Task 1.3 also retires the contract v4.1 grammar bridge: the nine kernel
+acceptance/replay-state tests moved from `engine_rs/tests/grammar_kernel.rs` to
+root `src/kaggriculture/grammar_kernel_tests.rs`, and the engine file and its
+authored trim registration are removed. A restored BuyLand-as-HIRE decode
+mutation fails the root `decoded_programs_feed_kernel` test.

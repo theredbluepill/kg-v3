@@ -1,0 +1,9 @@
+{"argv": ["uv", "run", "--no-sync", "python", "-X", "faulthandler", "-c", "import torch; print(torch.__version__, flush=True); torch.empty(1, pin_memory=True).fill_(0)"], "exit_status": 139, "wall_seconds": 0.837885541, "sampled_process_group_peak_rss_bytes": 218087424, "stop_reason": null, "time_limit_seconds": 120.0, "rss_limit_bytes": 1000000000, "rss_sampling_seconds": 0.1}
+2.9.0
+Fatal Python error: Segmentation fault
+
+Current thread 0x00000001f048d8c0 (most recent call first):
+  File "<string>", line 1 in <module>
+
+Extension modules: numpy._core._multiarray_umath, numpy.linalg._umath_linalg, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special (total: 13)
+

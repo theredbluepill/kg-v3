@@ -1,0 +1,94 @@
+    Checking owl v0.1.0 (/Users/poonszesen/kg-v3-observe)
+error: manual implementation of `.is_multiple_of()`
+   --> src/kaggriculture/oracle_corpus.rs:463:44
+    |
+463 |     config.max_market_orders_per_turn = if case % 2 == 0 { 10_i64 } else { 3_i64 }.into();
+    |                                            ^^^^^^^^^^^^^ help: replace with: `case.is_multiple_of(2)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+    = note: `-D clippy::manual-is-multiple-of` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_is_multiple_of)]`
+
+error: manual implementation of `.is_multiple_of()`
+   --> src/kaggriculture/oracle_corpus.rs:464:37
+    |
+464 |     config.farm_hand_cost_mult = if case % 2 == 0 { 0_i64 } else { 3_i64 }.into();
+    |                                     ^^^^^^^^^^^^^ help: replace with: `case.is_multiple_of(2)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+
+error: closure called just once immediately after it was declared
+   --> src/kaggriculture/oracle_corpus.rs:484:9
+    |
+484 |         farm.farmer = position(0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure_call
+    = note: `-D clippy::redundant-closure-call` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::redundant_closure_call)]`
+
+error: manual implementation of `.is_multiple_of()`
+   --> src/kaggriculture/oracle_corpus.rs:487:31
+    |
+487 |         farm.hires_today = if case % 2 == 0 {
+    |                               ^^^^^^^^^^^^^ help: replace with: `case.is_multiple_of(2)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+
+error: manual implementation of `.is_multiple_of()`
+   --> src/kaggriculture/oracle_corpus.rs:530:33
+    |
+530 |                 "watered_today":(case+crop_index)%2 == 0,"consecutive_unwatered":case%4,
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^ help: replace with: `(case + crop_index).is_multiple_of(2)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+
+error: manual implementation of `.is_multiple_of()`
+   --> src/kaggriculture/oracle_corpus.rs:531:34
+    |
+531 |                 "planted_day":if case%4 == 0 {-1} else {day.saturating_sub(2) as i64},
+    |                                  ^^^^^^^^^^^ help: replace with: `case.is_multiple_of(4)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+
+error: manual implementation of `.is_multiple_of()`
+   --> src/kaggriculture/oracle_corpus.rs:532:40
+    |
+532 |                 "max_lifespan_step":if case%3 == 0 {-1} else {step as i64-1},
+    |                                        ^^^^^^^^^^^ help: replace with: `case.is_multiple_of(3)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+
+error: manual implementation of `.is_multiple_of()`
+   --> src/kaggriculture/oracle_corpus.rs:537:65
+    |
+537 |                 "yield_units":(case+index+1)%10,"placed_day":if case%4 == 0 {-1} else {day.saturating_sub(1) as i64},
+    |                                                                 ^^^^^^^^^^^ help: replace with: `case.is_multiple_of(4)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+
+error: manual implementation of `.is_multiple_of()`
+   --> src/kaggriculture/oracle_corpus.rs:538:56
+    |
+538 |                 "consecutive_unfed":case%3,"fed_today":case%2 == 0,"cared_today":case%3 == 0,
+    |                                                        ^^^^^^^^^^^ help: replace with: `case.is_multiple_of(2)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+
+error: manual implementation of `.is_multiple_of()`
+   --> src/kaggriculture/oracle_corpus.rs:538:82
+    |
+538 |                 "consecutive_unfed":case%3,"fed_today":case%2 == 0,"cared_today":case%3 == 0,
+    |                                                                                  ^^^^^^^^^^^ help: replace with: `case.is_multiple_of(3)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+
+error: manual implementation of `.is_multiple_of()`
+   --> src/kaggriculture/oracle_corpus.rs:539:40
+    |
+539 |                 "fertilizer_available":case%4 == 0,"pending_care_bonus":case%12}));
+    |                                        ^^^^^^^^^^^ help: replace with: `case.is_multiple_of(4)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+
+error: could not compile `owl` (lib test) due to 11 previous errors

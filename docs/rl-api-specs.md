@@ -868,6 +868,101 @@ The Kaggriculture game uses the same shared training path through its own observ
 - **Model outputs** (`KaggricultureTransformer`, Task 2.3): `forward` returns sampled `KaggricultureActions` with `log_probs.event` and `entropies.event` of shape `[E,2,252,12]` (per frame and slot; implicit slots 0/2/11 are zero), `per_player_entity = event.sum(-1)` `[E,2,252]`, zero `launch`, per-slot entropy `components`, `values [E,2]` and `winner_probabilities [E,2,2]`. `evaluate_actions` requires `int64` tokens/lengths of exactly these shapes, rejects non-canonical or out-of-support programs itself (`GrammarReplayError` naming the support, length or canonical group), and requires `hidden_state` and `dones` to be `None`.
 - **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks (equal banks draw), and truncation keeps the transition's economic reward and bootstraps from the critic. Each evaluation seeds its games with `_evaluation_seed(base_seed, env_steps)` (`scripts/run_ppo.py`), a reproducible mix placed in `[2**62, 2**62 + 2**61)` that is distinct per evaluation step for a fixed base seed (and per base seed for a fixed step) and leaves int64 headroom for the seeds one evaluation consumes. It is not injective over `(base_seed, env_steps)` pairs, and consecutive seeds consumed by different evaluations or runs may overlap. Training seeds stay below the band only while `base_seed + rank + k * world_size < 2**62`, which the native env seam (Tasks 1.4/1.5) must enforce.
 
+### Structured native observation buffers (Task 1.3)
+
+The root `src/kaggriculture/` boundary uses the following named buffers. Every
+shape starts with `[E, 2]`; each row is one legal seat perspective. The contract
+is version 4, observation schema 3. Native writing is implemented. With Task
+2.1's schema merged, the real `KaggricultureObsBatch.check_contract()` runs on
+every binding test batch and on all 512 frozen oracle records. The optimized
+phase timing still needs a pod run, which the Mac could not build.
+
+| Fields | Scalar type | Trailing shape |
+| --- | --- | --- |
+| `tile_kind`, `tile_crop`, `tile_animal`, `tile_cell`, `tile_role` | int64 | `[200]` |
+| `tiles_int` | int64 | `[200,7]` |
+| `tiles_float` | float32 | `[200,15]` |
+| `actor_slot`, `actor_cell`, `actor_role` | int64 | `[482]` |
+| `actor_mask` | bool | `[482]` |
+| `actor_inventory`, `actor_inventory_rank` | int64 | `[241,12]` |
+| `actors_float` | float32 | `[482,26]` |
+| `player_features` | float32 | `[2,44]` |
+| `storage_counts` | int64 | `[17]` |
+| `storage_rank` | int64 | `[12]` |
+| `banks` | float64 | `[2]` |
+| `shop_type`, `shop_slot` | int64 | `[8]` |
+| `shop_mask` | bool | `[8]` |
+| `market_product` | int64 | `[9]` |
+| `market_float` | float32 | `[9,2]` |
+| `market_int` | int64 | `[9,2]` |
+| `global_features` | float32 | `[15]` |
+| `globals_int` | int64 | `[16]` |
+| `still_playing` | bool | scalar |
+| `order_limits` | int64 | scalar |
+| `can_act` (`action_mask.can_act` in Python) | bool | `[252]` |
+
+`ObsBuffersMut::validate(E)` checks nonzero E, checked shape/byte products and
+exact lengths before making typed row views. `ObsStaging::new(E)` allocates the
+29 named vectors once; `buffers_mut()` provides serial or indexed parallel
+views. `publish()` checks source/destination environment counts in release
+before any copy. These native mutable references are disjoint typed slices;
+NumPy admission runs on each binding call before making Rust mutable slices:
+exact native dtype, complete shape, C-contiguous and aligned layout, fallible
+writable borrowing, and pairwise disjoint byte ranges. Distinct Torch/NumPy base
+objects do not bypass overlap checks. Publication gives no authorization to
+overwrite data still in use by a reader; Task 1.4 owns lifecycle rollback and
+reuse fencing.
+
+The explicit-header seam in the existing `owl.rs` extension is:
+
+```python
+encode_kaggriculture_headers_into(
+    headers: str, *,
+    tile_kind, tile_crop, tile_animal, tile_cell, tile_role,
+    tiles_int, tiles_float, actor_slot, actor_cell, actor_role,
+    actor_mask, actor_inventory, actor_inventory_rank, actors_float,
+    player_features, storage_counts, storage_rank, banks,
+    shop_type, shop_slot, shop_mask, market_product, market_float, market_int,
+    global_features, globals_int, still_playing, order_limits, can_act,
+) -> None
+```
+
+All 29 keyword arguments are caller-owned NumPy arrays with the table's dtypes
+and complete `[E,2,...]` shapes; `python/owl/rs.pyi` carries their typed signature.
+`headers` is a JSON array of E full engine `TraceHeader` objects, not live-step
+JSON. The writer prepares every environment before the first destination write,
+then writes infallibly while detached from Python. Typed borrow guards remain
+alive for the call. Supplied-data errors raise `ValueError` with field and,
+where applicable, environment context; all output bytes stay unchanged. The
+call returns `None`, retains no caller array and allocates no replacement output
+arrays. Parsing and prepared snapshots still allocate scratch storage.
+
+`ObservationGame` owns its immutable checked config, forwards native stepping
+and prepares both seat views from one public snapshot. Exact count/rank tensors,
+strict engine-shaped tiles and wide intermediate arithmetic preserve admitted
+facts; positive hire costs use exact integer Fibonacci products before floating
+conversion. The one-shot writer always sets `still_playing=true`; live reset,
+transition rewards/dones, terminal records and seed allocation belong to Task 1.4.
+Native `check_row` is a diagnostic validator outside the write hot path. The
+Python schema's range checks do not replace semantic/privacy assertions.
+
+Snapshot acquisition and output allocation are separate costs. The engine's
+public snapshot clones both private inventories internally; only the requesting
+seat's private state may enter its row. A counter test proves exactly one
+acquisition per both-seat encode and stable output allocations; an intentional
+two-acquisition mutation fails. The fat-LTO release timing build was stopped at
+53.81 seconds after sampled process-group RSS reached 1,052,393,472 bytes.
+No phase costs were obtained; the optimized command is handed off for the pod in
+`ops/rebuild-2026-09-29/1.3/timing.json`. Debug timings do not justify changing
+the approved snapshot path.
+
+The frozen oracle (`tests/fixtures/kaggriculture/observation-v3/`) holds 512
+states and 1,024 seat rows. The pinned reference `encode_invest` recorded those
+rows, and the tensor-only reconstruction matches them bitwise at all 8,176
+offsets. Seeded states use policy `observation-corpus-v2`, the Claude R1
+correction, and 6 non-synthetic states exceed 16 actors against quota four.
+See the Task 1.3 receipt for actual checks and unresolved limits.
+
 ### Native grammar boundary (Task 1.2)
 
 `src/kaggriculture/grammar.rs` is the single C3 implementation. It uses `std`
@@ -928,10 +1023,10 @@ model/device. Task 2.3 consumes these shapes directly. The bindings and actual
 model integration are later work; no Python grammar reconstruction or binary
 DFA runtime compatibility layer is introduced here.
 
-The engine integration test includes the same Rust source under edition 2024;
-the root builds it under edition 2021 with a separate Serde feature graph.
-At the first production root → engine dependency (1.3/1.4), move acceptance and
-replay-state tests into root integration, delete the temporary engine test
-and its authored registration, and reopen L4. CPU checked token admission
+The root builds this source under edition 2021. Task 1.3 created the first
+production root → engine dependency, unified the Serde feature graph (L4 repair
+in `docs/rules-engine.md`) and retired the temporary engine include: kernel
+acceptance and replay-state tests run in root integration
+(`src/kaggriculture/grammar_kernel_tests.rs`). CPU checked token admission
 addresses a separate indexing hazard; it does not qualify the L6 Inductor
 GEMM overflow fix, CUDA/BF16 replay, batching transactions or buffer lifetimes.

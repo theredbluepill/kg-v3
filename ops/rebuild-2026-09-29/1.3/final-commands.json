@@ -1,0 +1,266 @@
+[
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 11.808543709,
+    "sampled_process_group_peak_rss_bytes": 565280768,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-01-root-tests",
+    "command": "cargo test --locked --offline",
+    "rust_counts": {
+      "passed": 233,
+      "failed": 1,
+      "ignored": 4
+    }
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--manifest-path",
+      "engine_rs/Cargo.toml"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 17.664001166,
+    "sampled_process_group_peak_rss_bytes": 551272448,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-02-engine-tests",
+    "command": "cargo test --locked --offline --manifest-path engine_rs/Cargo.toml",
+    "rust_counts": {
+      "passed": 59,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "scripts/check_engine_trim.py"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 25.086797375,
+    "sampled_process_group_peak_rss_bytes": 747159552,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-03-trim",
+    "command": "uv run --offline python scripts/check_engine_trim.py"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_observe.py",
+      "tests/tools/test_observation_oracle_custody.py",
+      "-q"
+    ],
+    "exit_status": 2,
+    "wall_seconds": 1.877538334,
+    "sampled_process_group_peak_rss_bytes": 255377408,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-04-observe-custody-pytest",
+    "command": "uv run --offline pytest tests/kaggriculture/test_observe.py tests/tools/test_observation_oracle_custody.py -q",
+    "collection_error": "ModuleNotFoundError: No module named 'owl.kaggriculture'",
+    "tests_executed": false
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--offline",
+      "--extra",
+      "reference",
+      "pytest",
+      "tests/owl",
+      "tests/scripts",
+      "tests/tools",
+      "-m",
+      "not slow",
+      "-q"
+    ],
+    "exit_status": 2,
+    "wall_seconds": 0.106809625,
+    "sampled_process_group_peak_rss_bytes": 638976,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-05-reference-fast-pytest",
+    "command": "uv run --offline --extra reference pytest tests/owl tests/scripts tests/tools -m 'not slow' -q",
+    "error": "Extra `reference` is not defined in the project's `optional-dependencies` table",
+    "tests_executed": false
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/owl",
+      "tests/scripts",
+      "tests/tools",
+      "-m",
+      "not slow",
+      "-q"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 18.884802334,
+    "sampled_process_group_peak_rss_bytes": 614907904,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-05b-fast-pytest-no-extra",
+    "command": "uv run --offline pytest tests/owl tests/scripts tests/tools -m 'not slow' -q",
+    "pytest_counts": {
+      "passed": 1056,
+      "failed": 0,
+      "skipped": 3
+    }
+  },
+  {
+    "argv": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "rs-prepare"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 11.973314541,
+    "sampled_process_group_peak_rss_bytes": 482705408,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-06-rs-prepare",
+    "command": "uvx --offline --from rust-just just rs-prepare",
+    "rust_counts": {
+      "passed": 233,
+      "failed": 1,
+      "ignored": 4
+    }
+  },
+  {
+    "argv": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "py-prepare"
+    ],
+    "exit_status": 2,
+    "wall_seconds": 10.237732084000001,
+    "sampled_process_group_peak_rss_bytes": 876036096,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-07-py-prepare",
+    "command": "uvx --offline --from rust-just just py-prepare",
+    "collection_error": "ModuleNotFoundError: No module named 'owl.kaggriculture'",
+    "tests_executed": false
+  },
+  {
+    "argv": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "prepare"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 13.504107124999999,
+    "sampled_process_group_peak_rss_bytes": 483131392,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-08-prepare",
+    "command": "uvx --offline --from rust-just just prepare",
+    "rust_counts": {
+      "passed": 233,
+      "failed": 1,
+      "ignored": 4
+    }
+  },
+  {
+    "argv": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "docs-fresh"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 0.212581417,
+    "sampled_process_group_peak_rss_bytes": 101285888,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-09-docs-fresh",
+    "command": "uvx --offline --from rust-just just docs-fresh"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 1.053156167,
+    "sampled_process_group_peak_rss_bytes": 75382784,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-10-native-boundary",
+    "command": "uv run --offline python ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py",
+    "native_boundary_checks": 55,
+    "schema_checked": false
+  },
+  {
+    "argv": [
+      "python3",
+      "ops/rebuild-2026-09-29/1.3/final_audit.py"
+    ],
+    "exit_status": 0,
+    "wall_seconds": 0.10691470800000001,
+    "sampled_process_group_peak_rss_bytes": 163840,
+    "stop_reason": null,
+    "time_limit_seconds": 120,
+    "rss_limit_bytes": 1000000000,
+    "rss_sampling_seconds": 0.1,
+    "receipt": "final-11-source-audit",
+    "command": "python3 ops/rebuild-2026-09-29/1.3/final_audit.py"
+  }
+]

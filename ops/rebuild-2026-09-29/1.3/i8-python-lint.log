@@ -1,0 +1,565 @@
+E501 Line too long (104 > 88)
+  --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:13:89
+   |
+12 | def _header() -> dict[str, Any]:
+13 |     products = ["WHEAT", "CARROT", "TOMATO", "STRAWBERRY", "MELON", "EGG", "MILK", "WOOL", "FERTILIZER"]
+   |                                                                                         ^^^^^^^^^^^^^^^^
+14 |     farms = []
+15 |     for seat in range(2):
+   |
+
+E501 Line too long (98 > 88)
+  --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:23:89
+   |
+21 |         farms.append({"money": 3000.00001 if seat == 0 else -200.0, "tiles": tiles,
+22 |             "farmer": [7, 2] if seat == 0 else [2, 7], "hands": [],
+23 |             "unlocked_quadrants": ["SE", "NW"] if seat == 0 else ["NW"], "hires_today": 4 + seat})
+   |                                                                                         ^^^^^^^^^^
+24 |     return {"format": "kaggriculture-re-parity-v1", "seed": 42,
+25 |         "configuration": {"episodeSteps": 720, "boardSize": 10, "startingMoney": 3000,
+   |
+
+E501 Line too long (90 > 88)
+  --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:31:89
+   |
+29 |             "farmHandCostMult": 7, "marketParams": {}},
+30 |         "initial": {"public": {"step": 239, "day": 9, "hour": 23, "farms": farms,
+31 |             "market": {"inventory": {name: -12345 + i for i, name in enumerate(products)},
+   |                                                                                         ^^
+32 |                 "prices": {name: 7777 + i for i, name in enumerate(products)}},
+33 |             "town": {"unlocked_shops": ["PIZZA_SHOP", "BAKERY", "PIZZA_SHOP"]}},
+   |
+
+E501 Line too long (90 > 88)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:142:89
+    |
+140 |     _write(json.dumps([_header()]), fresh)
+141 |     _write(json.dumps([_header()]), arrays)
+142 |     assert all(value.tobytes() == fresh[name].tobytes() for name, value in arrays.items())
+    |                                                                                         ^^
+143 |     assert pointers == {name: value.ctypes.data for name, value in arrays.items()}
+144 |     checks += 1
+    |
+
+E501 Line too long (112 > 88)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:146:89
+    |
+144 |     checks += 1
+145 |
+146 |     def rejected(arrays: dict[str, Any], payload: str, field: str, extras: tuple[np.ndarray, ...] = ()) -> None:
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^
+147 |         nonlocal checks
+148 |         before = [value.tobytes() for value in arrays.values()] + [value.tobytes() for value in extras]
+    |
+
+E501 Line too long (103 > 88)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:148:89
+    |
+146 |     def rejected(arrays: dict[str, Any], payload: str, field: str, extras: tuple[np.ndarray, ...] = ()) -> None:
+147 |         nonlocal checks
+148 |         before = [value.tobytes() for value in arrays.values()] + [value.tobytes() for value in extras]
+    |                                                                                         ^^^^^^^^^^^^^^^
+149 |         try:
+150 |             _write(payload, arrays)
+    |
+
+PT017 Found assertion on exception `error` in `except` block, use `pytest.raises()` instead
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:152:13
+    |
+150 |             _write(payload, arrays)
+151 |         except ValueError as error:
+152 |             assert field in str(error), (field, str(error))
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+153 |         else:
+154 |             raise AssertionError(f"accepted invalid {field}")
+    |
+
+PT017 Found assertion on exception `error` in `except` block, use `pytest.raises()` instead
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:152:13
+    |
+150 |             _write(payload, arrays)
+151 |         except ValueError as error:
+152 |             assert field in str(error), (field, str(error))
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+153 |         else:
+154 |             raise AssertionError(f"accepted invalid {field}")
+    |
+
+E501 Line too long (102 > 88)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:155:89
+    |
+153 |         else:
+154 |             raise AssertionError(f"accepted invalid {field}")
+155 |         after = [value.tobytes() for value in arrays.values()] + [value.tobytes() for value in extras]
+    |                                                                                         ^^^^^^^^^^^^^^
+156 |         assert before == after, field
+157 |         checks += 1
+    |
+
+E501 Line too long (124 > 88)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:164:89
+    |
+162 |         arrays[name] = arrays[name].reshape(-1)
+163 |         rejected(arrays, payload, "action_mask.can_act" if name == "can_act" else name)
+164 |     for name, wrong in [("tile_kind", np.int32), ("tiles_float", np.float64), ("banks", np.float32), ("can_act", np.uint8)]:
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+165 |         arrays = _arrays(1)
+166 |         arrays[name] = arrays[name].astype(wrong)
+    |
+
+E701 Multiple statements on one line (colon)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:176:29
+    |
+174 |         original = arrays["tile_kind"]
+175 |         extras = ()
+176 |         if mode == "fortran": arrays["tile_kind"] = np.asfortranarray(original)
+    |                             ^
+177 |         elif mode == "stride":
+178 |             root = np.full((1, 2, 400), -17, dtype=np.int64)
+    |
+
+E701 Multiple statements on one line (colon)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:181:32
+    |
+179 |             arrays["tile_kind"] = root[..., ::2]
+180 |             extras = (root,)
+181 |         elif mode == "readonly": arrays["tile_kind"].flags.writeable = False
+    |                                ^
+182 |         else:
+183 |             root = np.zeros(original.nbytes + 1, dtype=np.uint8)
+    |
+
+E501 Line too long (99 > 88)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:184:89
+    |
+182 |         else:
+183 |             root = np.zeros(original.nbytes + 1, dtype=np.uint8)
+184 |             arrays["tile_kind"] = np.ndarray(original.shape, dtype=np.int64, buffer=root, offset=1)
+    |                                                                                         ^^^^^^^^^^^
+185 |             extras = (root,)
+186 |         rejected(arrays, payload, "tile_kind", extras)
+    |
+
+E501 Line too long (102 > 88)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:192:89
+    |
+190 |             if separate_base:
+191 |                 root = np.zeros(3200, dtype=np.uint8)
+192 |                 arrays["tile_kind"] = np.frombuffer(memoryview(root), dtype=np.int64).reshape(1,2,200)
+    |                                                                                         ^^^^^^^^^^^^^^
+193 |                 name = "banks" if mixed else "tile_crop"
+194 |                 dtype = np.float64 if mixed else np.int64
+    |
+
+E501 Line too long (117 > 88)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:196:89
+    |
+194 |                 dtype = np.float64 if mixed else np.int64
+195 |                 shape = (1,2,2) if mixed else (1,2,200)
+196 |                 arrays[name] = np.frombuffer(memoryview(root), dtype=dtype, count=int(np.prod(shape))).reshape(shape)
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+197 |             elif mixed:
+198 |                 name = "banks"
+    |
+
+E501 Line too long (98 > 88)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:199:89
+    |
+197 |             elif mixed:
+198 |                 name = "banks"
+199 |                 arrays[name] = arrays["tile_kind"].reshape(-1)[:4].view(np.float64).reshape(1,2,2)
+    |                                                                                         ^^^^^^^^^^
+200 |             else:
+201 |                 name = "tile_crop"
+    |
+
+E501 Line too long (130 > 88)
+   --> ops/rebuild-2026-09-29/1.3/native_boundary_smoke.py:211:89
+    |
+209 |     checks += 1
+210 |     rejected(_arrays(2), payload, "tile_kind")
+211 |     for payload, field in [("not json", "headers"), ("{}", "headers"), ("[]", "headers"), (json.dumps([_header(), {}]), "env=1")]:
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+212 |         rejected(_arrays(2), payload, field)
+213 |     late = copy.deepcopy(_header())
+    |
+
+E501 Line too long (104 > 88)
+  --> tests/kaggriculture/test_observe.py:30:89
+   |
+29 | def _header() -> dict[str, Any]:
+30 |     products = ["WHEAT", "CARROT", "TOMATO", "STRAWBERRY", "MELON", "EGG", "MILK", "WOOL", "FERTILIZER"]
+   |                                                                                         ^^^^^^^^^^^^^^^^
+31 |     farms = []
+32 |     for seat in range(2):
+   |
+
+E501 Line too long (98 > 88)
+  --> tests/kaggriculture/test_observe.py:40:89
+   |
+38 |         farms.append({"money": 3000.00001 if seat == 0 else -200.0, "tiles": tiles,
+39 |             "farmer": [7, 2] if seat == 0 else [2, 7], "hands": [],
+40 |             "unlocked_quadrants": ["SE", "NW"] if seat == 0 else ["NW"], "hires_today": 4 + seat})
+   |                                                                                         ^^^^^^^^^^
+41 |     return {"format": "kaggriculture-re-parity-v1", "seed": 42,
+42 |         "configuration": {"episodeSteps": 720, "boardSize": 10, "startingMoney": 3000,
+   |
+
+E501 Line too long (90 > 88)
+  --> tests/kaggriculture/test_observe.py:48:89
+   |
+46 |             "farmHandCostMult": 7, "marketParams": {}},
+47 |         "initial": {"public": {"step": 239, "day": 9, "hour": 23, "farms": farms,
+48 |             "market": {"inventory": {name: -12345 + i for i, name in enumerate(products)},
+   |                                                                                         ^^
+49 |                 "prices": {name: 7777 + i for i, name in enumerate(products)}},
+50 |             "town": {"unlocked_shops": ["PIZZA_SHOP", "BAKERY", "PIZZA_SHOP"]}},
+   |
+
+E501 Line too long (127 > 88)
+  --> tests/kaggriculture/test_observe.py:95:89
+   |
+93 |         for name, (dtype, shape, _, _) in _SCHEMA.items()
+94 |     }
+95 |     mask = KaggricultureActionMask(can_act=torch.empty((n_envs, PLAYERS, MAX_FRAMES), dtype=torch.bool, pin_memory=pin_memory))
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+96 |     batch = KaggricultureObsBatch(**tensors, action_mask=mask)
+97 |     for tensor in _tensors(batch).values():
+   |
+
+E501 Line too long (114 > 88)
+   --> tests/kaggriculture/test_observe.py:104:89
+    |
+102 | def _tensors(batch: KaggricultureObsBatch) -> dict[str, torch.Tensor]:
+103 |     # Only the actual class's declared fields are iterated for bookkeeping.
+104 |     tensors = {name: getattr(batch, name) for name in KaggricultureObsBatch.model_fields if name != "action_mask"}
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+105 |     tensors["can_act"] = batch.action_mask.can_act
+106 |     return tensors
+    |
+
+E501 Line too long (91 > 88)
+   --> tests/kaggriculture/test_observe.py:143:89
+    |
+143 | def _assert_semantics(batch: KaggricultureObsBatch, headers: list[dict[str, Any]]) -> None:
+    |                                                                                         ^^^
+144 |     batch.check_contract()
+145 |     assert batch.banks.dtype == torch.float64
+    |
+
+E501 Line too long (93 > 88)
+   --> tests/kaggriculture/test_observe.py:148:89
+    |
+146 |     assert batch.actor_inventory.dtype == torch.int64
+147 |     assert batch.action_mask.can_act.dtype == torch.bool
+148 |     assert torch.equal(batch.actor_mask[..., :MAX_ACTORS].sum(-1), batch.globals_int[...,14])
+    |                                                                                         ^^^^^
+149 |     assert torch.equal(batch.actor_mask[..., MAX_ACTORS:].sum(-1), batch.globals_int[...,15])
+150 |     assert torch.equal(batch.action_mask.can_act, torch.arange(MAX_FRAMES)[None,None,:] < (batch.globals_int[...,14]+batch.order_limi…
+    |
+
+E501 Line too long (93 > 88)
+   --> tests/kaggriculture/test_observe.py:149:89
+    |
+147 |     assert batch.action_mask.can_act.dtype == torch.bool
+148 |     assert torch.equal(batch.actor_mask[..., :MAX_ACTORS].sum(-1), batch.globals_int[...,14])
+149 |     assert torch.equal(batch.actor_mask[..., MAX_ACTORS:].sum(-1), batch.globals_int[...,15])
+    |                                                                                         ^^^^^
+150 |     assert torch.equal(batch.action_mask.can_act, torch.arange(MAX_FRAMES)[None,None,:] < (batch.globals_int[...,14]+batch.order_limi…
+151 |     assert bool(batch.still_playing.all())
+    |
+
+E501 Line too long (149 > 88)
+   --> tests/kaggriculture/test_observe.py:150:89
+    |
+148 | …ORS].sum(-1), batch.globals_int[...,14])
+149 | …RS:].sum(-1), batch.globals_int[...,15])
+150 | …ch.arange(MAX_FRAMES)[None,None,:] < (batch.globals_int[...,14]+batch.order_limits+1)[...,None])
+    |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+151 | …
+152 | …MELON","EGG","MILK","WOOL","FERTILIZER","GOOSE","COW","SHEEP"]
+    |
+
+E501 Line too long (115 > 88)
+   --> tests/kaggriculture/test_observe.py:152:89
+    |
+150 |     assert torch.equal(batch.action_mask.can_act, torch.arange(MAX_FRAMES)[None,None,:] < (batch.globals_int[...,14]+batch.order_limi…
+151 |     assert bool(batch.still_playing.all())
+152 |     items = ["WHEAT","CARROT","TOMATO","STRAWBERRY","MELON","EGG","MILK","WOOL","FERTILIZER","GOOSE","COW","SHEEP"]
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+153 |     for env, header in enumerate(headers):
+154 |         public = header["initial"]["public"]
+    |
+
+E501 Line too long (96 > 88)
+   --> tests/kaggriculture/test_observe.py:161:89
+    |
+159 |                 for local, position in enumerate([farm["farmer"], *farm["hands"]]):
+160 |                     actor = role*MAX_ACTORS+local
+161 |                     assert batch.actor_cell[env,seat,actor].item() == 10*position[1]+position[0]
+    |                                                                                         ^^^^^^^^
+162 |                     assert batch.actor_slot[env,seat,actor].item() == local
+163 |             private = header["initial"]["privates"][seat]
+    |
+
+E501 Line too long (96 > 88)
+   --> tests/kaggriculture/test_observe.py:165:89
+    |
+163 |             private = header["initial"]["privates"][seat]
+164 |             for item, name in enumerate(items):
+165 |                 assert batch.storage_counts[env,seat,item].item() == private["shed"].get(name,0)
+    |                                                                                         ^^^^^^^^
+166 |                 rank = list(private["shed"]).index(name)+1 if name in private["shed"] else 0
+167 |                 assert batch.storage_rank[env,seat,item].item() == rank
+    |
+
+E501 Line too long (92 > 88)
+   --> tests/kaggriculture/test_observe.py:166:89
+    |
+164 |             for item, name in enumerate(items):
+165 |                 assert batch.storage_counts[env,seat,item].item() == private["shed"].get(name,0)
+166 |                 rank = list(private["shed"]).index(name)+1 if name in private["shed"] else 0
+    |                                                                                         ^^^^
+167 |                 assert batch.storage_rank[env,seat,item].item() == rank
+168 |             for actor, inventory in enumerate(private["inventories"]):
+    |
+
+E501 Line too long (89 > 88)
+   --> tests/kaggriculture/test_observe.py:172:89
+    |
+170 |                     item = items.index(name)
+171 |                     assert batch.actor_inventory[env,seat,actor,item].item() == count
+172 |                     assert batch.actor_inventory_rank[env,seat,actor,item].item() == rank
+    |                                                                                         ^
+173 |             assert not bool(batch.actors_float[env,seat,MAX_ACTORS:,2:].any())
+174 |             assert not bool(batch.player_features[env,seat,1,11:].any())
+    |
+
+E501 Line too long (102 > 88)
+   --> tests/kaggriculture/test_observe.py:179:89
+    |
+177 | @pytest.mark.parametrize("n_envs", [1,2])
+178 | @pytest.mark.parametrize("pin_memory", [False,True])
+179 | def test_native_writer_uses_real_schema_and_keeps_all_pointers(n_envs: int, pin_memory: bool) -> None:
+    |                                                                                         ^^^^^^^^^^^^^^
+180 |     if pin_memory:
+181 |         try:
+    |
+
+E501 Line too long (91 > 88)
+   --> tests/kaggriculture/test_observe.py:199:89
+    |
+197 |     assert batch.market_int[0,0,0].tolist() == [-12345,7777]
+198 |     assert batch.player_features[0,0,0,10].item() == np.float32(35/200000)
+199 |     assert pointers == {name: tensor.data_ptr() for name,tensor in _tensors(batch).items()}
+    |                                                                                         ^^^
+200 |     # Reusing the same arrays clears actor/storage/shop padding.
+201 |     for header in headers:
+    |
+
+E501 Line too long (91 > 88)
+   --> tests/kaggriculture/test_observe.py:210:89
+    |
+208 |     assert not bool(batch.actor_inventory_rank[:,0].any())
+209 |     assert not bool(batch.storage_rank[:,0].any())
+210 |     assert pointers == {name: tensor.data_ptr() for name,tensor in _tensors(batch).items()}
+    |                                                                                         ^^^
+    |
+
+E501 Line too long (108 > 88)
+   --> tests/kaggriculture/test_observe.py:213:89
+    |
+213 | def _rejected(arrays: dict[str,Any], payload: str, field: str, extras: tuple[np.ndarray, ...] = ()) -> None:
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^
+214 |     before = [value.tobytes() for value in arrays.values()] + [value.tobytes() for value in extras]
+215 |     pointers = {name:value.ctypes.data for name,value in arrays.items()}
+    |
+
+E501 Line too long (99 > 88)
+   --> tests/kaggriculture/test_observe.py:214:89
+    |
+213 | def _rejected(arrays: dict[str,Any], payload: str, field: str, extras: tuple[np.ndarray, ...] = ()) -> None:
+214 |     before = [value.tobytes() for value in arrays.values()] + [value.tobytes() for value in extras]
+    |                                                                                         ^^^^^^^^^^^
+215 |     pointers = {name:value.ctypes.data for name,value in arrays.items()}
+216 |     with pytest.raises(ValueError, match=field):
+    |
+
+E501 Line too long (107 > 88)
+   --> tests/kaggriculture/test_observe.py:218:89
+    |
+216 |     with pytest.raises(ValueError, match=field):
+217 |         _write(payload,arrays)
+218 |     assert before == [value.tobytes() for value in arrays.values()] + [value.tobytes() for value in extras]
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^
+219 |     assert pointers == {name:value.ctypes.data for name,value in arrays.items()}
+    |
+
+E501 Line too long (137 > 88)
+   --> tests/kaggriculture/test_observe.py:229:89
+    |
+229 | …ile_kind",np.int32),("tiles_float",np.float64),("banks",np.float32),("can_act",np.uint8)])
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+230 | …er(name: str, dtype: Any) -> None:
+231 | …
+    |
+
+E701 Multiple statements on one line (colon)
+   --> tests/kaggriculture/test_observe.py:248:25
+    |
+246 |     original = arrays["tile_kind"]
+247 |     extras = ()
+248 |     if mode == "fortran": arrays["tile_kind"] = np.asfortranarray(original)
+    |                         ^
+249 |     elif mode == "stride":
+250 |         root = np.full((1,2,400),-17,dtype=np.int64)
+    |
+
+E701 Multiple statements on one line (colon)
+   --> tests/kaggriculture/test_observe.py:253:28
+    |
+251 |         arrays["tile_kind"] = root[...,::2]
+252 |         extras = (root,)
+253 |     elif mode == "readonly": arrays["tile_kind"].flags.writeable = False
+    |                            ^
+254 |     else:
+255 |         root = np.zeros(original.nbytes+1,dtype=np.uint8)
+    |
+
+E501 Line too long (92 > 88)
+   --> tests/kaggriculture/test_observe.py:256:89
+    |
+254 |     else:
+255 |         root = np.zeros(original.nbytes+1,dtype=np.uint8)
+256 |         arrays["tile_kind"] = np.ndarray(original.shape,dtype=np.int64,buffer=root,offset=1)
+    |                                                                                         ^^^^
+257 |         extras = (root,)
+258 |     _rejected(arrays,json.dumps([_header()]),"tile_kind",extras)
+    |
+
+E501 Line too long (126 > 88)
+   --> tests/kaggriculture/test_observe.py:263:89
+    |
+261 | @pytest.mark.parametrize("mixed_dtype", [False,True])
+262 | @pytest.mark.parametrize("separate_torch_base", [False,True])
+263 | def test_overlapping_views_are_rejected_even_with_distinct_base_objects(mixed_dtype: bool, separate_torch_base: bool) -> None:
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+264 |     batch = _allocate(1)
+265 |     arrays = _arrays(batch)
+    |
+
+E501 Line too long (195 > 88)
+   --> tests/kaggriculture/test_observe.py:268:89
+    |
+266 | …
+267 | …
+268 | …reshape(1,2,2).numpy() if separate_torch_base else arrays["tile_kind"].reshape(-1)[:4].view(np.float64).reshape(1,2,2))
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+269 | …
+270 | …
+    |
+
+E501 Line too long (101 > 88)
+   --> tests/kaggriculture/test_observe.py:271:89
+    |
+269 |     else:
+270 |         name = "tile_crop"
+271 |         arrays[name] = batch.tile_kind.numpy() if separate_torch_base else arrays["tile_kind"].view()
+    |                                                                                         ^^^^^^^^^^^^^
+272 |     if separate_torch_base:
+273 |         assert arrays[name].base is not arrays["tile_kind"].base
+    |
+
+E501 Line too long (92 > 88)
+   --> tests/kaggriculture/test_observe.py:314:89
+    |
+312 |         for name, tensor in _tensors(batch).items()
+313 |     )
+314 |     assert pointers == {name: tensor.data_ptr() for name, tensor in _tensors(batch).items()}
+    |                                                                                         ^^^^
+    |
+
+E501 Line too long (113 > 88)
+   --> tests/kaggriculture/test_observe.py:317:89
+    |
+317 | @pytest.mark.parametrize("case", ["json","object","empty","missing_second_header_fields","late_state","wrong_e"])
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+318 | def test_header_and_late_environment_errors_preserve_the_whole_batch(case: str) -> None:
+319 |     arrays = _arrays(_allocate(2))
+    |
+
+E701 Multiple statements on one line (colon)
+   --> tests/kaggriculture/test_observe.py:321:22
+    |
+319 |     arrays = _arrays(_allocate(2))
+320 |     payload, field = json.dumps([_header()]), "tile_kind"
+321 |     if case == "json": payload, field = "not json", "headers"
+    |                      ^
+322 |     elif case == "object": payload, field = "{}", "headers"
+323 |     elif case == "empty": payload, field = "[]", "headers"
+    |
+
+E701 Multiple statements on one line (colon)
+   --> tests/kaggriculture/test_observe.py:322:26
+    |
+320 |     payload, field = json.dumps([_header()]), "tile_kind"
+321 |     if case == "json": payload, field = "not json", "headers"
+322 |     elif case == "object": payload, field = "{}", "headers"
+    |                          ^
+323 |     elif case == "empty": payload, field = "[]", "headers"
+324 |     elif case == "missing_second_header_fields": payload, field = json.dumps([_header(),{}]), "env=1"
+    |
+
+E701 Multiple statements on one line (colon)
+   --> tests/kaggriculture/test_observe.py:323:25
+    |
+321 |     if case == "json": payload, field = "not json", "headers"
+322 |     elif case == "object": payload, field = "{}", "headers"
+323 |     elif case == "empty": payload, field = "[]", "headers"
+    |                         ^
+324 |     elif case == "missing_second_header_fields": payload, field = json.dumps([_header(),{}]), "env=1"
+325 |     elif case == "late_state":
+    |
+
+E701 Multiple statements on one line (colon)
+   --> tests/kaggriculture/test_observe.py:324:48
+    |
+322 |     elif case == "object": payload, field = "{}", "headers"
+323 |     elif case == "empty": payload, field = "[]", "headers"
+324 |     elif case == "missing_second_header_fields": payload, field = json.dumps([_header(),{}]), "env=1"
+    |                                                ^
+325 |     elif case == "late_state":
+326 |         bad = copy.deepcopy(_header())
+    |
+
+E501 Line too long (101 > 88)
+   --> tests/kaggriculture/test_observe.py:324:89
+    |
+322 |     elif case == "object": payload, field = "{}", "headers"
+323 |     elif case == "empty": payload, field = "[]", "headers"
+324 |     elif case == "missing_second_header_fields": payload, field = json.dumps([_header(),{}]), "env=1"
+    |                                                                                         ^^^^^^^^^^^^^
+325 |     elif case == "late_state":
+326 |         bad = copy.deepcopy(_header())
+    |
+
+E501 Line too long (104 > 88)
+   --> tests/kaggriculture/test_observe.py:334:89
+    |
+333 | def test_every_frozen_oracle_record_passes_the_actual_schema() -> None:
+334 |     path = Path(__file__).resolve().parents[1] / "fixtures/kaggriculture/observation-v3/states.jsonl.gz"
+    |                                                                                         ^^^^^^^^^^^^^^^^
+335 |     spec = importlib.util.spec_from_file_location(
+336 |         "observation_oracle",
+    |
+
+E501 Line too long (90 > 88)
+   --> tests/kaggriculture/test_observe.py:357:89
+    |
+355 |             count += 1
+356 |     assert count == 512
+357 |     assert pointers == {name:tensor.data_ptr() for name,tensor in _tensors(batch).items()}
+    |                                                                                         ^^
+    |
+
+Found 55 errors (2 fixed, 53 remaining).

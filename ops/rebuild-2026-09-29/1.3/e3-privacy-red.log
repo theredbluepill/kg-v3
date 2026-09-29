@@ -1,0 +1,37 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 2 tests
+test kaggriculture::tests::privacy_private_values_and_key_order_do_not_cross_seats ... FAILED
+test kaggriculture::tests::privacy_public_mutation_changes_both_rows_and_complete_seat_swap_is_symmetric ... FAILED
+
+failures:
+
+---- kaggriculture::tests::privacy_private_values_and_key_order_do_not_cross_seats stdout ----
+
+thread 'kaggriculture::tests::privacy_private_values_and_key_order_do_not_cross_seats' (10095772) panicked at src/kaggriculture/tests.rs:2396:13:
+assertion `left != right` failed
+  [omitted verbose assertion byte-vector line: 423669 characters; full output preserved as documented below]
+  [omitted verbose assertion byte-vector line: 423669 characters; full output preserved as documented below]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- kaggriculture::tests::privacy_public_mutation_changes_both_rows_and_complete_seat_swap_is_symmetric stdout ----
+
+thread 'kaggriculture::tests::privacy_public_mutation_changes_both_rows_and_complete_seat_swap_is_symmetric' (10095773) panicked at src/kaggriculture/tests.rs:2410:13:
+assertion `left != right` failed
+  [omitted verbose assertion byte-vector line: 423669 characters; full output preserved as documented below]
+  [omitted verbose assertion byte-vector line: 423669 characters; full output preserved as documented below]
+
+
+failures:
+    kaggriculture::tests::privacy_private_values_and_key_order_do_not_cross_seats
+    kaggriculture::tests::privacy_public_mutation_changes_both_rows_and_complete_seat_swap_is_symmetric
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 203 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `--lib`
+
+Receipt curation: verbose assertion vectors omitted; complete raw output retained locally at
+/Users/poonszesen/kg-v3-observe/.codex-tmp/e3-privacy-red-full.log
+Raw output SHA-256: 7b4898ec0b0dbc3073748526449bee0ff97ca04acd883551e4936a4cca338aa1
+Raw output bytes: 1696081
