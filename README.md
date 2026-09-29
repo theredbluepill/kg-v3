@@ -146,8 +146,10 @@ Training presets live in `configs/`:
 - `model/stateless_transformer_200m_d38.yaml`,
   and `model/stateless_transformer_200m_d60.yaml`: depth-specific 200M stateless
   transformer presets with discrete-target actors.
-- `kaggriculture_2rank.yaml`, `kaggriculture_4rank.yaml` and the local CPU
-  `kaggriculture.yaml`: Kaggriculture on the `scaling_6m` recipe. Their `env`
+- `kaggriculture_2rank.yaml`, `kaggriculture_4rank.yaml`, `kaggriculture_8rank.yaml`
+  and the local CPU `kaggriculture.yaml`: Kaggriculture on the `scaling_6m`
+  recipe, with per-rank `n_envs` and `segments_per_minibatch` divided by the
+  world size (128/8, 64/4 and 32/2) so the global batch is unchanged. Their `env`
   section is `KaggricultureEnvConfig` (`owl.kaggriculture.config`), which
   `FullConfig` selects when `env.obs_spec.obs_spec` is `kaggriculture`; it
   requires the `kaggriculture_transformer` model and the Kaggriculture training

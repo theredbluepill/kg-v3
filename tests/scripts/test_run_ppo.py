@@ -3326,6 +3326,7 @@ def test_main_rejects_unserviceable_kaggriculture_workload_before_allocation(
     [
         ("kaggriculture_2rank.yaml", 256, 16_384, 3),
         ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+        ("kaggriculture_8rank.yaml", 64, 4_096, 1),
     ],
 )
 def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(

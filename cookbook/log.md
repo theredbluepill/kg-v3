@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Add the Isaiah-divided 8-rank config for the likely main run
+
+The owner said: "we'd likely use 8Xrtx 6000 in main run, 2 rank for diagonose/building." Recorded as stated ("likely"), not as a final adoption. `configs/kaggriculture_8rank.yaml` applies Isaiah's multi-GPU rule at world size 8 (32 envs/rank, spm 2, accumulation 1, teacher chunk 128 kept), so the global workload equals `scaling_6m`. `tests/kaggriculture/test_configs.py` now derives every ranked config's per-rank shapes from `scaling_6m` and fails loudly on a non-whole division; the startup workload tests cover 8 ranks. `ops/rebuild-2026-09-29/plan.md` keeps 2 ranks for smoke and diagnostics, adds Task 6.3b (8-rank qualification after the owner approves the 8-GPU pod's price), a world-size-8 L3 seed test in Task 1.4, and the measured `winner_ce_6m` batch-shape option. The [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] records the roles, shape, CPU checks, the model-only 8-rank component estimate (ops evidence on `kg/rebuild-gpu-checks`, pending merge) and the open measurements; the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]] lists the new config.
+
 ## 2026-09-29 — Serialize the GEMM-backend claim and scope old probe limits
 
 Codex verification r2 of the cuBLAS-only wiring
