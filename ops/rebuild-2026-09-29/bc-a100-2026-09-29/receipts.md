@@ -31,7 +31,9 @@ Not rerun. `pairing.json` is a copy of the earlier run's
 `/workspace/kg-v3-bc-2026-09-29/shards/pairing.json` (SHA-256
 `a2c2db5786f91129897aa6c60e757561ca2887a688b66548ee9bc9a5a7128add`):
 5743/5752 transitions match (0.9984) over 8 episodes, kaggle_environments
-1.32.7. All misses are private-only at day ends; labels are unaffected.
+1.32.7. The nine mismatches name only private0/private1 at day-end turns.
+This is a pairing diagnostic; it does not establish parity or prove label
+correctness.
 
 ## Memory check and stride
 

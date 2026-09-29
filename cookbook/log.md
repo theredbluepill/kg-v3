@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Correct the BC run's W&B status and pairing wording
+
+Codex receipt review (`ops/rebuild-2026-09-29/codex/review-bc-a100-receipts.md` in the main checkout, APPROVE WITH EDITS) found three blocking lines. The run `kvl4rfda` was launched offline but has since been synced to https://wandb.ai/spoon/kg-v3/runs/kvl4rfda (pod `.synced` marker 15:01:13Z; final sync 15:01:14Z), so the [[references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only|BC checkpoint Reference]] and `train/README.md` no longer say "not synced". The data receipts now call the 5743/5752 pairing result a diagnostic rather than proof that labels are unaffected. Selection-only scope, denominators and checkpoint custody were checked and unchanged.
+
 ## 2026-09-29 — Record the top-1 team BC checkpoint (selection only)
 
 The owner asked to train BC on the 7-day top-1 team data within 1.5–2 h. `configs/bc/kaggriculture_1gpu_eager.yaml` and `configs/kaggriculture_1gpu_eager.yaml` adapt the 2-rank BC config to one A100: same global batch, eager because the pod's driver is outside the probed compile stack. The run (`f0b7a38`, run statement `ops/rebuild-2026-09-29/run-statements/bc-a100.md`) stopped by the L9 rule at step 5,200. Its best held-out NLL was 0.480 at step 3,200. The checkpoint stays on the pod volume. See [[references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only|BC checkpoint Reference]]; receipts are in `ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/`.

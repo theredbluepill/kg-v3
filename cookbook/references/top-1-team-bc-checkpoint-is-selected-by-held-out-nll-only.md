@@ -27,7 +27,7 @@ The first real run of the [[kaggriculture-bc-trainer-warm-starts-ppo-from-the-he
 
 - **Selection, not qualification.** The same 16 episodes select the checkpoint and report its NLL. No separate held-out set, no game play, no legality check in live play and no PPO warm-start comparison exists.
 - There is one seed. The LR was still at its post-warmup plateau when the run stopped. The small train set (507 episodes) overfit after about 9 epochs at these settings. Other data, stride or regularization were not tried.
-- W&B telemetry is offline only (no key on the pod; run `kvl4rfda`, not synced).
+- W&B telemetry was collected offline (no key on the pod), then synced at `2026-09-29T15:01:14Z` to [spoon/kg-v3/kvl4rfda](https://wandb.ai/spoon/kg-v3/runs/kvl4rfda), supported by the pod's `.synced` marker (mtime 15:01:13Z) and the orchestrator's sync report.
 - The saved `config.yaml` is the eager 1-GPU PPO config. Loading the weights into `kaggriculture_2rank.yaml` with `--load-model-weights` is expected to work because the model sections match, but that load has not been run.
 
 Reopen this note when the checkpoint is evaluated in play or used to start PPO.
