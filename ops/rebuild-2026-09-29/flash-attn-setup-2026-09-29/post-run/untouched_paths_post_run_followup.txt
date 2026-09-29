@@ -1,0 +1,19 @@
+# follow-up (read-only): split the /workspace/kg-v3 hits into mtime vs ctime-only, and check hard-link sharing with the new venv
+date_utc: 2026-09-29T06:38:37Z
+$ find /workspace/kg-v3 -xdev -newermt "2026-09-29 06:16:00Z" | wc -l   # content/mtime changes
+0
+$ find /workspace/kg-v3 -xdev -newerct "2026-09-29 06:16:00Z" -not -path "/workspace/kg-v3/.venv/*" | wc -l   # ctime hits outside .venv
+0
+$ find /workspace/kg-v3/.venv -xdev -newerct "2026-09-29 06:16:00Z" -type f -links 1 | wc -l   # ctime-changed regular files NOT hard-linked
+0
+$ find /workspace/kg-v3/.venv -xdev -newerct "2026-09-29 06:16:00Z" -not -type f | wc -l   # ctime-changed non-regular entries
+0
+$ stat -c "%i %h %y %z %n" /workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/buf.py /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/smmap/buf.py
+13074928871 3 2026-09-28 18:33:22.718836837 +0000 2026-09-29 06:20:31.943238055 +0000 /workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/buf.py
+13074928871 3 2026-09-28 18:33:22.718836837 +0000 2026-09-29 06:20:31.943238055 +0000 /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/smmap/buf.py
+$ stat -c "%i %h %y %z %n" /workspace/kg-v3/.venv/bin/maturin /workspace/kg-v3-rebuild/.venv/bin/maturin
+27978772823 3 2026-09-28 18:33:24.733847737 +0000 2026-09-29 06:20:31.895237790 +0000 /workspace/kg-v3/.venv/bin/maturin
+27978772823 3 2026-09-28 18:33:24.733847737 +0000 2026-09-29 06:20:31.895237790 +0000 /workspace/kg-v3-rebuild/.venv/bin/maturin
+$ uv cache dir; UV_LINK_MODE=unset
+/root/.cache/uv
+UV_LINK_MODE=unset

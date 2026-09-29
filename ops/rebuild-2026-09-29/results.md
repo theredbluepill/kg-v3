@@ -143,28 +143,40 @@ Where our workloads sit, as rows × 709 tokens against L = 4,194,304 (2³¹/512)
 
 ## Phase 6.0 — flash-attn on the pod (2026-09-29, 06:16–06:27Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
 
-Run statement: `run-statements/pod-flash-attn-setup.md`. Receipts: `flash-attn-setup-2026-09-29/` (README has identities and hashes). Wall ≈ 11 min of the 90-min budget (≈ $0.8 at $4.18/h); no new billable resource; pod left running and idle.
+Run statement: `run-statements/pod-flash-attn-setup.md`, which now has a post-run addendum on custody and corrections. Receipts are in `flash-attn-setup-2026-09-29/`; the README has identities and hashes. Codex reviewed them in `codex/verify-flash-attn-r1.md` (APPROVE WITH EDITS), and this section applies those edits.
 
-**Outcome: the blocker is cleared for the forward path.** A separate v3 environment, `/workspace/kg-v3-rebuild` (`kg/isaiah-gap-closure` @ `69397da`, via git bundle; `.venv` from `uv sync --frozen --group dev --extra flash-attn`), has torch 2.9.0+cu128, triton 3.5.0 and flash-attn 2.8.3, and the model's forced packed FlashAttention path runs on sm_120.
-- **Install:** the extra's sdist build (`FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE`, no build isolation) downloaded the prebuilt release wheel `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` in 7.5 s. No compile, so no `MAX_JOBS`/arch settings were needed. Wheel sha256 `4e2f9e39…0810` equals the GitHub release digest. The installed `flash_attn_2_cuda` `.so` (sha256 `8ca052bf…5807`) is byte-identical to the wheel's.
+Wall time was about 11 min of the 90-min budget, roughly $0.8 at $4.18/h, with no new billable resource. The operator transcript's first and last pod commands are at 06:16:21Z and 06:28:14Z, so the wall time and cost are estimates. The pod was left running and idle: idle checks are retained at 06:16:25, 06:24:26, 06:26:39 and 06:28:14Z (`flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`) and at 06:36:54Z (`flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`).
+
+**Outcome: the blocker is cleared for the forward path. The trunk numerics are not qualified (see (b)).** A separate v3 environment, `/workspace/kg-v3-rebuild` (`kg/isaiah-gap-closure` @ `69397da`, via git bundle; `.venv` from `uv sync --frozen --group dev --extra flash-attn`), has torch 2.9.0+cu128, triton 3.5.0 and flash-attn 2.8.3, and the model's forced packed FlashAttention path runs on sm_120.
+- **Install:** the extra's sdist build (`FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE`, no build isolation) downloaded the prebuilt release wheel `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` in 7.5 s. No compile, so no `MAX_JOBS`/arch settings were needed. Wheel sha256 `4e2f9e39…0810` equals the GitHub release digest. The installed `flash_attn_2_cuda` `.so` (sha256 `8ca052bf…5807`) is byte-identical to the wheel's member: the member was extracted from the retained wheel, both files have the same sha256, and `cmp` exits 0. That receipt was produced post-run at 06:37Z and is kept as `flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt`, locally and on the pod.
 - **sm_120 support:** flash-attn 2.8.3's `setup.py` includes `120` in its default arch list (CUDA ≥ 12.8). The installed `.so` carries 72 sm_120 cubins, alongside sm_80/90/100 (`cuobjdump --list-elf`). Not a blocker.
 - **Rust extension:** `maturin develop` (justfile `build`, dev profile) → `owl.rs` sha256 `35239d1b…93b8`. `owl` and `owl.model.kaggriculture` import from the new checkout, and `flash_attn_available()` is True.
 
-**(a) Kernel vs SDPA.** `flash_attn_varlen_func` ran on BF16 packed q/k/v with 8 heads × head_dim 32, 256 sequences of 214–709 tokens, 173,518 tokens in total. Against per-sequence fp32 SDPA:
-- max |Δ| is 0.00359 and mean |Δ| is 1.07e-4. BF16 SDPA vs fp32 SDPA gives the same max |Δ| (0.00359, mean 1.06e-4), so the flash error equals BF16 output rounding.
-- The flash output differs from BF16 SDPA by at most 0.0039 (one BF16 ulp at |ref| ≈ 1.38).
+**(a) Kernel vs SDPA.** `flash_attn_varlen_func` ran on BF16 packed q/k/v with 8 heads × head_dim 32, 256 sequences of 214–709 tokens, 173,518 tokens in total. The reference is per-sequence `F.scaled_dot_product_attention` on fp32 inputs, with the backend chosen automatically. The math backend was not selected explicitly, and the backend actually used was not profiled.
+- Against that reference, flash has max |Δ| 0.00359 and mean |Δ| 1.07e-4. BF16 SDPA against the same reference gives the same max |Δ| (0.00359, mean 1.06e-4). BF16 output rounding is a plausible explanation that fits this. Equal maxima do not prove it.
+- Flash differs from BF16 SDPA by at most 0.00390625 = 2⁻⁸. Near |ref| ≈ 1.38, the largest reference magnitude, BF16 spacing is 2⁻⁷ = 0.0078125, so this is half a spacing there. It would be one spacing for values in [0.5, 1). The magnitude of the element with the largest error was not retained.
 - No element falls outside `0.02 + 0.02|ref|`. The profiler records `flash::flash_fwd_kernel<…bfloat16…>`.
 
 **(b) Model trunk.** Setup: preset `configs/model/kaggriculture.yaml` (width 256, depth 8, 8 heads, `force_flash_attn: true`), fp32 params, `autocast(bfloat16)`, TF32 via `configure_torch()`. Batch: `make_obs` with 128 envs = 256 rows, 173,108 present tokens, lengths 221–709, padded length 709.
 
-| Comparison (present tokens, 44.3M elements) | max \|Δ\| | mean \|Δ\| | outside tol |
-|---|---|---|---|
-| compiled flash vs eager flash | 0.0872 | 0.00542 | 0.018 % |
-| eager flash vs eager padded SDPA | 0.0805 | 0.00498 | 0.021 % |
-| compiled flash vs eager padded SDPA | 0.0775 | 0.00546 | 0.019 % |
-| compiled vs eager, second shape (64 rows) | 0.0872 | 0.00542 | 0.017 % |
+**The trunk smoke completed with outliers.** In every comparison, 0.017–0.021 % of present-token elements fall outside `0.02 + 0.02|ref|`. The script reports these differences but asserts no numerical acceptance, so this run does not claim trunk numerical agreement.
 
-Output magnitudes reach about 4.0, where one BF16 ulp is 0.03. All three paths differ from one another by the same amount, which fits BF16 accumulation over 8 layers rather than a path-specific error. All outputs are finite, masked positions are exactly zero, and repeated compiled calls agree exactly (Δ = 0).
+| Comparison (present tokens) | elements | max \|Δ\| | mean \|Δ\| | outside tol |
+|---|---|---|---|---|
+| compiled flash vs eager flash | 44.3M | 0.0872 | 0.00542 | 0.018 % |
+| eager flash vs eager padded SDPA | 44.3M | 0.0805 | 0.00498 | 0.021 % |
+| compiled flash vs eager padded SDPA | 44.3M | 0.0775 | 0.00546 | 0.019 % |
+| compiled vs eager, second shape (64 rows) | 10.9M | 0.0872 | 0.00542 | 0.017 % |
+
+Reference output magnitudes reach 4.03, or 3.86 for the 64-row shape. BF16 spacing is 0.03125 in [4, 8) and 0.015625 in [2, 4). The magnitudes of the elements with the largest errors, and the locations of the outliers, were not retained.
+
+The three paths differ from one another by similar amounts. BF16 rounding accumulated over 8 layers is a plausible explanation. It is not proven: similar pairwise differences do not rule out an error specific to one path.
+
+**What would discriminate (future Phase 6 work, not run now):** run the same weights and batch through an fp32 reference with autocast off and TF32 off (padded SDPA). Compare both BF16 paths (flash and padded) against it, and retain the magnitudes and locations of the largest-error elements and of the outliers.
+- If both paths show similar error distributions against fp32, and their outliers sit on large-magnitude or long-sequence elements, that supports rounding.
+- If flash errors are larger, or cluster at pack boundaries or particular sequences, that indicates a path-specific error.
+
+All outputs are finite, masked positions are exactly zero, and repeated compiled calls agree exactly (Δ = 0).
 
 Evidence that the flash path ran:
 - `use_flash_attn(x)` is True with x in bfloat16.
@@ -186,4 +198,12 @@ Evidence that the flash path ran:
   - The new venv and cache take about 3 GB; disk is at 20 GB free (62 %).
   - `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` also holds the 243 MB wheel re-download and a 55 MB Inductor cache.
   - `/workspace/transfer-flash-attn-2026-09-29/v3.bundle` is kept for custody.
-  - `/workspace/kg-v3`, its `.venv`, and `/workspace/gemm-limits-src-1ddc71d` were not modified.
+  - A post-run read-only check at 06:38Z (`flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found:
+    - `/workspace/kg-v3`: no mtime changes.
+    - `/workspace/gemm-limits-src-1ddc71d`: no mtime or ctime changes.
+    - `/workspace/kg-v3/.venv`: 19,796 entries have a new ctime. All are hard-linked regular files, and the sampled ones share an inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, so no content write is recorded, but the two venvs now **share inodes**. An in-place edit of a file in either venv would change the other.
+  - Source state:
+    - Detached HEAD at `69397da` with a clean checkout: `git checkout` output at 06:18:38Z (transcript excerpts).
+    - Zero tracked-file changes at 06:26:39Z.
+    - Fresh post-run receipt at 06:36:54Z: HEAD `69397da`, detached, `git status --porcelain` empty, `runs/` gitignored.
+  - Still **operator-reported**, with no retained receipt: "no credentials copied" and "nothing pushed". The only evidence is the clone's remote list, which shows just the bundle path.

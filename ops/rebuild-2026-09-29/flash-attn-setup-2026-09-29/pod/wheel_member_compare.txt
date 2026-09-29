@@ -1,0 +1,32 @@
+# flash_attn_2_cuda wheel-member vs installed .so comparison (Phase 6.0 follow-up; post-run)
+date_utc_start: 2026-09-29T06:37:10Z
+host: 58d6b0752a98  (pod w7ia3zvxqsvs3g)
+wheel: /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/wheel/flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+installed: /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+tempdir: /tmp/fa-wheel-cmp.sEzKGV (removed afterwards)
+
+$ sha256sum "$W"
+4e2f9e39313266b1544b68138b15b91ee6221eccf14f7902b7c6620351340810  /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/wheel/flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+$ unzip -l "$W" 'flash_attn_2_cuda*.so'
+Archive:  /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/wheel/flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+997961816  2025-12-17 06:09   flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+---------                     -------
+997961816                     1 file
+$ unzip -q "$W" 'flash_attn_2_cuda*.so' -d "$T"; echo exit=$?
+exit=0
+$ ls -l "$T" "$I"
+-rwxr-xr-x 2 root root 997961816 Sep 29 06:21 /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+
+/tmp/fa-wheel-cmp.sEzKGV:
+total 974576
+-rwxr-xr-x 1 root root 997961816 Dec 17  2025 flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+$ sha256sum "$T"/flash_attn_2_cuda*.so "$I"
+8ca052bf2d3f53baa629e22749b9622a95273c5bffb5f06cd24768ef63f65807  /tmp/fa-wheel-cmp.sEzKGV/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+8ca052bf2d3f53baa629e22749b9622a95273c5bffb5f06cd24768ef63f65807  /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+$ cmp "$T"/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so "$I"; echo exit=$?   # exit=0 = byte-identical
+exit=0
+$ grep flash_attn_2_cuda .venv/lib/python3.12/site-packages/flash_attn-2.8.3.dist-info/RECORD
+flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so,sha256=jKBSvy0_U7qmKeInSbliKpUnPFv_tfBs0kdo72P2WAc,997961816
+date_utc_end: 2026-09-29T06:37:16Z

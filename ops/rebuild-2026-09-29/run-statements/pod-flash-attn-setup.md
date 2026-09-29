@@ -16,3 +16,27 @@
 - **Budget:** ≤ 90 min wall on the already-running pod ($4.18/h ≈ $6.3 max; no new billable resource).
 - **Artifacts:** pod `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` (setup logs, `versions.json`, `cuobjdump` listing, smoke JSON/log, pytest log). Local copy of logs and a summary in `ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/`; result section "Phase 6.0 — flash-attn on the pod" in `ops/rebuild-2026-09-29/results.md`.
 - **Safety:** pre-check 06:16Z: `nvidia-smi` 0 MiB / 0 % on both GPUs, no compute apps, no python/torchrun/run_ppo/cargo/pip process. Re-checked immediately before the smoke. `/workspace/kg-v3` and its `.venv` are not touched; `/workspace/gemm-limits-src-1ddc71d` is not touched. No driver/CUDA/system-torch changes, no security changes. Never stop, restart or delete the pod; it is left running and idle.
+
+---
+
+## Post-run addendum (2026-09-29 ≈06:40Z, after Codex review `codex/verify-flash-attn-r1.md`)
+
+The text above this rule is the pre-run statement, byte-for-byte: its first 5,427 bytes hash to sha256 `405c4bd62b19ad072c17e3039276d010ad0e8740a2f2bc3a44b9f027492aaac3`. Check with `head -c 5427 pod-flash-attn-setup.md | shasum -a 256`. Nothing above the rule was edited after the run.
+
+**Custody of this statement.** Git first records the file in `4fd40c7` at 06:28:07Z, which is after execution. That commit alone does not show when the statement was written. The operator session's transcript does show the timing:
+- The `Write` of this file happened at **06:17:58.822Z**, and the written content has the same sha256 (`405c4bd6…aac3`).
+- The first command that changed the pod (bundle, clone, checkout) started at **06:18:04Z**.
+- The earlier 06:16:25Z call only read state.
+
+The excerpts are in `../flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`. That transcript is a local harness log kept outside git and is not tamper-evident. The excerpt file records its sha256 at extraction time. No copy of this statement was placed on the pod.
+
+**Corrections to the wording above.** The original text stays as written; these corrections apply to it.
+- **(a) reference.** "fp32 SDPA in fp32 math" means `F.scaled_dot_product_attention` on fp32 inputs, with the backend chosen automatically. The math backend was not selected explicitly, and the backend actually used was not profiled.
+- **(b) expectation.** The trunk result did not meet the "BF16-level agreement" expectation as a proven claim. The trunk smoke completed with outliers: 0.017–0.021 % of elements fall outside `0.02 + 0.02|ref|`, and the script asserts no numerical acceptance. See `../results.md` for details.
+- **Safety claims.** Some of the safety claims above now have receipts:
+  - Pre-check 06:16:25Z, pre-smoke re-check 06:24:26Z, end-of-run check 06:26:39Z and post-commit check 06:28:14Z are all in the transcript excerpts.
+  - A fresh post-run check at 06:36:54Z is in `../flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`.
+  - "`/workspace/kg-v3` and its `.venv` are not touched" needs a qualification. A read-only check at 06:38Z (`../flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found no file in `/workspace/kg-v3` with a changed mtime. However, 19,796 entries in `/workspace/kg-v3/.venv` have a changed ctime. All of those are hard-linked regular files, and the sampled files share their inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, but the two venvs now share inodes.
+  - `/workspace/gemm-limits-src-1ddc71d` has no mtime or ctime changes.
+  - The driver is still 595.91.07, and the system torch is still 2.8.0+cu128 (`version.py` mtime 2025-10-09).
+  - "No credentials copied" and "nothing pushed" remain **operator-reported**. The only retained evidence is the pod clone's remote list, which shows just the bundle path.
