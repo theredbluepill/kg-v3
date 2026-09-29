@@ -242,6 +242,14 @@ fn original_python_oracles_match_native_actions_and_states() {
     let mut results = Vec::new();
     let mut failures = Vec::new();
     for entry in entries() {
+        // Kaggle's simulation image runs CPython 3.11; 3.12's compensated float
+        // sum() changes R04's decisions, so only 3.11 traces are oracles.
+        let runtime = entry["python_runtime"].as_str().unwrap_or_default();
+        assert!(
+            runtime.starts_with("3.11."),
+            "{}: oracle runtime {runtime:?} is not CPython 3.11",
+            entry["path"]
+        );
         let report = replay(&read_rows(&entry));
         eprintln!("{}: {report:?}", entry["path"]);
         if let Some(mismatch) = &report.mismatch {

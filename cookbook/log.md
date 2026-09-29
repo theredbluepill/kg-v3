@@ -1,5 +1,21 @@
 # Change log
 
+## 2026-09-29 — Qualify the four opponents against their originals on CPython 3.11
+
+Claude's review of Task 7.1 regenerated the original-submission oracles on
+CPython 3.11.15, the interpreter of Kaggle's simulation image (v163, per v2's
+container Reference). Codex's single 3.12.13 trace had failed at R04 step 12
+because CPython 3.12 made float `sum()` compensated; the native port sums
+sequentially, as 3.11 does. Eight games (seeds 20260929–20260936, each bot
+twice in each seat) now match all 11,504 original actions and every state.
+The generator, custody checker and Rust oracle test refuse non-3.11 oracles,
+and three production mutations fail their tests. The
+[[references/snapshot-view-isolates-byte-exact-evaluation-opponents|opponent Reference]]
+and `docs/rules-parity-coverage.md` carry the denominators and remaining gaps
+(no Python-side shortage, rejection or mid-episode replay coverage; license
+notices; default config only; Task 1.4 binding). Receipts:
+`ops/rebuild-2026-09-29/7.1/review/`.
+
 ## 2026-09-29 — Import evaluation controllers through a v3-owned snapshot view
 
 Claude's revised Task 7.1 placement resolves the private-engine boundary with an

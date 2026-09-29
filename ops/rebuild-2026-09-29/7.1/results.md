@@ -1,3 +1,9 @@
+> **Superseded parity result (Claude review, 2026-09-29).** The parity block
+> below came from a CPython 3.12.13 oracle. Regenerated on CPython 3.11.15, the
+> Kaggle simulation image's interpreter, all eight oracle games match (11,504
+> actions, both seats, every bot). See `review/results.md`; the text below is
+> Codex's run-2 report, kept unchanged.
+
 # Task 7.1 final report
 
 The standalone import, view, registry, runner, custody, original-Python loader and

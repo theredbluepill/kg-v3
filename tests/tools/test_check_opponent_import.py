@@ -64,6 +64,7 @@ def original_fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, byte
                 "path": "test.jsonl.gz",
                 "policy_seed": records[0]["source"]["policy_seed"],
                 "config_variant": "default",
+                "python_runtime": "3.11.15",
                 "rejected": 0,
                 "coverage": [
                     {**dict.fromkeys(checker.COVERAGE_KEYS, 0), "openings": 1}
@@ -89,7 +90,10 @@ def original_fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, byte
             {"path": path, "sha256": checker.sha(current[path]), "reason": "test"}
             for path in ["opponents_rs/src/lib.rs", checker.ORACLE_MANIFEST]
         ],
-        "python_oracles": checker.python_oracle_receipts(),
+        # Committed receipts: the default check must not need the sibling repo.
+        "python_oracles": json.loads((ROOT / checker.MANIFEST).read_bytes())[
+            "python_oracles"
+        ],
         "oracle_traces": [trace],
         "trace_budget_bytes": checker.TRACE_BUDGET,
     }
@@ -274,6 +278,8 @@ def refresh_authored(manifest: dict[str, Any], current: dict[str, bytes]) -> Non
         ("invented_coverage", "coverage differs"),
         ("invented_replay", "coverage differs"),
         ("unsafe_trace", "path"),
+        ("python_312_runtime", r"CPython 3\.11"),
+        ("missing_runtime", "schema keys"),
     ],
 )
 def test_rehashed_oracle_manifest_attacks_fail(attack: str, message: str) -> None:
@@ -298,6 +304,10 @@ def test_rehashed_oracle_manifest_attacks_fail(attack: str, message: str) -> Non
         entry["coverage"][0]["mid_episode_replay"] = 1
     elif attack == "unsafe_trace":
         entry["path"] = "../test.jsonl.gz"
+    elif attack == "python_312_runtime":
+        entry["python_runtime"] = "3.12.13"
+    elif attack == "missing_runtime":
+        del entry["python_runtime"]
     current[checker.ORACLE_MANIFEST] = json.dumps(generated).encode()
     refresh_authored(manifest, current)
     with pytest.raises(ValueError, match=message):
@@ -363,3 +373,42 @@ def test_duplicate_json_keys_are_refused() -> None:
 def test_nonfinite_json_values_are_refused() -> None:
     with pytest.raises(ValueError, match="non-finite"):
         checker._loads('{"reward": NaN}')
+
+
+SIBLING_ABSENT = not Path(checker.PYTHON_REPO, ".git").exists()
+
+
+def test_default_check_needs_no_sibling_repository(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Pods and containers run `just prepare` without the owner's sibling tree."""
+
+    def unavailable() -> None:
+        raise OSError("sibling repository unavailable")
+
+    monkeypatch.setattr(checker, "_python_files", unavailable)
+    manifest, originals, current = fixture()
+    checker.verify(manifest, originals, current)
+    with pytest.raises(OSError, match="unavailable"):
+        checker.verify(manifest, originals, current, original_sources=True)
+
+
+@pytest.mark.skipif(SIBLING_ABSENT, reason="original sources live in the sibling repo")
+def test_original_sources_mode_checks_every_dependency_hash() -> None:
+    manifest, originals, current = fixture()
+    checker.verify(manifest, originals, current, original_sources=True)
+    e776 = next(e for e in manifest["python_oracles"] if e["bot"] == "e776")
+    dependency = next(f for f in e776["files"] if "/agents/" in f["path"])
+    dependency["sha256"] = "0" * 64
+    checker.verify(manifest, originals, current)  # structural pins cannot see it
+    with pytest.raises(ValueError, match="Python source hash"):
+        checker.verify(manifest, originals, current, original_sources=True)
+
+
+def test_structural_check_pins_entry_sources() -> None:
+    manifest, originals, current = fixture()
+    ecobot = next(e for e in manifest["python_oracles"] if e["bot"] == "ecobot")
+    main = next(f for f in ecobot["files"] if f["path"].endswith("main.py"))
+    main["sha256"] = "1" * 64
+    with pytest.raises(ValueError, match="Python source hash"):
+        checker.verify(manifest, originals, current)

@@ -14,6 +14,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 BASE = "b8747b6e8acece5f561d09a75bb914364a60ac05"
 STOPPED = "21d0f45effdf76302cc4bf3b163601038d0d2f8e"
+# Codex run 2's committed output; Claude review regenerated the oracles under
+# CPython 3.11 and adds its receipts, so this earlier output is accepted input.
+RUN2 = "7ae9bbfe0573b5f768ea6ce737705ee176c75062"
+ORACLE_PAIRS = ("starter-vs-r04", "r04-vs-ecobot", "ecobot-vs-e776", "e776-vs-starter")
 MANIFEST = "engine_rs/TRIM_MANIFEST.json"
 OPS = "ops/rebuild-2026-09-29/7.1"
 CHANGES = {
@@ -60,9 +64,13 @@ CHANGES = {
             "tests/oracle_parity.rs": "compare original Python actions and state.",
             "fixtures/e776-kenjo-trace.json": "preserve E776 executable policy data.",
             "fixtures/oracle/MANIFEST.json": "freeze generated Python oracle metadata.",
-            "fixtures/oracle/oracle-00-starter-vs-r04.jsonl.gz": (
-                "freeze original Starter/R04 observations and actions."
-            ),
+            **{
+                f"fixtures/oracle/oracle-{index:02d}-{pair}.jsonl.gz": (
+                    "freeze original-submission observations and actions "
+                    "(CPython 3.11, Claude review)."
+                )
+                for index, pair in enumerate(ORACLE_PAIRS * 2)
+            },
             **{
                 f"src/native_agents/{bot}.rs": "preserve pinned controller bytes."
                 for bot in ("starter", "r04", "ecobot", "e776")
@@ -150,6 +158,21 @@ CHANGES = {
             "inventory.json": "list final changed paths and their task purposes.",
         }.items()
     },
+    **{
+        f"{OPS}/review/{name}": reason
+        for name, reason in {
+            **{
+                f"oracle-gen-{start}.json": (
+                    "record bounded CPython 3.11 oracle generation summaries."
+                )
+                for start in (0, 2, 4, 6)
+            },
+            "oracle-parity.json": "pin 3.11 oracle compared/matched denominators.",
+            "mutations.log": "record production mutations that fail their tests.",
+            "results.md": "record Claude review findings, checks and limits.",
+            "prepare.log": "record the review's full repository preparation.",
+        }.items()
+    },
 }
 
 IMPORTED = {
@@ -166,7 +189,11 @@ IMPORTED = {
 
 
 def render(
-    current: bytes, baseline: bytes, stopped: bytes, changes: dict[str, str]
+    current: bytes,
+    baseline: bytes,
+    stopped: bytes,
+    changes: dict[str, str],
+    previous: tuple[bytes, ...] = (),
 ) -> bytes:
     manifest = json.loads(stopped)
     original = json.loads(baseline)
@@ -189,7 +216,7 @@ def render(
         else:
             entries.append({"path": path, "reason": f"Task 7.1: {reason}"})
     result = (json.dumps(manifest, indent=2) + "\n").encode()
-    if current not in (baseline, stopped, result):
+    if current not in (baseline, stopped, result, *previous):
         raise ValueError("unexpected trim manifest input; refusing to overwrite")
     return result
 
@@ -205,7 +232,9 @@ def main() -> None:
 
     baseline, stopped = read(BASE), read(STOPPED)
     target = ROOT / MANIFEST
-    target.write_bytes(render(target.read_bytes(), baseline, stopped, CHANGES))
+    target.write_bytes(
+        render(target.read_bytes(), baseline, stopped, CHANGES, (read(RUN2),))
+    )
     print(
         "Task 7.1: import inventory updated; retained/authored engine entries unchanged"
     )

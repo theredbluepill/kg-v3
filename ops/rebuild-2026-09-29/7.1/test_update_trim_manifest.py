@@ -111,5 +111,29 @@ class UpdaterTests(unittest.TestCase):
             assert json.loads(result)[key] == json.loads(stopped)[key]
 
 
+    def test_committed_run_two_output_is_an_accepted_input(self) -> None:
+        """Claude review: regenerated oracles change CHANGES after run 2."""
+
+        def git(revision: str) -> bytes:
+            return subprocess.run(
+                ["git", "show", f"{revision}:engine_rs/TRIM_MANIFEST.json"],
+                cwd=updater.ROOT,
+                check=True,
+                capture_output=True,
+            ).stdout
+
+        base, stopped, run2 = git("b8747b6"), git("21d0f45"), git(updater.RUN2)
+        result = updater.render(run2, base, stopped, updater.CHANGES, (run2,))
+        assert result != run2
+        assert updater.render(result, base, stopped, updater.CHANGES, (run2,)) == result
+        paths = {entry["path"] for entry in json.loads(result)["non_engine_changes"]}
+        for index, pair in enumerate(
+            ["starter-vs-r04", "r04-vs-ecobot", "ecobot-vs-e776", "e776-vs-starter"] * 2
+        ):
+            assert f"opponents_rs/fixtures/oracle/oracle-{index:02d}-{pair}.jsonl.gz" in paths
+        with pytest.raises(ValueError, match="unexpected"):
+            updater.render(run2, base, stopped, updater.CHANGES)
+
+
 if __name__ == "__main__":
     unittest.main()

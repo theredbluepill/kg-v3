@@ -548,3 +548,22 @@ def test_opponent_custody_failure_preserves_existing_manifest(tmp_path: Path) ->
     with pytest.raises(FileNotFoundError):
         generator.write_opponent_manifest(tmp_path, [], generator.pinned_engine())
     assert path.read_text() == frozen
+
+
+def test_opponent_oracle_requires_the_competition_python_runtime() -> None:
+    """R04 sums floats; CPython 3.12's compensated sum() changes its decisions."""
+    assert generator.oracle_python_runtime((3, 11, 15)) == "3.11.15"
+    for version in [(3, 12, 13), (3, 10, 14), (3, 13, 0)]:
+        with pytest.raises(generator.ParityGeneratorError, match=r"CPython 3\.11"):
+            generator.oracle_python_runtime(version)
+
+
+def test_opponent_preset_refuses_other_runtimes_before_playing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(generator.sys, "version_info", (3, 12, 13, "final", 0))
+    out = tmp_path / "oracle"
+    status = generator.main(["--preset", "opponents", "--out", str(out)])
+    assert status == 2
+    assert "CPython 3.11" in capsys.readouterr().err
+    assert not out.exists()

@@ -1,10 +1,10 @@
 ---
 type: "Reference"
 title: "Snapshot view isolates byte-exact evaluation opponents"
-description: "Task 7.1 preserves four controllers behind a v3-owned snapshot view; original-Python parity stops at R04 step 12, so lifecycle and custody checks do not qualify the opponents."
+description: "Task 7.1 runs four byte-exact controllers behind a v3-owned snapshot view; all match their original Python submissions on eight CPython 3.11 oracle games (11,504 actions, both seats). CPython 3.12 changes R04 through compensated float sum()."
 tags: ["kaggriculture-v3", "adaptation", "opponents", "parity"]
-status: "implemented-parity-mismatch"
-generated: {"by": "openai/codex", "at": "2026-09-29"}
+status: "implemented"
+generated: {"by": "openai/codex; revised by anthropic/claude", "at": "2026-09-29"}
 sources:
   - resource: "external-repository:/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/task-7.1-impl-prompt.md"
   - resource: "external-repository:/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/task-7.1-claude-view-probe-lib.rs"
@@ -38,6 +38,10 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/7.1/update_trim_manifest.py"
   - resource: "repository:ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py"
   - resource: "repository:docs/rules-parity-coverage.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/review/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/review/oracle-parity.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/review/mutations.log"
+  - resource: "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/kaggle-simulation-container.md"
 ---
 
 # Snapshot view isolates byte-exact evaluation opponents
@@ -85,54 +89,40 @@ seat-attributed. It is not a claim that every requested command executes.
 
 ## Verification and limits
 
-The final opponent test command reports 19 passes and one failing
-original-Python comparison, with no ignored tests. The 69 frozen-engine tests
-pass; required targeted Python checks report 164 passes and ten skips (nine
-Task 1.4 binding cases, one multi-game regeneration outside the Mac bound).
-Both custody checkers pass. Mutation checks independently reject tampered first actions for both
-seats. The changed-seed oracle attempt reproduced the already-known step-12
-mismatch and does not count as an independent control; native same/different-seed
-determinism is a separate check. These successes do not override the parity failure.
+**Original-submission parity (Claude review).** Eight oracle games were
+generated from Kaggle 1.32.7's own Python engine with the original submissions
+(Kaggle Starter; sibling R04, EcoBot and E776 at `e8884aae`, hash-verified, a
+fresh module per seat and game) on CPython 3.11.15, default configuration,
+seeds 20260929–20260936. The pairs rotate so every bot plays both seats twice.
+Native controllers, fed the native engine state rebuilt from configuration and
+seed, match every recorded Python action on both seats: 8 × 2 × 719 = 11,504
+actions, with public/private state, statuses, rewards and terminal banks equal
+after all 5,752 transitions. Traces total 1,779,187 of 4,000,000 bytes.
+A tampered first action fails for each seat of each trace.
 
-The first original-Python trace is Starter in seat 0 versus R04 in seat 1,
-seed `20260929`, with 719 Python transitions. The native comparator stops at
-step 12, seat 1, `action.hands[2][0]`: native `"WEST"`, Python `"NORTH"`.
-It compared 13 actions per seat; Starter matched 13, R04 matched 12. The first
-12 applied transitions matched full state including object order. This is a
-localized original-submission behavior mismatch, not a passing parity result.
-Widening stops here, preserving the imported bytes and failing comparison.
-The source cause is a floating reduction difference: actual Python 3.12.13
-sums 25 weights of 0.35 to `8.75`, while the native sequential reduction gives
-`8.749999999999996`. The resulting angular-sector threshold changes anchors
-at step zero and assignment at step 12. A diagnostic that replaces only the
-original `compute_anchors` function's `sum` binding with sequential accumulation
-matches all 13 native anchors/actions, including `WEST`. The original module
-independently reproduces all 13 frozen Python actions. This identifies a native
-port mismatch to the requested original-source oracle under this runtime;
-the original competition runtime remains unknown. The engine/view is not
-implicated by this bounded comparison. Source lines, arithmetic and controls
-are in `run2/r04-mismatch.md`; no diagnostic alteration becomes an oracle.
+**Why CPython 3.11.** Codex's first oracle ran on CPython 3.12.13 and failed at
+R04 step 12 (native `WEST`, Python `NORTH`); its localization
+(`run2/r04-mismatch.md`) traced this to `sum()` of 25 weights of 0.35: 3.12's
+compensated float `sum()` gives 8.75, sequential accumulation 8.749999999999996.
+CPython 3.12 changed `sum()`; the native port reproduces sequential summation.
+Kaggle's simulation image `gcr.io/kaggle-images/python:v163`, read directly in
+v2, runs CPython 3.11.13, so 3.11 is the competition runtime. The generator,
+custody checker and Rust oracle test now refuse oracles from any other
+interpreter. The 3.12 trace remains in history at `7ae9bbf` as a negative
+control: the comparator does detect a one-hand decision difference. Limit: the
+simulation build may use another image tag; the v2 reading is the evidence.
 
-The trace's full-Python coverage is distinct from that 12-transition native
-matched prefix. R04 seat 0, Starter seat 1, and both seats for EcoBot/E776 have
-no original-Python action comparison. Additional pairs/seeds and any coverage
-category absent from the first trace remain unqualified. The lifecycle tests
-cannot fill those denominators. The complete Python trace records opening/day
-reset/weed-step/added-hand/final-day SELL counts of `1/29/527/0/0` for Starter
-and `1/29/201/285/12` for R04. It has no whole-step rejection or mid-episode
-replay. The quantity-versus-inventory-index proxy is zero for both seats and
-does not establish engine-confirmed market shortages or individual-order
-rejection. Those categories remain gaps. The compressed oracle is 178,476 of
-4,000,000 allowed bytes; its exact SHA-256 is in the manifest and coverage page.
+**Other checks.** 19 opponent-crate tests pass: Starter's five pinned inline
+cases, view/visibility, lifecycle, determinism and the oracle suite. Rival
+private perturbations never change an action at seven checkpoints per seat;
+own-state perturbations do (positive control). Mutations in `review/mutations.log`
+(dropping the step guard, a stale snapshot, a wrong `fib`) each fail tests.
 
-The source-level boundary, lifecycle checks and original-Python comparison are
-separate claims: compiling the imported Rust or reproducing its own actions
-cannot establish original-submission parity. The original source is Kaggle
-1.32.7 Starter or the pinned sibling submissions, with fresh module/agent state
-for every seat and game. Action, public and private state comparisons preserve
-JSON number representation; rewards use the frozen engine's typed-f64 semantics,
-as the existing kernel comparator does. The initial reward `0` versus `0.0`
-harness mismatch was corrected before the R04 behavior mismatch was reached.
+**Coverage gaps.** The oracles exercise openings, 29 day resets per seat, weeds,
+hires (R04, EcoBot, E776) and final-day sells. No trace has a rejected step, a
+buy above the market inventory index or a mid-episode replay. Mid-episode
+replay and fresh-controller reset are checked natively only (lifecycle test),
+not against Python. Starter never hires in these games.
 
 Default-config-only support is deliberate: the controllers hardcode calendar
 and rule constants. Custom configs accepted by the general v4.1 environment
@@ -151,9 +141,12 @@ notice text and hashes; no Python submission source is copied into this repo.
 ## Adaptation custody and history
 
 The dedicated opponent manifest/checker owns imported bytes, authored support,
-Python source identities and oracle trace inventory/hash/size/budget. The
-engine trim updater accepts the exact `b8747b6` integration input, committed
-`21d0f45` run-1 manifest, or its exact final output. It preserves retained and
+Python source identities and oracle trace inventory/hash/size/budget. Its
+default mode pins original entry hashes without the sibling repository, so
+`just prepare` stays portable to pods and containers; `--original-sources`
+re-reads every original file on the owner's machine. The engine trim updater accepts the exact `b8747b6` integration input, committed
+`21d0f45` run-1 manifest, committed `7ae9bbf` run-2 output, or its exact final
+output. It preserves retained and
 authored engine entries, updates exactly five excluded reasons to identify their
 new `opponents_rs` copies, and registers this task's non-engine paths. Updater
 checks first failed against the old signature; six tests then passed, including
@@ -178,7 +171,6 @@ engine fields, parity, custody and negative evidence; this revises the existing
 concept rather than creating a parallel claim. Independent checks are the
 pinned Git blobs, original Python submissions, compiler and mutation tests.
 Future integration must preserve these boundaries and re-open any uncovered
-behavior before claiming broader qualification. R04 parity needs an explicit
-runtime contract and an authorized change to the byte-exact-source requirement,
-or a newly pinned corrected upstream controller; relaxing equality or changing
-the oracle is not a resolution. No result board is warranted.
+behavior before claiming broader qualification. Reopen parity if Kaggle's simulation runtime moves to CPython 3.12 or later:
+R04's decisions then follow compensated float summation, which the byte-exact
+native port does not reproduce. No result board is warranted.

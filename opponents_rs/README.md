@@ -5,7 +5,9 @@ E776's executable policy tape byte-exactly from reference commit
 65f0eac5bb00b18a9d3acce319c2a231cbd5dff0. The root training crate has no dependency
 on it. The dedicated OPPONENT_MANIFEST.json records source, authored files and
 original-Python oracle custody; run scripts/check_opponent_import.py from the
-repository root.
+repository root. That default check (also run by `just prepare`) needs no
+sibling repository and pins the original entry hashes structurally; add
+--original-sources on the owner's machine to re-read every original file.
 
 Use OpponentKind's exact string keys starter, r04, ecobot and e776. Construct
 a SeatController for each environment, seat and episode. Its action method must
@@ -43,17 +45,19 @@ error. Only completed raw banks determine the winner; None denotes either a
 draw or an incomplete result, distinguished by completed. Starter's inline
 tests exercise their own custom configs; this does not broaden match support.
 
-Original-Python parity is currently blocked: the first trace (seed 20260929,
-Starter seat 0 versus R04 seat 1) disagrees at step 12, R04 hands[2][0], native
-WEST versus Python NORTH. Both seats have 13 actions compared, with 13/12
-matches, and the preceding 12 complete state transitions agree. The parity
-test remains failing; imported bytes and strict action comparisons are unchanged.
-Corpus expansion stopped. Other bot/seat combinations are not qualified.
-See ops/rebuild-2026-09-29/7.1/results.md for diagnosis, counts and coverage.
+Original-Python parity: on eight default-config oracle games generated on
+CPython 3.11.15 (the Kaggle simulation image's interpreter), seeds
+20260929-20260936, every bot plays both seats twice and all 11,504 recorded
+original-submission actions match, with full state agreement after every
+transition. Oracles from other interpreters are refused: CPython 3.12's
+compensated float sum() changes R04's decisions (see
+ops/rebuild-2026-09-29/7.1/run2/r04-mismatch.md). Denominators, coverage and
+gaps are in docs/rules-parity-coverage.md and
+ops/rebuild-2026-09-29/7.1/review/results.md.
 
 ## Notices and redistribution limits
 
-The engine's MIT license and provenance remain at engine_rs/LICENSE and
+The engine's Apache-2.0 license and provenance remain at engine_rs/LICENSE and
 engine_rs/VENDORED_FROM.md. That license does not resolve original controller
 license custody. Python oracle sources are read-only Git blobs from
 /Users/poonszesen/kaggriculture at e8884aae82eddeb7a1aeae99ecceeca7c830d67e;

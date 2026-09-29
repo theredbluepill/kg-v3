@@ -2,9 +2,12 @@
 
 The manifest records actual comparison counts separately from the available actions
 in generated traces. A successful custody check does not establish action parity.
-Original Python submissions are read from their pinned Git object store, never
-copied into this repository. The Starter source is verified from its installed
-pinned package without importing or executing Kaggle or any controller.
+Original Python submissions are never copied into this repository. The default
+check pins their recorded entry hashes structurally, so it runs anywhere (pods,
+containers). ``--original-sources`` additionally re-reads every original file from
+its pinned Git object store in the owner's sibling repository and the Starter
+source from the installed pinned package, without importing or executing Kaggle
+or any controller.
 """
 
 from __future__ import annotations
@@ -272,9 +275,23 @@ def python_oracle_receipts() -> list[dict[str, Any]]:
     ]
 
 
-def _verify_python(value: object) -> None:
+def _structural_python_pins(bot: str, files: Mapping[str, str]) -> None:
+    """Hashes this checker pins itself; needs no source repository."""
+    pins = {
+        "starter": {STARTER_PATH: PYTHON_ENGINE_SHA256},
+        "e776": {
+            "agents/e776/main.py": PYTHON_MAIN_HASHES["e776"],
+            "agents/e776/MANIFEST.sha256": E776_MANIFEST_SHA256,
+        },
+    }.get(bot, {f"agents/{bot}/main.py": PYTHON_MAIN_HASHES.get(bot, "")})
+    for path, digest in pins.items():
+        _require(path in files, f"{bot}: Python source inventory missing={path}")
+        _require(files[path] == digest, f"{path}: Python source hash")
+
+
+def _verify_python(value: object, *, original_sources: bool) -> None:
     entries = _array(value, "python_oracles")
-    expected = _python_files()
+    expected = _python_files() if original_sources else None
     seen = []
     for value in entries:
         entry = _object(
@@ -296,19 +313,25 @@ def _verify_python(value: object) -> None:
             f"{bot}: source_commit",
         )
         _text(entry["provenance"], f"{bot}: provenance")
-        files = []
+        files: dict[str, str] = {}
         for value in _array(entry["files"], f"{bot}: files"):
             source = _object(value, ("path", "sha256"), f"{bot}: file")
             path = _path(source["path"])
-            files.append(path)
-            _require(
-                path in expected[bot], f"{bot}: Python source inventory extra={path}"
+            _require(path not in files, f"{bot}: duplicate Python source {path}")
+            files[path] = _digest(source["sha256"], path)
+        _structural_python_pins(bot, files)
+        if expected is not None:
+            for path, digest in files.items():
+                _require(
+                    path in expected[bot],
+                    f"{bot}: Python source inventory extra={path}",
+                )
+                _require(
+                    digest == sha(expected[bot][path]), f"{path}: Python source hash"
+                )
+            _inventory(
+                list(files), list(expected[bot]), f"{bot}: Python source inventory"
             )
-            _require(
-                _digest(source["sha256"], path) == sha(expected[bot][path]),
-                f"{path}: Python source hash",
-            )
-        _inventory(files, list(expected[bot]), f"{bot}: Python source inventory")
     _inventory(seen, list(BOTS), "Python oracle inventory")
 
 
@@ -556,6 +579,7 @@ def _verify_traces(entries: list[dict[str, Any]], current: Mapping[str, bytes]) 
                 "available_actions",
                 "policy_seed",
                 "config_variant",
+                "python_runtime",
                 "rejected",
                 "coverage",
             ),
@@ -584,6 +608,13 @@ def _verify_traces(entries: list[dict[str, Any]], current: Mapping[str, bytes]) 
         _require(
             generated["config_variant"] == "default", f"{name}: default config only"
         )
+        # The competition runtime; CPython 3.12's compensated float sum() changes
+        # R04 decisions, so no other interpreter can serve as the oracle.
+        _require(
+            re.fullmatch(r"3\.11\.\d+", _string(generated["python_runtime"], name))
+            is not None,
+            f"{name}: oracle must come from CPython 3.11 (Kaggle runtime)",
+        )
         coverage = _array(generated["coverage"], f"{name}: coverage")
         _require(len(coverage) == 2, f"{name}: coverage needs both seats")
         for counts in coverage:
@@ -598,9 +629,17 @@ def _verify_traces(entries: list[dict[str, Any]], current: Mapping[str, bytes]) 
 
 
 def verify(
-    value: object, originals: Mapping[str, bytes], current: Mapping[str, bytes]
+    value: object,
+    originals: Mapping[str, bytes],
+    current: Mapping[str, bytes],
+    *,
+    original_sources: bool = False,
 ) -> None:
-    """Check an inventory, raising ValueError at the first custody failure."""
+    """Check an inventory, raising ValueError at the first custody failure.
+
+    ``original_sources`` re-reads the original Python files (sibling repository
+    and installed Starter package); the default pins only recorded entry hashes.
+    """
     raw = _object(
         value,
         (
@@ -675,7 +714,7 @@ def verify(
             sha(current[path]) == _digest(entry["sha256"], path),
             f"{path}: authored hash",
         )
-    _verify_python(raw["python_oracles"])
+    _verify_python(raw["python_oracles"], original_sources=original_sources)
     _verify_traces(traces, current)
 
 
@@ -700,12 +739,15 @@ def current_files(root: Path) -> dict[str, bytes]:
     return current
 
 
-def check(root: Path) -> None:
+def check(root: Path, *, original_sources: bool = False) -> None:
     root = root.resolve()
     manifest_path = root / MANIFEST
     _require(not manifest_path.is_symlink(), f"{manifest_path}: symlink")
     verify(
-        _loads(manifest_path.read_bytes()), reference_files(root), current_files(root)
+        _loads(manifest_path.read_bytes()),
+        reference_files(root),
+        current_files(root),
+        original_sources=original_sources,
     )
 
 
@@ -714,9 +756,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--root", type=Path, default=Path(__file__).resolve().parents[1]
     )
+    parser.add_argument(
+        "--original-sources",
+        action="store_true",
+        help="also re-read every original Python file (needs the sibling repository)",
+    )
     args = parser.parse_args(argv)
     try:
-        check(args.root)
+        check(args.root, original_sources=args.original_sources)
     except (
         ValueError,
         OSError,
@@ -727,7 +774,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     ) as error:
         print(f"opponent import check failed: {error}", file=sys.stderr)
         return 1
-    print("opponent import check passed (custody only; parity is checked separately)")
+    scope = "original sources re-read" if args.original_sources else "entry pins"
+    print(
+        f"opponent import check passed ({scope}; custody only; "
+        "parity is checked separately)"
+    )
     return 0
 
 

@@ -661,6 +661,22 @@ E776_MANIFEST_SHA256 = (
     "55dcc45b4c56324599d7832dfbc53ce6f1ce86aa44524fcb5a59a3c694857d58"
 )
 ORACLE_BYTE_BUDGET = 4_000_000
+# Kaggle's simulation image (gcr.io/kaggle-images/python:v163, read directly)
+# runs CPython 3.11.13. CPython 3.12 made float sum() compensated, which changes
+# R04's anchor thresholds (ops/rebuild-2026-09-29/7.1/run2/r04-mismatch.md), so
+# original-submission oracles are only generated on the competition's 3.11.
+ORACLE_PYTHON = (3, 11)
+
+
+def oracle_python_runtime(version_info: Sequence[int] | None = None) -> str:
+    """The running interpreter's version, if it can produce opponent oracles."""
+    version = tuple(sys.version_info if version_info is None else version_info)
+    if version[:2] != ORACLE_PYTHON:
+        raise ParityGeneratorError(
+            "original opponent oracles require CPython 3.11 (the Kaggle "
+            f"competition runtime); this is {'.'.join(map(str, version[:3]))}"
+        )
+    return ".".join(str(part) for part in version[:3])
 
 
 def _sibling_blob(path: str) -> bytes:
@@ -1451,7 +1467,9 @@ def write_opponent_manifest(
             raise ParityGeneratorError(f"existing oracle custody mismatch: {path}")
     # Build the existing trace schema, then add explicit availability and events.
     manifest = _manifest_data(out, results, pin)
+    runtime = oracle_python_runtime()
     for entry, result in zip(manifest["traces"], results, strict=True):
+        entry["python_runtime"] = runtime
         entry["available_actions"] = [result.transitions, result.transitions]
         entry["coverage"] = opponent_coverage(result.records)
         existing[entry["path"]] = entry
@@ -1485,6 +1503,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
+        if args.preset == "opponents":
+            oracle_python_runtime()
         pin = pinned_engine()
         kaggle, module, digest = load_pinned_kaggle(pin)
     except ParityGeneratorError as error:

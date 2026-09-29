@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -62,7 +63,10 @@ def main() -> None:
     originals = checker.reference_files(ROOT)
     current = checker.current_files(ROOT)
     generated = json.loads(current[checker.ORACLE_MANIFEST])
-    results = json.loads((Path(__file__).parent / "oracle-parity.json").read_text())
+    # Claude review: the parity report is an argument so later runs do not
+    # overwrite this run's receipt (default: this directory's report).
+    report = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).parent / "oracle-parity.json"
+    results = json.loads(report.read_text())
     reports = {entry["path"]: entry for entry in results}
     imported = []
     for reference, data in originals.items():

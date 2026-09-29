@@ -167,80 +167,64 @@ The match runner supports only default configuration and sends official
 It records the applied action, joint engine acceptance per seat, controller
 errors, raw banks and winner. Acceptance is not proof that every individual
 order executed; engine market metrics are available only as joint aggregates.
-The final native crate test command reports **19 passed, 1 failed**, with no
-ignored tests: 12 unit tests (including Starter's five), five lifecycle/match
-integration tests and two successful comparator/mutation tests; original-Python
-parity is the failure described below. Tampering either seat's first recorded action produces an independent mismatch.
-The changed-seed oracle attempt only reproduced the known step-12 mismatch, so
-it provides no separate non-vacuity evidence. The unchanged engine reports
-**69 passed**, no failures/ignores. Required targeted Python checks report
-**164 passed, 10 skipped**: nine need the Task 1.4 binding, and one committed
-multi-game regeneration is skipped under the Mac's two-live-game bound.
-Both custody checkers pass. `py-prepare` passes with 1,692 tests and 17 skips. Full `prepare` and
-`rs-prepare` pass their earlier checks, root Rust 254 tests with four ignored,
-and engine 69 tests, then fail at the retained opponent parity comparison.
-Final command receipts are in `ops/rebuild-2026-09-29/7.1/run2/`; the aggregate
-result remains parity-blocked.
+The native crate's 20 tests pass: 12 unit tests (including Starter's five
+pinned inline cases), five lifecycle/match integration tests and three oracle
+tests (comparator regression, original-Python parity, per-seat tampering).
 
-The original-Python corpus currently contains one default-config trace:
-Starter seat 0 versus R04 seat 1, seed `20260929`, 719 Python transitions.
-It uses Kaggle 1.32.7 Starter and the original hash-pinned R04 submission at
-sibling commit `e8884aae82eddeb7a1aeae99ecceeca7c830d67e`, with fresh independent
-module/agent state per seat. The native comparator stops at step 12, seat 1,
-`action.hands[2][0]`: native `"WEST"`, Python `"NORTH"`. It compares 13
-Starter and 13 R04 actions, with 13 and 12 exact matches respectively; the first
-12 applied transitions match state and object order. Parity remains failing;
-no imported bytes are edited and the corpus is not widened after this finding.
-The cause is the original Python 3.12.13 floating `sum` versus the native
-sequential reduction in angular-sector anchors: 25 weights of 0.35 total `8.75`
-versus `8.749999999999996`, changing a sector threshold. Anchors first differ at
-step zero; assignment first changes the action at step 12. A diagnostic that
-changes only the original `compute_anchors` function's `sum` binding to sequential
-accumulation matches all 13 native anchors/actions; unchanged original code
-reproduces all 13 frozen Python actions. The native port differs from this
-original-source/runtime oracle; the original competition runtime remains
-unestablished. `run2/r04-mismatch.md` records the source lines and controls. The earlier reward `0` versus `0.0` comparator mismatch was a harness
-error: rewards are typed f64 as in the existing kernel comparator; actions and
-public/private state retain strict JSON number comparison.
+**Original-submission parity (Claude review).** The oracle corpus holds eight
+default-config games generated from Kaggle 1.32.7's Python engine on CPython
+3.11.15, seeds `20260929`–`20260936`, pairs rotating Starter–R04, R04–EcoBot,
+EcoBot–E776 and E776–Starter so each bot plays both seats twice. Seat policies
+are Kaggle's Starter and the hash-pinned original R04, EcoBot and E776
+submissions at sibling commit `e8884aae82eddeb7a1aeae99ecceeca7c830d67e`, each
+a fresh module per seat and game. Native controllers, fed native state rebuilt
+from configuration and seed, match every recorded Python action:
 
 | Bot | Seat 0 compared / matched | Seat 1 compared / matched |
 | --- | --- | --- |
-| Starter | 13 / 13 | 0 / 0 |
-| R04 | 0 / 0 | 13 / 12 |
-| EcoBot | 0 / 0 | 0 / 0 |
-| E776 | 0 / 0 | 0 / 0 |
+| Starter | 1,438 / 1,438 | 1,438 / 1,438 |
+| R04 | 1,438 / 1,438 | 1,438 / 1,438 |
+| EcoBot | 1,438 / 1,438 | 1,438 / 1,438 |
+| E776 | 1,438 / 1,438 | 1,438 / 1,438 |
 
-Full 719-transition Python coverage (not the 12-transition native matched
-prefix):
+All 5,752 transitions also match public/private state (including key order),
+statuses, rewards and terminal banks. Tampering either seat's first recorded
+action fails each trace. Actions and state compare JSON numbers strictly;
+rewards are typed f64, as in the existing kernel comparator.
 
-| Category | Starter seat 0 | R04 seat 1 |
-| --- | --- | --- |
-| Opening at step 0 | 1 | 1 |
-| Day reset (hour zero after step zero) | 29 | 29 |
-| Steps with own-farm weeds | 527 | 201 |
-| BUY_PRODUCT quantity above pre-step inventory index | 0 | 0 |
-| Whole Python-step rejection | 0 | 0 |
-| Added hands (positive hand-count changes) | 0 | 285 |
-| Submitted SELL orders on day 29 | 0 | 12 |
-| Mid-episode replay | 0 | 0 |
+**Runtime.** Codex's first oracle ran on CPython 3.12.13 and failed at R04 step
+12 (`hands[2][0]`: native `WEST`, Python `NORTH`). `run2/r04-mismatch.md`
+localized it to `sum()` over 25 weights of 0.35: CPython 3.12's compensated
+float `sum()` gives `8.75`, sequential accumulation `8.749999999999996`,
+moving an anchor threshold. The native port reproduces sequential summation,
+which is CPython 3.11 behavior. Kaggle's simulation image
+(`gcr.io/kaggle-images/python:v163`, read directly in v2's container Reference)
+runs CPython 3.11.13, so the generator, custody checker and Rust test now
+require a 3.11 oracle. The 3.12 trace, preserved at commit `7ae9bbf`, is a
+negative control. If Kaggle's runtime moves to 3.12 or later, R04 parity must
+be reopened.
 
-`buy_quantity_above_inventory_index` compares attempted quantity to that index;
-the index is not bounded stock. It does not establish engine-confirmed shortages.
-`rejected_steps` counts whole Python-step rejection, not individual order
-failure; `final_day_sell_orders` counts submissions, not successful sales. Engine-confirmed shortage/individual-order rejection and mid-episode
-replay are uncovered. Starter hires and late liquidation are also uncovered.
-Both-seat original parity remains incomplete for all four bots; EcoBot/E776
-have no original-behavior comparison. Lifecycle and visibility checks do not
-close these parity gaps.
+Coverage of the Python traces, per seat-game (eight games, 16 seat-games):
+openings 1 and day resets 29 in every seat-game; own-farm weeds in all;
+hires in every R04, EcoBot and E776 seat-game and none for Starter; day-29
+SELL orders in every R04, EcoBot and E776 seat-game and none for Starter.
+No trace has a whole-step rejection, a BUY_PRODUCT above the inventory index or
+a mid-episode replay. `buy_quantity_above_inventory_index` compares a quantity
+to a price index, not stock, so engine-confirmed shortages and individual-order
+rejection are uncovered. Mid-episode replay and reset are checked natively
+(lifecycle test), not against Python.
 
-The one compressed oracle uses **178,476 / 4,000,000 bytes**, SHA-256
-`39b8bc35c223594d2d6740fc35d0b8242e130351e0d69b2e4bc34594976cf97e`.
-Its manifest records 719 available actions per seat; actual compared/matched
-counts are the smaller table above. E776's separately pinned executable tape is
-policy data, not part of this new oracle budget.
+The eight compressed oracles use **1,779,187 / 4,000,000 bytes**; their
+SHA-256s are in `opponents_rs/fixtures/oracle/MANIFEST.json` and
+`opponents_rs/OPPONENT_MANIFEST.json`. E776's separately pinned executable
+tape is policy data, not part of this oracle budget.
 
 The dedicated opponent manifest/checker owns imported/authored file inventory,
 source hashes, Python source provenance and oracle trace hashes/size/budget.
+Its default mode, run by `just prepare`, needs no sibling repository: it pins
+the original entry hashes structurally. `--original-sources` re-reads every
+original file (owner's machine only); Claude's review split the modes because
+the first version made `just prepare` require the owner's sibling tree.
 EcoBot/E776 explicitly declare no software license and must not be redistributed;
 engine licensing does not resolve that notice gap. No original Python submission
 source is copied. Learned-seat integration tests are explicitly skipped with
