@@ -54,6 +54,7 @@ from owl.model.base import (
     ModelOutput,
     ModelServingOutput,
     ModelTeacherEvaluation,
+    TrunkCompileAPI,
 )
 from owl.model.lora_config import LoRAConfig
 from owl.model.lora_linear import LoRALinear
@@ -312,7 +313,7 @@ class _StudentDistillationEval:
     actor_inputs: _ActorInputs | None
 
 
-class StatelessTransformerV1(BaseModelAPI):
+class StatelessTransformerV1(BaseModelAPI, TrunkCompileAPI):
     def __init__(
         self,
         config: StatelessTransformerV1Config,

@@ -1,0 +1,32 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_trunk_guard_stays_in_front_of_the_compiled_callable ___________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e415b80>
+
+    def test_trunk_guard_stays_in_front_of_the_compiled_callable(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        model = _tiny()
+        recorder = _CompileRecorder()
+        monkeypatch.setattr(torch, "compile", recorder)
+        configure_model_compile(
+            model, PPOConfig(model_compile="trunk", model_compile_mode=MODE)
+        )
+        obs = make_obs(envs=2)
+        rows = obs.still_playing.numel()
+    
+        monkeypatch.setattr(km, "rows_per_chunk", lambda **_: 1)
+        with torch.no_grad():
+            model.encode_observations(obs)
+>       assert recorder.calls == [1] * rows
+E       assert [4] == [1, 1, 1, 1]
+E         
+E         At index 0 diff: 4 != 1
+E         Right contains 3 more items, first extra item: 1
+E         Use -v to get more diff
+
+tests/kaggriculture/test_model_compile.py:170: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_model_compile.py::test_trunk_guard_stays_in_front_of_the_compiled_callable
+1 failed in 0.34s

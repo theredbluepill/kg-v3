@@ -13,6 +13,25 @@ Codex rejected Task 3.4 (`ops/rebuild-2026-09-29/codex/verify-3.4-r1.md`). The f
 ## 2026-09-29 — Add Kaggriculture configs that follow Isaiah's scaling_6m recipe
 
 Rebuild Task 3.4 adds `configs/kaggriculture_2rank.yaml` (128 envs/rank, spm 8) and `configs/kaggriculture_4rank.yaml` (64/4), deliberately aligned to Isaiah per the [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|recipe Decision]] (its Limits now link them). They use his multi-GPU rule, so the global workload equals `scaling_6m`; the optimizer, PPO, teacher and compile settings are his. A local CPU config and a tiny CPU model preset are added for Task 3.5. The startup workload check (`python/owl/model/kaggriculture_workload.py`) sizes rollout, minibatch, teacher-chunk and evaluation rows against the model's trunk and head chunking and logs the headroom; at 2 ranks the 16,384-row teacher chunk runs in at most 3 trunk calls (full padding). Tests validate the observation, action, model, optimizer and PPO sections against their schemas; env keys and reward-shaping values get exact key and value assertions only. FullConfig loading and model construction are skipped until Task 3.1. `py-prepare`: 1,324 passed, 10 skipped. No GPU or training run. See the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]].
+## 2026-09-29 — Reconcile the compiled-GEMM Reference with Task 3.1's registration
+
+Codex verified `e1458d2...aadba6d` (APPROVE WITH EDITS, no functional defect; `ops/rebuild-2026-09-29/codex/verify-3.1-rest-r2.md`). Its one finding: the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] still said Kaggriculture was absent from `ModelConfig` and the factory and that `configure_model_compile` rejected its trunk target. The Reference now links the [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] for registration and the guarded trunk dispatch, and keeps the limits: CPU recording stand-ins only, `FullConfig` still rejects the model, and integrated workloads and real Inductor/CUDA compilation are unverified. Its description and index line match.
+
+## 2026-09-29 — Apply Codex's r1 wording edits to the Task 3.1 model-side Reference
+
+Codex verified `e1458d2...b1da613` (APPROVE WITH EDITS, no functional defect; `ops/rebuild-2026-09-29/codex/verify-3.1-rest-r1.md`). The [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] now:
+- says the factory keeps Isaiah's exhaustive `match`/`assert_never` but matches config classes where Isaiah matches `model_arch` strings;
+- classifies the 4 `py-prepare` skips as 3 hardware/backend and 1 unavailable native grammar binding, instead of "4 hardware skips";
+- cites the Codex report and its committed evidence.
+
+## 2026-09-29 — Register the Kaggriculture model and align its compile and critic with Isaiah
+
+Task 3.1 model side, on `kg/rebuild-trainer-model` (base `e1458d2`). The new [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] records three changes:
+- **Registration:** `KaggricultureTransformerConfig` joins `ModelConfig`, and `create_model` checks that the specs belong to the model's game. `FullConfig` rejects the model until a Kaggriculture env config exists.
+- **Compile:** `configure_model_compile` dispatches the trunk target through a nominal `TrunkCompileAPI` instead of rejecting every model except `StatelessTransformerV1`. Tests pin the compiled region to the blocks, behind `_run_trunk`'s guard.
+- **Critic:** the winner softmax uses Isaiah's masked form. The encoder and heads References now link here instead of listing these items as open.
+
+Checks: `just py-prepare` passes (1,324 passed, 4 skipped), and Isaiah's suites give 1,048 passed. Red runs are in `ops/rebuild-2026-09-29/trainer-model/`. Everything ran on CPU; real compile and CUDA are unverified.
 
 ## 2026-09-29 — Reconcile overflow notes after merging the heads and GEMM evidence
 
