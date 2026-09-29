@@ -1,0 +1,25 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_loader_rejects_tampered_shards_and_duplicate_episodes __________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-4/test_loader_rejects_tampered_s0')
+
+    def test_loader_rejects_tampered_shards_and_duplicate_episodes(tmp_path: Path) -> None:
+        root = _dataset_root(tmp_path)
+        shard = root / "train" / "2026-09-21-ep-a.npz"
+        original = shard.read_bytes()
+        shard.write_bytes(original[:-1] + bytes([original[-1] ^ 1]))
+        with pytest.raises(ValueError, match="SHA-256"):
+            load_bc_dataset(root)
+        shard.write_bytes(original)
+        manifest = json.loads((root / MANIFEST_NAME).read_text())
+        manifest["episodes"][1]["episode_id"] = "ep-a"
+        (root / MANIFEST_NAME).write_text(json.dumps(manifest))
+>       with pytest.raises(ValueError, match="more than once"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:235: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_loader_rejects_tampered_shards_and_duplicate_episodes
+1 failed, 17 deselected in 0.15s

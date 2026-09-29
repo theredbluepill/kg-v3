@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_held_out_selection_keeps_best_and_stops_after_patience __________
+
+    def test_held_out_selection_keeps_best_and_stops_after_patience() -> None:
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+        assert selection.observe(3.0, step=0)
+        assert selection.observe(2.0, step=2)
+>       assert not selection.observe(1.97, step=4)  # inside min_delta
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert not True
+E        +  where True = observe(1.97, step=4)
+E        +    where observe = HeldOutSelection(patience_evals=2, min_delta=0.05, best_nll=1.97, best_step=4, evals_since_best=0, last_nll=1.97, last_step=4).observe
+
+tests/kaggriculture/test_bc.py:397: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_held_out_selection_keeps_best_and_stops_after_patience
+1 failed, 17 deselected in 0.06s

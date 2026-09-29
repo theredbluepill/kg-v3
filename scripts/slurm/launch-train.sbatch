@@ -208,9 +208,10 @@ if [[ -n "$LOAD_MODEL_WEIGHTS" ]]; then
 fi
 map_load_model_weights_args
 if [[ "$LOAD_MODEL_WEIGHTS_MODE" != "model_only" && \
-    "$LOAD_MODEL_WEIGHTS_MODE" != "model_and_optimizer" ]]; then
+    "$LOAD_MODEL_WEIGHTS_MODE" != "model_and_optimizer" && \
+    "$LOAD_MODEL_WEIGHTS_MODE" != "model_fresh_critic_head" ]]; then
     echo \
-        "ORBIT_WARS_LOAD_MODEL_WEIGHTS_MODE must be model_only or model_and_optimizer." \
+        "ORBIT_WARS_LOAD_MODEL_WEIGHTS_MODE must be model_only, model_and_optimizer or model_fresh_critic_head." \
         >&2
     exit 1
 fi

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import math
+import os
 import re
 import sys
 import time
@@ -60,6 +62,7 @@ from owl.train.logging import (
     WandbRunFacts,
 )
 from owl.train.optimizer import CompositeOptimizer
+from owl.train.ppo import CHECKPOINT_KEYS, OPTIONAL_CHECKPOINT_KEYS
 
 _RUN_PPO_PATH = Path(__file__).parents[2] / "scripts" / "run_ppo.py"
 _RUN_PPO_SPEC = importlib.util.spec_from_file_location("run_ppo", _RUN_PPO_PATH)
@@ -1117,18 +1120,57 @@ def test_fixed_teacher_fresh_launch_leaves_last_best_unseeded(
     assert session_ref["last_best_model"] is None
 
 
+@pytest.mark.parametrize(
+    ("mode", "expect_load_optimizer", "expect_fresh_sentinel"),
+    [
+        ("model_only", False, False),
+        ("model_and_optimizer", True, False),
+        ("model_fresh_critic_head", False, True),
+    ],
+)
 def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    mode: str,
+    expect_load_optimizer: bool,
+    expect_fresh_sentinel: bool,
 ) -> None:
+    fresh_sentinel = frozenset({"critic_head.sentinel"})
+    fresh_mode_calls: list[tuple[torch.nn.Module, str]] = []
+    real_fresh_state_keys_for_mode = run_ppo._fresh_state_keys_for_mode
+
+    def fake_fresh_state_keys_for_mode(
+        model_arg: torch.nn.Module,
+        mode_arg: str,
+    ) -> frozenset[str]:
+        fresh_mode_calls.append((model_arg, mode_arg))
+        if mode_arg == "model_fresh_critic_head":
+            return fresh_sentinel
+        return real_fresh_state_keys_for_mode(model_arg, mode_arg)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(
+        run_ppo, "_fresh_state_keys_for_mode", fake_fresh_state_keys_for_mode
+    )
     cfg = _full_config()
     cfg = cfg.model_copy(
         update={"rl": cfg.rl.model_copy(update={"teacher_mode": "last_best"})}
     )
     config_path = tmp_path / "config.yaml"
     cfg.to_file(config_path)
+    # More than one 1 MiB read chunk of non-constant bytes, so the recorded digest
+    # proves the whole file was hashed.
+    checkpoint_content = os.urandom((1 << 20) + 17)
     checkpoint_path = tmp_path / "checkpoint.pt"
-    checkpoint_path.touch()
+    checkpoint_path.write_bytes(checkpoint_content)
+    # The documented launch passes a relative path; the record must resolve it.
+    # The ``..`` segment makes the resolved path differ from the merely absolute
+    # one, so recording ``Path.absolute()`` instead of ``Path.resolve()`` fails.
+    (tmp_path / "sub").mkdir()
+    monkeypatch.chdir(tmp_path)
+    relative_checkpoint_path = Path("sub/../checkpoint.pt")
+    assert relative_checkpoint_path.absolute() != checkpoint_path.resolve(), (
+        "the path oracle must distinguish absolute from resolved"
+    )
     output_dir = tmp_path / "runs"
     run_dir = output_dir / "run"
     student_model = torch.nn.Linear(1, 1)
@@ -1167,9 +1209,13 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
             path: Path,
             *,
             load_optimizer: bool = False,
+            fresh_state_keys: frozenset[str] = frozenset(),
         ) -> run_ppo.PPOCheckpointMetadata:
-            assert path == checkpoint_path
-            assert not load_optimizer
+            assert path == relative_checkpoint_path
+            assert load_optimizer is expect_load_optimizer
+            assert fresh_state_keys == (
+                fresh_sentinel if expect_fresh_sentinel else frozenset()
+            )
             loaded_model = self.model
             assert isinstance(loaded_model, torch.nn.Linear)
             loaded_model.weight.data.fill_(7.0)
@@ -1211,7 +1257,9 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
             str(config_path),
             str(output_dir),
             "--load-model-weights",
-            str(checkpoint_path),
+            str(relative_checkpoint_path),
+            "--load-model-weights-mode",
+            mode,
             "--log-mode",
             "debug",
         ],
@@ -1254,6 +1302,14 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
     assert isinstance(last_best_model, torch.nn.Linear)
     assert last_best_model is teacher_model
     assert last_best_model.weight.item() == pytest.approx(7.0)
+    assert fresh_mode_calls == [(student_model, mode)]
+    warm_start = json.loads((run_dir / run_ppo.WARM_START_RECORD).read_text())
+    assert warm_start == {
+        "checkpoint_path": str(checkpoint_path.resolve()),
+        "checkpoint_sha256": hashlib.sha256(checkpoint_content).hexdigest(),
+        "load_model_weights_mode": mode,
+    }
+    assert session_ref["warm_start"] == warm_start
 
 
 def test_resolve_resume_launch_prefers_final_checkpoint(tmp_path: Path) -> None:
@@ -2330,7 +2386,7 @@ def test_logger_session_marks_failed_runs(error_type: type[BaseException]) -> No
     assert closed == [1, 0]
 
 
-def test_run_training_session_sets_trainable_parameter_summary(
+def test_run_training_session_sets_launch_summaries(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     cfg = _full_config()
@@ -2355,11 +2411,19 @@ def test_run_training_session_sets_trainable_parameter_summary(
         start_env_steps=16,
         trainable_parameters=123,
         compiled_model_modules=4,
+        warm_start={
+            "checkpoint_path": "/bc/best.pt",
+            "checkpoint_sha256": "ab" * 32,
+            "load_model_weights_mode": "model_fresh_critic_head",
+        },
     )
 
     assert logger.summary == {
         "compiled_model_modules": 4,
         "trainable_parameters": 123,
+        "warm_start/checkpoint_path": "/bc/best.pt",
+        "warm_start/checkpoint_sha256": "ab" * 32,
+        "warm_start/load_model_weights_mode": "model_fresh_critic_head",
     }
     assert logger.closed
     assert logger.close_exit_codes == [0]
@@ -2520,10 +2584,45 @@ def test_ppo_trainer_write_checkpoint_includes_training_state(tmp_path: Path) ->
         "target_kl_exceeded_total",
         "wandb_run_id",
     }
+    assert set(checkpoint) == CHECKPOINT_KEYS
     metadata = run_ppo._checkpoint_metadata(checkpoint, path=path)
     assert metadata.env_steps == 512
     assert metadata.total_active_entities == 29
     assert not (tmp_path / ".checkpoint.pt.tmp").exists()
+
+
+def test_run_ppo_checkpoint_keys_derive_from_the_trainer_key_set(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "checkpoint.pt"
+    checkpoint: dict[str, object] = {
+        "model": {},
+        "optimizer": {},
+        "lr_scheduler": None,
+        "env_steps": 1,
+        "optimizer_steps": 1,
+        "player_step_total": 1,
+        "total_games_played": 1,
+        "total_active_entities": 1,
+        "target_kl_exceeded_total": 0,
+        "wandb_run_id": None,
+    }
+    assert set(checkpoint) == CHECKPOINT_KEYS
+    assert OPTIONAL_CHECKPOINT_KEYS < CHECKPOINT_KEYS
+    run_ppo._checkpoint_metadata(checkpoint, path=path)
+    for optional in OPTIONAL_CHECKPOINT_KEYS:
+        run_ppo._checkpoint_metadata(
+            {key: value for key, value in checkpoint.items() if key != optional},
+            path=path,
+        )
+    for required in CHECKPOINT_KEYS - OPTIONAL_CHECKPOINT_KEYS:
+        with pytest.raises(ValueError, match="checkpoint keys must include"):
+            run_ppo._checkpoint_metadata(
+                {key: value for key, value in checkpoint.items() if key != required},
+                path=path,
+            )
+    with pytest.raises(ValueError, match="checkpoint keys must include"):
+        run_ppo._checkpoint_metadata({**checkpoint, "hidden_state": 0}, path=path)
 
 
 def test_ppo_trainer_write_checkpoint_can_save_explicit_model(

@@ -1,0 +1,51 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_script_runs_fresh_and_resumes_on_cpu ___________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-19/test_script_runs_fresh_and_res0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1103f7470>
+
+    def test_script_runs_fresh_and_resumes_on_cpu(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2).to_file(config_path)
+        out = tmp_path / "runs"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "train_bc.py",
+                str(config_path),
+                "--data",
+                str(data),
+                "--output-dir",
+                str(out),
+                "--log-mode",
+                "debug",
+                "--source-commit",
+                "test-commit",
+            ],
+        )
+        train_bc_script.main()
+        (run_dir,) = out.iterdir()
+>       assert json.loads((run_dir / "launch.json").read_text())["source_commit"] == (
+            "test-commit"
+        )
+E       AssertionError: assert 'incorrect' == 'test-commit'
+E         
+E         - test-commit
+E         + incorrect
+
+tests/kaggriculture/test_bc.py:579: AssertionError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 0.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_best': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.008184332982636988, 'time/elapsed_seconds': 0.03370633302256465}
+{'bc/step': 2.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_best': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.008237916976213455, 'time/elapsed_seconds': 0.07588366599520668, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 266.28536343779456}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-19/test_script_runs_fresh_and_res0/runs/bc-20260929-195224", "stop_reason": "max_steps", "steps": 2, "best_step": 2, "best_validation_nll": 4.253199974695842, "final_validation_nll": 4.253199974695842}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_script_runs_fresh_and_resumes_on_cpu
+1 failed, 17 deselected in 0.24s

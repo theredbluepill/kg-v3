@@ -1,0 +1,22 @@
+Mutation re-run after the Claude verification r3 fixes (2026-09-30, Mac CPU).
+Report: ops/rebuild-2026-09-29/codex/claude-verify-bchandoff-r3.md (main checkout;
+a Claude stand-in for Codex, not a Codex verdict).
+r3 P3-1: after monkeypatch.chdir(tmp_path) the relative path "checkpoint.pt"
+had equal absolute and resolved forms, so N1 (.resolve() -> .absolute())
+passed 196/196. The fake-trainer main test now passes the checkpoint as
+"sub/../checkpoint.pt" (tmp_path/sub exists), asserts that its absolute form
+differs from checkpoint_path.resolve(), and still asserts the resolved path
+and the SHA-256 of (1 << 20) + 17 random bytes in warm_start.json.
+Each mutation was applied to scripts/run_ppo.py alone (sed on the line
+"path = launch.load_model_weights_path.resolve()"), then
+  OMP_NUM_THREADS=2 .venv/bin/python -m pytest -q \
+    tests/scripts/test_run_ppo.py tests/kaggriculture/test_bc.py tests/kaggriculture/test_teacher.py
+ran, and the file was restored byte-for-byte (cmp) and git diff --quiet checked.
+Unmutated baseline for these three files: 196 passed, 6 skipped (26.4 s and
+26.7 s; peak RSS 1.26 GB from /usr/bin/time -l, over the 1 GB tiny-check
+budget).
+
+N1   warm_start.json records Path.absolute() instead of Path.resolve()
+     CAUGHT: 3 failed, 193 passed, 6 skipped (r3: survived, 196 passed)
+R4   warm_start.json records the unresolved CLI path (.resolve() dropped)
+     CAUGHT: 3 failed, 193 passed, 6 skipped (unchanged from r2 fix)

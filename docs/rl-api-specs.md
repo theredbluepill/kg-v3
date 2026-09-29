@@ -1017,7 +1017,7 @@ Kaggriculture rollouts call `owl.game.create_env` with
 `base_seed=_kaggriculture_rollout_base_seed(cfg.env.seed, start_env_steps)`
 (`cfg.env.seed + 4 * start_env_steps`), the distributed rank and world size, and
 `transfer_device=distributed.device`. A fresh launch starts at `cfg.env.seed`. A
-resume, and a `--load-model-weights` fresh launch in either mode (which keeps
+resume, and a `--load-model-weights` fresh launch in any mode (which keeps
 the checkpoint's `env_steps`), read that global `env_steps` before allocation
 with a memory-mapped `torch.load`, so the stream starts past every seed of the
 launches the checkpoint trained on under the same `cfg.env.seed`. If the

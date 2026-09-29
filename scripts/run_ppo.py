@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import itertools
+import json
 import os
 import random
 import re
@@ -44,7 +46,10 @@ from owl.model.compile_gemm import (
     gemm_backend_claim,
     installed_compile_stack,
 )
-from owl.model.kaggriculture import KaggricultureTransformerConfig
+from owl.model.kaggriculture import (
+    KaggricultureTransformer,
+    KaggricultureTransformerConfig,
+)
 from owl.model.kaggriculture_workload import (
     WorkloadHeadroom,
     check_workload_headroom,
@@ -95,7 +100,14 @@ from owl.train.optimizer import (
     create_lr_scheduler,
     create_optimizer,
 )
-from owl.train.ppo import PPOCheckpointMetadata, _mean_env_metrics, _obs_to_device
+from owl.train.ppo import (
+    CHECKPOINT_KEYS,
+    OPTIONAL_CHECKPOINT_KEYS,
+    PPOCheckpointMetadata,
+    _mean_env_metrics,
+    _obs_to_device,
+    reject_unknown_checkpoint_keys,
+)
 from owl.train.utils import (
     DTypeConfig,
     autocast_context,
@@ -117,15 +129,20 @@ _EVAL_SEED_BITS = 61
 _EVAL_SEED_FLOOR = 1 << 62
 CHECKPOINT_FINAL = "checkpoint_final.pt"
 CHECKPOINT_LAST_BEST = "checkpoint_last_best.pt"
+# Fresh launches from --load-model-weights record their source here (main rank).
+WARM_START_RECORD = "warm_start.json"
 _JOB_TYPE = "ppo"
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _NUMBERED_CHECKPOINT_RE = re.compile(
     r"^checkpoint_(\d{2})_(\d{3})_(\d{3})_(\d{3})\.pt$"
 )
-LoadModelWeightsMode = Literal["model_only", "model_and_optimizer"]
+LoadModelWeightsMode = Literal[
+    "model_only", "model_and_optimizer", "model_fresh_critic_head"
+]
 LOAD_MODEL_WEIGHTS_MODES: tuple[LoadModelWeightsMode, ...] = (
     "model_only",
     "model_and_optimizer",
+    "model_fresh_critic_head",
 )
 
 
@@ -221,6 +238,7 @@ def main() -> None:
                 "set rl.eval_replay_games=0"
             )
 
+        warm_start: dict[str, str] | None = None
         if isinstance(launch, FreshLaunch):
             run_dir = (
                 _create_run_dir(launch.output_dir)
@@ -231,6 +249,11 @@ def main() -> None:
                 if run_dir is None:
                     raise RuntimeError("main process failed to create run dir")
                 cfg.to_file(run_dir / "config.yaml")
+                warm_start = _warm_start_record(launch)
+                if warm_start is not None:
+                    (run_dir / WARM_START_RECORD).write_text(
+                        json.dumps(warm_start, indent=2, sort_keys=True) + "\n"
+                    )
             run_dir = broadcast_object(run_dir, distributed)
         else:
             run_dir = launch.run_dir
@@ -348,6 +371,10 @@ def main() -> None:
                 load_optimizer=(
                     launch.load_model_weights_mode == "model_and_optimizer"
                 ),
+                fresh_state_keys=_fresh_state_keys_for_mode(
+                    unwrap_model(model),
+                    launch.load_model_weights_mode,
+                ),
             )
             start_env_steps = checkpoint_metadata.env_steps
             if isinstance(env_config, KaggricultureEnvConfig):
@@ -392,6 +419,7 @@ def main() -> None:
             compiled_model_modules=compiled_model_modules,
             compile_claim=compile_claim,
             lora_application=lora_application,
+            warm_start=warm_start,
         )
 
 
@@ -404,6 +432,22 @@ def _check_launch_telemetry(
     return check_telemetry(
         args.log_mode, args.wandb_mode, environ=os.environ, home=Path.home()
     )
+
+
+def _warm_start_record(launch: FreshLaunch) -> dict[str, str] | None:
+    """Custody of a ``--load-model-weights`` source: resolved path, SHA-256, mode."""
+    if launch.load_model_weights_path is None:
+        return None
+    path = launch.load_model_weights_path.resolve()
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return {
+        "checkpoint_path": str(path),
+        "checkpoint_sha256": digest.hexdigest(),
+        "load_model_weights_mode": launch.load_model_weights_mode,
+    }
 
 
 @contextmanager
@@ -435,6 +479,7 @@ def _run_training_session(
     compiled_model_modules: int = 0,
     compile_claim: GemmBackendClaim | None = None,
     lora_application: LoRAApplication | None = None,
+    warm_start: dict[str, str] | None = None,
 ) -> None:
     if not distributed.is_main_process:
         _run_training_session_worker(
@@ -477,6 +522,9 @@ def _run_training_session(
             )
         if trainable_parameters is not None:
             logger.set_summary("trainable_parameters", trainable_parameters)
+        if warm_start is not None:
+            for key, value in warm_start.items():
+                logger.set_summary(f"warm_start/{key}", value)
         if compiled_model_modules > 0:
             logger.set_summary("compiled_model_modules", compiled_model_modules)
         if compile_claim is not None:
@@ -747,7 +795,10 @@ def _parse_args() -> argparse.Namespace:
         help=(
             "State to load with --load-model-weights. model_and_optimizer also "
             "loads optimizer moment/momentum state while keeping the fresh "
-            "scheduler and fresh optimizer hyperparameters."
+            "scheduler and fresh optimizer hyperparameters. "
+            "model_fresh_critic_head loads every model tensor except the "
+            "Kaggriculture critic head, which keeps its fresh initialization "
+            "(for a BC checkpoint whose critic learned a different target)."
         ),
     )
     parser.add_argument(
@@ -1282,10 +1333,29 @@ def _load_model_weights(
         raise ValueError(f"checkpoint must be a dictionary: {path}")
     if "model" not in checkpoint:
         raise ValueError(f"checkpoint is missing model weights: {path}")
+    try:
+        reject_unknown_checkpoint_keys(checkpoint)
+    except ValueError as error:
+        raise ValueError(f"{error}: {path}") from error
     # Tolerate loading a non-LoRA base checkpoint into a LoRA-wrapped model: base
     # tensors are loaded and the adapters keep their config-initialized values.
     load_model_state_dict_allowing_lora(model, checkpoint["model"])
     model.eval()
+
+
+def _fresh_state_keys_for_mode(
+    model: BaseModelAPI,
+    mode: LoadModelWeightsMode,
+) -> frozenset[str]:
+    """Model state a ``--load-model-weights`` mode keeps at its fresh values."""
+    if mode != "model_fresh_critic_head":
+        return frozenset()
+    if not isinstance(model, KaggricultureTransformer):
+        raise ValueError(
+            "--load-model-weights-mode model_fresh_critic_head supports "
+            f"KaggricultureTransformer only, got {type(model).__name__}"
+        )
+    return frozenset(f"critic_head.{key}" for key in model.critic_head.state_dict())
 
 
 def _with_runtime_gpus(cfg: FullConfig, world_size: int) -> FullConfig:
@@ -1467,18 +1537,8 @@ def _checkpoint_metadata(
 ) -> PPOCheckpointMetadata:
     if not isinstance(checkpoint, dict):
         raise ValueError(f"checkpoint must be a dictionary: {path}")
-    required_keys = {
-        "model",
-        "optimizer",
-        "lr_scheduler",
-        "env_steps",
-        "optimizer_steps",
-        "player_step_total",
-        "total_games_played",
-        "target_kl_exceeded_total",
-        "wandb_run_id",
-    }
-    optional_keys = {"total_active_entities"}
+    required_keys = CHECKPOINT_KEYS - OPTIONAL_CHECKPOINT_KEYS
+    optional_keys = OPTIONAL_CHECKPOINT_KEYS
     checkpoint_keys = set(checkpoint)
     missing_keys = required_keys - checkpoint_keys
     unexpected_keys = checkpoint_keys - required_keys - optional_keys

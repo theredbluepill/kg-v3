@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_train_sharding_is_deterministic_per_rank_and_epoch ____________
+
+    def test_train_sharding_is_deterministic_per_rank_and_epoch() -> None:
+        sharding = TrainSharding(
+            seed=5, rows_per_rank=3, gradient_accumulation_steps=2, rank_rows=(25, 26)
+        )
+        assert (sharding.world_size, sharding.rows_per_step) == (2, 12)
+        assert sharding.steps_per_epoch == 4
+        for rank in range(2):
+            epoch = np.concatenate(
+                [
+                    sharding.rows(step=step, micro=micro, rank=rank)
+                    for step in range(4)
+                    for micro in range(2)
+                ]
+            )
+            assert epoch.size == 24 == np.unique(epoch).size
+            assert int(epoch.max()) < sharding.rank_rows[rank]
+        assert not np.array_equal(
+            sharding.rows(step=4, micro=0, rank=0), sharding.rows(step=0, micro=0, rank=0)
+        )
+        assert not np.array_equal(
+            sharding.rows(step=0, micro=0, rank=0), sharding.rows(step=0, micro=0, rank=1)
+        )
+>       with pytest.raises(ValueError, match="smallest rank partition"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:384: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_train_sharding_is_deterministic_per_rank_and_epoch
+1 failed, 17 deselected in 0.06s

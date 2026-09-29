@@ -278,7 +278,10 @@ ORBIT_WARS_LOAD_MODEL_WEIGHTS=/path/to/checkpoints/checkpoint_last_best.pt \
 Set `ORBIT_WARS_LOAD_MODEL_WEIGHTS_MODE=model_and_optimizer` to also reload the
 checkpoint optimizer moment/momentum state. Scheduler state and optimizer-step
 counters remain fresh, and optimizer hyperparameters such as LR and weight decay
-come from the fresh config rather than the checkpoint param groups.
+come from the fresh config rather than the checkpoint param groups. Set it to
+`model_fresh_critic_head` to load every model tensor except the Kaggriculture
+critic head, which keeps its fresh initialization; the optimizer starts fresh as
+in `model_only`.
 
 You can also pass `--load-model-weights` after the batch script. Use a container
 path under `/runs`, a host path under `ORBIT_WARS_OUTPUT_DIR`, or another

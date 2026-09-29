@@ -1,0 +1,26 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________________ test_bc_loss_reaches_every_parameter _____________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-11/test_bc_loss_reaches_every_par0')
+
+    def test_bc_loss_reaches_every_parameter(tmp_path: Path) -> None:
+        """The critic is trained with the policy; DDP needs no unused-parameter scan."""
+        dataset = load_bc_dataset(_dataset_root(tmp_path))
+        batch = dataset.train.gather(np.array([0, 1]))
+        model = _tiny(seed=3)
+        bc_loss(
+            bc_terms(model.evaluate_actions(batch.obs, batch.actions), batch),
+            value_coef=1.0,
+        ).backward()
+        missing = [name for name, p in model.named_parameters() if p.grad is None]
+>       assert missing == []
+E       AssertionError: assert ['critic_head...ead.out.bias'] == []
+E         
+E         Left contains 4 more items, first extra item: 'critic_head.up.weight'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:356: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_bc_loss_reaches_every_parameter
+1 failed, 17 deselected in 0.16s

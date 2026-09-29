@@ -1,0 +1,74 @@
+env:
+  action_spec:
+    action_spec: kaggriculture
+    hire_limit: 241
+  n_envs: 256
+  native_threads: 2
+  obs_spec:
+    obs_spec: kaggriculture
+    schema_version: 3
+  pin_memory: true
+  reward_mode: win_loss
+  reward_shaping:
+    econ_cap: 0.25
+    econ_drought_weight: 1.0
+    econ_ineffective_cap: 0.1
+    econ_ineffective_weight: 0.0
+    econ_shaping: 0.2
+    econ_starvation_weight: 4.0
+model:
+  activation: gelu
+  depth: 8
+  embed_dim: 256
+  force_flash_attn: true
+  mlp_ratio: 2.0
+  model_arch: kaggriculture_transformer
+  n_heads: 8
+  n_scratch_tokens: 4
+optimizer:
+  adamw_eps: 1.0e-05
+  adamw_lr: 0.0001
+  lr_schedule:
+    decay_steps: 400000
+    lr_min_ratio: 0.01
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 1000
+  muon_lr: 0.002
+  muon_momentum: 0.95
+  muon_weight_decay: 0.01
+  optimizer: muon
+  weight_decay: 0.0
+rl:
+  checkpoint_freq: 20000000
+  clip_coef: 0.2
+  compile_mode: default
+  dtype: bfloat16
+  ent_coef: 1.0e-06
+  eval_replay_games: 8
+  first_minibatch_logratio_limit: 0.05
+  gae_lambda: 0.9
+  gamma: 1.0
+  gradient_accumulation_steps: 1
+  horizon: 64
+  max_grad_norm: 10.0
+  model_compile: none
+  model_compile_mode: max-autotune-no-cudagraphs
+  normalize_advantages: true
+  ppo_clip_mode: per_player
+  ppo_epochs: 1
+  segments_per_minibatch: 16
+  target_kl: null
+  teacher_init: null
+  teacher_kl_coef: 0.005
+  teacher_mode: last_best
+  teacher_schedule:
+    mode: none
+  teacher_segments_per_minibatch: 128
+  teacher_value_coef: 0.005
+  truncation_prob: 0.0
+  truncation_step: null
+  value_loss: mse
+  vf_clip_coef: null
+  vf_coef: 2.0
+runtime:
+  n_runtime_gpus: 1

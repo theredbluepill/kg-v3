@@ -1,0 +1,296 @@
+..................FF...F.                                                [100%]
+=================================== FAILURES ===================================
+_______________ test_resume_rejects_changed_trajectory_settings ________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-207/test_resume_rejects_changed_tr0')
+
+    def test_resume_rejects_changed_trajectory_settings(tmp_path: Path) -> None:
+        """Only max_steps may change on resume; the rest set the continued trajectory."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(max_steps=2)
+        _run(tmp_path / "run", data, config)
+        state = load_bc_state(tmp_path / "run" / BC_STATE)
+        dataset = load_bc_dataset(data)
+        ppo_config = _ppo_config()
+    
+        def check(bc: BCConfig, ppo: FullConfig = ppo_config) -> None:
+            bc_module.check_resume_compatible(
+                state, dataset=dataset, world_size=1, config=bc, ppo_config=ppo
+            )
+    
+>       check(config.model_copy(update={"max_steps": 40}))
+
+tests/kaggriculture/test_bc.py:641: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:637: in check
+    bc_module.check_resume_compatible(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+state = BCResumeState(step=2, selection=HeldOutSelection(patience_evals=3, min_delta=0.0, best_nll=4.253199974695842, best_ste... 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97]}]}, lr_scheduler=None)
+
+    def check_resume_compatible(
+        state: BCResumeState,
+        *,
+        dataset: BCDataset,
+        world_size: int,
+        config: BCConfig,
+        ppo_config: FullConfig,
+    ) -> None:
+        """A resume continues the saved trajectory: same data, ranks and settings.
+    
+        Only ``max_steps`` may differ. A changed seed, batch, accumulation, optimizer
+        or schedule, selection rule or PPO config would silently change the rows or
+        updates after the saved step, so it needs a fresh run instead.
+        """
+        if state.dataset_manifest_sha256 != dataset.manifest_sha256:
+            raise ValueError(
+                "resume dataset manifest differs from the run's: "
+                f"{dataset.manifest_sha256} != {state.dataset_manifest_sha256}"
+            )
+        if state.world_size != world_size:
+            raise ValueError(
+                f"resume needs the run's world size {state.world_size} for the same "
+                f"data order, got {world_size}"
+            )
+        current = continuation_settings(config, ppo_config)
+        changed = [
+            f"{section}.{key}"
+            for section in sorted(set(state.continuation) | set(current))
+            for key in sorted(
+                set(state.continuation.get(section, {})) | set(current.get(section, {}))
+            )
+            if state.continuation.get(section, {}).get(key)
+            != current.get(section, {}).get(key)
+        ]
+        if changed:
+>           raise ValueError(
+                "resume settings differ from the saved trajectory's (only max_steps may "
+                f"change; start a fresh run instead): {', '.join(changed)}"
+            )
+E           ValueError: resume settings differ from the saved trajectory's (only max_steps may change; start a fresh run instead): bc.max_steps
+
+python/owl/train/bc.py:577: ValueError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.019510207988787442, 'time/elapsed_seconds': 0.09289900003932416}
+{'bc/step': 2.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.020187625021208078, 'time/elapsed_seconds': 0.17641520901815966, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 137.54251707302777}
+_________ test_script_resume_records_a_new_attempt_with_its_own_source _________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-207/test_script_resume_records_a_n0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11314f860>
+
+    def test_script_resume_records_a_new_attempt_with_its_own_source(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2, eval_interval_steps=1).to_file(config_path)
+        out = tmp_path / "runs"
+        _script_argv(
+            monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+        )
+        train_bc_script.main()
+        (run_dir,) = out.iterdir()
+        saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+        saved.model_copy(update={"max_steps": 4}).to_file(run_dir / "bc_config.yaml")
+        parent_sha = bc_module.file_sha256(run_dir / BC_STATE)
+        monkeypatch.setattr(train_bc_script, "_git_head", lambda: "b")
+        _script_argv(monkeypatch, run_dir, data)
+>       train_bc_script.main()
+
+tests/kaggriculture/test_bc.py:693: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/train_bc.py:124: in main
+    check_resume_compatible(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+state = BCResumeState(step=2, selection=HeldOutSelection(patience_evals=3, min_delta=0.0, best_nll=4.253199974695842, best_ste... 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97]}]}, lr_scheduler=None)
+
+    def check_resume_compatible(
+        state: BCResumeState,
+        *,
+        dataset: BCDataset,
+        world_size: int,
+        config: BCConfig,
+        ppo_config: FullConfig,
+    ) -> None:
+        """A resume continues the saved trajectory: same data, ranks and settings.
+    
+        Only ``max_steps`` may differ. A changed seed, batch, accumulation, optimizer
+        or schedule, selection rule or PPO config would silently change the rows or
+        updates after the saved step, so it needs a fresh run instead.
+        """
+        if state.dataset_manifest_sha256 != dataset.manifest_sha256:
+            raise ValueError(
+                "resume dataset manifest differs from the run's: "
+                f"{dataset.manifest_sha256} != {state.dataset_manifest_sha256}"
+            )
+        if state.world_size != world_size:
+            raise ValueError(
+                f"resume needs the run's world size {state.world_size} for the same "
+                f"data order, got {world_size}"
+            )
+        current = continuation_settings(config, ppo_config)
+        changed = [
+            f"{section}.{key}"
+            for section in sorted(set(state.continuation) | set(current))
+            for key in sorted(
+                set(state.continuation.get(section, {})) | set(current.get(section, {}))
+            )
+            if state.continuation.get(section, {}).get(key)
+            != current.get(section, {}).get(key)
+        ]
+        if changed:
+>           raise ValueError(
+                "resume settings differ from the saved trajectory's (only max_steps may "
+                f"change; start a fresh run instead): {', '.join(changed)}"
+            )
+E           ValueError: resume settings differ from the saved trajectory's (only max_steps may change; start a fresh run instead): bc.max_steps
+
+python/owl/train/bc.py:577: ValueError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 0.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.014291583967860788, 'time/elapsed_seconds': 0.06629158405121416}
+{'bc/step': 1.0, 'bc/validation_nll': 4.261711597442627, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.261711597442627, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.01752466696780175, 'time/elapsed_seconds': 0.11071858403738588, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 184.87492087605207}
+{'bc/step': 2.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.016583791992161423, 'time/elapsed_seconds': 0.17053058400051668, 'bc/train_nll': 3.9168338775634766, 'bc/train_value_ce': 0.7537779808044434, 'bc/grad_norm': 2.7767531871795654, 'perf/learner_seat_rows_per_second': 161.63139729040773}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-207/test_script_resume_records_a_n0/runs/bc-20260929-201518", "stop_reason": "max_steps", "steps": 2, "best_step": 2, "best_validation_nll": 4.253199974695842, "final_validation_nll": 4.253199974695842}
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+----------------------------- Captured stderr call -----------------------------
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/scripts/train_bc.py", line 124, in main
+    check_resume_compatible(
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 577, in check_resume_compatible
+    raise ValueError(
+ValueError: resume settings differ from the saved trajectory's (only max_steps may change; start a fresh run instead): bc.max_steps
+__________________ test_script_runs_fresh_and_resumes_on_cpu ___________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-207/test_script_runs_fresh_and_res0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113878350>
+
+    def test_script_runs_fresh_and_resumes_on_cpu(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2).to_file(config_path)
+        out = tmp_path / "runs"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "train_bc.py",
+                str(config_path),
+                "--data",
+                str(data),
+                "--output-dir",
+                str(out),
+                "--log-mode",
+                "debug",
+                "--source-commit",
+                "test-commit",
+            ],
+        )
+        train_bc_script.main()
+        (run_dir,) = out.iterdir()
+        (attempt,) = (run_dir / train_bc_script.ATTEMPTS).read_text().splitlines()
+        assert json.loads(attempt)["source_commit"] == "test-commit"
+        assert load_bc_state(run_dir / BC_STATE).step == 2
+        saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+        assert saved.ppo_config == Path(PPO_CONFIG_NAME)
+        # Raise the step budget in place, then resume from the run directory.
+        saved.model_copy(update={"max_steps": 4}).to_file(run_dir / "bc_config.yaml")
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "train_bc.py",
+                str(run_dir),
+                "--data",
+                str(data),
+                "--log-mode",
+                "debug",
+                "--source-commit",
+                "test-commit",
+            ],
+        )
+>       train_bc_script.main()
+
+tests/kaggriculture/test_bc.py:840: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/train_bc.py:124: in main
+    check_resume_compatible(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+state = BCResumeState(step=2, selection=HeldOutSelection(patience_evals=3, min_delta=0.0, best_nll=4.253199974695842, best_ste... 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97]}]}, lr_scheduler=None)
+
+    def check_resume_compatible(
+        state: BCResumeState,
+        *,
+        dataset: BCDataset,
+        world_size: int,
+        config: BCConfig,
+        ppo_config: FullConfig,
+    ) -> None:
+        """A resume continues the saved trajectory: same data, ranks and settings.
+    
+        Only ``max_steps`` may differ. A changed seed, batch, accumulation, optimizer
+        or schedule, selection rule or PPO config would silently change the rows or
+        updates after the saved step, so it needs a fresh run instead.
+        """
+        if state.dataset_manifest_sha256 != dataset.manifest_sha256:
+            raise ValueError(
+                "resume dataset manifest differs from the run's: "
+                f"{dataset.manifest_sha256} != {state.dataset_manifest_sha256}"
+            )
+        if state.world_size != world_size:
+            raise ValueError(
+                f"resume needs the run's world size {state.world_size} for the same "
+                f"data order, got {world_size}"
+            )
+        current = continuation_settings(config, ppo_config)
+        changed = [
+            f"{section}.{key}"
+            for section in sorted(set(state.continuation) | set(current))
+            for key in sorted(
+                set(state.continuation.get(section, {})) | set(current.get(section, {}))
+            )
+            if state.continuation.get(section, {}).get(key)
+            != current.get(section, {}).get(key)
+        ]
+        if changed:
+>           raise ValueError(
+                "resume settings differ from the saved trajectory's (only max_steps may "
+                f"change; start a fresh run instead): {', '.join(changed)}"
+            )
+E           ValueError: resume settings differ from the saved trajectory's (only max_steps may change; start a fresh run instead): bc.max_steps
+
+python/owl/train/bc.py:577: ValueError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 0.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.01646587497089058, 'time/elapsed_seconds': 0.070190750004258}
+{'bc/step': 2.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.019918583042453974, 'time/elapsed_seconds': 0.14604195801075548, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 158.3322328256947}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-207/test_script_runs_fresh_and_res0/runs/bc-20260929-201519", "stop_reason": "max_steps", "steps": 2, "best_step": 2, "best_validation_nll": 4.253199974695842, "final_validation_nll": 4.253199974695842}
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+----------------------------- Captured stderr call -----------------------------
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/scripts/train_bc.py", line 124, in main
+    check_resume_compatible(
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 577, in check_resume_compatible
+    raise ValueError(
+ValueError: resume settings differ from the saved trajectory's (only max_steps may change; start a fresh run instead): bc.max_steps
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_resume_rejects_changed_trajectory_settings
+FAILED tests/kaggriculture/test_bc.py::test_script_resume_records_a_new_attempt_with_its_own_source
+FAILED tests/kaggriculture/test_bc.py::test_script_runs_fresh_and_resumes_on_cpu
+3 failed, 22 passed in 7.15s
