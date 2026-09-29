@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Build the Kaggriculture encoder on Isaiah's layers (Task 2.1)
+
+The new [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] covers the contract types, the PEP 696 generic model base, and an encoder built entirely from Isaiah's classes, with one-hot stems, per-role tokens, a typed trunk config, his initialization, and the compiled-GEMM chunking guard. `just py-prepare` gives 762 passed. The work sits on branch `kg/rebuild-model`, pending Codex verification before merge.
+
 ## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
 
 Owner decisions:

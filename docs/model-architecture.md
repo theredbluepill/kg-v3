@@ -727,3 +727,13 @@ truncated logistic mixture distributions over integer fleet sizes from
 mixture identities, so component permutations between teacher and student are
 not penalized. Per-action KL portions are logged as components such as
 `launch`, `target`, `angle`, `fleet_size_logistic`, and `fleet_size_full`.
+
+## Kaggriculture Transformer
+
+`KaggricultureTransformer` (`python/owl/model/kaggriculture.py`, config `configs/model/kaggriculture.yaml`) plays Kaggriculture on this model's layer topology. It reuses `ObservationInputStem`, `TransformerBlock`, the flash-packing path, the compile hook and the initialization helpers unchanged. The tensor contract is `docs/kaggriculture-contract.md`; the per-point conformance table is `docs/kaggriculture-model.md`.
+
+- **Input encoding:** one stem per entity group, fed float channels concatenated with one-hot categorical fields: tiles (133 inputs), actors (371), shops (16, type plus slot), market (11), player features (44) and globals (15). There are no embedding tables. Player tokens are `player_tokens + player_feature_proj(player_features)` (self, opponent), and the global token is `global_proj(global_features)`.
+- **Sequence** per seat row (`B = 2 × envs`, each seat encoded independently), `705 + n_scratch_tokens` tokens: own actors (241), rival actors (241), tiles (200), shops (8), market (9), players (2), global (1), board scratch (n), actor plan (1), critic value (2). Masks: `actor_mask`, `shop_mask`, `still_playing` on player/plan/critic tokens, and all-true for the rest.
+- **Trunk:** `TransformerBlock × depth` and `final_norm`. The preset sits on the 6m ladder (width 256, 8 heads, GELU, `mlp_ratio` 2.0), with depth 8 for the 6–10M budget; SwiGLU is rejected.
+- **Compiled-GEMM guard:** Torch 2.9 Inductor GEMM templates overflow 32-bit offsets at rows × inner dim ≥ 2^31 (cookbook `references/compiled-gemm-template-overflows-above-2-21-rows`). The padded path chunks complete batch rows below the limit; the packed path raises instead of switching attention paths.
+- **Muon:** stem inputs and token parameters are excluded, as in `StatelessTransformerV1`; stem outputs and trunk matrices use Muon. The critic and action heads arrive with rebuild Tasks 2.2 and 2.3.
