@@ -218,6 +218,10 @@ def main() -> None:
     ap.add_argument("--rows", default="4,8" if C.DRYRUN else "256,1024")
     ap.add_argument("--hidden", action="store_true")
     ap.add_argument("--gain-swap", action="store_true")
+    # Amendment 1: attempt 1's fp32 compiled training graph failed in Inductor's
+    # coalesce tiling analysis (sympy is_constant on a symbolic index); this
+    # turns that analysis off for the fp32 compiled stages only.
+    ap.add_argument("--no-coalesce-tiling", action="store_true")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     fh = open(args.out, "a")
@@ -239,6 +243,10 @@ def main() -> None:
     model = build_model(dev, args.precision)
     trunk_calls = [0]
     if args.trunk == "compiled":
+        if args.no_coalesce_tiling:
+            import torch._inductor.config as inductor_config
+
+            inductor_config.triton.coalesce_tiling_analysis = False
         C.compile_trunk(model)
         compiled = model._compiled_transformer_trunk
 
@@ -253,7 +261,10 @@ def main() -> None:
                                model, model.critic_head.out),
                            "precision": args.precision, "trunk": args.trunk,
                            "rows": rows, "force_flash_attn": model.config.force_flash_attn,
-                           "tf32_matmul": torch.backends.cuda.matmul.allow_tf32}
+                           "tf32_matmul": torch.backends.cuda.matmul.allow_tf32,
+                           "inductor_coalesce_tiling_analysis":
+                           __import__("torch._inductor.config", fromlist=["triton"])
+                           .triton.coalesce_tiling_analysis}
     steps: dict[str, str] = {}
     rec["steps"] = steps
     try:

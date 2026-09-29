@@ -118,3 +118,23 @@ Notation, per stage and row count: **V** = max |R − S| of values; **V̄** = me
 
   It has not run under GNU `timeout` or on the pod.
 - **Code-path dry run** (`pre-launch/dryrun_local.txt`, `VGAP_DRYRUN=1` on the local `8fde43c` worktree, CPU, rows 4/8, no compile, no flash): all steps `ok` for a BF16 "compiled" stand-in with hidden and gain swap, fp32 eager with hidden, and the Isaiah eager stage with state generation. The driver's judge accepted them except for the expected `use_flash_attn` flag, which is false on CPU. **Not evidence.**
+
+## Amendment 1 — attempt 2 (written after attempt 1 stopped, before relaunch; attempt 1's gap numbers not yet read)
+
+**Attempt 1 (10:47:44–10:49:20Z, driver 95.9 s, exit 3).** Launch-time `git_pre.txt` recorded HEAD `8fde43c` and empty porcelain, and the idle gate passed at 0 s. Stage outcomes:
+
+- `isF_eager`, `isF_comp_default`, `kgA_bf16_comp_aten` and `kgB_bf16_eager` passed.
+- `kgC_fp32_comp_aten` exited 1. Its first no-grad sample compiled and ran. The grad-enabled `evaluate_actions` then triggered the expected Dynamo recompile, logged as `GLOBAL_STATE changed: grad_mode`. Compiling that training graph failed in Inductor codegen: `InductorError: AssertionError: -704388212327147/1000000000000000` in `tiling_utils.analyze_memory_coalescing` → `extract_normalized_read_writes` → sympy `Expr.is_constant()`. That call evaluates the symbolic index at random points (`_random`), and a torch integer sympy function then asserts on a non-integer value.
+- The driver stopped as the stopping rule requires. It terminated the running `isF_comp_aten` (rc −15), started nothing further, and the atexit cleanup found no live group.
+
+Attempt 1 is recorded as it stands: a stop on an Inductor compile error in the fp32 compiled padded-SDPA training graph. That path is not the production BF16 flash path.
+
+**Change.** Only the following changes; thresholds, cases and metrics are unchanged.
+
+1. The two fp32 compiled stages pass `--no-coalesce-tiling`, which sets `torch._inductor.config.triton.coalesce_tiling_analysis = False` before compiling. That skips the failing analysis. Torch's own config comment says the analysis "does not yet apply to dynamic shapes", and every compile here is dynamic. The value is recorded in each result (`inductor_coalesce_tiling_analysis`). BF16 stages are unchanged and keep the default.
+2. GPU 0's order becomes `kgA_bf16_comp_aten`, `kgB_bf16_eager`, `kgC_fp32_eager`, `kgA_bf16_comp_default`, `kgC_fp32_comp_aten`, `kgC_fp32_comp_default` (optional). The amended fp32 compiled stages run last, so a repeat failure cannot pre-empt the other cases. GPU 1 is unchanged.
+3. Budget: the internal deadline is 40 min and `launch.sh` uses `timeout -s TERM -k 20 2520`. The aggregate therefore stays ≤ 45 min: 95.9 s + 2,520 s + 20 s = 2,636 s.
+
+Scripts: `kg_gap.py 9e1686c4…`, `driver.py bef5b7fb…`, `launch.sh eb3a2ff0…`; the others are unchanged. The local cleanup test was rerun on the amended driver and passed (`pre-launch/driver_cleanup_test_local_attempt2.txt`).
+
+**Attempt 2** reruns every stage from the start in the same run dir, with fresh caches and freshly generated Orbit Wars states. Attempt 1's outputs, caches, states and scripts move to `attempt1/` on the pod before the relaunch.

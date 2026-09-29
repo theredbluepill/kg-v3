@@ -1,7 +1,7 @@
 #!/bin/bash
 # Value-gap diagnostic launcher (run statement run-statements/value-gap-diagnostic.md).
-# Idle gate on GPUs 0 and 1, receipts, the driver under a hard 44-min timeout
-# (45-min aggregate limit; internal deadline 42 min), post receipts. Never
+# Attempt 2 (Amendment 1). Idle gate on GPUs 0 and 1, receipts, the driver under
+# a hard 42-min timeout (45-min aggregate with attempt 1's 96 s; internal deadline 40 min), post receipts. Never
 # stops, restarts or deletes the pod.
 set -u
 R=/workspace/kg-v3-rebuild/runs/value-gap-2026-09-29
@@ -49,7 +49,7 @@ echo "=== idle gate passed after ${waited}s; driver start $(date -u +%FT%TZ)"
 
 # -s TERM: the driver gets SIGTERM first; its handler terminates every stage
 # group (own sessions, outside timeout's group) within 12 s, before the -k 20 SIGKILL.
-timeout -s TERM -k 20 2640 .venv/bin/python "$R/driver.py" > "$R/driver.out" 2>&1
+timeout -s TERM -k 20 2520 .venv/bin/python "$R/driver.py" > "$R/driver.out" 2>&1
 DRC=$?
 echo "=== driver exit $DRC $(date -u +%FT%TZ)"
 
