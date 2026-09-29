@@ -1,0 +1,21 @@
+# M1-M3 from claude-verify-7.5-r2 applied one at a time to engine_rs/tests/replay_parity.rs
+# (with the three new negative controls present), then restored.
+# Command: CARGO_BUILD_JOBS=2 cargo test --locked --offline --manifest-path engine_rs/Cargo.toml --test replay_parity
+# Before mutation: 22 passed, 0 failed (max RSS 177,864,704 bytes, /usr/bin/time -l).
+== M1
+-    if banks != header.terminal_banks.as_slice() {
++    if false && banks != header.terminal_banks.as_slice() {
+test generated_trace_perturbed_terminal_banks_are_rejected ... FAILED
+test result: FAILED. 21 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.04s
+== M2
+-                if actual.done != last {
++                if false && actual.done != last {
+test generated_trace_perturbed_transition_count_fails_done ... FAILED
+test result: FAILED. 21 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.06s
+== M3
+-                if actual.rewards != rewards {
++                if false && actual.rewards != rewards {
+test generated_trace_perturbed_rewards_are_rejected ... FAILED
+test result: FAILED. 21 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.91s
+== restored: 6520938a1900dbeaa0ef95724de3b588a62424ad68b62b674afd90985f6852e1
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.84s

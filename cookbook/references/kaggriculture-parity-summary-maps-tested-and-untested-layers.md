@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Kaggriculture parity summary maps tested and untested layers"
-description: "Task 7.5 adds a summary at the top of the Kaggriculture part of docs/rules-parity-coverage.md. For integration bde3374 it lists each tested layer: official episodes, live Kaggle 1.32.7 differential, retained unit/RNG, grammar, encoder, native env against its reference, and the Python adapter. Each row names its oracle, denominator, tests and receipts. The BC pairing diagnostic appears as local, non-parity evidence. The page lists 14 untested areas and the current check counts."
+description: "Task 7.5 adds a summary at the top of the Kaggriculture part of docs/rules-parity-coverage.md. For integration tip 994818b it lists each tested layer: official episodes, live Kaggle 1.32.7 differential, retained unit/RNG, grammar, encoder, native env against its reference, the Python adapter and the Task 7.1 evaluation opponents. Each row names its oracle, denominator, tests and receipts. The BC pairing diagnostic appears as local, non-parity evidence. The page lists 14 untested areas and the current check counts; three replay negative controls now guard the rewards, done and terminal-bank checks."
 tags: ["kaggriculture-v3", "adaptation", "parity", "documentation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex; reviewed and revised by anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -14,6 +14,10 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/7.5/engine-tests.log"
   - resource: "repository:ops/rebuild-2026-09-29/7.5/bc-audit.txt"
   - resource: "repository:ops/rebuild-2026-09-29/merge-env-adapter/prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/merge-7.1/prepare-on-5b43062.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.5/r2-fixes/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.5/r2-fixes/replay-negative-controls.log"
+  - resource: "repository:engine_rs/tests/replay_parity.rs"
   - resource: "bc-branch:kg/rebuild-bc-now@933d661/ops/rebuild-2026-09-29/bc-a100-2026-09-29/pairing.json"
 ---
 
@@ -53,10 +57,13 @@ Each of them covers one layer, so this record is new rather than a revision.
 
 ## Scope decisions
 
-- **Base.** The branch starts from integration `bde3374`, the first tip that
-  contains Tasks 1.4 and 1.5. Task 7.1 was still in merge verification when
-  Codex ran, so the page lists opponents as untested in this integration.
-  Tasks 7.3 and 7.4 are also listed as untested.
+- **Base.** The branch started from integration `bde3374`, the first tip that
+  contains Tasks 1.4 and 1.5. The integration had already moved to `994818b`
+  (Task 7.1 merged) before the summary was committed, which the r2 subagent
+  review found. The branch now merges `994818b`; the page has a Task 7.1 row
+  and lists only 7.1's untested scope (custom configurations, CPython 3.12+,
+  foreign prefixes, individual-order rejection, strength, no learned-seat hook).
+  Tasks 7.3 and 7.4 remain listed as untested.
 - **BC pairing diagnostic.** This is local evidence on `kg/rebuild-bc-now`
   (`933d661`) and was only read with `git show`. It re-steps Kaggle's own 1.32.7
   interpreter from archived observations and compares values on
@@ -103,13 +110,33 @@ Each of them covers one layer, so this record is new rather than a revision.
   - this note's correction count is fixed;
   - the tracker row is updated.
   The subagent review is not a Codex verdict.
+- A second independent Claude subagent review of `81d0bf7`
+  (`ops/rebuild-2026-09-29/codex/claude-verify-7.5-r2.md`, local) returned
+  REQUEST CHANGES: one P2 (the summary was stale at `994818b`) and four P3s.
+  Its scratch mutations M1–M3 disabled the replay comparator's rewards, done
+  and terminal-bank checks, and all 19 replay tests stayed green. The fixes,
+  recorded in `ops/rebuild-2026-09-29/7.5/r2-fixes/results.md`, are:
+  - the `994818b` merge and the refreshed summary;
+  - three negative controls in `engine_rs/tests/replay_parity.rs`, each of
+    which fails when its check is disabled;
+  - the 1 GB figure now cites the tracked `7.5/pytest.json`;
+  - the targeted-shard rule is scoped to Mac-limited review checks.
+  Checks after the fixes: engine 72 passed, opponents 22 passed, trim and
+  opponent-import checks passed, pytest shards 178 passed with 11 skipped and
+  400 passed, and docs-fresh passed. The `opponents_rs` test run peaked at
+  3.0 GB, above the 1 GB check limit, and that peak is unattributed. The root
+  Rust suite and the full Python suite were not rerun. No Rust or Python outside
+  that test file changed after `994818b`, so the page cites that tip's
+  `just prepare` (root 274 with 5 ignored, Python 2,400 with 21 skipped).
 
 ## Gaps and reopening conditions
 
-- The summary is a snapshot of `bde3374`. Update it when Task 7.1 (opponents),
-  7.3 (replay export), 7.4 (packaging) or 3.1 (rollout/mask mapping) merges.
-  The tracker's 7.5 row asks for a closing pass after 7.1, 7.3 and 7.4.
-- No new test, sweep or parity run was made; the page only maps existing
-  evidence. D1/D2 malformed-input divergences, framework behavior outside the
+- The summary is a snapshot of integration `994818b`. Update it when
+  Task 7.3 (replay export), 7.4 (packaging) or 3.1 (rollout/mask mapping)
+  merges, or when the integration tip otherwise changes a cited layer. The
+  tracker's 7.5 row asks for a closing pass after 7.1, 7.3, 7.4 and 3.1; 7.1
+  is now covered.
+- No new sweep or parity run was made. Apart from the three replay negative
+  controls, the page only maps existing evidence. D1/D2 malformed-input divergences, framework behavior outside the
   interpreter, strong-play worlds, a pod-scale sweep, CUDA/BF16 and pinned-memory
   paths, and complete-update throughput all remain untested, as the page lists.

@@ -138,10 +138,13 @@ assertions.
 
 ## Kaggriculture Coverage Summary (Task 7.5)
 
-This map describes integration HEAD `bde337465a9fa7c07bedded88d5d696d7cefb7ef`
-on 2026-09-29. The sections below retain their historical check counts.
+This map describes integration tip `994818b87041426c6fc442a85fb06932937d58a7`
+(Tasks 1.4/1.5 and 7.1 merged) as merged into `kg/rebuild-7-5` on 2026-09-30.
+It was first written from `bde337465a9fa7c07bedded88d5d696d7cefb7ef`, before
+Task 7.1 landed. The sections below retain their historical check counts.
 The current checks for this documentation change are listed separately here.
-Claim-by-claim sources are in `ops/rebuild-2026-09-29/7.5/claims.md`.
+Claim-by-claim sources are in `ops/rebuild-2026-09-29/7.5/claims.md`; the
+Task 7.1 refresh is in `ops/rebuild-2026-09-29/7.5/r2-fixes/results.md`.
 
 ### Compatibility target
 
@@ -174,10 +177,17 @@ Each oracle qualifies its own layer; their game and case counts are not additive
 | Observation encoder, Task 1.3 | Recorded `encode_invest` rows from the pinned reference Rust crate; tensor-only reconstruction | 512 states / 1,024 seat rows / 8,176 offsets per row, compared bitwise; actual Python observation-schema checks | `src/kaggriculture/oracle_corpus.rs::compare_observation_oracle`; `tests/kaggriculture/test_observe.py::test_every_frozen_oracle_record_passes_the_actual_schema` | `R/1.3/claude-review.md`; `R/1.3/r1-fixes/results.md` | [Observation](#kaggriculture-observation-coverage-task-13) |
 | Native environment, Task 1.4 | Synthetic lifecycle expectations and untouched controls; recorded reference Rust `TrainingBatch`; independent Python reward formula | 35 destination buffers; reset/step/truncate rollback and seed admission; 16 games, seeds 17000–17015, 719 transitions each = 11,504 | `src/kaggriculture/env_tests.rs`, `admission.rs`; `tests/kaggriculture/test_native_env.py`; `test_env_reference.py::test_native_matches_training_batch_16_complete_games` | `R/1.4/claude-review/pod-oracle/`; `R/1.4/p3-rerecord/reference-recording-attempt.json` | [Lifecycle](#kaggriculture-native-lifecycle-coverage-task-14) |
 | Python adapter / codec / table bridge, Task 1.5 | Real native binding plus lifecycle expectations, frozen grammar corpus, independent expected tables and reward arithmetic | Stable 35-buffer lifecycle; 321 accepted / 43 rejected codec records; 964 table bits; recorded reward trajectories plus 3 extreme-coefficient games of 96 transitions each | `tests/kaggriculture/test_env.py`, `test_codec.py`, `test_native_tables.py`, `test_game.py`, `test_rewards.py` | `R/stage2-adapter/native/results.md`; `R/stage2-adapter/tables/results.md` | [Native boundary](#kaggriculture-native-lifecycle-coverage-task-14) |
+| Evaluation opponents, Task 7.1 | Original Starter, R04, EcoBot and E776 Python submissions on Kaggle 1.32.7's engine under CPython 3.11.15 | 8 default-config games, seeds 20260929–20260936, each bot in both seats twice: 4 bots × 2 seats × 1,438 = 11,504 compared actions and 5,752 transitions of state; 24 mid-episode reconstructions with 1,152 resumed actions | `opponents_rs/tests/oracle_parity.rs`; `opponents_rs/tests/lifecycle.rs`; `tests/scripts/test_kaggriculture_parity.py` | `R/7.1/review/results.md`; `R/7.1/verify-r1/parity-replay.json`; `R/codex/verify-7.1-r2.md`; `R/merge-7.1/prepare-on-5b43062.log` | [Opponents](#task-71-opponents-snapshot-view-and-original-submission-parity) |
 
 The replay comparator checks public/private values and recursive object key
 order, statuses, typed rewards, step/done and terminal banks. Rejected actions
-must leave the checked state unchanged. The sweep receipt is historical;
+must leave the checked state unchanged. Negative controls in
+`engine_rs/tests/replay_parity.rs` perturb a committed trace's state value,
+private key order, action, rejection label, per-transition rewards, header
+transition count (caught by the done check) and header terminal banks; each must
+be rejected with its divergence kind. The last three were added after a scratch
+review disabled those checks without any test failing
+(`R/7.5/r2-fixes/replay-negative-controls.log`). The sweep receipt is historical;
 Task 7.5 does not launch another sweep.
 
 Observation reconstruction is observation-information coverage, not rules parity.
@@ -231,8 +241,11 @@ No Rust engine participates. This is not engine parity or proof of label correct
   its reference is Rust and its comparisons target the native transition boundary.
 - Complete historical observation-corpus source custody: three engine input hashes
   were omitted; generation-time dirty bytes and the full producer module inventory are absent.
-- Task 7.1 opponents and their oracle in this integration. The recorded approval
-  is on unmerged `kg/rebuild-7-1`.
+- Task 7.1 beyond its tested scope: custom configurations, CPython 3.12 or
+  later (R04 diverges there), states the controllers did not create, individual
+  order rejection and engine-confirmed shortages, and playing strength. The
+  native environment has no `opponents_rs` seat for the learned policy, so the
+  nine learned-seat opponent tests skip.
 - Task 7.3 replay export / Kaggle-episode round trip in this integration;
   it is unmerged, with no approving verdict in this tip's phase tracker.
 - Task 7.4 Kaggriculture packaging; this tip records a brief under review, not implementation.
@@ -245,28 +258,41 @@ No Rust engine participates. This is not engine parity or proof of label correct
 
 ### Current checks
 
-Checks ran on 2026-09-29 at HEAD
-`bde337465a9fa7c07bedded88d5d696d7cefb7ef`. Logs and resource receipts are under
-`ops/rebuild-2026-09-29/7.5/`. Codex's rows (engine tests, trim) used the owner's
-offline CPU/thread limits recorded in `7.5/results.md`. Codex's bounded runs of
-the root Rust suite and the Kaggriculture pytest selection stopped at its 960 MiB
-process-tree guard without a final summary (`7.5/root-tests-after-setup.log`,
-`7.5/pytest.log`). Claude then ran `just py-prepare` without that guard; it
-includes that pytest selection. Its environment exports and peak memory were not
-recorded, and uv rebuilt the local package during the run. That run probably
-exceeded the owner's 1 GB check limit: `tests/kaggriculture` alone later peaked
-at 1.94 GiB RSS in a separate scratch run. Future checks use targeted pytest
-shards instead of an unguarded full run. The root Rust
-suite was not rerun for this documentation change; its latest full run is the
-Tasks 1.4/1.5 merge receipt, and no Rust source, Cargo manifest or lockfile
-changed between merge commit `7f797a3` and this HEAD.
+Checks for this refresh ran on 2026-09-30 on `kg/rebuild-7-5` after merging
+integration tip `994818b` and adding the three replay negative controls. Logs,
+the runner and resource figures are under `ops/rebuild-2026-09-29/7.5/r2-fixes/`
+(`R2/` below). They ran on the owner's Mac, CPU only, with `CARGO_BUILD_JOBS=2`
+and `OMP_NUM_THREADS=2`; each figure is `/usr/bin/time -l` maximum RSS of the
+largest single child process, not a process-tree sum. The `opponents_rs` run
+peaked at 3.0 GB, above the owner's 1 GB check limit; this run did not
+attribute that peak to compilation or to a test binary. Between `994818b` and
+this branch, only documentation, `ops/` receipts, the cookbook,
+`engine_rs/tests/replay_parity.rs` and its `engine_rs/TRIM_MANIFEST.json` hash
+changed. The root Rust suite and the full Python suite were therefore not rerun;
+their latest full runs are the Task 7.1 merge receipt for `994818b`
+(`merge-7.1/prepare-on-5b43062.log`).
 
 | Command | Actual result | Receipt |
 | --- | --- | --- |
-| `cargo test --locked --offline --manifest-path engine_rs/Cargo.toml` | 69 passed, 0 failed, 0 ignored | `7.5/engine-tests.log` |
-| `uv run --offline python scripts/check_engine_trim.py` | Exit 0, `engine trim manifest: OK` | `7.5/trim-after-setup.log` |
-| `just py-prepare` (format, lint, mypy, full Python suite, docs-fresh) | Exit 0; 2,319 passed, 10 skipped (CUDA, pinned memory, flash-attn, x86 quantization and four Task 3.1 seam tests) | `7.5/py-prepare.log` |
-| `cargo test --offline` (root) | Not rerun here; 274 passed, 0 failed, 5 ignored in the Tasks 1.4/1.5 merge's `just prepare` | `merge-env-adapter/prepare.log` |
+| `cargo fmt --check` and `cargo clippy --all-targets --locked` (`engine_rs`, with the `justfile` allowances) | Exit 0 each | `R2/engine-fmt.log`; `R2/engine-clippy.log` |
+| `cargo test --locked --offline --manifest-path engine_rs/Cargo.toml` | 72 passed (41 unit, 9 RNG, 22 replay parity), 0 failed; 171 MB | `R2/engine-tests.log` |
+| Replay negative controls with each comparator check disabled in turn | Each mutation fails exactly its new test; the restored file passes 22 | `R2/replay-negative-controls.log` |
+| `cargo test --offline --manifest-path opponents_rs/Cargo.toml --locked` | 22 passed (12 unit, 5 lifecycle, 5 oracle), 0 failed; 3.0 GB | `R2/opponents-tests.log` |
+| `scripts/check_engine_trim.py`; `scripts/check_opponent_import.py` | Exit 0 each | `R2/engine-trim.log`; `R2/opponent-import.log` |
+| `pytest -m "not slow"` on the parity, trim, opponent-import and opponent tests | 178 passed, 11 skipped (nine learned-seat opponent tests, one broad regeneration, one original-source reread); 509 MB | `R2/pytest-parity-custody.log` |
+| `pytest -m "not slow"` on `test_env_reference.py`, `test_native_env.py`, `test_env.py` | 400 passed (includes the 16-game `TrainingBatch` comparison); 374 MB | `R2/pytest-env.log` |
+| `scripts/check_doc_freshness.py` | Exit 0 | `R2/docs-fresh.log` |
+| Root `cargo test` and the full Python suite | Not rerun; at `994818b` root 274 passed, 5 ignored; Python 2,400 passed, 21 skipped | `merge-7.1/prepare-on-5b43062.log` |
+
+The first version of this summary ran its checks at `bde3374` (receipts in
+`ops/rebuild-2026-09-29/7.5/`): engine 69 passed, trim OK, and an unguarded
+`just py-prepare` with 2,319 passed and 10 skipped. That run recorded neither its
+environment nor its peak memory. Codex's guarded run of the same pytest
+selection had already reached a sampled process-tree peak of 989,744 KiB after
+21.6 s and was stopped by its 960 MiB limit before finishing (`7.5/pytest.json`),
+so the unguarded run probably exceeded the 1 GB check limit. Mac-limited review
+checks in this rebuild therefore use targeted shards, as above; this does not
+change the `just py-prepare` / `just prepare` workflow.
 
 ## Kaggriculture Rules Kernel
 
@@ -433,7 +459,8 @@ negative seeds, rollover and long streams. These 50 tests do not read episodes.
 
 Task 1.1 added nine `tests/replay_parity.rs` tests: four replay tests, a public
 API test, and four comparator regressions. Task 1.1b extends the file to 19
-(see [live differential parity](#kaggriculture-live-differential-parity)). The API test covers decoded PASS
+(see [live differential parity](#kaggriculture-live-differential-parity)); the
+Task 7.5 review adds three negative controls, for 22. The API test covers decoded PASS
 commands, public state, terminal banks, and economic/attribution counters.
 Comparator tests reject private inventory and private field insertion-order
 drift, public market-map insertion-order drift, and public integer-versus-float
@@ -581,7 +608,8 @@ policies, policy seed, configuration, counts and any expected divergence. The
 that manifest, its exact file inventory, the Cargo engine pin and the budget;
 `TRIM_MANIFEST.json` pins the manifest bytes. Rust tests also fail when a
 committed state value, private key order, action or rejection claim is
-perturbed. A Python test regenerates the committed set from the live engine and
+perturbed; since Task 7.5, also when per-transition rewards, the header
+transition count or terminal banks are. A Python test regenerates the committed set from the live engine and
 requires identical bytes; it skips with a message when an isolated 1.32.7
 environment cannot be built offline.
 
