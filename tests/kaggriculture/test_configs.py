@@ -1,7 +1,7 @@
 """Task 3.4: Kaggriculture configs follow Isaiah's scaling_6m recipe.
 
-The ranked configs (2, 4 and 8 ranks) apply Isaiah's multi-GPU rule
-(``winner_ce_6m_4x5090.yaml``): per-rank ``n_envs`` and
+The ranked configs (2, 4 and 8 ranks) apply Isaiah's 6M multi-GPU
+division (``winner_ce_6m_4x5090.yaml``): per-rank ``n_envs`` and
 ``segments_per_minibatch`` are divided by the world size, everything else is
 scaling_6m's. Every config loads through the real
 ``FullConfig.from_file``, so each section, the Kaggriculture env and reward

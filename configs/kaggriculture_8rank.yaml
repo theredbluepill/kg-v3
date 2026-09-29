@@ -1,6 +1,7 @@
 # Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 8 ranks
 # (8x RTX PRO 6000, the owner's likely main-run hardware; 2 ranks stay the
-# diagnostics/building pod). Isaiah's multi-GPU rule (winner_ce_6m_4x5090.yaml):
+# diagnostics/building pod). Isaiah's 6M multi-GPU division
+# (winner_ce_6m_4x5090.yaml):
 # n_envs and segments_per_minibatch are divided by the world size, so the GLOBAL
 # batch (8 x 32 = 256 envs), optimizer steps/iter (16), global segments per
 # optimizer step (8 x 2 = 16) and env steps/iter (16,384) equal scaling_6m; the

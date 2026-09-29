@@ -1,6 +1,7 @@
 # Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 2 ranks
-# (2x RTX PRO 6000). Isaiah's multi-GPU rule (winner_ce_6m_4x5090.yaml): n_envs
-# and segments_per_minibatch are divided by the world size, so the GLOBAL batch
+# (2x RTX PRO 6000). Isaiah's 6M multi-GPU division
+# (winner_ce_6m_4x5090.yaml): n_envs and segments_per_minibatch are divided by
+# the world size, so the GLOBAL batch
 # (256 envs), optimizer steps/iter (16), global segments per optimizer step (16)
 # and env steps/iter (16,384) equal scaling_6m; the optimizer, LR schedule, PPO
 # coefficients, compile settings, teacher and checkpoint cadence are unchanged.
