@@ -28,6 +28,13 @@ from owl.model import (
     lora_config_for_model,
     roundtrip_lora_base_quantization,
 )
+from owl.model.kaggriculture import KaggricultureTransformerConfig
+from owl.model.kaggriculture_workload import (
+    WorkloadHeadroom,
+    check_workload_headroom,
+    headroom_log_lines,
+    ppo_forward_workloads,
+)
 from owl.replay import ReplayRecorder
 from owl.rl import (
     ActionBundle,
@@ -45,7 +52,13 @@ from owl.rl import (
     VectorizedEnv,
 )
 from owl.rs import assert_release_build
-from owl.train import FullConfig, PPOTrainer, configure_torch
+from owl.train import (
+    FullConfig,
+    PPOConfig,
+    PPOTrainer,
+    configure_torch,
+    require_orbit_env,
+)
 from owl.train.distributed import (
     DistributedContext,
     all_reduce_any,
@@ -82,6 +95,7 @@ _EVAL_SEED_BITS = 61
 _EVAL_SEED_FLOOR = 1 << 62
 CHECKPOINT_FINAL = "checkpoint_final.pt"
 CHECKPOINT_LAST_BEST = "checkpoint_last_best.pt"
+_TRAINER = "run_ppo"
 _NUMBERED_CHECKPOINT_RE = re.compile(
     r"^checkpoint_(\d{2})_(\d{3})_(\d{3})_(\d{3})\.pt$"
 )
@@ -147,6 +161,16 @@ def main() -> None:
 
         if isinstance(launch, FreshLaunch):
             cfg = _with_runtime_gpus(cfg, distributed.world_size)
+        else:
+            cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+        # Before any run dir, env or model: the per-rank shapes are final here.
+        _check_model_workload(
+            cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+        )
+        # Fails before the run dir for Kaggriculture, which has no env yet.
+        env_config = require_orbit_env(cfg.env, context=_TRAINER)
+
+        if isinstance(launch, FreshLaunch):
             run_dir = (
                 _create_run_dir(launch.output_dir)
                 if distributed.is_main_process
@@ -158,17 +182,16 @@ def main() -> None:
                 cfg.to_file(run_dir / "config.yaml")
             run_dir = broadcast_object(run_dir, distributed)
         else:
-            cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
             run_dir = launch.run_dir
 
         device = distributed.device
         env = VectorizedEnv(
-            n_envs=cfg.env.n_envs,
-            obs_spec=cfg.env.obs_spec,
-            action_spec=cfg.env.action_spec,
-            two_player_weight=cfg.env.two_player_weight,
-            reward_mode=cfg.env.reward_mode,
-            pin_memory=cfg.env.pin_memory,
+            n_envs=env_config.n_envs,
+            obs_spec=env_config.obs_spec,
+            action_spec=env_config.action_spec,
+            two_player_weight=env_config.two_player_weight,
+            reward_mode=env_config.reward_mode,
+            pin_memory=env_config.pin_memory,
         )
         model, lora_application = _create_training_model_for_config(
             cfg,
@@ -732,6 +755,38 @@ def _log_cli_overrides(
     print(f"Launched with the following raw manual overrides: '{overrides_flat}'")
 
 
+def _check_model_workload(
+    model_config: ModelConfig | KaggricultureTransformerConfig,
+    *,
+    n_envs: int,
+    rl: PPOConfig,
+    distributed: DistributedContext,
+) -> tuple[WorkloadHeadroom, ...]:
+    """Fail fast when a forward exceeds the model's GEMM chunking; print headroom.
+
+    Only the Kaggriculture model chunks its trunk and heads below the 2**31 GEMM
+    extent; Isaiah's Orbit models issue unchunked forwards and have no limit to
+    check. The BC trainer adds its batch as a ``ForwardWorkload`` when it exists.
+    """
+    if not isinstance(model_config, KaggricultureTransformerConfig):
+        return ()
+    reports = check_workload_headroom(
+        model_config,
+        ppo_forward_workloads(
+            n_envs=n_envs,
+            horizon=rl.horizon,
+            segments_per_minibatch=rl.segments_per_minibatch,
+            teacher_segments_per_minibatch=(
+                None if rl.teacher_mode is None else rl.teacher_segments_per_minibatch
+            ),
+        ),
+    )
+    if distributed.is_main_process:
+        for line in headroom_log_lines(reports):
+            print(line)
+    return reports
+
+
 def _create_run_dir(output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     while True:
@@ -762,10 +817,11 @@ def _create_training_model_for_config(
     reset_parameters: bool = False,
     roundtrip_lora_base: bool = True,
 ) -> tuple[BaseModelAPI, LoRAApplication | None]:
+    env = require_orbit_env(cfg.env, context=_TRAINER)
     model = _create_model(
         cfg.model,
-        obs_spec=cfg.env.obs_spec,
-        action_spec=cfg.env.action_spec,
+        obs_spec=env.obs_spec,
+        action_spec=env.action_spec,
     ).to(device)
     if reset_parameters:
         model.reset_parameters()
@@ -830,9 +886,10 @@ def _load_teacher_init_model(
     if not checkpoint_path.is_file():
         raise ValueError(f"teacher_init checkpoint does not exist: {checkpoint_path}")
     teacher_cfg = FullConfig.from_file(_checkpoint_config_path(checkpoint_path))
+    teacher_env = require_orbit_env(teacher_cfg.env, context=_TRAINER)
     teacher_obs_spec = _teacher_obs_spec_for_student(
-        teacher_cfg.env.obs_spec,
-        student_obs_spec=student_cfg.env.obs_spec,
+        teacher_env.obs_spec,
+        student_obs_spec=require_orbit_env(student_cfg.env, context=_TRAINER).obs_spec,
         checkpoint_path=checkpoint_path,
     )
     _validate_teacher_specs(
@@ -843,7 +900,7 @@ def _load_teacher_init_model(
     teacher_model, _ = _create_training_model_for_config(
         teacher_cfg.model_copy(
             update={
-                "env": teacher_cfg.env.model_copy(update={"obs_spec": teacher_obs_spec})
+                "env": teacher_env.model_copy(update={"obs_spec": teacher_obs_spec})
             }
         ),
         device=device,
@@ -901,12 +958,14 @@ def _validate_teacher_specs(
     student_cfg: FullConfig,
     checkpoint_path: Path,
 ) -> None:
+    teacher_env = require_orbit_env(teacher_cfg.env, context=_TRAINER)
+    student_env = require_orbit_env(student_cfg.env, context=_TRAINER)
     _teacher_obs_spec_for_student(
-        teacher_cfg.env.obs_spec,
-        student_obs_spec=student_cfg.env.obs_spec,
+        teacher_env.obs_spec,
+        student_obs_spec=student_env.obs_spec,
         checkpoint_path=checkpoint_path,
     )
-    if teacher_cfg.env.action_spec != student_cfg.env.action_spec:
+    if teacher_env.action_spec != student_env.action_spec:
         raise ValueError(f"teacher action_spec must match student: {checkpoint_path}")
 
 
@@ -1485,12 +1544,13 @@ def _create_eval_env(
             f"env_steps={env_steps})"
         )
     # Isaiah's Orbit env samples its own games; it takes no seed.
+    env_config = require_orbit_env(cfg.env, context=_TRAINER)
     return VectorizedEnv(
         n_envs=n_envs,
-        obs_spec=cfg.env.obs_spec,
-        action_spec=cfg.env.action_spec,
-        two_player_weight=cfg.env.two_player_weight,
-        reward_mode=cfg.env.reward_mode,
+        obs_spec=env_config.obs_spec,
+        action_spec=env_config.action_spec,
+        two_player_weight=env_config.two_player_weight,
+        reward_mode=env_config.reward_mode,
         pin_memory=device.type == "cuda",
     )
 

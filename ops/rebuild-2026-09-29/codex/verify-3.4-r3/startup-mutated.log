@@ -1,0 +1,198 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___ test_main_rejects_unserviceable_kaggriculture_workload_before_allocation ___
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-configs/.codex-tmp/pytest-of-poonszesen/pytest-7/test_main_rejects_unserviceabl0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108eab950>
+capsys = <_pytest.capture.CaptureFixture object at 0x110a4ecc0>
+
+    def test_main_rejects_unserviceable_kaggriculture_workload_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        # Trunk width 2 * 2**21 x 709 padded tokens exceeds 2**31 for one row.
+        calls: list[str] = []
+        argv = [
+            str(_CONFIGS / "kaggriculture_2rank.yaml"),
+            str(tmp_path / "runs"),
+            "-o",
+            f"model.embed_dim={2**21}",
+            f"model.n_heads={2**16}",
+        ]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(ValueError, match="one padded row of 709 tokens"):
+>           run_ppo.main()
+
+.codex-tmp/kg-config-verify-4_31ut59/tests/scripts/test_run_ppo.py:2783: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.codex-tmp/kg-config-verify-4_31ut59/scripts/run_ppo.py:157: in main
+    env_config = require_orbit_env(cfg.env, context=_TRAINER)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=128, obs_spec=KaggricultureObsConfig(obs_spec='kaggriculture', schema_version=3), action...t_weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=True, native_threads=2)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Launched with the following raw manual overrides: '['model.embed_dim=2097152', 'model.n_heads=65536']'
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-configs/.codex-tmp/pytest-of-poonszesen/pytest-7/test_main_loads_kaggriculture_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a26900>
+capsys = <_pytest.capture.CaptureFixture object at 0x10f74a9f0>
+name = 'kaggriculture_2rank.yaml', rollout_rows = 256, teacher_rows = 16384
+teacher_calls = 3
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(RuntimeError, match=_NOT_WIRED):
+            run_ppo.main()
+    
+        assert calls == []
+        assert not (tmp_path / "runs").exists()
+        headroom = _headroom_lines(capsys.readouterr().out)
+>       assert [line.split(":")[0] for line in headroom] == [
+            "GEMM workload headroom rollout",
+            "GEMM workload headroom minibatch",
+            "GEMM workload headroom teacher_chunk",
+            "GEMM workload headroom evaluation",
+        ]
+E       AssertionError: assert [] == ['GEMM worklo...m evaluation']
+E         
+E         Right contains 4 more items, first extra item: 'GEMM workload headroom rollout'
+E         Use -v to get more diff
+
+.codex-tmp/kg-config-verify-4_31ut59/tests/scripts/test_run_ppo.py:2816: AssertionError
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-configs/.codex-tmp/pytest-of-poonszesen/pytest-7/test_main_loads_kaggriculture_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a4c8c0>
+capsys = <_pytest.capture.CaptureFixture object at 0x110a4f800>
+name = 'kaggriculture_4rank.yaml', rollout_rows = 128, teacher_rows = 8192
+teacher_calls = 2
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(RuntimeError, match=_NOT_WIRED):
+            run_ppo.main()
+    
+        assert calls == []
+        assert not (tmp_path / "runs").exists()
+        headroom = _headroom_lines(capsys.readouterr().out)
+>       assert [line.split(":")[0] for line in headroom] == [
+            "GEMM workload headroom rollout",
+            "GEMM workload headroom minibatch",
+            "GEMM workload headroom teacher_chunk",
+            "GEMM workload headroom evaluation",
+        ]
+E       AssertionError: assert [] == ['GEMM worklo...m evaluation']
+E         
+E         Right contains 4 more items, first extra item: 'GEMM workload headroom rollout'
+E         Use -v to get more diff
+
+.codex-tmp/kg-config-verify-4_31ut59/tests/scripts/test_run_ppo.py:2816: AssertionError
+___________ test_resume_startup_checks_the_runtime_adapted_workload ____________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-configs/.codex-tmp/pytest-of-poonszesen/pytest-7/test_resume_startup_checks_the0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110a4fe60>
+capsys = <_pytest.capture.CaptureFixture object at 0x110a4c230>
+
+    def test_resume_startup_checks_the_runtime_adapted_workload(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        # A run saved at 2 ranks resumes on 1: resume adaptation doubles the
+        # per-rank envs to 256, so the checked rollout is 512 rows, not the file's 256.
+        saved = FullConfig.from_file(_CONFIGS / "kaggriculture_2rank.yaml")
+        saved = saved.model_copy(
+            update={"runtime": saved.runtime.model_copy(update={"n_runtime_gpus": 2})}
+        )
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        saved.to_file(run_dir / "config.yaml")
+        for checkpoint in ("checkpoint_final.pt", "checkpoint_last_best.pt"):
+            (run_dir / checkpoint).write_bytes(b"")
+        calls: list[str] = []
+        # Resume requires W&B logging; the check runs before any logger exists.
+        _patch_kaggriculture_startup(
+            monkeypatch,
+            [str(run_dir / "checkpoint_final.pt")],
+            calls,
+            log_mode=LogMode.WANDB,
+        )
+    
+        with pytest.raises(RuntimeError, match=_NOT_WIRED):
+            run_ppo.main()
+    
+        assert calls == []
+        headroom = _headroom_lines(capsys.readouterr().out)
+>       assert headroom[0].startswith(
+               ^^^^^^^^^^^
+            "GEMM workload headroom rollout: 512 rows x 709 padded tokens;"
+        )
+E       IndexError: list index out of range
+
+.codex-tmp/kg-config-verify-4_31ut59/tests/scripts/test_run_ppo.py:2862: IndexError
+=========================== short test summary info ============================
+FAILED .codex-tmp/kg-config-verify-4_31ut59/tests/scripts/test_run_ppo.py::test_main_rejects_unserviceable_kaggriculture_workload_before_allocation
+FAILED .codex-tmp/kg-config-verify-4_31ut59/tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3]
+FAILED .codex-tmp/kg-config-verify-4_31ut59/tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2]
+FAILED .codex-tmp/kg-config-verify-4_31ut59/tests/scripts/test_run_ppo.py::test_resume_startup_checks_the_runtime_adapted_workload
+4 failed, 79 deselected in 0.73s

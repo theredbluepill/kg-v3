@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Evaluation and truncation follow the Kaggriculture objective"
-description: "Rebuild Tasks 3.2/3.3: raw-bank evaluation winners, truncation that keeps the economic reward, joint per-player clipping and value-mode guards, a per-evaluation seed in a checked int64 band (distinct per step within a run, not a global stream separator), and promotion telemetry logged only after promotion completes, all proven on the trainer seam with CPU TDD, a fake env and 1,344 Python passes; the native env, config registration and a real Kaggriculture run are still missing."
+description: "Rebuild Tasks 3.2/3.3: raw-bank evaluation winners, truncation that keeps the economic reward, joint per-player clipping and value-mode guards, a per-evaluation seed in a checked int64 band (distinct per step within a run, not a global stream separator), and promotion telemetry logged only after promotion completes, all proven on the trainer seam with CPU TDD, a fake env and 1,344 Python passes; since the Task 3.4 merge the guards run through the registered Kaggriculture env config and every `configs/kaggriculture*.yaml`, while the native env and a real Kaggriculture run are still missing."
 tags: ["kaggriculture-v3", "adaptation", "evaluation", "rewards"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -18,6 +18,8 @@ sources:
   - resource: "repository:tests/kaggriculture/test_training_semantics.py"
   - resource: "repository:tests/owl/train/test_ppo.py"
   - resource: "repository:tests/scripts/test_run_ppo.py"
+  - resource: "repository:configs/kaggriculture.yaml"
+  - resource: "repository:python/owl/kaggriculture/config.py"
   - resource: "repository:README.md"
   - resource: "repository:docs/rl-api-specs.md"
   - resource: "repository:ops/rebuild-2026-09-29/3.2-3.3-red.log"
@@ -36,7 +38,7 @@ sources:
 
 This note records rebuild Tasks 3.2 (game semantics) and 3.3 (evaluation) from `ops/rebuild-2026-09-29/plan.md`, serving the [[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] and the [[../decisions/evaluation-preserves-generality-and-evidence|evaluation Decision]]. They implement reference lessons L1 (raw-bank winners), L2 (truncation reward) and L12 (a fresh seed per evaluation). The reference branch's `run_ppo.py`, `ppo.py` and `config.py` diffs and its gap-closure plan served as the oracle; the code was rebuilt, not copied. A cookbook search found the historical [[reward-reuse-preserves-objective-and-critic-semantics|reward-reuse Reference]] and [[shared-ppo-adapts-game-batches-without-a-second-loop|shared-PPO Reference]], which state the same rules for the reference branch. The [[ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer-seams Reference]] covers the schema-generic mapping these changes sit on.
 
-The native Kaggriculture environment (Tasks 1.4/1.5) and the config registration of the Kaggriculture env and model don't exist yet. So each rule is a game-dispatched function on the trainer seam, proven with Kaggriculture tensors or a fake environment. One skipped integration test per missing piece names what must pass once it lands.
+The native Kaggriculture environment (Tasks 1.4/1.5) doesn't exist yet. So each rule is a game-dispatched function on the trainer seam, proven with Kaggriculture tensors or a fake environment. When these tasks were built, the Kaggriculture env and model configs weren't registered either; Task 3.1 registered the model and Task 3.4 the env (see "Merge with Tasks 3.1 and 3.4" below). The remaining skipped integration test names what must pass once the native env lands.
 
 ## Contract and adaptation inventory
 
@@ -90,17 +92,22 @@ What the named tests show:
 - **L1:** a two-seat fake env whose shaped return favors the incumbent in both games, while the banks give the candidate one win and one draw. Evaluation credits the candidate with 1.5 of 2 games and logs margins of 1,000 and 0. The candidate's seat is read from its actions, not assumed.
 - **L2:** `make_obs` contract batches keep a 0.02/−0.02 economic reward on a cut row, and the GAE return there equals that reward plus the bootstrap. Orbit zeroes it. A `PPOTrainer` rollout on a truncating tiny Orbit env pins Isaiah's behavior end to end: the cut step has zero reward, done, a truncated flag and a bootstrap equal to `compute_value` of the cut state.
 - **Clipping:** with 40 acting frames each moved by 0.01 nats, `per_player` clips the joint ratio e^0.4 (clip fraction 1, loss −1.2), while `per_entity` would clip none.
-- **Guards:** each rejected setting fails with its own message. `scaling_6m` settings pass. An Orbit config with gamma 0.99 and `per_entity` still validates, while the same config carrying `KaggricultureObsConfig` fails.
+- **Guards:** each rejected setting fails with its own message. `scaling_6m` settings pass. An Orbit config with gamma 0.99 and `per_entity` still validates, while a Kaggriculture config with gamma 0.99 fails (originally an unvalidated Orbit copy carrying `KaggricultureObsConfig`; the shipped `configs/kaggriculture.yaml` since the Task 3.4 merge).
 - **Seed:** 1,000 checkpoint steps and 4 base seeds × 256 adjacent steps get distinct starting seeds. Extreme inputs stay in the band with headroom, and out-of-band inputs are rejected. A characterization test pins the pair collision and the adjacent-start counterexample above, so the limit stays documented.
 - **Telemetry:** a two-evaluation training loop logs `eval/games`, `eval/promoted` and `eval/promotion_threshold` at 0.7 and 0.69, and it promotes only at 0.7. When the incumbent refresh or the promoted-checkpoint write raises, the loop logs only the iteration's training metrics and no `eval/promoted`.
 
 `cargo test` wasn't run, because no Rust changed. No training, evaluation or GPU run was performed.
 
+## Merge with Tasks 3.1 and 3.4
+
+These tasks forked before Task 3.1 registered `KaggricultureTransformerConfig` and Task 3.4 added the typed `KaggricultureEnvConfig` behind `FullConfig.env`'s `GameEnvConfig` discriminator. The integration merge (`kg/merge-trainer-lanes`) keeps both sides' guards:
+- A validated Kaggriculture env now runs Task 3.4's `_validate_kaggriculture_rl` (gamma 1, no `winner_ce`) and then `_validate_kaggriculture_training` above (adds `rl.value_loss: mse` and `rl.ppo_clip_mode: per_player`; `env.reward_mode` is also fixed to `win_loss` by the env schema). Orbit configs run Isaiah's checks in `_validate_orbit_constraints`. The earlier `isinstance(env.obs_spec, KaggricultureObsConfig)` branch on Orbit's `EnvConfig` was unreachable for validated configs and was dropped.
+- `_create_eval_env` still rejects Kaggriculture first, then narrows the Orbit env with `require_orbit_env` before building `VectorizedEnv`.
+- The tests use the shipped configs instead of unvalidated `model_copy` configs: the full-config guard test and the raw-bank evaluation tests load `configs/kaggriculture.yaml`, and the formerly skipped `test_kaggriculture_yaml_configs_load_through_the_training_guards` now checks every `configs/kaggriculture*.yaml` loads and rejects gamma 0.99, `winner_ce`, `win_only` and `per_entity`.
+
 ## Limits and gaps
 
-- **Config registration is missing.** `EnvConfig.obs_spec` and `ModelConfig` don't accept the Kaggriculture configs yet (Task 1.5 game seam; the reference used `SupportedObsConfig`). Until then, the Kaggriculture branches in `FullConfig` and `run_ppo.py` are reachable only through unvalidated `model_copy` test configs.
-  - When the configs are registered, Isaiah's model checks in the same validator, which read `model.value_mode` and `model.critic_mode`, need `isinstance` narrowing, because `KaggricultureTransformerConfig` has neither field; its critic is fixed as a softmax `win_loss` critic.
-  - The skipped `test_kaggriculture_yaml_configs_load_through_the_training_guards` reopens this.
+- **Config registration landed with Tasks 3.1 and 3.4** (see below). The guards and the Kaggriculture evaluation branches are now reachable through validated configs; `EnvConfig` itself stays Orbit-only.
 - **The evaluation path is not Kaggriculture-ready.** `_create_eval_env` rejects Kaggriculture, and `_evaluation_seed` has no caller until the env config carries a seed. The script-local `_obs_to_device` and `_select_actions` still handle only Orbit batches, and replay export is Orbit-only. The skipped `test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds` reopens this once `owl.game.create_env` exists.
 - **The truncation path needs the mask type.** It indexes the observation through `_obs_index`, whose action-mask dispatch doesn't yet include `KaggricultureActionMask`, so the pure cut rule is tested but not a Kaggriculture `_apply_truncation`. The Kaggriculture `truncate_envs` must also keep the transition buffers (contract).
 - **Orbit keeps a quirk.** Its truncation zeroes the whole cut row, including a 4-player elimination reward (−1) earned on that same step. That is Isaiah's behavior, recorded here, not changed.

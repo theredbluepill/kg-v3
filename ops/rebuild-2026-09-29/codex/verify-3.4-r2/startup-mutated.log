@@ -1,0 +1,173 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___ test_main_rejects_unserviceable_kaggriculture_workload_before_allocation ___
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-configs/.codex-tmp/pytest-of-poonszesen/pytest-3/test_main_rejects_unserviceabl0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112916690>
+
+    def test_main_rejects_unserviceable_kaggriculture_workload_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        calls: list[str] = []
+        cfg = _kaggriculture_startup_config(
+            "kaggriculture_2rank.yaml", model=_TOO_WIDE_FOR_ONE_ROW
+        )
+        _patch_startup_until_run_dir(monkeypatch, tmp_path, cfg, calls)
+    
+        with pytest.raises(ValueError, match="one padded row of 709 tokens"):
+>           run_ppo.main()
+
+/private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py:2810: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/private/tmp/kg-verify34-2gdj_3zc/scripts/run_ppo.py:153: in main
+    _create_run_dir(launch.output_dir)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_output = PosixPath('/Users/poonszesen/kg-v3-configs/.codex-tmp/pytest-of-poonszesen/pytest-3/test_main_rejects_unserviceabl0/runs')
+
+    def fake_create_run_dir(_output: Path) -> Path:
+        calls.append("create_run_dir")
+>       raise _StopAfterStartupCheck
+E       test_run_ppo._StopAfterStartupCheck
+
+/private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py:2766: _StopAfterStartupCheck
+_ test_main_prints_kaggriculture_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-configs/.codex-tmp/pytest-of-poonszesen/pytest-3/test_main_prints_kaggriculture0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112757e60>
+capsys = <_pytest.capture.CaptureFixture object at 0x11298a420>
+name = 'kaggriculture_2rank.yaml', rollout_rows = 256, teacher_rows = 16384
+teacher_calls = 3
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+        ],
+    )
+    def test_main_prints_kaggriculture_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        _patch_startup_until_run_dir(
+            monkeypatch, tmp_path, _kaggriculture_startup_config(name), calls
+        )
+    
+        with pytest.raises(_StopAfterStartupCheck):
+            run_ppo.main()
+    
+        assert calls == ["create_run_dir"]
+        lines = capsys.readouterr().out.splitlines()
+        headroom = [line for line in lines if line.startswith("GEMM workload headroom")]
+>       assert [line.split(":")[0] for line in headroom] == [
+            "GEMM workload headroom rollout",
+            "GEMM workload headroom minibatch",
+            "GEMM workload headroom teacher_chunk",
+            "GEMM workload headroom evaluation",
+        ]
+E       AssertionError: assert [] == ['GEMM worklo...m evaluation']
+E         
+E         Right contains 4 more items, first extra item: 'GEMM workload headroom rollout'
+E         Use -v to get more diff
+
+/private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py:2841: AssertionError
+_ test_main_prints_kaggriculture_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-configs/.codex-tmp/pytest-of-poonszesen/pytest-3/test_main_prints_kaggriculture1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1129bbf20>
+capsys = <_pytest.capture.CaptureFixture object at 0x1129b9130>
+name = 'kaggriculture_4rank.yaml', rollout_rows = 128, teacher_rows = 8192
+teacher_calls = 2
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+        ],
+    )
+    def test_main_prints_kaggriculture_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        _patch_startup_until_run_dir(
+            monkeypatch, tmp_path, _kaggriculture_startup_config(name), calls
+        )
+    
+        with pytest.raises(_StopAfterStartupCheck):
+            run_ppo.main()
+    
+        assert calls == ["create_run_dir"]
+        lines = capsys.readouterr().out.splitlines()
+        headroom = [line for line in lines if line.startswith("GEMM workload headroom")]
+>       assert [line.split(":")[0] for line in headroom] == [
+            "GEMM workload headroom rollout",
+            "GEMM workload headroom minibatch",
+            "GEMM workload headroom teacher_chunk",
+            "GEMM workload headroom evaluation",
+        ]
+E       AssertionError: assert [] == ['GEMM worklo...m evaluation']
+E         
+E         Right contains 4 more items, first extra item: 'GEMM workload headroom rollout'
+E         Use -v to get more diff
+
+/private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py:2841: AssertionError
+___________ test_resume_startup_checks_the_runtime_adapted_workload ____________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-configs/.codex-tmp/pytest-of-poonszesen/pytest-3/test_resume_startup_checks_the0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11298a420>
+capsys = <_pytest.capture.CaptureFixture object at 0x11298a300>
+
+    def test_resume_startup_checks_the_runtime_adapted_workload(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        calls: list[str] = []
+        cfg = _kaggriculture_startup_config("kaggriculture_2rank.yaml")
+        adapted = cfg.model_copy(update={"env": cfg.env.model_copy(update={"n_envs": 64})})
+        _patch_startup_until_run_dir(monkeypatch, tmp_path, cfg, calls)
+        monkeypatch.setattr(
+            run_ppo,
+            "_resolve_launch",
+            lambda _args: run_ppo.ResumeLaunch(
+                config_path=tmp_path / "config.yaml",
+                run_dir=tmp_path / "run",
+                checkpoint_path=tmp_path / "run" / "checkpoint_final.pt",
+                last_best_checkpoint_path=tmp_path / "run" / "checkpoint_last_best.pt",
+            ),
+        )
+        monkeypatch.setattr(
+            run_ppo,
+            "_adapt_resume_config_for_runtime_gpus",
+            lambda _cfg, _distributed: adapted,
+        )
+    
+        with pytest.raises(AssertionError, match="VectorizedEnv ran before"):
+            run_ppo.main()
+    
+        out = capsys.readouterr().out
+>       assert "GEMM workload headroom rollout: 128 rows x 709 padded tokens;" in out
+E       AssertionError: assert 'GEMM workload headroom rollout: 128 rows x 709 padded tokens;' in ''
+
+/private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py:2886: AssertionError
+=========================== short test summary info ============================
+FAILED ../../../private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py::test_main_rejects_unserviceable_kaggriculture_workload_before_allocation
+FAILED ../../../private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py::test_main_prints_kaggriculture_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3]
+FAILED ../../../private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py::test_main_prints_kaggriculture_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2]
+FAILED ../../../private/tmp/kg-verify34-2gdj_3zc/tests/scripts/test_run_ppo.py::test_resume_startup_checks_the_runtime_adapted_workload
+4 failed, 79 deselected in 0.79s

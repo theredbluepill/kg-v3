@@ -9,11 +9,13 @@ per-seat winner critic (value ``2p(self) - 1``) needs the undiscounted
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pytest
 import torch
 from owl.kaggriculture import types as kt
+from owl.kaggriculture.config import KaggricultureEnvConfig
 from owl.rl import ObsBatch, PureActionMask
 from owl.train import FullConfig, PPOConfig
 from owl.train.advantages import compute_gae
@@ -23,7 +25,7 @@ from owl.train.ppo import (
     _ppo_loss_components,
     _truncation_keeps_transition_reward,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from tests.kaggriculture.conftest import make_obs
 
@@ -233,32 +235,40 @@ def _orbit_full_config(**rl: Any) -> FullConfig:
     )
 
 
+_CONFIGS = Path(__file__).parents[2] / "configs"
+_KAGGRICULTURE_CONFIGS = sorted(_CONFIGS.glob("kaggriculture*.yaml"))
+
+
+def _kaggriculture_config_data(path: Path) -> dict[str, Any]:
+    return FullConfig.from_file(path).model_dump(mode="json", round_trip=True)
+
+
 def test_full_config_applies_kaggriculture_guards_only_to_kaggriculture() -> None:
-    orbit = _orbit_full_config(gamma=0.99, ppo_clip_mode="per_entity")
-    # Until Task 1.5 registers the Kaggriculture env config, only an unvalidated
-    # copy can carry it; the validator itself is exercised directly.
-    farm = orbit.model_copy(
-        update={
-            "env": orbit.env.model_copy(
-                update={"obs_spec": kt.KaggricultureObsConfig()}
-            )
-        }
-    )
+    # Orbit keeps Isaiah's discounted, per-entity settings.
+    _orbit_full_config(gamma=0.99, ppo_clip_mode="per_entity")
+    farm = _kaggriculture_config_data(_CONFIGS / "kaggriculture.yaml")
+    farm["rl"]["gamma"] = 0.99
 
-    assert orbit._validate_cross_config_constraints() is orbit
-    with pytest.raises(ValueError, match=r"rl\.gamma=1\.0"):
-        farm._validate_cross_config_constraints()
+    with pytest.raises(ValidationError, match=r"rl\.gamma=1\.0"):
+        FullConfig.model_validate(farm)
 
 
-@pytest.mark.skip(
-    reason=(
-        "Needs the Kaggriculture env/model configs registered in EnvConfig and "
-        "ModelConfig (rebuild Task 1.5 game seam) and the Kaggriculture YAML "
-        "configs (Task 3.4)."
-    )
+@pytest.mark.parametrize("path", _KAGGRICULTURE_CONFIGS, ids=lambda p: p.name)
+@pytest.mark.parametrize(
+    ("section", "key", "value", "message"),
+    [
+        ("rl", "gamma", 0.99, r"rl\.gamma=1\.0"),
+        ("rl", "value_loss", "winner_ce", "rl.value_loss='winner_ce'"),
+        ("env", "reward_mode", "win_only", "reward_mode"),
+        ("rl", "ppo_clip_mode", "per_entity", r"rl\.ppo_clip_mode='per_player'"),
+    ],
 )
-def test_kaggriculture_yaml_configs_load_through_the_training_guards() -> None:
-    pytest.fail(
-        "Unskip when configs/kaggriculture*.yaml load: FullConfig.model_validate "
-        "must accept them and reject gamma<1, winner_ce, win_only and per_entity."
-    )
+def test_kaggriculture_yaml_configs_load_through_the_training_guards(
+    path: Path, section: str, key: str, value: object, message: str
+) -> None:
+    data = _kaggriculture_config_data(path)
+    assert isinstance(FullConfig.model_validate(data).env, KaggricultureEnvConfig)
+
+    data[section][key] = value
+    with pytest.raises(ValidationError, match=message):
+        FullConfig.model_validate(data)
