@@ -4,7 +4,7 @@ Reviewer: independent Claude subagent (substitute for Codex during its usage lim
 
 VERDICT: APPROVE
 
-- **Staging branch.** `kg/merge-wandb-c` in `/Users/poonszesen/kg-v3-m-wandb`.
+- **Staging branch.** `kg/merge-wandb-c` in `/Users/poonszesen/kg-v3-m-wandb`; merge commit `1fb5bcc` (parents `5ed1c1a`, `8d5838e`). The checks below ran on the uncommitted merged tree; `1fb5bcc` records its Python, Rust, test and README files unchanged since the final `just prepare`, and adds only the cookbook and `ops/` records written afterwards.
 - **BASE.** The integration tip `5ed1c1a` (`kg/isaiah-gap-closure`, the Tasks 3.1/3.5 landing).
 - **Merged.** `kg/rebuild-wandb` `8d5838e` (claude-verify-wandb-r3 APPROVE WITH EDITS, edits applied), with `git merge --no-ff`. The merge base is `994818b`.
 - **Scope.** The merge's own resolutions only. The two parents were reviewed separately: `claude-verify-wandb-r1..r3`, `claude-verify-3.1-*`, `claude-verify-3.5`, `claude-verify-merge-3-1-3-5` and `verify-4.4-r1`.
