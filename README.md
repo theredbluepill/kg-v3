@@ -323,8 +323,60 @@ uv run python scripts/run_ppo.py configs/baseline.yaml runs --log-mode debug --m
 ```
 
 Fresh launches accept `-o`/`--overrides field.path=value`; when provided, rank 0
-prints the flattened override list before loading the config. For a Kaggriculture
-launch on a suitable training host:
+prints the flattened override list before loading the config.
+
+Every `run_ppo` launch logs to W&B project `kg-v3` (any game) by default. W&B
+takes the entity from `WANDB_ENTITY` or the key's default entity. Before loading
+the config, rank 0 checks telemetry: `--log-mode wandb` with the default
+`--wandb-mode online` fails fast with `MissingWandbCredentialsError` unless
+`WANDB_API_KEY` is set (neither blank nor padded) or the `NETRC` file (default
+`~/.netrc`) has a password for the `WANDB_BASE_URL` host (default
+`api.wandb.ai`; an http(s) URL without embedded credentials). The error names
+the fix: install the credential with
+`cookbook/workflows/install-the-wandb-credential-before-any-pod-launch.md`,
+which copies only that entry with `scripts/export_wandb_netrc_entry.py`. In
+either W&B mode (online or offline) the same startup check also rejects, before
+the config, env or model exist, a set `WANDB_MODE` that differs from
+`--wandb-mode` (wandb 0.26.1 would silently let the flag win, or reject an
+empty value), and two settings that `wandb.init` would otherwise reject later:
+a `WANDB_BASE_URL` that is set but empty, is not such a URL, or fails the
+installed wandb's own `Settings` validation (for example `https://wandb.ai` or
+`http://api.wandb.ai`; the error withholds the value); and a set
+`WANDB_API_KEY` that is blank, padded or fails that validation. Other W&B
+settings are not pre-checked. Once the run
+starts, the logger stops if W&B reports a mode other than the requested one, so
+the receipt records the mode the run actually used. Running without live
+telemetry takes an explicit flag, either `--wandb-mode offline` (metrics stay in
+the run directory's `wandb/` folder until `wandb sync`) or `--log-mode debug`
+(stdout only); online failures never switch to offline. Either prints a
+`W&B TELEMETRY OUTAGE` banner to stderr at startup, and an offline run also
+names its `wandb/` folder once the run directory exists. `--wandb-mode offline`
+requires `--log-mode wandb`.
+
+Each launch or resume appends one record to the run directory's
+`attempts.jsonl`. The record holds `attempt`, `experiment_id`
+(`--experiment-id`, default the run directory name; resumes keep it), `job_type`
+`ppo`, `source_commit` (`git HEAD`, `-dirty` for tracked edits;
+`--source-commit` only where the checkout has no git metadata, and rejected when
+it disagrees with git), every attempt's commit so far, `config_sha256` (canonical
+JSON of the resolved config), `telemetry_mode` (`wandb-online`, `wandb-offline`
+or `disabled`), the W&B project, entity, run ID and URL, `start_env_steps` and
+`started_at` (a timezone-aware ISO time). Resume needs the run's `attempts.jsonl` and validates every field,
+the attempt order, a constant experiment ID and job type, and the source-commit
+history. The W&B run is named `ppo-<run-directory-name>`, uses the experiment
+ID as its group, `ppo` as its job type, and tags `kaggriculture-v3`, `ppo` and
+the game (`kaggriculture` or `orbit`). Training and evaluation metrics use the
+same logger calls. It stores `v3.experiment_id` and `v3.job_type` in its config,
+and the attempt's `v3/*` fields in its summary.
+
+A resume passes the saved W&B run ID with `resume="must"`, online only: resume
+launches reject `--wandb-mode offline` before allocating anything, because wandb
+0.26.1 ignores `resume` offline and would start a separate same-ID segment
+rather than continue the run. To resume a run whose earlier attempts were
+offline, first `wandb sync` its `wandb/offline-run-*` folders; otherwise the
+online `wandb.init` fails because the run does not exist remotely.
+
+For a Kaggriculture launch on a suitable training host:
 
 ```sh
 uv run python scripts/run_ppo.py configs/kaggriculture.yaml runs \
@@ -334,17 +386,6 @@ uv run python scripts/run_ppo.py configs/kaggriculture.yaml runs \
 The fresh Kaggriculture `last_best` launch names its teacher checkpoint
 (`--load-model-weights` or `-o rl.teacher_init=CHECKPOINT`; see the teacher
 paragraph below).
-
-`--wandb-mode {online,offline}` defaults to `online`. Kaggriculture W&B runs use
-project `kg-v3`, job type and group `ppo`, tags `kaggriculture-v3` and `ppo`,
-and name `ppo-<run-directory-name>`. Both training and evaluation metrics use
-the shared logger calls. For hosts without a W&B key, `--wandb-mode offline`
-saves telemetry under the run directory for a later `wandb sync`. Offline mode
-is explicit; online failures do not silently switch to it, and it requires
-`--log-mode wandb` (debug logging with offline mode fails). Resume requires
-online W&B logging and rejects
-`--wandb-mode offline` before allocating a run. Orbit keeps its existing online
-W&B initialization.
 
 Kaggriculture startup requires `env.seed` in `[0, 2**61)` and bounds the launch
 so every rollout seed remains below `2**62`, apart from the evaluation band.
@@ -463,12 +504,10 @@ samples from the weighted eval game set under
 ordinals are selected up front rather than taking the first games to finish.
 Each sampled eval game is written as its own JSONL file.
 
-`--log-mode wandb` (the default) publishes Kaggriculture runs to the W&B
-project `kg-v3` (job type and group `ppo`, tags `kaggriculture-v3` and `ppo`) and
-Orbit runs to `orbit-wars`. `--wandb-mode offline` keeps the W&B run under the
-run directory's `wandb/` for a later `wandb sync` (for a machine without a W&B
-key) and prints that the telemetry is offline; resume launches reject it (see
-the launch section above).
+`--log-mode wandb` (the default) publishes every run, Kaggriculture or Orbit,
+to the W&B project `kg-v3` under its experiment ID and game tag; the launch
+section above covers the credential check, `--wandb-mode offline` (rejected for
+resume launches), the outage banner and the `attempts.jsonl` receipt.
 Exceptions escaping the training logger session, including `KeyboardInterrupt`
 and `SystemExit`, close W&B with exit code 1; normal completion closes it with
 exit code 0. The distributed session prints and flushes a rank-tagged traceback

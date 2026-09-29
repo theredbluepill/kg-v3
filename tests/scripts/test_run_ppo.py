@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import math
 import re
 import sys
@@ -12,6 +13,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import owl.train.logging as train_logging
 import pytest
 import torch
 from owl.checkpoint_quantization import (
@@ -47,7 +49,16 @@ from owl.rl import (
 )
 from owl.train import FullConfig, PPOTrainer
 from owl.train.distributed import DistributedContext
-from owl.train.logging import LogMode, MetricLogger
+from owl.train.logging import (
+    ATTEMPTS_FILE,
+    LogMode,
+    MetricLogger,
+    MissingWandbCredentialsError,
+    RunIdentity,
+    TelemetryMode,
+    WandbMode,
+    WandbRunFacts,
+)
 from owl.train.optimizer import CompositeOptimizer
 
 _RUN_PPO_PATH = Path(__file__).parents[2] / "scripts" / "run_ppo.py"
@@ -455,6 +466,9 @@ class _FakeLogger:
     def run_id(self) -> str | None:
         return self._run_id
 
+    def wandb_run_facts(self) -> WandbRunFacts | None:
+        return None
+
     def log(self, metrics: dict[str, float], *, step: int) -> None:
         self.logged.append((metrics, step))
 
@@ -464,6 +478,18 @@ class _FakeLogger:
     def close(self, *, exit_code: int = 0) -> None:
         self.closed = True
         self.close_exit_codes.append(exit_code)
+
+
+def _identity(telemetry: TelemetryMode = TelemetryMode.DISABLED) -> RunIdentity:
+    return RunIdentity(
+        experiment_id="exp",
+        job_type="ppo",
+        attempt=0,
+        source_commit="abc123",
+        attempt_source_commits=("abc123",),
+        config_sha256="0" * 64,
+        telemetry=telemetry,
+    )
 
 
 class _FakeTrainer:
@@ -637,6 +663,8 @@ def test_validate_args_rejects_non_positive_runtime_hours() -> None:
                 load_model_weights=None,
                 load_model_weights_mode="model_only",
                 log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id=None,
             )
         )
 
@@ -652,6 +680,8 @@ def test_validate_args_rejects_debug_resume() -> None:
                 load_model_weights=None,
                 load_model_weights_mode="model_only",
                 log_mode=LogMode.DEBUG,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id=None,
             )
         )
 
@@ -667,6 +697,8 @@ def test_validate_args_rejects_resume_overrides() -> None:
                 load_model_weights=None,
                 load_model_weights_mode="model_only",
                 log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id=None,
             )
         )
 
@@ -685,6 +717,8 @@ def test_validate_args_rejects_resume_load_model_weights() -> None:
                 load_model_weights=Path("checkpoint.pt"),
                 load_model_weights_mode="model_only",
                 log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id=None,
             )
         )
 
@@ -703,14 +737,14 @@ def test_validate_args_rejects_load_model_weights_mode_without_checkpoint() -> N
                 load_model_weights=None,
                 load_model_weights_mode="model_and_optimizer",
                 log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id=None,
             )
         )
 
 
-def test_validate_args_rejects_wandb_mode_without_wandb_logging() -> None:
-    with pytest.raises(
-        ValueError, match="--wandb-mode offline requires --log-mode wandb"
-    ):
+def test_validate_args_rejects_offline_wandb_mode_with_debug_logging() -> None:
+    with pytest.raises(ValueError, match="applies only to --log-mode wandb"):
         run_ppo._validate_args(
             Namespace(
                 max_env_steps=None,
@@ -720,9 +754,67 @@ def test_validate_args_rejects_wandb_mode_without_wandb_logging() -> None:
                 load_model_weights=None,
                 load_model_weights_mode="model_only",
                 log_mode=LogMode.DEBUG,
-                wandb_mode="offline",
+                wandb_mode=WandbMode.OFFLINE,
+                experiment_id=None,
             )
         )
+
+
+def test_validate_args_rejects_resume_experiment_id() -> None:
+    with pytest.raises(ValueError, match="keep the recorded --experiment-id"):
+        run_ppo._validate_args(
+            Namespace(
+                max_env_steps=None,
+                max_runtime_hours=None,
+                output_dir=None,
+                overrides=None,
+                load_model_weights=None,
+                load_model_weights_mode="model_only",
+                log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id="other",
+            )
+        )
+
+
+def test_validate_args_rejects_a_malformed_experiment_id_before_the_run_dir() -> None:
+    with pytest.raises(ValueError, match="experiment id must match"):
+        run_ppo._validate_args(
+            Namespace(
+                max_env_steps=None,
+                max_runtime_hours=None,
+                output_dir=Path("runs"),
+                overrides=None,
+                load_model_weights=None,
+                load_model_weights_mode="model_only",
+                log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id="has space",
+            )
+        )
+
+
+def test_validate_args_rejects_wandb_mode_without_wandb_logging(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Through the parser: the one telemetry-mode check rejects the pair.
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_ppo.py",
+            "config.yaml",
+            "runs",
+            "--log-mode",
+            "debug",
+            "--wandb-mode",
+            "offline",
+        ],
+    )
+    with pytest.raises(
+        ValueError, match="--wandb-mode offline requires --log-mode wandb"
+    ):
+        run_ppo._parse_args()
 
 
 @pytest.mark.parametrize(
@@ -741,8 +833,9 @@ def test_run_training_session_opens_an_offline_wandb_run_visibly(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    logger = _FakeLogger()
+    logger = _FakeWandbLogger(run_id="off1")
     created: list[dict[str, object]] = []
+    identity = _identity(TelemetryMode.WANDB_OFFLINE)
 
     def create_fake_logger(*args: object, **kwargs: object) -> _FakeLogger:
         created.append({"args": args, **kwargs})
@@ -755,7 +848,7 @@ def test_run_training_session_opens_an_offline_wandb_run_visibly(
         run_dir=tmp_path,
         cfg=_full_config(),
         log_mode=LogMode.WANDB,
-        wandb_mode="offline",
+        identity=identity,
         env_steps_per_iteration=8,
         max_env_steps=8,
         max_runtime_seconds=None,
@@ -764,9 +857,9 @@ def test_run_training_session_opens_an_offline_wandb_run_visibly(
 
     (call,) = created
     assert call["args"] == (LogMode.WANDB, tmp_path, _full_config())
-    assert call["wandb_mode"] == "offline"
+    assert call["identity"] is identity
     assert f"W&B offline: telemetry stays under {tmp_path / 'wandb'}" in (
-        capsys.readouterr().out
+        capsys.readouterr().err
     )
 
 
@@ -2254,6 +2347,7 @@ def test_run_training_session_sets_trainable_parameter_summary(
         run_dir=tmp_path,
         cfg=cfg,
         log_mode=LogMode.DEBUG,
+        identity=_identity(),
         env_steps_per_iteration=8,
         max_env_steps=8,
         max_runtime_seconds=None,
@@ -2289,6 +2383,7 @@ def test_run_training_session_records_the_compile_gemm_claim(
         run_dir=tmp_path,
         cfg=_full_config(),
         log_mode=LogMode.DEBUG,
+        identity=_identity(),
         env_steps_per_iteration=8,
         max_env_steps=8,
         max_runtime_seconds=None,
@@ -2336,6 +2431,7 @@ def test_run_training_session_worker_skips_logger_and_final_checkpoint(
         run_dir=tmp_path,
         cfg=cfg,
         log_mode=LogMode.DEBUG,
+        identity=None,
         env_steps_per_iteration=8,
         max_env_steps=8,
         max_runtime_seconds=None,
@@ -2368,6 +2464,7 @@ def test_run_training_session_closes_logger_and_skips_final_checkpoint_on_error(
             run_dir=tmp_path,
             cfg=cfg,
             log_mode=LogMode.DEBUG,
+            identity=_identity(),
             env_steps_per_iteration=8,
             max_env_steps=8,
             max_runtime_seconds=None,
@@ -3452,6 +3549,9 @@ def _patch_kaggriculture_startup(
         monkeypatch.setattr(run_ppo, name, sentinel(name))
     # Hermetic: the compile-stack check reads the probed GPU stack, not the host.
     monkeypatch.setattr(run_ppo, "installed_compile_stack", lambda: _PROBED_STACK)
+    # Hermetic W&B credentials: online launches see a key, never the host's.
+    monkeypatch.delenv("WANDB_MODE", raising=False)
+    monkeypatch.setenv("WANDB_API_KEY", "test-key-not-real")
 
 
 def _teacher_source_argv(tmp_path: Path) -> list[str]:
@@ -3662,7 +3762,8 @@ def test_kaggriculture_session_forwards_offline_mode_and_shared_metrics(
         "eval/win_rate_against_last_best": 0.5,
         "eval/candidate_bank_margin": 0.0,
     }
-    trainer, logger = _FakeTrainer(metrics=training), _FakeLogger()
+    trainer, logger = _FakeTrainer(metrics=training), _FakeWandbLogger(run_id="off1")
+    identity = _identity(TelemetryMode.WANDB_OFFLINE)
 
     def make_logger(
         mode: LogMode, run_dir: Path, config: FullConfig, **kwargs: object
@@ -3670,7 +3771,7 @@ def test_kaggriculture_session_forwards_offline_mode_and_shared_metrics(
         assert mode == LogMode.WANDB
         assert run_dir == tmp_path
         assert config is cfg
-        assert kwargs == {"resume_run_id": None, "wandb_mode": "offline"}
+        assert kwargs == {"identity": identity, "resume_run_id": None}
         return logger
 
     monkeypatch.setattr(run_ppo, "create_logger", make_logger)
@@ -3683,7 +3784,7 @@ def test_kaggriculture_session_forwards_offline_mode_and_shared_metrics(
         run_dir=tmp_path,
         cfg=cfg,
         log_mode=LogMode.WANDB,
-        wandb_mode="offline",
+        identity=identity,
         env_steps_per_iteration=2,
         max_env_steps=2,
         max_runtime_seconds=None,
@@ -3892,6 +3993,22 @@ def test_kaggriculture_resume_seeds_follow_every_first_launch_seed() -> None:
     assert first_seeds.isdisjoint(range(resume_base, resumed_next))
 
 
+def _write_online_attempt_receipt(run_dir: Path) -> None:
+    """The ``attempts.jsonl`` a resume needs: one earlier online attempt."""
+    identity = train_logging.plan_attempt(
+        run_dir,
+        job_type="ppo",
+        resume=False,
+        experiment_id=None,
+        source_commit="v3-src-0",
+        config_sha256="0" * 64,
+        telemetry=TelemetryMode.WANDB_ONLINE,
+    )
+    train_logging.record_attempt(
+        run_dir, identity, _FakeWandbLogger(run_id="on0"), start_env_steps=0
+    )
+
+
 def test_main_kaggriculture_resume_starts_a_disjoint_seed_stream(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -3902,6 +4019,7 @@ def test_main_kaggriculture_resume_starts_a_disjoint_seed_stream(
     saved.to_file(run_dir / "config.yaml")
     _write_metadata_checkpoint(run_dir / "checkpoint_final.pt", env_steps=1_000)
     _write_metadata_checkpoint(run_dir / "checkpoint_last_best.pt", env_steps=0)
+    _write_online_attempt_receipt(run_dir)
     calls: list[str] = []
     _patch_kaggriculture_startup(
         monkeypatch, [str(run_dir)], calls, log_mode=LogMode.WANDB
@@ -3930,6 +4048,7 @@ def _kaggriculture_resume_run(tmp_path: Path, *, env_steps: int) -> Path:
     saved.to_file(run_dir / "config.yaml")
     _write_metadata_checkpoint(run_dir / "checkpoint_final.pt", env_steps=env_steps)
     _write_metadata_checkpoint(run_dir / "checkpoint_last_best.pt", env_steps=0)
+    _write_online_attempt_receipt(run_dir)
     return run_dir
 
 
@@ -4095,7 +4214,9 @@ def test_main_forwards_wandb_mode_and_the_default_step_limit(
     run_ppo.main()
     (kwargs,) = session
     assert kwargs["log_mode"] == LogMode.WANDB
-    assert kwargs["wandb_mode"] == "offline"
+    identity = kwargs["identity"]
+    assert isinstance(identity, RunIdentity)
+    assert identity.telemetry is TelemetryMode.WANDB_OFFLINE
     cfg = kwargs["cfg"]
     assert isinstance(cfg, FullConfig)
     assert kwargs["max_env_steps"] == run_ppo._kaggriculture_step_limit(
@@ -4414,7 +4535,8 @@ def test_validate_args_rejects_offline_wandb_with_debug_logging() -> None:
                 load_model_weights=None,
                 load_model_weights_mode="model_only",
                 log_mode=LogMode.DEBUG,
-                wandb_mode="offline",
+                wandb_mode=WandbMode.OFFLINE,
+                experiment_id=None,
             )
         )
 
@@ -4723,6 +4845,7 @@ def test_resume_startup_checks_the_runtime_adapted_workload(
     # Startup reads the resumed env step for the rollout seed budget.
     for checkpoint in ("checkpoint_final.pt", "checkpoint_last_best.pt"):
         _write_metadata_checkpoint(run_dir / checkpoint, env_steps=0)
+    _write_online_attempt_receipt(run_dir)
     calls: list[str] = []
     # Resume requires W&B logging; the check runs before any logger exists.
     _patch_kaggriculture_startup(
@@ -4770,3 +4893,365 @@ def test_startup_workload_check_skips_isaiahs_unchunked_orbit_models(
 
     assert reports == ()
     assert capsys.readouterr().out == ""
+
+
+# --- W&B telemetry gate and attempt receipts ----------------------------------
+
+
+def _without_wandb_credentials(monkeypatch: pytest.MonkeyPatch, home: Path) -> None:
+    for name in ("WANDB_API_KEY", "NETRC", "WANDB_BASE_URL", "WANDB_MODE"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("HOME", str(home))
+
+
+def test_main_fails_fast_without_wandb_credentials(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+    argv = [str(_CONFIGS / "kaggriculture_2rank.yaml"), str(tmp_path / "runs")]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls, log_mode=LogMode.WANDB)
+    _without_wandb_credentials(monkeypatch, tmp_path)
+
+    def reached(name: str) -> object:
+        def record(*_args: object, **_kwargs: object) -> None:
+            calls.append(name)
+            raise AssertionError(f"{name} ran before the telemetry gate")
+
+        return record
+
+    monkeypatch.setattr(run_ppo, "_log_cli_overrides", reached("_log_cli_overrides"))
+    monkeypatch.setattr(
+        run_ppo.FullConfig, "from_file", reached("FullConfig.from_file")
+    )
+    monkeypatch.setattr(
+        run_ppo, "resolve_source_commit", reached("resolve_source_commit")
+    )
+
+    with pytest.raises(
+        MissingWandbCredentialsError, match=re.escape("api.wandb.ai")
+    ) as info:
+        run_ppo.main()
+
+    message = str(info.value)
+    assert "WANDB_API_KEY" in message
+    assert "--wandb-mode offline" in message
+    assert "install-the-wandb-credential-before-any-pod-launch" in message
+    assert calls == []
+    assert not (tmp_path / "runs").exists()
+
+
+def test_main_offline_mode_announces_the_outage_without_credentials(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    calls: list[str] = []
+    argv = [
+        str(_CONFIGS / "kaggriculture_2rank.yaml"),
+        str(tmp_path / "runs"),
+        "--wandb-mode",
+        "offline",
+        *_teacher_source_argv(tmp_path),
+    ]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls, log_mode=LogMode.WANDB)
+    _without_wandb_credentials(monkeypatch, tmp_path)
+
+    # Past the telemetry gate, startup reaches the run directory's sentinel.
+    with pytest.raises(AssertionError, match="_create_run_dir ran"):
+        run_ppo.main()
+
+    assert calls == ["_create_run_dir"]
+    err = capsys.readouterr().err
+    assert "W&B TELEMETRY OUTAGE: telemetry_mode=wandb-offline" in err
+
+
+class _FakeWandbLogger(_FakeLogger):
+    def wandb_run_facts(self) -> WandbRunFacts | None:
+        return WandbRunFacts(project="kg-v3", entity="team", url=None)
+
+
+@pytest.mark.parametrize(
+    ("telemetry", "logger", "outage"),
+    [
+        (TelemetryMode.DISABLED, _FakeLogger(run_id=None), True),
+        (TelemetryMode.WANDB_OFFLINE, _FakeWandbLogger(run_id="off1"), True),
+        (TelemetryMode.WANDB_ONLINE, _FakeWandbLogger(run_id="on1"), False),
+    ],
+)
+def test_run_training_session_records_the_attempt_and_its_telemetry_mode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    telemetry: TelemetryMode,
+    logger: _FakeLogger,
+    outage: bool,
+) -> None:
+    monkeypatch.setattr(run_ppo, "create_logger", lambda *_a, **_k: logger)
+
+    run_ppo._run_training_session(
+        trainer=_FakeTrainer(),
+        run_dir=tmp_path,
+        cfg=_full_config(),
+        log_mode=LogMode.WANDB,
+        identity=_identity(telemetry),
+        env_steps_per_iteration=8,
+        max_env_steps=8,
+        max_runtime_seconds=None,
+        distributed=DistributedContext.single_process_cpu(),
+        start_env_steps=16,
+    )
+
+    records = [
+        json.loads(line) for line in (tmp_path / ATTEMPTS_FILE).read_text().splitlines()
+    ]
+    assert len(records) == 1
+    record = records[0]
+    assert record["telemetry_mode"] == str(telemetry)
+    assert record["experiment_id"] == "exp"
+    assert record["attempt"] == 0
+    assert record["source_commit"] == "abc123"
+    assert record["start_env_steps"] == 16
+    assert record["wandb_run_id"] == logger.run_id
+    assert record["wandb_project"] == (
+        None if telemetry is TelemetryMode.DISABLED else "kg-v3"
+    )
+    err = capsys.readouterr().err
+    assert ("W&B TELEMETRY OUTAGE recorded" in err) is outage
+
+
+def test_run_training_session_requires_the_main_rank_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(run_ppo, "create_logger", lambda *_a, **_k: _FakeLogger())
+
+    with pytest.raises(RuntimeError, match="needs its run identity"):
+        run_ppo._run_training_session(
+            trainer=_FakeTrainer(),
+            run_dir=tmp_path,
+            cfg=_full_config(),
+            log_mode=LogMode.DEBUG,
+            identity=None,
+            env_steps_per_iteration=8,
+            max_env_steps=8,
+            max_runtime_seconds=None,
+            distributed=DistributedContext.single_process_cpu(),
+        )
+
+
+# --- main-level receipt wiring (claude-verify-wandb-r1 F2) ---------------------
+
+
+class _StartupTrainer:
+    def __init__(self, **kwargs: object) -> None:
+        self.model = kwargs["model"]
+
+    def load_checkpoint(self, path: Path) -> run_ppo.PPOCheckpointMetadata:
+        assert path.name == run_ppo.CHECKPOINT_FINAL
+        return run_ppo.PPOCheckpointMetadata(env_steps=64, wandb_run_id="off1")
+
+    def set_teacher_model(self, *_args: object, **_kwargs: object) -> None:
+        return None
+
+
+def _patch_orbit_startup(
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+    *,
+    envs_built: list[int],
+    session: dict[str, object],
+) -> None:
+    """Stub everything past plan_attempt so main's receipt wiring is observable."""
+
+    class FakeEnv:
+        def __init__(self, *, n_envs: int, **_kwargs: object) -> None:
+            envs_built.append(n_envs)
+            self.n_envs = n_envs
+
+    monkeypatch.setattr(sys, "argv", ["run_ppo.py", *argv])
+    monkeypatch.setattr(run_ppo, "assert_release_build", lambda: None)
+    monkeypatch.setattr(run_ppo, "configure_torch", lambda: None)
+    monkeypatch.setattr(
+        run_ppo,
+        "distributed_session",
+        lambda: nullcontext(DistributedContext.single_process_cpu()),
+    )
+    monkeypatch.setattr(run_ppo, "VectorizedEnv", FakeEnv)
+    monkeypatch.setattr(
+        run_ppo, "_create_model", lambda *_a, **_k: torch.nn.Linear(1, 1)
+    )
+    monkeypatch.setattr(run_ppo, "configure_model_compile", lambda *_args: 0)
+    monkeypatch.setattr(
+        run_ppo,
+        "create_optimizer",
+        lambda model, _cfg: torch.optim.SGD(model.parameters(), lr=0.1),
+    )
+    monkeypatch.setattr(run_ppo, "create_lr_scheduler", lambda *_args: None)
+    monkeypatch.setattr(run_ppo, "PPOTrainer", _StartupTrainer)
+    monkeypatch.setattr(
+        run_ppo, "_create_eval_model_for_config", lambda *_a, **_k: None
+    )
+    monkeypatch.setattr(
+        run_ppo,
+        "_load_model_from_checkpoint",
+        lambda *_a, **_k: run_ppo.PPOCheckpointMetadata(
+            env_steps=64, wandb_run_id="off1"
+        ),
+    )
+    monkeypatch.setattr(run_ppo, "_compile_eval_model", lambda *_a, **_k: None)
+    monkeypatch.setattr(
+        run_ppo, "_run_training_session", lambda **kwargs: session.update(kwargs)
+    )
+    for name in ("WANDB_API_KEY", "NETRC", "WANDB_BASE_URL", "WANDB_MODE"):
+        monkeypatch.delenv(name, raising=False)
+
+
+def _without_git(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A checkout without git metadata, where --source-commit is the identity."""
+    monkeypatch.setattr(train_logging, "git_source_commit", lambda _cwd: None)
+
+
+def test_main_fresh_launch_plans_attempt_zero_with_the_flags(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    _full_config().to_file(config_path)
+    envs_built: list[int] = []
+    session: dict[str, object] = {}
+    _patch_orbit_startup(
+        monkeypatch,
+        [
+            str(config_path),
+            str(tmp_path / "runs"),
+            "--log-mode",
+            "debug",
+            "--experiment-id",
+            "exp-fresh",
+            "--source-commit",
+            "v3-src-1",
+        ],
+        envs_built=envs_built,
+        session=session,
+    )
+    _without_git(monkeypatch)
+
+    run_ppo.main()
+
+    identity = session["identity"]
+    assert isinstance(identity, RunIdentity)
+    assert identity.experiment_id == "exp-fresh"
+    assert identity.job_type == "ppo"
+    assert identity.attempt == 0
+    assert identity.source_commit == "v3-src-1"
+    assert identity.attempt_source_commits == ("v3-src-1",)
+    assert identity.telemetry is TelemetryMode.DISABLED
+    cfg = session["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert identity.config_sha256 == train_logging.config_sha256(cfg)
+    run_dir = session["run_dir"]
+    assert isinstance(run_dir, Path)
+    assert identity.config_sha256 == train_logging.config_sha256(
+        FullConfig.from_file(run_dir / "config.yaml")
+    )
+    assert envs_built == [2]
+
+
+def test_main_rejects_a_source_commit_that_disagrees_with_git(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    _full_config().to_file(config_path)
+    envs_built: list[int] = []
+    _patch_orbit_startup(
+        monkeypatch,
+        [
+            str(config_path),
+            str(tmp_path / "runs"),
+            "--log-mode",
+            "debug",
+            "--source-commit",
+            "not-the-checkout",
+        ],
+        envs_built=envs_built,
+        session={},
+    )
+    monkeypatch.setattr(train_logging, "git_source_commit", lambda _cwd: "abc123")
+
+    with pytest.raises(ValueError, match="disagrees with git"):
+        run_ppo.main()
+
+    assert envs_built == []
+    assert not (tmp_path / "runs").exists()
+
+
+def _resumable_run_dir(tmp_path: Path, *, with_receipt: bool) -> Path:
+    run_dir = tmp_path / "runs" / "20260930-000000"
+    run_dir.mkdir(parents=True)
+    cfg = run_ppo._with_runtime_gpus(_full_config(), 1)
+    cfg.to_file(run_dir / "config.yaml")
+    (run_dir / run_ppo.CHECKPOINT_FINAL).write_bytes(b"stub")
+    (run_dir / run_ppo.CHECKPOINT_LAST_BEST).write_bytes(b"stub")
+    if with_receipt:
+        identity = train_logging.plan_attempt(
+            run_dir,
+            job_type="ppo",
+            resume=False,
+            experiment_id="exp-resume",
+            source_commit="v3-src-0",
+            config_sha256=train_logging.config_sha256(cfg),
+            telemetry=TelemetryMode.WANDB_OFFLINE,
+        )
+        train_logging.record_attempt(
+            run_dir, identity, _FakeWandbLogger(run_id="off1"), start_env_steps=0
+        )
+    return run_dir
+
+
+def test_main_resume_with_a_receipt_plans_attempt_one(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = _resumable_run_dir(tmp_path, with_receipt=True)
+    envs_built: list[int] = []
+    session: dict[str, object] = {}
+    _patch_orbit_startup(
+        monkeypatch,
+        [str(run_dir), "--source-commit", "v3-src-1"],
+        envs_built=envs_built,
+        session=session,
+    )
+    _without_git(monkeypatch)
+    # Attempt 0 ran offline; after `wandb sync` the resume continues it online.
+    monkeypatch.setenv("WANDB_API_KEY", "test-key-not-real")
+
+    run_ppo.main()
+
+    identity = session["identity"]
+    assert isinstance(identity, RunIdentity)
+    assert identity.attempt == 1
+    assert identity.experiment_id == "exp-resume"
+    assert identity.attempt_source_commits == ("v3-src-0", "v3-src-1")
+    assert identity.telemetry is TelemetryMode.WANDB_ONLINE
+    assert session["resume_run_id"] == "off1"
+    assert session["start_env_steps"] == 64
+    assert envs_built == [2]
+
+
+def test_main_resume_without_receipts_fails_before_the_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = _resumable_run_dir(tmp_path, with_receipt=False)
+    envs_built: list[int] = []
+    _patch_orbit_startup(
+        monkeypatch,
+        [str(run_dir), "--source-commit", "v3-src-1"],
+        envs_built=envs_built,
+        session={},
+    )
+    _without_git(monkeypatch)
+    monkeypatch.setenv("WANDB_API_KEY", "test-key-not-real")
+
+    with pytest.raises(FileNotFoundError, match="resume needs the run's attempt"):
+        run_ppo.main()
+
+    assert envs_built == []

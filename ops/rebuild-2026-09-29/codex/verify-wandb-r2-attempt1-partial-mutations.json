@@ -1,0 +1,227 @@
+[
+  {
+    "guard": "G1_project",
+    "mutation": "WANDB_PROJECT = \"kg-v3\" -> WANDB_PROJECT = \"orbit-wars\"",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "3 failed, 38 passed in 0.12s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_wandb_logger_opens_the_v3_project_with_v3_identity[wandb-online-online]",
+      "tests/owl/train/test_logging.py::test_wandb_logger_opens_the_v3_project_with_v3_identity[wandb-offline-offline]",
+      "tests/owl/train/test_logging.py::test_other_launchers_reuse_the_logger_with_their_own_config"
+    ],
+    "seconds": 1.934043792,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G2_env",
+    "mutation": "if \"WANDB_API_KEY\" in environ: -> if False:",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "3 failed, 38 passed in 0.13s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_environment_key_counts_but_blank_does_not",
+      "tests/owl/train/test_logging.py::test_online_gate_requires_credentials_and_stays_quiet",
+      "tests/owl/train/test_logging.py::test_an_empty_wandb_mode_is_a_disagreement"
+    ],
+    "seconds": 1.4377530410000001,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G2_blank_padded",
+    "mutation": "if not key or key != key.strip(): -> if False:",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "1 failed, 40 passed in 0.11s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_environment_key_counts_but_blank_does_not"
+    ],
+    "seconds": 1.4557892499999996,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G2_netrc_password",
+    "mutation": "if entry is None or not entry[2]: -> if entry is None:",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "1 failed, 40 passed in 0.10s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_netrc_needs_the_api_wandb_ai_entry_with_a_password"
+    ],
+    "seconds": 1.3179821660000002,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G2_NETRC",
+    "mutation": "configured = environ.get(\"NETRC\") -> configured = None",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "4 failed, 37 passed in 0.11s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_netrc_and_host_follow_wandbs_environment",
+      "tests/owl/train/test_logging.py::test_netrc_entry_export_keeps_only_the_wandb_host[machine api.wandb.ai login user password 0123456789abcdef0123456789abcdef01234567 machine github.com login gh password GHSECRET default login a password DEFSECRET\\n]",
+      "tests/owl/train/test_logging.py::test_netrc_entry_export_keeps_only_the_wandb_host[machine\\napi.wandb.ai\\nlogin\\nuser\\npassword\\n0123456789abcdef0123456789abcdef01234567\\nmachine github.com login gh password GHSECRET\\n]",
+      "tests/owl/train/test_logging.py::test_netrc_entry_export_keeps_only_the_wandb_host[default login a password DEFSECRET\\nmachine github.com\\n  login gh\\n  password GHSECRET\\nmachine api.wandb.ai\\n  login user\\n  password 0123456789abcdef0123456789abcdef01234567\\n]"
+    ],
+    "seconds": 1.3361715829999996,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G2_host_override",
+    "mutation": "base_url = environ.get(\"WANDB_BASE_URL\") or DEFAULT_WANDB_BASE_URL -> base_url = DEFAULT_WANDB_BASE_URL",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "2 failed, 39 passed in 0.10s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_netrc_and_host_follow_wandbs_environment",
+      "tests/owl/train/test_logging.py::test_base_url_is_validated_first_and_never_quoted"
+    ],
+    "seconds": 1.3222387500000004,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G2_missing_credentials",
+    "mutation": "if source is None: -> if False:",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "2 failed, 39 passed in 0.10s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_no_key_and_no_netrc_fails_with_the_fix",
+      "tests/owl/train/test_logging.py::test_online_gate_requires_credentials_and_stays_quiet"
+    ],
+    "seconds": 1.3223457500000002,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G3_error_redaction",
+    "mutation": "f\"cannot parse {path} (line {error.lineno}); repair it with \" -> f\"cannot parse {path}: {error}; repair it with \"",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "1 failed, 40 passed in 0.10s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_malformed_netrc_error_never_quotes_the_file"
+    ],
+    "seconds": 1.3850729580000003,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G4_outage_banner",
+    "mutation": "print(telemetry_outage_banner(mode), file=sys.stderr, flush=True) -> pass",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "11 failed, 142 passed, 1 skipped in 1.24s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_outage_modes_skip_credentials_and_warn_loudly[wandb-offline-wandb-offline]",
+      "tests/owl/train/test_logging.py::test_outage_modes_skip_credentials_and_warn_loudly[debug-online-disabled]",
+      "tests/scripts/test_run_ppo.py::test_fixed_teacher_fresh_launch_leaves_last_best_unseeded",
+      "tests/scripts/test_run_ppo.py::test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher",
+      "tests/scripts/test_run_ppo.py::test_main_rejects_an_unprobed_compile_stack_before_allocation",
+      "tests/scripts/test_run_ppo.py::test_main_rejects_unserviceable_kaggriculture_workload_before_allocation",
+      "tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3]",
+      "tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2]",
+      "tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]",
+      "tests/scripts/test_run_ppo.py::test_resume_startup_checks_the_runtime_adapted_workload",
+      "tests/scripts/test_run_ppo.py::test_main_offline_mode_announces_the_outage_without_credentials"
+    ],
+    "seconds": 2.652575540999999,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G4_online_quiet",
+    "mutation": "require_wandb_credentials(environ, home=home)\n    else: -> require_wandb_credentials(environ, home=home)\n        print(\"OUTAGE\", file=sys.stderr)\n    else:",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "1 failed, 40 passed in 0.11s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_online_gate_requires_credentials_and_stays_quiet"
+    ],
+    "seconds": 1.5606182499999992,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G5_mode_disagreement",
+    "mutation": "if env_mode != wandb_mode: -> if False:",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "2 failed, 39 passed in 0.10s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_wandb_mode_environment_cannot_override_the_flag",
+      "tests/owl/train/test_logging.py::test_an_empty_wandb_mode_is_a_disagreement"
+    ],
+    "seconds": 1.4454054170000017,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G5_empty_mode",
+    "mutation": "and \"WANDB_MODE\" in environ: -> and environ.get(\"WANDB_MODE\"):",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "1 failed, 40 passed in 0.11s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_an_empty_wandb_mode_is_a_disagreement"
+    ],
+    "seconds": 1.5860108329999996,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  },
+  {
+    "guard": "G6_debug_offline",
+    "mutation": "if wandb_mode != WandbMode.ONLINE: -> if False:",
+    "exit": 1,
+    "killed": true,
+    "summary": [
+      "11 failed, 142 passed, 1 skipped in 1.05s"
+    ],
+    "failed_tests": [
+      "tests/owl/train/test_logging.py::test_telemetry_modes_and_the_offline_debug_conflict",
+      "tests/scripts/test_run_ppo.py::test_validate_args_rejects_offline_wandb_mode_with_debug_logging",
+      "tests/scripts/test_run_ppo.py::test_fixed_teacher_fresh_launch_leaves_last_best_unseeded",
+      "tests/scripts/test_run_ppo.py::test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher",
+      "tests/scripts/test_run_ppo.py::test_main_rejects_an_unprobed_compile_stack_before_allocation",
+      "tests/scripts/test_run_ppo.py::test_main_rejects_unserviceable_kaggriculture_workload_before_allocation",
+      "tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3]",
+      "tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2]",
+      "tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]",
+      "tests/scripts/test_run_ppo.py::test_resume_startup_checks_the_runtime_adapted_workload",
+      "tests/scripts/test_run_ppo.py::test_main_offline_mode_announces_the_outage_without_credentials"
+    ],
+    "seconds": 2.4121533750000026,
+    "restored": true,
+    "sha256": "31de2861558dbbd4e1f32ef38cd7a358fe27127145d0ef94eef042f7d86a8c04"
+  }
+]

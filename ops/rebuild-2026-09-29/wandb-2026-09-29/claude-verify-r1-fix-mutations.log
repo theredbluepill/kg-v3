@@ -1,0 +1,20 @@
+# claude-verify-wandb-r1 fix: Claude's own mutation check (not independent)
+# tree: kg/rebuild-wandb working tree on merge 46d05ba plus the r1 fixes (committed next); wandb 0.26.1; CPU, OMP_NUM_THREADS=2
+# suite per mutant: pytest tests/owl/train/test_logging.py tests/scripts/test_run_ppo.py tests/scripts/test_export_wandb_netrc_entry.py -m 'not slow'
+# each mutant is one exact string replacement, restored and byte-checked after its run; mutants and runner: claude-verify-r1-fix-mutations.py
+M1 KILLED | 1 failed, 189 passed in 1.23s
+M2 KILLED | 2 failed, 188 passed in 1.14s
+M3 KILLED | 1 failed, 189 passed in 1.03s
+M4 KILLED | 1 failed, 189 passed in 0.97s
+M5 KILLED | 3 failed, 187 passed in 1.02s
+M5b KILLED | 2 failed, 188 passed in 0.95s
+M6 KILLED | 2 failed, 188 passed in 1.04s
+M7 KILLED | 4 failed, 186 passed in 0.91s
+M7b KILLED | 1 failed, 189 passed in 0.98s
+M19 KILLED | 1 failed, 189 passed in 0.91s
+F1a KILLED | 5 failed, 185 passed in 0.93s
+F1b KILLED | 3 failed, 187 passed in 0.98s
+F1c KILLED | 2 failed, 188 passed in 0.91s
+F6a KILLED | 4 failed, 186 passed in 0.98s
+F6b KILLED | 2 failed, 188 passed in 0.94s
+F6c KILLED | 4 failed, 186 passed in 0.97s

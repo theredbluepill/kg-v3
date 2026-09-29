@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "PPO runs publish Kaggriculture telemetry to the v3 W&B project"
-description: "run_ppo's W&B logger sends Kaggriculture PPO runs to project kg-v3 as ppo-<run dir> (job type and group ppo, tags kaggriculture-v3 and ppo), where it had sent every run to Isaiah's orbit-wars; Orbit runs keep orbit-wars and their online init arguments. --wandb-mode offline keeps a syncable run in the run directory and prints the outage; it is rejected for resume launches and with --log-mode debug. Tasks 4.4 and 3.1 built this in parallel; the 3.1/3.5 merge keeps one logger. Tests with a fake wandb module, killed mutations and Task 3.5's one unsynced offline CLI run are the only checks; no live W&B call was made. The BC trainer (on its own branch) already uses kg-v3; its A100 run statement plans offline mode for lack of a pod key, so that run's telemetry would reach W&B only through wandb sync (no launch receipt or offline artifact inspected)."
+description: "Tasks 4.4 and 3.1 moved run_ppo's Kaggriculture PPO runs from Isaiah's orbit-wars to project kg-v3 as ppo-<run dir> and added --wandb-mode offline, rejected for resume launches and with --log-mode debug, with a printed offline line. Since the W&B landing merge every run, Orbit included, goes through the gated v3 path of the credential Reference (group = experiment id, game tag, attempts.jsonl receipt); Task 3.1's offline-resume rejection, run name and offline line are kept, its Orbit orbit-wars exception is dropped. Tests with a fake wandb module, killed mutations and Task 3.5's one unsynced offline CLI run are the only checks; no live W&B call was made. The BC trainer (on its own branch) already uses kg-v3; its A100 run statement plans offline mode for lack of a pod key, so that run's telemetry would reach W&B only through wandb sync (no launch receipt or offline artifact inspected)."
 tags: ["kaggriculture-v3", "training", "adaptation", "diagnostics"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -16,6 +16,8 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/teacher-configs-4.4/py-prepare.log"
   - resource: "repository:ops/rebuild-2026-09-29/merge-3-1-3-5/prepare.log"
   - resource: "repository:ops/rebuild-2026-09-29/3.5/cli-wandb-history.json"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/claude-verify-merge-wandb.md"
+  - resource: "repository:ops/rebuild-2026-09-29/merge-wandb-c/prepare.log"
   - resource: "reference-branch:kg/reference-2026-09-29/python/owl/train/logging.py"
   - resource: "bc-now-branch:f0b7a38:python/owl/train/bc.py"
   - resource: "bc-now-branch:f0b7a38:scripts/train_bc.py"
@@ -28,9 +30,9 @@ The owner asked why BC training had no W&B report and to "make sure all v3 exper
 
 ## Adaptation inventory
 
-- `python/owl/train/logging.py`: `wandb_init_identity(cfg)` returns `project="kg-v3"`, `job_type="ppo"`, `group="ppo"` and tags `kaggriculture-v3`, `ppo` when `cfg.env` is a `KaggricultureEnvConfig` (the config validator pairs it with the Kaggriculture model). Otherwise it returns `project="orbit-wars"` for Isaiah's retained Orbit runs. `WandbLogger` and `create_logger` take `wandb_mode` (`WandbMode`, `"online"` or `"offline"`). A Kaggriculture run is named `ppo-<run dir>` and always passes its mode to `wandb.init`; an Orbit run keeps Isaiah's online init arguments and adds `mode` only offline. `WandbLogger` rejects an offline resume before `wandb.init`, so an offline run never takes a saved run's id. The BC trainer's `BCWandbLogger` uses the same project and tag scheme.
-- `scripts/run_ppo.py`: `--wandb-mode {online,offline}` (default online, as in `scripts/train_bc.py`) reaches `create_logger` through `_run_training_session`. `_validate_args` rejects offline mode for a resume launch and with `--log-mode debug`. An offline run prints a line saying that telemetry stays under `<run_dir>/wandb` until `wandb sync`.
-- **Merge reconciliation (2026-09-30).** Task 4.4 (landed first) and the Task 3.1 remainder each wired this logger. Task 4.4 allowed an offline resume and printed that W&B then ignores `resume` and starts a local run with the saved id (the installed SDK's warning path in `wandb/sdk/wandb_init.py`, read, not exercised). Task 3.1 rejected it, since that offline run could not continue the saved run's telemetry. The merge keeps Task 3.1's rejection (fail fast, per the repository's error-handling rule), its run name and Orbit-unchanged arguments, and Task 4.4's helper, mode tuple and printed outage line.
+- **Current state (after the W&B landing merge, 2026-09-30).** `run_ppo`'s logger is the single gated path in [[v3-launchers-fail-fast-without-wandb-credentials|All v3 launchers on integration fail fast without W&B credentials]]: every run, Kaggriculture or Orbit, goes to `kg-v3`, named `ppo-<run dir>`, grouped by experiment id and tagged `kaggriculture-v3`, `ppo` and the game. `--wandb-mode {online,offline}` is one flag; offline is rejected for a resume launch (`_validate_args`, and `WandbLogger` before `wandb.init`) and with `--log-mode debug`. An offline run prints the outage banner, the receipt line and Task 3.1's line naming `<run_dir>/wandb`. The merge record is in that Reference's "Landing merge" section.
+- **History.** Task 3.1's `wandb_init_identity(cfg)` returned `project="kg-v3"`, `job_type="ppo"`, `group="ppo"` and tags `kaggriculture-v3`, `ppo` for a `KaggricultureEnvConfig`, and `project="orbit-wars"` otherwise, with Isaiah's online init arguments for Orbit. The landing merge removed it (group is now the experiment id, and Orbit runs gain the gate and receipt in `kg-v3`).
+- **Merge reconciliation (2026-09-30, Tasks 4.4 and 3.1).** Task 4.4 (landed first) and the Task 3.1 remainder each wired this logger. Task 4.4 allowed an offline resume and printed that W&B then ignores `resume` and starts a local run with the saved id (the installed SDK's warning path in `wandb/sdk/wandb_init.py`, read, not exercised). Task 3.1 rejected it, since that offline run could not continue the saved run's telemetry. That merge kept Task 3.1's rejection (fail fast, per the repository's error-handling rule), its run name and Orbit-unchanged arguments, and Task 4.4's helper, mode tuple and printed outage line.
 - `README.md` documents the project, labels and offline mode.
 
 ## Why the BC run has no W&B report
@@ -39,13 +41,13 @@ This was a read-only inspection of `kg/rebuild-bc-now` at `f0b7a38`; that branch
 
 ## Checks (this version, CPU only)
 
-- `tests/owl/train/test_logging.py`: the Kaggriculture and Orbit identities, and a fake `wandb` module that records `wandb.init`'s project, name, tags, mode (online and offline), resume id (online only), directory and config; Orbit's online arguments unchanged; an offline resume rejected before `wandb.init` for both games.
-- `tests/scripts/test_run_ppo.py`: the parser reads `--wandb-mode` (online by default); `--wandb-mode offline` with `--log-mode debug` or a resume is rejected; `_run_training_session` forwards the offline mode and prints the notice; `main` forwards `--wandb-mode offline` from a real tiny launch.
-- The merge's full `just prepare` (`ops/rebuild-2026-09-29/merge-3-1-3-5/prepare.log`) passes with both parents' logging and launch tests. Task 3.5's one CLI run (`--wandb-mode offline`) wrote an unsynced offline run in `kg-v3` (`3.5/cli-wandb-history.json`).
+- `tests/owl/train/test_logging.py` (Task 3.1's tests, rewritten onto the unified path by the landing merge): a fake `wandb` module records `wandb.init`'s full arguments for Kaggriculture (online and offline) and Orbit (online, resumed and offline), both games land in `kg-v3` with their game tag, and an offline resume is rejected before `wandb.init` for both games.
+- `tests/scripts/test_run_ppo.py`: the parser reads `--wandb-mode` (online by default); `--wandb-mode offline` with `--log-mode debug` (through `_validate_args` and through the parser) or a resume is rejected; `_run_training_session` forwards the run identity and prints the offline line; `main` forwards an offline identity from a real tiny launch; Kaggriculture resume tests carry an `attempts.jsonl`.
+- The landing merge's full `just prepare` and verification are in `ops/rebuild-2026-09-29/merge-wandb-c/` and `ops/rebuild-2026-09-29/codex/claude-verify-merge-wandb.md`. The earlier 3.1/3.5 merge's `just prepare` (`ops/rebuild-2026-09-29/merge-3-1-3-5/prepare.log`) passed with both parents' logging and launch tests. Task 3.5's one CLI run (`--wandb-mode offline`) wrote an unsynced offline run in `kg-v3` (`3.5/cli-wandb-history.json`).
 - Mutations (`ops/rebuild-2026-09-29/teacher-configs-4.4/mutations.log`), each restored byte-for-byte: forcing `orbit-wars` for Kaggriculture failed 3 tests, and dropping `mode=` from `wandb.init` failed 2. `just py-prepare`: 1,712 passed, 11 skipped (`py-prepare.log`).
 
 ## Limits
 
-- No live W&B call was made; authentication, upload and `wandb sync` of an offline run are unverified. Offline resume is rejected, not supported. A keyless online launch fails at `wandb.init`, which is the intended fail-fast.
+- No live W&B call was made; authentication, upload and `wandb sync` of an offline run are unverified. Offline resume is rejected, not supported. A keyless online launch fails at the startup gate, before config load.
 - Only `run_ppo.py` and (on its branch) the BC trainer log to W&B. Evaluation and benchmark scripts outside the trainer have no W&B logger; wiring them is open.
-- Orbit runs keep Isaiah's `orbit-wars` project, as the reference branch did.
+- Orbit runs no longer use Isaiah's `orbit-wars` project (the reference branch kept it); they share `kg-v3` under the `orbit` game tag.

@@ -1527,6 +1527,30 @@ def _assert_expected_tables(model: Any) -> None:
         assert torch.equal(model.actor.tables().as_dict()[name], table), name
 
 
+def _write_attempt_receipt(run_dir: Path, *, run_id: str) -> None:
+    """The ``attempts.jsonl`` a ``run_ppo`` resume needs: one online attempt."""
+    from owl.train import logging as train_logging
+
+    class _OnlineLogger(train_logging.DebugLogger):
+        @property
+        def run_id(self) -> str | None:
+            return run_id
+
+        def wandb_run_facts(self) -> train_logging.WandbRunFacts | None:
+            return train_logging.WandbRunFacts(project="kg-v3", entity=None, url=None)
+
+    identity = train_logging.plan_attempt(
+        run_dir,
+        job_type="ppo",
+        resume=False,
+        experiment_id=None,
+        source_commit="v3-src-0",
+        config_sha256="0" * 64,
+        telemetry=train_logging.TelemetryMode.WANDB_ONLINE,
+    )
+    train_logging.record_attempt(run_dir, identity, _OnlineLogger(), start_env_steps=0)
+
+
 def _run_ppo_main(
     monkeypatch: pytest.MonkeyPatch, argv: list[str]
 ) -> tuple[Any, dict[str, Any]]:
@@ -1571,6 +1595,9 @@ def _run_ppo_main(
             self.teacher_updates.append((teacher_model, active))
 
     monkeypatch.setattr(sys, "argv", ["run_ppo.py", *argv])
+    # Hermetic W&B credentials for the startup gate: never the host's netrc.
+    monkeypatch.delenv("WANDB_MODE", raising=False)
+    monkeypatch.setenv("WANDB_API_KEY", "test-key-not-real")
     monkeypatch.setattr(run_ppo, "assert_release_build", lambda: None)
     monkeypatch.setattr(run_ppo, "configure_torch", lambda: None)
     monkeypatch.setattr(
@@ -1631,6 +1658,7 @@ def test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best(
         saved = torch.load(run_dir / name, weights_only=False)
         assert set(saved) == CHECKPOINT_KEYS
         _assert_no_teacher_state(saved["model"])
+    _write_attempt_receipt(run_dir, run_id="run-123")
 
     trainer, session = _run_ppo_main(monkeypatch, [str(run_dir), "--log-mode", "wandb"])
 
