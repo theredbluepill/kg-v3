@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import math
 import re
 import sys
 import time
@@ -4003,6 +4004,184 @@ def test_main_forwards_wandb_mode_and_the_default_step_limit(
     )
     assert kwargs["start_env_steps"] == 0
     assert calls == []
+
+
+# Plan Task 3.5, the bounded local functional check: the shipped CPU config
+# (tiny model, 2 envs) runs 2 real updates through run_ppo.main() on the native
+# Kaggriculture env, with an evaluation after each update and both outcomes of
+# the promotion branch. Only launch plumbing is patched: the release-build and
+# torch setup, the single-process CPU session, the probed compile stack, a
+# recording metric logger, and the evaluation cadence below Isaiah's
+# checkpoint_freq floor of 1000 env steps (unreachable in 2 updates at 2 envs
+# within the local memory bound). Evaluation, promotion, teacher activation,
+# checkpoint writes and the trainer are the real shared path.
+_FUNCTIONAL_HORIZON = 2
+_FUNCTIONAL_UPDATES = 2
+_FUNCTIONAL_EPISODE_STEPS = 6
+
+
+def _run_functional_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, threshold: float
+) -> tuple[dict[str, Any], dict[str, torch.Tensor], _FakeLogger]:
+    n_envs = 2
+    update_steps = _FUNCTIONAL_HORIZON * n_envs
+    argv = [
+        str(_CONFIGS / "kaggriculture.yaml"),
+        str(tmp_path / "runs"),
+        "--max-env-steps",
+        str(_FUNCTIONAL_UPDATES * update_steps),
+        "-o",
+        f"rl.horizon={_FUNCTIONAL_HORIZON}",
+        f"env.config.episodeSteps={_FUNCTIONAL_EPISODE_STEPS}",
+    ]
+    monkeypatch.setattr(
+        sys, "argv", ["run_ppo.py", *argv, "--log-mode", LogMode.DEBUG.value]
+    )
+    monkeypatch.setattr(run_ppo, "assert_release_build", lambda: None)
+    monkeypatch.setattr(run_ppo, "configure_torch", lambda: None)
+    monkeypatch.setattr(
+        run_ppo,
+        "distributed_session",
+        lambda: nullcontext(DistributedContext.single_process_cpu()),
+    )
+    monkeypatch.setattr(run_ppo, "installed_compile_stack", lambda: _PROBED_STACK)
+    monkeypatch.setattr(run_ppo, "LAST_BEST_WIN_RATE_THRESHOLD", threshold)
+    real_from_file = FullConfig.from_file
+
+    def from_file_evaluating_each_update(
+        path: Path, *, overrides: dict[str, Any] | None = None
+    ) -> FullConfig:
+        cfg = real_from_file(path, overrides=overrides)
+        assert cfg.rl.checkpoint_freq == 1_000
+        return cfg.model_copy(
+            update={"rl": cfg.rl.model_copy(update={"checkpoint_freq": update_steps})}
+        )
+
+    monkeypatch.setattr(
+        run_ppo.FullConfig, "from_file", staticmethod(from_file_evaluating_each_update)
+    )
+    logger = _FakeLogger(run_id=None)
+    monkeypatch.setattr(run_ppo, "create_logger", lambda *_args, **_kwargs: logger)
+    real_session = run_ppo._run_training_session
+    session: dict[str, Any] = {}
+    initial: dict[str, torch.Tensor] = {}
+
+    def recording_session(**kwargs: Any) -> None:
+        session.update(kwargs)
+        model = run_ppo.unwrap_model(kwargs["trainer"].model)
+        initial.update({k: v.clone() for k, v in model.state_dict().items()})
+        real_session(**kwargs)
+
+    monkeypatch.setattr(run_ppo, "_run_training_session", recording_session)
+    run_ppo.main()
+    return session, initial, logger
+
+
+def _checkpoint_state(path: Path) -> tuple[dict[str, Any], dict[str, torch.Tensor]]:
+    checkpoint = torch.load(path, map_location="cpu", weights_only=False)
+    assert isinstance(checkpoint, dict)
+    return checkpoint, checkpoint["model"]
+
+
+def _states_equal(left: Mapping[str, torch.Tensor], right: Mapping[str, Any]) -> bool:
+    return left.keys() == right.keys() and all(
+        torch.equal(value, right[key]) for key, value in left.items()
+    )
+
+
+@pytest.mark.parametrize("promote", [True, False], ids=["promoted", "held"])
+def test_kaggriculture_two_update_functional_check_through_main(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, promote: bool
+) -> None:
+    torch.manual_seed(353)
+    # Threshold 0.0 promotes on any win rate; above 1.0 never promotes.
+    threshold = 0.0 if promote else 1.5
+    session, initial, logger = _run_functional_check(
+        tmp_path, monkeypatch, threshold=threshold
+    )
+    cfg = session["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert cfg.env.n_envs == 2
+    assert cfg.model.model_arch == "kaggriculture_transformer"
+    assert cfg.model.embed_dim == 16
+    assert cfg.rl.eval_replay_games == 0
+    assert cfg.rl.teacher_mode == "last_best"
+    assert session["log_mode"] == LogMode.DEBUG
+    trainer = session["trainer"]
+    assert isinstance(trainer, PPOTrainer)
+    assert trainer.device.type == "cpu"
+    run_dir = session["run_dir"]
+    assert isinstance(run_dir, Path)
+
+    # Two updates, each logging finite training losses, then its evaluation.
+    update_steps = _FUNCTIONAL_HORIZON * cfg.env.n_envs
+    steps = [update_steps * (i + 1) for i in range(_FUNCTIONAL_UPDATES)]
+    assert [step for _metrics, step in logger.logged] == [
+        step for step in steps for _ in range(2)
+    ]
+    training_logs = [metrics for metrics, _step in logger.logged[0::2]]
+    eval_logs = [metrics for metrics, _step in logger.logged[1::2]]
+    for metrics in training_logs:
+        losses = {k: v for k, v in metrics.items() if k.startswith("loss/")}
+        assert "loss/total_loss" in losses
+        assert all(math.isfinite(value) for value in metrics.values())
+    assert trainer.optimizer_steps == _FUNCTIONAL_UPDATES * cfg.env.n_envs
+    for metrics in eval_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        # Both seats of both native games are played to the engine's end.
+        assert metrics["eval/games"] == float(cfg.env.n_envs)
+        assert metrics["eval/episode_steps"] == float(_FUNCTIONAL_EPISODE_STEPS - 1)
+        assert 0.0 <= metrics["eval/win_rate_against_last_best"] <= 1.0
+        assert metrics["eval/promoted"] == float(promote)
+        assert metrics["eval/promotion_threshold"] == threshold
+    assert not (run_dir / "eval_replays").exists()
+
+    # Checkpoints: one per evaluation, the final one and last_best; all load.
+    final_path = run_dir / run_ppo.CHECKPOINT_FINAL
+    last_best_path = run_dir / run_ppo.CHECKPOINT_LAST_BEST
+    periodic = [
+        run_dir / f"checkpoint_{run_ppo._format_checkpoint_step(step)}.pt"
+        for step in steps
+    ]
+    assert sorted(path.name for path in run_dir.glob("*.pt")) == sorted(
+        path.name for path in [final_path, last_best_path, *periodic]
+    )
+    current = run_ppo.unwrap_model(trainer.model).state_dict()
+    final_checkpoint, final_state = _checkpoint_state(final_path)
+    assert _states_equal(current, final_state)
+    assert final_checkpoint["env_steps"] == steps[-1]
+    loaded_model = run_ppo._create_eval_model_for_config(
+        cfg, device=torch.device("cpu"), roundtrip_lora_base=False
+    )
+    metadata = run_ppo._load_model_from_checkpoint(
+        loaded_model, path=final_path, device=torch.device("cpu")
+    )
+    assert metadata.env_steps == steps[-1]
+    assert metadata.total_games_played == trainer.total_games_played
+    assert _states_equal(loaded_model.state_dict(), current)
+    assert not _states_equal(initial, current)
+    _periodic_checkpoint, periodic_state = _checkpoint_state(periodic[-1])
+    assert _states_equal(periodic_state, final_state)
+
+    # The promotion branch: last_best is refreshed and rewritten at the latest
+    # evaluation and becomes the active teacher; held, it stays the start model.
+    last_best_checkpoint, last_best_state = _checkpoint_state(last_best_path)
+    if promote:
+        assert last_best_checkpoint["env_steps"] == steps[-1]
+        assert _states_equal(last_best_state, final_state)
+        assert trainer.teacher_model is not None
+        assert trainer.teacher_active
+        assert _states_equal(trainer.teacher_model.state_dict(), current)
+        # Promoted after update 1, last_best distills into update 2.
+        assert training_logs[0]["teacher/cache_bytes"] == 0.0
+        assert training_logs[1]["teacher/cache_bytes"] > 0.0
+    else:
+        assert last_best_checkpoint["env_steps"] == 0
+        assert _states_equal(last_best_state, initial)
+        assert trainer.teacher_model is None
+        assert not trainer.teacher_active
+        assert all(m["teacher/cache_bytes"] == 0.0 for m in training_logs)
 
 
 class _SeatPinnedNativeEvalEnv(KaggricultureVectorizedEnv):
