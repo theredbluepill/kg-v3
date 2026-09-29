@@ -23,6 +23,18 @@
 - Every material adaptation gets a cookbook record (note + folder index + prepended log).
 - Recipe differences resolve toward Isaiah; residual differences are recorded, not escalated.
 
+### Resource fit on 2× RTX PRO 6000 (owner, 2026-09-29)
+
+Owner: "when fitting in GPUs, make sure we fits the GPU resource, since we are doing on RTX 6000 while Isaiah is doing in Tufa's B200 clusters". Isaiah's `scaling_6m` targets 1× B200 (192 GB). His `winner_ce_6m_4x5090` is the same recipe fitted to 4× RTX 5090 (32 GB, the same compute-capability-12.x generation as ours). That's the precedent: keep the global configuration identical (I2) and fit only the per-rank shapes and the spm/accumulation split (I1).
+
+- **Hardware, from the pod read:** 2× RTX PRO 6000 Blackwell Server Edition, 97,887 MiB each, cc 12.0, 188 SMs, driver 595.91.07; 64 vCPU; 50 GB pod disk (≈25 GB free).
+- **Memory target:** peak `torch.cuda.max_memory_allocated` ≤ 85% of 97,887 MiB per rank. It is measured at the **densest** states (late-game BC policy, maximum actors and tokens ≈ 720), not early sparse states. It covers rollout, update, teacher precompute and cache, evaluation, and compile/autotune transients. Per-rank shapes (128 envs, spm 8) equal Isaiah's 5090 per-rank shapes; our tokens are about 2× Orbit's (~720 vs ~337), so the expected peak is well under 96 GB. The 6.1 smoke must confirm it. If it doesn't fit, move to spm 4 / accumulation 2 (the same product, I1) before touching anything else, and never change the global batch.
+- **Compiler limit:** the L6 bound is independent of GPU type; rows × tokens × inner dim < 2³¹ on every compiled GEMM (guard and chunking in 2.1).
+- **Throughput:** the RTX PRO 6000 delivers much less than a B200, so wall-clock is longer. The learning trajectory is unchanged, because the schedule is defined in optimizer steps and env steps. Report measured SPS and an ETA for the planned env-step budget, and never shrink the workload to hit a time target (throughput Decision).
+- **CPU:** native env threads per rank × 2 ranks + dataloader/compile workers ≤ 64 vCPU. Measure native step time at 128 envs/rank and pick `native_threads` from the measurement.
+- **FlashAttention on cc 12.0:** Isaiah's 4× 5090 recipe forces FlashAttention with the same lock (`flash-attn 2.8.3`, torch 2.9.0), so it's expected to work. The 6.1 smoke confirms the FlashAttention path actually executes.
+- **Disk:** checkpoints are small (~6–10M params). Nsight traces and the Inductor cache are large, so traces go to the pod volume with a custody manifest, and old pod run directories are removed only with the owner's OK.
+
 ### Run statement (before every pod run)
 
 `ops/rebuild-2026-09-29/run-statements/<name>.md` must contain:
@@ -272,7 +284,7 @@ The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cov
 
 ## Phase 6 — GPU verification (pod, RTX PRO 6000; Claude operates, Codex reviews receipts)
 
-- [ ] **6.1 Memory smoke, 2 ranks:** one full iteration with the teacher on and a forced evaluation at dense BC positions. Record peak memory, teacher cache bytes and the spm/accum split decision (I1/I3).
+- [ ] **6.1 Memory smoke, 2 ranks:** one full iteration with the teacher on and a forced evaluation at dense BC positions. Record peak memory per phase against the ≤ 85% target, teacher cache bytes, native step time and the chosen `native_threads`, confirm the FlashAttention path ran, and record the spm/accum split decision (I1/I3; see "Resource fit").
 - [ ] **6.2 Complete-work run, 2 ranks, from the BC best:** 30 min bounded. Report game and learner-seat SPS over complete iterations, 16 optimizer steps per iteration, teacher telemetry, W&B status and whether the L6 fault is absent. Optionally an Nsight capture of one post-warmup iteration.
 - [ ] **6.3 Four ranks:** the same denominators for 15 min.
 - [ ] **6.4 Orbit end-to-end:** `configs/scaling_6m.yaml`, one GPU, 2 iterations, with a forced evaluation.

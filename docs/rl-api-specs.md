@@ -849,3 +849,20 @@ Terminal episode metrics:
 | `fleets_lost_to_sun_or_oob_rate` | `(fleets_lost_in_sun_per_game_mean + fleets_lost_out_of_bounds_per_game_mean) / fleets_lost_per_game_mean`. Omitted when no fleets were lost. |
 | `terminal_planet_occupancy_rate_2p` | Occupied non-comet planet fraction at terminal for 2-player games. |
 | `terminal_planet_occupancy_rate_4p` | Occupied non-comet planet fraction at terminal for 4-player games. |
+
+## Kaggriculture
+
+The Kaggriculture game uses the same shared training path through its own observation and action types. The authoritative tensor contract (shapes, dtypes, pinned enums, normalization scales, padding, environment lifecycle, rewards and the information audit against the reference encoder) is `docs/kaggriculture-contract.md`. This section only summarizes how it maps onto the shared API.
+
+- **Observation** `KaggricultureObsBatch`: every row is one seat's legal view (`[env, seat]` leading dims), so rival-private state never enters the other seat's row. Named per-entity tensors mirror `ObsBatch`: tiles (200), own/rival actors (482 slots), shops (8, ordered by `shop_slot`), market products (9), `player_features` (self, opponent) and `global_features`. Categorical fields are integer indices and exact values are `int64`/`float64` side tensors.
+- **Model topology** (Isaiah's `StatelessTransformerV1` classes):
+  - an `ObservationInputStem` per entity group, fed float channels plus one-hot categories
+  - player tokens = `player_tokens + player_feature_proj(player_features)`
+  - a global token = `global_proj(global_features)`
+  - separate board-scratch, actor-plan (1) and per-player critic-value (2) token parameters
+  - a `TransformerBlock` trunk with a final LayerNorm
+  - an `OutputProjectionMLP` critic head per critic-value token
+  - a `3D → D` actor input projection over [entity, player, plan]
+  - Only input channel widths and the grammar action heads are game-specific. Seat rows are encoded independently.
+- **Actions** `KaggricultureActions`: `tokens [E,2,252,12]` and `lengths [E,2]` (one unit frame per own actor, then up to `order_limits` market frames, then STOP). The slot widths and action enums are pinned in the contract; the native grammar supplies syntax/support masks.
+- **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks, and truncation keeps the transition's economic reward.

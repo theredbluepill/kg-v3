@@ -6,7 +6,7 @@ tags: ["kaggriculture-v3", "decisions"]
 status: "stable"
 generated: {"by": "openai/codex", "at": "2026-09-28"}
 decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
-sources: [{"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:refer-to-isaiah-stateless-approach"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/myolie-is-a-stateless-agent.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/myolie-opponent-context-needs-explicit-requalification.md"}]
+sources: [{"resource": "user-directive:2026-09-29:model-size-6-10m"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:refer-to-isaiah-stateless-approach"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/myolie-is-a-stateless-agent.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/myolie-opponent-context-needs-explicit-requalification.md"}]
 ---
 
 # The policy is stateless and observation-only
@@ -34,3 +34,9 @@ Source: `user-directive:2026-09-29:same-layer-topology`. The Kaggriculture model
 No input, embedding, head, loss, reward, normalization or checkpoint selection may condition on opponent slug, league class, ID, per-opponent baseline or per-class return normalization. Actor and critic are both covered. Opponent collection mixes and evaluation panels are allowed, without telling the model who the rival is. Diagnostic labels identify evidence, not policy input. Checkpoint schemas must reject prohibited identity-bearing state.
 
 This is a scoped adoption of owner-directed design constraints, not an empirical finding that all memory or identity-conditioned methods fail. The v2 ban originally removed value-head conditioning, even though the owner called it actor identity. V2's corrected record shows the recurrent gradient horizon was not merely 32 turns. Its reset collapse demonstrated that checkpoint's memory dependence; no historical checkpoint score transfers to a stateless derivative or v3. Do not import the obsolete m21 conversion or distillation prescription.
+
+## Model size — owner, 2026-09-29
+
+> 6-10M ok as long as topologies aligned with isaiah.
+
+Source: `user-directive:2026-09-29:model-size-6-10m`. The parameter budget is 6–10M. The trunk stays on Isaiah's 6m ladder settings (width 256, 8 heads so head_dim 32, `mlp_ratio` 2.0) and reaches the budget through depth. Depth 8 is the planned value, ≈6.2M with the game stems and heads; the exact count is confirmed once the model is built.

@@ -1,5 +1,13 @@
 # Change log
 
+## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
+
+Owner decisions:
+- “6-10M ok as long as topologies aligned with isaiah”, recorded in the [[decisions/the-policy-is-stateless-and-observation-only|stateless Decision]]: Isaiah's ladder width and ratios, with depth reaching the budget.
+- “let's stick with 2.9”, and fit to RTX 6000 rather than Isaiah's B200s, recorded in the [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]]: global config unchanged, per-rank shapes and spm/accumulation fitted by memory smoke, ≤ 85% peak.
+
+The Kaggriculture contract reaches v4 (Codex accept-with-edits applied), with a companion section in `docs/rl-api-specs.md`.
+
 ## 2026-09-29 — Rebuild failure status and traceback ordering on the clean base
 
 Task 0.3 implements the reference plan's logging fix under the
