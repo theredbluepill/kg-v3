@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-09-29 — Tighten the compiled-GEMM Reference after Codex's second review
+
+Codex re-verified the GEMM-limit evidence (APPROVE WITH EDITS, no blocking findings; `ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md`). The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] and `results.md` now:
+- separate the emitted `INDEX_DTYPE` (an all-buffer storage check) from the template size-arg dtype (output numel);
+- limit the "every failing graph" claim to kernels attributable from retained code, since two failures occurred during autotuning;
+- write L_in as floor(2³¹/K);
+- state the design bound as the strict < 2³¹ the guard implements.
+
+The run statement no longer implies Triton 3.5.0 was the installed version.
+
 ## 2026-09-29 — Measure the compiled-GEMM limit at the rebuild's shapes (Codex-verified)
 
 A bounded probe ran on GPU 0 of the running pod (GEMM-limits run statement in `ops/rebuild-2026-09-29/run-statements/`). Codex verified it (`ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md`, APPROVE WITH EDITS), and all its findings are applied. This revises the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]:

@@ -25,9 +25,9 @@ A controlled probe confirmed the threshold. It used a synthetic BF16 MLP (256→
 
 A second bounded probe compared compiled output against eager at every point. It covered synthetic compiled Linears and MLPs, plus the real `KaggricultureTransformer` trunk from `kg/rebuild-model` @ `1ddc71d`, compiled directly through its own `compile_transformer_trunk`. Precision matched `run_ppo`: fp32 parameters under bf16 autocast, `max-autotune-no-cudagraphs`, `dynamic=True`, compiled small first. Codex verified the evidence and requested edits, applied here. The table, the generated-code attribution and the source citations are in `ops/rebuild-2026-09-29/results.md`, "GEMM limits at our shapes".
 
-Measured (L_in = 2³¹ / GEMM input width; trunk L = 2³¹/512 = 4,194,304):
+Measured (L_in = floor(2³¹ / K) for GEMM input width K, e.g. 2,796,202 for K = 768; trunk L = 2³¹/512 = 4,194,304):
 - **The overflow is input-side at these shapes.** Input-wide GEMMs (4096→16, 768→256) were correct at L_in and failed at L_in+1. Output-wide GEMMs (16→4096, 256→512, 256→256) stayed correct up to M·N = 2³². The corrected kernel summaries show why:
-  - Every failing graph launches the template with a 32-bit size argument (`ks0: i32`) and an A-load of `K*idx_m`.
+  - Every failing graph whose kernel can be attributed from the retained code launches the template with a 32-bit size argument (`ks0: i32`) and an A-load of `K*idx_m`. The 768→256 and 512→256 failures happened during autotuning, so their failing candidate kernel is not localized.
   - Graphs whose output exceeds int32 get `ks0: i64` and stayed correct.
   - In the real trunk, the corrupting kernel is the 512→256 MLP down-projection. Above L it kept `ks0: i32`, while the 256→512 up-projection had been promoted.
 
@@ -41,11 +41,11 @@ Measured (L_in = 2³¹ / GEMM input width; trunk L = 2³¹/512 = 4,194,304):
 Inferred, not measured:
 - **Unguarded trunk at exactly L.** It was not run, so whether the guard's rejection at equality is stricter than necessary is unknown.
 - **Real-trunk backward.** It was not run at any size. The synthetic MLP backward faulted while compiling at L+1, which does not localize a backward-kernel threshold.
-- **Mechanism.** The source path and the generated code agree that the size-arg dtype follows a storage-size check on the template output, and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
+- **Mechanism.** The source path and the generated code agree that the emitted `INDEX_DTYPE` follows an all-buffer storage-size check while the template's size-arg dtype is chosen separately from the output numel (`SIMDKernelFeatures([], output_numel)`), and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
 
 ## Consequences
 
-- **Design bound: keep every compiled region at M × max(in, out) ≤ 2³¹ over its Linear layers.** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
+- **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
   - For the trunk that width is 512, which is `gemm_kmax`.
   - Nothing enforces the bound outside the trunk. The stems are eager today, but the full stem is 371→512→256. The heads and the planned 768-wide `actor_input_proj` are not implemented yet; compiled, `actor_input_proj` would exceed L_in at 2,796,203 rows × frames.
 - **Production compliance is unproven.** Kaggriculture is not yet in `ModelConfig` or the model factory, and `configure_model_compile` rejects it for `model_compile="trunk"`. Integrated rollout, PPO recompute, evaluation, BC and teacher workloads stay unverified until Task 3.1 and Phase 6.
