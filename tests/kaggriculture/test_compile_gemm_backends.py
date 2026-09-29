@@ -7,6 +7,7 @@ cookbook/decisions/kaggriculture-compiles-gemms-with-cublas-only.md.
 from __future__ import annotations
 
 import re
+import threading
 from typing import Any, get_args
 
 import pytest
@@ -187,6 +188,40 @@ def test_kaggriculture_after_orbit_raises_before_changing_backends(
     # Orbit's lazily compiled graphs would read "ATEN" on first run otherwise.
     assert inductor_config.max_autotune_gemm_backends == ISAIAH_DEFAULT_BACKENDS
     assert len(seen) == orbit_compiles
+
+
+def test_concurrent_claims_serialize_so_the_second_game_raises(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # While Kaggriculture reads its stack, another thread claims Orbit. Without
+    # serialization Orbit's claim would land and then be silently overwritten.
+    orbit_outcome: list[BaseException | GemmBackendClaim] = []
+
+    def claim_orbit() -> None:
+        try:
+            orbit_outcome.append(cg.claim_gemm_backends("orbit"))
+        except RuntimeError as error:
+            orbit_outcome.append(error)
+
+    orbit_thread = threading.Thread(target=claim_orbit)
+
+    def stack_read_while_orbit_claims() -> InstalledCompileStack:
+        orbit_thread.start()
+        orbit_thread.join(timeout=0.2)
+        return PROBED_GPU_STACK
+
+    monkeypatch.setattr(cg, "installed_compile_stack", stack_read_while_orbit_claims)
+
+    claim = cg.claim_gemm_backends("kaggriculture")
+    orbit_thread.join(timeout=10)
+
+    assert not orbit_thread.is_alive()
+    assert claim.game == "kaggriculture"
+    assert gemm_backend_claim() == claim
+    assert inductor_config.max_autotune_gemm_backends == "ATEN"
+    assert len(orbit_outcome) == 1
+    assert isinstance(orbit_outcome[0], RuntimeError)
+    assert "already compiled a kaggriculture model" in str(orbit_outcome[0])
 
 
 # --- direct compile entry points (not through configure_model_compile) --------

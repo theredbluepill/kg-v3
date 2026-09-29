@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import threading
 from dataclasses import dataclass
 from importlib import metadata
 from typing import Literal
@@ -91,6 +92,9 @@ class GemmBackendClaim:
 
 
 _GEMM_BACKEND_CLAIM: GemmBackendClaim | None = None
+# Serializes check-and-set, so a concurrent claim for the other game raises
+# instead of landing between this claim's check and its write.
+_GEMM_BACKEND_CLAIM_LOCK = threading.Lock()
 
 
 def installed_compile_stack() -> InstalledCompileStack:
@@ -209,33 +213,35 @@ def claim_gemm_backends(game: CompileGame) -> GemmBackendClaim:
     GEMM templates, but ``TORCHINDUCTOR_MAX_AUTOTUNE`` can enable them under any
     mode. Isaiah's Orbit models keep the backends they find. Claiming the game
     that already holds the claim is allowed (the trainer's eval and last-best
-    models); claiming the other game raises before anything changes.
+    models); claiming the other game raises before anything changes. Claims
+    are serialized by a lock, so this holds for concurrent claims from threads.
     """
     global _GEMM_BACKEND_CLAIM
-    current = _GEMM_BACKEND_CLAIM
-    if current is not None and current.game != game:
-        raise RuntimeError(
-            f"this process already compiled a {current.game} model with "
-            f"max_autotune_gemm_backends={current.gemm_backends!r}; compiling a "
-            f"{game} model here would change or inherit that process-global "
-            f"setting. Compile each game in its own process (see "
-            f"{_GEMM_BACKENDS_DECISION})"
-        )
-    if game == "orbit":
-        claim = GemmBackendClaim(
-            game=game,
-            gemm_backends=inductor_config.max_autotune_gemm_backends,
-            stack=None,
-        )
-    else:
-        stack = check_compile_stack(installed_compile_stack())
-        inductor_config.max_autotune_gemm_backends = COMPILED_GEMM_BACKENDS
-        require_compiled_gemm_backends()
-        claim = GemmBackendClaim(
-            game=game, gemm_backends=COMPILED_GEMM_BACKENDS, stack=stack
-        )
-    _GEMM_BACKEND_CLAIM = claim
-    return claim
+    with _GEMM_BACKEND_CLAIM_LOCK:
+        current = _GEMM_BACKEND_CLAIM
+        if current is not None and current.game != game:
+            raise RuntimeError(
+                f"this process already compiled a {current.game} model with "
+                f"max_autotune_gemm_backends={current.gemm_backends!r}; compiling a "
+                f"{game} model here would change or inherit that process-global "
+                f"setting. Compile each game in its own process (see "
+                f"{_GEMM_BACKENDS_DECISION})"
+            )
+        if game == "orbit":
+            claim = GemmBackendClaim(
+                game=game,
+                gemm_backends=inductor_config.max_autotune_gemm_backends,
+                stack=None,
+            )
+        else:
+            stack = check_compile_stack(installed_compile_stack())
+            inductor_config.max_autotune_gemm_backends = COMPILED_GEMM_BACKENDS
+            require_compiled_gemm_backends()
+            claim = GemmBackendClaim(
+                game=game, gemm_backends=COMPILED_GEMM_BACKENDS, stack=stack
+            )
+        _GEMM_BACKEND_CLAIM = claim
+        return claim
 
 
 def require_compiled_gemm_backends() -> None:

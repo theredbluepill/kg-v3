@@ -256,7 +256,8 @@ Inductor GEMM backends for one game (`owl.model.compile_gemm`):
 for the trunk. `KaggricultureTransformer` compiles (trunk or mlp, any mode)
 check the probed torch/triton/driver stack and set
 `max_autotune_gemm_backends = "ATEN"` (cuBLAS only); Orbit compiles keep the
-backends they find; a process never compiles both games.
+backends they find; a process never compiles both games. A lock serializes
+each claim's check and write, so concurrent claims for different games raise too.
 
 Set `rl.model_compile="mlp"` to compile each transformer-block MLP in place
 while keeping packing, unpacking, and flash-attn varlen calls eager.

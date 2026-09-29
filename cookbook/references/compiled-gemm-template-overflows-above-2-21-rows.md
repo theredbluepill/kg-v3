@@ -65,7 +65,7 @@ Inferred, not measured:
 
 ## Limits
 
-- **Stack:** measured on torch 2.9.0+cu128, driver 595.91.07, RTX PRO 6000 Blackwell (sm_120). Triton 3.5.0 is the lockfile pin; its installed version was not captured.
+- **Stack:** measured on torch 2.9.0+cu128, driver 595.91.07, RTX PRO 6000 Blackwell (sm_120). The overflow probes did not capture the installed triton (3.5.0 is the lockfile pin); the later ATEN-only A/B captured triton 3.5.0 on the same pod (`results.md` line 265).
 - **Templates:** `mm`/`addmm` templates with fused prologues and epilogues, dynamic shapes. Unmeasured:
   - the real trunk's backward;
   - the unguarded trunk at exactly L;
@@ -73,5 +73,5 @@ Inferred, not measured:
   - static-shape compiles;
   - other versions.
 - **Tolerances:** the checks detect the reported corruption. They do not prove BF16 equivalence for arbitrary inputs.
-- **FlashAttention:** the packed-path runs used torch's ATen varlen flash shim, because the pod venv has no `flash-attn`; the pod's run config also had `force_flash_attn: false`. The real flash-attn kernel is untested, and Phase 6 must install and verify it.
+- **FlashAttention:** the overflow probe's packed-path runs used torch's ATen varlen flash shim, because that pod venv had no `flash-attn`, and its run config had `force_flash_attn: false`. The later ATEN-only A/B ran the packed trunk with real flash-attn 2.8.3 (`results.md` line 265): correct above the bound in forward under ATEN-only GEMMs. The real-trunk backward above the bound and the current wiring on a GPU remain unverified (see the [[decisions/kaggriculture-compiles-gemms-with-cublas-only|Decision]]).
 - **Other versions:** torch 2.8 showed no overflow at width 1024 (Task 0.2).

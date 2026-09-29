@@ -1,5 +1,21 @@
 # Change log
 
+## 2026-09-29 — Serialize the GEMM-backend claim and scope old probe limits
+
+Codex verification r2 of the cuBLAS-only wiring
+(`ops/rebuild-2026-09-29/codex/verify-aten-r2.md`, APPROVE WITH EDITS) found
+two P3s. A concurrent Orbit claim could land while a Kaggriculture claim read
+its stack and then be silently overwritten; `claim_gemm_backends` in
+`python/owl/model/compile_gemm.py` now holds a lock around check and write, and
+a new test in `tests/kaggriculture/test_compile_gemm_backends.py` reproduces
+the race (it failed before the lock). The
+[[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]
+Limits now scope "triton not captured" and "real flash-attn untested" to the
+earlier overflow probe and credit the A/B's triton 3.5.0 and flash-attn 2.8.3;
+the backward-above-bound and GPU-wiring gaps stay. The
+[[decisions/kaggriculture-compiles-gemms-with-cublas-only|Decision]] records
+the lock and the r2 check.
+
 ## 2026-09-29 — Claim cuBLAS-only GEMMs at every public compile entry
 
 Codex verification r1 of the cuBLAS-only wiring
