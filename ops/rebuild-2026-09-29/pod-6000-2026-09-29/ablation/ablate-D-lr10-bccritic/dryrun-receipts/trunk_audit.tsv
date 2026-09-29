@@ -1,0 +1,15 @@
+# theta0	rank	actor_only_params	actor_only_theta0_norm	critic_only_params	critic_only_theta0_norm	shared_params	shared_theta0_norm	critic_head_norm
+# theta0	1	873406	88.4507	66561	22.0598	5312256	156.809	22.0106
+# theta0	0	873406	88.4507	66561	22.0598	5312256	156.809	22.0106
+trunk_audit	rank	iter	optimizer_steps	actor_only_rel_change	critic_only_rel_change	shared_rel_change
+trunk_audit	0	1	16	6.6767e-06	8.5880e-06	1.2003e-05
+trunk_audit	1	1	16	6.6767e-06	8.5880e-06	1.2003e-05
+trunk_audit	1	2	32	2.7504e-05	3.4113e-05	4.6277e-05
+trunk_audit	0	2	32	2.7504e-05	3.4113e-05	4.6277e-05
+grad_audit	rank	iter	steps_before	actor_only_grad_norm	actor_only_grad_max_abs	actor_only_none_grads	actor_only_rel_change	critic_only_grad_norm	critic_only_grad_max_abs	critic_only_none_grads	critic_only_rel_change	shared_grad_norm	shared_grad_max_abs	shared_none_grads	shared_rel_change
+grad_audit	1	1	0	3.457	0.1162	0	0.000e+00	0.9005	0.1238	0	0.000e+00	12.59	0.4648	0	0.000e+00
+grad_audit	0	1	0	3.457	0.1162	0	0.000e+00	0.9005	0.1238	0	0.000e+00	12.59	0.4648	0	0.000e+00
+grad_audit	1	2	16	3.906	0.1375	0	6.677e-06	1.19	0.189	0	8.588e-06	11.9	0.5264	0	1.200e-05
+grad_audit	0	2	16	3.906	0.1375	0	6.677e-06	1.19	0.189	0	8.588e-06	11.9	0.5264	0	1.200e-05
+# hook {"kind": "diagnostic_hook", "rank": 1, "t": 1790719233.6763258, "hook": "trunk_audit", "diagnostic_only": true, "telemetry_only": true, "trunk_audit_iterations": [1, 2], "grad_audit": "first", "base_launcher": "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py"}
+# hook {"kind": "diagnostic_hook", "rank": 0, "t": 1790719233.6765578, "hook": "trunk_audit", "diagnostic_only": true, "telemetry_only": true, "trunk_audit_iterations": [1, 2], "grad_audit": "first", "base_launcher": "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py"}
