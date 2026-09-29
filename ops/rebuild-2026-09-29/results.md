@@ -436,7 +436,7 @@ Setup:
 - **Attempts:**
   - Attempt 1 stopped on an Inductor compile error in the **fp32** compiled training graph. Amendment 1 disabled `coalesce_tiling_analysis` for fp32 compiled stages only.
   - Attempt 2 stopped on an fp32 eager OOM at 1,024 rows. Amendment 2 limited fp32 to 256 rows.
-  - Attempt 3 passed. Its compiled Isaiah stages hit Dynamo's recompile limit because of my `use_flash_attn` counting wrapper, which his attention calls inside the compiled trunk, so their 1,024-row cells ran eagerly. Amendment 3 removed the wrapper and reran those two stages on the same states.
+  - Attempt 3 passed. Its compiled Isaiah stages hit Dynamo's recompile limit because of my `use_flash_attn` counting wrapper, which his attention calls inside the compiled trunk, so their 1,024-row cells ran eagerly. Amendment 3 removed the wrapper and reran those two stages, on attempt 3's states by the operator's account; no retained receipt establishes that the inputs were identical (see the run statement's post-run addendum).
   - Aggregate driver wall 449 s. The pod was left running and idle.
 
 **Mechanism observed:**
