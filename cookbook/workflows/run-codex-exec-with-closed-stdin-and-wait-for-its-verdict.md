@@ -39,6 +39,6 @@ codex exec -C <worktree> -s <workspace-write|read-only> \
 ## Limits and gaps
 
 - The rules were not tested with a controlled reproduction, such as an open pipe or an early parent return.
-- No orchestration receipt ties a parent's return to a child's exit. Retaining the exit status (`${PIPESTATUS[0]}`) or a process-lifecycle log would give later episodes that receipt.
+- No orchestration receipt ties a parent's return to a child's exit. The child's exit status (`${PIPESTATUS[0]}`) records only the child's own outcome. Tying the two needs a process-lifecycle log with timestamps for the parent's return and the child's exit.
 
 Concept search before writing: `cookbook/` had no note on `codex exec`, stdin handling or usage limits. The [[profile-cuda-bottlenecks-with-nsight-systems|Nsight workflow]] is the only other Workflow and covers GPU profiling, not agent delegation.

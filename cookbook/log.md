@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Narrow the orchestration-receipt claim in the codex exec workflow
+
+Codex's second cookbook-refresh review (P3) noted that an exit status proves only the child's outcome. The [[workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict|codex exec workflow]] now says that tying a parent's return to a child's exit needs a timestamped process-lifecycle log.
+
 ## 2026-09-29 — Apply Codex's cookbook-refresh review and record the codex exec workflow
 
 Codex reviewed the refresh commits `bcd9627`, `5247daa`, `92e88e0` and `9bfa0a0` (APPROVE WITH EDITS; local `ops/rebuild-2026-09-29/codex/verify-cookbook-refresh-r1.md`). All seven edits are applied:
