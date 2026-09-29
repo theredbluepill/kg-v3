@@ -2667,15 +2667,21 @@ _CHECKPOINT_KEYS = frozenset(
 )
 
 
-def _checkpoint_metadata(checkpoint: dict[object, object]) -> PPOCheckpointMetadata:
-    # Only keys write_checkpoint saves: anything else (for example opponent
-    # identity or carried hidden state) is rejected, never silently ignored.
-    # A model-weights checkpoint may omit the optimizer-side keys.
+def reject_unknown_checkpoint_keys(checkpoint: dict[object, object]) -> None:
+    """Reject any top-level key ``write_checkpoint`` does not save.
+
+    Anything else (for example opponent identity or carried hidden state) is
+    rejected, never silently ignored. A model-weights checkpoint may omit keys.
+    """
     unexpected_keys = set(checkpoint) - _CHECKPOINT_KEYS
     if unexpected_keys:
         raise ValueError(
             f"checkpoint has unexpected keys {sorted(map(str, unexpected_keys))}"
         )
+
+
+def _checkpoint_metadata(checkpoint: dict[object, object]) -> PPOCheckpointMetadata:
+    reject_unknown_checkpoint_keys(checkpoint)
     total_active_entities = checkpoint.get("total_active_entities", 0)
     return PPOCheckpointMetadata(
         env_steps=_checkpoint_nonnegative_int(

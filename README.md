@@ -169,7 +169,7 @@ scheduler state. `--load-model-weights-mode model_fresh_critic_head`
 (`critic_head.*`), which keeps the fresh launch's initialization; the optimizer
 starts fresh as in `model_only`. The checkpoint must still hold every model
 tensor, and any checkpoint key or model tensor the trainer does not save is
-rejected.
+rejected (also by the `teacher_init` loader).
 resume launches load checkpoint weights and optimizer state without resetting
 the model first.
 Set `model.lora` on stateless transformer configs to run PPO as a LoRA
@@ -491,9 +491,9 @@ validation rows are evaluated; the lowest held-out NLL is saved as
 Kaggriculture (it stops before the environment until Tasks 1.4 and 3.1 land;
 the loaders accept the checkpoint today). Start PPO from it with
 `--load-model-weights <run>/checkpoint_bc_best.pt --load-model-weights-mode
-model_fresh_critic_head`: the BC critic learned the winner of the imitated
-team's games and saturates (|value| > 1 - 2e-6 on 97% of one held-out game's
-turns), where the MSE value loss has almost no gradient, so PPO keeps the BC
+model_fresh_critic_head`: every BC game was the imitated team's win, and the BC
+critic saturates (|value| > 1 - 2e-6 on 97% of one held-out game's seat
+values), where the MSE value loss has almost no gradient, so PPO keeps the BC
 trunk and actor and starts the critic head fresh. Training stops after
 `patience_evals` evaluations without an improvement of more than `min_delta`
 over the last such improvement, at `max_steps` or at `--max-runtime-hours`;

@@ -1094,6 +1094,25 @@ def test_ppo_load_rejects_prohibited_checkpoint_state(
             load({**clean, extra: torch.zeros(1)}, f"{extra}.pt")
         with pytest.raises(ValueError, match=extra):
             run_ppo._checkpoint_metadata({**clean, extra: 0}, path=best_path)
+        # The teacher_init / initial last-best loader, including for a minimal
+        # model-only checkpoint.
+        for name, checkpoint in (
+            (f"{extra}-teacher.pt", {**clean, extra: 0}),
+            (f"{extra}-minimal.pt", {"model": clean["model"], extra: 0}),
+        ):
+            torch.save(checkpoint, tmp_path / name)
+            with pytest.raises(ValueError, match=f"unexpected keys \\['{extra}'\\]"):
+                run_ppo._load_model_weights(
+                    _ppo_model(cfg, seed=5),
+                    path=tmp_path / name,
+                    device=torch.device("cpu"),
+                )
+    torch.save({"model": clean["model"]}, tmp_path / "minimal.pt")
+    run_ppo._load_model_weights(
+        _ppo_model(cfg, seed=5),
+        path=tmp_path / "minimal.pt",
+        device=torch.device("cpu"),
+    )
     # Nor inside the model state: an opponent embedding has no place to load.
     tainted = {
         **clean,

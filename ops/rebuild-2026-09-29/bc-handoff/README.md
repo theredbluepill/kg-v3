@@ -41,14 +41,18 @@ the BC critic's value distribution on a real held-out game.
   winner probabilities and log-probs on 8 real rows are equal across the three
   and finite; policy-seat turn NLL 0.419 on those rows.
 - `critic_probe.txt` (all 360 rows of the shard): with the BC critic head,
-  97.2 % of rows have |value| > 1 − 2e-6 and the values are already [−1, 1] at
-  turn 20 of 720. With the outcome flipped, the MSE value loss's gradient norm
-  on `critic_head` is 0.118 with the BC head and 12.4 with a fresh head. With a
+  700 of 720 seat values (97.2 %) have |value| > 1 − 2e-6 (both seats on 345
+  of 360 turns), and the values are already [−1, 1] at turn 20 of 720. With
+  each model's target set opposite to its own prediction, the MSE value loss's
+  gradient norm on `critic_head` is 0.118 with the BC head and 12.4 with a
+  fresh head. With a
   fresh head, no row saturates (mean |value| 0.468) and the actor log-probs are
   bit-identical to the BC-head model's.
 - Prohibited state: before this change `PPOTrainer.load_model_weights` ignored
   unknown top-level checkpoint keys (such as `opponent_id` or `hidden_state`).
-  `ppo._checkpoint_metadata` now rejects them. Unknown model tensors were
+  `ppo.reject_unknown_checkpoint_keys` now rejects them, in
+  `ppo._checkpoint_metadata` and in `run_ppo._load_model_weights` (the
+  `teacher_init` loader, which also ignored them: Codex r1 P2). Unknown model tensors were
   already rejected by `load_model_state_dict_allowing_lora`.
 
 ## Decision and launch

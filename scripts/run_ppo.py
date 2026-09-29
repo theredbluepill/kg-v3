@@ -82,7 +82,11 @@ from owl.train.optimizer import (
     create_lr_scheduler,
     create_optimizer,
 )
-from owl.train.ppo import PPOCheckpointMetadata, _mean_env_metrics
+from owl.train.ppo import (
+    PPOCheckpointMetadata,
+    _mean_env_metrics,
+    reject_unknown_checkpoint_keys,
+)
 from owl.train.utils import (
     DTypeConfig,
     autocast_context,
@@ -1084,6 +1088,10 @@ def _load_model_weights(
         raise ValueError(f"checkpoint must be a dictionary: {path}")
     if "model" not in checkpoint:
         raise ValueError(f"checkpoint is missing model weights: {path}")
+    try:
+        reject_unknown_checkpoint_keys(checkpoint)
+    except ValueError as error:
+        raise ValueError(f"{error}: {path}") from error
     # Tolerate loading a non-LoRA base checkpoint into a LoRA-wrapped model: base
     # tensors are loaded and the adapters keep their config-initialized values.
     load_model_state_dict_allowing_lora(model, checkpoint["model"])
