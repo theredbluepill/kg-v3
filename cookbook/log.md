@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Correct the packaging Reference's failure modes and limits
+
+The Codex re-review of the Task 7.4 brief found the [[references/kaggle-packaging-reuses-the-starter-submission-path|packaging Reference]] still said a non-dict action loses the episode and that resource limits were unknown. It now records that Kaggle silently normalizes a non-dict return to PASS, that termination overwrites a final-call fault to `DONE`, and the 1.6 vCPU / 6.5 GiB / 8 GiB / 100 MiB limits from the indexed official FAQ. Source: `ops/rebuild-2026-09-29/codex/brief-7.4-rereview.md`.
+
 ## 2026-09-29 — Remove the competition deadline from the packaging Reference
 
 At the owner's direction, the cookbook records no competition deadline. The [[references/kaggle-packaging-reuses-the-starter-submission-path|packaging Reference]] keeps only the packaging rules that bear on the design.

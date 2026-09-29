@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Kaggle packaging reuses the starter submission path"
-description: "Task 7.4 brief: the Kaggriculture agent ships through Isaiah's in-image extension build and tarball. It encodes one seat with the training write_seat through a new seat binding, strips the local loader's __raw_path__ key, and bounds a 1 s turn plus a 60 s bank. Design only; nothing built or timed."
+description: "Task 7.4 brief: the Kaggriculture agent ships through Isaiah's in-image extension build and tarball. It encodes one seat with the training write_seat through a new seat binding, strips the local loader's __raw_path__ key, and bounds a 1 s turn plus a 60 s bank. It validates raw actions because Kaggle silently normalizes non-dict returns to PASS. Design only; nothing built or timed."
 tags: ["kaggriculture-v3", "adaptation", "packaging", "kaggle-runtime"]
 status: "draft"
 generated: {"by": "anthropic/claude-opus-5.5", "at": "2026-09-29"}
@@ -71,15 +71,26 @@ These come from sources read on 2026-09-29.
 
 **Failure modes.**
 
-- An exception, a non-dict action or a timeout each lose the episode. The
-  brief keeps Isaiah's catch-all default action at the process boundary. A
-  strict mode re-raises for every test, benchmark and qualifying episode.
+- An exception or a timeout loses the episode, and a dict that fails the
+  JSON schema becomes `INVALID`. A non-dict return (`None`, a list, a string)
+  does **not** fail: Kaggle's `default_schema` silently replaces it with the
+  default PASS action (`utils.py:150–195`). The brief therefore validates
+  every raw returned action, by structure and a native encode round trip,
+  before Kaggle normalizes it.
+- At termination the interpreter overwrites every seat's status and reward
+  (`kaggriculture.py:960–963`), so a fault on the final call ends as `DONE`.
+  Final statuses prove nothing; the harness captures each call's result
+  itself.
+- The brief keeps Isaiah's catch-all default action at the process boundary.
+  A strict mode re-raises for every test, benchmark and qualifying episode.
 
 **Competition rules.**
 
 - Only the latest 2 submissions count for the final leaderboard.
-- The FAQ's size, RAM and vCPU values are unrendered placeholders, so they are
-  unknown.
+- The Kaggle MCP page read returned the FAQ's resource values as unrendered
+  placeholders. The indexed official FAQ, read independently in both Codex
+  reviews, lists 1.6 vCPUs, 6.5 GiB RAM, 8 GiB disk and a 100 MiB submission
+  size; the brief designs to these and plans a dated receipt.
 
 ## Consequence
 
