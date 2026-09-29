@@ -1,0 +1,198 @@
+[kg-probe] {"kind": "diagnostic_hook", "rank": 1, "t": 1790711265.6295683, "hook": "critic_warmup", "diagnostic_only": true, "warmup_iterations": 1, "grad_audit": "all", "base_launcher": "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", "masked_terms": ["policy_gradient(advantages=0)", "teacher_kl_coef=0", "ent_coef=0"]}
+[kg-probe] {"kind": "start", "rank": 1, "t": 1790711265.6322544, "argv": ["/root/kg-v3/scripts/run_ppo.py", "configs/kaggriculture_2rank.yaml", "/root/runs/ablate-C-dryrun", "--load-model-weights", "/root/bc-best/checkpoint_bc_best.pt", "--load-model-weights-mode", "model_fresh_critic_head", "--log-mode", "debug", "--max-env-steps", "32768", "-o", "rl.eval_replay_games=0"], "torch": "2.9.0+cu128", "wandb": "0.26.1"}
+[kg-probe] {"kind": "diagnostic_hook", "rank": 0, "t": 1790711265.632317, "hook": "critic_warmup", "diagnostic_only": true, "warmup_iterations": 1, "grad_audit": "all", "base_launcher": "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", "masked_terms": ["policy_gradient(advantages=0)", "teacher_kl_coef=0", "ent_coef=0"]}
+[kg-probe] {"kind": "start", "rank": 0, "t": 1790711265.6350152, "argv": ["/root/kg-v3/scripts/run_ppo.py", "configs/kaggriculture_2rank.yaml", "/root/runs/ablate-C-dryrun", "--load-model-weights", "/root/bc-best/checkpoint_bc_best.pt", "--load-model-weights-mode", "model_fresh_critic_head", "--log-mode", "debug", "--max-env-steps", "32768", "-o", "rl.eval_replay_games=0"], "torch": "2.9.0+cu128", "wandb": "0.26.1"}
+Launched with the following raw manual overrides: '['rl.eval_replay_games=0']'
+GEMM workload headroom rollout: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+GEMM workload headroom minibatch: 1024 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 5.776x headroom, <= 1 call(s)); heads 11096 rows/call (10.84x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16384 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 0.361x headroom, <= 3 call(s)); heads 11096 rows/call (0.6772x headroom, 2 call(s)); teacher targets 1674575872 B per chunk, 1674575872 B cached for 16384 rollout rows
+GEMM workload headroom evaluation: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+[kg-probe] {"kind": "env_construct", "rank": 0, "t": 1790711266.2406826, "n_envs": 128, "seed": 0, "seed_stride": 2, "native_threads": 2, "pin_memory": true, "transfer_device": "cuda:0", "episode_steps": 720}
+[kg-probe] {"kind": "env_construct", "rank": 1, "t": 1790711266.2528346, "n_envs": 128, "seed": 1, "seed_stride": 2, "native_threads": 2, "pin_memory": true, "transfer_device": "cuda:1", "episode_steps": 720}
+Compiled GEMM backends: compile_gemm_game=kaggriculture, compile_gemm_backends=ATEN, compile_stack_torch=2.9.0+cu128, compile_stack_triton=3.5.0, compile_stack_nvidia_driver=595.91.07
+0env steps [00:00, ?env steps/s][kg-probe] {"kind": "phase", "rank": 1, "t": 1790711278.4933345, "phase": "rollout", "iteration": 1, "seconds": 10.840806962001807, "peak_allocated": 3432926720, "peak_reserved": 4062183424, "device_total": 101975851008, "reserved_fraction": 0.03983475875755449, "native_steps": 64, "native_step_seconds": 3.2562951219952083}
+[kg-probe] {"kind": "phase", "rank": 0, "t": 1790711279.199842, "phase": "rollout", "iteration": 1, "seconds": 11.547980755000026, "peak_allocated": 3432926720, "peak_reserved": 4062183424, "device_total": 101975851008, "reserved_fraction": 0.03983475875755449, "native_steps": 64, "native_step_seconds": 2.8858213710045675}
+[kg-probe] {"kind": "phase", "rank": 1, "t": 1790711281.7942183, "phase": "teacher_precompute", "iteration": 1, "seconds": 3.296682496998983, "peak_allocated": 39983242752, "peak_reserved": 67205332992, "device_total": 101975851008, "reserved_fraction": 0.6590318426146573, "native_steps": 0, "native_step_seconds": 0.0}
+[kg-probe] {"kind": "phase", "rank": 0, "t": 1790711282.6756184, "phase": "teacher_precompute", "iteration": 1, "seconds": 3.4715992540004663, "peak_allocated": 39983711744, "peak_reserved": 67205332992, "device_total": 101975851008, "reserved_fraction": 0.6590318426146573, "native_steps": 0, "native_step_seconds": 0.0}
+0env steps [00:21, ?env steps/s]
+[rank0] training failed:
+[rank1] training failed:
+Traceback (most recent call last):
+  File "/root/kg-v3/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+    _run_training_session(
+  File "/root/kg-v3/scripts/run_ppo.py", line 416, in _run_training_session
+    env_steps = _run_training_loop(
+                ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+    metrics = trainer.train_iteration()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 130, in train_iteration
+    metrics = original_iteration(self)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+    metrics, sampled_segments = self._update(
+                                ^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 82, in wrapped
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 122, in update
+    return original_update(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 1217, in _update
+    grad_norms.append(self._step_optimizer().detach())
+                      ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/ablation/critic_warmup_launcher.py", line 179, in step_optimizer
+    _audit(self)
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/ablation/critic_warmup_launcher.py", line 140, in _audit
+    raise RuntimeError(
+RuntimeError: grad audit found no actor_only parameters; first names ['_ddp.module.model.player_tokens', '_ddp.module.model.board_tokens', '_ddp.module.model.actor_plan_tokens', '_ddp.module.model.critic_value_tokens', '_ddp.module.model.tile_proj.input.weight', '_ddp.module.model.tile_proj.input.bias', '_ddp.module.model.tile_proj.output.weight', '_ddp.module.model.tile_proj.output.bias']
+Traceback (most recent call last):
+  File "/root/kg-v3/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+    _run_training_session(
+  File "/root/kg-v3/scripts/run_ppo.py", line 379, in _run_training_session
+    _run_training_session_worker(
+  File "/root/kg-v3/scripts/run_ppo.py", line 448, in _run_training_session_worker
+    _run_training_loop(
+  File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+    metrics = trainer.train_iteration()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 130, in train_iteration
+    metrics = original_iteration(self)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+    metrics, sampled_segments = self._update(
+                                ^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 82, in wrapped
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 122, in update
+    return original_update(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 1217, in _update
+    grad_norms.append(self._step_optimizer().detach())
+                      ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/ablation/critic_warmup_launcher.py", line 179, in step_optimizer
+    _audit(self)
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/ablation/critic_warmup_launcher.py", line 140, in _audit
+    raise RuntimeError(
+RuntimeError: grad audit found no actor_only parameters; first names ['_ddp.module.model.player_tokens', '_ddp.module.model.board_tokens', '_ddp.module.model.actor_plan_tokens', '_ddp.module.model.critic_value_tokens', '_ddp.module.model.tile_proj.input.weight', '_ddp.module.model.tile_proj.input.bias', '_ddp.module.model.tile_proj.output.weight', '_ddp.module.model.tile_proj.output.bias']
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/root/ablation/critic_warmup_launcher.py", line 197, in <module>
+[rank1]:     BASE.main()
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 230, in main
+[rank1]:     module.main()
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+[rank1]:     _run_training_session(
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 379, in _run_training_session
+[rank1]:     _run_training_session_worker(
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 448, in _run_training_session_worker
+[rank1]:     _run_training_loop(
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+[rank1]:     metrics = trainer.train_iteration()
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 130, in train_iteration
+[rank1]:     metrics = original_iteration(self)
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+[rank1]:     metrics, sampled_segments = self._update(
+[rank1]:                                 ^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 82, in wrapped
+[rank1]:     result = fn(*args, **kwargs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 122, in update
+[rank1]:     return original_update(self, *args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/python/owl/train/ppo.py", line 1217, in _update
+[rank1]:     grad_norms.append(self._step_optimizer().detach())
+[rank1]:                       ^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/ablation/critic_warmup_launcher.py", line 179, in step_optimizer
+[rank1]:     _audit(self)
+[rank1]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+[rank1]:     return func(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/ablation/critic_warmup_launcher.py", line 140, in _audit
+[rank1]:     raise RuntimeError(
+[rank1]: RuntimeError: grad audit found no actor_only parameters; first names ['_ddp.module.model.player_tokens', '_ddp.module.model.board_tokens', '_ddp.module.model.actor_plan_tokens', '_ddp.module.model.critic_value_tokens', '_ddp.module.model.tile_proj.input.weight', '_ddp.module.model.tile_proj.input.bias', '_ddp.module.model.tile_proj.output.weight', '_ddp.module.model.tile_proj.output.bias']
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/root/ablation/critic_warmup_launcher.py", line 197, in <module>
+[rank0]:     BASE.main()
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 230, in main
+[rank0]:     module.main()
+[rank0]:   File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+[rank0]:     _run_training_session(
+[rank0]:   File "/root/kg-v3/scripts/run_ppo.py", line 416, in _run_training_session
+[rank0]:     env_steps = _run_training_loop(
+[rank0]:                 ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+[rank0]:     metrics = trainer.train_iteration()
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 130, in train_iteration
+[rank0]:     metrics = original_iteration(self)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+[rank0]:     metrics, sampled_segments = self._update(
+[rank0]:                                 ^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 82, in wrapped
+[rank0]:     result = fn(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 122, in update
+[rank0]:     return original_update(self, *args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/python/owl/train/ppo.py", line 1217, in _update
+[rank0]:     grad_norms.append(self._step_optimizer().detach())
+[rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/ablation/critic_warmup_launcher.py", line 179, in step_optimizer
+[rank0]:     _audit(self)
+[rank0]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/ablation/critic_warmup_launcher.py", line 140, in _audit
+[rank0]:     raise RuntimeError(
+[rank0]: RuntimeError: grad audit found no actor_only parameters; first names ['_ddp.module.model.player_tokens', '_ddp.module.model.board_tokens', '_ddp.module.model.actor_plan_tokens', '_ddp.module.model.critic_value_tokens', '_ddp.module.model.tile_proj.input.weight', '_ddp.module.model.tile_proj.input.bias', '_ddp.module.model.tile_proj.output.weight', '_ddp.module.model.tile_proj.output.bias']
+[kg-probe] {"kind": "exit", "rank": 0, "t": 1790711289.6824121, "native_step_calls": 64, "native_step_seconds": 2.8858213710045675, "native_step_mean_ms": 45.09095892194637, "terminal_records": 0, "phase_peaks": {"rollout": {"allocated": 3432926720, "reserved": 4062183424}, "teacher_precompute": {"allocated": 39983711744, "reserved": 67205332992}}, "inductor_max_autotune_gemm_backends": "ATEN"}
+[kg-probe] {"kind": "exit", "rank": 1, "t": 1790711289.7781618, "native_step_calls": 64, "native_step_seconds": 3.2562951219952083, "native_step_mean_ms": 50.87961128117513, "terminal_records": 0, "phase_peaks": {"rollout": {"allocated": 3432926720, "reserved": 4062183424}, "teacher_precompute": {"allocated": 39983242752, "reserved": 67205332992}}, "inductor_max_autotune_gemm_backends": "ATEN"}
+W0929 19:48:10.862000 21805 torch/distributed/elastic/multiprocessing/api.py:908] Sending process 21810 closing signal SIGTERM
+E0929 19:48:11.126000 21805 torch/distributed/elastic/multiprocessing/api.py:882] failed (exitcode: 1) local_rank: 0 (pid: 21809) of binary: /root/kg-v3/.venv/bin/python
+Traceback (most recent call last):
+  File "/root/kg-v3/.venv/bin/torchrun", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 357, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 936, in main
+    run(args)
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 927, in run
+    elastic_launch(
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 156, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 293, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+/root/ablation/critic_warmup_launcher.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-09-29_19:48:10
+  host      : 9c9253a4b2ec
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 21809)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
