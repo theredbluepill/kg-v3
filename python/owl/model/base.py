@@ -87,6 +87,20 @@ class ModelServingOutput(Generic[ActT]):
     next_hidden_state: ModelHiddenState | None = None
 
 
+class TrunkCompileAPI(ABC):
+    """A model that supports ``rl.model_compile='trunk'``.
+
+    ``compile_transformer_trunk`` compiles only the self-attention trunk
+    (blocks plus final norm). Stems, token assembly, packing, heads and critic
+    stay eager, and the model calls the compiled callable only from its own
+    trunk dispatch, so any guard in that dispatch runs before it. Returns the
+    number of compiled callables.
+    """
+
+    @abstractmethod
+    def compile_transformer_trunk(self, *, mode: str) -> int: ...
+
+
 class BaseModelAPI(nn.Module, ABC, Generic[ObsT, ActT, ActSpecT]):
     @property
     def action_spec(self) -> ActSpecT:

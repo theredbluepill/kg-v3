@@ -10,6 +10,7 @@ from owl.model.base import (
     ModelOutput,
     ModelServingOutput,
     ModelTeacherEvaluation,
+    TrunkCompileAPI,
 )
 from owl.model.config import ModelConfig, OrbitModelConfig
 from owl.model.factory import create_model
@@ -81,6 +82,7 @@ __all__ = [
     "StatelessTransformerV1",
     "StatelessTransformerV1Config",
     "TeacherTargets",
+    "TrunkCompileAPI",
     "ValueMode",
     "apply_lora_to_stateless_transformer",
     "create_model",

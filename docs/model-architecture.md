@@ -243,6 +243,12 @@ the fixed padded sequence capacity `max_entities + 13 + n_scratch_tokens` as
 `max_seqlen`, so the compiled trunk can reuse one graph across different
 live-token counts. This mode currently rejects `EntityBasedCrossAttnV1`,
 `recurrent_transformer_v1`, and `player_count_adapter_blocks > 0`.
+`configure_model_compile` dispatches the trunk target through the nominal
+`TrunkCompileAPI` interface (`python/owl/model/base.py`), which
+`StatelessTransformerV1` and `KaggricultureTransformer` implement; any other
+model raises. Implementations compile only their blocks and final norm and call
+the compiled callable from their own trunk dispatch. The trainer never compiles
+a whole model.
 
 Set `rl.model_compile="mlp"` to compile each transformer-block MLP in place
 while keeping packing, unpacking, and flash-attn varlen calls eager.
@@ -742,6 +748,7 @@ not penalized. Per-action KL portions are logged as components such as
 
 `KaggricultureTransformer` (`python/owl/model/kaggriculture.py`, config `configs/model/kaggriculture.yaml`) plays Kaggriculture on this model's layer topology. It reuses `ObservationInputStem`, `TransformerBlock`, the flash-packing path, the compile hook and the initialization helpers unchanged. The tensor contract is `docs/kaggriculture-contract.md`; the per-point conformance table is `docs/kaggriculture-model.md`.
 
+- **Compile targets:** `rl.model_compile="trunk"` reaches `compile_transformer_trunk` through `TrunkCompileAPI` and compiles `_forward_transformer_trunk` (blocks plus `final_norm`) only. `_run_trunk` calls the compiled callable, so the overflow guard and row chunking run first; stems, token assembly, packing, critic, actor projection and heads stay eager. `"mlp"` compiles each `blocks[i].mlp` in place, and those modules are reached only through `_run_trunk`. Tests pin the compiled region, the guard order and every compile call site on the trainer and model paths.
 - **Registration:** `KaggricultureTransformerConfig` is the third member of the shared `ModelConfig` union (discriminator `model_arch: kaggriculture_transformer`), next to `StatelessTransformerV1Config` and `RecurrentTransformerV1Config` (together `OrbitModelConfig`). `create_model` dispatches on the config class. Each architecture belongs to one game, so it raises `TypeError` when an Orbit model gets Kaggriculture specs or the reverse. Typed overloads return `BaseModelAPI` for Orbit configs and `KaggricultureTransformer` for this one. `FullConfig` still pairs the model with Orbit's `EnvConfig`, so it rejects this architecture until a Kaggriculture env config exists.
 
 - **Input encoding:** one stem per entity group, fed float channels concatenated with one-hot categorical fields: tiles (133 inputs), actors (371), shops (16, type plus slot), market (11), player features (44) and globals (15). There are no embedding tables. Player tokens are `player_tokens + player_feature_proj(player_features)` (self, opponent), and the global token is `global_proj(global_features)`.

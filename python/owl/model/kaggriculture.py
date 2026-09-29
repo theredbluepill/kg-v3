@@ -34,6 +34,7 @@ from owl.model.base import (
     ModelEvaluation,
     ModelHiddenState,
     ModelOutput,
+    TrunkCompileAPI,
 )
 from owl.model.kaggriculture_actor import (
     POLICY_SLOTS,
@@ -207,7 +208,8 @@ class KaggricultureTransformer(
         kt.KaggricultureObsBatch,
         kt.KaggricultureActions,
         kt.KaggricultureActionConfig,
-    ]
+    ],
+    TrunkCompileAPI,
 ):
     def __init__(
         self,
@@ -501,6 +503,11 @@ class KaggricultureTransformer(
         return self.final_norm(x)
 
     def compile_transformer_trunk(self, *, mode: str) -> int:
+        """Compile the blocks and final norm only; ``_run_trunk`` calls it.
+
+        The overflow guard and chunking in ``_run_trunk`` stay in front of the
+        compiled callable; stems, heads and critic stay eager.
+        """
         self._compiled_transformer_trunk = torch.compile(
             self._forward_transformer_trunk, mode=mode, dynamic=True
         )

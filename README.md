@@ -294,7 +294,9 @@ FlashAttention packing and before unpacking, using
 transformer-block MLP in place with `dynamic=True`, keeping attention packing
 and flash-attn calls eager while allowing Inductor to optimize the FFN path. Set
 `rl.model_compile=none` for short CPU smoke tests or compile-debugging runs.
-The trunk mode rejects cross-attention observations, recurrent models, and
+The trunk mode dispatches through the model's `TrunkCompileAPI`
+(`StatelessTransformerV1`, `KaggricultureTransformer`) and never compiles the
+whole model; it rejects cross-attention observations, recurrent models, and
 player-count adapter trunk blocks.
 
 Fresh launches can also initialize the model from an existing full training
