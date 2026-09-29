@@ -761,6 +761,43 @@ fn generated_trace_perturbed_action_is_rejected() {
 }
 
 #[test]
+fn generated_trace_perturbed_rewards_are_rejected() {
+    let text = generated_trace(PERTURBED);
+    let line = line_for_step(&text, "transition", 100);
+    let perturbed = edit_line(&text, line, |row| {
+        assert_eq!(row["rewards"], json!([0, 0]));
+        row["rewards"] = json!([1, 0]);
+    });
+    let divergence = replay_text(&perturbed).unwrap_err();
+    assert_eq!((divergence.line, divergence.from_step), (line, Some(100)));
+    assert_eq!(divergence.kind, "rewards", "{divergence}");
+}
+
+#[test]
+fn generated_trace_perturbed_terminal_banks_are_rejected() {
+    let text = generated_trace(PERTURBED);
+    let perturbed = edit_line(&text, 0, |header| {
+        let bank = header["terminal_banks"][0].as_f64().unwrap();
+        header["terminal_banks"][0] = json!(bank + 1.0);
+    });
+    let divergence = replay_text(&perturbed).unwrap_err();
+    assert_eq!((divergence.line, divergence.from_step), (0, None));
+    assert_eq!(divergence.kind, "terminal_banks", "{divergence}");
+}
+
+#[test]
+fn generated_trace_perturbed_transition_count_fails_done() {
+    let text = generated_trace(PERTURBED);
+    let perturbed = edit_line(&text, 0, |header| {
+        let transitions = header["transitions"].as_u64().unwrap();
+        header["transitions"] = json!(transitions + 1);
+    });
+    let divergence = replay_text(&perturbed).unwrap_err();
+    assert_eq!(divergence.kind, "done", "{divergence}");
+    assert_eq!(divergence.field, "done");
+}
+
+#[test]
 fn generated_trace_rejection_claims_are_checked() {
     let text = generated_trace(PERTURBED);
     // An accepted step relabelled as rejected: Rust accepts it.

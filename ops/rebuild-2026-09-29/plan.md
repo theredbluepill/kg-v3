@@ -315,7 +315,7 @@ The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cov
 - [ ] **7.2 (Claude) Panel script:** win rate, bank margin, seeds, both seats, denominators, legality, completion and runtime, labelled selection vs held-out.
 - [ ] **7.3 (Codex) Replay export:** Kaggle episode format, round-tripped through the native engine from the seed header; 8 replays per evaluation.
 - [ ] **7.4 (Claude) Kaggle agent packaging:** validated on one bounded local episode.
-- [ ] **7.5 (Codex) Parity docs:** `docs/rules-parity-coverage.md` gains a Kaggriculture section stating what is tested and what isn't.
+- [x] **7.5 (Codex) Parity docs:** (at `31c19ef` merged by `kg/merge-7-5-c`; reviews by Claude subagents substituting for Codex) `docs/rules-parity-coverage.md` gains a Kaggriculture section stating what is tested and what isn't.
 
 ## Phase 8 — Docs and closeout
 

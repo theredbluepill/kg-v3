@@ -1,0 +1,1 @@
+Resume the Task 7.5 independent verification exactly as specified in the original prompt (ops/rebuild-2026-09-29/codex/verify-7.5-r1-prompt.md in /Users/poonszesen/kg-v3). Nothing was done before the usage limit, so start from step 1. End with the VERDICT line.

@@ -1,0 +1,4 @@
+Read-only installed distribution metadata and interpreter bytes; no Kaggle import/step.
+Command: .venv/bin/python -c 'import importlib.metadata,hashlib,json; from pathlib import Path; d=importlib.metadata.distribution("kaggle-environments"); p=Path(d.locate_file("kaggle_environments/envs/kaggriculture/kaggriculture.py")); print(json.dumps({"version":d.version,"interpreter_sha256":hashlib.sha256(p.read_bytes()).hexdigest()},sort_keys=True))'
+Exit: 0
+{"interpreter_sha256": "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e", "version": "1.32.7"}

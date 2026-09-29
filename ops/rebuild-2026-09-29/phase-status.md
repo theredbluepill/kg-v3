@@ -12,6 +12,8 @@
 
 **Landing update, 2026-09-30 (W&B).** The W&B wiring for all v3 experiments lands on staging branch `kg/merge-wandb-c`: merge `1fb5bcc` (`--no-ff`) of `kg/rebuild-wandb` `8d5838e` onto the integration tip `5ed1c1a` (the 3.1/3.5 landing), with the landing record after it. With Codex at its usage limit, the merge verification is `codex/claude-verify-merge-wandb.md` (APPROVE), by an independent Claude subagent substituting for Codex (owner-approved; not a Codex verdict). Only the Cross-cutting W&B row and the 3.1 row's Cookbook cell were updated for it.
 
+**Landing update, 2026-09-30 (7.5).** Task 7.5 lands on staging branch `kg/merge-7-5-c`: a `--no-ff` merge of `kg/rebuild-7-5` `31c19ef` onto the integration tip `bd1c927` (the W&B landing), with the landing record after it. Only `cookbook/log.md` conflicted (both sides kept, newest first). With Codex at its usage limit, the Task 7.5 reviews and the merge verification `codex/claude-verify-merge-7-5.md` are by Claude agents substituting for Codex (owner-approved; not Codex verdicts). Only the Phase 7 summary row and the 7.5 row were updated for it.
+
 This is a working artifact, not a durable cookbook claim. Update it at each landing: a merge, a Codex verdict, or a state change. When a row changes, re-check it against git and the cited report. Don't copy a row into a cookbook note without re-checking it. The cookbook stays organised by concept (`cookbook/references/`, `cookbook/decisions/`). This file is the one place that maps those notes and receipts onto the plan's phases (`ops/rebuild-2026-09-29/plan.md`).
 
 ## Path conventions
@@ -20,7 +22,7 @@ This is a working artifact, not a durable cookbook claim. Update it at each land
 - **`codex/…`** is `rebuild/codex/…`. The custody sweep committed the compact reports for merged work. The inventory and the manifest are described in `rebuild/evidence-custody.md` and `rebuild/evidence-custody.json`.
 - **`codex/…` (local)** means the report is not tracked on any branch. It exists only in the main worktree, `/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/`. This covers in-progress work, which lands with its own merge, and reports written after the 13:48Z inventory.
 - **`<branch>:<path>`** is a path tracked on that branch but not in this tree.
-- **"Merged"** means the commit is an ancestor of `666deec`, or of `faed717` for the custody rows, or of this branch for the 7.1, 4.4, 3.1-remainder, 3.5 and W&B rows. Each was checked with `git merge-base --is-ancestor` at 22:10 HKT. Branch heads were read at 22:12 HKT; in-progress branches may have moved since.
+- **"Merged"** means the commit is an ancestor of `666deec`, or of `faed717` for the custody rows, or of this branch for the 7.1, 4.4, 3.1-remainder, 3.5, W&B and 7.5 rows. Each was checked with `git merge-base --is-ancestor` at 22:10 HKT. Branch heads were read at 22:12 HKT; in-progress branches may have moved since.
 
 State values: **merged**, **merged (custody)**, **approved, not merged** (Codex APPROVE, not on integration), **in review**, **in progress**, **blocked**, **not started**.
 
@@ -37,7 +39,7 @@ The done count only includes plan checkboxes whose work is merged. Rows without 
 | 4 Teacher | 4 / 4 | merged; T18/T19b run on CPU since `821b446` | None on CPU. GPU teacher checks wait on 6.1. |
 | 5 BC | 0 / 2 | in progress | 5.2 trainer approved and 5.1 preparer approved at `356d19f`, both unmerged; two later preparer commits unreviewed |
 | 6 GPU verification | 1 / 6 | 6.0 merged; evidence merged | 6.1 after 5.2 (3.5 merged) |
-| 7 Evaluation and packaging | 1 / 5 | 7.1 merged (`kg/merge-7-1`); 7.3 in review; 7.4 brief awaiting re-review | 7.3 verification |
+| 7 Evaluation and packaging | 2 / 5 | 7.1 merged (`kg/merge-7-1`); 7.5 merged (`kg/merge-7-5-c`); 7.3 in review; 7.4 brief awaiting re-review | 7.3 verification |
 | 8 Docs and closeout | 0 / 3 | 8.1a partial (custody) | Needs the earlier phases |
 
 Live processes at 22:11 HKT (`ps`):
@@ -129,7 +131,7 @@ Live processes at 22:11 HKT (`ps`):
 | 7.2 Panel script | not started | None | None | None | Contract: `cookbook/decisions/evaluation-preserves-generality-and-evidence.md` | Depends on 7.1 and 6.2. |
 | 7.3 Replay export | in review | `kg/rebuild-7-3` `f23cd4f` (base `0b8cf98`, merges 1.4 at `37c1e51`) | `codex/verify-7.3-r1.md` REJECT; `codex/verify-7.3-r2.md` REJECT on `822c951` (local); `f23cd4f` addresses r2; a Codex run started 22:07 | `kg/rebuild-7-3:ops/rebuild-2026-09-29/7.3/` | `kg/rebuild-7-3:cookbook/references/native-replay-export-preserves-kaggle-episodes.md` | No approving verdict yet. Depends on the unmerged 1.4. |
 | 7.4 Packaging | in review (brief) | `kg/rebuild-7-4-brief` `ff6195e`; review applied in `2ac7ddb` | `codex/brief-7.4-review.md` REVISE on `eccdd12` (local); no re-review found | `kg/rebuild-7-4-brief:ops/rebuild-2026-09-29/briefs/7.4-packaging.md` | `kg/rebuild-7-4-brief:cookbook/references/kaggle-packaging-reuses-the-starter-submission-path.md` | No implementation. The owner decides any submission. |
-| 7.5 Parity docs | not started | Kaggriculture sections already in `docs/rules-parity-coverage.md` | None | None | `cookbook/references/live-differential-parity-checks-the-rust-kernel.md` | Needs a closing pass after 7.1, 7.3 and 7.4. |
+| 7.5 Parity docs | merged (`kg/merge-7-5-c`) | `kg/rebuild-7-5` `31c19ef` (base `bde3374`, merged with integration `994818b`): summary `a8afb33`, verify r1 P3 fixes `81d0bf7`, r2 P2/P3 fixes `78b78fb` (`7.5/r2-fixes/results.md`), r3 P3s `31c19ef`; merged onto `bd1c927` | No Codex verdict (Codex verify r1 stopped at its usage limit). Reviewer: independent Claude subagents substituting for Codex, owner-approved, not Codex verdicts: `codex/claude-verify-7.5-r1.md` APPROVE WITH EDITS on `e9aafba`, `codex/claude-verify-7.5-r2.md` REQUEST CHANGES on `81d0bf7`, `codex/claude-verify-7.5-r3.md` APPROVE WITH EDITS on `78b78fb` (edits applied); merge `codex/claude-verify-merge-7-5.md` (the landing Claude agent, substituting for Codex; not independent of the merge) | `rebuild/7.5/`, `rebuild/merge-7-5-c/prepare.log` | `cookbook/references/kaggriculture-parity-summary-maps-tested-and-untested-layers.md` | The summary maps `994818b`, reconciled at `bd1c927`; the Task 3.1 gap is restated for the merged trainer. Needs a pass when 7.3 or 7.4 merges or a learned-seat `opponents_rs` hook lands. The `opponents_rs` test peak (3.0 GB) is unattributed. |
 
 ## Phase 8 — Docs and closeout
 

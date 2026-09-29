@@ -2,7 +2,9 @@
 
 This document is the system of record for Orbit Wars and Kaggriculture parity
 coverage. Keep it updated whenever the Python reference, fixture generators,
-or Rust rules engines change. The Orbit Wars coverage below remains unchanged.
+or Rust rules engines change. Start with the
+[Kaggriculture summary](#kaggriculture-coverage-summary-task-75) for its tested
+layers and open gaps. The Orbit Wars coverage below remains unchanged.
 
 ## Covered By Replay Fixtures
 
@@ -133,6 +135,178 @@ RL-only terminal metrics such as `ships_lost_in_combat_per_game`,
 `neutral_comet_undershot_rate` are derived from simulator step results and are
 covered by focused Rust/Python metric tests, not by replay fixture parity
 assertions.
+
+## Kaggriculture Coverage Summary (Task 7.5)
+
+This map describes integration tip `994818b87041426c6fc442a85fb06932937d58a7`
+(Tasks 1.4/1.5 and 7.1 merged) as merged into `kg/rebuild-7-5` on 2026-09-30.
+It was first written from `bde337465a9fa7c07bedded88d5d696d7cefb7ef`, before
+Task 7.1 landed. The sections below retain their historical check counts.
+The current checks for this documentation change are listed separately here.
+Claim-by-claim sources are in `ops/rebuild-2026-09-29/7.5/claims.md`; the
+Task 7.1 refresh is in `ops/rebuild-2026-09-29/7.5/r2-fixes/results.md`.
+Task 7.5 landed on the integration through staging branch `kg/merge-7-5-c`,
+onto integration tip `bd1c9279ec09a27a5c05069197fef404263cb55b` (Task 4.4, the
+Task 3.1 remainder with Task 3.5, and the W&B wiring). Those three landings
+change no Rust, no `python/owl/kaggriculture` module and none of the test files
+the rows below cite, so every tested-layer row still holds; the Task 3.1 gap is restated for the merged trainer, and
+the landing's full `just prepare` is listed under current checks.
+
+### Compatibility target
+
+The target is `kaggle-environments==1.32.7`, pinned in `pyproject.toml` and
+`uv.lock`. `engine_rs/Cargo.toml` metadata pins the interpreter file SHA-256 to
+`bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`.
+The vendored reference commit is
+`65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`.
+
+`tests/scripts/test_kaggriculture_parity.py::test_project_environment_satisfies_the_engine_pin`
+checks the installed package version and engine hash through
+`scripts/kaggriculture_parity/generate_traces.py::load_pinned_kaggle`.
+The generator refuses a different version or hash before writing traces.
+The same test file checks version/hash rejection and live fixture regeneration.
+`scripts/check_engine_trim.py` checks vendored source custody and generated
+trace inventory, hashes and Cargo-pin consistency; it does not inspect the
+installed Python engine. `tests/tools/test_check_engine_trim.py` tests that checker.
+
+### What is tested
+
+In the receipt column, `R/` means `ops/rebuild-2026-09-29/`.
+Each oracle qualifies its own layer; their game and case counts are not additive.
+
+| Layer | Oracle | Scope / denominator | Test entry point(s) | Receipt path | Detail |
+| --- | --- | --- | --- | --- | --- |
+| Rules kernel, official episodes | Four recorded official Python-engine traces; Rust resets from configuration and seed | Episodes 95324500, 95901360, 95921764, 95990191; 719 transitions each, 2,876 transitions and 2,880 snapshots | `engine_rs/tests/replay_parity.rs::episode_*` | `R/1.1/results.md`; `R/7.5/engine-tests.log` | [Kernel](#kaggriculture-test-surface) |
+| Live differential parity, Task 1.1b | Kaggle's own hash-pinned 1.32.7 Python engine | Committed: 8 games / 3,960 transitions, plus 7 one-step divergence repros. Recorded local sweep: 40 games / 21,824 transitions agree; 303 probes / 1,515 transitions give 266 agreements and 37 D1/D2 divergences | `engine_rs/tests/replay_parity.rs::generated_fixtures_replay`, `env_directory_traces`; `tests/scripts/test_kaggriculture_parity.py` | `R/1.1b/results.md`; `R/1.1b/verify-r1/sweep-summary.json` | [Differential](#kaggriculture-live-differential-parity) |
+| Retained unit and RNG tests | Hand-derived synthetic expectations and embedded CPython RNG vectors | 41 library tests + 9 RNG integration tests; no episode reads | `engine_rs/src/lib.rs` test module; `engine_rs/tests/py_random.rs` | `R/7.5/engine-tests.log` | [Test surface](#kaggriculture-test-surface) |
+| Native grammar, Task 1.2 | Frozen outputs of three reference decoders, literal command supports, and direct kernel execution | 320 scheduled programs (256 synthetic + 64 replay); 44 controls (43 rejections + 1 padding acceptance); 964 table bits; 64 selected replay seat actions | `src/kaggriculture/grammar_tests.rs`; root `src/kaggriculture/grammar_kernel_tests.rs` | `R/1.2/results.md`; `R/1.2/oracle/README.md`; `R/1.3/r1-fixes/results.md` | [Grammar](#kaggriculture-native-grammar-task-12) |
+| Observation encoder, Task 1.3 | Recorded `encode_invest` rows from the pinned reference Rust crate; tensor-only reconstruction | 512 states / 1,024 seat rows / 8,176 offsets per row, compared bitwise; actual Python observation-schema checks | `src/kaggriculture/oracle_corpus.rs::compare_observation_oracle`; `tests/kaggriculture/test_observe.py::test_every_frozen_oracle_record_passes_the_actual_schema` | `R/1.3/claude-review.md`; `R/1.3/r1-fixes/results.md` | [Observation](#kaggriculture-observation-coverage-task-13) |
+| Native environment, Task 1.4 | Synthetic lifecycle expectations and untouched controls; recorded reference Rust `TrainingBatch`; independent Python reward formula | 35 destination buffers; reset/step/truncate rollback and seed admission; 16 games, seeds 17000–17015, 719 transitions each = 11,504 | `src/kaggriculture/env_tests.rs`, `admission.rs`; `tests/kaggriculture/test_native_env.py`; `test_env_reference.py::test_native_matches_training_batch_16_complete_games` | `R/1.4/claude-review/pod-oracle/`; `R/1.4/p3-rerecord/reference-recording-attempt.json` | [Lifecycle](#kaggriculture-native-lifecycle-coverage-task-14) |
+| Python adapter / codec / table bridge, Task 1.5 | Real native binding plus lifecycle expectations, frozen grammar corpus, independent expected tables and reward arithmetic | Stable 35-buffer lifecycle; 321 accepted / 43 rejected codec records; 964 table bits; recorded reward trajectories plus 3 extreme-coefficient games of 96 transitions each | `tests/kaggriculture/test_env.py`, `test_codec.py`, `test_native_tables.py`, `test_game.py`, `test_rewards.py` | `R/stage2-adapter/native/results.md`; `R/stage2-adapter/tables/results.md` | [Native boundary](#kaggriculture-native-lifecycle-coverage-task-14) |
+| Evaluation opponents, Task 7.1 | Original Starter, R04, EcoBot and E776 Python submissions on Kaggle 1.32.7's engine under CPython 3.11.15 | 8 default-config games, seeds 20260929–20260936, each bot in both seats twice: 4 bots × 2 seats × 1,438 = 11,504 compared actions and 5,752 transitions of state; 24 mid-episode reconstructions with 1,152 resumed actions | `opponents_rs/tests/oracle_parity.rs`; `opponents_rs/tests/lifecycle.rs`; `tests/scripts/test_kaggriculture_parity.py` | `R/7.1/review/results.md`; `R/7.1/verify-r1/parity-replay.json`; `R/codex/verify-7.1-r2.md`; `R/merge-7.1/prepare-on-5b43062.log` | [Opponents](#task-71-opponents-snapshot-view-and-original-submission-parity) |
+
+The replay comparator checks public/private values and recursive object key
+order, statuses, typed rewards, step/done and terminal banks. Rejected actions
+must leave the checked state unchanged. Negative controls in
+`engine_rs/tests/replay_parity.rs` perturb a committed trace's state value,
+private key order, action, rejection label, per-transition rewards, header
+transition count (caught by the done check) and header terminal banks; each must
+be rejected with its divergence kind. The last three were added after a scratch
+review disabled those checks without any test failing
+(`R/7.5/r2-fixes/replay-negative-controls.log`). The sweep receipt is historical;
+Task 7.5 does not launch another sweep.
+
+Observation reconstruction is observation-information coverage, not rules parity.
+For Task 1.4, `scripts/record_kaggriculture_env_reference.py` exports the reference
+commit named above and runs `training::TrainingBatch` through its Rust recorder.
+The fixture pair is `tests/fixtures/kaggriculture_env_reference_v1.json` and
+`tests/fixtures/kaggriculture_env_reference_v1.npz`.
+Its replay compares rewards, dones, before/after banks and economic counters
+bitwise, then checks terminal records, metrics, seed progression and autoreset.
+The separate Python reward formula allows one f32 ULP. This is a native-wrapper
+comparison to the historical Rust training environment, not a second Python
+rules-engine differential check.
+
+### Local evidence that is not parity
+
+The BC pairing diagnostic exists on `kg/rebuild-bc-now` at
+`933d661097bed36859fd9a0d7505ac66d8659b7a`, outside this integration.
+Its local evidence paths are
+`ops/rebuild-2026-09-29/bc-a100-2026-09-29/pairing.json` and `receipts.md`
+on that branch. The implementation is
+`scripts/kaggriculture_prepare_bc.py::pairing_check` and `PAIRING_PUBLIC_KEYS`
+at that commit. The receipt says the pairing result was copied, not rerun there.
+The receipt at this tip is `ops/rebuild-2026-09-29/7.5/bc-audit.txt`. It records
+the `pairing.json` SHA-256, the aggregate sums and the read-only branch check, so
+the figures below stay checkable if that branch is rebased or deleted.
+
+Kaggle's own 1.32.7 Python interpreter re-steps each archived `steps[t]`
+observation with the recorded `steps[t+1]` actions and episode configuration.
+It compares values of `day`, `hour`, `farms`, `market`, `town` and both seats'
+`private`. It excludes `step`, key order, statuses and rewards.
+Across 8 sampled episodes, 5,743/5,752 transitions match. All 9 mismatches are
+private-only, at turns 335, 383, 431, 455, 527 and 623; their cause is unattributed.
+The receipt calls them day ends, but the sampled episode configurations are not
+in the tracked evidence, so this page does not confirm that classification.
+No Rust engine participates. This is not engine parity or proof of label correctness.
+
+### What is not tested
+
+- D1/D2 agreement: Unicode-decimal quantities and unhashable fields remain known
+  divergences. Their repros assert failures; they do not establish repaired parity.
+- Exhaustive Python rules-path or malformed-input agreement. Model grammar actions
+  cannot exercise D1/D2, and the generated policies/probes are a bounded sample.
+- Kaggle framework behavior outside the interpreter: timeouts, agent errors and
+  `INVALID` statuses.
+- Strong-play worlds beyond the four official episodes, or a larger pod parity sweep.
+- Direct equality of recorded RNG/shop schedule headers; replay tests check their
+  effects through state instead.
+- Full-season codec parity on the official action streams, or every actor/order/HIRE combination;
+  selected replay actions and local support classes are the tested scope.
+- Whole-observation or whole-snapshot Python parity from the Task 1.4 fixture;
+  its reference is Rust and its comparisons target the native transition boundary.
+- Complete historical observation-corpus source custody: three engine input hashes
+  were omitted; generation-time dirty bytes and the full producer module inventory are absent.
+- Task 7.1 beyond its tested scope: custom configurations, CPython 3.12 or
+  later (R04 diverges there), states the controllers did not create, individual
+  order rejection and engine-confirmed shortages, and playing strength. The
+  native environment has no `opponents_rs` seat for the learned policy, so the
+  nine learned-seat opponent tests skip.
+- Task 7.3 replay export / Kaggle-episode round trip in this integration;
+  it is unmerged, with no approving verdict in this tip's phase tracker.
+- Task 7.4 Kaggriculture packaging; this tip records a brief under review, not implementation.
+- Kaggriculture trainer qualification beyond CPU functional checks. Since
+  `821b446` canonical `scripts/run_ppo.py` carries Kaggriculture through the
+  shared rollout storage, mask/action mapping, evaluation and W&B logger, and
+  Task 3.5's two-update tiny CPU run exercises it; that run carries no learning
+  claim, and GPU, multi-rank and learning qualification wait on Phase 6. None of
+  this is rules parity: the trainer consumes the native environment rows above.
+- CUDA/BF16 native-adapter parity, hardware table upload and pinned-memory DMA
+  reuse-fence qualification. Separate GPU model diagnostics do not qualify these paths.
+- Complete-update throughput. Task 1.4 measured observation/lifecycle components;
+  Task 1.3's dedicated timing diagnostic remains incomplete.
+
+### Current checks
+
+Checks for this refresh ran on 2026-09-30 on `kg/rebuild-7-5` after merging
+integration tip `994818b` and adding the three replay negative controls. Logs,
+the runner and resource figures are under `ops/rebuild-2026-09-29/7.5/r2-fixes/`
+(`R2/` below). They ran on the owner's Mac, CPU only, with `CARGO_BUILD_JOBS=2`
+and `OMP_NUM_THREADS=2`; each figure is `/usr/bin/time -l` maximum RSS of the
+largest single child process, not a process-tree sum. The `opponents_rs` run
+peaked at 3.0 GB, above the owner's 1 GB check limit; this run did not
+attribute that peak to compilation or to a test binary. Between `994818b` and
+this branch, only documentation, `ops/` receipts, the cookbook,
+`engine_rs/tests/replay_parity.rs` and its `engine_rs/TRIM_MANIFEST.json` hash
+changed. The root Rust suite and the full Python suite were therefore not rerun;
+their latest full runs are the Task 7.1 merge receipt for `994818b`
+(`merge-7.1/prepare-on-5b43062.log`).
+
+| Command | Actual result | Receipt |
+| --- | --- | --- |
+| `cargo fmt --check` and `cargo clippy --all-targets --locked` (`engine_rs`, with the `justfile` allowances) | Exit 0 each | `R2/engine-fmt.log`; `R2/engine-clippy.log` |
+| `cargo test --locked --offline --manifest-path engine_rs/Cargo.toml` | 72 passed (41 unit, 9 RNG, 22 replay parity), 0 failed; 171 MB | `R2/engine-tests.log` |
+| Replay negative controls with each comparator check disabled in turn | Each mutation fails exactly its new test; the restored file passes 22 | `R2/replay-negative-controls.log` |
+| `cargo test --offline --manifest-path opponents_rs/Cargo.toml --locked` | 22 passed (12 unit, 5 lifecycle, 5 oracle), 0 failed; 3.0 GB | `R2/opponents-tests.log` |
+| `scripts/check_engine_trim.py`; `scripts/check_opponent_import.py` | Exit 0 each | `R2/engine-trim.log`; `R2/opponent-import.log` |
+| `pytest -m "not slow"` on the parity, trim, opponent-import and opponent tests | 178 passed, 11 skipped (nine learned-seat opponent tests, one broad regeneration, one original-source reread); 509 MB | `R2/pytest-parity-custody.log` |
+| `pytest -m "not slow"` on `test_env_reference.py`, `test_native_env.py`, `test_env.py` | 400 passed (includes the 16-game `TrainingBatch` comparison); 374 MB | `R2/pytest-env.log` |
+| `scripts/check_doc_freshness.py` | Exit 0 | `R2/docs-fresh.log` |
+| Root `cargo test` and the full Python suite | Not rerun; at `994818b` root 274 passed, 5 ignored; Python 2,400 passed, 21 skipped | `merge-7.1/prepare-on-5b43062.log` |
+| Landing: full `just prepare` on the `kg/merge-7-5-c` merge onto `bd1c927` | Exit 0: engine 72 (41 unit, 9 RNG, 22 replay parity), root 274 passed, 5 ignored; opponents 22; Python 2,587 passed, 17 skipped; mypy and docs-fresh clean. `/usr/bin/time -l` peak 3.3 GB (largest single process, unattributed; above the 1 GB check limit) | `merge-7-5-c/prepare.log` |
+
+The first version of this summary ran its checks at `bde3374` (receipts in
+`ops/rebuild-2026-09-29/7.5/`): engine 69 passed, trim OK, and an unguarded
+`just py-prepare` with 2,319 passed and 10 skipped. That run recorded neither its
+environment nor its peak memory. Codex's guarded run covered a different
+selection: a subset of the tests (the parity and trim test files and
+`tests/kaggriculture`) with slow tests included, whereas `just py-prepare` runs
+`pytest tests/ -m "not slow"`. That guarded run had already reached a sampled
+process-tree peak of 989,744 KiB after 21.6 s and was stopped by its 960 MiB
+limit before finishing (`7.5/pytest.json`), so the unguarded run may have
+exceeded the 1 GB check limit. Mac-limited review
+checks in this rebuild therefore use targeted shards, as above; this does not
+change the `just py-prepare` / `just prepare` workflow.
 
 ## Kaggriculture Rules Kernel
 
@@ -299,7 +473,8 @@ negative seeds, rollover and long streams. These 50 tests do not read episodes.
 
 Task 1.1 added nine `tests/replay_parity.rs` tests: four replay tests, a public
 API test, and four comparator regressions. Task 1.1b extends the file to 19
-(see [live differential parity](#kaggriculture-live-differential-parity)). The API test covers decoded PASS
+(see [live differential parity](#kaggriculture-live-differential-parity)); the
+Task 7.5 review adds three negative controls, for 22. The API test covers decoded PASS
 commands, public state, terminal banks, and economic/attribution counters.
 Comparator tests reject private inventory and private field insertion-order
 drift, public market-map insertion-order drift, and public integer-versus-float
@@ -308,7 +483,7 @@ every object at every depth of both (market inventory/prices, shed, seeds,
 inventories), statuses, typed `Vec<f64>` rewards, step/done and terminal banks. Typed rewards accommodate recorded `[0,0]` versus
 serialized `[0.0,0.0]` without relaxing public market-number comparisons.
 
-Each replay constructs `Game::new(config, seed, 2)` directly. No expected initial
+Each replay constructs `Game::new_with_seed_decimal(config, seed, 2)` directly. No expected initial
 state, RNG/shop schedule or final bank value is injected into the constructor.
 System `gzip -dc` reads each pinned trace; decompression or fixture failures are
 hard failures. Each episode has 719 transitions and 720 checked snapshots
@@ -325,7 +500,7 @@ The 79 excluded library unit tests belong to excluded bots/controllers (47),
 FFI (16), matching (3), flat features (5), grammar (4), and policy rows (4).
 The excluded ShopRouter integration test compares controller actions and executes
 zero engine transitions. Bot/controller/matching fixtures, examples and binaries
-are excluded with per-file reasons. Grammar coverage returns with Task 1.2;
+are excluded with per-file reasons. Grammar coverage returned with Task 1.2;
 selected opponent coverage returns when those opponents are imported.
 
 ### Kaggriculture Verification and Limits
@@ -447,7 +622,8 @@ policies, policy seed, configuration, counts and any expected divergence. The
 that manifest, its exact file inventory, the Cargo engine pin and the budget;
 `TRIM_MANIFEST.json` pins the manifest bytes. Rust tests also fail when a
 committed state value, private key order, action or rejection claim is
-perturbed. A Python test regenerates the committed set from the live engine and
+perturbed; since Task 7.5, also when per-transition rewards, the header
+transition count or terminal banks are. A Python test regenerates the committed set from the live engine and
 requires identical bytes; it skips with a message when an isolated 1.32.7
 environment cannot be built offline.
 
@@ -516,11 +692,10 @@ coverage. A larger pod sweep remains open.
 ## Kaggriculture Native Grammar (Task 1.2)
 
 The root compiles the v4.1 typed grammar, strict JSON encoder and checked i64
-decoder in `src/kaggriculture/grammar.rs`. The authored engine integration test
-includes that same source and its shared tests under the engine's separate
-edition/feature graph. No retained kernel bytes change. The include is temporary:
-Tasks 1.3/1.4 retire it and move acceptance tests to root integration when adding
-the first production engine dependency, reopening L4 then.
+decoder in `src/kaggriculture/grammar.rs`. Task 1.3 retired the temporary
+engine-side include and moved the kernel acceptance tests to root
+`src/kaggriculture/grammar_kernel_tests.rs` when adding the production engine
+dependency and reopening L4. No retained kernel bytes changed.
 
 The independent fixture pins reference `65f0eac5` and all recorder inputs. It
 contains 320 scheduled accepted programs: 256 seeded synthetic programs and
@@ -612,13 +787,20 @@ Task 4.4 integration `f02ed02`), which change no Rust, full `just prepare`
 passes with engine **69**, root **274 passed, five ignored**, opponents **22**
 and Python **2,494 passed, 17 skipped** (the four teacher trainer/run_ppo
 seam tests now run); receipt `ops/rebuild-2026-09-29/merge-3-1-3-5/prepare.log`.
+After merging the W&B wiring (`kg/merge-wandb-c`, `bd1c927`), which changes no
+Rust, full `just prepare` passes with engine **69**, root **274 passed, five
+ignored**, opponents **22** and Python **2,587 passed, 17 skipped**; receipt
+`ops/rebuild-2026-09-29/merge-wandb-c/prepare.log`. After merging Task 7.5
+(`kg/merge-7-5-c`), which adds three replay negative controls, full `just prepare` passes with engine **72** (22 replay-parity), root **274 passed,
+five ignored**, opponents **22** and Python **2,587 passed, 17 skipped**;
+receipt `ops/rebuild-2026-09-29/merge-7-5-c/prepare.log`.
 The trim
 checker's fixed authored set is now exactly the replay-parity test plus the
 generated-trace manifest. The native `grammar_tables()` matches all 964 bits of the Python
 heads' `expected_grammar_tables` in that merge-time cross-check. Task 1.4 now
 exports the native table/codec bindings and tests all 964 bits again; Task 1.5
 wires `native_grammar_tables(device)` into the Python model as its default
-tables (see the Task 1.5 note at the end of this page).
+tables (see the [Task 1.5 summary row](#what-is-tested)).
 CPU grammar admission does not qualify the model sampler/replay, CUDA/BF16
 behavior or L6's distinct Inductor GEMM overflow fix. Native batch transactions
 and CPU buffer admission have separate Task 1.4 evidence below.
@@ -671,9 +853,11 @@ allocation to MPS, where a fill raises or kills the process (SIGSEGV observed in
 independent verification). Pinned and GPU behavior are therefore unqualified.
 
 The exactly-one-snapshot test passes after its two-acquisition mutation fails.
-The optimized timing build stops at the Mac memory limit before any phase runs,
+The Task 1.3 optimized timing build stopped at the Mac memory limit before any phase ran,
 and no debug timing is substituted. The pod command is in
-`ops/rebuild-2026-09-29/1.3/timing.json`; phase costs remain unmeasured. Current
+`ops/rebuild-2026-09-29/1.3/timing.json`; that diagnostic remains incomplete.
+Task 1.4 later measured snapshot acquisition, validation and observation writing
+as components (see [native lifecycle coverage](#kaggriculture-native-lifecycle-coverage-task-14)). Current
 qualification counts and receipts are in `ops/rebuild-2026-09-29/1.3/claude-review.md`
 and, for the verification round 1 fixes, `ops/rebuild-2026-09-29/1.3/r1-fixes/`.
 `ops/rebuild-2026-09-29/1.3/results.md` is the frozen, historical pre-integration
@@ -699,8 +883,9 @@ The targeted trim tests pass 3 cases, and the root kernel route passes all 9.
 No vendored kernel bytes changed.
 
 Native reward tests isolate own starvation/drought/ineffective counters from
-unweighted counters and raw-bank terminal outcomes. They pin the exact ten-case
-binary64 admission predicate, disabled-component behavior, finite outputs,
+unweighted counters and raw-bank terminal outcomes. They pin the ten-case binary64
+admission predicate plus Task 1.5's strengthening case, disabled-component
+behavior, finite outputs,
 reference two-rounding schedule and an independent telescoping/ULP budget.
 Review found the first budget depended on actual errors and therefore admitted
 a zero-reward mutation; the corrected independent endpoint/budget test rejects
@@ -795,6 +980,7 @@ Mac passes Rust, build, trim, documentation, mypy and **2,042 Python tests with
 `test_native_tables_match_expected_tables` then waited for Task 1.5's
 `native_grammar_tables(device)`; Task 1.5 un-skips it.
 
-The Python adapter, `rewards.py`, Python codec, device table bridge and pinned
-CUDA reuse-fence qualification belong to Task 1.5. CPU checks establish no GPU,
+Task 1.5 has merged the Python adapter, `rewards.py`, Python codec and device
+table bridge with CPU tests. Its pinned CUDA reuse-fence qualification remains
+open. CPU checks establish no GPU,
 training or complete-update throughput claim.
