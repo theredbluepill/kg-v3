@@ -1,6 +1,8 @@
 import owl.train.ppo as ppo
 import pytest
 import torch
+from owl.model import StatelessTransformerV1, StatelessTransformerV1Config
+from owl.rl import ActionPureConfig, EntityBasedConfig
 from owl.train import PPOConfig
 from owl.train.ppo import _ppo_loss
 
@@ -327,9 +329,15 @@ def test_teacher_value_cross_entropy_sums_active_winner_distribution() -> None:
     )
     teacher = student_probabilities.clone()
 
-    cross_entropy = ppo._teacher_value_cross_entropy(
+    model = StatelessTransformerV1(
+        StatelessTransformerV1Config(embed_dim=8, depth=1, n_heads=2),
+        obs_spec=EntityBasedConfig(),
+        action_spec=ActionPureConfig(max_per_planet_launches=1),
+    )
+    cross_entropy = model.teacher_value_cross_entropy(
         student_probabilities.clamp_min(1e-8).log(),
         teacher,
+        value_mask=teacher > 0,
     )
 
     assert torch.allclose(

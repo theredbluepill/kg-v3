@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Kaggriculture teacher distills per-slot KL and per-seat winner CE"
-description: "Phases 4.1-4.2: the grammar core returns replay-conditioned per-slot masked logits and a liveness-weighted per-slot KL(teacher || student), Isaiah's categorical KL helper promotes instead of demoting FP64, and KaggricultureTeacherTargets caches them (102,208 B per seat row) under the TeacherTargets protocol with symmetric concat, nbytes and a grammar signature; CPU TDD, a brute-force oracle and eight killed mutations; trainer wiring and configs are pending."
+description: "Phases 4.1-4.3 on CPU: replay-conditioned per-slot masked logits and a liveness-weighted per-slot KL(teacher || student), cached as KaggricultureTeacherTargets (102,208 B per seat row) with a grammar signature, a cached path bit-for-bit equal to the combined path, a live-seat-mean winner CE owned by the model, stateless PPO teacher dispatch and teacher/cache_bytes; eleven killed mutations. Phase 4 is not complete: the trainer and run_ppo launch tests are skipped on the Task 3.1/3.2 seams and kg/rebuild-configs, and 4.4 waits on that merge."
 tags: ["kaggriculture-v3", "model", "training", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -17,6 +17,11 @@ sources:
   - resource: "repository:python/owl/kaggriculture/gpu_grammar.py"
   - resource: "repository:python/owl/train/ppo.py"
   - resource: "repository:python/owl/train/distributed.py"
+  - resource: "repository:scripts/run_ppo.py"
+  - resource: "repository:tests/owl/train/test_loss.py"
+  - resource: "repository:docs/kaggriculture-model.md"
+  - resource: "repository:docs/rl-api-specs.md"
+  - resource: "repository:README.md"
   - resource: "repository:tests/kaggriculture/test_teacher.py"
   - resource: "repository:tests/kaggriculture/helpers.py"
   - resource: "repository:tests/kaggriculture/test_model_heads.py"
@@ -29,6 +34,10 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/trainer-model/4.2-red.log"
   - resource: "repository:ops/rebuild-2026-09-29/trainer-model/4.2-mutations.log"
   - resource: "repository:ops/rebuild-2026-09-29/trainer-model/4.2-py-prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/trainer-model/4.3-red.log"
+  - resource: "repository:ops/rebuild-2026-09-29/trainer-model/4.3-mutations.log"
+  - resource: "repository:ops/rebuild-2026-09-29/trainer-model/4.3-py-prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/trainer-model/4.3-isaiah-suites.log"
 ---
 
 # Kaggriculture teacher distills per-slot KL and per-seat winner CE
@@ -48,6 +57,22 @@ Branch `kg/rebuild-trainer-model`. This note records Phase 4 of `ops/rebuild-202
 - `python/owl/kaggriculture/gpu_grammar.py`: `grammar_tables_digest` (SHA-256 over names, shapes and values). `KaggricultureGrammarActor` takes it once at construction; the buffers are never reassigned, so the signature needs no device sync.
 - `python/owl/model/kaggriculture.py`: `grammar_signature()` and `compute_teacher_distillation_targets`, which runs one guarded encode, `_policy(collect_logits=True)`, `check_replay_flags`, a reshape to the lead and the winner probabilities, all under `no_grad`.
 - **Protocol typing (brief §3.2, moved from 4.3 because mypy required it with the new return type):** `BaseModelAPI.compute_teacher_distillation_targets -> TeacherTargets` and `evaluate_actions_with_cached_teacher(teacher_targets: TeacherTargets)`. `StatelessTransformerV1` narrows with `isinstance` and raises `TypeError` before any kernel. `ppo.py` and the DDP adapter (`python/owl/train/distributed.py`) annotate the protocol. `teacher_targets.py` adds `nbytes`, and `CachedTeacherDistillationTargets.nbytes` sums its tensors.
+
+**4.3 model methods and trainer wiring.**
+- `KaggricultureTransformer`:
+  - `supports_cached_teacher_distillation()` and `supports_cached_value_distillation()` return `True`.
+  - `evaluate_actions_with_cached_teacher` admits before any kernel: stateless checks, the target type (`TypeError`), required targets, the grammar signature, slot keys, FP32/FP64 dtypes and shapes (`ValueError`). It then encodes the student once and returns `evaluate_actions`'s evaluation plus `action_kl`: `event [*lead,252,12]`, `per_player_entity`, zero `launch`, per-slot `components`, `target=None`.
+  - `evaluate_actions_with_teacher` is the combined path. It checks the teacher type, `action_spec`, signature and per-table `torch.equal`, then feeds the no-grad teacher's row-layout logits straight to the student.
+  - `teacher_value_cross_entropy` takes the per-seat CE over (self, opponent) and averages it over live seats.
+- `BaseModelAPI.teacher_value_cross_entropy(student_log, teacher_probs, *, value_mask)`: its default is Isaiah's formula, moved verbatim from the removed `ppo._teacher_value_cross_entropy`. The `supports_cached_teacher_distillation` docstring is model-generic.
+- `ppo.py`:
+  - The value CE goes through `unwrap_model(self.model).teacher_value_cross_entropy(..., value_mask=batch_value_mask)`, without the two `.view_as` calls; those were no-ops for Orbit's segment-major cached tensors.
+  - `_model_evaluate_actions_with_teacher` and `_model_evaluate_actions_with_cached_teacher` dispatch statelessly: with no hidden state they pass neither `hidden_state` nor `dones` (review P1-1).
+  - `teacher/cache_bytes` is logged every iteration (0 without targets).
+  - `set_teacher_model`'s error names cached action-KL support.
+- `scripts/run_ppo.py`: `_teacher_obs_spec_for_student` dispatches by game with `isinstance`. Orbit keeps the `max_entities` rule, Kaggriculture requires equality, and a cross-game pair raises `TypeError`.
+- `tests/owl/train/test_loss.py`: the value-CE test calls the base method (call syntax only).
+- Docs: `docs/model-architecture.md`, `docs/kaggriculture-model.md` (a Teacher conformance row), `docs/rl-api-specs.md` (target shapes), `README.md` (`teacher/cache_bytes`, the model-owned value CE, stateless dispatch).
 
 The estimator is Isaiah's: teacher-forced conditionals at the behavior policy's replayed prefix, summed per slot, not an unbiased joint-program KL. Both sides must share the grammar tables and `hire_limit`; replay admission does not detect a mismatch that still admits the program.
 
@@ -73,15 +98,33 @@ The estimator is Isaiah's: teacher-forced conditionals at the behavior policy's 
 | 4.2 (b) `index` slices dim 1 | 6 failed (T9) |
 | 4.2 (c) grammar dropped from `concat`'s check | 1 failed (T9) |
 | 4.2 (d) `nbytes` omits winner probabilities | 1 failed (T10) |
+| 4.3 (e) cached admission without the signature check | 2 failed (T15, grammar mismatch) |
+| 4.3 (f) cached-teacher wrapper always passes `dones` | 1 failed (T15b) |
+| 4.3 (g) value CE sums seats instead of the live-seat mean | 2 failed (T13, T14) |
 
 - 4.2 red: collection `ImportError` (missing module); the Isaiah foreign-targets test failed with an `AttributeError` after encoding (`4.2-red.log`).
 - 4.2 green: T7 lead layout, dtypes and optional fields on a segment-major `[3, 2, 2]` batch; T8 a non-canonical program and a HIRE count beyond a `hire_limit = 3` teacher's capacity both raise `GrammarReplayError` (support group named); T9 index-then-concat over three layouts and chunk sizes 1–3 is exact, a single chunk is returned as is, and mismatched presence, keys and grammar raise in both orders; T9b the signature tracks a flipped table entry and `hire_limit`; T10 `nbytes` equals the tensor sum and `rows × 102,208`, and Isaiah's type counts its optional continuation logits; T10b pins 1,674,575,872 B and 837,287,936 B; T11 per-segment chunks joined by `concat` match one call (`assert_close`, since batch sizes differ); Isaiah's model rejects Kaggriculture targets with `TypeError` before any encode.
+- 4.3 red: 12 failed on missing methods, 2 skipped (`4.3-red.log`). Green:
+  - **T12:** cached equals combined with `torch.equal` on every field (KL event, per-entity and per-slot components; teacher winner probabilities; student winner log-probs; value CE; student log-probs, entropies and values) for a segment-major batch with a dense row and an inactive seat.
+  - **T13:** a `load_state_dict` copy gives exactly zero KL and the value CE equals the live-seat mean of the student's winner entropy.
+  - **T14:** the CE is the mean over two live seats (not the sum), excludes a non-live seat, is 0 with no live seat (state weight 0), and sends no gradient to the teacher.
+  - **T15:** cached admission rejects Isaiah's target type, missing targets, missing keys, a wrong shape, BF16, a wrong winner shape, a foreign grammar, `hidden_state` and `dones`, all with zero encodes. The combined path rejects an Orbit teacher, a different `action_spec`, different tables and an in-place table edit (same signature), also with zero encodes.
+  - **Grammar mismatch that replay admits:** a teacher without HIRE in `market_kind` computes targets for a HIRE-free program without error. The student rejects them by signature. Re-stamped with the student's signature, they pass and change the `market_kind` KL, so the signature is the only guard.
+  - **T15b:** both PPO wrappers accept a non-`None` `dones` for the Kaggriculture student and equal the direct call; on Isaiah's segment-major rollout they equal his direct calls with `dones`.
+  - **T16:** the base value CE is `torch.equal` to Isaiah's formula on that rollout, and `test_loss.py` passes.
+  - **T17:** seat 0's targets and KL are unchanged when seat 1's observation changes, while seat 1's KL changes. Unrelated calls in between leave the targets equal.
+  - **T19a:** the obs-spec dispatch (equality, a constructed schema-4 mismatch, cross-game `TypeError` both ways).
+  - **Refresh:** `_refresh_eval_model_from_weights` keeps the last-best's tables and signature, and gives zero KL against the student.
+  - **Checkpoint keys:** the state dict holds no table or teacher keys.
+- 4.3 `just py-prepare` (`4.3-py-prepare.log`): format, lint, mypy over 59 files, 1,372 passed and 6 skipped (the 4 above plus T18 and T19b). docs-fresh passes. Isaiah's suites on their own: 1,048 passed, 3 skipped (`4.3-isaiah-suites.log`), the same count as the Task 3.1 baseline.
 - `just py-prepare` (`4.1-py-prepare.log`): format, lint, mypy and 1,343 passed with 4 skipped (3 hardware/backend, 1 native grammar binding). docs-fresh first flagged `docs/model-architecture.md`; after the Kaggriculture teacher bullet and the KL dtype note were added, it passes. For 4.2 (`4.2-py-prepare.log`): format, lint, mypy over 59 files and 1,360 passed with the same 4 skips. The model doc gained the targets bullet and the protocol typing. `ppo.py` and `distributed.py` changed annotations only and README names no concrete target type, so docs-fresh was acknowledged with `DOCS_CURRENT=1`.
 
-## Deviations from the brief (4.1)
+## Deviations from the brief
 
 - **T1 non-negativity:** FP32 rounding gives values down to −5.6e-8 where the true KL is of order 1e-5, so the test bounds `kl ≥ −1e-6` instead of `≥ 0`.
 - **T4 head chunking:** the brief asked for `torch.equal`, but head-chunked market-kind logits differ in the last bits (CPU GEMM blocking varies with row count). The test uses `assert_close`, as the heads chunking test already did. T2's FP32 exactness, which the brief made a stop condition, holds.
+- **Order:** the protocol typing of §3.2 (`base.py`, `ppo.py`, the DDP adapter) landed with 4.2 because mypy rejected the new return type otherwise. Its Isaiah-side `TypeError` test was written first.
+- **T19 split:** the obs-spec dispatch (T19a) and the last-best refresh are pure functions, so they run now; only the resume and fresh-launch part (T19b) waits for the configs merge.
 - **T3 HIRE case:** the oracle uses a small `hire_limit = 5` case (budgets 2, 3, 1, 1, all exhausted mid-queue) instead of the 238–241-actor `hire_capacity` case. The one-value-per-row oracle would need about 5,000 variant rows of 241 frames there. The capacity-blocked HIRE sites are asserted to be exercised.
 
 ## Limits and gaps
@@ -90,4 +133,6 @@ The estimator is Isaiah's: teacher-forced conditionals at the behavior policy's 
 - The per-seat KL sums up to 241 × 5 + 11 × 4 conditional KLs with Isaiah's coefficient 0.005. This scale difference is recorded, not tuned.
 - The grammar digest is taken at construction. An in-place edit of a table buffer after that would not change the signature; the combined path (4.3) also compares tables with `torch.equal`.
 - The cache estimate (1.56 GiB per 2-rank rollout) is arithmetic; GPU peak allocated and reserved memory are unmeasured until Task 6.1.
-- 4.3 (model methods and trainer wiring) and 4.4 (configs) are not recorded here yet.
+- **Phase 4 is not complete** (brief §6, review P2-4). T18 (trainer: one precompute under `no_grad`, `teacher/kl`, `teacher/cache_bytes`, coefficients, zero first-minibatch KL for a copy at learning rate 0) is written and skipped until the Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping) and Task 3.2 (value-mode guards) land. T19b (run_ppo resume and fresh launch) is skipped until `kg/rebuild-configs` merges. Task 4.4 (configs) waits on the same merge; `TEACHER_TARGET_BYTES_PER_ROW` and its pinned totals are ready for it.
+- The `teacher/cache_bytes` metric is this rank's value, not reduced across ranks.
+- Real multi-rank, BF16 autocast and compiled replay equality of teacher targets across the teacher chunk and the minibatch are unverified until Phase 6.

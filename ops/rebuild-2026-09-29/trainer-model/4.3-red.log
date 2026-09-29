@@ -1,0 +1,777 @@
+....................................FFFFFFFFFFsFFs                       [100%]
+=================================== FAILURES ===================================
+______________ test_cached_path_is_bit_for_bit_the_combined_path _______________
+
+    def test_cached_path_is_bit_for_bit_the_combined_path() -> None:
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        teacher.requires_grad_(False)
+        obs, actions = _segment_major(student)
+        with torch.no_grad():
+>           combined = student.evaluate_actions_with_teacher(obs, actions, teacher)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:921: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[[3, 2, 5,  ..., 0, 3, 5],
+          [4, 1, 5,  ..., 2, 3, 2]],
+
+         [[5...    [[ True,  True,  True,  ..., False, False, False],
+          [ True,  True,  True,  ..., False, False, False]]]])))
+actions = KaggricultureActions(tokens=tensor([[[[[ 0, 15,  0,  ...,  0,  0,  0],
+           [ 0,  0,  0,  ...,  8, 17,  0],
+    ...,   7],
+         [  9,   6]],
+
+        [[  7,   6],
+         [246,   7]],
+
+        [[  8,   0],
+         [ 10,   6]]]))
+teacher = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+
+    def evaluate_actions_with_teacher(
+        self,
+        obs: ObsT,
+        actions: ActT,
+        teacher: BaseModelAPI[ObsT, ActT, ActSpecT],
+        *,
+        hidden_state: ModelHiddenState | None = None,
+        dones: torch.Tensor | None = None,
+        compute_teacher_action_kl: bool = True,
+        compute_teacher_value: bool = True,
+    ) -> ModelTeacherEvaluation:
+>       raise NotImplementedError(
+            f"{type(self).__name__} does not implement teacher evaluation"
+        )
+E       NotImplementedError: KaggricultureTransformer does not implement teacher evaluation
+
+python/owl/model/base.py:162: NotImplementedError
+______ test_a_copied_teacher_gives_zero_kl_and_the_student_winner_entropy ______
+
+    def test_a_copied_teacher_gives_zero_kl_and_the_student_winner_entropy() -> None:
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        teacher.load_state_dict(student.state_dict())
+        obs, actions = _segment_major(student)
+        with torch.no_grad():
+>           evaluation = _cached(student, teacher, obs, actions)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:949: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:884: in _cached
+    return student.evaluate_actions_with_cached_teacher(obs, actions, targets, **flags)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[[3, 2, 5,  ..., 0, 3, 5],
+          [4, 1, 5,  ..., 2, 3, 2]],
+
+         [[5...    [[ True,  True,  True,  ..., False, False, False],
+          [ True,  True,  True,  ..., False, False, False]]]])))
+actions = KaggricultureActions(tokens=tensor([[[[[ 0, 15,  0,  ...,  0,  0,  0],
+           [ 0,  0,  0,  ...,  8, 17,  0],
+    ...,   7],
+         [  9,   6]],
+
+        [[  7,   6],
+         [246,   7]],
+
+        [[  8,   0],
+         [ 10,   6]]]))
+teacher_targets = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38, -1.7448e-03, -5.6864e-03,  ..., -1.4643e-02,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+
+    def evaluate_actions_with_cached_teacher(
+        self,
+        obs: ObsT,
+        actions: ActT,
+        teacher_targets: TeacherTargets,
+        *,
+        hidden_state: ModelHiddenState | None = None,
+        dones: torch.Tensor | None = None,
+        compute_teacher_action_kl: bool = True,
+        compute_teacher_value: bool = True,
+    ) -> ModelTeacherEvaluation:
+        """Student evaluation plus the distillation terms against cached targets.
+    
+        Implementations narrow ``teacher_targets`` to the type their
+        ``compute_teacher_distillation_targets`` returns with ``isinstance``
+        and raise ``TypeError`` for any other type, before any kernel.
+        """
+>       raise NotImplementedError(
+            f"{type(self).__name__} does not implement cached teacher evaluation"
+        )
+E       NotImplementedError: KaggricultureTransformer does not implement cached teacher evaluation
+
+python/owl/model/base.py:199: NotImplementedError
+________________ test_value_cross_entropy_is_the_live_seat_mean ________________
+
+    def test_value_cross_entropy_is_the_live_seat_mean() -> None:
+        model = _tiny()
+        teacher = torch.tensor(
+            [
+                [[0.8, 0.2], [0.3, 0.7]],
+                [[0.6, 0.4], [0.5, 0.5]],
+                [[0.9, 0.1], [0.1, 0.9]],
+            ]
+        )
+        student_log = torch.log(
+            torch.tensor(
+                [
+                    [[0.5, 0.5], [0.4, 0.6]],
+                    [[0.7, 0.3], [0.5, 0.5]],
+                    [[0.2, 0.8], [0.6, 0.4]],
+                ]
+            )
+        )
+        live = torch.tensor([[True, True], [True, False], [False, False]])
+>       ce = model.teacher_value_cross_entropy(student_log, teacher, value_mask=live)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:981: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+name = 'teacher_value_cross_entropy'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'KaggricultureTransformer' object has no attribute 'teacher_value_cross_entropy'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1964: AttributeError
+_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110c61130>
+
+    def test_cached_admission_rejects_bad_targets_before_any_kernel(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs, actions = _segment_major(student)
+        targets = teacher.compute_teacher_distillation_targets(obs, actions)
+        calls = _encode_spy(monkeypatch, student)
+        evaluate = student.evaluate_actions_with_cached_teacher
+        isaiah_targets = CachedTeacherDistillationTargets(
+            action_params=None, winner_probabilities=None
+        )
+        with pytest.raises(TypeError, match="KaggricultureTeacherTargets"):
+>           evaluate(obs, actions, isaiah_targets)
+
+tests/kaggriculture/test_teacher.py:1022: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[[3, 2, 5,  ..., 0, 3, 5],
+          [4, 1, 5,  ..., 2, 3, 2]],
+
+         [[5...    [[ True,  True,  True,  ..., False, False, False],
+          [ True,  True,  True,  ..., False, False, False]]]])))
+actions = KaggricultureActions(tokens=tensor([[[[[ 0, 15,  0,  ...,  0,  0,  0],
+           [ 0,  0,  0,  ...,  8, 17,  0],
+    ...,   7],
+         [  9,   6]],
+
+        [[  7,   6],
+         [246,   7]],
+
+        [[  8,   0],
+         [ 10,   6]]]))
+teacher_targets = CachedTeacherDistillationTargets(action_params=None, winner_probabilities=None)
+
+    def evaluate_actions_with_cached_teacher(
+        self,
+        obs: ObsT,
+        actions: ActT,
+        teacher_targets: TeacherTargets,
+        *,
+        hidden_state: ModelHiddenState | None = None,
+        dones: torch.Tensor | None = None,
+        compute_teacher_action_kl: bool = True,
+        compute_teacher_value: bool = True,
+    ) -> ModelTeacherEvaluation:
+        """Student evaluation plus the distillation terms against cached targets.
+    
+        Implementations narrow ``teacher_targets`` to the type their
+        ``compute_teacher_distillation_targets`` returns with ``isinstance``
+        and raise ``TypeError`` for any other type, before any kernel.
+        """
+>       raise NotImplementedError(
+            f"{type(self).__name__} does not implement cached teacher evaluation"
+        )
+E       NotImplementedError: KaggricultureTransformer does not implement cached teacher evaluation
+
+python/owl/model/base.py:199: NotImplementedError
+__________ test_combined_path_rejects_foreign_or_mismatched_teachers ___________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110dc4b30>
+
+    def test_combined_path_rejects_foreign_or_mismatched_teachers(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from owl.model.stateless_transformer_v1 import (
+            StatelessTransformerV1,
+            StatelessTransformerV1Config,
+        )
+        from owl.rl import ActionPureConfig, EntityBasedConfig
+    
+        student = _tiny().eval()
+        obs, actions = _base_case()
+        calls = _encode_spy(monkeypatch, student)
+        orbit = StatelessTransformerV1(
+            StatelessTransformerV1Config(embed_dim=8, depth=1, n_heads=2),
+            obs_spec=EntityBasedConfig(),
+            action_spec=ActionPureConfig(max_per_planet_launches=1),
+        )
+        combined = student.evaluate_actions_with_teacher
+        with pytest.raises(ValueError, match="KaggricultureTransformer"):
+>           combined(obs, actions, orbit)
+
+tests/kaggriculture/test_teacher.py:1110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3, 1, 1, 4, 5, 0, 4, 4, 2, 5, 4, 5, 1, 3, 2, 0, 5, 0, 0, 0, 0,
+       ...se, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[0, 6, 0,  ..., 0, 0, 0],
+          [1, 1, 0,  ..., 0, 0, 0],
+          [0, 0, 0...,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0]]]]), lengths=tensor([[5, 7]]))
+teacher = StatelessTransformerV1(
+  (static_planet_proj): ObservationInputStem(
+    (input): Linear(in_features=107, out_feature...tures=8, out_features=8, bias=True)
+        (out): Linear(in_features=8, out_features=4, bias=True)
+      )
+    )
+  )
+)
+
+    def evaluate_actions_with_teacher(
+        self,
+        obs: ObsT,
+        actions: ActT,
+        teacher: BaseModelAPI[ObsT, ActT, ActSpecT],
+        *,
+        hidden_state: ModelHiddenState | None = None,
+        dones: torch.Tensor | None = None,
+        compute_teacher_action_kl: bool = True,
+        compute_teacher_value: bool = True,
+    ) -> ModelTeacherEvaluation:
+>       raise NotImplementedError(
+            f"{type(self).__name__} does not implement teacher evaluation"
+        )
+E       NotImplementedError: KaggricultureTransformer does not implement teacher evaluation
+
+python/owl/model/base.py:162: NotImplementedError
+___ test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature ____
+
+    def test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature() -> None:
+        student = _tiny().eval()
+        with torch.no_grad():
+            student.actor.heads["market_kind"].out.bias[HIRE] = -30.0
+        obs = make_obs(envs=2, own_actors=(2, 3), rival_actors=(4, 1), order_limit=6)
+        actions = _sampled(student, obs)
+        assert int((actions.tokens[..., 7] == HIRE).sum()) == 0
+        matched = _tiny(seed=6).eval()
+        flipped = gg.expected_grammar_tables()
+        flipped.market_kind[HIRE] = False
+        no_hire = km.KaggricultureTransformer(
+            matched.config,
+            obs_spec=kt.KaggricultureObsConfig(),
+            action_spec=kt.KaggricultureActionConfig(),
+            grammar_tables=flipped,
+        ).eval()
+        no_hire.load_state_dict(matched.state_dict())
+        # Replay admission passes under both grammars.
+        foreign = no_hire.compute_teacher_distillation_targets(obs, actions)
+        reference = matched.compute_teacher_distillation_targets(obs, actions)
+        with pytest.raises(ValueError, match="grammar"):
+>           student.evaluate_actions_with_cached_teacher(obs, actions, foreign)
+
+tests/kaggriculture/test_teacher.py:1153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3, 1, 1, 4, 5, 0, 4, 4, 2, 5, 4, 5, 1, 3, 2, 0, 5, 0, 0, 0, 0,
+       ...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 1,  8,  0,  ...,  0,  0,  0],
+      ...  0,  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  0,  0,  0]]]]), lengths=tensor([[ 9, 10],
+        [10,  2]]))
+teacher_targets = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[-3.4028e+38,  1.0908e-02, -1.2475e-05,  ...,  4.9464e-03,
+     ...mar=GrammarSignature(tables_sha256='0978efb2f0ad17369ba8db273870066c4479ce7f281a1677bd04a92e00e95676', hire_limit=241))
+
+    def evaluate_actions_with_cached_teacher(
+        self,
+        obs: ObsT,
+        actions: ActT,
+        teacher_targets: TeacherTargets,
+        *,
+        hidden_state: ModelHiddenState | None = None,
+        dones: torch.Tensor | None = None,
+        compute_teacher_action_kl: bool = True,
+        compute_teacher_value: bool = True,
+    ) -> ModelTeacherEvaluation:
+        """Student evaluation plus the distillation terms against cached targets.
+    
+        Implementations narrow ``teacher_targets`` to the type their
+        ``compute_teacher_distillation_targets`` returns with ``isinstance``
+        and raise ``TypeError`` for any other type, before any kernel.
+        """
+>       raise NotImplementedError(
+            f"{type(self).__name__} does not implement cached teacher evaluation"
+        )
+E       NotImplementedError: KaggricultureTransformer does not implement cached teacher evaluation
+
+python/owl/model/base.py:199: NotImplementedError
+________________ test_ppo_teacher_wrappers_dispatch_statelessly ________________
+
+    def test_ppo_teacher_wrappers_dispatch_statelessly() -> None:
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs, actions = _segment_major(student)
+        dones = torch.zeros(SEGMENTS, HORIZON, 2, dtype=torch.bool)
+        targets = teacher.compute_teacher_distillation_targets(obs, actions)
+        with torch.no_grad():
+>           cached = ppo._model_evaluate_actions_with_cached_teacher(
+                student,
+                obs,
+                actions,
+                targets,
+                hidden_state=None,
+                dones=dones,
+                compute_teacher_action_kl=True,
+                compute_teacher_value=True,
+            )
+
+tests/kaggriculture/test_teacher.py:1171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:2762: in _model_evaluate_actions_with_cached_teacher
+    return model.evaluate_actions_with_cached_teacher(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[[3, 2, 5,  ..., 0, 3, 5],
+          [4, 1, 5,  ..., 2, 3, 2]],
+
+         [[5...    [[ True,  True,  True,  ..., False, False, False],
+          [ True,  True,  True,  ..., False, False, False]]]])))
+actions = KaggricultureActions(tokens=tensor([[[[[ 0, 15,  0,  ...,  0,  0,  0],
+           [ 0,  0,  0,  ...,  8, 17,  0],
+    ...,   7],
+         [  9,   6]],
+
+        [[  7,   6],
+         [246,   7]],
+
+        [[  8,   0],
+         [ 10,   6]]]))
+teacher_targets = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[[-3.4028e+38,  1.2522e-02,  3.8030e-03,  ...,  7.3268e-03,
+    ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+
+    def evaluate_actions_with_cached_teacher(
+        self,
+        obs: ObsT,
+        actions: ActT,
+        teacher_targets: TeacherTargets,
+        *,
+        hidden_state: ModelHiddenState | None = None,
+        dones: torch.Tensor | None = None,
+        compute_teacher_action_kl: bool = True,
+        compute_teacher_value: bool = True,
+    ) -> ModelTeacherEvaluation:
+        """Student evaluation plus the distillation terms against cached targets.
+    
+        Implementations narrow ``teacher_targets`` to the type their
+        ``compute_teacher_distillation_targets`` returns with ``isinstance``
+        and raise ``TypeError`` for any other type, before any kernel.
+        """
+>       raise NotImplementedError(
+            f"{type(self).__name__} does not implement cached teacher evaluation"
+        )
+E       NotImplementedError: KaggricultureTransformer does not implement cached teacher evaluation
+
+python/owl/model/base.py:199: NotImplementedError
+___________ test_ppo_teacher_wrappers_leave_orbit_results_unchanged ____________
+
+    def test_ppo_teacher_wrappers_leave_orbit_results_unchanged() -> None:
+        from owl.model.stateless_transformer_v1 import (
+            ActorDiscreteTargetsConfig,
+            StatelessTransformerV1,
+            StatelessTransformerV1Config,
+        )
+    
+        from tests.owl.train.test_ppo import TinyDiscreteTargetEnv
+    
+        torch.manual_seed(0)
+        env = TinyDiscreteTargetEnv(n_envs=2)
+        config = StatelessTransformerV1Config(
+            actor=ActorDiscreteTargetsConfig(n_action_mixtures=2, entropy_ship_quantiles=8),
+            embed_dim=32,
+            depth=1,
+            n_heads=4,
+        )
+        models = []
+        for _ in range(2):
+            model = StatelessTransformerV1(
+                config, obs_spec=env.obs_spec, action_spec=env.action_spec
+            )
+            model.reset_parameters()
+            models.append(model.eval())
+        student, teacher = models
+        teacher.requires_grad_(False)
+        trainer = ppo.PPOTrainer(
+            env=env,
+            model=student,
+            optimizer=torch.optim.AdamW(student.parameters(), lr=0.01, eps=1e-5),
+            config=ppo.PPOConfig(horizon=3, segments_per_minibatch=1),
+            device=torch.device("cpu"),
+            teacher_model=teacher,
+            teacher_active=True,
+        )
+        trainer._collect_rollout()
+        segments = trainer.rollout.segment_major()
+        targets = teacher.compute_teacher_distillation_targets(
+            segments.obs, segments.actions
+        )
+        flags = {"compute_teacher_action_kl": True, "compute_teacher_value": True}
+        with torch.no_grad():
+            wrapped = ppo._model_evaluate_actions_with_cached_teacher(
+                student,
+                segments.obs,
+                segments.actions,
+                targets,
+                hidden_state=None,
+                dones=segments.dones,
+                **flags,
+            )
+            direct = student.evaluate_actions_with_cached_teacher(
+                segments.obs, segments.actions, targets, dones=segments.dones, **flags
+            )
+            wrapped_combined = ppo._model_evaluate_actions_with_teacher(
+                student,
+                segments.obs,
+                segments.actions,
+                teacher,
+                hidden_state=None,
+                dones=segments.dones,
+                **flags,
+            )
+            direct_combined = student.evaluate_actions_with_teacher(
+                segments.obs, segments.actions, teacher, dones=segments.dones, **flags
+            )
+        for got, want in ((wrapped, direct), (wrapped_combined, direct_combined)):
+            assert got.action_kl is not None
+            assert want.action_kl is not None
+            assert torch.equal(got.action_kl.event, want.action_kl.event)
+            assert torch.equal(got.student.log_probs.event, want.student.log_probs.event)
+            assert torch.equal(
+                got.teacher_winner_probabilities, want.teacher_winner_probabilities
+            )
+        # Isaiah's value CE, now a base-class method, is his formula exactly.
+        student_log = wrapped.student_winner_log_probabilities
+        teacher_probs = wrapped.teacher_winner_probabilities
+        assert student_log is not None
+        assert teacher_probs is not None
+        assert torch.equal(
+>           student.teacher_value_cross_entropy(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                student_log, teacher_probs, value_mask=segments.obs.still_playing
+            ),
+            (-teacher_probs.detach() * student_log).sum(dim=-1),
+        )
+
+tests/kaggriculture/test_teacher.py:1278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = StatelessTransformerV1(
+  (static_planet_proj): ObservationInputStem(
+    (input): Linear(in_features=107, out_feature...(in_features=32, out_features=32, bias=True)
+      (out): Linear(in_features=32, out_features=2, bias=True)
+    )
+  )
+)
+name = 'teacher_value_cross_entropy'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'StatelessTransformerV1' object has no attribute 'teacher_value_cross_entropy'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1964: AttributeError
+_____________ test_targets_and_kl_are_seat_isolated_and_stateless ______________
+
+    def test_targets_and_kl_are_seat_isolated_and_stateless() -> None:
+        student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+        obs = make_obs(envs=2, own_actors=(2, 3), rival_actors=(3, 2), order_limit=4)
+        actions = _sampled(student, obs)
+        changed = make_obs(envs=2, own_actors=(2, 3), rival_actors=(3, 2), order_limit=4)
+        changed.tiles_float[:, 1] += 1.0
+        changed.actors_float[:, 1] += 0.5
+        with torch.no_grad():
+            base = teacher.compute_teacher_distillation_targets(obs, actions)
+            other = teacher.compute_teacher_distillation_targets(changed, actions)
+>           base_eval = student.evaluate_actions_with_cached_teacher(obs, actions, base)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:1295: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3, 1, 1, 4, 5, 0, 4, 4, 2, 5, 4, 5, 1, 3, 2, 0, 5, 0, 0, 0, 0,
+       ...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[ 0, 15,  0,  ...,  0,  0,  0],
+          [ 1,  8,  0,  ...,  0,  0,  0],
+      ...[ 0,  0,  0,  ...,  0,  0,  0],
+          [ 0,  0,  0,  ...,  0,  0,  0]]]]), lengths=tensor([[7, 8],
+        [8, 3]]))
+teacher_targets = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[-3.4028e+38,  6.4861e-03, -1.2055e-03,  ...,  9.0936e-03,
+     ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+
+    def evaluate_actions_with_cached_teacher(
+        self,
+        obs: ObsT,
+        actions: ActT,
+        teacher_targets: TeacherTargets,
+        *,
+        hidden_state: ModelHiddenState | None = None,
+        dones: torch.Tensor | None = None,
+        compute_teacher_action_kl: bool = True,
+        compute_teacher_value: bool = True,
+    ) -> ModelTeacherEvaluation:
+        """Student evaluation plus the distillation terms against cached targets.
+    
+        Implementations narrow ``teacher_targets`` to the type their
+        ``compute_teacher_distillation_targets`` returns with ``isinstance``
+        and raise ``TypeError`` for any other type, before any kernel.
+        """
+>       raise NotImplementedError(
+            f"{type(self).__name__} does not implement cached teacher evaluation"
+        )
+E       NotImplementedError: KaggricultureTransformer does not implement cached teacher evaluation
+
+python/owl/model/base.py:199: NotImplementedError
+____________ test_the_model_supports_both_cached_distillation_paths ____________
+
+    def test_the_model_supports_both_cached_distillation_paths() -> None:
+        model = _tiny()
+>       assert model.supports_cached_teacher_distillation()
+E       assert False
+E        +  where False = supports_cached_teacher_distillation()
+E        +    where supports_cached_teacher_distillation = KaggricultureTransformer(\n  (tile_proj): ObservationInputStem(\n    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)\n        (out): Linear(in_features=16, out_features=32, bias=True)\n      )\n    )\n  )\n).supports_cached_teacher_distillation
+
+tests/kaggriculture/test_teacher.py:1326: AssertionError
+_____________ test_teacher_obs_spec_dispatch_covers_kaggriculture ______________
+
+    def test_teacher_obs_spec_dispatch_covers_kaggriculture() -> None:
+        from owl.rl import EntityBasedConfig
+    
+        import scripts.run_ppo as run_ppo
+    
+        path = Path("teacher/checkpoint.pt")
+        spec = kt.KaggricultureObsConfig()
+        assert (
+>           run_ppo._teacher_obs_spec_for_student(
+                spec, student_obs_spec=kt.KaggricultureObsConfig(), checkpoint_path=path
+            )
+            == spec
+        )
+
+tests/kaggriculture/test_teacher.py:1402: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+teacher_obs_spec = KaggricultureObsConfig(obs_spec='kaggriculture', schema_version=3)
+
+    def _teacher_obs_spec_for_student(
+        teacher_obs_spec: ObsConfig,
+        *,
+        student_obs_spec: ObsConfig,
+        checkpoint_path: Path,
+    ) -> ObsConfig:
+        if not isinstance(teacher_obs_spec, EntityBasedBaseConfig) or not isinstance(
+            student_obs_spec, EntityBasedBaseConfig
+        ):
+>           raise TypeError("teacher and student obs_spec must be entity-based")
+E           TypeError: teacher and student obs_spec must be entity-based
+
+scripts/run_ppo.py:900: TypeError
+________ test_last_best_refresh_keeps_the_tables_and_copies_the_student ________
+
+    def test_last_best_refresh_keeps_the_tables_and_copies_the_student() -> None:
+        import scripts.run_ppo as run_ppo
+    
+        student, last_best = _tiny(), _tiny(seed=6)
+        obs, actions = _base_case()
+        before = last_best.grammar_signature()
+        run_ppo._refresh_eval_model_from_weights(last_best, student)
+        assert not last_best.training
+        assert last_best.grammar_signature() == before
+        for name, table in gg.expected_grammar_tables().as_dict().items():
+            assert torch.equal(last_best.actor.tables().as_dict()[name], table), name
+        with torch.no_grad():
+>           evaluation = _cached(student, last_best, obs, actions)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:1434: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:884: in _cached
+    return student.evaluate_actions_with_cached_teacher(obs, actions, targets, **flags)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3, 1, 1, 4, 5, 0, 4, 4, 2, 5, 4, 5, 1, 3, 2, 0, 5, 0, 0, 0, 0,
+       ...se, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[0, 6, 0,  ..., 0, 0, 0],
+          [1, 1, 0,  ..., 0, 0, 0],
+          [0, 0, 0...,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0]]]]), lengths=tensor([[5, 7]]))
+teacher_targets = KaggricultureTeacherTargets(slot_logits={1: tensor([[[[-3.4028e+38, -7.9684e-03, -5.7537e-03,  ..., -1.2769e-02,
+     ...mar=GrammarSignature(tables_sha256='0fd8e0fe034e6a1aa37574c833fbd9b7df7b6043a28f869095f674e93cb1d1c5', hire_limit=241))
+
+    def evaluate_actions_with_cached_teacher(
+        self,
+        obs: ObsT,
+        actions: ActT,
+        teacher_targets: TeacherTargets,
+        *,
+        hidden_state: ModelHiddenState | None = None,
+        dones: torch.Tensor | None = None,
+        compute_teacher_action_kl: bool = True,
+        compute_teacher_value: bool = True,
+    ) -> ModelTeacherEvaluation:
+        """Student evaluation plus the distillation terms against cached targets.
+    
+        Implementations narrow ``teacher_targets`` to the type their
+        ``compute_teacher_distillation_targets`` returns with ``isinstance``
+        and raise ``TypeError`` for any other type, before any kernel.
+        """
+>       raise NotImplementedError(
+            f"{type(self).__name__} does not implement cached teacher evaluation"
+        )
+E       NotImplementedError: KaggricultureTransformer does not implement cached teacher evaluation
+
+python/owl/model/base.py:199: NotImplementedError
+=========================== short test summary info ============================
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1350: needs Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping in ppo.py) and Task 3.2 (winner value-mode guards)
+SKIPPED [1] tests/kaggriculture/test_teacher.py:1441: needs kg/rebuild-configs (KaggricultureEnvConfig in FullConfig)
+FAILED tests/kaggriculture/test_teacher.py::test_cached_path_is_bit_for_bit_the_combined_path
+FAILED tests/kaggriculture/test_teacher.py::test_a_copied_teacher_gives_zero_kl_and_the_student_winner_entropy
+FAILED tests/kaggriculture/test_teacher.py::test_value_cross_entropy_is_the_live_seat_mean
+FAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel
+FAILED tests/kaggriculture/test_teacher.py::test_combined_path_rejects_foreign_or_mismatched_teachers
+FAILED tests/kaggriculture/test_teacher.py::test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature
+FAILED tests/kaggriculture/test_teacher.py::test_ppo_teacher_wrappers_dispatch_statelessly
+FAILED tests/kaggriculture/test_teacher.py::test_ppo_teacher_wrappers_leave_orbit_results_unchanged
+FAILED tests/kaggriculture/test_teacher.py::test_targets_and_kl_are_seat_isolated_and_stateless
+FAILED tests/kaggriculture/test_teacher.py::test_the_model_supports_both_cached_distillation_paths
+FAILED tests/kaggriculture/test_teacher.py::test_teacher_obs_spec_dispatch_covers_kaggriculture
+FAILED tests/kaggriculture/test_teacher.py::test_last_best_refresh_keeps_the_tables_and_copies_the_student
+12 failed, 36 passed, 2 skipped in 5.05s

@@ -7,6 +7,7 @@ the replay-conditioned per-slot KL computed inside ``policy_core``.
 from __future__ import annotations
 
 import dataclasses
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -21,6 +22,7 @@ from owl.model.stateless_transformer_v1 import (
     CachedTeacherDistillationTargets,
     DiscreteTargetPolicyParams,
 )
+from owl.train import ppo
 
 from tests.kaggriculture.conftest import make_obs
 from tests.kaggriculture.helpers import (
@@ -861,3 +863,596 @@ def test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel(
     with pytest.raises(TypeError, match="CachedTeacherDistillationTargets"):
         student.evaluate_actions_with_cached_teacher(obs, actions, foreign)
     assert calls == []
+
+
+# === 4.3 model methods and trainer wiring ============================================
+
+NEEDS_TRAINER_SEAM = (
+    "needs Task 3.1 trainer seam (Kaggriculture rollout storage and action "
+    "mapping in ppo.py) and Task 3.2 (winner value-mode guards)"
+)
+NEEDS_CONFIGS = "needs kg/rebuild-configs (KaggricultureEnvConfig in FullConfig)"
+
+
+def _cached(student: Any, teacher: Any, obs: Any, actions: Any, **flags: bool) -> Any:
+    targets = teacher.compute_teacher_distillation_targets(
+        obs,
+        actions,
+        compute_action_kl=flags.get("compute_teacher_action_kl", True),
+        compute_value=flags.get("compute_teacher_value", True),
+    )
+    return student.evaluate_actions_with_cached_teacher(obs, actions, targets, **flags)
+
+
+def _value_ce(model: Any, evaluation: Any, obs: Any) -> torch.Tensor:
+    assert evaluation.student_winner_log_probabilities is not None
+    assert evaluation.teacher_winner_probabilities is not None
+    return model.teacher_value_cross_entropy(
+        evaluation.student_winner_log_probabilities,
+        evaluation.teacher_winner_probabilities,
+        value_mask=obs.still_playing,
+    )
+
+
+def _evaluation_tensors(evaluation: Any, model: Any, obs: Any) -> dict[str, Any]:
+    kl = evaluation.action_kl
+    tensors = {
+        "kl_event": kl.event,
+        "kl_launch": kl.launch,
+        "kl_per_player_entity": kl.per_player_entity,
+        "teacher_winner": evaluation.teacher_winner_probabilities,
+        "student_winner_log": evaluation.student_winner_log_probabilities,
+        "value_ce": _value_ce(model, evaluation, obs),
+        "log_probs": evaluation.student.log_probs.event,
+        "log_probs_entity": evaluation.student.log_probs.per_player_entity,
+        "entropies": evaluation.student.entropies.event,
+        "values": evaluation.student.values,
+    }
+    for name, component in kl.components.items():
+        tensors[f"kl_{name}"] = component
+    return tensors
+
+
+def test_cached_path_is_bit_for_bit_the_combined_path() -> None:
+    student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+    teacher.requires_grad_(False)
+    obs, actions = _segment_major(student)
+    with torch.no_grad():
+        combined = student.evaluate_actions_with_teacher(obs, actions, teacher)
+        cached = _cached(student, teacher, obs, actions)
+    assert combined.action_kl is not None
+    assert cached.action_kl is not None
+    assert set(cached.action_kl.components) == {
+        kt.SLOT_NAMES[s] for s in ka.POLICY_SLOTS
+    }
+    assert cached.action_kl.target is None
+    lead = (SEGMENTS, HORIZON, 2)
+    assert cached.action_kl.event.shape == (*lead, F, K)
+    assert cached.action_kl.per_player_entity.shape == (*lead, F)
+    got = _evaluation_tensors(cached, student, obs)
+    want = _evaluation_tensors(combined, student, obs)
+    assert set(got) == set(want)
+    for name, tensor in want.items():
+        assert torch.equal(got[name], tensor), name
+    assert float(cached.action_kl.per_player_entity.sum()) > 0
+    # The student side is exactly evaluate_actions.
+    plain = student.evaluate_actions(obs, actions)
+    assert torch.equal(cached.student.log_probs.event, plain.log_probs.event)
+    assert torch.equal(cached.student.values, plain.values)
+
+
+def test_a_copied_teacher_gives_zero_kl_and_the_student_winner_entropy() -> None:
+    student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+    teacher.load_state_dict(student.state_dict())
+    obs, actions = _segment_major(student)
+    with torch.no_grad():
+        evaluation = _cached(student, teacher, obs, actions)
+    assert evaluation.action_kl is not None
+    zeros = torch.zeros_like(evaluation.action_kl.event)
+    assert torch.equal(evaluation.action_kl.event, zeros)
+    log_q = evaluation.student_winner_log_probabilities
+    entropy = -(log_q.exp() * log_q).sum(-1)
+    live = obs.still_playing.to(entropy.dtype)
+    expected = (entropy * live).sum(-1) / live.sum(-1).clamp_min(1.0)
+    torch.testing.assert_close(
+        _value_ce(student, evaluation, obs), expected, rtol=0, atol=1e-6
+    )
+
+
+def test_value_cross_entropy_is_the_live_seat_mean() -> None:
+    model = _tiny()
+    teacher = torch.tensor(
+        [
+            [[0.8, 0.2], [0.3, 0.7]],
+            [[0.6, 0.4], [0.5, 0.5]],
+            [[0.9, 0.1], [0.1, 0.9]],
+        ]
+    )
+    student_log = torch.log(
+        torch.tensor(
+            [
+                [[0.5, 0.5], [0.4, 0.6]],
+                [[0.7, 0.3], [0.5, 0.5]],
+                [[0.2, 0.8], [0.6, 0.4]],
+            ]
+        )
+    )
+    live = torch.tensor([[True, True], [True, False], [False, False]])
+    ce = model.teacher_value_cross_entropy(student_log, teacher, value_mask=live)
+    per_seat = -(teacher * student_log).sum(-1)
+    assert ce.shape == (3,)
+    torch.testing.assert_close(ce[0], per_seat[0].mean())  # mean, not sum
+    assert float(ce[0]) != pytest.approx(float(per_seat[0].sum()))
+    torch.testing.assert_close(ce[1], per_seat[1, 0])  # the non-live seat is out
+    assert float(ce[2]) == 0.0
+    state_weight = ppo._value_state_weight(live.float(), dtype=torch.float32)
+    assert state_weight.tolist() == [1.0, 1.0, 0.0]
+    # No gradient flows to the teacher distribution.
+    teacher_grad = teacher.clone().requires_grad_(True)
+    student_grad = student_log.clone().requires_grad_(True)
+    model.teacher_value_cross_entropy(
+        student_grad, teacher_grad, value_mask=live
+    ).sum().backward()
+    assert teacher_grad.grad is None
+    assert student_grad.grad is not None
+
+
+def _encode_spy(monkeypatch: pytest.MonkeyPatch, model: Any) -> list[int]:
+    calls: list[int] = []
+    original = model.encode_observations
+
+    def spy(*args: Any, **kwargs: Any) -> Any:
+        calls.append(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(model, "encode_observations", spy)
+    return calls
+
+
+def test_cached_admission_rejects_bad_targets_before_any_kernel(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+    obs, actions = _segment_major(student)
+    targets = teacher.compute_teacher_distillation_targets(obs, actions)
+    calls = _encode_spy(monkeypatch, student)
+    evaluate = student.evaluate_actions_with_cached_teacher
+    isaiah_targets = CachedTeacherDistillationTargets(
+        action_params=None, winner_probabilities=None
+    )
+    with pytest.raises(TypeError, match="KaggricultureTeacherTargets"):
+        evaluate(obs, actions, isaiah_targets)
+    assert targets.slot_logits is not None
+    slots = targets.slot_logits
+    bad_cases: list[tuple[Any, str, dict[str, bool]]] = [
+        (
+            dataclasses.replace(targets, slot_logits=None),
+            "cached teacher action targets are missing",
+            {},
+        ),
+        (
+            dataclasses.replace(targets, winner_probabilities=None),
+            "cached teacher value targets are missing",
+            {},
+        ),
+        (
+            dataclasses.replace(
+                targets, slot_logits={k: v for k, v in slots.items() if k != 9}
+            ),
+            "slot keys",
+            {},
+        ),
+        (
+            dataclasses.replace(targets, slot_logits={**slots, 3: slots[3][:, :1]}),
+            "shape",
+            {},
+        ),
+        (
+            dataclasses.replace(
+                targets, slot_logits={**slots, 8: slots[8].to(torch.bfloat16)}
+            ),
+            "dtype",
+            {},
+        ),
+        (
+            dataclasses.replace(
+                targets, winner_probabilities=torch.zeros(SEGMENTS, HORIZON, 2, 3)
+            ),
+            "winner",
+            {},
+        ),
+        (
+            dataclasses.replace(
+                targets,
+                grammar=kt_teacher.GrammarSignature(targets.grammar.tables_sha256, 7),
+            ),
+            "grammar",
+            {},
+        ),
+    ]
+    for bad, match, flags in bad_cases:
+        with pytest.raises(ValueError, match=match):
+            evaluate(obs, actions, bad, **flags)
+    with pytest.raises(ValueError, match="hidden_state"):
+        evaluate(obs, actions, targets, hidden_state=object())
+    with pytest.raises(ValueError, match="dones"):
+        evaluate(obs, actions, targets, dones=torch.zeros(SEGMENTS, HORIZON, 2))
+    assert calls == []
+    # A disabled target may be absent, and a value-only call skips the grammar.
+    evaluate(
+        obs,
+        actions,
+        dataclasses.replace(
+            targets, slot_logits=None, grammar=bad_cases[-1][0].grammar
+        ),
+        compute_teacher_action_kl=False,
+    )
+    assert calls == [1]
+
+
+def test_combined_path_rejects_foreign_or_mismatched_teachers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from owl.model.stateless_transformer_v1 import (
+        StatelessTransformerV1,
+        StatelessTransformerV1Config,
+    )
+    from owl.rl import ActionPureConfig, EntityBasedConfig
+
+    student = _tiny().eval()
+    obs, actions = _base_case()
+    calls = _encode_spy(monkeypatch, student)
+    orbit = StatelessTransformerV1(
+        StatelessTransformerV1Config(embed_dim=8, depth=1, n_heads=2),
+        obs_spec=EntityBasedConfig(),
+        action_spec=ActionPureConfig(max_per_planet_launches=1),
+    )
+    combined = student.evaluate_actions_with_teacher
+    with pytest.raises(ValueError, match="KaggricultureTransformer"):
+        combined(obs, actions, orbit)
+    with pytest.raises(ValueError, match="action_spec"):
+        combined(obs, actions, _tiny(hire_limit=5, seed=6))
+    flipped = gg.expected_grammar_tables()
+    flipped.market_kind[HIRE] = False
+    no_hire = km.KaggricultureTransformer(
+        student.config,
+        obs_spec=kt.KaggricultureObsConfig(),
+        action_spec=kt.KaggricultureActionConfig(),
+        grammar_tables=flipped,
+    )
+    with pytest.raises(ValueError, match="grammar"):
+        combined(obs, actions, no_hire)
+    edited = _tiny(seed=6)
+    with torch.no_grad():
+        edited.actor.table_market_kind[HIRE] = False  # after construction
+    assert edited.grammar_signature() == student.grammar_signature()
+    with pytest.raises(ValueError, match="table market_kind"):
+        combined(obs, actions, edited)
+    assert calls == []
+
+
+def test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature() -> None:
+    student = _tiny().eval()
+    with torch.no_grad():
+        student.actor.heads["market_kind"].out.bias[HIRE] = -30.0
+    obs = make_obs(envs=2, own_actors=(2, 3), rival_actors=(4, 1), order_limit=6)
+    actions = _sampled(student, obs)
+    assert int((actions.tokens[..., 7] == HIRE).sum()) == 0
+    matched = _tiny(seed=6).eval()
+    flipped = gg.expected_grammar_tables()
+    flipped.market_kind[HIRE] = False
+    no_hire = km.KaggricultureTransformer(
+        matched.config,
+        obs_spec=kt.KaggricultureObsConfig(),
+        action_spec=kt.KaggricultureActionConfig(),
+        grammar_tables=flipped,
+    ).eval()
+    no_hire.load_state_dict(matched.state_dict())
+    # Replay admission passes under both grammars.
+    foreign = no_hire.compute_teacher_distillation_targets(obs, actions)
+    reference = matched.compute_teacher_distillation_targets(obs, actions)
+    with pytest.raises(ValueError, match="grammar"):
+        student.evaluate_actions_with_cached_teacher(obs, actions, foreign)
+    # Non-vacuity: re-stamped, the foreign logits pass and change the KL.
+    restamped = dataclasses.replace(foreign, grammar=student.grammar_signature())
+    with torch.no_grad():
+        wrong = student.evaluate_actions_with_cached_teacher(obs, actions, restamped)
+        right = student.evaluate_actions_with_cached_teacher(obs, actions, reference)
+    assert wrong.action_kl is not None
+    assert right.action_kl is not None
+    kind = wrong.action_kl.components["market_kind"]
+    assert not torch.equal(kind, right.action_kl.components["market_kind"])
+
+
+def test_ppo_teacher_wrappers_dispatch_statelessly() -> None:
+    student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+    obs, actions = _segment_major(student)
+    dones = torch.zeros(SEGMENTS, HORIZON, 2, dtype=torch.bool)
+    targets = teacher.compute_teacher_distillation_targets(obs, actions)
+    with torch.no_grad():
+        cached = ppo._model_evaluate_actions_with_cached_teacher(
+            student,
+            obs,
+            actions,
+            targets,
+            hidden_state=None,
+            dones=dones,
+            compute_teacher_action_kl=True,
+            compute_teacher_value=True,
+        )
+        combined = ppo._model_evaluate_actions_with_teacher(
+            student,
+            obs,
+            actions,
+            teacher,
+            hidden_state=None,
+            dones=dones,
+            compute_teacher_action_kl=True,
+            compute_teacher_value=True,
+        )
+        direct = student.evaluate_actions_with_cached_teacher(obs, actions, targets)
+    for got in (cached, combined):
+        tensors = _evaluation_tensors(got, student, obs)
+        for name, tensor in _evaluation_tensors(direct, student, obs).items():
+            assert torch.equal(tensors[name], tensor), name
+
+
+def test_ppo_teacher_wrappers_leave_orbit_results_unchanged() -> None:
+    from owl.model.stateless_transformer_v1 import (
+        ActorDiscreteTargetsConfig,
+        StatelessTransformerV1,
+        StatelessTransformerV1Config,
+    )
+
+    from tests.owl.train.test_ppo import TinyDiscreteTargetEnv
+
+    torch.manual_seed(0)
+    env = TinyDiscreteTargetEnv(n_envs=2)
+    config = StatelessTransformerV1Config(
+        actor=ActorDiscreteTargetsConfig(n_action_mixtures=2, entropy_ship_quantiles=8),
+        embed_dim=32,
+        depth=1,
+        n_heads=4,
+    )
+    models = []
+    for _ in range(2):
+        model = StatelessTransformerV1(
+            config, obs_spec=env.obs_spec, action_spec=env.action_spec
+        )
+        model.reset_parameters()
+        models.append(model.eval())
+    student, teacher = models
+    teacher.requires_grad_(False)
+    trainer = ppo.PPOTrainer(
+        env=env,
+        model=student,
+        optimizer=torch.optim.AdamW(student.parameters(), lr=0.01, eps=1e-5),
+        config=ppo.PPOConfig(horizon=3, segments_per_minibatch=1),
+        device=torch.device("cpu"),
+        teacher_model=teacher,
+        teacher_active=True,
+    )
+    trainer._collect_rollout()
+    segments = trainer.rollout.segment_major()
+    targets = teacher.compute_teacher_distillation_targets(
+        segments.obs, segments.actions
+    )
+    flags = {"compute_teacher_action_kl": True, "compute_teacher_value": True}
+    with torch.no_grad():
+        wrapped = ppo._model_evaluate_actions_with_cached_teacher(
+            student,
+            segments.obs,
+            segments.actions,
+            targets,
+            hidden_state=None,
+            dones=segments.dones,
+            **flags,
+        )
+        direct = student.evaluate_actions_with_cached_teacher(
+            segments.obs, segments.actions, targets, dones=segments.dones, **flags
+        )
+        wrapped_combined = ppo._model_evaluate_actions_with_teacher(
+            student,
+            segments.obs,
+            segments.actions,
+            teacher,
+            hidden_state=None,
+            dones=segments.dones,
+            **flags,
+        )
+        direct_combined = student.evaluate_actions_with_teacher(
+            segments.obs, segments.actions, teacher, dones=segments.dones, **flags
+        )
+    for got, want in ((wrapped, direct), (wrapped_combined, direct_combined)):
+        assert got.action_kl is not None
+        assert want.action_kl is not None
+        assert torch.equal(got.action_kl.event, want.action_kl.event)
+        assert torch.equal(got.student.log_probs.event, want.student.log_probs.event)
+        assert torch.equal(
+            got.teacher_winner_probabilities, want.teacher_winner_probabilities
+        )
+    # Isaiah's value CE, now a base-class method, is his formula exactly.
+    student_log = wrapped.student_winner_log_probabilities
+    teacher_probs = wrapped.teacher_winner_probabilities
+    assert student_log is not None
+    assert teacher_probs is not None
+    assert torch.equal(
+        student.teacher_value_cross_entropy(
+            student_log, teacher_probs, value_mask=segments.obs.still_playing
+        ),
+        (-teacher_probs.detach() * student_log).sum(dim=-1),
+    )
+
+
+def test_targets_and_kl_are_seat_isolated_and_stateless() -> None:
+    student, teacher = _tiny().eval(), _tiny(seed=6).eval()
+    obs = make_obs(envs=2, own_actors=(2, 3), rival_actors=(3, 2), order_limit=4)
+    actions = _sampled(student, obs)
+    changed = make_obs(envs=2, own_actors=(2, 3), rival_actors=(3, 2), order_limit=4)
+    changed.tiles_float[:, 1] += 1.0
+    changed.actors_float[:, 1] += 0.5
+    with torch.no_grad():
+        base = teacher.compute_teacher_distillation_targets(obs, actions)
+        other = teacher.compute_teacher_distillation_targets(changed, actions)
+        base_eval = student.evaluate_actions_with_cached_teacher(obs, actions, base)
+        other_eval = student.evaluate_actions_with_cached_teacher(
+            changed, actions, other
+        )
+        teacher.compute_teacher_distillation_targets(
+            make_obs(envs=3, own_actors=7, order_limit=10),
+            _sampled(teacher, make_obs(envs=3, own_actors=7, order_limit=10)),
+        )
+        again = teacher.compute_teacher_distillation_targets(obs, actions)
+    assert base.slot_logits is not None
+    assert other.slot_logits is not None
+    for slot in ka.POLICY_SLOTS:
+        assert torch.equal(other.slot_logits[slot][:, 0], base.slot_logits[slot][:, 0])
+    assert other.winner_probabilities is not None
+    assert base.winner_probabilities is not None
+    assert torch.equal(
+        other.winner_probabilities[:, 0], base.winner_probabilities[:, 0]
+    )
+    assert base_eval.action_kl is not None
+    assert other_eval.action_kl is not None
+    assert torch.equal(
+        other_eval.action_kl.event[:, 0], base_eval.action_kl.event[:, 0]
+    )
+    assert not torch.equal(
+        other_eval.action_kl.event[:, 1], base_eval.action_kl.event[:, 1]
+    )
+    _assert_targets_equal(again, base)
+
+
+def test_the_model_supports_both_cached_distillation_paths() -> None:
+    model = _tiny()
+    assert model.supports_cached_teacher_distillation()
+    assert model.supports_cached_value_distillation()
+    # No teacher target or cache is ever a checkpoint entry.
+    keys = set(model.state_dict())
+    assert not any("table_" in key or "teacher" in key for key in keys)
+
+
+class _FakeKaggricultureEnv:
+    """Two-env Kaggriculture stand-in for the PPO trainer (T18)."""
+
+    def __init__(self) -> None:
+        self.n_envs = 2
+        self.pin_memory_enabled = False
+        self.obs_spec = kt.KaggricultureObsConfig()
+        self.action_spec = kt.KaggricultureActionConfig()
+
+    def reset(self) -> kt.KaggricultureObsBatch:
+        return make_obs(envs=2, own_actors=(2, 3), rival_actors=(3, 1), order_limit=4)
+
+    def step(self, actions: kt.KaggricultureActions) -> tuple[Any, ...]:
+        assert actions.tokens.shape == (2, 2, F, K)
+        return self.reset(), torch.zeros(2, 2), torch.zeros(2, 2, dtype=torch.bool), {}
+
+
+@pytest.mark.skip(reason=NEEDS_TRAINER_SEAM)
+def test_trainer_precomputes_once_and_logs_teacher_metrics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    student, teacher = _tiny(), _tiny(seed=6)
+    horizon = 4
+    trainer = ppo.PPOTrainer(
+        env=_FakeKaggricultureEnv(),
+        model=student,
+        optimizer=torch.optim.AdamW(student.parameters(), lr=0.0),
+        config=ppo.PPOConfig(
+            horizon=horizon,
+            segments_per_minibatch=1,
+            teacher_mode="last_best",
+            teacher_kl_coef=0.005,
+            teacher_value_coef=0.005,
+            teacher_segments_per_minibatch=1,
+        ),
+        device=torch.device("cpu"),
+        teacher_model=teacher,
+        teacher_active=True,
+    )
+    precomputes: list[int] = []
+    teacher_grad_modes: list[bool] = []
+    original = trainer._precompute_teacher_targets
+    teacher_targets = teacher.compute_teacher_distillation_targets
+
+    def spy(*args: Any, **kwargs: Any) -> Any:
+        precomputes.append(1)
+        return original(*args, **kwargs)
+
+    def teacher_spy(*args: Any, **kwargs: Any) -> Any:
+        teacher_grad_modes.append(torch.is_grad_enabled())
+        return teacher_targets(*args, **kwargs)
+
+    monkeypatch.setattr(trainer, "_precompute_teacher_targets", spy)
+    monkeypatch.setattr(teacher, "compute_teacher_distillation_targets", teacher_spy)
+    metrics = trainer.train_iteration()
+    assert precomputes == [1]
+    assert teacher_grad_modes == [False, False]  # two one-segment chunks
+    assert metrics["teacher/kl"] > 0
+    assert metrics["teacher/cache_bytes"] == (
+        2 * horizon * 2 * kt_teacher.TEACHER_TARGET_BYTES_PER_ROW
+    )
+    assert metrics["teacher/kl_coef"] == 0.005
+    assert metrics["teacher/value_coef"] == 0.005
+    # A copied teacher gives exactly zero KL at zero learning rate.
+    teacher.load_state_dict(student.state_dict())
+    assert trainer.train_iteration()["teacher/kl"] == 0.0
+
+
+def test_teacher_obs_spec_dispatch_covers_kaggriculture() -> None:
+    from owl.rl import EntityBasedConfig
+
+    import scripts.run_ppo as run_ppo
+
+    path = Path("teacher/checkpoint.pt")
+    spec = kt.KaggricultureObsConfig()
+    assert (
+        run_ppo._teacher_obs_spec_for_student(
+            spec, student_obs_spec=kt.KaggricultureObsConfig(), checkpoint_path=path
+        )
+        == spec
+    )
+    future = kt.KaggricultureObsConfig.model_construct(schema_version=4)
+    with pytest.raises(ValueError, match="obs_spec must match"):
+        run_ppo._teacher_obs_spec_for_student(
+            future, student_obs_spec=spec, checkpoint_path=path
+        )
+    for teacher_spec, student_spec in (
+        (EntityBasedConfig(), spec),
+        (spec, EntityBasedConfig()),
+    ):
+        with pytest.raises(TypeError, match="KaggricultureObsConfig"):
+            run_ppo._teacher_obs_spec_for_student(
+                teacher_spec, student_obs_spec=student_spec, checkpoint_path=path
+            )
+
+
+def test_last_best_refresh_keeps_the_tables_and_copies_the_student() -> None:
+    import scripts.run_ppo as run_ppo
+
+    student, last_best = _tiny(), _tiny(seed=6)
+    obs, actions = _base_case()
+    before = last_best.grammar_signature()
+    run_ppo._refresh_eval_model_from_weights(last_best, student)
+    assert not last_best.training
+    assert last_best.grammar_signature() == before
+    for name, table in gg.expected_grammar_tables().as_dict().items():
+        assert torch.equal(last_best.actor.tables().as_dict()[name], table), name
+    with torch.no_grad():
+        evaluation = _cached(student, last_best, obs, actions)
+    assert evaluation.action_kl is not None
+    assert torch.equal(
+        evaluation.action_kl.event, torch.zeros_like(evaluation.action_kl.event)
+    )
+
+
+@pytest.mark.skip(reason=NEEDS_CONFIGS)
+def test_run_ppo_resume_and_fresh_launch_activate_the_last_best_teacher() -> None:
+    """T19b: resume and fresh launch restore or activate the last-best teacher.
+
+    Resume restores the teacher from ``checkpoint_last_best.pt``; a launch from
+    weights activates it at iteration 1; the checkpoint key set holds no teacher
+    cache. Needs a Kaggriculture ``FullConfig`` to build the run.
+    """
+    raise AssertionError("unreachable until kg/rebuild-configs merges")

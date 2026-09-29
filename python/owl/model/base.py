@@ -205,11 +205,11 @@ class BaseModelAPI(nn.Module, ABC, Generic[ObsT, ActT, ActSpecT]):
 
         PPO precomputes teacher distillation targets once per iteration and
         consumes them per minibatch (``compute_teacher_distillation_targets`` /
-        ``evaluate_actions_with_cached_teacher``). The action-KL path additionally
-        requires the discrete_targets actor; only models that implement it return
-        ``True``. The trainer rejects active teachers (with ``teacher_kl_coef`` >
-        0) whose student/teacher models return ``False`` instead of failing
-        mid-training.
+        ``evaluate_actions_with_cached_teacher``). A model returns ``True`` only
+        when it implements both for its action heads (for ``StatelessTransformerV1``
+        the discrete_targets actor without player-count adapters). The trainer
+        rejects active teachers (with ``teacher_kl_coef`` > 0) whose
+        student/teacher models return ``False`` instead of failing mid-training.
         """
         return False
 
@@ -221,6 +221,24 @@ class BaseModelAPI(nn.Module, ABC, Generic[ObsT, ActT, ActSpecT]):
         ``supports_cached_teacher_distillation``.
         """
         return False
+
+    def teacher_value_cross_entropy(
+        self,
+        student_winner_log_probabilities: torch.Tensor,
+        teacher_winner_probabilities: torch.Tensor,
+        *,
+        value_mask: torch.Tensor,  # noqa: ARG002
+    ) -> torch.Tensor:
+        """Per-state teacher value cross-entropy, before PPO's state weighting.
+
+        The default is Isaiah's joint winner distribution over player slots:
+        one categorical per state whose inactive slots already have zero
+        probability, so ``value_mask`` is unused. Games whose winner layout
+        differs (e.g. one distribution per seat) override the reduction.
+        """
+        return (
+            -teacher_winner_probabilities.detach() * student_winner_log_probabilities
+        ).sum(dim=-1)
 
     def count_non_masked_tokens(self, obs: ObsT) -> torch.Tensor:
         """Return the number of unmasked model tokens represented by ``obs``.
