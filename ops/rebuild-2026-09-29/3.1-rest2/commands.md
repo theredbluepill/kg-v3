@@ -1,0 +1,102 @@
+# Verification command ledger
+
+All commands used `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2`. No network was used. Broad suites and preparation additionally used `PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1`; the bounded batches list full shell commands below. This records verification commands, not read-only source inspections.
+
+- `uv run --offline pytest tests/owl/train/test_ppo_observation_mapping.py tests/kaggriculture/test_training_smoke.py -q`
+  - [ppo-red.log](ppo-red.log): 3 failed, 189 passed in 0.35s
+  - [ppo-green-first.log](ppo-green-first.log): 1 failed, 191 passed in 0.35s
+  - [ppo-green.log](ppo-green.log): 192 passed in 0.65s
+- `uv run --offline pytest tests/kaggriculture/test_training_smoke.py::test_no_teacher_two_updates -q`
+  - [smoke-first.log](smoke-first.log): 1 failed in 0.14s
+- `uv run pytest tests/kaggriculture/test_teacher.py -q -k "test_trainer_precomputes_once_and_logs_teacher_metrics or test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache or test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best or test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher"`
+  - [teacher-red.log](teacher-red.log): 4 failed, 48 deselected in 0.40s
+- `uv run pytest tests/kaggriculture/test_teacher.py -q -k "test_trainer_precomputes_once_and_logs_teacher_metrics or test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache"`
+  - [teacher-ppo-green.log](teacher-ppo-green.log): 2 passed, 50 deselected in 1.46s
+- `uv run pytest tests/kaggriculture/test_teacher.py -q`
+  - [teacher-green.log](teacher-green.log): 52 passed in 25.92s
+- `uv run pytest tests/scripts/test_run_ppo.py -q -k "kaggriculture_policy_evaluation_runs or main_loads_kaggriculture or resume_startup or rejects_kaggriculture or wandb_mode or resume_offline or seed_budget or rollout_factory"`
+  - [runner-red.log](runner-red.log): 16 failed, 103 deselected in 0.66s
+- `uv run pytest tests/scripts/test_run_ppo.py -q`
+  - [runner-green-1.log](runner-green-1.log): 1 failed, 118 passed in 1.59s
+  - [runner-green.log](runner-green.log): 119 passed in 0.53s
+  - [runner-final.log](runner-final.log): 123 passed in 0.67s
+- `uv run pytest tests/owl/train/test_logging.py -q`
+  - [wandb-red.log](wandb-red.log): 6 failed, 4 passed in 0.08s
+  - [wandb-green.log](wandb-green.log): 10 passed in 0.04s
+- `uv run pytest tests/scripts/test_benchmark_checkpoints.py -k kaggriculture -q`
+  - [benchmark-red.log](benchmark-red.log): 2 failed, 37 deselected in 0.10s
+- `uv run pytest tests/scripts/test_benchmark_checkpoints.py tests/kaggriculture/test_configs.py -q`
+  - [benchmark-green.log](benchmark-green.log): 88 passed in 1.47s
+- `uv run pytest tests/scripts/test_run_ppo.py -k evaluation_mapper_keeps -q`
+  - [transfer-red.log](transfer-red.log): 1 failed, 119 deselected in 0.25s
+- `uv run pytest tests/scripts/test_run_ppo.py -k "evaluation_mapper_keeps or seed_budget" -q`
+  - [transfer-green.log](transfer-green.log): 2 passed, 118 deselected in 0.07s
+- `uv run --offline pytest tests/owl/train/test_ppo_observation_mapping.py -q`
+  - [mapping-final.log](mapping-final.log): 191 passed in 0.21s
+- `/usr/bin/time -l uv run --offline pytest tests/kaggriculture/test_training_smoke.py::test_no_teacher_two_updates -q`
+  - [smoke-measured.log](smoke-measured.log): 1 passed in 0.28s
+- `uv run --offline python ops/rebuild-2026-09-29/3.1-rest2/measure_smoke.py`
+  - [smoke-watchdog.log](smoke-watchdog.log): 1 passed in 0.42s
+- `uv run pytest tests/kaggriculture -q`
+  - [kaggriculture-suite.log](kaggriculture-suite.log): exit 86 before captured output flushed; no test totals
+  - [kaggriculture-suite-2.log](kaggriculture-suite-2.log): BOUNDED CHECK STOP: rss=944144384 bytes, elapsed=8.383s; limits=943718400 bytes/115s; rerun in smaller batches
+- `uv run pytest tests/owl tests/scripts tests/tools -m "not slow" -q`
+  - [isaiah-suite.log](isaiah-suite.log): 1276 passed, 3 skipped in 41.28s
+- `uvx --from rust-just just py-prepare`
+  - [py-prepare.log](py-prepare.log): 137 files left unchanged; All checks passed!; Success: no issues found in 70 source files; collected 2374 items; BOUNDED CHECK STOP: rss=944816128 bytes, elapsed=6.662s; limits=943718400 bytes/115s; rerun in smaller batches
+- `uv run --offline mypy python/owl/train/ppo.py`
+  - [ppo-mypy.log](ppo-mypy.log): Success: no issues found in 1 source file
+- `uv run mypy python/owl scripts`
+  - [mypy-1.log](mypy-1.log): Found 1 error in 1 file (checked 69 source files)
+  - [mypy.log](mypy.log): Success: no issues found in 69 source files
+- `uvx --from rust-just just docs-fresh`
+  - [docs-fresh.log](docs-fresh.log): No doc updates required
+- `uvx pymarkdownlnt scan README.md docs/rl-api-specs.md docs/kaggriculture-contract.md`
+  - [docs-lint.log](docs-lint.log): no count summary; see receipt
+- `uv run ruff check scripts/run_ppo.py tests/scripts/test_run_ppo.py --fix; subsequent check/format invocations on the same files`
+  - [runner-ruff.log](runner-ruff.log): Found 12 errors.; 2 files reformatted
+  - [runner-ruff-2.log](runner-ruff-2.log): All checks passed!
+  - [runner-ruff-final.log](runner-ruff-final.log): Found 2 errors.
+  - [runner-format-final.log](runner-format-final.log): 1 file reformatted, 1 file left unchanged
+- `uv run ruff check python/owl/train/logging.py tests/owl/train/test_logging.py; uv run ruff format --check on the same files`
+  - [wandb-ruff.log](wandb-ruff.log): All checks passed!; 2 files already formatted
+- `uv run ruff check python/owl/train/config.py python/owl/train/__init__.py scripts/benchmark_checkpoints.py tests/kaggriculture/test_configs.py tests/scripts/test_benchmark_checkpoints.py; uv run ruff format --check on the same files`
+  - [benchmark-ruff.log](benchmark-ruff.log): All checks passed!; 5 files already formatted
+- `uv run ruff check tests/kaggriculture/test_teacher.py; uv run ruff format tests/kaggriculture/test_teacher.py`
+  - [teacher-ruff.log](teacher-ruff.log): All checks passed!
+  - [teacher-format.log](teacher-format.log): 1 file reformatted
+
+The first runner green failure was a new-test metric-name expectation (`candidate_bank_margin`, without `_mean`). The first mypy failure was a local optional-terminal annotation; both are repaired. The first PPO green exposed the inherited Orbit winner-distribution reshape, now restricted to Orbit. Smoke expectation fixes were test key `loss/total_loss` and two terminal games for four transitions at episodeSteps=3. `/usr/bin/time -l` returned exit 1 because sandbox denied sysctl; the known-PID watchdog supplies the usable measurement. Earlier Ruff errors are preserved; final py-prepare formatting/lint pass.
+
+## Bounded Kaggriculture commands
+
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest --noconftest tests/kaggriculture/test_base_generics_typing.py -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-typing.log 2>&1`
+  - 1 passed in 7.05s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest tests/kaggriculture/test_codec.py tests/kaggriculture/test_env.py tests/kaggriculture/test_env_cuda_fence.py tests/kaggriculture/test_env_reference.py tests/kaggriculture/test_evaluation.py tests/kaggriculture/test_game.py tests/kaggriculture/test_native_env.py tests/kaggriculture/test_native_grammar_bindings.py tests/kaggriculture/test_native_tables.py tests/kaggriculture/test_observe.py tests/kaggriculture/test_rewards.py tests/kaggriculture/test_types.py -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-native.log 2>&1`
+  - 757 passed, 3 skipped in 3.74s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest tests/kaggriculture/test_compile_gemm_backends.py tests/kaggriculture/test_configs.py tests/kaggriculture/test_gpu_grammar.py -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-grammar_configs.log 2>&1`
+  - 128 passed in 1.06s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest tests/kaggriculture/test_model_encoder.py -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-model_encoder.log 2>&1`
+  - 43 passed in 1.61s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest tests/kaggriculture/test_model_heads.py -k 'not hire_coupling_enumeration_equals_replayed_density' -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-model_heads.log 2>&1`
+  - 60 passed, 5 deselected in 5.18s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest 'tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[0]' -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-heads_budget_0.log 2>&1`
+  - 1 passed in 0.13s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest 'tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[1]' -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-heads_budget_1.log 2>&1`
+  - 1 passed in 0.17s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest 'tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[2]' -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-heads_budget_2.log 2>&1`
+  - 1 passed in 0.17s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest 'tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[3]' -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-heads_budget_3.log 2>&1`
+  - 1 passed in 0.18s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest 'tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[10]' -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-heads_budget_10.log 2>&1`
+  - 1 passed in 0.18s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest tests/kaggriculture/test_model_compile.py tests/kaggriculture/test_model_registration.py -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-model_compile_registration.log 2>&1`
+  - 18 passed in 0.28s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest tests/kaggriculture/test_teacher.py -k 'not brute_force_oracle' -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-teacher_non_bruteforce.log 2>&1`
+  - 50 passed, 2 deselected in 4.66s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest 'tests/kaggriculture/test_teacher.py::test_kl_matches_a_brute_force_oracle_over_the_admissible_values[base]' -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-teacher_bruteforce_base.log 2>&1`
+  - 1 passed in 0.12s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest 'tests/kaggriculture/test_teacher.py::test_kl_matches_a_brute_force_oracle_over_the_admissible_values[hire]' -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-teacher_bruteforce_hire.log 2>&1`
+  - 1 passed in 0.31s
+- `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 PYTHONPATH=ops/rebuild-2026-09-29/3.1-rest2 PYTEST_PLUGINS=bounded_pytest UV_OFFLINE=1 uv run --offline pytest tests/kaggriculture/test_training_semantics.py tests/kaggriculture/test_training_smoke.py -vv --color=no > ops/rebuild-2026-09-29/3.1-rest2/kg-batch-training.log 2>&1`
+  - 28 passed in 0.13s

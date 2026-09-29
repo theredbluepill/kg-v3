@@ -238,6 +238,33 @@ Wiring: player tokens are `player_tokens + player_feature_proj(player_features)`
   - A failed step or reset leaves game state, seed allocation, terminal records and published buffers unchanged.
   - Task 0.2 found that the historical CUDA fault was a compiler GEMM overflow, not buffer reuse; the fence is still required for correctness.
 
+## Trainer seam (Task 3.1)
+
+The canonical `scripts/run_ppo.py` and `PPOTrainer` use the same collector,
+rollout storage and PPO loop for Orbit and Kaggriculture. Schema-field iteration
+preserves `KaggricultureObsBatch`; explicit type dispatch preserves its bool
+`KaggricultureActionMask.can_act [E,2,252]` and int64 actions
+`tokens [E,2,252,12]`, `lengths [E,2]`. Rollout storage adds only the leading
+horizon dimension. Device-to-CPU transfer and C-contiguous action
+materialization belong to the trainer and shared evaluation mapper, before the
+strict native adapter boundary. No model hidden state or opponent identity is
+introduced.
+
+Kaggriculture rollout construction uses `owl.game.create_env` with
+`base_seed=cfg.env.seed`, distributed rank/world size and the transfer device.
+Startup restricts the base seed to `[0, 2**61)` and admits a conservative step
+budget that keeps the complete rollout seed stream below `2**62`, reserving
+construction/reset, auto-reset, truncation and a full update's overshoot. It also
+keeps evaluation's environment-step input below `2**61`. An excessive explicit
+step limit fails before run allocation; an omitted limit uses the safe ceiling.
+The native constructor and factory retain their nonnegative i64 seed domain.
+
+Evaluation uses the same observation/action mapper and an independent seeded
+native environment, with rank 0, world size 1 and its transfer device for the
+entry fence. Terminal raw banks determine the winner and candidate margin.
+Kaggriculture replay export is Task 7.3; a positive `rl.eval_replay_games`
+fails at startup before the run directory, environment or model exists.
+
 ## Information audit (reference flat vector → this contract)
 
 | Reference range | Content | New location |

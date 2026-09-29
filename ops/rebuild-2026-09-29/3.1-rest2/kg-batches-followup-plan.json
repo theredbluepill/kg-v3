@@ -1,0 +1,57 @@
+[
+  {
+    "name": "teacher_non_bruteforce",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_teacher.py",
+      "-k",
+      "not brute_force_oracle",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-teacher_non_bruteforce.log"
+  },
+  {
+    "name": "teacher_bruteforce_base",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_teacher.py::test_kl_matches_a_brute_force_oracle_over_the_admissible_values[base]",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-teacher_bruteforce_base.log"
+  },
+  {
+    "name": "teacher_bruteforce_hire",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_teacher.py::test_kl_matches_a_brute_force_oracle_over_the_admissible_values[hire]",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-teacher_bruteforce_hire.log"
+  },
+  {
+    "name": "training",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_training_semantics.py",
+      "tests/kaggriculture/test_training_smoke.py",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-training.log"
+  }
+]

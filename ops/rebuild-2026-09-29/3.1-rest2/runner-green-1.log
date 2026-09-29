@@ -1,0 +1,62 @@
+........................................................................ [ 60%]
+.....................F.........................                          [100%]
+=================================== FAILURES ===================================
+____________ test_kaggriculture_policy_evaluation_runs_native_games ____________
+
+    def test_kaggriculture_policy_evaluation_runs_native_games() -> None:
+        cfg = FullConfig.from_file(
+            _CONFIGS / "kaggriculture.yaml",
+            overrides={
+                "env.n_envs": 2, "env.native_threads": 1,
+                "env.pin_memory": False, "env.config.episodeSteps": 3,
+                "model.embed_dim": 16, "model.depth": 1, "model.n_heads": 1,
+                "model.mlp_ratio": 1, "model.n_scratch_tokens": 0,
+                "rl.dtype": "float32", "rl.model_compile": "none",
+                "rl.segments_per_minibatch": 1, "rl.gradient_accumulation_steps": 1,
+                "rl.eval_replay_games": 0,
+            },
+        )
+        torch.manual_seed(31)
+        current, _ = run_ppo._create_training_model_for_config(
+            cfg, device=torch.device("cpu"), reset_parameters=True
+        )
+        last_best = run_ppo._create_eval_model_from_weights(
+            current, cfg, device=torch.device("cpu")
+        )
+        current.eval()
+        with torch.no_grad():
+            stats, by_count, metrics, steps = run_ppo._evaluate_games(
+                current_model=current, last_best_model=last_best, cfg=cfg,
+                n_games=2, n_envs=2, device=torch.device("cpu"), env_steps=1000,
+            )
+        margins = metrics["candidate_bank_margin"]
+        expected_wins = sum(1.0 if x > 0 else 0.5 if x == 0 else 0.0 for x in margins)
+        assert stats.model_games == [2, 2]
+        assert stats.wins == [expected_wins, 2 - expected_wins]
+        assert by_count[2].wins == stats.wins
+        assert steps == 4
+        assert metrics["episode_steps"] == [2, 2]
+        for candidate, incumbent, margin in zip(
+            metrics["candidate_bank"], metrics["last_best_bank"], margins, strict=True
+        ):
+            assert torch.isfinite(torch.tensor([candidate, incumbent, margin])).all()
+            assert candidate - incumbent == margin
+        logged = run_ppo._eval_env_metrics(metrics)
+>       assert "eval/candidate_bank_margin_mean" in logged
+E       AssertionError: assert 'eval/candidate_bank_margin_mean' in {'eval/bank_0': 2.5, 'eval/bank_1': 0.0, 'eval/candidate_bank': 0.0, 'eval/candidate_bank_margin': -2.5, ...}
+
+tests/scripts/test_run_ppo.py:3215: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  owl.config:config.py:84 Override 'env.n_envs' has the same value (2) as the existing config
+WARNING  owl.config:config.py:84 Override 'env.native_threads' has the same value (1) as the existing config
+WARNING  owl.config:config.py:84 Override 'env.pin_memory' has the same value (False) as the existing config
+WARNING  owl.config:config.py:84 Override 'model.embed_dim' has the same value (16) as the existing config
+WARNING  owl.config:config.py:84 Override 'model.depth' has the same value (1) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.dtype' has the same value (float32) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.model_compile' has the same value (none) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.segments_per_minibatch' has the same value (1) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.gradient_accumulation_steps' has the same value (1) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.eval_replay_games' has the same value (0) as the existing config
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_policy_evaluation_runs_native_games
+1 failed, 118 passed in 1.59s

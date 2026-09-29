@@ -1,0 +1,127 @@
+E501 Line too long (101 > 88)
+   --> scripts/run_ppo.py:574:89
+    |
+573 | def _parse_args() -> argparse.Namespace:
+574 |     parser = argparse.ArgumentParser(description="Run PPO training for Orbit Wars or Kaggriculture.")
+    |                                                                                         ^^^^^^^^^^^^^
+575 |     parser.add_argument(
+576 |         "target",
+    |
+
+E501 Line too long (91 > 88)
+   --> scripts/run_ppo.py:664:89
+    |
+662 |         raise ValueError("resume launches require wandb logging")
+663 |     if args.output_dir is None and args.wandb_mode == "offline":
+664 |         raise ValueError("resume launches do not support --wandb-mode offline; use online")
+    |                                                                                         ^^^
+    |
+
+E501 Line too long (89 > 88)
+    --> scripts/run_ppo.py:1534:89
+     |
+1532 |         if isinstance(env, KaggricultureVectorizedEnv):
+1533 |             if not isinstance(actions, KaggricultureActions):
+1534 |                 raise TypeError("Kaggriculture evaluation requires KaggricultureActions")
+     |                                                                                         ^
+1535 |             obs, rewards, dones, _step_env_metrics = env.step(actions)
+1536 |         else:
+     |
+
+E501 Line too long (91 > 88)
+    --> scripts/run_ppo.py:1563:89
+     |
+1561 |                     terminal = env.terminal_metrics(env_index)
+1562 |                     if terminal is None:
+1563 |                         raise RuntimeError(f"missing terminal metrics for env {env_index}")
+     |                                                                                         ^^^
+1564 |                     # Native diagnostics also carry counter vectors. The shared
+1565 |                     # scalar metric reducer takes only the terminal scalar ABI.
+     |
+
+E501 Line too long (91 > 88)
+    --> scripts/run_ppo.py:1576:89
+     |
+1574 |                     orbit_terminal_metrics = env.terminal_metrics(env_index)
+1575 |                     if orbit_terminal_metrics is None:
+1576 |                         raise RuntimeError(f"missing terminal metrics for env {env_index}")
+     |                                                                                         ^^^
+1577 |                     terminal_metrics = orbit_terminal_metrics
+1578 |                 _extend_single_env_metrics(env_metrics, terminal_metrics)
+     |
+
+E501 Line too long (90 > 88)
+    --> scripts/run_ppo.py:1934:89
+     |
+1932 |     ):
+1933 |         return KaggricultureActions(
+1934 |             tokens=_select_action(actions_a.tokens, actions_b.tokens, use_a).contiguous(),
+     |                                                                                         ^^
+1935 |             lengths=_select_action(actions_a.lengths, actions_b.lengths, use_a).contiguous(),
+1936 |         )
+     |
+
+E501 Line too long (93 > 88)
+    --> scripts/run_ppo.py:1935:89
+     |
+1933 |         return KaggricultureActions(
+1934 |             tokens=_select_action(actions_a.tokens, actions_b.tokens, use_a).contiguous(),
+1935 |             lengths=_select_action(actions_a.lengths, actions_b.lengths, use_a).contiguous(),
+     |                                                                                         ^^^^^
+1936 |         )
+1937 |     if isinstance(actions_a, PureActions) and isinstance(actions_b, PureActions):
+     |
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+    --> tests/scripts/test_run_ppo.py:3469:42
+     |
+3467 |         "-o", f"env.seed={seed}", "rl.eval_replay_games=0",
+3468 |     ], calls)
+3469 |     with pytest.raises(ValueError, match="env.seed must be in"):
+     |                                          ^^^^^^^^^^^^^^^^^^^^^
+3470 |         run_ppo.main()
+3471 |     assert calls == []
+     |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+    --> tests/scripts/test_run_ppo.py:3506:42
+     |
+3504 |         "run_ppo.py", "nonexistent-run", "--wandb-mode", "offline",
+3505 |     ])
+3506 |     with pytest.raises(ValueError, match="resume.*offline"):
+     |                                          ^^^^^^^^^^^^^^^^^
+3507 |         run_ppo.main()
+     |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+E501 Line too long (91 > 88)
+    --> tests/scripts/test_run_ppo.py:3510:89
+     |
+3510 | def test_kaggriculture_seed_budget_covers_resets_truncation_and_update_overshoot() -> None:
+     |                                                                                         ^^^
+3511 |     cfg = _kaggriculture_eval_config()
+3512 |     cfg = cfg.model_copy(update={"env": cfg.env.model_copy(update={"seed": 2**61 - 1})})
+     |
+
+E501 Line too long (93 > 88)
+    --> tests/scripts/test_run_ppo.py:3527:89
+     |
+3525 |         run_ppo._kaggriculture_step_limit(cfg, ctx, max_env_steps=limit + 1)
+3526 |     # Orbit has no new limit or seed checks.
+3527 |     assert run_ppo._kaggriculture_step_limit(_full_config(), ctx, max_env_steps=None) is None
+     |                                                                                         ^^^^^
+     |
+
+E501 Line too long (89 > 88)
+    --> tests/scripts/test_run_ppo.py:3603:89
+     |
+3601 | ) -> None:
+3602 |     calls: list[str] = []
+3603 |     argv = [str(_CONFIGS / name), str(tmp_path / "runs"), "-o", "rl.eval_replay_games=0"]
+     |                                                                                         ^
+3604 |     _patch_kaggriculture_startup(monkeypatch, argv, calls)
+     |
+
+Found 12 errors.
+2 files reformatted

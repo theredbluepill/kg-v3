@@ -11,12 +11,25 @@ import torch
 from pydantic import BaseModel, Field, model_validator
 
 from owl.config import BaseConfig
-from owl.kaggriculture.types import KaggricultureObsBatch
+from owl.game import GameActions, GameObsBatch, GameVectorizedEnv
+from owl.kaggriculture.env import (
+    KaggricultureVectorizedEnv,
+    allocate_observation_buffers,
+)
+from owl.kaggriculture.types import (
+    ACTION_SLOTS,
+    MAX_FRAMES,
+    PLAYERS,
+    KaggricultureActionConfig,
+    KaggricultureActionMask,
+    KaggricultureActions,
+    KaggricultureObsBatch,
+    KaggricultureObsConfig,
+)
 from owl.model import (
     ActorDiscreteTargetsConfig,
     BaseModelAPI,
     ModelActionKLDivergences,
-    ModelActions,
     ModelEvaluation,
     ModelHiddenState,
     ModelOutput,
@@ -28,7 +41,6 @@ from owl.model import (
 from owl.rl import (
     ACTION_ENTITY_SLOTS,
     OUTER_PLAYER_SLOTS,
-    ActionBundle,
     ActionConfig,
     ActionDiscreteTargetBinsConfig,
     ActionDiscreteTargetsConfig,
@@ -119,6 +131,7 @@ _FIRST_MINIBATCH_LOGRATIO_REFERENCE = (
 # Any pydantic observation batch: Orbit's ``ObsBatch`` or a game-specific one.
 # The mapping helpers below iterate its declared fields instead of naming them.
 _ObservationT = TypeVar("_ObservationT", bound=BaseModel)
+_GameActionMask: TypeAlias = ActionMask | KaggricultureActionMask
 
 
 class PPOConfig(BaseConfig):
@@ -227,8 +240,8 @@ class _PPOUpdateResult:
 class _PPORolloutSegments:
     """Rollout tensors converted from collection layout [T, N, ...] to [N, T, ...]."""
 
-    obs: ObsBatch
-    actions: ModelActions
+    obs: GameObsBatch
+    actions: GameActions
     logp: torch.Tensor
     values: torch.Tensor
     rewards: torch.Tensor
@@ -256,8 +269,8 @@ class _PPORolloutBuffer:
         *,
         horizon: int,
         n_envs: int,
-        obs_spec: EntityBasedBaseConfig,
-        action_spec: ActionConfig,
+        obs_spec: EntityBasedBaseConfig | KaggricultureObsConfig,
+        action_spec: ActionConfig | KaggricultureActionConfig,
         device: torch.device,
     ) -> None:
         if horizon <= 0:
@@ -266,203 +279,253 @@ class _PPORolloutBuffer:
             raise ValueError("n_envs must be positive")
         self.horizon = horizon
         self.n_envs = n_envs
-        can_act_shape: tuple[int, ...]
-        if isinstance(action_spec, ActionPureConfig):
-            can_act_shape = (horizon, n_envs, OUTER_PLAYER_SLOTS, ACTION_ENTITY_SLOTS)
-        elif isinstance(action_spec, ActionDiscreteTargetsConfig):
-            can_act_shape = (
-                horizon,
-                n_envs,
-                OUTER_PLAYER_SLOTS,
-                ACTION_ENTITY_SLOTS,
-                ACTION_ENTITY_SLOTS,
+        self.obs: GameObsBatch
+        self.actions: GameActions
+        if isinstance(obs_spec, KaggricultureObsConfig):
+            if not isinstance(action_spec, KaggricultureActionConfig):
+                raise ValueError(
+                    "Kaggriculture observations require Kaggriculture actions"
+                )
+            # The native allocator owns the field shapes/dtypes. A single-row
+            # prototype avoids duplicating that schema or staging a full CPU
+            # rollout when its final storage belongs on an accelerator.
+            self.obs = _map_observation(
+                allocate_observation_buffers(1, pin_memory=False),
+                lambda tensor: torch.zeros(
+                    (horizon, n_envs, *tensor.shape[1:]),
+                    dtype=tensor.dtype,
+                    device=device,
+                ),
             )
+            self.actions = KaggricultureActions(
+                tokens=torch.zeros(
+                    (horizon, n_envs, PLAYERS, MAX_FRAMES, ACTION_SLOTS),
+                    dtype=torch.int64,
+                    device=device,
+                ),
+                lengths=torch.zeros(
+                    (horizon, n_envs, PLAYERS),
+                    dtype=torch.int64,
+                    device=device,
+                ),
+            )
+            player_slots, action_entity_slots = PLAYERS, MAX_FRAMES
         else:
-            can_act_shape = (
-                horizon,
-                n_envs,
-                OUTER_PLAYER_SLOTS,
-                ACTION_ENTITY_SLOTS,
-                ACTION_ENTITY_SLOTS,
-                action_spec.n_bins,
-            )
-        can_act = torch.zeros(
-            can_act_shape,
-            dtype=torch.bool,
-            device=device,
-        )
-        max_launch = (
-            None
-            if isinstance(action_spec, ActionDiscreteTargetBinsConfig)
-            else torch.zeros(
-                (horizon, n_envs, OUTER_PLAYER_SLOTS, ACTION_ENTITY_SLOTS),
-                dtype=torch.int64,
-                device=device,
-            )
-        )
-        if isinstance(action_spec, ActionPureConfig):
-            action_mask: ActionMask = PureActionMask(
-                can_act=can_act,
-                max_launch=cast(torch.Tensor, max_launch),
-            )
-        elif isinstance(action_spec, ActionDiscreteTargetsConfig):
-            action_mask = DiscreteTargetActionMask(
-                can_act=can_act,
-                max_launch=cast(torch.Tensor, max_launch),
-            )
-        else:
-            action_mask = DiscreteTargetBinActionMask(can_act=can_act)
-        self.obs = ObsBatch(
-            planets=torch.zeros(
-                (horizon, n_envs, obs_spec.max_planets, obs_spec.planet_channels),
-                dtype=torch.float32,
-                device=device,
-            ),
-            orbiting_planets=torch.zeros(
-                (
+            if isinstance(action_spec, KaggricultureActionConfig):
+                raise ValueError("Orbit observations require Orbit actions")
+            player_slots, action_entity_slots = OUTER_PLAYER_SLOTS, ACTION_ENTITY_SLOTS
+            can_act_shape: tuple[int, ...]
+            if isinstance(action_spec, ActionPureConfig):
+                can_act_shape = (
                     horizon,
                     n_envs,
-                    obs_spec.max_planets,
-                ),
+                    OUTER_PLAYER_SLOTS,
+                    ACTION_ENTITY_SLOTS,
+                )
+            elif isinstance(action_spec, ActionDiscreteTargetsConfig):
+                can_act_shape = (
+                    horizon,
+                    n_envs,
+                    OUTER_PLAYER_SLOTS,
+                    ACTION_ENTITY_SLOTS,
+                    ACTION_ENTITY_SLOTS,
+                )
+            else:
+                can_act_shape = (
+                    horizon,
+                    n_envs,
+                    OUTER_PLAYER_SLOTS,
+                    ACTION_ENTITY_SLOTS,
+                    ACTION_ENTITY_SLOTS,
+                    action_spec.n_bins,
+                )
+            can_act = torch.zeros(
+                can_act_shape,
                 dtype=torch.bool,
                 device=device,
-            ),
-            fleets=torch.zeros(
-                (horizon, n_envs, obs_spec.max_fleets, obs_spec.fleet_channels),
-                dtype=torch.float32,
-                device=device,
-            ),
-            fleet_target=(
+            )
+            max_launch = (
                 None
-                if not obs_spec.uses_cross_attention
-                else torch.full(
-                    (horizon, n_envs, obs_spec.max_fleets),
-                    -1,
+                if isinstance(action_spec, ActionDiscreteTargetBinsConfig)
+                else torch.zeros(
+                    (horizon, n_envs, OUTER_PLAYER_SLOTS, ACTION_ENTITY_SLOTS),
                     dtype=torch.int64,
                     device=device,
                 )
-            ),
-            target_incoming_features=(
-                None
-                if not obs_spec.uses_cross_attention
-                else torch.zeros(
-                    (
-                        horizon,
-                        n_envs,
-                        ACTION_ENTITY_SLOTS,
-                        obs_spec.target_incoming_channels,
-                    ),
-                    dtype=torch.float32,
-                    device=device,
-                )
-            ),
-            comets=torch.zeros(
-                (horizon, n_envs, obs_spec.max_comets, obs_spec.comet_channels),
-                dtype=torch.float32,
-                device=device,
-            ),
-            entity_mask=torch.zeros(
-                (horizon, n_envs, obs_spec.max_entities),
-                dtype=torch.bool,
-                device=device,
-            ),
-            still_playing=torch.zeros(
-                (horizon, n_envs, OUTER_PLAYER_SLOTS),
-                dtype=torch.bool,
-                device=device,
-            ),
-            global_features=torch.zeros(
-                (horizon, n_envs, obs_spec.global_channels),
-                dtype=torch.float32,
-                device=device,
-            ),
-            action_mask=action_mask,
-            player_features=(
-                None
-                if obs_spec.player_feature_channels == 0
-                else torch.zeros(
-                    (
-                        horizon,
-                        n_envs,
-                        OUTER_PLAYER_SLOTS,
-                        obs_spec.player_feature_channels,
-                    ),
-                    dtype=torch.float32,
-                    device=device,
-                )
-            ),
-        )
-        if isinstance(action_spec, ActionDiscreteTargetBinsConfig):
-            action_shape: tuple[int, ...] = (
-                horizon,
-                n_envs,
-                OUTER_PLAYER_SLOTS,
-                ACTION_ENTITY_SLOTS,
-            )
-            self.actions: ActionBundle = DiscreteTargetBinActions(
-                target=torch.zeros(action_shape, dtype=torch.int64, device=device),
-                fleet_bin=torch.zeros(action_shape, dtype=torch.int64, device=device),
-            )
-        else:
-            action_shape = (
-                horizon,
-                n_envs,
-                OUTER_PLAYER_SLOTS,
-                ACTION_ENTITY_SLOTS,
-                action_spec.max_per_planet_launches,
             )
             if isinstance(action_spec, ActionPureConfig):
-                self.actions = PureActions(
-                    launch=torch.zeros(
-                        action_shape,
-                        dtype=torch.bool,
-                        device=device,
-                    ),
-                    angle=torch.zeros(action_shape, dtype=torch.float32, device=device),
-                    ships=torch.zeros(action_shape, dtype=torch.int64, device=device),
+                action_mask: ActionMask = PureActionMask(
+                    can_act=can_act,
+                    max_launch=cast(torch.Tensor, max_launch),
+                )
+            elif isinstance(action_spec, ActionDiscreteTargetsConfig):
+                action_mask = DiscreteTargetActionMask(
+                    can_act=can_act,
+                    max_launch=cast(torch.Tensor, max_launch),
                 )
             else:
-                self.actions = DiscreteTargetActions(
-                    launch=torch.zeros(
-                        action_shape,
-                        dtype=torch.bool,
-                        device=device,
+                action_mask = DiscreteTargetBinActionMask(can_act=can_act)
+            self.obs = ObsBatch(
+                planets=torch.zeros(
+                    (horizon, n_envs, obs_spec.max_planets, obs_spec.planet_channels),
+                    dtype=torch.float32,
+                    device=device,
+                ),
+                orbiting_planets=torch.zeros(
+                    (
+                        horizon,
+                        n_envs,
+                        obs_spec.max_planets,
                     ),
-                    target=torch.zeros(action_shape, dtype=torch.int64, device=device),
-                    ships=torch.zeros(action_shape, dtype=torch.int64, device=device),
+                    dtype=torch.bool,
+                    device=device,
+                ),
+                fleets=torch.zeros(
+                    (horizon, n_envs, obs_spec.max_fleets, obs_spec.fleet_channels),
+                    dtype=torch.float32,
+                    device=device,
+                ),
+                fleet_target=(
+                    None
+                    if not obs_spec.uses_cross_attention
+                    else torch.full(
+                        (horizon, n_envs, obs_spec.max_fleets),
+                        -1,
+                        dtype=torch.int64,
+                        device=device,
+                    )
+                ),
+                target_incoming_features=(
+                    None
+                    if not obs_spec.uses_cross_attention
+                    else torch.zeros(
+                        (
+                            horizon,
+                            n_envs,
+                            ACTION_ENTITY_SLOTS,
+                            obs_spec.target_incoming_channels,
+                        ),
+                        dtype=torch.float32,
+                        device=device,
+                    )
+                ),
+                comets=torch.zeros(
+                    (horizon, n_envs, obs_spec.max_comets, obs_spec.comet_channels),
+                    dtype=torch.float32,
+                    device=device,
+                ),
+                entity_mask=torch.zeros(
+                    (horizon, n_envs, obs_spec.max_entities),
+                    dtype=torch.bool,
+                    device=device,
+                ),
+                still_playing=torch.zeros(
+                    (horizon, n_envs, OUTER_PLAYER_SLOTS),
+                    dtype=torch.bool,
+                    device=device,
+                ),
+                global_features=torch.zeros(
+                    (horizon, n_envs, obs_spec.global_channels),
+                    dtype=torch.float32,
+                    device=device,
+                ),
+                action_mask=action_mask,
+                player_features=(
+                    None
+                    if obs_spec.player_feature_channels == 0
+                    else torch.zeros(
+                        (
+                            horizon,
+                            n_envs,
+                            OUTER_PLAYER_SLOTS,
+                            obs_spec.player_feature_channels,
+                        ),
+                        dtype=torch.float32,
+                        device=device,
+                    )
+                ),
+            )
+            if isinstance(action_spec, ActionDiscreteTargetBinsConfig):
+                action_shape: tuple[int, ...] = (
+                    horizon,
+                    n_envs,
+                    OUTER_PLAYER_SLOTS,
+                    ACTION_ENTITY_SLOTS,
                 )
+                self.actions = DiscreteTargetBinActions(
+                    target=torch.zeros(action_shape, dtype=torch.int64, device=device),
+                    fleet_bin=torch.zeros(
+                        action_shape, dtype=torch.int64, device=device
+                    ),
+                )
+            else:
+                action_shape = (
+                    horizon,
+                    n_envs,
+                    OUTER_PLAYER_SLOTS,
+                    ACTION_ENTITY_SLOTS,
+                    action_spec.max_per_planet_launches,
+                )
+                if isinstance(action_spec, ActionPureConfig):
+                    self.actions = PureActions(
+                        launch=torch.zeros(
+                            action_shape,
+                            dtype=torch.bool,
+                            device=device,
+                        ),
+                        angle=torch.zeros(
+                            action_shape, dtype=torch.float32, device=device
+                        ),
+                        ships=torch.zeros(
+                            action_shape, dtype=torch.int64, device=device
+                        ),
+                    )
+                else:
+                    self.actions = DiscreteTargetActions(
+                        launch=torch.zeros(
+                            action_shape,
+                            dtype=torch.bool,
+                            device=device,
+                        ),
+                        target=torch.zeros(
+                            action_shape, dtype=torch.int64, device=device
+                        ),
+                        ships=torch.zeros(
+                            action_shape, dtype=torch.int64, device=device
+                        ),
+                    )
         self.logp = torch.zeros(
-            (horizon, n_envs, OUTER_PLAYER_SLOTS),
+            (horizon, n_envs, player_slots),
             dtype=torch.float32,
             device=device,
         )
         self.entity_logp = torch.zeros(
-            (horizon, n_envs, OUTER_PLAYER_SLOTS, ACTION_ENTITY_SLOTS),
+            (horizon, n_envs, player_slots, action_entity_slots),
             dtype=torch.float32,
             device=device,
         )
         self.values = torch.zeros(
-            (horizon, n_envs, OUTER_PLAYER_SLOTS),
+            (horizon, n_envs, player_slots),
             dtype=torch.float32,
             device=device,
         )
         self.rewards = torch.zeros(
-            (horizon, n_envs, OUTER_PLAYER_SLOTS),
+            (horizon, n_envs, player_slots),
             dtype=torch.float32,
             device=device,
         )
         self.dones = torch.zeros(
-            (horizon, n_envs, OUTER_PLAYER_SLOTS),
+            (horizon, n_envs, player_slots),
             dtype=torch.bool,
             device=device,
         )
         self.truncated = torch.zeros(
-            (horizon, n_envs, OUTER_PLAYER_SLOTS),
+            (horizon, n_envs, player_slots),
             dtype=torch.bool,
             device=device,
         )
         self.bootstrap_values = torch.zeros(
-            (horizon, n_envs, OUTER_PLAYER_SLOTS),
+            (horizon, n_envs, player_slots),
             dtype=torch.float32,
             device=device,
         )
@@ -472,8 +535,8 @@ class _PPORolloutBuffer:
         self,
         step: int,
         *,
-        obs: ObsBatch,
-        actions: ModelActions,
+        obs: GameObsBatch,
+        actions: GameActions,
         logp: torch.Tensor,
         entity_logp: torch.Tensor | None = None,
         values: torch.Tensor,
@@ -524,12 +587,12 @@ class PPOTrainer:
         self,
         *,
         config: PPOConfig,
-        env: VectorizedEnv,
-        model: BaseModelAPI,
+        env: GameVectorizedEnv,
+        model: BaseModelAPI[Any, Any, Any],
         optimizer: _Optimizer,
         device: torch.device,
         lr_scheduler: _LRScheduler | None = None,
-        teacher_model: BaseModelAPI | None = None,
+        teacher_model: BaseModelAPI[Any, Any, Any] | None = None,
         teacher_active: bool = False,
         distributed_context: DistributedContext | None = None,
     ) -> None:
@@ -591,7 +654,7 @@ class PPOTrainer:
         else:
             self._env_step_count = torch.zeros(0, dtype=torch.long)
             self._is_truncation_game = torch.zeros(0, dtype=torch.bool)
-        self.teacher_model: BaseModelAPI | None = None
+        self.teacher_model: BaseModelAPI[Any, Any, Any] | None = None
         self.teacher_active = False
         self.rollout = _PPORolloutBuffer(
             horizon=config.horizon,
@@ -609,7 +672,7 @@ class PPOTrainer:
 
     def set_teacher_model(
         self,
-        teacher_model: BaseModelAPI | None,
+        teacher_model: BaseModelAPI[Any, Any, Any] | None,
         *,
         active: bool,
     ) -> None:
@@ -684,11 +747,21 @@ class PPOTrainer:
             teacher_start = perf_counter()
             teacher_targets = self._precompute_teacher_targets(segments)
             teacher_elapsed = max(perf_counter() - teacher_start, 1e-12)
-        max_entities_seen = segments.obs.entity_mask.sum(dim=-1).max()
+        max_entities_seen = (
+            (
+                segments.obs.actor_mask
+                if isinstance(segments.obs, KaggricultureObsBatch)
+                else segments.obs.entity_mask
+            )
+            .sum(dim=-1)
+            .max()
+        )
         value_mask = segments.obs.still_playing
         policy_mask = _policy_mask(segments.obs)
         model_tokens = self._sum_int(
-            unwrap_model(self.model).count_non_masked_tokens(segments.obs)
+            cast(
+                BaseModelAPI[Any, Any, Any], unwrap_model(self.model)
+            ).count_non_masked_tokens(segments.obs)
         )
         active_entities = self._sum_int(_policy_entity_mask(segments.obs).sum())
         advantages, returns = self._compute_gae(
@@ -784,7 +857,7 @@ class PPOTrainer:
         *,
         env_steps: int,
         wandb_run_id: str | None = None,
-        model: BaseModelAPI | None = None,
+        model: BaseModelAPI[Any, Any, Any] | None = None,
     ) -> None:
         checkpoint_model = unwrap_model(self.model if model is None else model)
         checkpoint = {
@@ -942,7 +1015,7 @@ class PPOTrainer:
 
     def _apply_truncation(
         self,
-        next_obs: ObsBatch,
+        next_obs: GameObsBatch,
         rewards: torch.Tensor,
         dones: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -1303,7 +1376,9 @@ class PPOTrainer:
         entropy_components = _output_entropy_components(output, segments.logp[idx])
         new_values = _output_values(output).view_as(batch_old_values)
         winner_log_probabilities = output.winner_log_probabilities
-        if winner_log_probabilities is not None:
+        if winner_log_probabilities is not None and isinstance(
+            batch_segment_obs, ObsBatch
+        ):
             winner_log_probabilities = winner_log_probabilities.view_as(
                 batch_old_values
             )
@@ -2048,8 +2123,8 @@ def _per_entity_policy_loss_components(
 
 
 def _copy_action_mask_(
-    dst: ActionMask,
-    src: ActionMask,
+    dst: _GameActionMask,
+    src: _GameActionMask,
     copy: Callable[[torch.Tensor, torch.Tensor], object],
     *,
     context: str,
@@ -2066,9 +2141,9 @@ def _copy_action_mask_(
 
 
 def _map_action_mask(
-    action_mask: ActionMask,
+    action_mask: _GameActionMask,
     fn: Callable[[torch.Tensor], torch.Tensor],
-) -> ActionMask:
+) -> _GameActionMask:
     if isinstance(action_mask, PureActionMask):
         return PureActionMask(
             can_act=fn(action_mask.can_act),
@@ -2079,13 +2154,15 @@ def _map_action_mask(
             can_act=fn(action_mask.can_act),
             max_launch=fn(action_mask.max_launch),
         )
+    if isinstance(action_mask, KaggricultureActionMask):
+        return KaggricultureActionMask(can_act=fn(action_mask.can_act))
     return DiscreteTargetBinActionMask(can_act=fn(action_mask.can_act))
 
 
 def _map_action_bundle(
-    actions: ActionBundle,
+    actions: GameActions,
     fn: Callable[[torch.Tensor], torch.Tensor],
-) -> ActionBundle:
+) -> GameActions:
     if isinstance(actions, PureActions):
         return PureActions(
             launch=fn(actions.launch),
@@ -2097,6 +2174,10 @@ def _map_action_bundle(
             launch=fn(actions.launch),
             target=fn(actions.target),
             ships=fn(actions.ships),
+        )
+    if isinstance(actions, KaggricultureActions):
+        return KaggricultureActions(
+            tokens=fn(actions.tokens), lengths=fn(actions.lengths)
         )
     return DiscreteTargetBinActions(
         target=fn(actions.target),
@@ -2134,7 +2215,10 @@ def _map_observation_value(
         return fn(value)
     if isinstance(
         value,
-        PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+        PureActionMask
+        | DiscreteTargetActionMask
+        | DiscreteTargetBinActionMask
+        | KaggricultureActionMask,
     ):
         return _map_action_mask(value, fn)
     raise TypeError(
@@ -2156,7 +2240,10 @@ def _observation_tensor_shapes(obs: BaseModel) -> str:
             shapes.append(f"{field}={tuple(value.shape)}")
         elif isinstance(
             value,
-            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+            PureActionMask
+            | DiscreteTargetActionMask
+            | DiscreteTargetBinActionMask
+            | KaggricultureActionMask,
         ):
             shapes.append(f"{field}.can_act={tuple(value.can_act.shape)}")
             if isinstance(value, PureActionMask | DiscreteTargetActionMask):
@@ -2192,7 +2279,10 @@ def _copy_observation_(
             copy(dst_value, src_value)
         elif isinstance(
             dst_value,
-            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+            PureActionMask
+            | DiscreteTargetActionMask
+            | DiscreteTargetBinActionMask
+            | KaggricultureActionMask,
         ):
             _copy_action_mask_(dst_value, src_value, copy, context=context)
         else:
@@ -2212,14 +2302,30 @@ def _copy_obs_time_step(dst: BaseModel, step: int, src: BaseModel) -> None:
     )
 
 
-def _copy_actions_time_step(dst: ActionBundle, step: int, src: ActionBundle) -> None:
+def _copy_actions_time_step(dst: GameActions, step: int, src: GameActions) -> None:
     if type(dst) is not type(src):
         raise ValueError(
             f"rollout action bundle type mismatch: expected {type(dst).__name__}, "
             f"got {type(src).__name__}"
         )
-    for field in dst.__dataclass_fields__:
-        getattr(dst, field)[step].copy_(getattr(src, field))
+    if isinstance(dst, KaggricultureActions) and isinstance(src, KaggricultureActions):
+        dst.tokens[step].copy_(src.tokens)
+        dst.lengths[step].copy_(src.lengths)
+    elif isinstance(dst, PureActions) and isinstance(src, PureActions):
+        dst.launch[step].copy_(src.launch)
+        dst.angle[step].copy_(src.angle)
+        dst.ships[step].copy_(src.ships)
+    elif isinstance(dst, DiscreteTargetActions) and isinstance(
+        src, DiscreteTargetActions
+    ):
+        dst.launch[step].copy_(src.launch)
+        dst.target[step].copy_(src.target)
+        dst.ships[step].copy_(src.ships)
+    elif isinstance(dst, DiscreteTargetBinActions) and isinstance(
+        src, DiscreteTargetBinActions
+    ):
+        dst.target[step].copy_(src.target)
+        dst.fleet_bin[step].copy_(src.fleet_bin)
 
 
 def _segment_major_tensor(tensor: torch.Tensor) -> torch.Tensor:
@@ -2230,7 +2336,7 @@ def _obs_segment_major(obs: _ObservationT) -> _ObservationT:
     return _map_observation(obs, _segment_major_tensor)
 
 
-def _actions_segment_major(actions: ActionBundle) -> ActionBundle:
+def _actions_segment_major(actions: GameActions) -> GameActions:
     return _map_action_bundle(actions, _segment_major_tensor)
 
 
@@ -2238,7 +2344,7 @@ def _obs_index(obs: _ObservationT, idx: torch.Tensor) -> _ObservationT:
     return _map_observation(obs, lambda tensor: tensor[idx])
 
 
-def _actions_index(actions: ActionBundle, idx: torch.Tensor) -> ActionBundle:
+def _actions_index(actions: GameActions, idx: torch.Tensor) -> GameActions:
     return _map_action_bundle(actions, lambda tensor: tensor[idx])
 
 
@@ -2282,10 +2388,17 @@ def _copy_obs_to_device_(
 
 
 def _actions_to_cpu(
-    actions: ActionBundle,
+    actions: GameActions,
     *,
     non_blocking: bool = False,
-) -> ActionBundle:
+) -> GameActions:
+    if isinstance(actions, KaggricultureActions):
+        # The native adapter admits exactly int64, C-contiguous CPU actions.
+        # Preserve dtype here (invalid model output must not be silently cast).
+        return _map_action_bundle(
+            actions,
+            lambda tensor: tensor.to("cpu", non_blocking=non_blocking).contiguous(),
+        )
     return _map_action_bundle(
         actions,
         lambda tensor: tensor.to("cpu", non_blocking=non_blocking),
@@ -2300,16 +2413,21 @@ def _flatten_obs_time(obs: _ObservationT) -> _ObservationT:
     return _map_observation(obs, _flatten_tensor_time)
 
 
-def _flatten_actions_time(actions: ActionBundle) -> ActionBundle:
+def _flatten_actions_time(actions: GameActions) -> GameActions:
     return _map_action_bundle(actions, _flatten_tensor_time)
 
 
 def _step_env(
-    env: VectorizedEnv,
-    actions: ActionBundle,
-) -> tuple[ObsBatch, torch.Tensor, torch.Tensor, dict[str, list[float]]]:
+    env: GameVectorizedEnv,
+    actions: GameActions,
+) -> tuple[GameObsBatch, torch.Tensor, torch.Tensor, dict[str, list[float]]]:
     cpu_actions = _actions_to_cpu(actions)
-    return env.step(cpu_actions)
+    # PPO admission already requires identical model/env action specs. Narrow
+    # the paired environment from the action schema, also admitting test envs
+    # that implement the same interface without inheriting a native adapter.
+    if isinstance(cpu_actions, KaggricultureActions):
+        return cast(KaggricultureVectorizedEnv, env).step(cpu_actions)
+    return cast(VectorizedEnv, env).step(cpu_actions)
 
 
 def _extend_env_metrics(
@@ -2670,7 +2788,7 @@ def _checkpoint_optional_str(value: object, *, name: str) -> str | None:
 
 
 def _require_stateless_teacher(
-    teacher: BaseModelAPI,
+    teacher: BaseModelAPI[Any, Any, Any],
     *,
     batch_size: int,
     device: torch.device,
@@ -2681,8 +2799,8 @@ def _require_stateless_teacher(
 
 
 def _validate_fixed_teacher_action_compatibility(
-    student: BaseModelAPI,
-    teacher: BaseModelAPI,
+    student: BaseModelAPI[Any, Any, Any],
+    teacher: BaseModelAPI[Any, Any, Any],
 ) -> None:
     if not isinstance(student, StatelessTransformerV1) or not isinstance(
         teacher,
@@ -2703,11 +2821,11 @@ def _validate_fixed_teacher_action_compatibility(
 
 
 def _model_forward(
-    model: BaseModelAPI,
-    obs: ObsBatch,
+    model: BaseModelAPI[Any, Any, Any],
+    obs: GameObsBatch,
     *,
     hidden_state: ModelHiddenState | None,
-) -> ModelOutput:
+) -> ModelOutput[GameActions]:
     if hidden_state is None:
         return model(obs)
     return model(obs, hidden_state=hidden_state)
@@ -2755,8 +2873,8 @@ def _cut_truncated_envs_(
 
 
 def _model_compute_value(
-    model: BaseModelAPI,
-    obs: ObsBatch,
+    model: BaseModelAPI[Any, Any, Any],
+    obs: GameObsBatch,
     *,
     hidden_state: ModelHiddenState | None,
 ) -> torch.Tensor:
@@ -2766,9 +2884,9 @@ def _model_compute_value(
 
 
 def _model_evaluate_actions(
-    model: BaseModelAPI,
-    obs: ObsBatch,
-    actions: ModelActions,
+    model: BaseModelAPI[Any, Any, Any],
+    obs: GameObsBatch,
+    actions: GameActions,
     *,
     hidden_state: ModelHiddenState | None,
     dones: torch.Tensor,
@@ -2779,10 +2897,10 @@ def _model_evaluate_actions(
 
 
 def _model_evaluate_actions_with_teacher(
-    model: BaseModelAPI,
-    obs: ObsBatch,
-    actions: ModelActions,
-    teacher: BaseModelAPI,
+    model: BaseModelAPI[Any, Any, Any],
+    obs: GameObsBatch,
+    actions: GameActions,
+    teacher: BaseModelAPI[Any, Any, Any],
     *,
     hidden_state: ModelHiddenState | None,
     dones: torch.Tensor,
@@ -2811,9 +2929,9 @@ def _model_evaluate_actions_with_teacher(
 
 
 def _model_evaluate_actions_with_cached_teacher(
-    model: BaseModelAPI,
-    obs: ObsBatch,
-    actions: ModelActions,
+    model: BaseModelAPI[Any, Any, Any],
+    obs: GameObsBatch,
+    actions: GameActions,
     teacher_targets: TeacherTargets,
     *,
     hidden_state: ModelHiddenState | None,
@@ -2841,15 +2959,17 @@ def _model_evaluate_actions_with_cached_teacher(
     )
 
 
-def _output_actions(output: ModelOutput) -> ModelActions:
+def _output_actions(output: ModelOutput[GameActions]) -> GameActions:
     return output.actions
 
 
-def _output_logp(output: ModelOutput | ModelEvaluation) -> torch.Tensor:
+def _output_logp(output: ModelOutput[GameActions] | ModelEvaluation) -> torch.Tensor:
     return output.log_probs.per_player_entity.sum(dim=-1)
 
 
-def _output_entity_logp(output: ModelOutput | ModelEvaluation) -> torch.Tensor:
+def _output_entity_logp(
+    output: ModelOutput[GameActions] | ModelEvaluation,
+) -> torch.Tensor:
     return output.log_probs.per_player_entity
 
 
@@ -2868,7 +2988,7 @@ def _old_policy_logp_for_clip_mode(
 
 
 def _output_logp_for_clip_mode(
-    output: ModelOutput | ModelEvaluation,
+    output: ModelOutput[GameActions] | ModelEvaluation,
     ppo_clip_mode: PPOClipMode,
 ) -> torch.Tensor:
     if ppo_clip_mode == "per_entity":
@@ -2877,17 +2997,19 @@ def _output_logp_for_clip_mode(
 
 
 def _output_entropy(
-    output: ModelOutput | ModelEvaluation, like: torch.Tensor
+    output: ModelOutput[GameActions] | ModelEvaluation, like: torch.Tensor
 ) -> torch.Tensor:
     return output.entropies.per_player_entity.sum(dim=-1).view_as(like)
 
 
-def _output_entity_entropy(output: ModelOutput | ModelEvaluation) -> torch.Tensor:
+def _output_entity_entropy(
+    output: ModelOutput[GameActions] | ModelEvaluation,
+) -> torch.Tensor:
     return output.entropies.per_player_entity
 
 
 def _output_entropy_for_clip_mode(
-    output: ModelOutput | ModelEvaluation,
+    output: ModelOutput[GameActions] | ModelEvaluation,
     like: torch.Tensor,
     ppo_clip_mode: PPOClipMode,
 ) -> torch.Tensor:
@@ -2918,7 +3040,7 @@ def _output_action_kl_for_clip_mode(
 
 
 def _output_entropy_components(
-    output: ModelOutput | ModelEvaluation,
+    output: ModelOutput[GameActions] | ModelEvaluation,
     like: torch.Tensor,
 ) -> dict[str, torch.Tensor]:
     return {
@@ -2945,11 +3067,11 @@ def _output_action_kl_components(
     }
 
 
-def _output_values(output: ModelOutput | ModelEvaluation) -> torch.Tensor:
+def _output_values(output: ModelOutput[GameActions] | ModelEvaluation) -> torch.Tensor:
     return output.values
 
 
-def _policy_mask(obs: ObsBatch) -> torch.Tensor:
+def _policy_mask(obs: GameObsBatch) -> torch.Tensor:
     can_act = obs.action_mask.can_act.flatten(start_dim=3).any(dim=-1)
     return obs.still_playing & can_act
 
@@ -2962,7 +3084,7 @@ def _player_count_rates(still_playing: torch.Tensor) -> dict[str, torch.Tensor]:
     }
 
 
-def _policy_entity_mask(obs: ObsBatch) -> torch.Tensor:
+def _policy_entity_mask(obs: GameObsBatch) -> torch.Tensor:
     can_act = obs.action_mask.can_act
     if can_act.ndim == obs.still_playing.ndim + 1:
         source_can_act = can_act

@@ -1,4 +1,4 @@
-from .config import FullConfig, GameEnvConfig, RuntimeConfig, require_orbit_env
+from .config import FullConfig, GameEnvConfig, RuntimeConfig
 from .optimizer import (
     AdamConfig,
     AdamWConfig,
@@ -38,5 +38,4 @@ __all__ = [
     "configure_torch",
     "create_lr_scheduler",
     "create_optimizer",
-    "require_orbit_env",
 ]

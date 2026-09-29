@@ -27,7 +27,7 @@ from owl.model.kaggriculture_workload import (
     headroom_log_lines,
     ppo_forward_workloads,
 )
-from owl.train import FullConfig, OptimizerConfig, PPOConfig, require_orbit_env
+from owl.train import FullConfig, OptimizerConfig, PPOConfig
 from owl.train.ppo import _minibatch_indices
 from pydantic import ValidationError
 
@@ -522,10 +522,3 @@ def test_reward_terminal_scale_counts_only_enabled_caps() -> None:
         ).terminal_scale
         == 1.0 - 0.25 - 0.1
     )
-
-
-def test_require_orbit_env_narrows_orbit_and_fails_fast_for_kaggriculture() -> None:
-    orbit = _scaling_6m().env
-    assert require_orbit_env(orbit, context="caller") is orbit
-    with pytest.raises(RuntimeError, match="caller cannot run Kaggriculture yet"):
-        require_orbit_env(_sections("kaggriculture.yaml").env, context="caller")
