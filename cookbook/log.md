@@ -1,5 +1,11 @@
 # Change log
 
+## 2026-09-29 — Separate the 5.1 normalization probe and narrow the pairing claim
+
+Codex's confirmation (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r2.md`) asked for two edits:
+- The 5.1 brief's Q1 now specifies a separate normalization probe that compares raw and normalized snapshots directly.
+- The [[references/rebuild-data-preparation-preserves-replay-identity|data-preparation Reference]] now says the Rust transition check is specified, not yet executed. The executed evidence is Codex's Python-engine measurement.
+
 ## 2026-09-29 — Apply Codex's review of the Task 5.1 owner-direction edits
 
 Codex reviewed the 5.1 BC data brief after the owner's two directions ("kaggle

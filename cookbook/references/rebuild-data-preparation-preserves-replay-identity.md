@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Rebuild data preparation preserves replay identity"
-description: "The engine-independent selector reproduces the historical 252-episode split; the BC data brief binds preparation to the merged encoder and grammar, proves the step+1 pairing with an offline Rust transition check that needs the recorded episode seed, and runs on the current GPU pod that holds the hash-matched selected ZIP; only the 1.4 codec binding blocks tokens; replay/opponent briefs bound the remaining evaluation work."
+description: "The engine-independent selector reproduces the historical 252-episode split; the BC data brief binds preparation to the merged encoder and grammar, specifies an offline Rust transition check for the step+1 pairing (the executed evidence so far is a Python-engine measurement) that needs the recorded episode seed, and runs on the current GPU pod that holds the hash-matched selected ZIP; only the 1.4 codec binding blocks tokens; replay/opponent briefs bound the remaining evaluation work."
 tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex", "at": "2026-09-29"}
