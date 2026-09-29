@@ -1,0 +1,109 @@
+[
+  {
+    "path": "cookbook/references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce.md",
+    "line": 160,
+    "text": "  - **T19b's launch/resume pair** is written and was dry-run with config validation bypassed, but is skipped (`NEEDS_RUN_PPO_GAME_SEAM`) until the Task 3.1 run_ppo game seam and the Task 1.4 native env let `run_ppo` build a Kaggriculture environment. The seam may move the env patch point.",
+    "identical_lines_in_parents": {
+      "666deec": [
+        160
+      ],
+      "8699ca9": "file absent"
+    }
+  },
+  {
+    "path": "cookbook/references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic.md",
+    "line": 61,
+    "text": "- The trainer cannot build this model yet. `FullConfig` now loads it with `KaggricultureEnvConfig` (see the [[kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]]), but `run_ppo` stops at `require_orbit_env` because rollout storage, the Kaggriculture observation mapping (rest of Task 3.1) and the native env (Task 1.4) are open.",
+    "identical_lines_in_parents": {
+      "666deec": [
+        61
+      ],
+      "8699ca9": [
+        61
+      ]
+    }
+  },
+  {
+    "path": "cookbook/references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe.md",
+    "line": 28,
+    "text": "  - `python/owl/kaggriculture/config.py` adds `KaggricultureEnvConfig` (`n_envs`, the Kaggriculture obs/action specs, `reward_mode: win_loss` only, `reward_shaping`, `pin_memory`, `native_threads \u2265 1`; Isaiah's `two_player_weight` is an unknown key) and `KaggricultureRewardConfig`. The reward config keeps the reference branch's field names and defaults (including `econ_ineffective_cap` 0.1), its `terminal_scale`, and both of its budget checks: the active caps must sum below one, and positive `econ_shaping` needs a positive starvation or drought weight.",
+    "identical_lines_in_parents": {
+      "666deec": [
+        28
+      ],
+      "8699ca9": [
+        28
+      ]
+    }
+  },
+  {
+    "path": "cookbook/references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe.md",
+    "line": 30,
+    "text": "  - `require_orbit_env(env, context=...)` narrows to `EnvConfig` and raises an explicit `RuntimeError` for Kaggriculture. `scripts/run_ppo.py` calls it right after the workload check (so a Kaggriculture launch stops before the run directory exists) and at its other Orbit-only sites (model build, teacher specs, the Orbit branch of the evaluation env, which builds Kaggriculture games through `owl.game.create_env` since Task 1.5); `scripts/benchmark_checkpoints.py` uses it through a `LoadedCheckpoint.env` property and at checkpoint load.",
+    "identical_lines_in_parents": {
+      "666deec": [],
+      "8699ca9": []
+    }
+  },
+  {
+    "path": "configs/kaggriculture.yaml",
+    "line": 7,
+    "text": "# Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.",
+    "identical_lines_in_parents": {
+      "666deec": [
+        7
+      ],
+      "8699ca9": [
+        7
+      ]
+    }
+  },
+  {
+    "path": "configs/kaggriculture_2rank.yaml",
+    "line": 12,
+    "text": "# Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.",
+    "identical_lines_in_parents": {
+      "666deec": [
+        12
+      ],
+      "8699ca9": [
+        11
+      ]
+    }
+  },
+  {
+    "path": "configs/kaggriculture_4rank.yaml",
+    "line": 12,
+    "text": "# Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.",
+    "identical_lines_in_parents": {
+      "666deec": [
+        12
+      ],
+      "8699ca9": [
+        11
+      ]
+    }
+  },
+  {
+    "path": "configs/kaggriculture_8rank.yaml",
+    "line": 13,
+    "text": "# Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.",
+    "identical_lines_in_parents": {
+      "666deec": [
+        13
+      ],
+      "8699ca9": "file absent"
+    }
+  },
+  {
+    "path": "docs/rl-api-specs.md",
+    "line": 1262,
+    "text": "The Task 1.5 adapter will own one persistent Torch allocation and NumPy view per",
+    "identical_lines_in_parents": {
+      "666deec": [],
+      "8699ca9": [
+        1261
+      ]
+    }
+  }
+]

@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________ test_model_default_loads_native_tables_once __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10fdeb980>
+
+    def test_model_default_loads_native_tables_once(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        expected = gg.grammar_tables_from_arrays(rs.kaggriculture_grammar_tables())
+        native_tables = rs.kaggriculture_grammar_tables
+        calls = 0
+    
+        def load() -> dict[str, np.ndarray]:
+            nonlocal calls
+            calls += 1
+            return native_tables()
+    
+        monkeypatch.setattr(rs, "kaggriculture_grammar_tables", load)
+        model = _tiny_model()
+>       assert calls == 1
+E       assert 0 == 1
+
+tests/kaggriculture/test_native_tables.py:175: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_tables.py::test_model_default_loads_native_tables_once
+1 failed in 0.02s

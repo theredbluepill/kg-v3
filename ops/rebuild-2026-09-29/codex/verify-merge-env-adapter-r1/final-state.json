@@ -1,0 +1,70 @@
+{
+  "source_whitespace": {
+    "argv": [
+      "git",
+      "diff",
+      "--check",
+      "666deec",
+      "HEAD",
+      "--",
+      ":!ops"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "conflict_markers": {
+    "argv": [
+      "git",
+      "grep",
+      "-nE",
+      "^(<<<<<<< |=======$|>>>>>>> )",
+      "HEAD",
+      "--",
+      "README.md",
+      "configs",
+      "python",
+      "scripts",
+      "src",
+      "docs",
+      "cookbook",
+      "tests"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  "tracked_worktree": {
+    "argv": [
+      "git",
+      "diff",
+      "--exit-code",
+      "HEAD",
+      "--"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "tracked_index": {
+    "argv": [
+      "git",
+      "diff",
+      "--cached",
+      "--exit-code"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "status": {
+    "argv": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "returncode": 0,
+    "stdout": "?? ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/\n",
+    "stderr": ""
+  }
+}

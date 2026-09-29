@@ -1,0 +1,29 @@
+# Independent semantic merge audit
+
+Target: HEAD `49a48350cdd72d6b546320441d677fbcbae2d893`, first-parent integration `666deec789b2e75f56afb6dbb7b7acd40171c6b1`, adapter `8699ca9`, merge base `e197528`.
+
+Scope: read-only comparison of the requested non-conflicted, both-sides-changed files, plus the live reward schema and startup control flow. No tracked files edited. No training or GPU work. Full-suite execution and scratch mutation evidence are owned by the root verifier.
+
+## Method and supported result
+
+Read cookbook index/log, scope Decision, native-boundary/reward/configs References, README, relevant model/API documentation. Inspected parent-to-HEAD diffs for README, all four Kaggriculture YAMLs, gpu_grammar.py, model/kaggriculture.py, run_ppo.py, both requested config/startup test modules, and parity coverage. Also compared both parents against the merge base to distinguish each branch's contribution.
+
+No production semantic loss found in the requested auto-merged files:
+
+- README retains integration 8-rank recipe and teacher/cache semantics, and adapter native factory / Task 3.1 stop descriptions.
+- All configs retain integration recipe fields. HEAD's only executable change to the 8-rank config relative to BASE is required `econ_ineffective_cap: 0.1`; the other three already receive it from the adapter. The reward schema in `python/owl/kaggriculture/rewards.py:30-35` requires all six explicit values, and the actual FullConfig loader admits each shipped file. Resolved values in every file: W=.2, starvation=4, drought=1, death cap=.25, ineffective weight=0, ineffective cap=.1; terminal_scale=.75. Per-rank env/minibatch pairs are CPU 2/1, 2rank 128/8, 4rank 64/4, 8rank 32/2.
+- gpu_grammar.py retains integration's construction-time table digest and adapter's native ABI admission/table loader. It validates constants and all eight exact names, boolean dtypes, shapes and C layout before producing owned tensors.
+- model/kaggriculture.py retains integration teacher methods, grammar-signature admission, head chunk target slicing/joining and shared evaluation assembly, while adapter replaces only the construction default with native tables. Every teacher encode still calls encode_observations -> _run_trunk; compiled execution checks the GEMM backend claim there. Existing trunk and head chunking remain.
+- run_ppo.py retains both teacher spec helper and adapter factory imports. Order at lines 168-190: FullConfig and launch validation -> fresh/resume runtime shape adaptation -> workload check -> compile-stack check -> explicit Task 3.1 guard -> require_orbit_env. Run directory / env / model allocation starts only later. Hence invalid workload or unprobed compiled stack fails before the not-wired guard, and a valid Kaggriculture config stops with the Task 3.1 message before allocation. The native evaluation factory has its own Kaggriculture branch; policy evaluation explicitly rejects the remaining Orbit-only mapping before reset.
+- Config tests retain 8-rank divided-shape/global-workload/headroom coverage and adapter's required reward imports/fields/round-trip values. Startup tests retain the integrated 8-rank case and adapter's actual native evaluation reproducibility/factory/guard cases. The old `test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native` name intentionally becomes `test_create_eval_env_keeps_orbit_env_and_builds_kaggriculture`; the Orbit assertion remains, while the obsolete rejection expectation is replaced by native construction coverage.
+- Parity coverage retains integration teacher/8rank counts and 53-case observation custody correction plus the adapter native lifecycle section. The reconciliation corrects both native grammar status claims and records the new merge counts; those reported suite totals are checked separately by the root verifier.
+
+Actual lightweight probe: `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 uv run python` loading all `configs/kaggriculture*.yaml` through `FullConfig.from_file` succeeded (exit 0), yielding exactly the values above. This is schema evidence, not training evidence.
+
+## Findings
+
+P3 — `configs/kaggriculture_8rank.yaml:12-13` (also `configs/kaggriculture_2rank.yaml:11-12`, `configs/kaggriculture_4rank.yaml:11-12`, `configs/kaggriculture.yaml:6-7`): headers say launch waits for the Kaggriculture env binding (Task 1.4) to land. That binding and adapter are now present, and the live guard names only Task 3.1. Update all four headers to the remaining rollout-storage/action-mapping dependency. Origin: unchanged parent prose; 8rank is byte-identical to BASE here, and 2rank/4rank/CPU carry adapter-parent wording. No executable defect.
+
+P3 — `cookbook/references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe.md:28-30`: the current implementation inventory still says `config.py` adds the reward class and that reward fields retain defaults; the class moved to rewards.py and requires all six coefficients. It describes the old raw-weight admission, whereas the live validator uses positive binary64 weight products plus active-cap checks. Line 30 also attributes the startup stop to require_orbit_env immediately after workload checking, but compile-stack checking and the explicit Task 3.1 guard occur first. Update this inventory to the live schema and order. Origin: adapter-parent stale prose retained during resolution (the evaluation-env clause was updated). This contradicts the otherwise correct note summary and limits. No executable defect.
+
+Related documentation observation for root adjudication: parity coverage line 479 says “see the Task 1.5 note at the end of this page,” but the final section is headed Task 1.4 and ends by assigning Python adapter work to Task 1.5. Consider replacing this dangling internal prose reference with the actual native-boundary Reference; not independently promoted as a separate finding here.

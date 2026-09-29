@@ -1259,12 +1259,12 @@ must evaluate/copy the pre-reset bootstrap observation before truncating and
 retain its economic reward; native tests establish buffer behavior, not trainer
 or GPU integration.
 
-The Task 1.5 adapter will own one persistent Torch allocation and NumPy view per
-output. Before `reset`, `step` or `truncate_envs`, it must call
+The Task 1.5 adapter owns one persistent Torch allocation and NumPy view per
+output (see the adapter section above). Before `reset`, `step` or `truncate_envs`, it must call
 `torch.cuda.current_stream(transfer_device).synchronize()` exactly when the
 buffers are pinned and the transfer device is CUDA. CPU or unpinned use makes
 no CUDA call. Every asynchronous reader must finish or join that stream before
-reuse. This fence and the adapter are not implemented by Task 1.4.
+reuse. Task 1.5 implements this fence and the adapter; Task 1.4 does not.
 
 Cold diagnostics are `terminal_metrics(i)`, `state_snapshot(i)` and
 `seed_state()`. A terminal record contains finite float64-valued Python floats

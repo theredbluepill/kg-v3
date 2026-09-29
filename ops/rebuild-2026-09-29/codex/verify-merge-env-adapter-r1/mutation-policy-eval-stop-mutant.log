@@ -1,0 +1,74 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_kaggriculture_policy_evaluation_names_remaining_mapping_blocker _____
+
+    def test_kaggriculture_policy_evaluation_names_remaining_mapping_blocker() -> None:
+        with pytest.raises(
+            RuntimeError,
+            match=(
+                r"Kaggriculture policy evaluation needs Task 3\.1 observation "
+                "and action mapping"
+            ),
+        ):
+>           run_ppo._evaluate_games(
+                current_model=_LaunchPolicy(launch=True),
+                last_best_model=_LaunchPolicy(launch=False),
+                cfg=_kaggriculture_eval_config(),
+                n_games=1,
+                n_envs=1,
+                device=torch.device("cpu"),
+                env_steps=1000,
+            )
+
+tests/scripts/test_run_ppo.py:3184: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:1496: in _evaluate_games
+    _eval_actions_for_assignments_and_hidden(
+scripts/run_ppo.py:1810: in _eval_actions_for_assignments_and_hidden
+    device_obs = _obs_to_device(obs, device)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/run_ppo.py:1847: in _obs_to_device
+    field: getattr(obs, field).to(
+           ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureObsBatch(tile_kind=tensor([[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0,
+       ...se, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]])))
+item = 'planets'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'KaggricultureObsBatch' object has no attribute 'planets'
+
+/Users/poonszesen/kg-v3-m-env-adapter/.venv/lib/python3.12/site-packages/pydantic/main.py:1042: AttributeError
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_policy_evaluation_names_remaining_mapping_blocker
+1 failed in 0.27s

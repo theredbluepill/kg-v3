@@ -1,0 +1,108 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-757/test_main_loads_kaggriculture_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10eaaa2a0>
+capsys = <_pytest.capture.CaptureFixture object at 0x10eaaa4b0>
+name = 'kaggriculture_8rank.yaml', rollout_rows = 64, teacher_rows = 4096
+teacher_calls = 1
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+            ("kaggriculture_8rank.yaml", 64, 4_096, 1),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3486: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:183: in main
+    env_config = require_orbit_env(cfg.env, context=_TRAINER)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=32, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=720, starting_mo...t_weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=True, native_threads=2)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/verify-merge-env-mutations-q9zjryjx/python/owl/train/config.py:57: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-757/test_main_loads_kaggriculture_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10eaaa2a0>
+capsys = <_pytest.capture.CaptureFixture object at 0x10eaaa4b0>
+name = 'kaggriculture_8rank.yaml', rollout_rows = 64, teacher_rows = 4096
+teacher_calls = 1
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+            ("kaggriculture_8rank.yaml", 64, 4_096, 1),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+>       with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'run_ppo\\ cannot\\ run\\ Kaggriculture\\ yet:\\ Task\\ 3\\.1\\ rollout\\ storage\\ and\\ action\\ mapping\\ are\\ not\\ implemented'
+E         Actual message: 'run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land'
+
+tests/scripts/test_run_ppo.py:3485: AssertionError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 64 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 92.42x headroom, <= 1 call(s)); heads 11096 rows/call (173.4x headroom, 1 call(s))
+GEMM workload headroom minibatch: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 4096 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 1.444x headroom, <= 1 call(s)); heads 11096 rows/call (2.709x headroom, 1 call(s))
+GEMM workload headroom evaluation: 64 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 92.42x headroom, <= 1 call(s)); heads 11096 rows/call (173.4x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]
+1 failed in 0.22s

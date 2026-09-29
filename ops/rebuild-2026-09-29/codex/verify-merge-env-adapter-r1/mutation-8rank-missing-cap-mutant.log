@@ -1,0 +1,123 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_8rank.yaml-8] _
+
+name = 'kaggriculture_8rank.yaml', world_size = 8
+
+    @pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+    def test_ranked_config_global_workload_equals_scaling_6m(
+        name: str, world_size: int
+    ) -> None:
+        scaling = _scaling_6m()
+>       ours = _sections(name)
+               ^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_configs.py:140: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_configs.py:75: in _sections
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/verify-merge-env-mutations-q9zjryjx/configs/kaggriculture_8rank.yaml')
+overrides = None
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/verify-merge-env-mutations-q9zjryjx/python/owl/config.py:49: ValidationError
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-754/test_main_loads_kaggriculture_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1123faa80>
+capsys = <_pytest.capture.CaptureFixture object at 0x1123facc0>
+name = 'kaggriculture_8rank.yaml', rollout_rows = 64, teacher_rows = 4096
+teacher_calls = 1
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+            ("kaggriculture_8rank.yaml", 64, 4_096, 1),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3486: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:165: in main
+    cfg = FullConfig.from_file(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'owl.train.config.FullConfig'>
+path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/verify-merge-env-mutations-q9zjryjx/configs/kaggriculture_8rank.yaml')
+overrides = {}
+
+    @classmethod
+    def from_file(cls, path: Path, overrides: dict[str, Any] | None = None) -> Self:
+        config_data = cls._load_yaml_mapping(path)
+        overrides_map = copy.deepcopy(overrides or {})
+        overrides_by_depth: dict[int, dict[str, Any]] = {}
+        for field_path, value in overrides_map.items():
+            path_parts = _split_override_field_path(field_path)
+            overrides_by_depth.setdefault(len(path_parts), {})[field_path] = value
+    
+        cls._apply_overrides(config_data, overrides_by_depth.pop(1, {}))
+        cls._resolve_all_subconfig_references(
+            config_data, root_dir=path.resolve().parent
+        )
+        for depth in sorted(overrides_by_depth):
+            cls._apply_overrides(config_data, overrides_by_depth[depth])
+            cls._resolve_all_subconfig_references(
+                config_data, root_dir=path.resolve().parent
+            )
+>       return cls.model_validate(config_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for FullConfig
+E       env.kaggriculture.reward_shaping.econ_ineffective_cap
+E         Field required [type=missing, input_value={'econ_shaping': 0.2, 'ec...neffective_weight': 0.0}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/verify-merge-env-mutations-q9zjryjx/python/owl/config.py:49: ValidationError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_8rank.yaml-8]
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]
+2 failed in 0.22s
