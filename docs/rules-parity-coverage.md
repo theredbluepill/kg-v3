@@ -438,7 +438,12 @@ live parity and Task 2.3's heads, the engine suite passes **87, none ignored**
 (41 retained unit, nine RNG, 19 replay-parity, 18 shared grammar/kernel), the
 root suite **164 passed, two ignored**, Python **1,337 passed, four skipped**
 and tooling pytest alone 106; receipts are in
-`ops/rebuild-2026-09-29/merge-1.2/`. The trim checker's fixed authored set is
+`ops/rebuild-2026-09-29/merge-1.2/`. After the later Tasks 3.1–3.4 and
+1.4/1.5-brief merges (`kg/merge-trainer-lanes`), which change no Rust, full
+`just prepare` passes with the same engine **87** and root **164 passed, two
+ignored**, and Python **1,458 passed, five skipped** (the fifth skip waits for
+the native Kaggriculture evaluation env); receipt
+`ops/rebuild-2026-09-29/merge-trainer-lanes/prepare.log`. The trim checker's fixed authored set is
 now exactly the replay and grammar kernel tests plus the generated-trace
 manifest. The native `grammar_tables()` matches all 964 bits of the Python
 heads' `expected_grammar_tables` in a merge-time cross-check, but no Python

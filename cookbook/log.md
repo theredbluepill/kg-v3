@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-09-29 — Record the merged trainer-lane check counts
+
+After merging Tasks 3.1, 3.2/3.3, 3.4 and the 1.4/1.5 briefs onto the Task 1.2
+integration, full `just prepare` passed: engine 87, root Rust 164 with two
+ignored, Python 1,458 passed with five skips (two FlashAttention/CUDA, one
+quantized backend, the native grammar binding, and the native Kaggriculture
+evaluation env). `docs/rules-parity-coverage.md` now states these counts beside
+the Task 1.2 merge counts; receipt
+`ops/rebuild-2026-09-29/merge-trainer-lanes/prepare.log`.
+
 ## 2026-09-29 — Merge Task 3.4 configs and the startup workload check onto Tasks 3.1–3.3
 
 Task 3.4 (Codex APPROVE at `71cebdb`, which already contains Task 3.1 at
