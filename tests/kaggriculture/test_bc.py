@@ -20,6 +20,8 @@ from typing import Any, cast
 import numpy as np
 import pytest
 import torch
+import wandb as _real_wandb
+import wandb.errors  # the gate imports it beside a fake wandb
 from owl.kaggriculture import bc_data as bc_data_module
 from owl.kaggriculture import types as kt
 from owl.kaggriculture.bc_data import (
@@ -35,6 +37,7 @@ from owl.kaggriculture.bc_data import (
 from owl.model import create_model
 from owl.train import FullConfig
 from owl.train import bc as bc_module
+from owl.train import logging as train_logging
 from owl.train.bc import (
     BC_HISTORY,
     BC_RESULT,
@@ -766,22 +769,72 @@ def _script_argv(
     monkeypatch: pytest.MonkeyPatch, target: Path, data: Path, *extra: str
 ) -> None:
     monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "train_bc.py",
-            str(target),
-            "--data",
-            str(data),
-            "--log-mode",
-            "debug",
-            *extra,
-        ],
+        sys, "argv", ["train_bc.py", str(target), "--data", str(data), *extra]
     )
 
 
+class _FakeWandb:
+    """``sys.modules['wandb']`` for the real ``WandbLogger``.
+
+    wandb's own ``Settings`` validator and errors stay real for the gate.
+    """
+
+    def __init__(self) -> None:
+        self.inits: list[dict[str, Any]] = []
+        self.logs: list[tuple[dict[str, float], int]] = []
+        self.runs: list[SimpleNamespace] = []
+        self.Settings = _real_wandb.Settings
+        self.errors = _real_wandb.errors
+        self.run: SimpleNamespace | None = None
+
+    def init(self, **kwargs: Any) -> SimpleNamespace:
+        self.inits.append(kwargs)
+        offline = kwargs["mode"] == "offline"
+        finished: list[int] = []
+        run = SimpleNamespace(
+            id=kwargs.get("id", f"bc-run-{len(self.inits)}"),
+            project=kwargs["project"],
+            entity="team",
+            url=None if offline else "https://wandb.ai/team/kg-v3/runs/x",
+            offline=offline,
+            disabled=False,
+            summary={},
+            finished=finished,
+            finish=lambda *, exit_code=0: finished.append(exit_code),
+        )
+        self.run = run
+        self.runs.append(run)
+        return run
+
+    def log(self, metrics: dict[str, float], *, step: int) -> None:
+        self.logs.append((metrics, step))
+
+
+@pytest.fixture
+def bc_wandb(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> _FakeWandb:
+    """Online W&B credentials (a key wandb's validator accepts) and a fake run.
+
+    ``git_source_commit`` answers ``None`` so ``--source-commit`` names the
+    attempt's source, as on a checkout without git metadata.
+    """
+    for name in ("NETRC", "WANDB_BASE_URL", "WANDB_MODE"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("WANDB_API_KEY", "test-key-not-real")
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    fake = _FakeWandb()
+    monkeypatch.setitem(sys.modules, "wandb", fake)
+    monkeypatch.setattr(train_logging, "git_source_commit", lambda _cwd: None)
+    return fake
+
+
+def _jsonl(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text().splitlines() if line]
+
+
 def test_script_resume_records_a_new_attempt_with_its_own_source(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bc_wandb: _FakeWandb
 ) -> None:
     data = _dataset_root(tmp_path)
     config_path = tmp_path / "bc.yaml"
@@ -795,9 +848,10 @@ def test_script_resume_records_a_new_attempt_with_its_own_source(
     saved = BCConfig.from_file(run_dir / "bc_config.yaml")
     saved.model_copy(update={"max_steps": 4}).to_file(run_dir / "bc_config.yaml")
     parent_sha = bc_module.file_sha256(run_dir / BC_STATE)
-    monkeypatch.setattr(train_bc_script, "_git_head", lambda: "b")
+    monkeypatch.setattr(train_logging, "git_source_commit", lambda _cwd: "b")
     _script_argv(monkeypatch, run_dir, data)
     train_bc_script.main()
+    assert [init.get("id") for init in bc_wandb.inits] == [None, "bc-run-1"]
 
     attempts = [
         json.loads(line)
@@ -820,7 +874,9 @@ def test_script_resume_records_a_new_attempt_with_its_own_source(
 
 
 def test_script_resume_rejects_an_edited_seed(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    bc_wandb: _FakeWandb,  # noqa: ARG001
 ) -> None:
     data = _dataset_root(tmp_path)
     config_path = tmp_path / "bc.yaml"
@@ -841,18 +897,34 @@ def test_script_resume_rejects_an_edited_seed(
     assert load_bc_state(run_dir / BC_STATE).step == 2
 
 
+def _bc_identity(
+    *, attempt: int, sources: tuple[str, ...]
+) -> train_logging.RunIdentity:
+    return train_logging.RunIdentity(
+        experiment_id="bc-exp",
+        job_type="bc",
+        attempt=attempt,
+        source_commit=sources[-1],
+        attempt_source_commits=sources,
+        config_sha256="0" * 64,
+        telemetry=train_logging.TelemetryMode.WANDB_ONLINE,
+    )
+
+
 def test_attempt_records_reject_malformed_lineage(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     run_dir.mkdir()
     path = run_dir / train_bc_script.ATTEMPTS
     resume = cast(Any, SimpleNamespace(step=2))
 
-    def start(resume: Any) -> dict[str, object]:
+    def start(
+        resume: Any, *, attempt: int = 1, sources: tuple[str, ...] = ("a", "b")
+    ) -> dict[str, object]:
         return cast(
             dict[str, object],
-            train_bc_script._start_attempt(
+            train_bc_script._plan_bc_attempt(
                 run_dir,
-                source_commit="b",
+                identity=_bc_identity(attempt=attempt, sources=sources),
                 data=tmp_path,
                 dataset_manifest_sha256="0" * 64,
                 world_size=1,
@@ -866,7 +938,7 @@ def test_attempt_records_reject_malformed_lineage(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="needs the run's attempt records"):
         start(resume)
     with pytest.raises(FileExistsError, match="already has attempts"):
-        start(None)
+        start(None, attempt=0, sources=("b",))
     for lines, match in (
         (['{"attempt": 1, "source_commit": "a"}'], "is not attempt 0"),
         (['["attempt", 0]'], "is not attempt 0"),
@@ -877,6 +949,40 @@ def test_attempt_records_reject_malformed_lineage(tmp_path: Path) -> None:
         with pytest.raises(ValueError, match=match):
             start(resume)
     assert path.read_text() == '{"attempt": 0}\n'
+
+
+def test_bc_receipt_must_agree_with_the_shared_attempt_receipt(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / BC_STATE).write_bytes(b"state")
+    (run_dir / train_bc_script.ATTEMPTS).write_text(
+        '{"attempt": 0, "source_commit": "a"}\n'
+    )
+    resume = cast(Any, SimpleNamespace(step=2))
+
+    def plan(attempt: int, sources: tuple[str, ...]) -> dict[str, object]:
+        return cast(
+            dict[str, object],
+            train_bc_script._plan_bc_attempt(
+                run_dir,
+                identity=_bc_identity(attempt=attempt, sources=sources),
+                data=tmp_path,
+                dataset_manifest_sha256="0" * 64,
+                world_size=1,
+                resume=resume,
+            ),
+        )
+
+    record = plan(1, ("a", "b"))
+    assert record["attempt"] == 1
+    assert record["experiment_id"] == "bc-exp"
+    assert record["telemetry_mode"] == "wandb-online"
+    assert record["config_sha256"] == "0" * 64
+    assert record["attempt_source_commits"] == ["a", "b"]
+    assert record["parent_state_sha256"] == bc_module.file_sha256(run_dir / BC_STATE)
+    for attempt, sources in ((2, ("a", "x", "b")), (1, ("z", "b"))):
+        with pytest.raises(ValueError, match="receipts are inconsistent"):
+            plan(attempt, sources)
 
 
 # --- PPO handoff --------------------------------------------------------------------
@@ -1292,7 +1398,9 @@ def test_two_rank_bc_config_targets_the_two_rank_ppo_config() -> None:
 
 
 def test_script_runs_fresh_and_resumes_on_cpu(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    bc_wandb: _FakeWandb,  # noqa: ARG001
 ) -> None:
     data = _dataset_root(tmp_path)
     config_path = tmp_path / "bc.yaml"
@@ -1308,8 +1416,6 @@ def test_script_runs_fresh_and_resumes_on_cpu(
             str(data),
             "--output-dir",
             str(out),
-            "--log-mode",
-            "debug",
             "--source-commit",
             "test-commit",
         ],
@@ -1331,8 +1437,6 @@ def test_script_runs_fresh_and_resumes_on_cpu(
             str(run_dir),
             "--data",
             str(data),
-            "--log-mode",
-            "debug",
             "--source-commit",
             "test-commit",
         ],
@@ -1346,3 +1450,293 @@ def test_contract_shapes_cover_every_observation_field() -> None:
     assert set(OBS_FIELDS) | {"action_mask"} == set(
         kt.KaggricultureObsBatch.model_fields
     )
+
+
+# --- W&B: the shared v3 path, its credential gate and outage receipts ----------
+
+
+def _fresh_argv(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, *extra: str
+) -> tuple[Path, Path]:
+    data = _dataset_root(tmp_path)
+    config_path = tmp_path / "bc.yaml"
+    _bc_config(max_steps=2).to_file(config_path)
+    out = tmp_path / "runs"
+    _script_argv(
+        monkeypatch,
+        config_path,
+        data,
+        "--output-dir",
+        str(out),
+        "--source-commit",
+        "src-0",
+        *extra,
+    )
+    return out, data
+
+
+def test_script_logs_online_to_the_v3_project_by_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bc_wandb: _FakeWandb
+) -> None:
+    out, _ = _fresh_argv(monkeypatch, tmp_path, "--experiment-id", "bc-top1")
+    train_bc_script.main()
+
+    (run_dir,) = out.iterdir()
+    (init,) = bc_wandb.inits
+    assert init["project"] == train_logging.WANDB_PROJECT == "kg-v3"
+    assert init["mode"] == "online"
+    assert init["job_type"] == "bc"
+    assert init["group"] == "bc-top1"
+    assert init["name"] == f"bc-{run_dir.name}"
+    assert init["tags"] == ["kaggriculture-v3", "bc", "kaggriculture"]
+    assert init["config"]["v3"] == {"experiment_id": "bc-top1", "job_type": "bc"}
+    assert init["config"]["provenance"]["telemetry_mode"] == "wandb-online"
+    (run,) = bc_wandb.runs
+    assert run.summary["v3/telemetry_mode"] == "wandb-online"
+    assert run.summary["v3/source_commit"] == "src-0"
+    assert run.finished == [0]
+    assert bc_wandb.logs
+
+    (shared,) = _jsonl(run_dir / train_logging.ATTEMPTS_FILE)
+    (bc_attempt,) = _jsonl(run_dir / train_bc_script.ATTEMPTS)
+    assert shared["job_type"] == "bc"
+    assert shared["telemetry_mode"] == "wandb-online"
+    assert shared["wandb_project"] == "kg-v3"
+    assert shared["wandb_run_id"] == run.id
+    bc_config, ppo_config = bc_module.load_bc_configs(run_dir / "bc_config.yaml")
+    assert shared["config_sha256"] == bc_module.bc_config_sha256(bc_config, ppo_config)
+    for key in ("experiment_id", "config_sha256", "telemetry_mode", "source_commit"):
+        assert bc_attempt[key] == shared[key]
+    result = json.loads((run_dir / BC_RESULT).read_text())
+    best = json.loads((run_dir / CHECKPOINT_BC_BEST_RECORD).read_text())
+    for record in (result, best):
+        assert record["telemetry_mode"] == "wandb-online"
+        assert record["experiment_id"] == "bc-top1"
+        assert record["wandb_run_id"] == run.id
+
+
+@pytest.mark.parametrize(
+    ("env", "error", "match"),
+    [
+        ({}, train_logging.MissingWandbCredentialsError, "--wandb-mode offline"),
+        (
+            {"WANDB_API_KEY": "test-key-not-real", "WANDB_MODE": "offline"},
+            ValueError,
+            "WANDB_MODE='offline' disagrees",
+        ),
+    ],
+)
+def test_script_fails_fast_before_config_or_data(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    bc_wandb: _FakeWandb,
+    env: dict[str, str],
+    error: type[Exception],
+    match: str,
+) -> None:
+    monkeypatch.delenv("WANDB_API_KEY")
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    out, _ = _fresh_argv(monkeypatch, tmp_path)
+
+    def reached(name: str) -> Any:
+        def fail(*_args: object, **_kwargs: object) -> None:
+            raise AssertionError(f"{name} ran before the telemetry gate")
+
+        return fail
+
+    for name in ("load_bc_configs", "load_bc_dataset", "resolve_source_commit"):
+        monkeypatch.setattr(train_bc_script, name, reached(name))
+
+    with pytest.raises(error, match=match) as info:
+        train_bc_script.main()
+
+    if error is train_logging.MissingWandbCredentialsError:
+        message = str(info.value)
+        assert "WANDB_API_KEY" in message
+        assert "install-the-wandb-credential-before-any-pod-launch" in message
+    assert not out.exists()
+    assert bc_wandb.inits == []
+
+
+@pytest.mark.parametrize(
+    ("extra", "telemetry", "wandb_mode"),
+    [
+        (("--wandb-mode", "offline"), "wandb-offline", "offline"),
+        (("--log-mode", "debug"), "disabled", None),
+    ],
+)
+def test_script_outage_needs_a_flag_and_is_announced_and_recorded(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    bc_wandb: _FakeWandb,
+    extra: tuple[str, ...],
+    telemetry: str,
+    wandb_mode: str | None,
+) -> None:
+    monkeypatch.delenv("WANDB_API_KEY")  # no credentials: the flag alone runs
+    out, _ = _fresh_argv(monkeypatch, tmp_path, *extra)
+    train_bc_script.main()
+
+    (run_dir,) = out.iterdir()
+    assert [init["mode"] for init in bc_wandb.inits] == (
+        [] if wandb_mode is None else [wandb_mode]
+    )
+    captured = capsys.readouterr()
+    assert f"W&B TELEMETRY OUTAGE: telemetry_mode={telemetry}" in captured.err
+    assert f"W&B TELEMETRY OUTAGE recorded: telemetry_mode={telemetry}" in captured.err
+    assert ("until `wandb sync`" in captured.err) is (wandb_mode == "offline")
+    assert json.loads(captured.out.splitlines()[-1])["telemetry_mode"] == telemetry
+    (shared,) = _jsonl(run_dir / train_logging.ATTEMPTS_FILE)
+    (bc_attempt,) = _jsonl(run_dir / train_bc_script.ATTEMPTS)
+    result = json.loads((run_dir / BC_RESULT).read_text())
+    best = json.loads((run_dir / CHECKPOINT_BC_BEST_RECORD).read_text())
+    for record in (shared, bc_attempt, result, best):
+        assert record["telemetry_mode"] == telemetry
+    assert result["wandb_run_id"] == shared["wandb_run_id"]
+    assert (result["wandb_run_id"] is None) is (wandb_mode is None)
+
+
+@pytest.mark.parametrize(
+    ("extra", "match"),
+    [
+        (("--log-mode", "debug"), "resume launches require wandb logging"),
+        (("--wandb-mode", "offline"), "do not support --wandb-mode offline"),
+        (("--experiment-id", "other"), "keep the recorded --experiment-id"),
+    ],
+)
+def test_script_resume_rejects_telemetry_flags(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    bc_wandb: _FakeWandb,  # noqa: ARG001
+    extra: tuple[str, ...],
+    match: str,
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    _script_argv(monkeypatch, run_dir, tmp_path, *extra)
+    with pytest.raises(ValueError, match=match):
+        train_bc_script.main()
+
+
+@pytest.mark.parametrize(
+    ("extra", "match"),
+    [
+        (("--log-mode", "debug", "--wandb-mode", "offline"), "requires --log-mode"),
+        (("--experiment-id", "bad id"), "experiment id must match"),
+    ],
+)
+def test_script_rejects_contradictory_fresh_flags(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    bc_wandb: _FakeWandb,
+    extra: tuple[str, ...],
+    match: str,
+) -> None:
+    out, _ = _fresh_argv(monkeypatch, tmp_path, *extra)
+    with pytest.raises(ValueError, match=match):
+        train_bc_script.main()
+    assert not out.exists()
+    assert bc_wandb.inits == []
+
+
+def test_script_resume_continues_the_saved_wandb_run_and_experiment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bc_wandb: _FakeWandb
+) -> None:
+    out, data = _fresh_argv(monkeypatch, tmp_path, "--experiment-id", "bc-top1")
+    train_bc_script.main()
+    (run_dir,) = out.iterdir()
+    saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+    saved.model_copy(update={"max_steps": 4}).to_file(run_dir / "bc_config.yaml")
+    _script_argv(monkeypatch, run_dir, data, "--source-commit", "src-1")
+    train_bc_script.main()
+
+    first, second = bc_wandb.inits
+    assert "id" not in first
+    assert second["id"] == bc_wandb.runs[0].id
+    assert second["resume"] == "must"
+    assert second["group"] == "bc-top1"
+    shared = _jsonl(run_dir / train_logging.ATTEMPTS_FILE)
+    bc_attempts = _jsonl(run_dir / train_bc_script.ATTEMPTS)
+    assert (
+        [a["attempt"] for a in shared] == [a["attempt"] for a in bc_attempts] == [0, 1]
+    )
+    assert [a["experiment_id"] for a in bc_attempts] == ["bc-top1", "bc-top1"]
+    assert bc_attempts[1]["attempt_source_commits"] == ["src-0", "src-1"]
+    # The raised budget is part of the settings hash, so the attempts differ.
+    assert shared[0]["config_sha256"] != shared[1]["config_sha256"]
+    assert shared[1]["config_sha256"] == bc_attempts[1]["config_sha256"]
+    assert json.loads((run_dir / BC_RESULT).read_text())["attempt"] == 1
+
+
+def test_script_resume_of_a_debug_run_is_rejected_before_any_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bc_wandb: _FakeWandb
+) -> None:
+    out, data = _fresh_argv(monkeypatch, tmp_path, "--log-mode", "debug")
+    train_bc_script.main()
+    (run_dir,) = out.iterdir()
+    receipts = {
+        name: (run_dir / name).read_text()
+        for name in (train_logging.ATTEMPTS_FILE, train_bc_script.ATTEMPTS)
+    }
+    saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+    saved.model_copy(update={"max_steps": 4}).to_file(run_dir / "bc_config.yaml")
+    _script_argv(monkeypatch, run_dir, data, "--source-commit", "src-1")
+    with pytest.raises(ValueError, match="no wandb_run_id"):
+        train_bc_script.main()
+    assert bc_wandb.inits == []
+    for name, text in receipts.items():
+        assert (run_dir / name).read_text() == text
+
+
+def test_script_rejects_a_source_commit_that_disagrees_with_git(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bc_wandb: _FakeWandb
+) -> None:
+    monkeypatch.setattr(train_logging, "git_source_commit", lambda _cwd: "abc123")
+    out, _ = _fresh_argv(monkeypatch, tmp_path)
+    with pytest.raises(ValueError, match="disagrees with git's 'abc123'"):
+        train_bc_script.main()
+    assert not out.exists()
+    assert bc_wandb.inits == []
+
+
+def test_non_main_ranks_skip_the_credential_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for name in ("WANDB_API_KEY", "NETRC", "WANDB_BASE_URL", "WANDB_MODE"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    args = SimpleNamespace(
+        log_mode=train_logging.LogMode.WANDB,
+        wandb_mode=train_logging.WandbMode.ONLINE,
+    )
+    assert (
+        train_bc_script._check_launch_telemetry(cast(Any, args), is_main_process=False)
+        is train_logging.TelemetryMode.WANDB_ONLINE
+    )
+    with pytest.raises(train_logging.MissingWandbCredentialsError):
+        train_bc_script._check_launch_telemetry(cast(Any, args), is_main_process=True)
+    assert train_bc_script._NoopLogger("r").wandb_run_facts() is None
+
+
+def test_bc_config_sha256_hashes_the_ppo_config_content_not_its_path(
+    tmp_path: Path,
+) -> None:
+    ppo_config = _ppo_config()
+    config = _bc_config()
+    digest = bc_module.bc_config_sha256(config, ppo_config)
+    copy_path = tmp_path / "config.yaml"
+    ppo_config.to_file(copy_path)
+    moved = config.model_copy(update={"ppo_config": copy_path})
+    assert bc_module.bc_config_sha256(moved, ppo_config) == digest
+    assert (
+        bc_module.bc_config_sha256(
+            config.model_copy(update={"max_steps": 5}), ppo_config
+        )
+        != digest
+    )
+    changed_ppo = ppo_config.model_copy(
+        update={"rl": ppo_config.rl.model_copy(update={"dtype": "bfloat16"})}
+    )
+    assert bc_module.bc_config_sha256(config, changed_ppo) != digest
