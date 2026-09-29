@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Kaggriculture teacher distills per-slot KL and per-seat winner CE"
-description: "Phases 4.1-4.3 on CPU: replay-conditioned per-slot masked logits and a liveness-weighted per-slot KL(teacher || student), cached as KaggricultureTeacherTargets (102,208 B per seat row) with a grammar signature, a cached path bit-for-bit equal to the combined path, a live-seat-mean winner CE owned by the model, stateless PPO teacher dispatch and teacher/cache_bytes; eleven killed mutations. Phase 4 is not complete: the trainer and run_ppo launch tests are skipped on the Task 3.1/3.2 seams and kg/rebuild-configs, and 4.4 waits on that merge."
+description: "Phases 4.1-4.3 on CPU: replay-conditioned per-slot masked logits and a liveness-weighted per-slot KL(teacher || student), cached as KaggricultureTeacherTargets (102,208 B per seat row) with a grammar signature, a cached path bit-for-bit equal to the combined path, a live-seat-mean winner CE owned by the model, stateless PPO teacher dispatch and teacher/cache_bytes; eleven killed mutations. Phase 4 is not complete: the trainer and run_ppo launch/resume tests are written but skipped on the Task 3.1/3.2 seams and kg/rebuild-configs (the launch/resume pair dry-run with config validation bypassed), and 4.4 waits on that merge."
 tags: ["kaggriculture-v3", "model", "training", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -38,6 +38,12 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/trainer-model/4.3-mutations.log"
   - resource: "repository:ops/rebuild-2026-09-29/trainer-model/4.3-py-prepare.log"
   - resource: "repository:ops/rebuild-2026-09-29/trainer-model/4.3-isaiah-suites.log"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/verify-4-teacher-r1/report.md"
+  - resource: "repository:ops/rebuild-2026-09-29/teacher-r1-fixes/t19b_dryrun.py"
+  - resource: "repository:ops/rebuild-2026-09-29/teacher-r1-fixes/t19b-dryrun.log"
+  - resource: "repository:ops/rebuild-2026-09-29/teacher-r1-fixes/py-prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/teacher-r1-fixes/isaiah-suites.log"
+  - resource: "repository:ops/rebuild-2026-09-29/teacher-r1-fixes/test-teacher-skips.log"
 ---
 
 # Kaggriculture teacher distills per-slot KL and per-seat winner CE
@@ -72,7 +78,7 @@ Branch `kg/rebuild-trainer-model`. This note records Phase 4 of `ops/rebuild-202
   - `set_teacher_model`'s error names cached action-KL support.
 - `scripts/run_ppo.py`: `_teacher_obs_spec_for_student` dispatches by game with `isinstance`. Orbit keeps the `max_entities` rule, Kaggriculture requires equality, and a cross-game pair raises `TypeError`.
 - `tests/owl/train/test_loss.py`: the value-CE test calls the base method (call syntax only).
-- Docs: `docs/model-architecture.md`, `docs/kaggriculture-model.md` (a Teacher conformance row), `docs/rl-api-specs.md` (target shapes), `README.md` (`teacher/cache_bytes`, the model-owned value CE, stateless dispatch).
+- Docs: `docs/model-architecture.md` (its game-generic Teacher Distillation section scopes the discrete_targets-only cached action KL and the fixed-teacher launch-mode rule to Orbit, and names Kaggriculture's policy-core KL and grammar-signature rule; verification r1 P3), `docs/kaggriculture-model.md` (a Teacher conformance row), `docs/rl-api-specs.md` (target shapes), `README.md` (`teacher/cache_bytes`, the model-owned value CE, stateless dispatch).
 
 The estimator is Isaiah's: teacher-forced conditionals at the behavior policy's replayed prefix, summed per slot, not an unbiased joint-program KL. Both sides must share the grammar tables and `hire_limit`; replay admission does not detect a mismatch that still admits the program.
 
@@ -116,6 +122,13 @@ The estimator is Isaiah's: teacher-forced conditionals at the behavior policy's 
   - **T19a:** the obs-spec dispatch (equality, a constructed schema-4 mismatch, cross-game `TypeError` both ways).
   - **Refresh:** `_refresh_eval_model_from_weights` keeps the last-best's tables and signature, and gives zero KL against the student.
   - **Checkpoint keys:** the state dict holds no table or teacher keys.
+- **T19b (verification r1 P2).** The r1 placeholder, a docstring and an unconditional `AssertionError`, is replaced by three skipped tests:
+  - **Resume:** `run_ppo.main` resumes a run directory whose `checkpoint_final.pt` holds the student and whose `checkpoint_last_best.pt` holds a different model. The only `set_teacher_model` call is active and passes the session's last-best model, which is not the student, is in eval mode, has the saved last-best weights and the grammar's tables, and gives targets `torch.equal` to the saved model's. Both files have exactly `PPOTrainer.write_checkpoint`'s key set, with no teacher or table keys in the model state.
+  - **Fresh launch from weights:** `--load-model-weights` activates a last-best teacher with the loaded weights, separate from the student, and zero KL against it.
+  - **Trainer checkpoint:** after a teacher iteration fills the cache, `write_checkpoint` for the student and for the teacher writes exactly the fixed key set, `_checkpoint_metadata` accepts it and the model state holds no teacher keys. Its body mirrors T18 and has not run.
+  - The launch pair follows Isaiah's `tests/scripts/test_run_ppo.py` pattern: a fake env and trainer, with last-best construction and loading left real. It loads `configs/kaggriculture.yaml` from `kg/rebuild-configs` with the tiny model and `model_compile: none`. After that merge, `require_orbit_env` still stops Kaggriculture model construction, so the skip names both the configs merge and the Task 3.1 run_ppo game seam.
+  - **Dry run (`t19b-dryrun.log`):** with `FullConfig` validation bypassed (`t19b_dryrun.py`, copied into `tests/kaggriculture/` for the run and removed afterwards), the launch pair passes on CPU. Four `run_ppo.py` mutations each fail one of them: resume loading last-best into a discarded model, resume activating the student, fresh launch building last-best from initialization, and fresh launch never activating. `run_ppo.py`'s SHA-1 is unchanged afterwards. The dry run bypasses the real config schema and the env constructor, so the first unbypassed run after the merges remains the check.
+- r1 fixes `just py-prepare` (`teacher-r1-fixes/py-prepare.log`): format, lint, mypy over 59 files, 1,372 passed and 8 skipped (the 4 hardware/backend/binding skips, T18, the trainer-checkpoint test and the T19b pair). docs-fresh passes. Isaiah's suites: 1,048 passed, 3 skipped (`isaiah-suites.log`).
 - 4.3 `just py-prepare` (`4.3-py-prepare.log`): format, lint, mypy over 59 files, 1,372 passed and 6 skipped (the 4 above plus T18 and T19b). docs-fresh passes. Isaiah's suites on their own: 1,048 passed, 3 skipped (`4.3-isaiah-suites.log`), the same count as the Task 3.1 baseline.
 - `just py-prepare` (`4.1-py-prepare.log`): format, lint, mypy and 1,343 passed with 4 skipped (3 hardware/backend, 1 native grammar binding). docs-fresh first flagged `docs/model-architecture.md`; after the Kaggriculture teacher bullet and the KL dtype note were added, it passes. For 4.2 (`4.2-py-prepare.log`): format, lint, mypy over 59 files and 1,360 passed with the same 4 skips. The model doc gained the targets bullet and the protocol typing. `ppo.py` and `distributed.py` changed annotations only and README names no concrete target type, so docs-fresh was acknowledged with `DOCS_CURRENT=1`.
 
@@ -124,7 +137,7 @@ The estimator is Isaiah's: teacher-forced conditionals at the behavior policy's 
 - **T1 non-negativity:** FP32 rounding gives values down to −5.6e-8 where the true KL is of order 1e-5, so the test bounds `kl ≥ −1e-6` instead of `≥ 0`.
 - **T4 head chunking:** the brief asked for `torch.equal`, but head-chunked market-kind logits differ in the last bits (CPU GEMM blocking varies with row count). The test uses `assert_close`, as the heads chunking test already did. T2's FP32 exactness, which the brief made a stop condition, holds.
 - **Order:** the protocol typing of §3.2 (`base.py`, `ppo.py`, the DDP adapter) landed with 4.2 because mypy rejected the new return type otherwise. Its Isaiah-side `TypeError` test was written first.
-- **T19 split:** the obs-spec dispatch (T19a) and the last-best refresh are pure functions, so they run now; only the resume and fresh-launch part (T19b) waits for the configs merge.
+- **T19 split:** the obs-spec dispatch (T19a) and the last-best refresh are pure functions, so they run now. The resume and fresh-launch part (T19b) waits for the configs merge and the Task 3.1 run_ppo game seam. Its checkpoint key-set check needs a real `PPOTrainer`, so it waits for the trainer seam with T18.
 - **T3 HIRE case:** the oracle uses a small `hire_limit = 5` case (budgets 2, 3, 1, 1, all exhausted mid-queue) instead of the 238–241-actor `hire_capacity` case. The one-value-per-row oracle would need about 5,000 variant rows of 241 frames there. The capacity-blocked HIRE sites are asserted to be exercised.
 
 ## Limits and gaps
@@ -133,6 +146,6 @@ The estimator is Isaiah's: teacher-forced conditionals at the behavior policy's 
 - The per-seat KL sums up to 241 × 5 + 11 × 4 conditional KLs with Isaiah's coefficient 0.005. This scale difference is recorded, not tuned.
 - The grammar digest is taken at construction. An in-place edit of a table buffer after that would not change the signature; the combined path (4.3) also compares tables with `torch.equal`.
 - The cache estimate (1.56 GiB per 2-rank rollout) is arithmetic; GPU peak allocated and reserved memory are unmeasured until Task 6.1.
-- **Phase 4 is not complete** (brief §6, review P2-4). T18 (trainer: one precompute under `no_grad`, `teacher/kl`, `teacher/cache_bytes`, coefficients, zero first-minibatch KL for a copy at learning rate 0) is written and skipped until the Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping) and Task 3.2 (value-mode guards) land. T19b (run_ppo resume and fresh launch) is skipped until `kg/rebuild-configs` merges. Task 4.4 (configs) waits on the same merge; `TEACHER_TARGET_BYTES_PER_ROW` and its pinned totals are ready for it.
+- **Phase 4 is not complete** (brief §6, review P2-4). T18 (trainer: one precompute under `no_grad`, `teacher/kl`, `teacher/cache_bytes`, coefficients, zero first-minibatch KL for a copy at learning rate 0) is written and skipped until the Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping) and Task 3.2 (value-mode guards) land. T19b's launch/resume pair (run_ppo resume and fresh launch) is written and dry-run but skipped until `kg/rebuild-configs` merges and the Task 3.1 run_ppo game seam lets `run_ppo` build a Kaggriculture model. The seam may move the env patch point. Its trainer-checkpoint test is skipped with T18 and has never run. Task 4.4 (configs) waits on the same merge; `TEACHER_TARGET_BYTES_PER_ROW` and its pinned totals are ready for it.
 - The `teacher/cache_bytes` metric is this rank's value, not reduced across ranks.
 - Real multi-rank, BF16 autocast and compiled replay equality of teacher targets across the teacher chunk and the minibatch are unverified until Phase 6.

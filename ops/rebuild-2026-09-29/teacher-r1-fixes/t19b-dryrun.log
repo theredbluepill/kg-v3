@@ -1,0 +1,30 @@
+# T19b dry run: tests/kaggriculture/test_teacher.py's two skipped run_ppo launch tests,
+# called directly with FullConfig validation bypassed (t19b_dryrun.py copied into tests/kaggriculture/).
+# run_ppo.py sha1 before: 40f6e7c56007258e461c154ed1a38b05991fc7e6
+## baseline
+2 passed in 0.50s
+## M1 resume last-best model not loaded from checkpoint_last_best.pt
+E           AssertionError: player_tokens
+E           assert False
+E            +  where False = <built-in method equal of type object at 0x10c82b778>(tensor([[-0.1335, -0.1704,  0.2778, -0.3873,  0.1611, -0.2662, -0.0050, -0.1022,\n          0.0136, -0.0184, -0.0407,  ... -0.1621,  0.1736,  0.1066, -0.0618,\n         -0.0159,  0.0473,  0.2181, -0.0372, -0.0448,  0.3596, -0.3832,  0.3385]]), tensor([[-0.1470,  0.8103, -0.1978,  0.1749,  0.0947,  0.3112, -0.1719,  0.1060,\n          0.1043,  0.0101,  0.1482, -... -0.1752, -0.2688, -0.1081, -0.3220,\n          0.0056, -0.3235, -0.1549,  0.0317,  0.3192,  0.2684,  0.1111,  0.3893]]))
+E            +    where <built-in method equal of type object at 0x10c82b778> = torch.equal
+FAILED tests/kaggriculture/test_zz_t19b_dryrun.py::test_resume - AssertionErr...
+1 failed, 1 passed in 0.39s
+## M2 resume activates the student as teacher
+E       assert KaggricultureTransformer(\n  (tile_proj): ObservationInputStem(\n    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)\n        (out): Linear(in_features=16, out_features=32, bias=True)\n      )\n    )\n  )\n) is KaggricultureTransformer(\n  (tile_proj): ObservationInputStem(\n    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)\n        (out): Linear(in_features=16, out_features=32, bias=True)\n      )\n    )\n  )\n)
+FAILED tests/kaggriculture/test_zz_t19b_dryrun.py::test_resume - assert Kaggr...
+1 failed, 1 passed in 0.36s
+## M3 fresh launch builds last-best from init, not the loaded weights
+E           AssertionError: player_tokens
+E           assert False
+E            +  where False = <built-in method equal of type object at 0x10a007778>(tensor([[-0.2503,  0.0244,  0.0375,  0.3044,  0.1551, -0.3939, -0.3175, -0.3921,\n          0.2719, -0.0665, -0.0862, -... -0.4330, -0.0014, -0.0401, -0.1859,\n         -0.2451,  0.0155, -0.0679,  0.2818,  0.1307,  0.0423,  0.1878, -0.3403]]), tensor([[-0.1470,  0.8103, -0.1978,  0.1749,  0.0947,  0.3112, -0.1719,  0.1060,\n          0.1043,  0.0101,  0.1482, -... -0.1752, -0.2688, -0.1081, -0.3220,\n          0.0056, -0.3235, -0.1549,  0.0317,  0.3192,  0.2684,  0.1111,  0.3893]]))
+E            +    where <built-in method equal of type object at 0x10a007778> = torch.equal
+FAILED tests/kaggriculture/test_zz_t19b_dryrun.py::test_fresh - AssertionErro...
+1 failed, 1 passed in 0.41s
+## M4 fresh launch never activates the teacher
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = <tests.kaggriculture.test_teacher._run_ppo_main.<locals>.FakeTrainer object at 0x11061e1b0>.teacher_updates
+FAILED tests/kaggriculture/test_zz_t19b_dryrun.py::test_fresh - assert 0 == 1
+1 failed, 1 passed in 0.35s
+# run_ppo.py sha1 after: 40f6e7c56007258e461c154ed1a38b05991fc7e6

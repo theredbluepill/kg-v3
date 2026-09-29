@@ -708,9 +708,12 @@ teachers that require recurrent hidden state.
 When a teacher is active, PPO precomputes the teacher's contribution after
 rollout via `compute_teacher_distillation_targets(...)`: a chunked
 `torch.no_grad()` pass (chunk size `rl.teacher_segments_per_minibatch` segments) that
-caches the teacher action-distribution params (`DiscreteTargetPolicyParams`) and
-winner probabilities as a `CachedTeacherDistillationTargets` in segment-major
-layout. The cached targets implement the `TeacherTargets` protocol
+caches the teacher's action targets and winner probabilities in segment-major
+layout: Orbit's `StatelessTransformerV1` caches its action-distribution params
+(`DiscreteTargetPolicyParams`) as a `CachedTeacherDistillationTargets`, and the
+Kaggriculture transformer caches its replay-conditioned per-slot logits as a
+`KaggricultureTeacherTargets` (see
+[Kaggriculture Transformer](#kaggriculture-transformer)). The cached targets implement the `TeacherTargets` protocol
 (`python/owl/model/teacher_targets.py`): PPO joins the chunks with
 `type(chunks[0]).concat(chunks)` and slices each minibatch with
 `targets.index(idx)`, both along the segment dimension, and reports the cache
@@ -729,14 +732,19 @@ PPO loop requests the same targets from the same teacher for every chunk. Each u
 then calls `evaluate_actions_with_cached_teacher(...)`,
 which encodes the student once (with grad), returns the normal PPO replay
 log-probs, entropy, and values from that encoding, and computes the action KL
-against the cached teacher params via the actor's
-`kl_divergence_from_teacher_params(...)` — without re-running the teacher trunk.
+against the cached teacher targets without re-running the teacher trunk. Orbit
+computes it with the actor's `kl_divergence_from_teacher_params(...)`;
+Kaggriculture computes it inside the grammar `policy_core`, per policy slot at
+the replayed prefix, from the cached logits.
 `categorical_kl_from_logits` computes in `promote_types(teacher, student, float32)`: BF16/FP16 are upcast to FP32 as before, and FP64 is kept rather than demoted, so a `finfo(dtype).min` mask fill stays finite and FP64 gradient checks stay exact.
 The combined `evaluate_actions_with_teacher(...)` path (one student pass plus a
 no-grad teacher pass) is retained and is bit-for-bit equivalent to the cached
-path. The cached action-KL path supports only the discrete_targets actor without
-player-count adapters; a fixed teacher (`rl.teacher_mode: fixed`) must
-additionally share the student's launch mode. Value distillation
+path. For Orbit's `StatelessTransformerV1`, the cached action-KL path supports
+only the discrete_targets actor without player-count adapters, and a fixed
+teacher (`rl.teacher_mode: fixed`) must additionally share the student's launch
+mode. The Kaggriculture transformer supports the cached action-KL and value
+paths for its grammar actor and has no launch mode; its teacher must share the
+student's grammar signature (tables and `hire_limit`). Value distillation
 (`rl.teacher_value_coef` > 0) only uses the critic winner distribution and does
 not require actor KL support, but the trainer still requires matching action
 specs and non-adapter models. `evaluate_action_kl(...)` remains as a

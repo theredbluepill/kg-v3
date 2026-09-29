@@ -871,7 +871,11 @@ NEEDS_TRAINER_SEAM = (
     "needs Task 3.1 trainer seam (Kaggriculture rollout storage and action "
     "mapping in ppo.py) and Task 3.2 (winner value-mode guards)"
 )
-NEEDS_CONFIGS = "needs kg/rebuild-configs (KaggricultureEnvConfig in FullConfig)"
+NEEDS_CONFIGS_AND_RUN_PPO_SEAM = (
+    "needs kg/rebuild-configs (KaggricultureEnvConfig in FullConfig) and the Task "
+    "3.1 run_ppo game seam (Kaggriculture env and model construction past "
+    "require_orbit_env)"
+)
 
 
 def _cached(student: Any, teacher: Any, obs: Any, actions: Any, **flags: bool) -> Any:
@@ -1447,12 +1451,269 @@ def test_last_best_refresh_keeps_the_tables_and_copies_the_student() -> None:
     )
 
 
-@pytest.mark.skip(reason=NEEDS_CONFIGS)
-def test_run_ppo_resume_and_fresh_launch_activate_the_last_best_teacher() -> None:
-    """T19b: resume and fresh launch restore or activate the last-best teacher.
+# --- T19b: run_ppo launch and resume ---------------------------------------------
 
-    Resume restores the teacher from ``checkpoint_last_best.pt``; a launch from
-    weights activates it at iteration 1; the checkpoint key set holds no teacher
-    cache. Needs a Kaggriculture ``FullConfig`` to build the run.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+# ``PPOTrainer.write_checkpoint``'s whole key set: run_ppo's loader rejects any other
+# key, so a teacher cache can never ride along in a checkpoint.
+CHECKPOINT_KEYS = {
+    "model",
+    "optimizer",
+    "lr_scheduler",
+    "env_steps",
+    "optimizer_steps",
+    "player_step_total",
+    "total_games_played",
+    "total_active_entities",
+    "target_kl_exceeded_total",
+    "wandb_run_id",
+}
+_TINY_MODEL = {
+    "model_arch": km.KAGGRICULTURE_TRANSFORMER,
+    "embed_dim": 16,
+    "depth": 1,
+    "n_heads": 2,
+    "mlp_ratio": 2.0,
+    "n_scratch_tokens": 1,
+}
+
+
+def _kaggriculture_run_config() -> Any:
+    """``configs/kaggriculture.yaml`` with the tiny test model, last-best teacher."""
+    from owl.train import FullConfig
+
+    data = FullConfig.from_file(REPO_ROOT / "configs" / "kaggriculture.yaml")
+    dumped = data.model_dump(mode="python")
+    return FullConfig.model_validate(
+        {
+            **dumped,
+            "model": _TINY_MODEL,
+            "rl": {
+                **dumped["rl"],
+                "horizon": 4,
+                "teacher_mode": "last_best",
+                "model_compile": "none",
+                "compile_mode": None,
+                "dtype": "float32",
+            },
+        }
+    )
+
+
+def _write_run_checkpoint(
+    path: Path, model: torch.nn.Module, *, env_steps: int, run_id: str
+) -> None:
+    """A checkpoint in ``PPOTrainer.write_checkpoint``'s layout (model state only)."""
+    checkpoint = {
+        "model": model.state_dict(),
+        "optimizer": {},
+        "lr_scheduler": None,
+        "env_steps": env_steps,
+        "optimizer_steps": 0,
+        "player_step_total": 0,
+        "total_games_played": 0,
+        "total_active_entities": 0,
+        "target_kl_exceeded_total": 0,
+        "wandb_run_id": run_id,
+    }
+    assert set(checkpoint) == CHECKPOINT_KEYS
+    torch.save(checkpoint, path)
+
+
+def _assert_no_teacher_state(state: dict[str, torch.Tensor]) -> None:
+    assert not any("teacher" in key or "table_" in key for key in state)
+
+
+def _assert_same_weights(model: torch.nn.Module, source: torch.nn.Module) -> None:
+    expected = source.state_dict()
+    actual = model.state_dict()
+    assert set(actual) == set(expected)
+    for key, value in expected.items():
+        assert torch.equal(actual[key], value), key
+
+
+def _assert_expected_tables(model: Any) -> None:
+    for name, table in gg.expected_grammar_tables().as_dict().items():
+        assert torch.equal(model.actor.tables().as_dict()[name], table), name
+
+
+def _run_ppo_main(
+    monkeypatch: pytest.MonkeyPatch, argv: list[str]
+) -> tuple[Any, dict[str, Any]]:
+    """Run ``run_ppo.main`` with a fake env and trainer; return both refs.
+
+    Isaiah's launch-test pattern (``tests/scripts/test_run_ppo.py``): the fake
+    trainer records ``set_teacher_model`` and loads model weights through
+    ``run_ppo._checkpoint_metadata``; last-best construction and loading stay real.
     """
-    raise AssertionError("unreachable until kg/rebuild-configs merges")
+    import sys
+    from contextlib import nullcontext
+
+    from owl.train.distributed import DistributedContext
+
+    import scripts.run_ppo as run_ppo
+
+    refs: dict[str, Any] = {}
+    session: dict[str, Any] = {}
+
+    class FakeTrainer:
+        def __init__(self, **kwargs: Any) -> None:
+            self.model = kwargs["model"]
+            self.teacher_model = kwargs["teacher_model"]
+            self.teacher_active = kwargs["teacher_active"]
+            self.teacher_updates: list[tuple[Any, bool]] = []
+            refs["trainer"] = self
+
+        def _load(self, path: Path) -> Any:
+            checkpoint = torch.load(path, weights_only=False)
+            metadata = run_ppo._checkpoint_metadata(checkpoint, path=path)
+            self.model.load_state_dict(checkpoint["model"])
+            return metadata
+
+        def load_checkpoint(self, path: Path) -> Any:
+            return self._load(path)
+
+        def load_model_weights(self, path: Path, *, load_optimizer: bool) -> Any:
+            assert not load_optimizer
+            return self._load(path)
+
+        def set_teacher_model(self, teacher_model: Any, *, active: bool) -> None:
+            self.teacher_updates.append((teacher_model, active))
+
+    monkeypatch.setattr(sys, "argv", ["run_ppo.py", *argv])
+    monkeypatch.setattr(run_ppo, "assert_release_build", lambda: None)
+    monkeypatch.setattr(run_ppo, "configure_torch", lambda: None)
+    monkeypatch.setattr(
+        run_ppo,
+        "distributed_session",
+        lambda: nullcontext(DistributedContext.single_process_cpu()),
+    )
+    # The env patch point follows the Task 3.1 run_ppo game seam's constructor.
+    monkeypatch.setattr(
+        run_ppo, "VectorizedEnv", lambda **_kwargs: _FakeKaggricultureEnv()
+    )
+    monkeypatch.setattr(run_ppo, "PPOTrainer", FakeTrainer)
+    monkeypatch.setattr(run_ppo, "_run_training_session", session.update)
+    run_ppo.main()
+    return refs["trainer"], session
+
+
+def _assert_active_last_best_teacher(
+    trainer: Any, session: dict[str, Any], *, source: Any
+) -> Any:
+    """One active ``set_teacher_model`` call with the session's last-best model."""
+    assert trainer.teacher_model is None
+    assert not trainer.teacher_active
+    assert len(trainer.teacher_updates) == 1
+    teacher, active = trainer.teacher_updates[0]
+    assert active
+    assert teacher is session["last_best_model"]
+    assert teacher is not trainer.model
+    assert not teacher.training
+    _assert_same_weights(teacher, source)
+    _assert_expected_tables(teacher)
+    _assert_no_teacher_state(teacher.state_dict())
+    obs, actions = _base_case()
+    with torch.no_grad():
+        _assert_targets_equal(
+            teacher.compute_teacher_distillation_targets(obs, actions),
+            source.eval().compute_teacher_distillation_targets(obs, actions),
+        )
+    return teacher
+
+
+@pytest.mark.skip(reason=NEEDS_CONFIGS_AND_RUN_PPO_SEAM)
+def test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """T19b resume: the teacher is ``checkpoint_last_best.pt``, not the student."""
+    cfg = _kaggriculture_run_config()
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    cfg.to_file(run_dir / "config.yaml")
+    student, last_best = _tiny(), _tiny(seed=6)
+    _write_run_checkpoint(
+        run_dir / "checkpoint_final.pt", student, env_steps=128, run_id="run-123"
+    )
+    _write_run_checkpoint(
+        run_dir / "checkpoint_last_best.pt", last_best, env_steps=64, run_id="run-123"
+    )
+    for name in ("checkpoint_final.pt", "checkpoint_last_best.pt"):
+        saved = torch.load(run_dir / name, weights_only=False)
+        assert set(saved) == CHECKPOINT_KEYS
+        _assert_no_teacher_state(saved["model"])
+
+    trainer, session = _run_ppo_main(monkeypatch, [str(run_dir), "--log-mode", "wandb"])
+
+    assert session["start_env_steps"] == 128
+    assert session["resume_run_id"] == "run-123"
+    _assert_same_weights(trainer.model, student)
+    _assert_active_last_best_teacher(trainer, session, source=last_best)
+
+
+@pytest.mark.skip(reason=NEEDS_CONFIGS_AND_RUN_PPO_SEAM)
+def test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """T19b fresh launch: the loaded weights become the active last-best teacher."""
+    cfg = _kaggriculture_run_config()
+    config_path = tmp_path / "config.yaml"
+    cfg.to_file(config_path)
+    source = _tiny(seed=6)
+    weights = tmp_path / "weights.pt"
+    _write_run_checkpoint(weights, source, env_steps=64, run_id="run-123")
+
+    trainer, session = _run_ppo_main(
+        monkeypatch,
+        [
+            str(config_path),
+            str(tmp_path / "runs"),
+            "--load-model-weights",
+            str(weights),
+            "--log-mode",
+            "debug",
+        ],
+    )
+
+    assert session["start_env_steps"] == 64
+    _assert_same_weights(trainer.model, source)
+    teacher = _assert_active_last_best_teacher(trainer, session, source=source)
+    obs, actions = _base_case()
+    with torch.no_grad():
+        evaluation = _cached(trainer.model.eval(), teacher, obs, actions)
+    assert evaluation.action_kl is not None
+    assert torch.equal(
+        evaluation.action_kl.event, torch.zeros_like(evaluation.action_kl.event)
+    )
+
+
+@pytest.mark.skip(reason=NEEDS_TRAINER_SEAM)
+def test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache(
+    tmp_path: Path,
+) -> None:
+    """T19b: after an iteration fills the teacher cache, checkpoints omit it."""
+    import scripts.run_ppo as run_ppo
+
+    student, teacher = _tiny(), _tiny(seed=6)
+    trainer = ppo.PPOTrainer(
+        env=_FakeKaggricultureEnv(),
+        model=student,
+        optimizer=torch.optim.AdamW(student.parameters(), lr=0.0),
+        config=ppo.PPOConfig(
+            horizon=4,
+            segments_per_minibatch=1,
+            teacher_mode="last_best",
+            teacher_segments_per_minibatch=1,
+        ),
+        device=torch.device("cpu"),
+        teacher_model=teacher,
+        teacher_active=True,
+    )
+    assert trainer.train_iteration()["teacher/cache_bytes"] > 0
+    for name, model in (("checkpoint.pt", None), ("checkpoint_last_best.pt", teacher)):
+        path = tmp_path / name
+        trainer.write_checkpoint(path, env_steps=8, wandb_run_id="run-123", model=model)
+        saved = torch.load(path, weights_only=False)
+        assert set(saved) == CHECKPOINT_KEYS
+        run_ppo._checkpoint_metadata(saved, path=path)
+        _assert_no_teacher_state(saved["model"])
