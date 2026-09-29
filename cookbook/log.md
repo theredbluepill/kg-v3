@@ -1,5 +1,20 @@
 # Change log
 
+## 2026-09-29 — Check the Rust kernel live against Kaggle's engine
+
+Owner: “can you add a parity check after your rust engine, with kaggle envcironments?”
+The new [[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]]
+records Task 1.1b. A hash-guarded generator runs kaggle-environments 1.32.7's
+own engine in an isolated uv environment, leaving the project lock unchanged.
+It records official-format traces plus `rejected` records. The Rust replay
+checks official, committed and swept traces with one first-divergence comparator.
+Eight committed games (3,960 transitions) and a 40-game local sweep (21,824)
+agree. Of 303 probes, 37 diverge in two malformed-input classes: D1, Unicode digit
+strings, and D2, unhashable verbs/items. The pinned kernel is not edited. Seven
+repros are exact expected failures; failing traces are kept in
+`ops/rebuild-2026-09-29/1.1b/`. The trim checker now pins the generated
+manifest. No training or GPU work ran.
+
 ## 2026-09-29 — Rebuild and verify the trimmed rules kernel
 
 The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records

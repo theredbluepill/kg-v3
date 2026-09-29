@@ -163,8 +163,9 @@ failure rollback, and economic/attribution counters including state neutrality.
 Nine RNG integration tests use embedded CPython vectors, including large and
 negative seeds, rollover and long streams. These 50 tests do not read episodes.
 
-The nine new `tests/replay_parity.rs` tests comprise four replay tests, a public
-API test, and four comparator regressions. The API test covers decoded PASS
+Task 1.1 added nine `tests/replay_parity.rs` tests: four replay tests, a public
+API test, and four comparator regressions. Task 1.1b extends the file to 16
+(see [live differential parity](#kaggriculture-live-differential-parity)). The API test covers decoded PASS
 commands, public state, terminal banks, and economic/attribution counters.
 Comparator tests reject private inventory and private field insertion-order
 drift, public market-map insertion-order drift, and public integer-versus-float
@@ -195,7 +196,8 @@ selected opponent coverage returns when those opponents are imported.
 
 ### Kaggriculture Verification and Limits
 
-Offline engine tests pass **59/59 with none ignored**; the retained root suite
+Task 1.1's offline engine tests passed **59/59 with none ignored** (66/66 after
+Task 1.1b); the retained root suite
 passes **155 with two ignored**. Receipts in `ops/rebuild-2026-09-29/1.1/` show the
 private-order regression fail with plain JSON equality, then pass with explicit
 key-order checks. Claude's review added the public-order and nested private-order
@@ -222,10 +224,129 @@ test-only `fixture_float` repair at the first compiled root consumer (potentiall
 Task 1.3, certainly Task 1.4); selecting multiple packages together can unify
 features even with a newer Cargo resolver.
 
-Parity is scoped to these four recorded worlds plus synthetic unit/RNG coverage.
-The trace headers' recorded RNG and shop schedules are not compared directly;
-their effects are checked only through the resulting public and private state.
-It does not establish exhaustive malformed-input parity, a fresh differential
-run against Python, adapter/model integration, learning quality or GPU throughput.
-Historical full-engine and performance claims in provenance do not qualify this
-trim. No training or network access is required by these checks.
+Task 1.1 parity was scoped to these four recorded worlds plus synthetic unit/RNG
+coverage. The trace headers' recorded RNG and shop schedules are not compared
+directly; their effects are checked only through the resulting public and
+private state. Task 1.1b adds a live differential check against Kaggle's own
+Python engine (below). Neither establishes adapter/model integration, learning
+quality or GPU throughput. Historical full-engine and performance claims in
+provenance do not qualify this trim. No training or network access is required
+by these checks.
+
+### Kaggriculture Live Differential Parity
+
+Task 1.1b answers the owner request "add a parity check after your rust engine,
+with kaggle environments". `scripts/kaggriculture_parity/generate_traces.py`
+runs `kaggle_environments.make("kaggriculture", configuration=...)` with an
+explicit seed and records traces in the official
+`kaggriculture-re-parity-v1` format: complete public and private state, statuses
+and rewards after every step. It refuses to run unless the installed package is
+1.32.7 and `envs/kaggriculture/kaggriculture.py` has exactly the SHA-256 pinned
+in `engine_rs/Cargo.toml`; each header records both. The project lock pins
+kaggle-environments 1.29.0, which has no Kaggriculture environment, so the
+generator runs in an isolated environment and the project lock is unchanged:
+
+```sh
+UV_OFFLINE=1 uv run --isolated --no-project --with kaggle-environments==1.32.7 \
+  python scripts/kaggriculture_parity/generate_traces.py --preset committed \
+  --out engine_rs/fixtures/generated --manifest
+```
+
+The format adds one record type. When Python's interpreter raises on an input,
+Kaggle's `env.step` fails and keeps its state; the generator records a
+`rejected` record (actions and Python exception) and then steps the policy's
+fallback actions. Rust must return an error for the same actions without
+changing any public or private state. Actions are recorded as submitted (after a
+JSON round trip); Kaggle's action-schema defaulting only adds missing top-level
+`farmer`/`hands`/`market` keys, which the interpreter defaults identically.
+
+Policies are seeded and selectable per seat: `random` (legal-looking unit
+commands for every actor, usually meaningful on the actor's tile, plus 0–4
+market orders and occasional over-limit queues); `edge` (the random policy plus
+HIRE until and past the 241-actor model capacity, 0/1023/negative/float/string/
+boolean/null/array/huge quantities, empty orders and markets, duplicate and
+reversed queues, BUY_LAND past three quadrants, unknown and lower-case verbs,
+malformed orders and unit commands, commands for non-existent hands,
+oversubscribed PLANT, malformed whole actions, and uncaught-`int()` probes);
+Kaggle's built-in `pass`, `random` (seeded through the policy RNG) and `starter`
+agents; and mixed seats. Configuration variants cover the defaults, free hires
+with 12 orders per turn (up to 249 hands, 250 actors), 10,000,000 starting money
+whose million-unit orders reach Python's 100,000-iteration market-loop escape,
+and a custom set (7 turns per day, capacity 30, weed chance 0.2, shop and
+town-centre intervals, hire multiplier 3, 4 orders and sparse `marketParams`
+overrides, including `hinge` and `log10` curves). Seeds include negative and
+above-`u64` integers. The 303 minimal probes step a two-turn preamble (buy
+wheat, a goose and carrots, hire, pick up), then one probe command: every
+malformed unit and order, 33 quantity spellings for PICKUP, PLACE and each market
+verb, unhashable verbs and items, missing-hand commands and malformed actions.
+
+`engine_rs/tests/replay_parity.rs` uses one comparator for three sources and
+reports the first divergence as line, step, kind and field path with expected
+and actual values. Rust starts from configuration and seed only.
+
+| Source | Traces | Transitions | Result |
+| --- | --- | --- | --- |
+| Official recorded episodes | 4 | 2,876 | agree |
+| Committed generated games | 8 | 3,960 (25 Python rejections) | agree |
+| Committed divergence repros | 7 | 35 (5 Python rejections) | expected failures, asserted exactly |
+| Local sweep, 40 games | 40 | 21,824 (155 Python rejections) | agree |
+| Local sweep, 303 probes | 303 | 1,515 | 266 agree, 37 diverge (D1 12, D2 25) |
+
+The committed games are `random` vs `random`, `edge` vs `edge`, built-in
+`starter` vs built-in `random`, `random` vs `edge`, `edge` free-hire, `edge` vs
+`random` rich, `random` vs built-in `starter` custom, and built-in `pass` vs
+`edge` with seed −123,456; seeds are 11, 22, 33, 44, 55, 66, 2^64+7 and −123,456.
+`engine_rs/fixtures/generated/MANIFEST.json` pins each trace's SHA-256, size,
+policies, policy seed, configuration, counts and any expected divergence. The
+15 files total 667,059 bytes (budget 4,000,000). `scripts/check_engine_trim.py` validates
+that manifest, its exact file inventory, the Cargo engine pin and the budget;
+`TRIM_MANIFEST.json` pins the manifest bytes. Rust tests also fail when a
+committed state value, private key order, action or rejection claim is
+perturbed. A Python test regenerates the committed set from the live engine and
+requires identical bytes; it skips with a message when an isolated 1.32.7
+environment cannot be built offline.
+
+The recorded sweep ran `uv run python scripts/kaggriculture_parity/sweep.py
+--games 40` at commit `8ca378b` on the owner's Mac (single process, 46 s):
+base seed 20,260,929, 12 rotating policy/configuration pairs, 343 traces and
+23,339 transitions. Its summary, including per-policy counts and every first
+divergence, is `ops/rebuild-2026-09-29/1.1b/sweep-summary.json`. Set
+`KAGG_PARITY_TRACES=<absolute dir>` (and optionally `KAGG_PARITY_REPORT`) to
+replay a larger directory with the same comparator.
+
+#### Known Divergences
+
+Both classes concern malformed input only. The vendored kernel bytes are pinned,
+so they are recorded, not repaired; seven minimized repros are expected-failure
+fixtures with these reasons, and the test fails if any stops diverging exactly.
+Full-game policies exclude these inputs by default so a game can test the rest
+of the episode; `--include-known-divergences` restores them (12 such games: 8
+diverge, all classified D1 or D2).
+
+- **D1, Unicode decimal digits.** Python `int()` accepts non-ASCII decimal digit
+  strings such as `"\u0663"` (Arabic-Indic three) and `"\uff13"` (full-width
+  three). In PICKUP/PLACE counts Rust returns an error where Python acts; in
+  BUY_SEED, SELL, BUY_PRODUCT and BUY_ANIMAL quantities Rust drops the order
+  where Python executes three units. First found at step 13 of the free-hire
+  edge game (`BUY_PRODUCT FERTILIZER "\u0663"`, money 2,159 versus 2,460).
+- **D2, unhashable arrays/objects.** Python raises `TypeError`, so Kaggle's step
+  fails, when an array or object reaches a dict lookup: a unit verb
+  (`[["NORTH"]]`), a PLANT crop (also for a non-existent hand, via the atomic
+  seed check), a PICKUP or PLACE item, or a BUY_SEED or BUY_ANIMAL item. Rust
+  treats these as no-ops and accepts the step.
+
+All ASCII quantity spellings agree, including `" 4 "`, `"+2"`, `"0002"`,
+`"1_0"`, floats, booleans, `null`, arrays, 10^30 and uncaught-`int()` errors
+(`"abc"`, `null`, `[1]` counts), which both engines reject. Our policy's
+grammar emits only ASCII verbs, item names and integers, so neither class is
+reachable from model actions; an adapter accepting external actions would need
+explicit handling. The original failing full-game traces, their first
+divergences and the replay receipt are in
+`ops/rebuild-2026-09-29/1.1b/evidence/first-failing-games/`.
+
+Limits: generated games come from seeded random, edge and built-in policies,
+not strong play, and most random seats go bankrupt; the four official episodes
+remain the only recorded competitive worlds. Framework behavior outside the
+interpreter (timeouts, agent errors, `INVALID` statuses) is not modeled. The
+sweep is a bounded sample: 40 games and 303 probes, not exhaustive input
+coverage. A larger pod sweep remains open.
