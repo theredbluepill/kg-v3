@@ -456,11 +456,12 @@ two CUDA-only pinned-memory cases added); receipt
 `ops/rebuild-2026-09-29/merge-1.3/prepare.log`. The trim
 checker's fixed authored set is now exactly the replay-parity test plus the
 generated-trace manifest. The native `grammar_tables()` matches all 964 bits of the Python
-heads' `expected_grammar_tables` in a merge-time cross-check, but no Python
-binding exists yet, so the heads still use the Python stand-in.
-CPU grammar admission does not qualify
-native batch transactions, PyO3 buffer ownership, the model sampler/replay,
-CUDA/BF16 behavior or L6's distinct Inductor GEMM overflow fix.
+heads' `expected_grammar_tables` in that merge-time cross-check. Task 1.4 now
+exports the native table/codec bindings and tests all 964 bits again; wiring
+`native_grammar_tables(device)` into the Python model remains Task 1.5.
+CPU grammar admission does not qualify the model sampler/replay, CUDA/BF16
+behavior or L6's distinct Inductor GEMM overflow fix. Native batch transactions
+and CPU buffer admission have separate Task 1.4 evidence below.
 
 ## Kaggriculture Observation Coverage (Task 1.3)
 
@@ -517,3 +518,127 @@ acceptance/replay-state tests moved from `engine_rs/tests/grammar_kernel.rs` to
 root `src/kaggriculture/grammar_kernel_tests.rs`, and the engine file and its
 authored trim registration are removed. A restored BuyLand-as-HIRE decode
 mutation fails the root `decoded_programs_feed_kernel` test.
+
+## Kaggriculture Native Lifecycle Coverage (Task 1.4)
+
+The native class and four cold grammar functions use the root crate's merged
+Task 1.2 grammar and Task 1.3 encoder. The root remains
+`src/kaggriculture/mod.rs`; there is no second module root or duplicate kernel
+test file. Task A confirms Task 1.3 already retired
+`engine_rs/tests/grammar_kernel.rs`: root `grammar_kernel_tests.rs` imports the
+real grammar and retained engine, the manifest contains no authored grammar
+exception, and the trim checker passes. The strengthened
+`test_no_authored_grammar_path_include_after_root_engine_edge` pins that state.
+The targeted trim tests pass 3 cases, and the root kernel route passes all 9.
+No vendored kernel bytes changed.
+
+Native reward tests isolate own starvation/drought/ineffective counters from
+unweighted counters and raw-bank terminal outcomes. They pin the exact ten-case
+binary64 admission predicate, disabled-component behavior, finite outputs,
+reference two-rounding schedule and an independent telescoping/ULP budget.
+Review found the first budget depended on actual errors and therefore admitted
+a zero-reward mutation; the corrected independent endpoint/budget test rejects
+that mutation and passes after restoration. That correction does not replace
+the full recorded TrainingBatch trajectory comparison.
+
+The lifecycle tests drive real `ValidatedObsBuffersMut` destinations. Batch
+failure cases include malformed peer actions, an engine Result error, a worker
+panic, failed auto-reset and failed late observation preparation. Reset and
+truncate separately cover late selected-environment construction/preparation
+errors, worker panic and seed exhaustion. Injection-hit assertions prove the
+ample-seed cases reached their intended failure points. Every case compares all
+35 destination bytes, game snapshots, a fresh observation, seeds/counter and
+terminal records, then retries against an untouched control. Moving a live seed
+counter write before commit makes each named rollback test fail; both source
+mutations were restored byte-exactly. These negative controls perturb live seed
+state, not output-buffer bytes.
+
+The full default-horizon PASS test ends exactly at transition 719, captures final
+banks/counters/winner and consumes one auto-reset seed while publishing reset
+clock/live observations. Truncation tests preserve a nonzero economic transition
+and distinguish the pre-reset bootstrap state. Sentinel tests replace unselected
+observation rows with 0x5A bytes (true for bool), then check both single-selection
+masks and an all-false mask in nonterminal and terminal fixtures. Only selected
+observation rows may change; all six transition tensors remain identical.
+Replacing the selected-row commit with whole-batch `ObsStaging::publish` fails
+at the unselected-row comparison; restoration passes the 12-test native
+lifecycle suite.
+
+Python tests exercise all 35 destinations' dtype, shape, layout, alignment,
+writeability and byte-overlap admission, plus token/length/mask admission,
+terminal-record copies and the real schema. A controlled native latch verifies
+a second Python thread progresses while observation work is detached. Seed
+partition tests exercise world sizes 2 and 8, all ranks sequentially, with 67
+consumed seeds per rank across constructor, full/partial resets and simultaneous
+terminal resets. They also check failed-step nonconsumption, ordering and
+exhaustion rollback. Mutating the factory arithmetic to
+`(base + rank*n_envs) + k` makes both cases fail with `rank 1 collides with rank
+0`; the restored native binding suite passes 339 cases. No distributed process,
+model or training run is implied.
+
+Task F adds 43 Python codec/table cases. Direct missing-function calls first
+failed 42 cases; implementation passed those 42, then a contiguous caller-view
+case was added. All 964 table bits match the independent expected tables and
+returned arrays are independent. The frozen Task 1.2 corpus passes 321 accepted
+round trips (320 scheduled, including 64 with 241 actors and 22 at length 252)
+and 43 rejection classes. Every failed encode preserves all 3,024 cells.
+The final native environment/grammar suites pass **383 cases** (340 + 43),
+including the two-thread versus one-thread native-pool equivalence case.
+Receipts, including corrected malformed test fixtures and diagnostic-message
+matches, are in `ops/rebuild-2026-09-29/1.4/`; malformed-test failures are not
+counted as missing-behavior evidence.
+
+The cast audit examines 99 numeric casts plus saturating/wrapping expressions
+and identifies two reachable unbounded HIRE cash casts. Root `admission.rs`
+checks the exact executed hire costs; six helper tests and a transactional
+native rejection test pass. Root Cargo release policy enables engine overflow
+checks. The release overflow proof attempt stopped before its test body after
+28.873 seconds at 1,007,714,304 sampled process-group RSS bytes. Its result is
+**PENDING (pod)**, not a release pass. The separate optimized timing build
+stopped before its test body after 7.840 seconds at 1,018,937,344 sampled
+process-group RSS bytes. `ops/rebuild-2026-09-29/1.4/timing.json` records the
+exact paired pod commands with and without the overflow-check policy. No debug
+timing substitutes for release phase costs or the policy-cost measurement.
+
+Task G implements the deterministic recorder, policy, custody and replay
+checks for exactly 16 games, seeds 17000–17015 and 719 transitions each, with
+one live reference game at a time. The sole recording attempt stopped during
+exported-reference debug engine compilation: the inner watchdog observed
+1,012,252,672 process-group RSS bytes at 11.297 seconds and killed the worker;
+the outer receipt reports exit 1 at 11.443 seconds. It recorded **zero games and
+zero transitions** and published no fixture or manifest. The reference Rust
+harness, complete native replay and reward/done trajectory mutation remain
+**PENDING (pod)**; missing-fixture replay fails loudly, without a skip.
+
+Acceptance still requires exact reward/done/bank/counter/seed/terminal values,
+positive starvation/drought/ineffective counters, executed hires, animal
+placement and sales, and the 8 MiB compressed / 256 MiB expanded budget. None of
+those full-trajectory coverage, size or hash assertions was qualified by the
+failed build. The exact recording command and resource evidence are in
+`reference-recording-attempt.json` and `g-reference-recording.{json,log}` under
+`ops/rebuild-2026-09-29/1.4/`.
+
+Final root Rust checks pass **274 tests, zero failures, five ignored**; the
+engine passes **69, zero failures, none ignored**. `just rs-prepare`, the trim
+checker and debug `maturin develop --locked` exit zero. The requested five-file
+Python command reports **497 passed, two failed, zero skipped**: only the full
+16-game native replay and frozen-fixture custody test fail, both because the
+required `tests/fixtures/kaggriculture_env_reference_v1.npz` is absent.
+The recorder tooling contributes 35 passing synthetic custody tests and the one
+missing-fixture failure; these do not qualify a recorded trajectory.
+
+`just py-prepare` passes formatting, Ruff, syntax and mypy over 65 files, then
+its broad pytest run is killed by the Mac memory watchdog after 15.693 seconds
+at 1,015,529,472 sampled process-group RSS bytes. Pytest collected 2,045 tests
+and stopped during the first existing `test_base_generics_typing.py` case;
+there are no completed-suite pass/fail counts. The repaired full `just prepare`
+passes formatting, lint, documentation checks, mypy, build, trim and the same
+root/engine Rust suites, then is killed at the same existing Python test after
+56.574 seconds at 1,017,036,800 sampled bytes. Broad Python completion for both
+`just py-prepare` and `just prepare` is **PENDING (pod)**. Actual command details
+and remaining pod work are in
+`ops/rebuild-2026-09-29/1.4/results.md` and `final-checks.json`.
+
+The Python adapter, `rewards.py`, Python codec, device table bridge and pinned
+CUDA reuse-fence qualification belong to Task 1.5. CPU checks establish no GPU,
+training or complete-update throughput claim.

@@ -1,5 +1,26 @@
 # Change log
 
+## 2026-09-29 — Add transactional native lifecycle and the codec/table ABI
+
+Task 1.4 extends the existing root module over the merged grammar and structured
+encoder: staged game/seed/terminal publication, Rust rewards, selected-row
+truncation and four cold codec/table functions. Restored mutations catch early
+live seed writes, whole-batch truncate publication and colliding rank offsets;
+world sizes 2 and 8 consume 67 seeds per rank. Native Python suites pass 383
+cases; root Rust passes 274 with five ignored, and the engine passes 69. The
+[[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+now records this current implementation, inventory and limits while preserving
+reference-branch history. The sole reference-recording attempt stopped at the
+Mac memory limit during compilation, recording zero games and publishing no
+fixture. The requested five-file Python check reports 497 passes and two
+missing-fixture failures. Both preparation commands pass their static checks;
+full `prepare` also passes Rust, build and trim, then both exceed the Mac RSS
+budget during pytest. Broad Python completion, full trajectory and release
+qualification remain PENDING (pod); the Python adapter, device bridge and CUDA
+entry fence belong to Task 1.5. Native seeds use the approved checked i64
+domain; training-band separation is a factory
+policy, not an added native cap.
+
 ## 2026-09-29 — Merge Task 1.3 structured observations onto the trainer-lane integration
 
 Task 1.3 (Codex APPROVE at `dc6b200`) forked from `f464c3d`, after the Task 1.2

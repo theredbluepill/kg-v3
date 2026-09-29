@@ -448,7 +448,6 @@ def encode_kaggriculture_headers_into(
     can_act: NDArray[np.bool_],
 ) -> None: ...
 
-
 class KaggricultureRewardDict(TypedDict):
     reward_mode: Literal["win_loss"]
     econ_shaping: float
@@ -468,10 +467,20 @@ class KaggricultureTerminalMetrics(TypedDict):
     econ_1: NDArray[np.int64]
 
 class KaggricultureEnv:
-    def __init__(self, n_envs: int, seed: int, seed_stride: int, config: str,
-                 reward_config: KaggricultureRewardDict, native_threads: int,
-                 *, hire_limit: int) -> None: ...
-    def observe(self, *,
+    def __init__(
+        self,
+        n_envs: int,
+        seed: int,
+        seed_stride: int,
+        config: str,
+        reward_config: KaggricultureRewardDict,
+        native_threads: int,
+        *,
+        hire_limit: int,
+    ) -> None: ...
+    def observe(
+        self,
+        *,
         tile_kind: NDArray[np.int64],
         tile_crop: NDArray[np.int64],
         tile_animal: NDArray[np.int64],
@@ -508,7 +517,9 @@ class KaggricultureEnv:
         transition_econ_before: NDArray[np.int64],
         transition_econ_after: NDArray[np.int64],
     ) -> None: ...
-    def reset(self, *,
+    def reset(
+        self,
+        *,
         tile_kind: NDArray[np.int64],
         tile_crop: NDArray[np.int64],
         tile_animal: NDArray[np.int64],
@@ -545,7 +556,11 @@ class KaggricultureEnv:
         transition_econ_before: NDArray[np.int64],
         transition_econ_after: NDArray[np.int64],
     ) -> None: ...
-    def step(self, tokens: NDArray[np.int64], lengths: NDArray[np.int64], *,
+    def step(
+        self,
+        tokens: NDArray[np.int64],
+        lengths: NDArray[np.int64],
+        *,
         tile_kind: NDArray[np.int64],
         tile_crop: NDArray[np.int64],
         tile_animal: NDArray[np.int64],
@@ -582,7 +597,10 @@ class KaggricultureEnv:
         transition_econ_before: NDArray[np.int64],
         transition_econ_after: NDArray[np.int64],
     ) -> dict[str, list[float]]: ...
-    def truncate_envs(self, mask: NDArray[np.bool_], *,
+    def truncate_envs(
+        self,
+        mask: NDArray[np.bool_],
+        *,
         tile_kind: NDArray[np.int64],
         tile_crop: NDArray[np.int64],
         tile_animal: NDArray[np.int64],
@@ -619,6 +637,27 @@ class KaggricultureEnv:
         transition_econ_before: NDArray[np.int64],
         transition_econ_after: NDArray[np.int64],
     ) -> None: ...
-    def terminal_metrics(self, env_index: int) -> KaggricultureTerminalMetrics | None: ...
+    def terminal_metrics(
+        self, env_index: int
+    ) -> KaggricultureTerminalMetrics | None: ...
     def state_snapshot(self, env_index: int) -> str: ...
     def seed_state(self) -> tuple[int, tuple[int, ...]]: ...
+
+def kaggriculture_encode(
+    action_json: str,
+    actors: int,
+    order_limit: int,
+    hire_limit: int,
+    out: NDArray[np.int64],
+) -> int: ...
+def kaggriculture_decode(
+    tokens: NDArray[np.int64],
+    length: int,
+    actors: int,
+    order_limit: int,
+    hire_limit: int,
+) -> str: ...
+def kaggriculture_grammar_tables() -> dict[str, NDArray[np.bool_]]: ...
+def kaggriculture_grammar_constants() -> tuple[
+    int, tuple[str, ...], tuple[int, ...]
+]: ...

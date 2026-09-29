@@ -356,11 +356,24 @@ mod bindings;
 
 pub(super) fn add_to_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(encode_kaggriculture_headers_into, module)?)?;
-    module.add_class::<bindings::PyKaggricultureEnv>()
+    module.add_class::<bindings::PyKaggricultureEnv>()?;
+    module.add_function(wrap_pyfunction!(bindings::kaggriculture_encode, module)?)?;
+    module.add_function(wrap_pyfunction!(bindings::kaggriculture_decode, module)?)?;
+    module.add_function(wrap_pyfunction!(
+        bindings::kaggriculture_grammar_tables,
+        module
+    )?)?;
+    module.add_function(wrap_pyfunction!(
+        bindings::kaggriculture_grammar_constants,
+        module
+    )?)
 }
 
+mod admission;
+mod env;
 #[cfg(test)]
 mod env_tests;
-mod env;
 mod reward;
-mod admission;
+
+#[cfg(test)]
+mod lifecycle_timing_tests;
