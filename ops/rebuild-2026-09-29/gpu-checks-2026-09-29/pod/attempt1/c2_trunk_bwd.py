@@ -17,10 +17,6 @@ Pre-declared tolerances (judged by driver.py):
   dX     : 0 non-finite; 0 valid tokens with ||d_t|| > 0.5 ||ref_t||;
            max|d| / max|ref| <= 0.05; exactly 0 at masked tokens
   params : every max|d| / max|ref| <= 0.05, 0 non-finite
-Amendment 1 (attempt 2; run statement "Amendment 1"): attn.k.bias has an
-analytically zero gradient (softmax is invariant to the per-query constant
-q.b_k), so its relative error is judged against the sibling attn.q.bias
-gradient scale instead (driver.py). Absolute magnitudes are now recorded.
 """
 
 from __future__ import annotations
@@ -124,9 +120,6 @@ def cmp_params(a: dict[str, torch.Tensor], b: dict[str, torch.Tensor]) -> dict[s
         r = ref.float()
         d = (g - r).abs()
         out[name] = {
-            "max_abs_diff": float(d.max()),
-            "ref_max_abs": float(r.abs().max()),
-            "out_max_abs": float(g.abs().max()),
             "rel_max": float(d.max() / r.abs().max().clamp_min(1e-30)),
             "rel_fro": float((g - r).norm() / r.norm().clamp_min(1e-30)),
             "nonfinite": int((~torch.isfinite(g)).sum()),

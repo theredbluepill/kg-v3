@@ -1,0 +1,25 @@
+{"unix": 1790673335.05, "event": "process", "case": "c3_mid_aten", "dryrun": false, "torch": "2.9.0+cu128", "torch_git": "0fabc3ba44823f257e70ce397d989c8de5e362c1", "cuda_runtime": "12.8", "kg_file": "/workspace/kg-v3-rebuild/python/owl/model/kaggriculture.py", "flash_attn_available": true, "max_autotune_gemm_backends": "ATEN", "gemm_limit": 2147483648, "tf32_matmul": true, "tf32_cudnn": true, "git": {"head": "8fde43cd7408c9c4f9147eeb8f916bd08f8266ed", "tree": "70d50fa37e66aa322e8db00c9359d3f9e3031499", "porcelain": ""}, "flash_attn": "2.8.3", "triton": "3.5.0", "device_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition", "cuda_visible_devices": "0"}
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.12284799665212631}
+AUTOTUNE addmm(77568x256, 77568x256, 256x256)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.1228 ms 100.0% 
+  addmm 0.1412 ms 87.0% 
+SingleProcess AUTOTUNE benchmarking takes 0.0637 seconds and 0.0001 seconds precompiling for 2 choices
+V0929 09:15:58.138000 153233 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/kaggriculture.py:507
+V0929 09:15:58.138000 153233 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V0929 09:15:58.138000 153233 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     - 0/0: GLOBAL_STATE changed: grad_mode 
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.21913599967956543}
+AUTOTUNE addmm(77568x512, 77568x256, 256x512)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.2191 ms 100.0% 
+  addmm 0.2703 ms 81.1% 
+SingleProcess AUTOTUNE benchmarking takes 0.0841 seconds and 0.0002 seconds precompiling for 2 choices
+/workspace/kg-v3-rebuild/runs/gpu-checks-2026-09-29/c3_smoke.py:57: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  "per_slot_max_abs_diff": {kt.SLOT_NAMES[s]: float(per_slot[s])
+{"unix": 1790673384.952, "event": "result", "case": "c3_mid_aten", "density": "mid", "rows_sample": 256, "rows_replay_tiled": 1024, "steps": {"sample_256": "ok", "replay_256": "ok", "replay_1024": "ok", "compute_value_256": "ok", "teacher_self_combined": "ok", "teacher_self_cached": "ok", "teacher_perturbed": "ok", "loss_backward_1024": "ok"}, "sample": {"log_probs": {"mean": -0.05444468930363655, "abs_mean": 0.05444468930363655, "abs_max": 3.5002386569976807, "min": -3.5002386569976807, "max": 0.0, "nonfinite": 0, "n": 774144}, "entropies": {"mean": 0.05444476008415222, "abs_mean": 0.05444476008415222, "abs_max": 3.465712070465088, "min": 0.0, "max": 3.465712070465088, "nonfinite": 0, "n": 774144}, "values": {"mean": -0.02853543311357498, "abs_mean": 0.055670902132987976, "abs_max": 0.20599418878555298, "min": -0.20599418878555298, "max": 0.13778984546661377, "nonfinite": 0, "n": 256}, "winner_probabilities": {"mean": 0.5, "abs_mean": 0.5, "abs_max": 0.6029970049858093, "min": 0.3970029056072235, "max": 0.6029970049858093, "nonfinite": 0, "n": 512}, "lengths": {"mean": 43.328125, "abs_mean": 43.328125, "abs_max": 44.0, "min": 41.0, "max": 44.0, "nonfinite": 0, "n": 256}, "old_logp_max": 0.0}, "replay_256": {"logratio_per_row": {"mean": 3.597140312194824e-05, "abs_mean": 0.00046876072883605957, "abs_max": 0.0018463134765625, "min": -0.0018463134765625, "max": 0.0018310546875, "nonfinite": 0, "n": 256}, "per_slot_max_abs_diff": {"unit_actor": 0.0, "unit_kind": 0.00033974647521972656, "unit_target": 0.0, "unit_item": 0.00026535987854003906, "unit_quantity_present": 0.0002136826515197754, "unit_quantity_high": 0.00026488304138183594, "unit_quantity": 0.0002601146697998047, "market_kind": 0.000255584716796875, "market_item": 0.0002040863037109375, "market_quantity_high": 0.0002028942108154297, "market_quantity": 0.00025773048400878906, "stop": 0.0}, "event_max_abs_diff": 0.00033974647521972656, "new_logp_nonfinite": 0, "new_logp_max": 0.0, "entropy_max_abs_diff": 1.7881
+{"unix": 1790673384.953, "event": "done", "case": "c3_mid_aten"}

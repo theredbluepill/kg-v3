@@ -1,5 +1,4 @@
-"""GPU checks bundle driver (run statement run-statements/gpu-checks-bundle.md,
-attempt 2 under its Amendment 1).
+"""GPU checks bundle driver (run statement run-statements/gpu-checks-bundle.md).
 
 Phase 1 runs two independent streams in parallel, one per GPU:
   GPU 0: c3 full-model smoke  (mid/dense x ATEN/default)
@@ -33,9 +32,7 @@ RUN = Path(__file__).resolve().parent
 ROOT = Path("/workspace/kg-v3-rebuild")
 PY = str(ROOT / ".venv/bin/python")
 WRAP = str(RUN / "gemm_backend_wrap.py")
-# Attempt 2 (Amendment 1): attempt 1's driver used 55.4 s of the 60-min
-# aggregate limit; `timeout -k 20 3540` is the backstop.
-BUDGET_S = 55 * 60
+BUDGET_S = 55 * 60  # internal deadline; `timeout -k 20 3600` is the backstop
 MIN_START_S = 90
 CONTROL_CAP_S = 600
 REL_MAX = 0.05
@@ -113,20 +110,9 @@ def _c2_point(r: dict[str, Any]) -> list[str]:
             or not (d["rel_max"] is not None and d["rel_max"] <= REL_MAX)):
         errs.append(f"dx nonfinite={d['nonfinite']} tok>0.5={d['tokens_rel_gt_0.5']} "
                     f"masked_nonzero={d['masked_nonzero']} rel_max={d['rel_max']}")
-    params = r["params_compiled_vs_eager"]
-    for name, m in params.items():
+    for name, m in r["params_compiled_vs_eager"].items():
         if name == "_missing":
             errs.append(f"param grads missing {m}")
-        elif name.endswith("attn.k.bias"):
-            # Amendment 1: the key-bias gradient is analytically zero (softmax
-            # shift invariance), so compiled and eager values and their
-            # difference are judged against the sibling query-bias scale.
-            scale = params[name[: -len("k.bias")] + "q.bias"]["ref_max_abs"]
-            worst = max(m["max_abs_diff"], m["out_max_abs"], m["ref_max_abs"])
-            if m["nonfinite"] or not worst <= REL_MAX * scale:
-                errs.append(f"grad {name} max(|diff|,|c|,|e|)={worst} > "
-                            f"{REL_MAX} x |q.bias grad| {scale} "
-                            f"nonfinite={m['nonfinite']}")
         elif m["nonfinite"] or not m["rel_max"] <= REL_MAX:
             errs.append(f"grad {name} rel_max={m['rel_max']} nonfinite={m['nonfinite']}")
     return errs

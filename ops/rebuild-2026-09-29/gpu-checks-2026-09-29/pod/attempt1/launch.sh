@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPU checks bundle launcher (run statement run-statements/gpu-checks-bundle.md).
-# Attempt 2 (Amendment 1). Idle gate on GPUs 0 and 1, receipts, the driver
-# under a hard 59-minute timeout (60-min aggregate with attempt 1's 55 s), generated-code census (text only), post receipts. Never stops,
+# Idle gate on GPUs 0 and 1, receipts, the driver under a hard 60-minute
+# timeout, generated-code census (text only), post receipts. Never stops,
 # restarts or deletes the pod.
 set -u
 R=/workspace/kg-v3-rebuild/runs/gpu-checks-2026-09-29
@@ -47,7 +47,7 @@ done
 snap prelaunch
 echo "=== idle gate passed after ${waited}s; driver start $(date -u +%FT%TZ)"
 
-timeout -k 20 3540 .venv/bin/python "$R/driver.py" > "$R/driver.out" 2>&1
+timeout -k 20 3600 .venv/bin/python "$R/driver.py" > "$R/driver.out" 2>&1
 DRC=$?
 echo "=== driver exit $DRC $(date -u +%FT%TZ)"
 
