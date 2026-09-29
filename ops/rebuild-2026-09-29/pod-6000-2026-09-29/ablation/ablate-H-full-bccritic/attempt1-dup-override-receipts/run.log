@@ -1,0 +1,73 @@
+[kg-probe] {"kind": "diagnostic_hook", "rank": 0, "t": 1790723007.682348, "hook": "trunk_audit", "diagnostic_only": true, "telemetry_only": true, "trunk_audit_iterations": [12, 23, 34, 46], "grad_audit": "first", "base_launcher": "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py"}
+[kg-probe] {"kind": "start", "rank": 0, "t": 1790723007.685066, "argv": ["/root/kg-v3/scripts/run_ppo.py", "configs/kaggriculture_2rank.yaml", "/root/runs/ablate-H-full-bccritic", "--load-model-weights", "/root/bc-best/checkpoint_bc_best.pt", "--load-model-weights-mode", "model_only", "--log-mode", "wandb", "--wandb-mode", "online", "--max-env-steps", "753664", "-o", "rl.eval_replay_games=0", "-o", "rl.teacher_kl_coef=0.005", "rl.eval_replay_games=0"], "torch": "2.9.0+cu128", "wandb": "0.26.1"}
+Traceback (most recent call last):
+  File "/root/ablation/ablate-D-lr10-bccritic/trunk_audit_launcher.py", line 209, in <module>
+    BASE.main()
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 230, in main
+    module.main()
+  File "/root/kg-v3/scripts/run_ppo.py", line 168, in main
+    launch = _resolve_launch(args)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/scripts/run_ppo.py", line 715, in _resolve_launch
+    overrides=_parse_cli_overrides(args.overrides),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/scripts/run_ppo.py", line 812, in _parse_cli_overrides
+    raise ValueError(f"Duplicate override field '{field_path}'")
+ValueError: Duplicate override field 'rl.eval_replay_games'
+[kg-probe] {"kind": "exit", "rank": 0, "t": 1790723007.6870208, "native_step_calls": 0, "native_step_seconds": 0.0, "native_step_mean_ms": 0.0, "terminal_records": 0, "phase_peaks": {}, "inductor_max_autotune_gemm_backends": "ATEN,TRITON,CPP"}
+[kg-probe] {"kind": "diagnostic_hook", "rank": 1, "t": 1790723007.7055802, "hook": "trunk_audit", "diagnostic_only": true, "telemetry_only": true, "trunk_audit_iterations": [12, 23, 34, 46], "grad_audit": "first", "base_launcher": "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py"}
+[kg-probe] {"kind": "start", "rank": 1, "t": 1790723007.70836, "argv": ["/root/kg-v3/scripts/run_ppo.py", "configs/kaggriculture_2rank.yaml", "/root/runs/ablate-H-full-bccritic", "--load-model-weights", "/root/bc-best/checkpoint_bc_best.pt", "--load-model-weights-mode", "model_only", "--log-mode", "wandb", "--wandb-mode", "online", "--max-env-steps", "753664", "-o", "rl.eval_replay_games=0", "-o", "rl.teacher_kl_coef=0.005", "rl.eval_replay_games=0"], "torch": "2.9.0+cu128", "wandb": "0.26.1"}
+Traceback (most recent call last):
+  File "/root/ablation/ablate-D-lr10-bccritic/trunk_audit_launcher.py", line 209, in <module>
+    BASE.main()
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 230, in main
+    module.main()
+  File "/root/kg-v3/scripts/run_ppo.py", line 168, in main
+    launch = _resolve_launch(args)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/scripts/run_ppo.py", line 715, in _resolve_launch
+    overrides=_parse_cli_overrides(args.overrides),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/scripts/run_ppo.py", line 812, in _parse_cli_overrides
+    raise ValueError(f"Duplicate override field '{field_path}'")
+ValueError: Duplicate override field 'rl.eval_replay_games'
+[kg-probe] {"kind": "exit", "rank": 1, "t": 1790723007.710368, "native_step_calls": 0, "native_step_seconds": 0.0, "native_step_mean_ms": 0.0, "terminal_records": 0, "phase_peaks": {}, "inductor_max_autotune_gemm_backends": "ATEN,TRITON,CPP"}
+E0929 23:03:28.157000 29216 torch/distributed/elastic/multiprocessing/api.py:882] failed (exitcode: 1) local_rank: 0 (pid: 29219) of binary: /root/kg-v3/.venv/bin/python
+Traceback (most recent call last):
+  File "/root/kg-v3/.venv/bin/torchrun", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 357, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 936, in main
+    run(args)
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 927, in run
+    elastic_launch(
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 156, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 293, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+/root/ablation/ablate-D-lr10-bccritic/trunk_audit_launcher.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-09-29_23:03:28
+  host      : 9c9253a4b2ec
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 29220)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-09-29_23:03:28
+  host      : 9c9253a4b2ec
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 29219)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
