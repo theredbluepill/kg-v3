@@ -1,5 +1,12 @@
 # Change log
 
+## 2026-09-29 — Apply Codex's r1 wording edits to the Task 3.1 model-side Reference
+
+Codex verified `e1458d2...b1da613` (APPROVE WITH EDITS, no functional defect; `ops/rebuild-2026-09-29/codex/verify-3.1-rest-r1.md`). The [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] now:
+- says the factory keeps Isaiah's exhaustive `match`/`assert_never` but matches config classes where Isaiah matches `model_arch` strings;
+- classifies the 4 `py-prepare` skips as 3 hardware/backend and 1 unavailable native grammar binding, instead of "4 hardware skips";
+- cites the Codex report and its committed evidence.
+
 ## 2026-09-29 — Register the Kaggriculture model and align its compile and critic with Isaiah
 
 Task 3.1 model side, on `kg/rebuild-trainer-model` (base `e1458d2`). The new [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] records three changes:
