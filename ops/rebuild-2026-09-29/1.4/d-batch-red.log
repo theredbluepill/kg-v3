@@ -1,0 +1,102 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env)
+warning: unused import: `ObservationGame`
+   --> src/kaggriculture/env_tests.rs:111:45
+    |
+111 | use super::{grammar, ObsRowMut, ObsStaging, ObservationGame};
+    |                                             ^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `Config` and `TraceHeader`
+   --> src/kaggriculture/env_tests.rs:112:28
+    |
+112 | use kaggriculture_engine::{Config, TraceHeader};
+    |                            ^^^^^^  ^^^^^^^^^^^
+
+warning: method `reset` is never used
+   --> src/kaggriculture/env_tests.rs:125:8
+    |
+116 | impl Output {
+    | ----------- method in this implementation
+...
+125 |     fn reset(&mut self,env:&mut NativeEnv,mask:&[bool],truncate:bool)->Result<(),EnvError> {
+    |        ^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `actors`, `orders`, and `steps` are never read
+  --> src/kaggriculture/env.rs:62:5
+   |
+58 | struct EnvSlot {
+   |        ------- fields in this struct
+...
+62 |     actors: [i64;2],
+   |     ^^^^^^
+63 |     orders: i64,
+   |     ^^^^^^
+64 |     steps: i64,
+   |     ^^^^^
+
+warning: fields `episode_steps`, `reward`, and `hire_limit` are never read
+   --> src/kaggriculture/env.rs:121:5
+    |
+119 | pub struct NativeEnv {
+    |            --------- fields in this struct
+120 |     config:Config,
+121 |     episode_steps:i64,
+    |     ^^^^^^^^^^^^^
+122 |     reward:RewardConfig,
+    |     ^^^^^^
+123 |     hire_limit:i64,
+    |     ^^^^^^^^^^
+
+warning: variants `ResetConstruct`, `ResetPrepare`, and `ResetPanic` are never constructed
+   --> src/kaggriculture/env.rs:289:77
+    |
+289 | pub(super) enum FaultPoint { StepResult, StepPanic, AutoReset, StepPrepare, ResetConstruct, ResetPrepare, ResetPanic }
+    |                 ---------- variants in this enum                            ^^^^^^^^^^^^^^  ^^^^^^^^^^^^  ^^^^^^^^^^
+    |
+    = note: `FaultPoint` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: fields `point` and `env` are never read
+   --> src/kaggriculture/env.rs:291:16
+    |
+291 | struct Fault { point:FaultPoint, env:usize, hits:std::sync::atomic::AtomicUsize }
+    |        -----   ^^^^^             ^^^
+    |        |
+    |        fields in this struct
+
+warning: methods `inject` and `replace_game` are never used
+   --> src/kaggriculture/env.rs:299:8
+    |
+293 | impl NativeEnv {
+    | -------------- methods in this implementation
+...
+299 |     fn inject(&self,point:FaultPoint,env:usize)->Result<(),EnvError> {
+    |        ^^^^^^
+...
+309 |     pub(super) fn replace_game(&mut self,i:usize,game:ObservationGame) {
+    |                   ^^^^^^^^^^^^
+
+warning: `owl` (lib test) generated 8 warnings (run `cargo fix --lib -p owl --tests` to apply 2 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.62s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 1 test
+test kaggriculture::env_tests::batch_failure_preserves_every_published_byte ... FAILED
+
+failures:
+
+---- kaggriculture::env_tests::batch_failure_preserves_every_published_byte stdout ----
+
+thread 'kaggriculture::env_tests::batch_failure_preserves_every_published_byte' (11162395) panicked at src/kaggriculture/env_tests.rs:190:93:
+called `Result::unwrap()` on an `Err` value: Value("step transaction not implemented (Task D)")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::env_tests::batch_failure_preserves_every_published_byte
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 264 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`

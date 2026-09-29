@@ -1,0 +1,45 @@
+........................F.                                               [100%]
+=================================== FAILURES ===================================
+_ test_semantic_inventory_guard_rejects_coherent_invalid_arrays[nonfinite_reward-nonfinite rewards] _
+
+corrupt = <function _nonfinite_reward at 0x10b6e6980>
+error = 'nonfinite rewards'
+
+    @pytest.mark.parametrize(
+        ("corrupt", "error"),
+        [
+            (_length_zero, "program lengths outside 1..252"),
+            (_length_too_long, "program lengths outside 1..252"),
+            (_offset_shift, "program offset inventory differs"),
+            (_extra_token_row, "packed token inventory differs"),
+            (_transition_index, "transition index inventory differs"),
+            (_autoreset_seed, "seed consumption differs"),
+            (_next_seed, "seed consumption differs"),
+            (_terminal_step, "terminal steps differ"),
+            (_early_done, "terminal done schedule differs"),
+            (_missing_terminal_done, "terminal done schedule differs"),
+            (_terminal_econ, "terminal values differ"),
+            (_terminal_bank, "terminal values differ"),
+            (_terminal_winner, "terminal winner differs"),
+            (_econ_continuity, "economic transition continuity differs"),
+            (_bank_continuity, "bank transition continuity differs"),
+            (_nonfinite_reward, "nonfinite rewards"),
+            (_decreasing_econ, "economic counters decrease"),
+        ],
+        ids=lambda value: value.__name__.lstrip("_") if callable(value) else None,
+    )
+    def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
+        corrupt, error: str
+    ) -> None:
+        manifest, arrays = example()
+        recorder.validate_arrays(manifest, arrays)
+        corrupt(arrays)
+        manifest["arrays"] = recorder.metadata(arrays)
+>       with pytest.raises(ValueError, match=re.escape(error)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_kaggriculture_env_reference.py:251: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_semantic_inventory_guard_rejects_coherent_invalid_arrays[nonfinite_reward-nonfinite rewards]
+1 failed, 25 passed, 32 deselected in 1.67s

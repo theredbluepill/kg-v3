@@ -1,0 +1,32 @@
+{"argv": ["cargo", "test", "--locked", "--offline", "--lib", "reward_uses_only_own_counters_and_raw_banks", "--", "--test-threads=1"], "exit_status": 101, "wall_seconds": 18.077056875, "sampled_process_group_peak_rss_bytes": 885620736, "stop_reason": null, "time_limit_seconds": 115.0, "rss_limit_bytes": 1006632960, "rss_sampling_seconds": 0.1}
+   Compiling pyo3-build-config v0.28.3
+   Compiling pyo3-ffi v0.28.3
+   Compiling pyo3-macros-backend v0.28.3
+   Compiling pyo3 v0.28.3
+   Compiling numpy v0.28.0
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-core)
+   Compiling pyo3-macros v0.28.3
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.37s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 1 test
+test kaggriculture::env_tests::reward_uses_only_own_counters_and_raw_banks ... FAILED
+
+failures:
+
+---- kaggriculture::env_tests::reward_uses_only_own_counters_and_raw_banks stdout ----
+
+thread 'kaggriculture::env_tests::reward_uses_only_own_counters_and_raw_banks' (11812084) panicked at src/kaggriculture/env_tests.rs:44:5:
+assertion `left == right` failed
+  left: [0.0, 0.0]
+ right: [-0.08, 0.08]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::env_tests::reward_uses_only_own_counters_and_raw_banks
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 278 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+

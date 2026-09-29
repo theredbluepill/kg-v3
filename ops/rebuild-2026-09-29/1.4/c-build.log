@@ -1,0 +1,60 @@
+   Building owl @ file:///Users/poonszesen/kg-v3-env
+  × Failed to build `owl @ file:///Users/poonszesen/kg-v3-env`
+  ├─▶ The build backend returned an error
+  ╰─▶ Call to `maturin.build_editable` failed (exit status: 1)
+
+      [stdout]
+      Running `maturin pep517 build-wheel -i
+      /Users/poonszesen/.cache/uv/builds-v0/.tmp72P02f/bin/python
+      --compatibility off --editable`
+
+      [stderr]
+      📦 Including license file `LICENSE`
+      🍹 Building a mixed python/rust project
+      🐍 Found CPython 3.12 at
+      /Users/poonszesen/.cache/uv/builds-v0/.tmp72P02f/bin/python
+      🔗 Found pyo3 bindings with abi3-py3.11 support
+      📡 Using build options features from pyproject.toml
+         Compiling pyo3-build-config v0.28.3
+         Compiling pyo3-macros-backend v0.28.3
+         Compiling pyo3-ffi v0.28.3
+         Compiling pyo3 v0.28.3
+         Compiling numpy v0.28.0
+         Compiling pyo3-macros v0.28.3
+         Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env)
+      error[E0425]: cannot find function `add_to_module` in module `bindings`
+         --> src/kaggriculture/mod.rs:359:15
+          |
+      359 |     bindings::add_to_module(module)
+          |               ^^^^^^^^^^^^^ not found in `bindings`
+          |
+      help: consider importing this function
+          |
+       10 + use crate::rl::add_to_module;
+          |
+      help: if you import `add_to_module`, refer to it directly
+          |
+      359 -     bindings::add_to_module(module)
+      359 +     add_to_module(module)
+          |
+
+      For more information about this error, try `rustc --explain E0425`.
+      error: could not compile `owl` (lib) due to 1 previous error
+      💥 maturin failed
+        Caused by: Failed to build a native library through cargo
+        Caused by: Cargo build finished with "exit status: 101": `env -u CARGO
+      CARGO_ENCODED_RUSTFLAGS="-C\u{1f}link-arg=-undefined\u{1f}-C\u{1f}link-arg=dynamic_lookup"
+      PYO3_BUILD_EXTENSION_MODULE="1"
+      PYO3_ENVIRONMENT_SIGNATURE="cpython-3.12-64bit"
+      PYO3_PYTHON="/Users/poonszesen/.cache/uv/builds-v0/.tmp72P02f/bin/python"
+      PYTHON_SYS_EXECUTABLE="/Users/poonszesen/.cache/uv/builds-v0/.tmp72P02f/bin/python"
+      "cargo" "rustc" "--profile" "release" "--features" "extension-module"
+      "--message-format" "json-render-diagnostics" "--manifest-path"
+      "/Users/poonszesen/kg-v3-env/Cargo.toml" "--lib" "--" "-C"
+      "link-args=-Wl,-install_name,@rpath/owl.rs.abi3.so"`
+      Error: command ['maturin', 'pep517', 'build-wheel', '-i',
+      '/Users/poonszesen/.cache/uv/builds-v0/.tmp72P02f/bin/python',
+      '--compatibility', 'off', '--editable'] returned non-zero exit status 1
+
+      hint: This usually indicates a problem with the package or the build
+      environment.

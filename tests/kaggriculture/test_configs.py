@@ -17,7 +17,8 @@ from typing import Any
 import pytest
 import torch
 from owl.kaggriculture import types as kt
-from owl.kaggriculture.config import KaggricultureEnvConfig, KaggricultureRewardConfig
+from owl.kaggriculture.config import KaggricultureEnvConfig
+from owl.kaggriculture.rewards import KaggricultureRewardConfig
 from owl.model import create_model
 from owl.model import kaggriculture as km
 from owl.model.kaggriculture_workload import (
@@ -43,6 +44,7 @@ _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_drought_weight=1.0,
     econ_cap=0.25,
     econ_ineffective_weight=0.0,
+    econ_ineffective_cap=0.1,
 )
 
 
@@ -405,6 +407,8 @@ def test_config_round_trips_through_the_kaggriculture_env_schema() -> None:
     data = _config_data("kaggriculture_2rank.yaml")
     assert data["env"] == {
         "n_envs": 128,
+        "seed": 0,
+        "config": kt.KaggricultureGameConfig().model_dump(mode="json"),
         "obs_spec": {"obs_spec": "kaggriculture", "schema_version": 3},
         "action_spec": {"action_spec": "kaggriculture", "hire_limit": 241},
         "reward_mode": "win_loss",
@@ -500,15 +504,21 @@ def test_reward_shaping_rejects_an_invalid_budget(
     kwargs: dict[str, float], match: str
 ) -> None:
     with pytest.raises(ValidationError, match=match):
-        KaggricultureRewardConfig(**kwargs)
+        KaggricultureRewardConfig.model_validate(_REWARD_SHAPING.model_dump() | kwargs)
 
 
 def test_reward_terminal_scale_counts_only_enabled_caps() -> None:
-    assert KaggricultureRewardConfig().terminal_scale == 1.0
+    assert (
+        KaggricultureRewardConfig.model_validate(
+            _REWARD_SHAPING.model_dump()
+            | {"econ_shaping": 0.0, "econ_cap": 0.0, "econ_ineffective_cap": 0.0}
+        ).terminal_scale
+        == 1.0
+    )
     assert _REWARD_SHAPING.terminal_scale == 0.75
     assert (
-        KaggricultureRewardConfig(
-            econ_shaping=0.2, econ_ineffective_weight=1.0
+        KaggricultureRewardConfig.model_validate(
+            _REWARD_SHAPING.model_dump() | {"econ_ineffective_weight": 1.0}
         ).terminal_scale
         == 1.0 - 0.25 - 0.1
     )

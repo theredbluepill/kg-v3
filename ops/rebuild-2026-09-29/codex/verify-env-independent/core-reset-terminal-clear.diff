@@ -1,0 +1,12 @@
+--- original/src/kaggriculture/env.rs
++++ mutant/src/kaggriculture/env.rs
+@@ -360,6 +360,9 @@
+                 return Err(EnvError::Value(
+                     "reset mask: batch mismatch or partial full reset".into(),
+                 ));
++            }
++            for (slot, selected) in self.slots.iter_mut().zip(mask) {
++                if *selected { slot.terminal = None; }
+             }
+             let (seeds, stream) = self.stream.reserve(mask)?;
+             let mut staging = ObsStaging::new(self.n_envs())?;

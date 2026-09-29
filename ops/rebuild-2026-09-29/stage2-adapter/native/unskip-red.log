@@ -1,0 +1,41 @@
+...................................................................F.... [ 69%]
+...............................s                                         [100%]
+=================================== FAILURES ===================================
+_____________ test_native_fixture_rewards_match_independent_oracle _____________
+
+    def test_native_fixture_rewards_match_independent_oracle() -> None:
+        path = Path(__file__).parents[1] / "fixtures" / "kaggriculture_env_reference_v1.npz"
+        with np.load(path, allow_pickle=False) as fixture:
+            assert fixture["rewards"].shape == (16, 719, 2)
+            for game in range(16):
+                config = _config(
+                    econ_shaping=0.02 if game < 8 else 0.2,
+                    econ_ineffective_weight=0.001 if game < 8 else 0,
+                )
+                actual = transition_rewards(
+>                   torch.from_numpy(fixture["transition_econ_before"][game]),
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                    torch.from_numpy(fixture["transition_econ_after"][game]),
+                    torch.from_numpy(fixture["transition_banks_after"][game]),
+                    torch.from_numpy(fixture["dones"][game]),
+                    config,
+                ).numpy()
+
+tests/kaggriculture/test_rewards.py:333: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = NpzFile 'object' with keys: autoreset_seed, banks_after, banks_before, dones, econ_after...
+key = 'transition_econ_before'
+
+    def __getitem__(self, key):
+        try:
+            key = self._files[key]
+        except KeyError:
+>           raise KeyError(f"{key} is not a file in the archive") from None
+E           KeyError: 'transition_econ_before is not a file in the archive'
+
+.venv/lib/python3.12/site-packages/numpy/lib/_npyio_impl.py:243: KeyError
+=========================== short test summary info ============================
+SKIPPED [1] tests/kaggriculture/test_env_cuda_fence.py:11: CUDA is unavailable
+FAILED tests/kaggriculture/test_rewards.py::test_native_fixture_rewards_match_independent_oracle
+1 failed, 102 passed, 1 skipped in 0.25s

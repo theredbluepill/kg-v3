@@ -1,0 +1,460 @@
+FFF.FFFFFFFFFFFFFFFFFFFFFFs                                              [100%]
+=================================== FAILURES ===================================
+______________________________ test_game_envelope ______________________________
+
+    def test_game_envelope() -> None:
+>       config = kt.KaggricultureGameConfig()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.kaggriculture.types' has no attribute 'KaggricultureGameConfig'. Did you mean: 'KaggricultureObsConfig'?
+
+tests/kaggriculture/test_game.py:52: AttributeError
+___________ test_integral_float_envelope_matches_real_header_encoder ___________
+
+    def test_integral_float_envelope_matches_real_header_encoder() -> None:
+        from .test_observe import _allocate, _header, _write
+    
+        header = _header()
+        integer_config = header["configuration"]
+        float_config = {
+            key: float(value) if type(value) is int else value
+            for key, value in integer_config.items()
+        }
+        header["configuration"] = float_config
+>       arrays, _ = _allocate(1, pinned=False)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: _allocate() got an unexpected keyword argument 'pinned'
+
+tests/kaggriculture/test_game.py:115: TypeError
+________________________ test_hire_limit_has_one_owner _________________________
+
+    def test_hire_limit_has_one_owner() -> None:
+        cfg = KaggricultureEnvConfig.model_validate(_env_data() | {"n_envs": 1})
+        assert cfg.n_envs == 1
+>       assert cfg.seed == 0
+               ^^^^^^^^
+
+tests/kaggriculture/test_game.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureEnvConfig(n_envs=1, obs_spec=KaggricultureObsConfig(obs_spec='kaggriculture', schema_version=3), action_s..._weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=False, native_threads=1)
+item = 'seed'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'KaggricultureEnvConfig' object has no attribute 'seed'
+
+.venv/lib/python3.12/site-packages/pydantic/main.py:1042: AttributeError
+__________________ test_orbit_factory_is_original_constructor __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110f36a50>
+
+    def test_orbit_factory_is_original_constructor(monkeypatch: pytest.MonkeyPatch) -> None:
+>       import owl.game as game
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:169: ModuleNotFoundError
+__________________________ test_factory_rank_streams ___________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110ef8230>
+
+    def test_factory_rank_streams(monkeypatch: pytest.MonkeyPatch) -> None:
+>       from .fake_env import FakeKaggricultureEnv
+E       ModuleNotFoundError: No module named 'tests.kaggriculture.fake_env'
+
+tests/kaggriculture/test_game.py:186: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch0] ___________________
+
+patch = {'n_envs': 0}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch1] ___________________
+
+patch = {'n_envs': True}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch2] ___________________
+
+patch = {'n_envs': '2'}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch3] ___________________
+
+patch = {'n_envs': 2.0}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch4] ___________________
+
+patch = {'rank': -1}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch5] ___________________
+
+patch = {'rank': 2}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch6] ___________________
+
+patch = {'rank': True}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch7] ___________________
+
+patch = {'rank': 0.0}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch8] ___________________
+
+patch = {'rank': '0'}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch9] ___________________
+
+patch = {'world_size': 0}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch10] __________________
+
+patch = {'world_size': True}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch11] __________________
+
+patch = {'world_size': 1.0}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch12] __________________
+
+patch = {'world_size': '2'}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch13] __________________
+
+patch = {'world_size': 9223372036854775808}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch14] __________________
+
+patch = {'base_seed': -1}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch15] __________________
+
+patch = {'base_seed': True}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch16] __________________
+
+patch = {'base_seed': '0'}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch17] __________________
+
+patch = {'base_seed': 0.0}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch18] __________________
+
+patch = {'base_seed': 9223372036854775808}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+__________________ test_factory_invalid_rank_streams[patch19] __________________
+
+patch = {'base_seed': 9223372036854775807, 'rank': 1}
+
+    @pytest.mark.parametrize("patch", [
+        {"n_envs": 0}, {"n_envs": True}, {"n_envs": "2"}, {"n_envs": 2.0},
+        {"rank": -1}, {"rank": 2}, {"rank": True}, {"rank": 0.0}, {"rank": "0"},
+        {"world_size": 0}, {"world_size": True}, {"world_size": 1.0}, {"world_size": "2"},
+        {"world_size": _I64_MAX + 1}, {"base_seed": -1}, {"base_seed": True},
+        {"base_seed": "0"}, {"base_seed": 0.0}, {"base_seed": _I64_MAX + 1},
+        {"base_seed": _I64_MAX, "rank": 1},
+    ])
+    def test_factory_invalid_rank_streams(patch: dict[str, Any]) -> None:
+>       from owl.game import create_env
+E       ModuleNotFoundError: No module named 'owl.game'
+
+tests/kaggriculture/test_game.py:220: ModuleNotFoundError
+=========================== short test summary info ============================
+SKIPPED [1] tests/kaggriculture/test_game.py:229: needs Task 1.4 binding
+FAILED tests/kaggriculture/test_game.py::test_game_envelope - AttributeError:...
+FAILED tests/kaggriculture/test_game.py::test_integral_float_envelope_matches_real_header_encoder
+FAILED tests/kaggriculture/test_game.py::test_hire_limit_has_one_owner - Attr...
+FAILED tests/kaggriculture/test_game.py::test_orbit_factory_is_original_constructor
+FAILED tests/kaggriculture/test_game.py::test_factory_rank_streams - ModuleNo...
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch0]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch1]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch2]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch3]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch4]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch5]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch6]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch7]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch8]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch9]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch10]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch11]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch12]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch13]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch14]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch15]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch16]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch17]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch18]
+FAILED tests/kaggriculture/test_game.py::test_factory_invalid_rank_streams[patch19]
+25 failed, 1 passed, 1 skipped in 0.11s
+
+EXIT_CODE=1

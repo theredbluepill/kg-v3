@@ -1,0 +1,207 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-independent/python/owl/rs.abi3.so
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+__________ test_encode_decode_preserves_canonical_action[action0-1-2] __________
+
+action = {'farmer': ['PASS'], 'hands': [], 'market': []}, actors = 1, length = 2
+
+    @pytest.mark.parametrize(
+        ("action", "actors", "length"),
+        [
+            (PASS, 1, 2),
+            ({**PASS, "market": [[], []]}, 1, 4),
+            ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+            ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+            ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+            ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+            ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+        ],
+    )
+    def test_encode_decode_preserves_canonical_action(
+        action: dict[str, Any], actors: int, length: int
+    ) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+>       assert (out[length:] == 0).all()
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x1139c95f0>()
+E        +    where <built-in method all of numpy.ndarray object at 0x1139c95f0> = array([[0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       ...,\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 1]], shape=(250, 12)) == 0.all
+
+tests/kaggriculture/test_native_grammar_bindings.py:86: AssertionError
+__________ test_encode_decode_preserves_canonical_action[action1-1-4] __________
+
+action = {'farmer': ['PASS'], 'hands': [], 'market': [[], []]}, actors = 1
+length = 4
+
+    @pytest.mark.parametrize(
+        ("action", "actors", "length"),
+        [
+            (PASS, 1, 2),
+            ({**PASS, "market": [[], []]}, 1, 4),
+            ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+            ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+            ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+            ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+            ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+        ],
+    )
+    def test_encode_decode_preserves_canonical_action(
+        action: dict[str, Any], actors: int, length: int
+    ) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+>       assert (out[length:] == 0).all()
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x1139cac70>()
+E        +    where <built-in method all of numpy.ndarray object at 0x1139cac70> = array([[0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       ...,\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 1]], shape=(248, 12)) == 0.all
+
+tests/kaggriculture/test_native_grammar_bindings.py:86: AssertionError
+__________ test_encode_decode_preserves_canonical_action[action2-1-4] __________
+
+action = {'farmer': ['PASS'], 'hands': [], 'market': [[], ['BUY_PRODUCT', 'WHEAT', 0]]}
+actors = 1, length = 4
+
+    @pytest.mark.parametrize(
+        ("action", "actors", "length"),
+        [
+            (PASS, 1, 2),
+            ({**PASS, "market": [[], []]}, 1, 4),
+            ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+            ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+            ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+            ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+            ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+        ],
+    )
+    def test_encode_decode_preserves_canonical_action(
+        action: dict[str, Any], actors: int, length: int
+    ) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+>       assert (out[length:] == 0).all()
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x1139cad90>()
+E        +    where <built-in method all of numpy.ndarray object at 0x1139cad90> = array([[0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       ...,\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 1]], shape=(248, 12)) == 0.all
+
+tests/kaggriculture/test_native_grammar_bindings.py:86: AssertionError
+__________ test_encode_decode_preserves_canonical_action[action3-1-2] __________
+
+action = {'farmer': ['PICKUP', 'GOOSE'], 'hands': [], 'market': []}, actors = 1
+length = 2
+
+    @pytest.mark.parametrize(
+        ("action", "actors", "length"),
+        [
+            (PASS, 1, 2),
+            ({**PASS, "market": [[], []]}, 1, 4),
+            ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+            ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+            ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+            ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+            ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+        ],
+    )
+    def test_encode_decode_preserves_canonical_action(
+        action: dict[str, Any], actors: int, length: int
+    ) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+>       assert (out[length:] == 0).all()
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x1139cafd0>()
+E        +    where <built-in method all of numpy.ndarray object at 0x1139cafd0> = array([[0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       ...,\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 1]], shape=(250, 12)) == 0.all
+
+tests/kaggriculture/test_native_grammar_bindings.py:86: AssertionError
+__________ test_encode_decode_preserves_canonical_action[action4-1-2] __________
+
+action = {'farmer': ['PLACE', 'WHEAT'], 'hands': [], 'market': []}, actors = 1
+length = 2
+
+    @pytest.mark.parametrize(
+        ("action", "actors", "length"),
+        [
+            (PASS, 1, 2),
+            ({**PASS, "market": [[], []]}, 1, 4),
+            ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+            ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+            ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+            ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+            ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+        ],
+    )
+    def test_encode_decode_preserves_canonical_action(
+        action: dict[str, Any], actors: int, length: int
+    ) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+>       assert (out[length:] == 0).all()
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x1139cbe10>()
+E        +    where <built-in method all of numpy.ndarray object at 0x1139cbe10> = array([[0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       ...,\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 1]], shape=(250, 12)) == 0.all
+
+tests/kaggriculture/test_native_grammar_bindings.py:86: AssertionError
+__________ test_encode_decode_preserves_canonical_action[action5-1-2] __________
+
+action = {'farmer': ['PICKUP', 'WHEAT', 1], 'hands': [], 'market': []}
+actors = 1, length = 2
+
+    @pytest.mark.parametrize(
+        ("action", "actors", "length"),
+        [
+            (PASS, 1, 2),
+            ({**PASS, "market": [[], []]}, 1, 4),
+            ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+            ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+            ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+            ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+            ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+        ],
+    )
+    def test_encode_decode_preserves_canonical_action(
+        action: dict[str, Any], actors: int, length: int
+    ) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+>       assert (out[length:] == 0).all()
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x1139cb870>()
+E        +    where <built-in method all of numpy.ndarray object at 0x1139cb870> = array([[0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       ...,\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 1]], shape=(250, 12)) == 0.all
+
+tests/kaggriculture/test_native_grammar_bindings.py:86: AssertionError
+__________ test_encode_decode_preserves_canonical_action[action6-3-4] __________
+
+action = {'farmer': ['PASS'], 'hands': [['EAST'], ['PASS']], 'market': []}
+actors = 3, length = 4
+
+    @pytest.mark.parametrize(
+        ("action", "actors", "length"),
+        [
+            (PASS, 1, 2),
+            ({**PASS, "market": [[], []]}, 1, 4),
+            ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+            ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+            ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+            ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+            ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+        ],
+    )
+    def test_encode_decode_preserves_canonical_action(
+        action: dict[str, Any], actors: int, length: int
+    ) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+>       assert (out[length:] == 0).all()
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x1139899b0>()
+E        +    where <built-in method all of numpy.ndarray object at 0x1139899b0> = array([[0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       ...,\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 0],\n       [0, 0, 0, ..., 0, 0, 1]], shape=(248, 12)) == 0.all
+
+tests/kaggriculture/test_native_grammar_bindings.py:86: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action0-1-2]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action1-1-4]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action2-1-4]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action3-1-2]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action4-1-2]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action5-1-2]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action6-3-4]
+7 failed, 36 deselected in 0.04s

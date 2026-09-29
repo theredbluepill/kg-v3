@@ -1,0 +1,59 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-bindings/python/owl/rs.abi3.so
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__ test_seed_partition_across_constructor_full_partial_and_terminal_resets[2] __
+
+world_size = 2
+
+    @pytest.mark.parametrize("world_size", [2, 8])
+    def test_seed_partition_across_constructor_full_partial_and_terminal_resets(
+        world_size: int,
+    ) -> None:
+        # Ranks run sequentially: only this rank's two native games are live.
+        base, n_envs = 17000, 2
+        streams: list[list[int]] = []
+        for rank in range(world_size):
+            initial_seed, stride = _rank_seed_stream(base, rank, n_envs, world_size)
+            env = make_env(
+                n_envs, seed=initial_seed, stride=stride, config='{"episodeSteps":2}'
+            )
+            arrays = buffers(n_envs)
+            env.observe(**arrays)
+            consumed = list(env.seed_state()[1])
+>           assert consumed == [initial_seed, initial_seed + stride]
+E           assert [17000, 17001] == [17000, 17002]
+E             
+E             At index 1 diff: 17001 != 17002
+E             Use -v to get more diff
+
+tests/kaggriculture/test_native_env.py:427: AssertionError
+__ test_seed_partition_across_constructor_full_partial_and_terminal_resets[8] __
+
+world_size = 8
+
+    @pytest.mark.parametrize("world_size", [2, 8])
+    def test_seed_partition_across_constructor_full_partial_and_terminal_resets(
+        world_size: int,
+    ) -> None:
+        # Ranks run sequentially: only this rank's two native games are live.
+        base, n_envs = 17000, 2
+        streams: list[list[int]] = []
+        for rank in range(world_size):
+            initial_seed, stride = _rank_seed_stream(base, rank, n_envs, world_size)
+            env = make_env(
+                n_envs, seed=initial_seed, stride=stride, config='{"episodeSteps":2}'
+            )
+            arrays = buffers(n_envs)
+            env.observe(**arrays)
+            consumed = list(env.seed_state()[1])
+>           assert consumed == [initial_seed, initial_seed + stride]
+E           assert [17000, 17001] == [17000, 17008]
+E             
+E             At index 1 diff: 17001 != 17008
+E             Use -v to get more diff
+
+tests/kaggriculture/test_native_env.py:427: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_seed_partition_across_constructor_full_partial_and_terminal_resets[2]
+FAILED tests/kaggriculture/test_native_env.py::test_seed_partition_across_constructor_full_partial_and_terminal_resets[8]
+2 failed, 342 deselected in 0.06s

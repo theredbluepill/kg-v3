@@ -1,0 +1,46 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_size_budget_rejects_coherent_oversize_fixture[MAX_COMPRESSED-compressed_bytes-compressed size budget exceeded] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-97/test_size_budget_rejects_coher0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106bd4350>
+cap = 'MAX_COMPRESSED', field = 'compressed_bytes'
+error = 'compressed size budget exceeded'
+
+    @pytest.mark.parametrize(
+        ("cap", "field", "error"),
+        [
+            ("MAX_COMPRESSED", "compressed_bytes", "compressed size budget exceeded"),
+            ("MAX_EXPANDED", "expanded_bytes", "expanded size budget exceeded"),
+        ],
+    )
+    def test_size_budget_rejects_coherent_oversize_fixture(
+        tmp_path: Path, monkeypatch, cap: str, field: str, error: str
+    ) -> None:
+        """A self-consistent fixture one byte over a lowered cap fails its budget."""
+        path = publish_example(tmp_path)
+        manifest, _ = recorder.load_fixture(path)
+        monkeypatch.setattr(recorder, cap, manifest[field] - 1)
+        _forbid_numpy_load(monkeypatch)
+        with pytest.raises(ValueError, match=re.escape(error)):
+>           recorder.load_fixture(path)
+
+tests/tools/test_record_kaggriculture_env_reference.py:283: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:432: in load_fixture
+    with np.load(path, allow_pickle=False) as loaded:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_a = (PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-97/test_size_budget_rejects_coher0/oracle.npz'),)
+_k = {'allow_pickle': False}
+
+>       np, "load", lambda *_a, **_k: pytest.fail("numpy loaded before custody")
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: numpy loaded before custody
+
+tests/tools/test_record_kaggriculture_env_reference.py:257: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_size_budget_rejects_coherent_oversize_fixture[MAX_COMPRESSED-compressed_bytes-compressed size budget exceeded]
+1 failed, 1 passed, 56 deselected in 1.25s

@@ -1,0 +1,71 @@
+F..........................                                              [100%]
+=================================== FAILURES ===================================
+______________________________ test_game_envelope ______________________________
+
+    def test_game_envelope() -> None:
+        config = kt.KaggricultureGameConfig()
+        assert json.loads(config.to_native_json()) == _DEFAULT_GAME
+        assert config.board_size == 10
+        assert config.episode_steps == 720
+        assert kt.KaggricultureGameConfig(episode_steps=3).episode_steps == 3
+        accepted: list[dict[str, Any]] = [
+            {"maxMarketOrdersPerTurn": 1, "turnsPerDay": 240},
+            {"maxMarketOrdersPerTurn": 10, "turnsPerDay": 24},
+            {"weedSpawnChance": 2.0},
+            {"episodeSteps": 1, "startingMoney": 0, "farmHandCostMult": 0},
+            {"marketParams": {}},
+        ]
+        for patch in accepted:
+            assert (
+                json.loads(
+                    kt.KaggricultureGameConfig.model_validate(patch).to_native_json()
+                )
+                == _DEFAULT_GAME | patch
+            )
+        for field in (
+            "episodeSteps",
+            "startingMoney",
+            "shedCapacity",
+            "townShopUnlockInterval",
+            "townShopSellInterval",
+            "townCenterSellInterval",
+            "farmHandCostMult",
+        ):
+            result = kt.KaggricultureGameConfig.model_validate({field: _I64_MAX})
+            assert json.loads(result.to_native_json())[field] == _I64_MAX
+            with pytest.raises(ValidationError):
+                kt.KaggricultureGameConfig.model_validate({field: _I64_MAX + 1})
+        rejected: list[dict[str, Any]] = [
+            {"boardSize": 9},
+            {"boardSize": 11},
+            {"maxMarketOrdersPerTurn": 0},
+            {"maxMarketOrdersPerTurn": 11},
+            # Product 11 <= 240: only the per-turn order bound rejects this.
+            {"maxMarketOrdersPerTurn": 11, "turnsPerDay": 1},
+            {"turnsPerDay": 25},
+            {"turnsPerDay": 0},
+            {"episodeSteps": 0},
+            {"startingMoney": -1},
+            {"shedCapacity": 0},
+            {"townShopUnlockInterval": 0},
+            {"townShopSellInterval": 0},
+            {"townCenterSellInterval": 0},
+            {"farmHandCostMult": -1},
+            {"marketParams": {"WHEAT": 1}},
+            {"extra": {}},
+            {"unknown": 1},
+            {"weedSpawnChance": -0.01},
+            {"weedSpawnChance": float("inf")},
+            {"weedSpawnChance": float("nan")},
+            {"weedSpawnChance": True},
+            {"weedSpawnChance": "0.1"},
+        ]
+        for patch in rejected:
+>           with pytest.raises(ValidationError):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+tests/kaggriculture/test_game.py:113: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_game.py::test_game_envelope - Failed: DID NOT...
+1 failed, 26 passed in 0.15s

@@ -1,0 +1,45 @@
+   Building owl @ file:///Users/poonszesen/kg-v3-adapter
+      Built owl @ file:///Users/poonszesen/kg-v3-adapter
+Uninstalled 1 package in 2ms
+Installed 1 package in 1ms
+....F...........                                                         [100%]
+=================================== FAILURES ===================================
+______ test_python_and_native_reward_admission_agree[coefficients4-False] ______
+
+coefficients = (1e-300, 1e-300, 1e-300, 0.25, 0, 0), accepted = False
+
+    @pytest.mark.parametrize(
+        ("coefficients", "accepted"), _ADMISSION_CASES + _STRENGTHENING_CASES
+    )
+    def test_python_and_native_reward_admission_agree(
+        coefficients: tuple[float, ...], accepted: bool
+    ) -> None:
+        w, starvation, drought, cap, ineffective, ineffective_cap = coefficients
+        case: KaggricultureRewardDict = {
+            "reward_mode": "win_loss",
+            "econ_shaping": w,
+            "econ_starvation_weight": starvation,
+            "econ_drought_weight": drought,
+            "econ_cap": cap,
+            "econ_ineffective_weight": ineffective,
+            "econ_ineffective_cap": ineffective_cap,
+        }
+        if accepted:
+            config = KaggricultureRewardConfig.model_validate(
+                dict(zip(_COEFFICIENTS, coefficients, strict=True))
+            )
+            assert config.to_native_dict("win_loss") == case
+            rs.KaggricultureEnv(1, 0, 1, "{}", case, 1, hire_limit=241)
+        else:
+            with pytest.raises(ValidationError):
+                KaggricultureRewardConfig.model_validate(
+                    dict(zip(_COEFFICIENTS, coefficients, strict=True))
+                )
+>           with pytest.raises(ValueError, match=r"econ|shaping|weight|cap"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_rewards.py:134: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_rewards.py::test_python_and_native_reward_admission_agree[coefficients4-False]
+1 failed, 15 passed, 26 deselected in 0.20s

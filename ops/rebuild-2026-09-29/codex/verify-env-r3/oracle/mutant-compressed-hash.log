@@ -1,0 +1,97 @@
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+________ test_same_size_archive_corruption_fails_hash_before_numpy_load ________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-101/test_same_size_archive_corrupt0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107c6eae0>
+
+    def test_same_size_archive_corruption_fails_hash_before_numpy_load(
+        tmp_path: Path, monkeypatch
+    ) -> None:
+        path = publish_example(tmp_path)
+        payload = bytearray(path.read_bytes())
+        payload[len(payload) // 2] ^= 0xFF
+        path.write_bytes(bytes(payload))
+        _forbid_numpy_load(monkeypatch)
+        with pytest.raises(ValueError, match=re.escape("fixture hash differs")):
+>           recorder.load_fixture(path)
+
+tests/tools/test_record_kaggriculture_env_reference.py:313: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:427: in load_fixture
+    while block := stream.read(1024**2):
+                   ^^^^^^^^^^^^^^^^^^^^
+/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/zipfile/__init__.py:1008: in read
+    data = self._read1(n)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <zipfile.ZipExtFile [closed]>, n = 1048576
+
+    def _read1(self, n):
+        # Read up to n compressed bytes with at most one read() system call,
+        # decrypt and decompress them.
+        if self._eof or n <= 0:
+            return b''
+    
+        # Read from file.
+        if self._compress_type == ZIP_DEFLATED:
+            ## Handle unconsumed data.
+            data = self._decompressor.unconsumed_tail
+            if n > len(data):
+                data += self._read2(n - len(data))
+        else:
+            data = self._read2(n)
+    
+        if self._compress_type == ZIP_STORED:
+            self._eof = self._compress_left <= 0
+        elif self._compress_type == ZIP_DEFLATED:
+            n = max(n, self.MIN_READ_SIZE)
+>           data = self._decompressor.decompress(data, n)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           zlib.error: Error -3 while decompressing data: invalid distance too far back
+
+/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/zipfile/__init__.py:1084: error
+_ test_archive_digest_mismatch_rejected_before_numpy_load[fixture_sha256-fixture hash differs] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-101/test_archive_digest_mismatch_r0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107c96f30>
+field = 'fixture_sha256', error = 'fixture hash differs'
+
+    @pytest.mark.parametrize(
+        ("field", "error"),
+        [
+            ("fixture_sha256", "fixture hash differs"),
+            ("expanded_sha256", "expanded fixture hash differs"),
+        ],
+    )
+    def test_archive_digest_mismatch_rejected_before_numpy_load(
+        tmp_path: Path, monkeypatch, field: str, error: str
+    ) -> None:
+        """Only the named digest is wrong; sizes, arrays and sources stay coherent."""
+        path = publish_example(tmp_path)
+        _rewrite_manifest(path, **{field: "0" * 64})
+        _forbid_numpy_load(monkeypatch)
+        with pytest.raises(ValueError, match=re.escape(error)):
+>           recorder.load_fixture(path)
+
+tests/tools/test_record_kaggriculture_env_reference.py:331: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/record_kaggriculture_env_reference.py:433: in load_fixture
+    with np.load(path, allow_pickle=False) as loaded:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_a = (PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-101/test_archive_digest_mismatch_r0/oracle.npz'),)
+_k = {'allow_pickle': False}
+
+>       np, "load", lambda *_a, **_k: pytest.fail("numpy loaded before custody")
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: numpy loaded before custody
+
+tests/tools/test_record_kaggriculture_env_reference.py:257: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_same_size_archive_corruption_fails_hash_before_numpy_load
+FAILED tests/tools/test_record_kaggriculture_env_reference.py::test_archive_digest_mismatch_rejected_before_numpy_load[fixture_sha256-fixture hash differs]
+2 failed, 1 passed, 55 deselected in 1.62s

@@ -1,0 +1,37 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r3-bindings/python/owl/rs.abi3.so
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________________ test_tables_are_copied_bool_support ______________________
+
+    def test_tables_are_copied_bool_support() -> None:
+        actual = rs.kaggriculture_grammar_tables()
+        expected = expected_grammar_tables().as_dict()
+        assert actual.keys() == expected.keys() == TABLE_SHAPES.keys()
+        assert sum(array.size for array in actual.values()) == 964
+        second = rs.kaggriculture_grammar_tables()
+        for key, array in actual.items():
+            assert array.dtype == np.bool_
+            assert array.flags.c_contiguous
+            assert array.shape == TABLE_SHAPES[key]
+>           np.testing.assert_array_equal(array, expected[key].numpy())
+E           AssertionError: 
+E           Arrays are not equal
+E           
+E           Mismatched elements: 20 / 20 (100%)
+E           First 5 mismatches are at indices:
+E            [0]: True (ACTUAL), False (DESIRED)
+E            [1]: False (ACTUAL), True (DESIRED)
+E            [2]: False (ACTUAL), True (DESIRED)
+E            [3]: False (ACTUAL), True (DESIRED)
+E            [4]: False (ACTUAL), True (DESIRED)
+E            ACTUAL: array([ True, False, False, False, False, False, False, False, False,
+E                  False, False, False, False, False, False, False, False, False,
+E                  False,  True])
+E            DESIRED: array([False,  True,  True,  True,  True,  True,  True,  True,  True,
+E                   True,  True,  True,  True,  True,  True,  True,  True,  True,
+E                   True, False])
+
+tests/kaggriculture/test_native_grammar_bindings.py:60: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_tables_are_copied_bool_support
+1 failed, 42 deselected in 0.03s

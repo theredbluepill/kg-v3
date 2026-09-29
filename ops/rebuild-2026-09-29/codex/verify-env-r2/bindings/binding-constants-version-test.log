@@ -1,0 +1,17 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-bindings/python/owl/rs.abi3.so
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________________ test_exact_grammar_constants _________________________
+
+    def test_exact_grammar_constants() -> None:
+        constants = rs.kaggriculture_grammar_constants()
+>       assert constants == (1, NAMES, WIDTHS)
+E       AssertionError: assert (2, ('unit_ac..., 2, 32, ...)) == (1, ('unit_ac..., 2, 32, ...))
+E         
+E         At index 0 diff: 2 != 1
+E         Use -v to get more diff
+
+tests/kaggriculture/test_native_grammar_bindings.py:44: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_exact_grammar_constants
+1 failed, 42 deselected in 0.02s

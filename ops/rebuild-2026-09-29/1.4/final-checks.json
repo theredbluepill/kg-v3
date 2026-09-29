@@ -1,0 +1,243 @@
+{
+  "base": "e197528820ab7cfb429e21259000957370abf1c6",
+  "scope": "actual final command receipts; no predicted acceptance",
+  "checks": [
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-diff.json",
+      "actual_counts": null,
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_status": 0,
+      "wall_seconds": 0.106552625,
+      "sampled_process_group_peak_rss_bytes": 688128,
+      "stop_reason": null,
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    },
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-docs.json",
+      "actual_counts": null,
+      "argv": [
+        "uvx",
+        "--offline",
+        "--from",
+        "rust-just",
+        "just",
+        "docs-lint",
+        "docs-fresh"
+      ],
+      "exit_status": 0,
+      "wall_seconds": 1.048500042,
+      "sampled_process_group_peak_rss_bytes": 126877696,
+      "stop_reason": null,
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    },
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-engine.json",
+      "actual_counts": {
+        "passed": 69,
+        "failed": 0,
+        "ignored": 0
+      },
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "engine_rs/Cargo.toml"
+      ],
+      "exit_status": 0,
+      "wall_seconds": 23.334629,
+      "sampled_process_group_peak_rss_bytes": 546832384,
+      "stop_reason": null,
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    },
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-maturin.json",
+      "actual_counts": null,
+      "argv": [
+        "uv",
+        "run",
+        "--offline",
+        "maturin",
+        "develop",
+        "--locked"
+      ],
+      "exit_status": 0,
+      "wall_seconds": 2.150048709,
+      "sampled_process_group_peak_rss_bytes": 475824128,
+      "stop_reason": null,
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    },
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-prepare-restored.json",
+      "actual_counts": {
+        "rust_passed": 274,
+        "rust_ignored": 5,
+        "engine_passed": 69,
+        "python_collected": 2045,
+        "python_completion_counts": null
+      },
+      "argv": [
+        "uvx",
+        "--offline",
+        "--from",
+        "rust-just",
+        "just",
+        "prepare"
+      ],
+      "exit_status": -9,
+      "wall_seconds": 56.573670957999994,
+      "sampled_process_group_peak_rss_bytes": 1017036800,
+      "stop_reason": "memory",
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    },
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-prepare.json",
+      "actual_counts": null,
+      "argv": [
+        "uvx",
+        "--offline",
+        "--from",
+        "rust-just",
+        "just",
+        "prepare"
+      ],
+      "exit_status": 1,
+      "wall_seconds": 4.475928417,
+      "sampled_process_group_peak_rss_bytes": 500793344,
+      "stop_reason": null,
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    },
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-py-prepare.json",
+      "actual_counts": {
+        "python_collected": 2045,
+        "python_completion_counts": null
+      },
+      "argv": [
+        "uvx",
+        "--offline",
+        "--from",
+        "rust-just",
+        "just",
+        "py-prepare"
+      ],
+      "exit_status": -9,
+      "wall_seconds": 15.692801750000001,
+      "sampled_process_group_peak_rss_bytes": 1015529472,
+      "stop_reason": "memory",
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    },
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-root.json",
+      "actual_counts": {
+        "passed": 274,
+        "failed": 0,
+        "ignored": 5
+      },
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--lib",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_status": 0,
+      "wall_seconds": 30.754461292,
+      "sampled_process_group_peak_rss_bytes": 676052992,
+      "stop_reason": null,
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    },
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-rs-prepare.json",
+      "actual_counts": {
+        "rust_passed": 274,
+        "rust_ignored": 5,
+        "engine_passed": 69
+      },
+      "argv": [
+        "uvx",
+        "--offline",
+        "--from",
+        "rust-just",
+        "just",
+        "rs-prepare"
+      ],
+      "exit_status": 0,
+      "wall_seconds": 53.667836334,
+      "sampled_process_group_peak_rss_bytes": 645890048,
+      "stop_reason": null,
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    },
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-targeted-python.json",
+      "actual_counts": {
+        "passed": 497,
+        "failed": 2,
+        "skipped": 0
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--offline",
+        "pytest",
+        "tests/kaggriculture/test_native_env.py",
+        "tests/kaggriculture/test_native_grammar_bindings.py",
+        "tests/kaggriculture/test_env_reference.py",
+        "tests/tools/test_record_kaggriculture_env_reference.py",
+        "tests/tools/test_check_engine_trim.py",
+        "-q"
+      ],
+      "exit_status": 1,
+      "wall_seconds": 11.270715167,
+      "sampled_process_group_peak_rss_bytes": 443383808,
+      "stop_reason": null,
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    },
+    {
+      "receipt": "ops/rebuild-2026-09-29/1.4/final-trim.json",
+      "actual_counts": null,
+      "argv": [
+        "uv",
+        "run",
+        "--offline",
+        "python",
+        "scripts/check_engine_trim.py"
+      ],
+      "exit_status": 0,
+      "wall_seconds": 0.967059208,
+      "sampled_process_group_peak_rss_bytes": 72482816,
+      "stop_reason": null,
+      "time_limit_seconds": 115,
+      "rss_limit_bytes": 1006632960,
+      "rss_sampling_seconds": 0.1
+    }
+  ],
+  "additional_source_checks": "source-custody-final.json"
+}

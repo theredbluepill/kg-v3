@@ -1,0 +1,69 @@
+[
+  {
+    "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/kaggriculture/test_game.py -q",
+    "exit_code": 1,
+    "counts": {
+      "failed": 25,
+      "passed": 1,
+      "skipped": 1
+    },
+    "log": "ops/rebuild-2026-09-29/stage1-adapter/game-red.log",
+    "note": "First red included test-helper typo: _allocate expects pin_memory and returns a batch. Corrected test only, then reran config red."
+  },
+  {
+    "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/kaggriculture/test_game.py -k 'envelope or hire_limit or config_union' -q",
+    "exit_code": 1,
+    "counts": {
+      "failed": 3,
+      "passed": 1,
+      "deselected": 23
+    },
+    "log": "ops/rebuild-2026-09-29/stage1-adapter/game-config-red.log",
+    "note": "Real header encoder accepted integral-float input; missing new GameConfig and env seed fail. Existing config union already passes."
+  },
+  {
+    "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/kaggriculture/test_game.py -k 'envelope or hire_limit or config_union' -q",
+    "exit_code": 2,
+    "counts": {
+      "errors": 1
+    },
+    "log": "ops/rebuild-2026-09-29/stage1-adapter/game-config-green.log",
+    "note": "Intermediate: rewards.py not yet written by parallel agent."
+  },
+  {
+    "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/kaggriculture/test_game.py -q",
+    "exit_code": 0,
+    "counts": {
+      "passed": 26,
+      "skipped": 1
+    },
+    "log": "ops/rebuild-2026-09-29/stage1-adapter/game-green-r1.log",
+    "note": "Only native-binding seed stream test skipped needs Task 1.4 binding."
+  },
+  {
+    "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/kaggriculture/test_game.py -k 'envelope or hire_limit or config_union' -q",
+    "exit_code": 0,
+    "counts": {
+      "passed": 4,
+      "deselected": 23
+    },
+    "log": "ops/rebuild-2026-09-29/stage1-adapter/game-config-green-r2.log",
+    "note": "Matching focused config red-to-green check."
+  },
+  {
+    "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline mypy python/owl/kaggriculture/types.py python/owl/kaggriculture/config.py python/owl/game.py",
+    "exit_code": 0,
+    "counts": {
+      "source_files": 3
+    },
+    "log": "ops/rebuild-2026-09-29/stage1-adapter/game-mypy.log",
+    "note": ""
+  },
+  {
+    "command": "OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uvx --offline ruff check python/owl/kaggriculture/types.py python/owl/kaggriculture/config.py python/owl/game.py tests/kaggriculture/test_game.py",
+    "exit_code": 0,
+    "counts": {},
+    "log": "ops/rebuild-2026-09-29/stage1-adapter/game-ruff.log",
+    "note": ""
+  }
+]

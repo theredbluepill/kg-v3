@@ -1,0 +1,23 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env)
+error[E0284]: type annotations needed for `[f32; _]`
+  --> src/kaggriculture/reward.rs:55:13
+   |
+55 |           let r = std::array::from_fn(|s| {
+   |  _____________^___-
+56 | |             let economic = (delta[1-s]-delta[s]) as f32;
+57 | |             if done {
+58 | |                 let sign = if banks[s] > banks[1-s] {1.} else if banks[s] < banks[1-s] {-1.} else {0.};
+59 | |                 (f64::from(economic) + self.terminal_scale()*sign) as f32
+60 | |             } else {economic}
+61 | |         });
+   | |__________- type must be known at this point
+   |
+note: required by a const generic parameter in `std::array::from_fn`
+  --> /rustc/e9e32aca5a4ffd08cbc29547b039d64b92a2c03b/library/core/src/array/mod.rs:109:0
+help: consider giving `r` an explicit type, where the value of const parameter `N` is specified
+   |
+55 |         let r: [_; N] = std::array::from_fn(|s| {
+   |              ++++++++
+
+For more information about this error, try `rustc --explain E0284`.
+error: could not compile `owl` (lib test) due to 1 previous error

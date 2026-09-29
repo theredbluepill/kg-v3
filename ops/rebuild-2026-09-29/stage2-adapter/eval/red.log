@@ -1,0 +1,595 @@
+.FFFFFFFFF                                                               [100%]
+=================================== FAILURES ===================================
+________ test_create_eval_env_keeps_orbit_env_and_builds_kaggriculture _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110b501d0>
+
+    def test_create_eval_env_keeps_orbit_env_and_builds_kaggriculture(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        built: list[dict[str, object]] = []
+    
+        def fake_vectorized_env(**kwargs: object) -> str:
+            built.append(kwargs)
+            return "orbit-env"
+    
+        monkeypatch.setattr(run_ppo, "VectorizedEnv", fake_vectorized_env)
+        cfg = _config_with_envs(2)
+        assert isinstance(cfg.env, EnvConfig)
+    
+        env = run_ppo._create_eval_env(
+            cfg, n_envs=4, device=torch.device("cpu"), env_steps=1000
+        )
+    
+        assert env == "orbit-env"
+        assert built == [
+            {
+                "n_envs": 4,
+                "obs_spec": cfg.env.obs_spec,
+                "action_spec": cfg.env.action_spec,
+                "two_player_weight": cfg.env.two_player_weight,
+                "reward_mode": cfg.env.reward_mode,
+                "pin_memory": False,
+            }
+        ]
+>       kaggriculture = run_ppo._create_eval_env(
+            _kaggriculture_eval_config(),
+            n_envs=1,
+            device=torch.device("cpu"),
+            env_steps=1000,
+        )
+
+tests/scripts/test_run_ppo.py:3038: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cfg = FullConfig(env=KaggricultureEnvConfig(n_envs=2, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=72...e-no-cudagraphs', dtype='float32', truncation_step=None, truncation_prob=0.0), runtime=RuntimeConfig(n_runtime_gpus=1))
+
+    def _create_eval_env(
+        cfg: FullConfig,
+        *,
+        n_envs: int,
+        device: torch.device,
+        env_steps: int,
+    ) -> VectorizedEnv:
+        """Build the evaluation env for the evaluation at ``env_steps``."""
+        if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+>           raise NotImplementedError(
+                "Kaggriculture evaluation needs the native environment (rebuild Tasks "
+                "1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, "
+                f"env_steps={env_steps})"
+            )
+E           NotImplementedError: Kaggriculture evaluation needs the native environment (rebuild Tasks 1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, env_steps=1000)
+
+scripts/run_ppo.py:1589: NotImplementedError
+________________ test_kaggriculture_eval_factory_arguments[cpu] ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110f5bd70>
+device_type = 'cpu'
+
+    @pytest.mark.parametrize("device_type", ["cpu", "cuda"])
+    def test_kaggriculture_eval_factory_arguments(
+        monkeypatch: pytest.MonkeyPatch, device_type: str
+    ) -> None:
+        cfg = _kaggriculture_eval_config()
+        assert isinstance(cfg.env, KaggricultureEnvConfig)
+        cfg = cfg.model_copy(update={"env": cfg.env.model_copy(update={"seed": 7})})
+        calls: list[tuple[object, dict[str, object]]] = []
+        sentinel = object()
+    
+        def fake_create_env(config: object, **kwargs: object) -> object:
+            calls.append((config, kwargs))
+            return sentinel
+    
+>       monkeypatch.setattr(run_ppo, "create_env", fake_create_env)
+E       AttributeError: <module 'run_ppo' from '/Users/poonszesen/kg-v3-adapter/scripts/run_ppo.py'> has no attribute 'create_env'
+
+tests/scripts/test_run_ppo.py:3063: AttributeError
+_______________ test_kaggriculture_eval_factory_arguments[cuda] ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110f57020>
+device_type = 'cuda'
+
+    @pytest.mark.parametrize("device_type", ["cpu", "cuda"])
+    def test_kaggriculture_eval_factory_arguments(
+        monkeypatch: pytest.MonkeyPatch, device_type: str
+    ) -> None:
+        cfg = _kaggriculture_eval_config()
+        assert isinstance(cfg.env, KaggricultureEnvConfig)
+        cfg = cfg.model_copy(update={"env": cfg.env.model_copy(update={"seed": 7})})
+        calls: list[tuple[object, dict[str, object]]] = []
+        sentinel = object()
+    
+        def fake_create_env(config: object, **kwargs: object) -> object:
+            calls.append((config, kwargs))
+            return sentinel
+    
+>       monkeypatch.setattr(run_ppo, "create_env", fake_create_env)
+E       AttributeError: <module 'run_ppo' from '/Users/poonszesen/kg-v3-adapter/scripts/run_ppo.py'> has no attribute 'create_env'
+
+tests/scripts/test_run_ppo.py:3063: AttributeError
+_____ test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds _____
+
+    def test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds() -> None:
+        cfg = _kaggriculture_eval_config()
+        assert isinstance(cfg.env, KaggricultureEnvConfig)
+        cfg = cfg.model_copy(
+            update={
+                "env": cfg.env.model_copy(
+                    update={
+                        "seed": 7,
+                        "native_threads": 1,
+                        "config": cfg.env.config.model_copy(update={"episode_steps": 3}),
+                    }
+                )
+            }
+        )
+    
+        def evaluate(env_steps: int) -> tuple[list[object], list[tuple[float, float]]]:
+            env = run_ppo._create_eval_env(
+                cfg, n_envs=2, device=torch.device("cpu"), env_steps=env_steps
+            )
+            assert isinstance(env, KaggricultureVectorizedEnv)
+            seed = run_ppo._evaluation_seed(base_seed=7, env_steps=env_steps)
+            assert env.seed_state() == (seed + 2, (seed, seed + 1))
+            # Match the evaluation caller's explicit reset after factory construction.
+            obs = env.reset()
+            assert env.seed_state() == (seed + 4, (seed + 2, seed + 3))
+            initial = [env.state_snapshot(i) for i in range(2)]
+            for step in range(2):
+                programs = [
+                    tuple(
+                        {
+                            "farmer": [],
+                            "hands": [[]] * (int(obs.actor_mask[i, s, :MAX_ACTORS].sum()) - 1),
+                            "market": [],
+                        }
+                        for s in range(2)
+                    )
+                    for i in range(2)
+                ]
+                actions = encode_actions(programs, obs, action_spec=env.action_spec)
+                obs, _rewards, dones, _metrics = env.step(actions)
+                obs.check_contract()
+                assert bool(dones.all()) == (step == 1)
+            banks = []
+            for i in range(2):
+                terminal = env.terminal_metrics(i)
+                assert terminal is not None
+                assert terminal["episode_steps"] == 2
+                banks.append((terminal["bank_0"], terminal["bank_1"]))
+            return initial, banks
+    
+>       first_worlds, first_banks = evaluate(1000)
+                                    ^^^^^^^^^^^^^^
+
+tests/scripts/test_run_ppo.py:3133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/scripts/test_run_ppo.py:3099: in evaluate
+    env = run_ppo._create_eval_env(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cfg = FullConfig(env=KaggricultureEnvConfig(n_envs=2, seed=7, config=KaggricultureGameConfig(board_size=10, episode_steps=3,...e-no-cudagraphs', dtype='float32', truncation_step=None, truncation_prob=0.0), runtime=RuntimeConfig(n_runtime_gpus=1))
+
+    def _create_eval_env(
+        cfg: FullConfig,
+        *,
+        n_envs: int,
+        device: torch.device,
+        env_steps: int,
+    ) -> VectorizedEnv:
+        """Build the evaluation env for the evaluation at ``env_steps``."""
+        if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+>           raise NotImplementedError(
+                "Kaggriculture evaluation needs the native environment (rebuild Tasks "
+                "1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, "
+                f"env_steps={env_steps})"
+            )
+E           NotImplementedError: Kaggriculture evaluation needs the native environment (rebuild Tasks 1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, env_steps=1000)
+
+scripts/run_ppo.py:1589: NotImplementedError
+__________________ test_kaggriculture_eval_env_is_independent __________________
+
+    def test_kaggriculture_eval_env_is_independent() -> None:
+        cfg = _kaggriculture_eval_config()
+>       first = run_ppo._create_eval_env(
+            cfg, n_envs=1, device=torch.device("cpu"), env_steps=1000
+        )
+
+tests/scripts/test_run_ppo.py:3143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cfg = FullConfig(env=KaggricultureEnvConfig(n_envs=2, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=72...e-no-cudagraphs', dtype='float32', truncation_step=None, truncation_prob=0.0), runtime=RuntimeConfig(n_runtime_gpus=1))
+
+    def _create_eval_env(
+        cfg: FullConfig,
+        *,
+        n_envs: int,
+        device: torch.device,
+        env_steps: int,
+    ) -> VectorizedEnv:
+        """Build the evaluation env for the evaluation at ``env_steps``."""
+        if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+>           raise NotImplementedError(
+                "Kaggriculture evaluation needs the native environment (rebuild Tasks "
+                "1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, "
+                f"env_steps={env_steps})"
+            )
+E           NotImplementedError: Kaggriculture evaluation needs the native environment (rebuild Tasks 1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, env_steps=1000)
+
+scripts/run_ppo.py:1589: NotImplementedError
+_____ test_kaggriculture_policy_evaluation_names_remaining_mapping_blocker _____
+
+    def test_kaggriculture_policy_evaluation_names_remaining_mapping_blocker() -> None:
+        with pytest.raises(
+            RuntimeError,
+            match=r"Kaggriculture policy evaluation needs Task 3\.1 observation and action mapping",
+        ):
+>           run_ppo._evaluate_games(
+                current_model=_LaunchPolicy(launch=True),
+                last_best_model=_LaunchPolicy(launch=False),
+                cfg=_kaggriculture_eval_config(),
+                n_games=1,
+                n_envs=1,
+                device=torch.device("cpu"),
+                env_steps=1000,
+            )
+
+tests/scripts/test_run_ppo.py:3163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:1414: in _evaluate_games
+    env = _create_eval_env(cfg, n_envs=n_envs, device=device, env_steps=env_steps)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cfg = FullConfig(env=KaggricultureEnvConfig(n_envs=2, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=72...e-no-cudagraphs', dtype='float32', truncation_step=None, truncation_prob=0.0), runtime=RuntimeConfig(n_runtime_gpus=1))
+
+    def _create_eval_env(
+        cfg: FullConfig,
+        *,
+        n_envs: int,
+        device: torch.device,
+        env_steps: int,
+    ) -> VectorizedEnv:
+        """Build the evaluation env for the evaluation at ``env_steps``."""
+        if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+>           raise NotImplementedError(
+                "Kaggriculture evaluation needs the native environment (rebuild Tasks "
+                "1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, "
+                f"env_steps={env_steps})"
+            )
+E           NotImplementedError: Kaggriculture evaluation needs the native environment (rebuild Tasks 1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, env_steps=1000)
+
+scripts/run_ppo.py:1589: NotImplementedError
+
+During handling of the above exception, another exception occurred:
+
+    def test_kaggriculture_policy_evaluation_names_remaining_mapping_blocker() -> None:
+>       with pytest.raises(
+            RuntimeError,
+            match=r"Kaggriculture policy evaluation needs Task 3\.1 observation and action mapping",
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'Kaggriculture policy evaluation needs Task 3\\.1 observation and action mapping'
+E         Actual message: 'Kaggriculture evaluation needs the native environment (rebuild Tasks 1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, env_steps=1000)'
+
+tests/scripts/test_run_ppo.py:3159: AssertionError
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-697/test_main_loads_kaggriculture_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110f71670>
+capsys = <_pytest.capture.CaptureFixture object at 0x110f714f0>
+name = 'kaggriculture_2rank.yaml', rollout_rows = 256, teacher_rows = 16384
+teacher_calls = 3
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3464: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:179: in main
+    env_config = require_orbit_env(cfg.env, context=_TRAINER)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=128, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=720, starting_m...t_weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=True, native_threads=2)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-697/test_main_loads_kaggriculture_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110f71670>
+capsys = <_pytest.capture.CaptureFixture object at 0x110f714f0>
+name = 'kaggriculture_2rank.yaml', rollout_rows = 256, teacher_rows = 16384
+teacher_calls = 3
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+>       with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'run_ppo\\ cannot\\ run\\ Kaggriculture\\ yet:\\ Task\\ 3\\.1\\ rollout\\ storage\\ and\\ action\\ mapping\\ are\\ not\\ implemented'
+E         Actual message: 'run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land'
+
+tests/scripts/test_run_ppo.py:3463: AssertionError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+GEMM workload headroom minibatch: 1024 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 5.776x headroom, <= 1 call(s)); heads 11096 rows/call (10.84x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16384 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 0.361x headroom, <= 3 call(s)); heads 11096 rows/call (0.6772x headroom, 2 call(s))
+GEMM workload headroom evaluation: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-697/test_main_loads_kaggriculture_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110f55910>
+capsys = <_pytest.capture.CaptureFixture object at 0x110f555b0>
+name = 'kaggriculture_4rank.yaml', rollout_rows = 128, teacher_rows = 8192
+teacher_calls = 2
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3464: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:179: in main
+    env_config = require_orbit_env(cfg.env, context=_TRAINER)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=64, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=720, starting_mo...t_weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=True, native_threads=2)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-697/test_main_loads_kaggriculture_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110f55910>
+capsys = <_pytest.capture.CaptureFixture object at 0x110f555b0>
+name = 'kaggriculture_4rank.yaml', rollout_rows = 128, teacher_rows = 8192
+teacher_calls = 2
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs")]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+>       with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'run_ppo\\ cannot\\ run\\ Kaggriculture\\ yet:\\ Task\\ 3\\.1\\ rollout\\ storage\\ and\\ action\\ mapping\\ are\\ not\\ implemented'
+E         Actual message: 'run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land'
+
+tests/scripts/test_run_ppo.py:3463: AssertionError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 128 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 46.21x headroom, <= 1 call(s)); heads 11096 rows/call (86.69x headroom, 1 call(s))
+GEMM workload headroom minibatch: 512 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 11.55x headroom, <= 1 call(s)); heads 11096 rows/call (21.67x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 8192 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 0.722x headroom, <= 2 call(s)); heads 11096 rows/call (1.354x headroom, 1 call(s))
+GEMM workload headroom evaluation: 128 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 46.21x headroom, <= 1 call(s)); heads 11096 rows/call (86.69x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+___________ test_resume_startup_checks_the_runtime_adapted_workload ____________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-697/test_resume_startup_checks_the0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110f73170>
+capsys = <_pytest.capture.CaptureFixture object at 0x110f72c00>
+
+    def test_resume_startup_checks_the_runtime_adapted_workload(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        # A run saved at 2 ranks resumes on 1: resume adaptation doubles the
+        # per-rank envs to 256, so the checked rollout is 512 rows, not the file's 256.
+        saved = FullConfig.from_file(_CONFIGS / "kaggriculture_2rank.yaml")
+        saved = saved.model_copy(
+            update={"runtime": saved.runtime.model_copy(update={"n_runtime_gpus": 2})}
+        )
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        saved.to_file(run_dir / "config.yaml")
+        for checkpoint in ("checkpoint_final.pt", "checkpoint_last_best.pt"):
+            (run_dir / checkpoint).write_bytes(b"")
+        calls: list[str] = []
+        # Resume requires W&B logging; the check runs before any logger exists.
+        _patch_kaggriculture_startup(
+            monkeypatch,
+            [str(run_dir / "checkpoint_final.pt")],
+            calls,
+            log_mode=LogMode.WANDB,
+        )
+    
+        with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3511: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:179: in main
+    env_config = require_orbit_env(cfg.env, context=_TRAINER)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=256, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=720, starting_m...t_weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=True, native_threads=2)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-697/test_resume_startup_checks_the0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110f73170>
+capsys = <_pytest.capture.CaptureFixture object at 0x110f72c00>
+
+    def test_resume_startup_checks_the_runtime_adapted_workload(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        # A run saved at 2 ranks resumes on 1: resume adaptation doubles the
+        # per-rank envs to 256, so the checked rollout is 512 rows, not the file's 256.
+        saved = FullConfig.from_file(_CONFIGS / "kaggriculture_2rank.yaml")
+        saved = saved.model_copy(
+            update={"runtime": saved.runtime.model_copy(update={"n_runtime_gpus": 2})}
+        )
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        saved.to_file(run_dir / "config.yaml")
+        for checkpoint in ("checkpoint_final.pt", "checkpoint_last_best.pt"):
+            (run_dir / checkpoint).write_bytes(b"")
+        calls: list[str] = []
+        # Resume requires W&B logging; the check runs before any logger exists.
+        _patch_kaggriculture_startup(
+            monkeypatch,
+            [str(run_dir / "checkpoint_final.pt")],
+            calls,
+            log_mode=LogMode.WANDB,
+        )
+    
+>       with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'run_ppo\\ cannot\\ run\\ Kaggriculture\\ yet:\\ Task\\ 3\\.1\\ rollout\\ storage\\ and\\ action\\ mapping\\ are\\ not\\ implemented'
+E         Actual message: 'run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land'
+
+tests/scripts/test_run_ppo.py:3510: AssertionError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 512 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 11.55x headroom, <= 1 call(s)); heads 11096 rows/call (21.67x headroom, 1 call(s))
+GEMM workload headroom minibatch: 1024 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 5.776x headroom, <= 1 call(s)); heads 11096 rows/call (10.84x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16384 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 0.361x headroom, <= 3 call(s)); heads 11096 rows/call (0.6772x headroom, 2 call(s))
+GEMM workload headroom evaluation: 512 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 11.55x headroom, <= 1 call(s)); heads 11096 rows/call (21.67x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_create_eval_env_keeps_orbit_env_and_builds_kaggriculture
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_eval_factory_arguments[cpu]
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_eval_factory_arguments[cuda]
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_eval_env_is_independent
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_policy_evaluation_names_remaining_mapping_blocker
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3]
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2]
+FAILED tests/scripts/test_run_ppo.py::test_resume_startup_checks_the_runtime_adapted_workload
+9 failed, 1 passed, 97 deselected in 0.38s

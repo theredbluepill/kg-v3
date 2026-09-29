@@ -1,0 +1,23 @@
+E501 Line too long (94 > 88)
+   --> tests/tools/test_record_kaggriculture_env_reference.py:205:89
+    |
+203 |     monkeypatch.setattr(recorder.subprocess, "Popen", lambda *_a, **_k: process)
+204 |     monkeypatch.setattr(recorder, "OPS", tmp_path)
+205 |     monkeypatch.setattr(recorder, "group_rss", lambda group: 700_000 if group == 12345 else 0)
+    |                                                                                         ^^^^^^
+206 |     monkeypatch.setattr(recorder, "resident_bytes", lambda _pid: 400_000)
+207 |     monkeypatch.setattr(recorder.os, "killpg", lambda group, sig: killed.append((group, sig)))
+    |
+
+E501 Line too long (94 > 88)
+   --> tests/tools/test_record_kaggriculture_env_reference.py:207:89
+    |
+205 |     monkeypatch.setattr(recorder, "group_rss", lambda group: 700_000 if group == 12345 else 0)
+206 |     monkeypatch.setattr(recorder, "resident_bytes", lambda _pid: 400_000)
+207 |     monkeypatch.setattr(recorder.os, "killpg", lambda group, sig: killed.append((group, sig)))
+    |                                                                                         ^^^^^^
+208 |     with pytest.raises(SystemExit, match="reason=memory"):
+209 |         recorder.supervise(["fake-worker"], 115, 1)
+    |
+
+Found 2 errors.

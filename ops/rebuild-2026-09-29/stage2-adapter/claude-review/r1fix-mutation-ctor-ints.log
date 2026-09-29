@@ -1,0 +1,510 @@
+.FF.FF.F.F                                                               [100%]
+=================================== FAILURES ===================================
+_ test_constructor_rejects_invalid_integers_before_allocation_and_native[n_envs-True] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110c2aa80>
+name = 'n_envs', value = True
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [
+            ("n_envs", 0),
+            ("n_envs", True),
+            ("n_envs", 2.0),
+            ("seed", -1),
+            ("seed", 2**63),
+            ("seed", False),
+            ("seed_stride", 0),
+            ("seed_stride", 2**63),
+            ("native_threads", 0),
+            ("native_threads", 1.5),
+        ],
+    )
+    def test_constructor_rejects_invalid_integers_before_allocation_and_native(
+        monkeypatch, name, value
+    ):
+        def fail_native(*_args, **_kwargs):
+            pytest.fail("native environment constructed")
+    
+        monkeypatch.setattr(rs, "KaggricultureEnv", fail_native, raising=False)
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        arguments = {
+            "n_envs": 2,
+            "seed": 41,
+            "seed_stride": 2,
+            "native_threads": 1,
+        } | {name: value}
+        with pytest.raises(ValueError, match=f"{name} must be an integer"):
+>           KaggricultureVectorizedEnv(
+                **arguments,
+                config=KaggricultureGameConfig(),
+                reward_config=reward_config(),
+                reward_mode="win_loss",
+                pin_memory=False,
+                transfer_device=_CPU_DEVICE,
+                obs_spec=KaggricultureObsConfig(),
+                action_spec=KaggricultureActionConfig(),
+            )
+
+tests/kaggriculture/test_env.py:450: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:185: in __init__
+    self._observations = allocate_observation_buffers(n_envs, pin_memory=pin_memory)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+n_envs = True
+
+    def allocate_observation_buffers(
+        n_envs: int, *, pin_memory: bool
+    ) -> KaggricultureObsBatch:
+        """Allocate the contract's 29 CPU buffers; native observe fills all padding."""
+        if type(n_envs) is not int or n_envs < 1:
+>           raise ValueError("n_envs must be a positive integer")
+E           ValueError: n_envs must be a positive integer
+
+python/owl/kaggriculture/env.py:51: ValueError
+
+During handling of the above exception, another exception occurred:
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110c2aa80>
+name = 'n_envs', value = True
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [
+            ("n_envs", 0),
+            ("n_envs", True),
+            ("n_envs", 2.0),
+            ("seed", -1),
+            ("seed", 2**63),
+            ("seed", False),
+            ("seed_stride", 0),
+            ("seed_stride", 2**63),
+            ("native_threads", 0),
+            ("native_threads", 1.5),
+        ],
+    )
+    def test_constructor_rejects_invalid_integers_before_allocation_and_native(
+        monkeypatch, name, value
+    ):
+        def fail_native(*_args, **_kwargs):
+            pytest.fail("native environment constructed")
+    
+        monkeypatch.setattr(rs, "KaggricultureEnv", fail_native, raising=False)
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        arguments = {
+            "n_envs": 2,
+            "seed": 41,
+            "seed_stride": 2,
+            "native_threads": 1,
+        } | {name: value}
+>       with pytest.raises(ValueError, match=f"{name} must be an integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'n_envs must be an integer'
+E         Actual message: 'n_envs must be a positive integer'
+
+tests/kaggriculture/test_env.py:449: AssertionError
+_ test_constructor_rejects_invalid_integers_before_allocation_and_native[n_envs-2.0] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110c2b290>
+name = 'n_envs', value = 2.0
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [
+            ("n_envs", 0),
+            ("n_envs", True),
+            ("n_envs", 2.0),
+            ("seed", -1),
+            ("seed", 2**63),
+            ("seed", False),
+            ("seed_stride", 0),
+            ("seed_stride", 2**63),
+            ("native_threads", 0),
+            ("native_threads", 1.5),
+        ],
+    )
+    def test_constructor_rejects_invalid_integers_before_allocation_and_native(
+        monkeypatch, name, value
+    ):
+        def fail_native(*_args, **_kwargs):
+            pytest.fail("native environment constructed")
+    
+        monkeypatch.setattr(rs, "KaggricultureEnv", fail_native, raising=False)
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        arguments = {
+            "n_envs": 2,
+            "seed": 41,
+            "seed_stride": 2,
+            "native_threads": 1,
+        } | {name: value}
+        with pytest.raises(ValueError, match=f"{name} must be an integer"):
+>           KaggricultureVectorizedEnv(
+                **arguments,
+                config=KaggricultureGameConfig(),
+                reward_config=reward_config(),
+                reward_mode="win_loss",
+                pin_memory=False,
+                transfer_device=_CPU_DEVICE,
+                obs_spec=KaggricultureObsConfig(),
+                action_spec=KaggricultureActionConfig(),
+            )
+
+tests/kaggriculture/test_env.py:450: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:185: in __init__
+    self._observations = allocate_observation_buffers(n_envs, pin_memory=pin_memory)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+n_envs = 2.0
+
+    def allocate_observation_buffers(
+        n_envs: int, *, pin_memory: bool
+    ) -> KaggricultureObsBatch:
+        """Allocate the contract's 29 CPU buffers; native observe fills all padding."""
+        if type(n_envs) is not int or n_envs < 1:
+>           raise ValueError("n_envs must be a positive integer")
+E           ValueError: n_envs must be a positive integer
+
+python/owl/kaggriculture/env.py:51: ValueError
+
+During handling of the above exception, another exception occurred:
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110c2b290>
+name = 'n_envs', value = 2.0
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [
+            ("n_envs", 0),
+            ("n_envs", True),
+            ("n_envs", 2.0),
+            ("seed", -1),
+            ("seed", 2**63),
+            ("seed", False),
+            ("seed_stride", 0),
+            ("seed_stride", 2**63),
+            ("native_threads", 0),
+            ("native_threads", 1.5),
+        ],
+    )
+    def test_constructor_rejects_invalid_integers_before_allocation_and_native(
+        monkeypatch, name, value
+    ):
+        def fail_native(*_args, **_kwargs):
+            pytest.fail("native environment constructed")
+    
+        monkeypatch.setattr(rs, "KaggricultureEnv", fail_native, raising=False)
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        arguments = {
+            "n_envs": 2,
+            "seed": 41,
+            "seed_stride": 2,
+            "native_threads": 1,
+        } | {name: value}
+>       with pytest.raises(ValueError, match=f"{name} must be an integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'n_envs must be an integer'
+E         Actual message: 'n_envs must be a positive integer'
+
+tests/kaggriculture/test_env.py:449: AssertionError
+_ test_constructor_rejects_invalid_integers_before_allocation_and_native[seed-9223372036854775808] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110c2bd40>
+name = 'seed', value = 9223372036854775808
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [
+            ("n_envs", 0),
+            ("n_envs", True),
+            ("n_envs", 2.0),
+            ("seed", -1),
+            ("seed", 2**63),
+            ("seed", False),
+            ("seed_stride", 0),
+            ("seed_stride", 2**63),
+            ("native_threads", 0),
+            ("native_threads", 1.5),
+        ],
+    )
+    def test_constructor_rejects_invalid_integers_before_allocation_and_native(
+        monkeypatch, name, value
+    ):
+        def fail_native(*_args, **_kwargs):
+            pytest.fail("native environment constructed")
+    
+        monkeypatch.setattr(rs, "KaggricultureEnv", fail_native, raising=False)
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        arguments = {
+            "n_envs": 2,
+            "seed": 41,
+            "seed_stride": 2,
+            "native_threads": 1,
+        } | {name: value}
+        with pytest.raises(ValueError, match=f"{name} must be an integer"):
+>           KaggricultureVectorizedEnv(
+                **arguments,
+                config=KaggricultureGameConfig(),
+                reward_config=reward_config(),
+                reward_mode="win_loss",
+                pin_memory=False,
+                transfer_device=_CPU_DEVICE,
+                obs_spec=KaggricultureObsConfig(),
+                action_spec=KaggricultureActionConfig(),
+            )
+
+tests/kaggriculture/test_env.py:450: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:185: in __init__
+    self._observations = allocate_observation_buffers(n_envs, pin_memory=pin_memory)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:53: in allocate_observation_buffers
+    tile_kind=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:40: in _allocate
+    tensor = torch.empty(shape, dtype=dtype, device="cpu", pin_memory=pin_memory)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = ((2, 2, 200),)
+_kwargs = {'device': 'cpu', 'dtype': torch.int64, 'pin_memory': False}
+
+>       torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: allocated buffers
+
+tests/kaggriculture/test_env.py:441: Failed
+_ test_constructor_rejects_invalid_integers_before_allocation_and_native[seed-False] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110c90470>
+name = 'seed', value = False
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [
+            ("n_envs", 0),
+            ("n_envs", True),
+            ("n_envs", 2.0),
+            ("seed", -1),
+            ("seed", 2**63),
+            ("seed", False),
+            ("seed_stride", 0),
+            ("seed_stride", 2**63),
+            ("native_threads", 0),
+            ("native_threads", 1.5),
+        ],
+    )
+    def test_constructor_rejects_invalid_integers_before_allocation_and_native(
+        monkeypatch, name, value
+    ):
+        def fail_native(*_args, **_kwargs):
+            pytest.fail("native environment constructed")
+    
+        monkeypatch.setattr(rs, "KaggricultureEnv", fail_native, raising=False)
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        arguments = {
+            "n_envs": 2,
+            "seed": 41,
+            "seed_stride": 2,
+            "native_threads": 1,
+        } | {name: value}
+        with pytest.raises(ValueError, match=f"{name} must be an integer"):
+>           KaggricultureVectorizedEnv(
+                **arguments,
+                config=KaggricultureGameConfig(),
+                reward_config=reward_config(),
+                reward_mode="win_loss",
+                pin_memory=False,
+                transfer_device=_CPU_DEVICE,
+                obs_spec=KaggricultureObsConfig(),
+                action_spec=KaggricultureActionConfig(),
+            )
+
+tests/kaggriculture/test_env.py:450: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:185: in __init__
+    self._observations = allocate_observation_buffers(n_envs, pin_memory=pin_memory)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:53: in allocate_observation_buffers
+    tile_kind=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:40: in _allocate
+    tensor = torch.empty(shape, dtype=dtype, device="cpu", pin_memory=pin_memory)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = ((2, 2, 200),)
+_kwargs = {'device': 'cpu', 'dtype': torch.int64, 'pin_memory': False}
+
+>       torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: allocated buffers
+
+tests/kaggriculture/test_env.py:441: Failed
+_ test_constructor_rejects_invalid_integers_before_allocation_and_native[seed_stride-9223372036854775808] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110c2b5f0>
+name = 'seed_stride', value = 9223372036854775808
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [
+            ("n_envs", 0),
+            ("n_envs", True),
+            ("n_envs", 2.0),
+            ("seed", -1),
+            ("seed", 2**63),
+            ("seed", False),
+            ("seed_stride", 0),
+            ("seed_stride", 2**63),
+            ("native_threads", 0),
+            ("native_threads", 1.5),
+        ],
+    )
+    def test_constructor_rejects_invalid_integers_before_allocation_and_native(
+        monkeypatch, name, value
+    ):
+        def fail_native(*_args, **_kwargs):
+            pytest.fail("native environment constructed")
+    
+        monkeypatch.setattr(rs, "KaggricultureEnv", fail_native, raising=False)
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        arguments = {
+            "n_envs": 2,
+            "seed": 41,
+            "seed_stride": 2,
+            "native_threads": 1,
+        } | {name: value}
+        with pytest.raises(ValueError, match=f"{name} must be an integer"):
+>           KaggricultureVectorizedEnv(
+                **arguments,
+                config=KaggricultureGameConfig(),
+                reward_config=reward_config(),
+                reward_mode="win_loss",
+                pin_memory=False,
+                transfer_device=_CPU_DEVICE,
+                obs_spec=KaggricultureObsConfig(),
+                action_spec=KaggricultureActionConfig(),
+            )
+
+tests/kaggriculture/test_env.py:450: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:185: in __init__
+    self._observations = allocate_observation_buffers(n_envs, pin_memory=pin_memory)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:53: in allocate_observation_buffers
+    tile_kind=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:40: in _allocate
+    tensor = torch.empty(shape, dtype=dtype, device="cpu", pin_memory=pin_memory)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = ((2, 2, 200),)
+_kwargs = {'device': 'cpu', 'dtype': torch.int64, 'pin_memory': False}
+
+>       torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: allocated buffers
+
+tests/kaggriculture/test_env.py:441: Failed
+_ test_constructor_rejects_invalid_integers_before_allocation_and_native[native_threads-1.5] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110c92900>
+name = 'native_threads', value = 1.5
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [
+            ("n_envs", 0),
+            ("n_envs", True),
+            ("n_envs", 2.0),
+            ("seed", -1),
+            ("seed", 2**63),
+            ("seed", False),
+            ("seed_stride", 0),
+            ("seed_stride", 2**63),
+            ("native_threads", 0),
+            ("native_threads", 1.5),
+        ],
+    )
+    def test_constructor_rejects_invalid_integers_before_allocation_and_native(
+        monkeypatch, name, value
+    ):
+        def fail_native(*_args, **_kwargs):
+            pytest.fail("native environment constructed")
+    
+        monkeypatch.setattr(rs, "KaggricultureEnv", fail_native, raising=False)
+        monkeypatch.setattr(
+            torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+        )
+        arguments = {
+            "n_envs": 2,
+            "seed": 41,
+            "seed_stride": 2,
+            "native_threads": 1,
+        } | {name: value}
+        with pytest.raises(ValueError, match=f"{name} must be an integer"):
+>           KaggricultureVectorizedEnv(
+                **arguments,
+                config=KaggricultureGameConfig(),
+                reward_config=reward_config(),
+                reward_mode="win_loss",
+                pin_memory=False,
+                transfer_device=_CPU_DEVICE,
+                obs_spec=KaggricultureObsConfig(),
+                action_spec=KaggricultureActionConfig(),
+            )
+
+tests/kaggriculture/test_env.py:450: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/env.py:185: in __init__
+    self._observations = allocate_observation_buffers(n_envs, pin_memory=pin_memory)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:53: in allocate_observation_buffers
+    tile_kind=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/env.py:40: in _allocate
+    tensor = torch.empty(shape, dtype=dtype, device="cpu", pin_memory=pin_memory)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_args = ((2, 2, 200),)
+_kwargs = {'device': 'cpu', 'dtype': torch.int64, 'pin_memory': False}
+
+>       torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+E   Failed: allocated buffers
+
+tests/kaggriculture/test_env.py:441: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_env.py::test_constructor_rejects_invalid_integers_before_allocation_and_native[n_envs-True]
+FAILED tests/kaggriculture/test_env.py::test_constructor_rejects_invalid_integers_before_allocation_and_native[n_envs-2.0]
+FAILED tests/kaggriculture/test_env.py::test_constructor_rejects_invalid_integers_before_allocation_and_native[seed-9223372036854775808]
+FAILED tests/kaggriculture/test_env.py::test_constructor_rejects_invalid_integers_before_allocation_and_native[seed-False]
+FAILED tests/kaggriculture/test_env.py::test_constructor_rejects_invalid_integers_before_allocation_and_native[seed_stride-9223372036854775808]
+FAILED tests/kaggriculture/test_env.py::test_constructor_rejects_invalid_integers_before_allocation_and_native[native_threads-1.5]
+6 failed, 4 passed, 44 deselected in 0.08s

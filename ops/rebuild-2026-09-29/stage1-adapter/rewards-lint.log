@@ -1,0 +1,35 @@
+E501 Line too long (89 > 88)
+  --> python/owl/kaggriculture/rewards.py:68:89
+   |
+66 |         if self.econ_ineffective_weight > 0 and self.econ_ineffective_cap <= 0:
+67 |             raise ValueError(
+68 |                 "positive econ_ineffective_weight requires positive econ_ineffective_cap"
+   |                                                                                         ^
+69 |             )
+70 |         return self
+   |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_rewards.py:124:28
+    |
+122 |                 dict(zip(_COEFFICIENTS, coefficients, strict=True))
+123 |             )
+124 |         with pytest.raises(ValueError):
+    |                            ^^^^^^^^^^
+125 |             rs.KaggricultureEnv(1, 0, 1, "{}", case, 1, hire_limit=241)
+    |
+
+PT011 `pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception
+   --> tests/kaggriculture/test_rewards.py:297:28
+    |
+295 |             terminal_rewards(bad, config)
+296 |     for bad in (counts.expand(2, 2, 32), counts[..., :31]):
+297 |         with pytest.raises(ValueError):
+    |                            ^^^^^^^^^^
+298 |             economic_rewards(counts, bad, config)
+299 |     previous = counts.clone()
+    |
+
+Found 3 errors.
+
+EXIT_CODE=1

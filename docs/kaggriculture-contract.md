@@ -1,6 +1,6 @@
 # Kaggriculture observation, action and environment contract
 
-Status: **v4.1, accepted** (Codex re-review: accept with edits, all applied; rebuild plan Task 0.1). Both streams build against this file. Changing it needs both agents to agree, recorded under "Review and changes".
+Status: **v4.2, accepted** (Codex re-review: accept with edits, all applied; rebuild plan Task 0.1). Both streams build against this file. Changing it needs both agents to agree, recorded under "Review and changes".
 
 Scope: the tensors that cross the native ↔ Python ↔ model boundary. The design follows Isaiah's `ObsBatch` pattern (`docs/rl-api-specs.md`): named per-entity tensors, written by Rust into caller-owned buffers, with explicit masks. The reference branch's flat 8,176-float vector (`kg/reference-2026-09-29:engine_rs/src/myolie_features.rs`) is the semantic source and test oracle, not the layout.
 
@@ -217,7 +217,7 @@ Wiring: player tokens are `player_tokens + player_feature_proj(player_features)`
 
 ## Environment
 
-- **Constructor:** `KaggricultureEnv(n_envs, seed, seed_stride, config, reward_config, native_threads, pin_memory)`, created by `owl.game.create_env`. It validates the configuration envelope; `seed ≥ 0` (CPython discards the sign of integer seeds).
+- **Constructor:** native `owl.rs.KaggricultureEnv(n_envs, seed, seed_stride, config, reward_config, native_threads, *, hire_limit)`, wrapped by the Python adapter `KaggricultureVectorizedEnv`, which owns `pin_memory` and the single pinned buffer set, and created by `owl.game.create_env` (v4.2). `config` is the validated game-envelope JSON text, `reward_config` an exact-key dict and `hire_limit` comes from `action_spec.hire_limit`. It validates the configuration envelope; `0 ≤ seed ≤ 2^63−1` and `1 ≤ seed_stride ≤ 2^63−1` (CPython discards the sign of integer seeds), with checked consumption.
 - **Seeds:** the factory passes `seed = base_seed + rank` and `seed_stride = world_size`; the native side doesn't add the rank again. Rank `r` starts with `next_seed = base_seed + r` and stride `world_size`. Every game construction and every reset consumes one seed and advances the counter. Simultaneous resets consume seeds in ascending environment index, and construction consumes seeds before any explicit `reset()`.
 - **API:** `reset() -> obs`; `step(actions) -> (obs, rewards f32 [E,2], dones bool [E,2], metrics)`, with synchronous auto-reset.
 - **Terminal step timing:** on a step that ends a game, rewards, dones, transition banks, economic counters and terminal metrics describe the **completed** transition, while the returned observation, `obs.banks` and masks describe the **newly reset** game. The default game ends after 719 transitions.
@@ -294,3 +294,8 @@ The oracle test (plan Task 1.3) reconstructs every retained reference value from
   - Native decoding rejects length 0; synthetic inactive rows stay in model/trainer masking.
   - Typed `GrammarPlan`/`State` plus eight direct boolean tables replace the binary plan runtime interface; table version 1 pins names, widths and shapes in `docs/rl-api-specs.md`.
   - Production grammar compiles at `src/kaggriculture/grammar.rs`; the standalone engine test includes that same source temporarily. At the first production root → engine dependency (1.3/1.4), move kernel acceptance tests into root integration, delete the engine test and its authored registration, and reopen L4 feature unification.
+- v4.2 (Task 1.4 constructor refinement; Codex proposed it in the 1.4 brief, Claude approved it as Q1 of the brief review, `ops/rebuild-2026-09-29/briefs/1.4.md`). This is a refinement, not a semantic change:
+  - The native constructor takes the game config as JSON text, an exact-key reward dict and a required `hire_limit`.
+  - `pin_memory`, the single caller-owned buffer set and its reuse fence move to the Python adapter.
+  - `observe` publishes the cached observation and transition outputs and consumes no seed.
+  - `step`, `reset` and `observe` write all six transition outputs; `truncate_envs` leaves them untouched and writes only the selected observation rows.

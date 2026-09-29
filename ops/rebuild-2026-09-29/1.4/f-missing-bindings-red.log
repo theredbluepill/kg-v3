@@ -1,0 +1,724 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF                               [100%]
+=================================== FAILURES ===================================
+_________________________ test_exact_grammar_constants _________________________
+
+    def test_exact_grammar_constants() -> None:
+>       constants = rs.kaggriculture_grammar_constants()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'kaggriculture_grammar_constants'
+
+tests/kaggriculture/test_native_grammar_bindings.py:34: AttributeError
+_____________________ test_tables_are_copied_bool_support ______________________
+
+    def test_tables_are_copied_bool_support() -> None:
+>       actual = rs.kaggriculture_grammar_tables()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'kaggriculture_grammar_tables'
+
+tests/kaggriculture/test_native_grammar_bindings.py:41: AttributeError
+__________ test_encode_decode_preserves_canonical_action[action0-1-2] __________
+
+action = {'farmer': ['PASS'], 'hands': [], 'market': []}, actors = 1, length = 2
+
+    @pytest.mark.parametrize("action,actors,length", [
+        (PASS, 1, 2),
+        ({**PASS, "market": [[], []]}, 1, 4),
+        ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+        ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+        ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+        ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+        ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+    ])
+    def test_encode_decode_preserves_canonical_action(action: dict[str, Any], actors: int, length: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+>       assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:69: AttributeError
+__________ test_encode_decode_preserves_canonical_action[action1-1-4] __________
+
+action = {'farmer': ['PASS'], 'hands': [], 'market': [[], []]}, actors = 1
+length = 4
+
+    @pytest.mark.parametrize("action,actors,length", [
+        (PASS, 1, 2),
+        ({**PASS, "market": [[], []]}, 1, 4),
+        ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+        ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+        ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+        ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+        ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+    ])
+    def test_encode_decode_preserves_canonical_action(action: dict[str, Any], actors: int, length: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+>       assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:69: AttributeError
+__________ test_encode_decode_preserves_canonical_action[action2-1-4] __________
+
+action = {'farmer': ['PASS'], 'hands': [], 'market': [[], ['BUY_PRODUCT', 'WHEAT', 0]]}
+actors = 1, length = 4
+
+    @pytest.mark.parametrize("action,actors,length", [
+        (PASS, 1, 2),
+        ({**PASS, "market": [[], []]}, 1, 4),
+        ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+        ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+        ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+        ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+        ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+    ])
+    def test_encode_decode_preserves_canonical_action(action: dict[str, Any], actors: int, length: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+>       assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:69: AttributeError
+__________ test_encode_decode_preserves_canonical_action[action3-1-2] __________
+
+action = {'farmer': ['PICKUP', 'GOOSE'], 'hands': [], 'market': []}, actors = 1
+length = 2
+
+    @pytest.mark.parametrize("action,actors,length", [
+        (PASS, 1, 2),
+        ({**PASS, "market": [[], []]}, 1, 4),
+        ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+        ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+        ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+        ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+        ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+    ])
+    def test_encode_decode_preserves_canonical_action(action: dict[str, Any], actors: int, length: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+>       assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:69: AttributeError
+__________ test_encode_decode_preserves_canonical_action[action4-1-2] __________
+
+action = {'farmer': ['PLACE', 'WHEAT'], 'hands': [], 'market': []}, actors = 1
+length = 2
+
+    @pytest.mark.parametrize("action,actors,length", [
+        (PASS, 1, 2),
+        ({**PASS, "market": [[], []]}, 1, 4),
+        ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+        ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+        ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+        ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+        ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+    ])
+    def test_encode_decode_preserves_canonical_action(action: dict[str, Any], actors: int, length: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+>       assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:69: AttributeError
+__________ test_encode_decode_preserves_canonical_action[action5-1-2] __________
+
+action = {'farmer': ['PICKUP', 'WHEAT', 1], 'hands': [], 'market': []}
+actors = 1, length = 2
+
+    @pytest.mark.parametrize("action,actors,length", [
+        (PASS, 1, 2),
+        ({**PASS, "market": [[], []]}, 1, 4),
+        ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+        ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+        ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+        ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+        ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+    ])
+    def test_encode_decode_preserves_canonical_action(action: dict[str, Any], actors: int, length: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+>       assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:69: AttributeError
+__________ test_encode_decode_preserves_canonical_action[action6-3-4] __________
+
+action = {'farmer': ['PASS'], 'hands': [['EAST'], ['PASS']], 'market': []}
+actors = 3, length = 4
+
+    @pytest.mark.parametrize("action,actors,length", [
+        (PASS, 1, 2),
+        ({**PASS, "market": [[], []]}, 1, 4),
+        ({**PASS, "market": [[], ["BUY_PRODUCT", "WHEAT", 0]]}, 1, 4),
+        ({**PASS, "farmer": ["PICKUP", "GOOSE"]}, 1, 2),
+        ({**PASS, "farmer": ["PLACE", "WHEAT"]}, 1, 2),
+        ({**PASS, "farmer": ["PICKUP", "WHEAT", 1]}, 1, 2),
+        ({**PASS, "hands": [["EAST"], ["PASS"]]}, 3, 4),
+    ])
+    def test_encode_decode_preserves_canonical_action(action: dict[str, Any], actors: int, length: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+>       assert rs.kaggriculture_encode(json.dumps(action), actors, 10, 241, out) == length
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:69: AttributeError
+____________________ test_failed_encode_preserves_output[{] ____________________
+
+action_json = '{'
+
+    @pytest.mark.parametrize("action_json", [
+        "{", "null", "[]", "{}",
+        '{"farmer":null,"hands":[],"market":[]}',
+        '{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}',
+        '{"farmer":["PASS"],"hands":[],"market":[],"extra":0}',
+        '{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}',
+    ])
+    def test_failed_encode_preserves_output(action_json: str) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(action_json, 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:89: AttributeError
+__________________ test_failed_encode_preserves_output[null] ___________________
+
+action_json = 'null'
+
+    @pytest.mark.parametrize("action_json", [
+        "{", "null", "[]", "{}",
+        '{"farmer":null,"hands":[],"market":[]}',
+        '{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}',
+        '{"farmer":["PASS"],"hands":[],"market":[],"extra":0}',
+        '{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}',
+    ])
+    def test_failed_encode_preserves_output(action_json: str) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(action_json, 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:89: AttributeError
+___________________ test_failed_encode_preserves_output[[]] ____________________
+
+action_json = '[]'
+
+    @pytest.mark.parametrize("action_json", [
+        "{", "null", "[]", "{}",
+        '{"farmer":null,"hands":[],"market":[]}',
+        '{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}',
+        '{"farmer":["PASS"],"hands":[],"market":[],"extra":0}',
+        '{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}',
+    ])
+    def test_failed_encode_preserves_output(action_json: str) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(action_json, 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:89: AttributeError
+___________________ test_failed_encode_preserves_output[{}] ____________________
+
+action_json = '{}'
+
+    @pytest.mark.parametrize("action_json", [
+        "{", "null", "[]", "{}",
+        '{"farmer":null,"hands":[],"market":[]}',
+        '{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}',
+        '{"farmer":["PASS"],"hands":[],"market":[],"extra":0}',
+        '{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}',
+    ])
+    def test_failed_encode_preserves_output(action_json: str) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(action_json, 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:89: AttributeError
+_ test_failed_encode_preserves_output[{"farmer":null,"hands":[],"market":[]}] __
+
+action_json = '{"farmer":null,"hands":[],"market":[]}'
+
+    @pytest.mark.parametrize("action_json", [
+        "{", "null", "[]", "{}",
+        '{"farmer":null,"hands":[],"market":[]}',
+        '{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}',
+        '{"farmer":["PASS"],"hands":[],"market":[],"extra":0}',
+        '{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}',
+    ])
+    def test_failed_encode_preserves_output(action_json: str) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(action_json, 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:89: AttributeError
+_ test_failed_encode_preserves_output[{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}] _
+
+action_json = '{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}'
+
+    @pytest.mark.parametrize("action_json", [
+        "{", "null", "[]", "{}",
+        '{"farmer":null,"hands":[],"market":[]}',
+        '{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}',
+        '{"farmer":["PASS"],"hands":[],"market":[],"extra":0}',
+        '{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}',
+    ])
+    def test_failed_encode_preserves_output(action_json: str) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(action_json, 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:89: AttributeError
+_ test_failed_encode_preserves_output[{"farmer":["PASS"],"hands":[],"market":[],"extra":0}] _
+
+action_json = '{"farmer":["PASS"],"hands":[],"market":[],"extra":0}'
+
+    @pytest.mark.parametrize("action_json", [
+        "{", "null", "[]", "{}",
+        '{"farmer":null,"hands":[],"market":[]}',
+        '{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}',
+        '{"farmer":["PASS"],"hands":[],"market":[],"extra":0}',
+        '{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}',
+    ])
+    def test_failed_encode_preserves_output(action_json: str) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(action_json, 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:89: AttributeError
+_ test_failed_encode_preserves_output[{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}] _
+
+action_json = '{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}'
+
+    @pytest.mark.parametrize("action_json", [
+        "{", "null", "[]", "{}",
+        '{"farmer":null,"hands":[],"market":[]}',
+        '{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}',
+        '{"farmer":["PASS"],"hands":[],"market":[],"extra":0}',
+        '{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}',
+    ])
+    def test_failed_encode_preserves_output(action_json: str) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(action_json, 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:89: AttributeError
+____________ test_codec_shape_rejection_is_transactional[0-10-241] _____________
+
+actors = 0, order_limit = 10, hire_limit = 241
+
+    @pytest.mark.parametrize("actors,order_limit,hire_limit", [(0, 10, 241), (242, 10, 241), (1, 11, 241), (1, -1, 241), (1, 10, 0), (1, 10, 242)])
+    def test_codec_shape_rejection_is_transactional(actors: int, order_limit: int, hire_limit: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), actors, order_limit, hire_limit, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:98: AttributeError
+___________ test_codec_shape_rejection_is_transactional[242-10-241] ____________
+
+actors = 242, order_limit = 10, hire_limit = 241
+
+    @pytest.mark.parametrize("actors,order_limit,hire_limit", [(0, 10, 241), (242, 10, 241), (1, 11, 241), (1, -1, 241), (1, 10, 0), (1, 10, 242)])
+    def test_codec_shape_rejection_is_transactional(actors: int, order_limit: int, hire_limit: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), actors, order_limit, hire_limit, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:98: AttributeError
+____________ test_codec_shape_rejection_is_transactional[1-11-241] _____________
+
+actors = 1, order_limit = 11, hire_limit = 241
+
+    @pytest.mark.parametrize("actors,order_limit,hire_limit", [(0, 10, 241), (242, 10, 241), (1, 11, 241), (1, -1, 241), (1, 10, 0), (1, 10, 242)])
+    def test_codec_shape_rejection_is_transactional(actors: int, order_limit: int, hire_limit: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), actors, order_limit, hire_limit, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:98: AttributeError
+____________ test_codec_shape_rejection_is_transactional[1--1-241] _____________
+
+actors = 1, order_limit = -1, hire_limit = 241
+
+    @pytest.mark.parametrize("actors,order_limit,hire_limit", [(0, 10, 241), (242, 10, 241), (1, 11, 241), (1, -1, 241), (1, 10, 0), (1, 10, 242)])
+    def test_codec_shape_rejection_is_transactional(actors: int, order_limit: int, hire_limit: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), actors, order_limit, hire_limit, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:98: AttributeError
+_____________ test_codec_shape_rejection_is_transactional[1-10-0] ______________
+
+actors = 1, order_limit = 10, hire_limit = 0
+
+    @pytest.mark.parametrize("actors,order_limit,hire_limit", [(0, 10, 241), (242, 10, 241), (1, 11, 241), (1, -1, 241), (1, 10, 0), (1, 10, 242)])
+    def test_codec_shape_rejection_is_transactional(actors: int, order_limit: int, hire_limit: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), actors, order_limit, hire_limit, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:98: AttributeError
+____________ test_codec_shape_rejection_is_transactional[1-10-242] _____________
+
+actors = 1, order_limit = 10, hire_limit = 242
+
+    @pytest.mark.parametrize("actors,order_limit,hire_limit", [(0, 10, 241), (242, 10, 241), (1, 11, 241), (1, -1, 241), (1, 10, 0), (1, 10, 242)])
+    def test_codec_shape_rejection_is_transactional(actors: int, order_limit: int, hire_limit: int) -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), actors, order_limit, hire_limit, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:98: AttributeError
+______________ test_codec_array_admission_before_any_write[dtype] ______________
+
+kind = 'dtype'
+
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "fortran", "unaligned", "endian", "alias"])
+    def test_codec_array_admission_before_any_write(kind: str) -> None:
+        out = _invalid_array(kind)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:127: AttributeError
+______________ test_codec_array_admission_before_any_write[shape] ______________
+
+kind = 'shape'
+
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "fortran", "unaligned", "endian", "alias"])
+    def test_codec_array_admission_before_any_write(kind: str) -> None:
+        out = _invalid_array(kind)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:127: AttributeError
+_____________ test_codec_array_admission_before_any_write[stride] ______________
+
+kind = 'stride'
+
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "fortran", "unaligned", "endian", "alias"])
+    def test_codec_array_admission_before_any_write(kind: str) -> None:
+        out = _invalid_array(kind)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:127: AttributeError
+_____________ test_codec_array_admission_before_any_write[fortran] _____________
+
+kind = 'fortran'
+
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "fortran", "unaligned", "endian", "alias"])
+    def test_codec_array_admission_before_any_write(kind: str) -> None:
+        out = _invalid_array(kind)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:127: AttributeError
+____________ test_codec_array_admission_before_any_write[unaligned] ____________
+
+kind = 'unaligned'
+
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "fortran", "unaligned", "endian", "alias"])
+    def test_codec_array_admission_before_any_write(kind: str) -> None:
+        out = _invalid_array(kind)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:127: AttributeError
+_____________ test_codec_array_admission_before_any_write[endian] ______________
+
+kind = 'endian'
+
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "fortran", "unaligned", "endian", "alias"])
+    def test_codec_array_admission_before_any_write(kind: str) -> None:
+        out = _invalid_array(kind)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:127: AttributeError
+______________ test_codec_array_admission_before_any_write[alias] ______________
+
+kind = 'alias'
+
+    @pytest.mark.parametrize("kind", ["dtype", "shape", "stride", "fortran", "unaligned", "endian", "alias"])
+    def test_codec_array_admission_before_any_write(kind: str) -> None:
+        out = _invalid_array(kind)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:127: AttributeError
+_____________________ test_encode_rejects_readonly_storage _____________________
+
+    def test_encode_rejects_readonly_storage() -> None:
+        out = np.full((252, 12), 91, dtype=np.int64)
+        out.setflags(write=False)
+        before = out.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_encode(json.dumps(PASS), 1, 10, 241, out)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_encode'. Did you mean: 'KaggricultureEnv'?
+
+tests/kaggriculture/test_native_grammar_bindings.py:139: AttributeError
+____________________ test_decode_rejects_invalid_length[-1] ____________________
+
+length = -1
+
+    @pytest.mark.parametrize("length", [-1, 0, 1, 3, 253, 2**63 - 1])
+    def test_decode_rejects_invalid_length(length: int) -> None:
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_decode(_pass_tokens(), length, 1, 10, 241)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:146: AttributeError
+____________________ test_decode_rejects_invalid_length[0] _____________________
+
+length = 0
+
+    @pytest.mark.parametrize("length", [-1, 0, 1, 3, 253, 2**63 - 1])
+    def test_decode_rejects_invalid_length(length: int) -> None:
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_decode(_pass_tokens(), length, 1, 10, 241)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:146: AttributeError
+____________________ test_decode_rejects_invalid_length[1] _____________________
+
+length = 1
+
+    @pytest.mark.parametrize("length", [-1, 0, 1, 3, 253, 2**63 - 1])
+    def test_decode_rejects_invalid_length(length: int) -> None:
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_decode(_pass_tokens(), length, 1, 10, 241)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:146: AttributeError
+____________________ test_decode_rejects_invalid_length[3] _____________________
+
+length = 3
+
+    @pytest.mark.parametrize("length", [-1, 0, 1, 3, 253, 2**63 - 1])
+    def test_decode_rejects_invalid_length(length: int) -> None:
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_decode(_pass_tokens(), length, 1, 10, 241)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:146: AttributeError
+___________________ test_decode_rejects_invalid_length[253] ____________________
+
+length = 253
+
+    @pytest.mark.parametrize("length", [-1, 0, 1, 3, 253, 2**63 - 1])
+    def test_decode_rejects_invalid_length(length: int) -> None:
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_decode(_pass_tokens(), length, 1, 10, 241)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:146: AttributeError
+___________ test_decode_rejects_invalid_length[9223372036854775807] ____________
+
+length = 9223372036854775807
+
+    @pytest.mark.parametrize("length", [-1, 0, 1, 3, 253, 2**63 - 1])
+    def test_decode_rejects_invalid_length(length: int) -> None:
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_decode(_pass_tokens(), length, 1, 10, 241)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:146: AttributeError
+____________ test_decode_rejects_dirty_tail_and_wide_tokens[2-0-1] _____________
+
+frame = 2, slot = 0, value = 1
+
+    @pytest.mark.parametrize("frame,slot,value", [(2, 0, 1), (251, 11, 1), (252 - 1, 1, -1), (0, 1, 2**62)])
+    def test_decode_rejects_dirty_tail_and_wide_tokens(frame: int, slot: int, value: int) -> None:
+        tokens = _pass_tokens()
+        tokens[frame, slot] = value
+        before = tokens.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_decode(tokens, 2, 1, 10, 241)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:155: AttributeError
+___________ test_decode_rejects_dirty_tail_and_wide_tokens[251-11-1] ___________
+
+frame = 251, slot = 11, value = 1
+
+    @pytest.mark.parametrize("frame,slot,value", [(2, 0, 1), (251, 11, 1), (252 - 1, 1, -1), (0, 1, 2**62)])
+    def test_decode_rejects_dirty_tail_and_wide_tokens(frame: int, slot: int, value: int) -> None:
+        tokens = _pass_tokens()
+        tokens[frame, slot] = value
+        before = tokens.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_decode(tokens, 2, 1, 10, 241)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:155: AttributeError
+___________ test_decode_rejects_dirty_tail_and_wide_tokens[251-1--1] ___________
+
+frame = 251, slot = 1, value = -1
+
+    @pytest.mark.parametrize("frame,slot,value", [(2, 0, 1), (251, 11, 1), (252 - 1, 1, -1), (0, 1, 2**62)])
+    def test_decode_rejects_dirty_tail_and_wide_tokens(frame: int, slot: int, value: int) -> None:
+        tokens = _pass_tokens()
+        tokens[frame, slot] = value
+        before = tokens.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_decode(tokens, 2, 1, 10, 241)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:155: AttributeError
+___ test_decode_rejects_dirty_tail_and_wide_tokens[0-1-4611686018427387904] ____
+
+frame = 0, slot = 1, value = 4611686018427387904
+
+    @pytest.mark.parametrize("frame,slot,value", [(2, 0, 1), (251, 11, 1), (252 - 1, 1, -1), (0, 1, 2**62)])
+    def test_decode_rejects_dirty_tail_and_wide_tokens(frame: int, slot: int, value: int) -> None:
+        tokens = _pass_tokens()
+        tokens[frame, slot] = value
+        before = tokens.tobytes()
+        with pytest.raises(ValueError):
+>           rs.kaggriculture_decode(tokens, 2, 1, 10, 241)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:155: AttributeError
+______ test_recorded_grammar_corpus_including_dense_and_rejection_classes ______
+
+    def test_recorded_grammar_corpus_including_dense_and_rejection_classes() -> None:
+        compressed = (FIXTURES / "grammar-v4-reference.jsonl.gz").read_bytes()
+        manifest = json.loads((FIXTURES / "grammar-v4-reference.manifest.json").read_text())
+        assert hashlib.sha256(compressed).hexdigest() == manifest["compressed_sha256"]
+        payload = gzip.decompress(compressed)
+        assert hashlib.sha256(payload).hexdigest() == manifest["uncompressed_sha256"]
+        rows = [json.loads(line) for line in payload.splitlines()]
+        assert rows[0]["type"] == "header"
+        assert rows[0]["slot_names"] == list(NAMES) and rows[0]["slot_widths"] == list(WIDTHS)
+        assert rows[0]["reference_commit"] == manifest["reference_commit"]
+        accepted = scheduled = dense = dense_full = 0
+        rejected: set[str] = set()
+        for row in rows[1:]:
+            assert row["type"] == "program" and row["source"] != "replay_rejected"
+            shape = row["shape"]
+            actors, orders, hire = shape["actors"], shape["order_limit"], shape["hire_limit"]
+            tokens = np.zeros((252, 12), dtype=np.int64)
+            tokens.reshape(-1)[:len(row["tokens"])] = row["tokens"]
+            for frame, slot, value in row["padding_edits"]:
+                tokens[frame, slot] = value
+            length = row["length"]
+            if row["v4_expected"]["accepted"]:
+                expected = row["v4_expected"]["action"]
+>               actual = json.loads(rs.kaggriculture_decode(tokens, length, actors, orders, hire))
+                                    ^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: module 'owl.rs' has no attribute 'kaggriculture_decode'
+
+tests/kaggriculture/test_native_grammar_bindings.py:182: AttributeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_exact_grammar_constants
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_tables_are_copied_bool_support
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action0-1-2]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action1-1-4]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action2-1-4]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action3-1-2]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action4-1-2]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action5-1-2]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_decode_preserves_canonical_action[action6-3-4]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_failed_encode_preserves_output[{]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_failed_encode_preserves_output[null]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_failed_encode_preserves_output[[]]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_failed_encode_preserves_output[{}]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_failed_encode_preserves_output[{"farmer":null,"hands":[],"market":[]}]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_failed_encode_preserves_output[{"farmer":["PASS"],"hands":[["PASS"]],"market":[]}]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_failed_encode_preserves_output[{"farmer":["PASS"],"hands":[],"market":[],"extra":0}]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_failed_encode_preserves_output[{"farmer":["PICKUP","WHEAT",0],"hands":[],"market":[]}]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_shape_rejection_is_transactional[0-10-241]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_shape_rejection_is_transactional[242-10-241]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_shape_rejection_is_transactional[1-11-241]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_shape_rejection_is_transactional[1--1-241]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_shape_rejection_is_transactional[1-10-0]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_shape_rejection_is_transactional[1-10-242]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_array_admission_before_any_write[dtype]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_array_admission_before_any_write[shape]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_array_admission_before_any_write[stride]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_array_admission_before_any_write[fortran]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_array_admission_before_any_write[unaligned]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_array_admission_before_any_write[endian]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_codec_array_admission_before_any_write[alias]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_encode_rejects_readonly_storage
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_invalid_length[-1]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_invalid_length[0]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_invalid_length[1]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_invalid_length[3]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_invalid_length[253]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_invalid_length[9223372036854775807]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_dirty_tail_and_wide_tokens[2-0-1]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_dirty_tail_and_wide_tokens[251-11-1]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_dirty_tail_and_wide_tokens[251-1--1]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_decode_rejects_dirty_tail_and_wide_tokens[0-1-4611686018427387904]
+FAILED tests/kaggriculture/test_native_grammar_bindings.py::test_recorded_grammar_corpus_including_dense_and_rejection_classes
+42 failed in 0.16s

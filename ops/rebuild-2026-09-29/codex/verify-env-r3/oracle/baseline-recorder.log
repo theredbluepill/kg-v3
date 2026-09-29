@@ -1,0 +1,135 @@
+..........................................F...F.....F....F               [100%]
+=================================== FAILURES ===================================
+_ test_size_budget_rejects_coherent_oversize_fixture[MAX_EXPANDED-expanded_bytes-expanded size budget exceeded] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-93/test_size_budget_rejects_coher1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108df8fb0>
+cap = 'MAX_EXPANDED', field = 'expanded_bytes'
+error = 'expanded size budget exceeded'
+
+    @pytest.mark.parametrize(
+        ("cap", "field", "error"),
+        [
+            ("MAX_COMPRESSED", "compressed_bytes", "compressed size budget exceeded"),
+            ("MAX_EXPANDED", "expanded_bytes", "expanded size budget exceeded"),
+        ],
+    )
+    def test_size_budget_rejects_coherent_oversize_fixture(
+        tmp_path: Path, monkeypatch, cap: str, field: str, error: str
+    ) -> None:
+        """A self-consistent fixture one byte over a lowered cap fails its budget."""
+>       path = publish_example(tmp_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py:57: in publish_example
+    recorder.publish_fixture(target, manifest, arrays)
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:356: in publish_fixture
+    with tempfile.TemporaryDirectory(prefix="env-fixture-", dir=scratch) as directory:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:308: in validate_manifest
+    )
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'reference/recorder/policy source custody differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: reference/recorder/policy source custody differs
+
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:63: ValueError
+_ test_archive_digest_mismatch_rejected_before_numpy_load[fixture_sha256-fixture hash differs] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-93/test_archive_digest_mismatch_r0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108dff830>
+field = 'fixture_sha256', error = 'fixture hash differs'
+
+    @pytest.mark.parametrize(
+        ("field", "error"),
+        [
+            ("fixture_sha256", "fixture hash differs"),
+            ("expanded_sha256", "expanded fixture hash differs"),
+        ],
+    )
+    def test_archive_digest_mismatch_rejected_before_numpy_load(
+        tmp_path: Path, monkeypatch, field: str, error: str
+    ) -> None:
+        """Only the named digest is wrong; sizes, arrays and sources stay coherent."""
+>       path = publish_example(tmp_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py:327: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py:57: in publish_example
+    recorder.publish_fixture(target, manifest, arrays)
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:356: in publish_fixture
+    scratch.mkdir(exist_ok=True)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:308: in validate_manifest
+    "reference/recorder/policy source custody differs",
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'reference/recorder/policy source custody differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: reference/recorder/policy source custody differs
+
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:63: ValueError
+_________________ test_reference_source_member_drift_rejected __________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-env/.codex-tmp/pytest-of-poonszesen/pytest-93/test_reference_source_member_d0')
+
+    def test_reference_source_member_drift_rejected(tmp_path: Path) -> None:
+>       path = publish_example(tmp_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py:406: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py:57: in publish_example
+    recorder.publish_fixture(target, manifest, arrays)
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:356: in publish_fixture
+    validate_manifest(manifest)
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:308: in validate_manifest
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'reference/recorder/policy source custody differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: reference/recorder/policy source custody differs
+
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:63: ValueError
+______________ test_frozen_fixture_custody_and_complete_coverage _______________
+
+    def test_frozen_fixture_custody_and_complete_coverage() -> None:
+>       manifest, arrays = recorder.load_fixture()
+                           ^^^^^^^^^^^^^^^^^^^^^^^
+
+/private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py:483: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:381: in load_fixture
+    validate_manifest(manifest)
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:308: in validate_manifest
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, reason = 'reference/recorder/policy source custody differs'
+
+    def require(condition: bool, reason: str) -> None:
+        if not condition:
+>           raise ValueError(reason)
+E           ValueError: reference/recorder/policy source custody differs
+
+/private/tmp/kg-env-r3-oracle/scripts/record_kaggriculture_env_reference.py:63: ValueError
+=========================== short test summary info ============================
+FAILED ../../../private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_size_budget_rejects_coherent_oversize_fixture[MAX_EXPANDED-expanded_bytes-expanded size budget exceeded]
+FAILED ../../../private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_archive_digest_mismatch_rejected_before_numpy_load[fixture_sha256-fixture hash differs]
+FAILED ../../../private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_reference_source_member_drift_rejected
+FAILED ../../../private/tmp/kg-env-r3-oracle/tests/tools/test_record_kaggriculture_env_reference.py::test_frozen_fixture_custody_and_complete_coverage
+4 failed, 54 passed in 13.19s
