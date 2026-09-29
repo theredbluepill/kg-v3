@@ -22,6 +22,7 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/codex/claude-verify-7.5-r2.md"
   - resource: "repository:ops/rebuild-2026-09-29/codex/claude-verify-7.5-r3.md"
   - resource: "repository:ops/rebuild-2026-09-29/merge-7-5-c/prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/claude-verify-merge-7-5.md"
   - resource: "bc-branch:kg/rebuild-bc-now@933d661/ops/rebuild-2026-09-29/bc-a100-2026-09-29/pairing.json"
 ---
 
@@ -150,7 +151,8 @@ Each of them covers one layer, so this record is new rather than a revision.
   `ops/rebuild-2026-09-29/merge-7-5-c/prepare.log`, and the merge verification is
   `ops/rebuild-2026-09-29/codex/claude-verify-merge-7-5.md`, by the landing Claude
   agent substituting for Codex during its usage limit (owner-approved; not a
-  Codex verdict and not independent of the merge author).
+  Codex verdict and not independent of the merge author): APPROVE, with one
+  disclosed P3 (the 3.3 GB prepare peak).
 
 ## Gaps and reopening conditions
 
