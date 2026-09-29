@@ -138,3 +138,23 @@ Attempt 1 is recorded as it stands: a stop on an Inductor compile error in the f
 Scripts: `kg_gap.py 9e1686c4…`, `driver.py bef5b7fb…`, `launch.sh eb3a2ff0…`; the others are unchanged. The local cleanup test was rerun on the amended driver and passed (`pre-launch/driver_cleanup_test_local_attempt2.txt`).
 
 **Attempt 2** reruns every stage from the start in the same run dir, with fresh caches and freshly generated Orbit Wars states. Attempt 1's outputs, caches, states and scripts move to `attempt1/` on the pod before the relaunch.
+
+## Amendment 2 — attempt 3 (written after attempt 2 stopped, before relaunch; no gap numbers read from attempts 1–2)
+
+**Attempt 2 (10:52:29–10:53:41Z, driver 72.3 s, exit 3).** The idle gate passed at 0 s. Stage outcomes:
+
+- `isF_eager`, `kgA_bf16_comp_aten` and `kgB_bf16_eager` passed.
+- `kgC_fp32_eager` failed with `torch.OutOfMemoryError`. It was trying to allocate 710 MiB with 92.37 GiB allocated by PyTorch. The failure came at 1,024 rows, inside the supplementary grad-enabled `compute_value`, while the grad replay's graph was still alive. The 256-row pair and hidden cells had completed.
+- For scale, the BF16 stages' peak allocation at 1,024 rows was 56.8 GiB (compiled) and 71.5 GiB (eager). This is a planning error in the fp32 memory estimate: fp32 padded SDPA roughly doubles the activations, and the supplementary cells hold two grad graphs at once.
+- The driver stopped as required. It terminated `isF_comp_default` (rc −15) and started nothing further.
+
+Attempt 2 is recorded as it stands.
+
+**Change.** Only the following changes; thresholds and metrics are unchanged.
+
+1. The three fp32 stages run at **256 rows only** (`--rows 256`). Prediction 2 (C) is therefore evaluated at 256 rows only, against A at 256 rows. Every BF16 and Isaiah stage keeps 256 and 1,024 rows.
+2. Budget: the internal deadline is 38 min and `launch.sh` uses `timeout -s TERM -k 20 2400`. The aggregate therefore stays ≤ 45 min: 95.9 + 72.3 + 2,400 + 20 = 2,588 s.
+
+Scripts: `driver.py 68516ad9…` and `launch.sh bd98fe95…`; the others are unchanged from Amendment 1. The local cleanup test was rerun and passed (`pre-launch/driver_cleanup_test_local_attempt3.txt`).
+
+**Attempt 3** reruns every stage from the start, with fresh caches and states. Attempt 2's files move to `attempt2/` on the pod.

@@ -48,9 +48,10 @@ SELFTEST = os.environ.get("VGAP_DRIVER_SELFTEST")
 ROOT = Path("/workspace/kg-v3-rebuild")
 PY = str(ROOT / ".venv/bin/python")
 WRAP = str(RUN / "gemm_backend_wrap.py")
-# Attempt 2 (Amendment 1): attempt 1 used 95.9 s of driver wall; 40 min here
-# plus launch.sh's `timeout -k 20 2520` keeps the aggregate within 45 min.
-BUDGET_S = 40 * 60
+# Attempt 3 (Amendment 2): attempts 1 and 2 used 95.9 s + 72.3 s of driver
+# wall; 38 min here plus launch.sh's `timeout -k 20 2400` keeps the aggregate
+# within 45 min.
+BUDGET_S = 38 * 60
 MIN_START_S = 90
 OPTIONAL_MIN_S = 600
 TERM_GRACE_S = 8.0
@@ -82,13 +83,15 @@ GPU0: list[Stage] = [
         ["--hidden", "--gain-swap"]),
     _kg("kgB_bf16_eager", "required", "ATEN", "bf16", "eager",
         ["--hidden", "--gain-swap"]),
-    _kg("kgC_fp32_eager", "required", "ATEN", "fp32", "eager", ["--hidden"]),
+    # Amendment 2: fp32 stages at 256 rows only (attempt 2 ran out of GPU memory
+    # in kgC_fp32_eager at 1,024 rows).
+    _kg("kgC_fp32_eager", "required", "ATEN", "fp32", "eager", ["--hidden", "--rows", "256"]),
     _kg("kgA_bf16_comp_default", "required", "default", "bf16", "compiled",
         ["--hidden", "--gain-swap"]),
     _kg("kgC_fp32_comp_aten", "required", "ATEN", "fp32", "compiled",
-        ["--hidden", "--no-coalesce-tiling"]),
+        ["--hidden", "--no-coalesce-tiling", "--rows", "256"]),
     _kg("kgC_fp32_comp_default", "optional", "default", "fp32", "compiled",
-        ["--hidden", "--no-coalesce-tiling"]),
+        ["--hidden", "--no-coalesce-tiling", "--rows", "256"]),
 ]
 GPU1: list[Stage] = [
     _is("isF_eager", "ATEN", "eager"),
