@@ -61,6 +61,9 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/run_mutations.py"
   - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/mutations.json"
   - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/rollback-red.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r3-fixes/rollback-green.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/independent-verifier-r4/review.md"
   - resource: "repository:scripts/run_ppo.py"
   - resource: "repository:README.md"
   - resource: "repository:tests/scripts/test_run_ppo.py"
@@ -402,8 +405,11 @@ raised two P2 findings.
   and the failure is a note. Nine tests (episode or custody write/close
   failure, unpublishable error custody, fsync/link order, no-replace, and the
   verifier's partial write over two live native games) were red first
-  (`r3-fixes/publication-red.log`); eight source mutations each fail them
-  (`r3-fixes/mutations.json`). The verifier's probes patch the final episode
+  (`r3-fixes/publication-red.log`). Codex r4 approved with one P3 edit: a
+  rollback removal failure replaced the original exception. Rollback now notes
+  it on the original and stops, keeping custody with its matching episode
+  (red first, `r3-fixes/rollback-red.log`). Ten source mutations each fail the
+  tests (`r3-fixes/mutations.json`). The verifier's probes patch the final episode
   path, which is no longer opened, so the live test carries their scenario.
 - **P2, canonical evaluation (deferred to Task 3.1).** Not implemented on this
   branch by instruction; the dependency and reopening condition are recorded

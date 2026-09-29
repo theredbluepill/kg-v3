@@ -1,0 +1,30 @@
+MUTATION_SOURCE /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kg-t73-r4-mutations-gag8e_ai/replay_export.py 3b2499b15bac96b32e8b22cbf0940e5c23ecf6206428b47c612c07cba05dc6d2
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_unpublishable_error_custody_leaves_no_files_and_the_game_active _____
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-854/test_unpublishable_error_custo0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11040b110>
+
+    @pytest.mark.usefixtures("native_calls")
+    def test_unpublishable_error_custody_leaves_no_files_and_the_game_active(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        recorder = _recorder(tmp_path)
+        _inject_publication_failure(
+            monkeypatch, "game_000000.custody.json", "write", times=2
+        )
+        with pytest.raises(OSError, match="injected partial write failure") as raised:
+            _finish_selected_game(recorder)
+        assert list(tmp_path.iterdir()) == []
+>       assert recorder.active_games == frozenset({0})
+E       assert frozenset() == frozenset({0})
+E         
+E         Extra items in the right set:
+E         0
+E         Use -v to get more diff
+
+tests/kaggriculture/test_replay_export.py:672: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_unpublishable_error_custody_leaves_no_files_and_the_game_active
+1 failed in 0.40s

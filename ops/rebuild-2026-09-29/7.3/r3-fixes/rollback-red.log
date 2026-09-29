@@ -1,0 +1,106 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_rollback_failure_keeps_the_original_error_and_a_matching_pair ______
+
+descriptor = 11
+
+    def fsync(descriptor: int) -> None:
+        calls["fsync"] += 1
+        if calls["fsync"] == 3:  # episode file, custody file, then directory
+>           raise OSError("injected directory fsync failure")
+E           OSError: injected directory fsync failure
+
+tests/kaggriculture/test_replay_export.py:740: OSError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-959/test_rollback_failure_keeps_th0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1111957c0>
+
+    @pytest.mark.usefixtures("native_calls")
+    def test_rollback_failure_keeps_the_original_error_and_a_matching_pair(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Verification r4 double fault: the directory fsync fails, then removing
+        # the published custody fails too.
+        original_fsync, original_unlink = replay_export.os.fsync, Path.unlink
+        calls = {"fsync": 0}
+    
+        def fsync(descriptor: int) -> None:
+            calls["fsync"] += 1
+            if calls["fsync"] == 3:  # episode file, custody file, then directory
+                raise OSError("injected directory fsync failure")
+            original_fsync(descriptor)
+    
+        def unlink(path: Path, missing_ok: bool = False) -> None:
+            if path.name == "game_000000.custody.json":
+                raise PermissionError("injected rollback failure")
+            original_unlink(path, missing_ok=missing_ok)
+    
+        monkeypatch.setattr(replay_export.os, "fsync", fsync)
+        monkeypatch.setattr(Path, "unlink", unlink)
+        recorder = _recorder(tmp_path)
+        with pytest.raises(OSError, match="injected directory fsync failure") as raised:
+>           _finish_selected_game(recorder)
+
+tests/kaggriculture/test_replay_export.py:752: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_replay_export.py:623: in _finish_selected_game
+    recorder.finish_game(0, _snapshot(2, done=True))
+python/owl/kaggriculture/replay_export.py:458: in finish_game
+    self._write(replay, status="complete")
+python/owl/kaggriculture/replay_export.py:556: in _write
+    _publish(self.output_dir, files)
+python/owl/kaggriculture/replay_export.py:90: in _publish
+    path.unlink(missing_ok=True)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-959/test_rollback_failure_keeps_th0/game_000000.custody.json')
+missing_ok = True
+
+    def unlink(path: Path, missing_ok: bool = False) -> None:
+        if path.name == "game_000000.custody.json":
+>           raise PermissionError("injected rollback failure")
+E           PermissionError: injected rollback failure
+E           error custody for game 0 was not published: FileExistsError: [Errno 17] File exists: '/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-959/test_rollback_failure_keeps_th0/.game_000000.custody.json.6876496e290e719b.tmp' -> '/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-959/test_rollback_failure_keeps_th0/game_000000.custody.json'
+
+tests/kaggriculture/test_replay_export.py:745: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-959/test_rollback_failure_keeps_th0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1111957c0>
+
+    @pytest.mark.usefixtures("native_calls")
+    def test_rollback_failure_keeps_the_original_error_and_a_matching_pair(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Verification r4 double fault: the directory fsync fails, then removing
+        # the published custody fails too.
+        original_fsync, original_unlink = replay_export.os.fsync, Path.unlink
+        calls = {"fsync": 0}
+    
+        def fsync(descriptor: int) -> None:
+            calls["fsync"] += 1
+            if calls["fsync"] == 3:  # episode file, custody file, then directory
+                raise OSError("injected directory fsync failure")
+            original_fsync(descriptor)
+    
+        def unlink(path: Path, missing_ok: bool = False) -> None:
+            if path.name == "game_000000.custody.json":
+                raise PermissionError("injected rollback failure")
+            original_unlink(path, missing_ok=missing_ok)
+    
+        monkeypatch.setattr(replay_export.os, "fsync", fsync)
+        monkeypatch.setattr(Path, "unlink", unlink)
+        recorder = _recorder(tmp_path)
+>       with pytest.raises(OSError, match="injected directory fsync failure") as raised:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'injected directory fsync failure'
+E         Actual message: "injected rollback failure\nerror custody for game 0 was not published: FileExistsError: [Errno 17] File exists: '/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-959/test_rollback_failure_keeps_th0/.game_000000.custody.json.6876496e290e719b.tmp' -> '/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-959/test_rollback_failure_keeps_th0/game_000000.custody.json'"
+
+tests/kaggriculture/test_replay_export.py:751: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_rollback_failure_keeps_the_original_error_and_a_matching_pair
+1 failed, 54 deselected in 0.62s

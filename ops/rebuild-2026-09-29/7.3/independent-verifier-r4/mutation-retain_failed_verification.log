@@ -1,0 +1,173 @@
+MUTATION_SOURCE /tmp/kg-t73-r4-mutations-9bih42mi/replay_export.py f53fb8de2b241631a757a844cf6c28b6f9d70900f80929b0bbe8fea75a00b9dc
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_publication_failure_never_leaves_successful_custody[game_000000.json-write] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-903/test_publication_failure_never0')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113da7020>
+target = 'game_000000.json', stage = 'write'
+
+    @pytest.mark.parametrize("stage", ["write", "close"])
+    @pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+    def test_publication_failure_never_leaves_successful_custody(
+        tmp_path: Path,
+        native_calls: list[dict[str, Any]],
+        monkeypatch: pytest.MonkeyPatch,
+        target: str,
+        stage: str,
+    ) -> None:
+        # Only the first exclusive write of the target fails; the error custody
+        # written afterwards succeeds.
+        recorder = _recorder(tmp_path)
+        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+        with pytest.raises(
+            OSError,
+            match=f"injected {'partial write' if stage == 'write' else 'close'} failure",
+        ):
+            _finish_selected_game(recorder)
+        assert len(failed) == 1
+        assert len(native_calls) == 1
+        # No episode, no staging leftovers: exactly one error custody record.
+        assert sorted(path.name for path in tmp_path.iterdir()) == [
+            "game_000000.custody.json"
+        ]
+        sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+        assert sidecar["status"] == "error"
+        assert sidecar["complete"] is False
+        assert sidecar["action_tape"]["complete"] is False
+        assert len(sidecar["action_tape"]["transitions"]) == 2
+        assert "episode_sha256" not in sidecar
+>       assert "verification" not in sidecar
+E       AssertionError: assert 'verification' not in {'action_tape': {'complete': False, 'transitions': [{'actions': [{'farmer': [...], 'hands': [], 'market': [...]}, {'fa...aaaaaaaaaaa', 'incumbent': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'}, 'complete': False, ...}
+
+tests/kaggriculture/test_replay_export.py:656: AssertionError
+_ test_publication_failure_never_leaves_successful_custody[game_000000.json-close] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-903/test_publication_failure_never1')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113d7ac90>
+target = 'game_000000.json', stage = 'close'
+
+    @pytest.mark.parametrize("stage", ["write", "close"])
+    @pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+    def test_publication_failure_never_leaves_successful_custody(
+        tmp_path: Path,
+        native_calls: list[dict[str, Any]],
+        monkeypatch: pytest.MonkeyPatch,
+        target: str,
+        stage: str,
+    ) -> None:
+        # Only the first exclusive write of the target fails; the error custody
+        # written afterwards succeeds.
+        recorder = _recorder(tmp_path)
+        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+        with pytest.raises(
+            OSError,
+            match=f"injected {'partial write' if stage == 'write' else 'close'} failure",
+        ):
+            _finish_selected_game(recorder)
+        assert len(failed) == 1
+        assert len(native_calls) == 1
+        # No episode, no staging leftovers: exactly one error custody record.
+        assert sorted(path.name for path in tmp_path.iterdir()) == [
+            "game_000000.custody.json"
+        ]
+        sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+        assert sidecar["status"] == "error"
+        assert sidecar["complete"] is False
+        assert sidecar["action_tape"]["complete"] is False
+        assert len(sidecar["action_tape"]["transitions"]) == 2
+        assert "episode_sha256" not in sidecar
+>       assert "verification" not in sidecar
+E       AssertionError: assert 'verification' not in {'action_tape': {'complete': False, 'transitions': [{'actions': [{'farmer': [...], 'hands': [], 'market': [...]}, {'fa...aaaaaaaaaaa', 'incumbent': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'}, 'complete': False, ...}
+
+tests/kaggriculture/test_replay_export.py:656: AssertionError
+_ test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-903/test_publication_failure_never2')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x115413a40>
+target = 'game_000000.custody.json', stage = 'write'
+
+    @pytest.mark.parametrize("stage", ["write", "close"])
+    @pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+    def test_publication_failure_never_leaves_successful_custody(
+        tmp_path: Path,
+        native_calls: list[dict[str, Any]],
+        monkeypatch: pytest.MonkeyPatch,
+        target: str,
+        stage: str,
+    ) -> None:
+        # Only the first exclusive write of the target fails; the error custody
+        # written afterwards succeeds.
+        recorder = _recorder(tmp_path)
+        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+        with pytest.raises(
+            OSError,
+            match=f"injected {'partial write' if stage == 'write' else 'close'} failure",
+        ):
+            _finish_selected_game(recorder)
+        assert len(failed) == 1
+        assert len(native_calls) == 1
+        # No episode, no staging leftovers: exactly one error custody record.
+        assert sorted(path.name for path in tmp_path.iterdir()) == [
+            "game_000000.custody.json"
+        ]
+        sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+        assert sidecar["status"] == "error"
+        assert sidecar["complete"] is False
+        assert sidecar["action_tape"]["complete"] is False
+        assert len(sidecar["action_tape"]["transitions"]) == 2
+        assert "episode_sha256" not in sidecar
+>       assert "verification" not in sidecar
+E       AssertionError: assert 'verification' not in {'action_tape': {'complete': False, 'transitions': [{'actions': [{'farmer': [...], 'hands': [], 'market': [...]}, {'fa...aaaaaaaaaaa', 'incumbent': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'}, 'complete': False, ...}
+
+tests/kaggriculture/test_replay_export.py:656: AssertionError
+_ test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-903/test_publication_failure_never3')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1154a3260>
+target = 'game_000000.custody.json', stage = 'close'
+
+    @pytest.mark.parametrize("stage", ["write", "close"])
+    @pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+    def test_publication_failure_never_leaves_successful_custody(
+        tmp_path: Path,
+        native_calls: list[dict[str, Any]],
+        monkeypatch: pytest.MonkeyPatch,
+        target: str,
+        stage: str,
+    ) -> None:
+        # Only the first exclusive write of the target fails; the error custody
+        # written afterwards succeeds.
+        recorder = _recorder(tmp_path)
+        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+        with pytest.raises(
+            OSError,
+            match=f"injected {'partial write' if stage == 'write' else 'close'} failure",
+        ):
+            _finish_selected_game(recorder)
+        assert len(failed) == 1
+        assert len(native_calls) == 1
+        # No episode, no staging leftovers: exactly one error custody record.
+        assert sorted(path.name for path in tmp_path.iterdir()) == [
+            "game_000000.custody.json"
+        ]
+        sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+        assert sidecar["status"] == "error"
+        assert sidecar["complete"] is False
+        assert sidecar["action_tape"]["complete"] is False
+        assert len(sidecar["action_tape"]["transitions"]) == 2
+        assert "episode_sha256" not in sidecar
+>       assert "verification" not in sidecar
+E       AssertionError: assert 'verification' not in {'action_tape': {'complete': False, 'transitions': [{'actions': [{'farmer': [...], 'hands': [], 'market': [...]}, {'fa...aaaaaaaaaaa', 'incumbent': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'}, 'complete': False, ...}
+
+tests/kaggriculture/test_replay_export.py:656: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-write]
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-close]
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write]
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close]
+4 failed in 0.38s

@@ -79,15 +79,28 @@ def _fsync_directory(directory: Path) -> None:
 
 
 def _publish(directory: Path, files: Sequence[tuple[Path, bytes]]) -> None:
-    """Publish ``files`` in order; on any failure remove what was published."""
+    """Publish ``files`` in order; on failure remove them in reverse order.
+
+    The original failure is always re-raised. If a published file cannot be
+    removed, rollback stops there and notes it, so any custody left behind still
+    has the episode it claims.
+    """
     published: list[Path] = []
     try:
         for path, payload in files:
             _publish_new_file(path, payload, published)
         _fsync_directory(directory)
-    except BaseException:
+    except BaseException as error:
         for path in reversed(published):
-            path.unlink(missing_ok=True)
+            try:
+                path.unlink(missing_ok=True)
+            except OSError as cleanup_error:
+                error.add_note(
+                    f"could not remove {path.name} after the failed publication: "
+                    f"{type(cleanup_error).__name__}: {cleanup_error}; files "
+                    "published before it were kept"
+                )
+                break
         raise
 
 

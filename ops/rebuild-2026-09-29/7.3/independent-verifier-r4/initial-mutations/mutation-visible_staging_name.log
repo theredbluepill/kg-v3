@@ -1,0 +1,50 @@
+MUTATION_SOURCE /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kg-t73-r4-mutations-gag8e_ai/replay_export.py e298cfeaceeee25c93bca6c48f39f14ef80258fb8bbb3667a2e5a3019b13a1e5
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_dot_staging_precedes_visible_file ____________________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-832/test_dot_staging_precedes_visi0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ea0be00>
+
+    def test_dot_staging_precedes_visible_file(tmp_path, monkeypatch):
+        target=tmp_path/'game_000000.json'
+        original=Path.open; writes=[]
+        def open_(path,mode='r',*args,**kwargs):
+            if mode=='xb':
+                assert path.name.startswith('.'), path
+                assert path.name.endswith('.tmp'), path
+                assert path != target
+                assert not target.exists()
+                writes.append(str(path))
+            return original(path,mode,*args,**kwargs)
+        monkeypatch.setattr(Path,'open',open_)
+        published=[]
+>       subject._publish_new_file(target,b'payload',published)
+
+ops/rebuild-2026-09-29/7.3/independent-verifier-r4/test_r4_probes.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kg-t73-r4-mutations-gag8e_ai/replay_export.py:62: in _publish_new_file
+    with temporary.open("xb") as stream:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-832/test_dot_staging_precedes_visi0/visible-game_000000.json.94f2fd4abb931252.tmp')
+mode = 'xb', args = (), kwargs = {}
+@py_assert1 = 'visible-game_000000.json.94f2fd4abb931252.tmp'
+@py_assert3 = <built-in method startswith of str object at 0x10e99e070>
+@py_assert5 = '.', @py_assert7 = False
+@py_format9 = "PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-832/test_dot_staging_...test-832/test_dot_staging_precedes_visi0/visible-game_000000.json.94f2fd4abb931252.tmp').name\n}.startswith\n}('.')\n}"
+
+    def open_(path,mode='r',*args,**kwargs):
+        if mode=='xb':
+>           assert path.name.startswith('.'), path
+E           AssertionError: PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-832/test_dot_staging_precedes_visi0/visible-game_000000.json.94f2fd4abb931252.tmp')
+E           assert False
+E            +  where False = <built-in method startswith of str object at 0x10e99e070>('.')
+E            +    where <built-in method startswith of str object at 0x10e99e070> = 'visible-game_000000.json.94f2fd4abb931252.tmp'.startswith
+E            +      where 'visible-game_000000.json.94f2fd4abb931252.tmp' = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-832/test_dot_staging_precedes_visi0/visible-game_000000.json.94f2fd4abb931252.tmp').name
+
+ops/rebuild-2026-09-29/7.3/independent-verifier-r4/test_r4_probes.py:78: AssertionError
+=========================== short test summary info ============================
+FAILED ops/rebuild-2026-09-29/7.3/independent-verifier-r4/test_r4_probes.py::test_dot_staging_precedes_visible_file
+1 failed in 1.27s

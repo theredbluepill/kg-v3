@@ -1053,7 +1053,9 @@ episode is published before the custody that claims it, then the directory is
 fsynced. If any step fails, files this attempt published are removed and an
 error sidecar (`replay publication failed: ...`, no episode hash) is published
 before the original exception is re-raised; if that also fails, the game stays
-active and the failure is attached as a note.
+active and the failure is attached as a note. A file that cannot be removed
+during rollback is noted on the original exception and stops the rollback, so
+custody left behind keeps the episode it claims.
 Seeds and checkpoint identity are host metadata, never model inputs.
 
 `owl.kaggriculture.native_evaluation.evaluate_native_games` is the live seam

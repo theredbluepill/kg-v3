@@ -1,0 +1,81 @@
+MUTATION_SOURCE /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kg-t73-r4-mutations-gag8e_ai/replay_export.py c288ac28625a210aa41c255d2e1810cdbe552feed23f1f67d7fbed255b783f64
+..FF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-842/test_publication_failure_never2')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x115de3bc0>
+target = 'game_000000.custody.json', stage = 'write'
+
+    @pytest.mark.parametrize("stage", ["write", "close"])
+    @pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+    def test_publication_failure_never_leaves_successful_custody(
+        tmp_path: Path,
+        native_calls: list[dict[str, Any]],
+        monkeypatch: pytest.MonkeyPatch,
+        target: str,
+        stage: str,
+    ) -> None:
+        # Only the first exclusive write of the target fails; the error custody
+        # written afterwards succeeds.
+        recorder = _recorder(tmp_path)
+        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+        with pytest.raises(
+            OSError,
+            match=f"injected {'partial write' if stage == 'write' else 'close'} failure",
+        ):
+            _finish_selected_game(recorder)
+        assert len(failed) == 1
+        assert len(native_calls) == 1
+        # No episode, no staging leftovers: exactly one error custody record.
+>       assert sorted(path.name for path in tmp_path.iterdir()) == [
+            "game_000000.custody.json"
+        ]
+E       AssertionError: assert ['game_000000..._000000.json'] == ['game_000000.custody.json']
+E         
+E         Left contains one more item: 'game_000000.json'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_replay_export.py:647: AssertionError
+_ test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-842/test_publication_failure_never3')
+native_calls = [{'captured': {'banks': [[3000.25, 2999.5], [3000.25, 2999.5]], 'initial': {'done': False, 'privates': [{'shed': {...}...03205395, ...}, 'tape': {'complete': True, 'transitions': [{'actions': [{...}, {...}]}, {'actions': [{...}, {...}]}]}}]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x115de2930>
+target = 'game_000000.custody.json', stage = 'close'
+
+    @pytest.mark.parametrize("stage", ["write", "close"])
+    @pytest.mark.parametrize("target", ["game_000000.json", "game_000000.custody.json"])
+    def test_publication_failure_never_leaves_successful_custody(
+        tmp_path: Path,
+        native_calls: list[dict[str, Any]],
+        monkeypatch: pytest.MonkeyPatch,
+        target: str,
+        stage: str,
+    ) -> None:
+        # Only the first exclusive write of the target fails; the error custody
+        # written afterwards succeeds.
+        recorder = _recorder(tmp_path)
+        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)
+        with pytest.raises(
+            OSError,
+            match=f"injected {'partial write' if stage == 'write' else 'close'} failure",
+        ):
+            _finish_selected_game(recorder)
+        assert len(failed) == 1
+        assert len(native_calls) == 1
+        # No episode, no staging leftovers: exactly one error custody record.
+>       assert sorted(path.name for path in tmp_path.iterdir()) == [
+            "game_000000.custody.json"
+        ]
+E       AssertionError: assert ['game_000000..._000000.json'] == ['game_000000.custody.json']
+E         
+E         Left contains one more item: 'game_000000.json'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_replay_export.py:647: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write]
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close]
+2 failed, 2 passed in 0.63s

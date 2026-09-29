@@ -1,5 +1,16 @@
 # Change log
 
+## 2026-09-29 — Apply Task 7.3 verification r4 P3: rollback keeps the original error
+
+Codex verification r4 (`ops/rebuild-2026-09-29/7.3/independent-verifier-r4/review.md`,
+APPROVE WITH EDITS) resolved the r3 custody finding, recorded the canonical
+evaluation deferral to Task 3.1, and raised one P3: when the directory fsync and
+then custody removal both failed, the removal error replaced the original.
+Rollback now notes the removal failure on the original exception and stops,
+keeping custody with its matching episode. A double-fault test was red first;
+two mutations detect it. The [[references/native-replay-export-preserves-kaggle-episodes|replay-export
+Reference]] is revised. Receipts are in `ops/rebuild-2026-09-29/7.3/r3-fixes/`.
+
 ## 2026-09-29 — Fix Task 7.3 verification r3: transactional replay publication
 
 Codex verification r3 of Task 7.3 (`ops/rebuild-2026-09-29/7.3/independent-verifier-r3/review.md`,

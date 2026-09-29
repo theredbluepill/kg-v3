@@ -29,8 +29,16 @@ MUTATIONS = {
         "",
     ),
     "published_files_not_removed_on_failure": (
-        "            path.unlink(missing_ok=True)\n        raise",
-        "            pass\n        raise",
+        "                path.unlink(missing_ok=True)\n",
+        "                pass\n",
+    ),
+    "rollback_failure_replaces_original_error": (
+        "            except OSError as cleanup_error:",
+        "            except ArithmeticError as cleanup_error:",
+    ),
+    "rollback_continues_past_unremovable_custody": (
+        "                break\n",
+        "                continue\n",
     ),
     "no_error_custody_after_failed_publication": (
         'if sidecar["status"] != "error":',

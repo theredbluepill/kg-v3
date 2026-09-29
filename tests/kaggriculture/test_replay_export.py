@@ -723,3 +723,44 @@ def test_publication_never_replaces_a_path_created_meanwhile(tmp_path: Path) -> 
     assert target.read_bytes() == b"unrelated evidence"
     assert published == []
     assert list(tmp_path.iterdir()) == [target]
+
+
+@pytest.mark.usefixtures("native_calls")
+def test_rollback_failure_keeps_the_original_error_and_a_matching_pair(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Verification r4 double fault: the directory fsync fails, then removing
+    # the published custody fails too.
+    original_fsync, original_unlink = replay_export.os.fsync, Path.unlink
+    calls = {"fsync": 0}
+
+    def fsync(descriptor: int) -> None:
+        calls["fsync"] += 1
+        if calls["fsync"] == 3:  # episode file, custody file, then directory
+            raise OSError("injected directory fsync failure")
+        original_fsync(descriptor)
+
+    def unlink(path: Path, missing_ok: bool = False) -> None:
+        if path.name == "game_000000.custody.json":
+            raise PermissionError("injected rollback failure")
+        original_unlink(path, missing_ok=missing_ok)
+
+    monkeypatch.setattr(replay_export.os, "fsync", fsync)
+    monkeypatch.setattr(Path, "unlink", unlink)
+    recorder = _recorder(tmp_path)
+    with pytest.raises(OSError, match="injected directory fsync failure") as raised:
+        _finish_selected_game(recorder)
+    assert not isinstance(raised.value, PermissionError)
+    notes = "\n".join(raised.value.__notes__)
+    assert "could not remove game_000000.custody.json" in notes
+    assert "PermissionError: injected rollback failure" in notes
+    # Rollback stops at the custody it could not remove, so the episode it
+    # claims is kept and still matches its hash.
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "game_000000.custody.json",
+        "game_000000.json",
+    ]
+    sidecar = json.loads((tmp_path / "game_000000.custody.json").read_text())
+    episode = (tmp_path / "game_000000.json").read_bytes()
+    assert sidecar["episode_sha256"] == hashlib.sha256(episode).hexdigest()
+    assert recorder.active_games == frozenset({0})

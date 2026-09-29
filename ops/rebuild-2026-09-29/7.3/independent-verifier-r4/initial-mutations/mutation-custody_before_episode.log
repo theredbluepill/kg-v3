@@ -1,0 +1,45 @@
+MUTATION_SOURCE /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kg-t73-r4-mutations-gag8e_ai/replay_export.py 82aabeb0d8aed182e1b43a1cd66919366bae2132a8782b60c17f6c24ea15f627
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_episode_is_durable_before_custody_claims_it _______________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-840/test_episode_is_durable_before0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11248b170>
+
+    @pytest.mark.usefixtures("native_calls")
+    def test_episode_is_durable_before_custody_claims_it(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        events: list[str] = []
+        original_fsync, original_link = replay_export.os.fsync, replay_export.os.link
+    
+        def fsync(descriptor: int) -> None:
+            events.append("fsync")
+            original_fsync(descriptor)
+    
+        def link(source: Any, destination: Any) -> None:
+            events.append(f"link {Path(destination).name}")
+            original_link(source, destination)
+    
+        monkeypatch.setattr(replay_export.os, "fsync", fsync)
+        monkeypatch.setattr(replay_export.os, "link", link)
+        recorder = _recorder(tmp_path)
+        _finish_selected_game(recorder)
+        # Each file is fsynced before it appears; custody appears after the
+        # episode; the directory entries are fsynced last.
+>       assert events == [
+            "fsync",
+            "link game_000000.json",
+            "fsync",
+            "link game_000000.custody.json",
+            "fsync",
+        ]
+E       AssertionError: assert ['fsync', 'li...son', 'fsync'] == ['fsync', 'li...son', 'fsync']
+E         
+E         At index 1 diff: 'link game_000000.custody.json' != 'link game_000000.json'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_replay_export.py:704: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it
+1 failed in 0.70s

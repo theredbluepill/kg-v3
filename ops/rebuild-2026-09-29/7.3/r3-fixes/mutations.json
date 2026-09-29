@@ -1,41 +1,59 @@
 {
-  "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
-  "restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+  "source_sha256": "9ade5c5626e344cf819913b074e6ce117c6f81ed4c626c50dd576e039dcdcae5",
+  "restored_sha256": "9ade5c5626e344cf819913b074e6ce117c6f81ed4c626c50dd576e039dcdcae5",
   "mutations": {
     "custody_published_before_episode": {
       "exit": 1,
-      "summary": "1 failed, 63 passed in 2.22s",
+      "summary": "2 failed, 63 passed in 1.91s",
       "failed": [
-        "tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it"
+        "tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it",
+        "tests/kaggriculture/test_replay_export.py::test_rollback_failure_keeps_the_original_error_and_a_matching_pair"
       ]
     },
     "rename_replaces_existing_path": {
       "exit": 1,
-      "summary": "2 failed, 62 passed in 2.62s",
+      "summary": "3 failed, 62 passed in 1.88s",
       "failed": [
         "tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it",
-        "tests/kaggriculture/test_replay_export.py::test_publication_never_replaces_a_path_created_meanwhile"
+        "tests/kaggriculture/test_replay_export.py::test_publication_never_replaces_a_path_created_meanwhile",
+        "tests/kaggriculture/test_replay_export.py::test_rollback_failure_keeps_the_original_error_and_a_matching_pair"
       ]
     },
     "no_fsync_before_link": {
       "exit": 1,
-      "summary": "1 failed, 63 passed in 2.22s",
+      "summary": "2 failed, 63 passed in 1.81s",
       "failed": [
-        "tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it"
+        "tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it",
+        "tests/kaggriculture/test_replay_export.py::test_rollback_failure_keeps_the_original_error_and_a_matching_pair"
       ]
     },
     "published_files_not_removed_on_failure": {
       "exit": 1,
-      "summary": "3 failed, 61 passed in 2.18s",
+      "summary": "4 failed, 61 passed in 1.80s",
       "failed": [
         "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write]",
         "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close]",
-        "tests/kaggriculture/test_replay_export.py::test_unpublishable_error_custody_leaves_no_files_and_the_game_active"
+        "tests/kaggriculture/test_replay_export.py::test_unpublishable_error_custody_leaves_no_files_and_the_game_active",
+        "tests/kaggriculture/test_replay_export.py::test_rollback_failure_keeps_the_original_error_and_a_matching_pair"
+      ]
+    },
+    "rollback_failure_replaces_original_error": {
+      "exit": 1,
+      "summary": "1 failed, 64 passed in 1.80s",
+      "failed": [
+        "tests/kaggriculture/test_replay_export.py::test_rollback_failure_keeps_the_original_error_and_a_matching_pair"
+      ]
+    },
+    "rollback_continues_past_unremovable_custody": {
+      "exit": 1,
+      "summary": "1 failed, 64 passed in 1.77s",
+      "failed": [
+        "tests/kaggriculture/test_replay_export.py::test_rollback_failure_keeps_the_original_error_and_a_matching_pair"
       ]
     },
     "no_error_custody_after_failed_publication": {
       "exit": 1,
-      "summary": "6 failed, 58 passed in 2.08s",
+      "summary": "6 failed, 59 passed in 1.78s",
       "failed": [
         "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-write]",
         "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-close]",
@@ -47,7 +65,7 @@
     },
     "staging_file_left_behind": {
       "exit": 1,
-      "summary": "7 failed, 57 passed in 2.09s",
+      "summary": "8 failed, 57 passed in 1.92s",
       "failed": [
         "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-write]",
         "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-close]",
@@ -55,12 +73,13 @@
         "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close]",
         "tests/kaggriculture/test_replay_export.py::test_unpublishable_error_custody_leaves_no_files_and_the_game_active",
         "tests/kaggriculture/test_replay_export.py::test_publication_never_replaces_a_path_created_meanwhile",
+        "tests/kaggriculture/test_replay_export.py::test_rollback_failure_keeps_the_original_error_and_a_matching_pair",
         "tests/kaggriculture/test_replay_export_integration.py::test_partial_episode_write_during_live_evaluation_leaves_error_custody"
       ]
     },
     "error_custody_keeps_episode_hash": {
       "exit": 1,
-      "summary": "5 failed, 59 passed in 2.14s",
+      "summary": "5 failed, 60 passed in 1.93s",
       "failed": [
         "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-write]",
         "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-close]",
@@ -71,9 +90,10 @@
     },
     "unpublished_error_custody_retires_game": {
       "exit": 1,
-      "summary": "1 failed, 63 passed in 1.94s",
+      "summary": "2 failed, 63 passed in 1.80s",
       "failed": [
-        "tests/kaggriculture/test_replay_export.py::test_unpublishable_error_custody_leaves_no_files_and_the_game_active"
+        "tests/kaggriculture/test_replay_export.py::test_unpublishable_error_custody_leaves_no_files_and_the_game_active",
+        "tests/kaggriculture/test_replay_export.py::test_rollback_failure_keeps_the_original_error_and_a_matching_pair"
       ]
     }
   }

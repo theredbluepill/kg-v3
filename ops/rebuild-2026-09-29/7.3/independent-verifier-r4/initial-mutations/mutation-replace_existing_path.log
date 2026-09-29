@@ -1,0 +1,19 @@
+MUTATION_SOURCE /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/kg-t73-r4-mutations-gag8e_ai/replay_export.py 6a512dbb9c49a457040d99d6a8bebf2c5e6149e6764ec31d8580c9f12b7f3e51
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_publication_never_replaces_a_path_created_meanwhile ___________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-838/test_publication_never_replace0')
+
+    def test_publication_never_replaces_a_path_created_meanwhile(tmp_path: Path) -> None:
+        target = tmp_path / "game_000000.json"
+        target.write_bytes(b"unrelated evidence")
+        published: list[Path] = []
+>       with pytest.raises(FileExistsError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'FileExistsError'>
+
+tests/kaggriculture/test_replay_export.py:721: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_replay_export.py::test_publication_never_replaces_a_path_created_meanwhile
+1 failed in 0.04s

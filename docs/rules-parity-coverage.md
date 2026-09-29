@@ -487,9 +487,12 @@ re-raised. When error custody also fails, no file remains and the game stays
 active for the abort handler. A durability test checks the fsync/link order
 (episode, then custody, then directory), and publication refuses to replace an
 existing path. A live two-game run whose episode write stops after 20 bytes
-leaves error custody for both games. Eight source mutations (custody first,
-rename replacing, no fsync, no cleanup, no error custody, staging file left,
-episode hash kept, unpublished game retired) each fail these tests.
+leaves error custody for both games. A double fault (directory fsync, then
+custody removal) re-raises the original error with a note and keeps the matching
+episode/custody pair (verify r4 P3). Ten source mutations (custody first,
+rename replacing, no fsync, no cleanup, rollback error escaping, rollback past
+unremovable custody, no error custody, staging file left, episode hash kept,
+unpublished game retired) each fail these tests.
 
 Limits: `_evaluate_games` still stops at `_create_eval_env` for Kaggriculture
 (an explicit skipped acceptance test tracks its eight canonical exports);

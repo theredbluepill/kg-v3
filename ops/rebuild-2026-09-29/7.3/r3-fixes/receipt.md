@@ -42,13 +42,27 @@ The verifier's probe scripts patch the final episode path in `xb` mode, which
 the fixed code no longer opens, so they are not rerun unchanged; the live test
 above injects the same failure into the staged episode write.
 
-Mutations (`run_mutations.py`, `mutations.json`): 8 of 8 detected, source
-restored byte-for-byte (SHA-256 matches):
-custody published before episode (1 failure), rename replacing an existing path
-(2), no fsync before link (1), published files not removed on failure (3), no
-error custody after a failed publication (6), staging file left behind (7),
-error custody keeping the episode hash (5), unpublished error custody retiring
-the game (1).
+Mutations (`run_mutations.py`, `mutations.json`, rerun after the r4 P3
+edit below): 10 of 10 detected, source restored byte-for-byte (SHA-256
+matches): custody published before episode (2 failures), rename replacing an
+existing path (3), no fsync before link (2), published files not removed on
+failure (4), rollback failure replacing the original error (1), rollback
+continuing past unremovable custody (1), no error custody after a failed
+publication (6), staging file left behind (8), error custody keeping the episode
+hash (5), unpublished error custody retiring the game (2).
+
+## Verification r4 P3 edit
+
+Codex r4 (`/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-7.3-r4.md`,
+APPROVE WITH EDITS; evidence in `../independent-verifier-r4/`) found that a
+double fault (directory fsync fails, then removing the published custody fails)
+let the rollback `PermissionError` replace the original exception. `_publish`
+now removes files in reverse order, catches a removal failure, notes it on the
+original exception and stops, so custody that cannot be removed keeps the
+episode it claims (hash still matches); the original exception is re-raised.
+`test_rollback_failure_keeps_the_original_error_and_a_matching_pair` was red
+first (`rollback-red.log`), then green with the replay suites
+(`rollback-green.log`: 68 passed). Two added mutations detect the guard.
 
 ## Finding 2 (P2, canonical evaluation incomplete) — deferred dependency
 
@@ -72,7 +86,8 @@ or its tests while lane A works on Task 3.1.
 
 Only Python, tests, docs, cookbook and ops receipts changed (no Rust), so the
 check is `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 uvx --from rust-just just
-py-prepare` (`prepare.log`): format, ruff, Python 3.11 syntax, mypy (68 source
-files, no issues), **2,207 Python passed / 12 skipped** in 217.43 s, docs
-freshness OK. The first attempt failed ruff ARG001 on two unused fixture
-arguments (fixed with `usefixtures`); the log holds the passing rerun.
+py-prepare` (`prepare.log`, rerun after the r4 P3 edit): format, ruff,
+Python 3.11 syntax, mypy (68 source files, no issues), **2,208 Python passed /
+12 skipped** in 187.71 s, docs freshness OK. The r3 commit's run passed 2,207 /
+12 skipped; its first attempt failed ruff ARG001 on two unused fixture
+arguments (fixed with `usefixtures`).

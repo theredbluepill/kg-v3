@@ -1,0 +1,30 @@
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+131 files left unchanged
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uv run mypy python/ scripts/
+Success: no issues found in 68 source files
+uv run pytest tests/ -m "not slow"
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/poonszesen/kg-v3-t73
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 2219 items
+
+tests/kaggriculture/test_base_generics_typing.py .                       [  0%]
+tests/kaggriculture/test_compile_gemm_backends.py ...................... [  1%]
+.................................                                        [  2%]
+tests/kaggriculture/test_configs.py .................................... [  4%]
+...                                                                      [  4%]
+tests/kaggriculture/test_env_reference.py .                              [  4%]
+tests/kaggriculture/test_evaluation.py .............                     [  4%]
+tests/kaggriculture/test_gpu_grammar.py .......................s         [  5%]
+tests/kaggriculture/test_model_compile.py ...........                    [  6%]
+tests/kaggriculture/test_model_encoder.py .............................. [  7%]
+.............                                                            [  8%]
+tests/kaggriculture/test_model_heads.py ................................ [  9%]
+................error: recipe `py-test` failed on line 29 with exit code 86

@@ -1,0 +1,365 @@
+{
+  "scratch": "/tmp/kg-t73-r4-mutations-9bih42mi",
+  "source": "/Users/poonszesen/kg-v3-t73/python/owl/kaggriculture/replay_export.py",
+  "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+  "baseline": {
+    "exit_code": 0,
+    "wall_seconds": 2.955,
+    "log": "mutation-baseline.log",
+    "summary": [
+      "8 passed in 0.60s"
+    ]
+  },
+  "mutations": [
+    {
+      "name": "visible_staging_name",
+      "old": "f\".{path.name}.{secrets.token_hex(8)}.tmp\"",
+      "new": "f\"visible-{path.name}.{secrets.token_hex(8)}.tmp\"",
+      "tests": [
+        "/Users/poonszesen/kg-v3-t73/ops/rebuild-2026-09-29/7.3/independent-verifier-r4/test_r4_probes.py::test_dot_staging_precedes_visible_file"
+      ],
+      "mutated_sha256": "e298cfeaceeee25c93bca6c48f39f14ef80258fb8bbb3667a2e5a3019b13a1e5",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 0.923,
+        "log": "mutation-visible_staging_name.log",
+        "summary": [
+          "FAILED ops/rebuild-2026-09-29/7.3/independent-verifier-r4/test_r4_probes.py::test_dot_staging_precedes_visible_file",
+          "1 failed in 0.55s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 0.855,
+        "log": "mutation-visible_staging_name-restored.log",
+        "summary": [
+          "1 passed in 0.51s"
+        ]
+      },
+      "detected": true
+    },
+    {
+      "name": "skip_file_fsync",
+      "old": "            os.fsync(stream.fileno())",
+      "new": "            pass  # mutated: skip staged-file fsync",
+      "tests": [
+        "tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it"
+      ],
+      "mutated_sha256": "f81edbe7017909a95d4b4a7c480e805d60ea697094cb03e4dcd52447a921f45f",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 1.75,
+        "log": "mutation-skip_file_fsync.log",
+        "summary": [
+          "FAILED tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it",
+          "1 failed in 0.39s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 1.87,
+        "log": "mutation-skip_file_fsync-restored.log",
+        "summary": [
+          "1 passed in 0.37s"
+        ]
+      },
+      "detected": true
+    },
+    {
+      "name": "skip_directory_fsync",
+      "old": "        _fsync_directory(directory)",
+      "new": "        pass  # mutated: skip directory fsync",
+      "tests": [
+        "tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it"
+      ],
+      "mutated_sha256": "1f67d006e99279bb16031746864f4ae681bce6e2f10406b52b1efa0f8496c39b",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 2.68,
+        "log": "mutation-skip_directory_fsync.log",
+        "summary": [
+          "FAILED tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it",
+          "1 failed in 1.14s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 1.784,
+        "log": "mutation-skip_directory_fsync-restored.log",
+        "summary": [
+          "1 passed in 0.37s"
+        ]
+      },
+      "detected": true
+    },
+    {
+      "name": "replace_existing_path",
+      "old": "        os.link(temporary, path)",
+      "new": "        os.replace(temporary, path)",
+      "tests": [
+        "tests/kaggriculture/test_replay_export.py::test_publication_never_replaces_a_path_created_meanwhile"
+      ],
+      "mutated_sha256": "6a512dbb9c49a457040d99d6a8bebf2c5e6149e6764ec31d8580c9f12b7f3e51",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 1.476,
+        "log": "mutation-replace_existing_path.log",
+        "summary": [
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_never_replaces_a_path_created_meanwhile",
+          "1 failed in 0.02s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 1.459,
+        "log": "mutation-replace_existing_path-restored.log",
+        "summary": [
+          "1 passed in 0.03s"
+        ]
+      },
+      "detected": true
+    },
+    {
+      "name": "custody_before_episode",
+      "old": "            files.insert(0, (episode_path, episode_bytes))",
+      "new": "            files.append((episode_path, episode_bytes))",
+      "tests": [
+        "tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it"
+      ],
+      "mutated_sha256": "82aabeb0d8aed182e1b43a1cd66919366bae2132a8782b60c17f6c24ea15f627",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 1.848,
+        "log": "mutation-custody_before_episode.log",
+        "summary": [
+          "FAILED tests/kaggriculture/test_replay_export.py::test_episode_is_durable_before_custody_claims_it",
+          "1 failed in 0.47s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 1.852,
+        "log": "mutation-custody_before_episode-restored.log",
+        "summary": [
+          "1 passed in 0.40s"
+        ]
+      },
+      "detected": true
+    },
+    {
+      "name": "skip_published_cleanup",
+      "old": "            path.unlink(missing_ok=True)",
+      "new": "            pass  # mutated: leave published files",
+      "tests": [
+        "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody"
+      ],
+      "mutated_sha256": "c288ac28625a210aa41c255d2e1810cdbe552feed23f1f67d7fbed255b783f64",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 1.758,
+        "log": "mutation-skip_published_cleanup.log",
+        "summary": [
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close]",
+          "2 failed, 2 passed in 0.41s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 1.875,
+        "log": "mutation-skip_published_cleanup-restored.log",
+        "summary": [
+          "4 passed in 0.42s"
+        ]
+      },
+      "detected": true
+    },
+    {
+      "name": "skip_error_custody",
+      "old": "                self._publish_failure_custody(\n                    replay, sidecar, custody_path, error=error\n                )",
+      "new": "                pass  # mutated: suppress failed-publication custody",
+      "tests": [
+        "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody"
+      ],
+      "mutated_sha256": "c37faedd267ef060344ec50580457d81801abf1101f87d8eab2338551f614653",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 1.998,
+        "log": "mutation-skip_error_custody.log",
+        "summary": [
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-write]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-close]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close]",
+          "4 failed in 0.48s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 1.936,
+        "log": "mutation-skip_error_custody-restored.log",
+        "summary": [
+          "4 passed in 0.50s"
+        ]
+      },
+      "detected": true
+    },
+    {
+      "name": "skip_staging_cleanup",
+      "old": "        temporary.unlink(missing_ok=True)",
+      "new": "        pass  # mutated: leave staging file",
+      "tests": [
+        "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody"
+      ],
+      "mutated_sha256": "b1a1c1331ffa89e138342f60782a97a19ac03ff4a5f692ae92c389555ef1da44",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 1.847,
+        "log": "mutation-skip_staging_cleanup.log",
+        "summary": [
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-write]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-close]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close]",
+          "4 failed in 0.47s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 1.96,
+        "log": "mutation-skip_staging_cleanup-restored.log",
+        "summary": [
+          "4 passed in 0.57s"
+        ]
+      },
+      "detected": true
+    },
+    {
+      "name": "retain_failed_hash",
+      "old": "            if key not in (\"episode_sha256\", \"verification\")",
+      "new": "            if key != \"verification\"",
+      "tests": [
+        "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody"
+      ],
+      "mutated_sha256": "9776a86f1913c9f252996aa6f33550eaaa4162edcd77c61237d707d3bb9ecde9",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 2.051,
+        "log": "mutation-retain_failed_hash.log",
+        "summary": [
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-write]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-close]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close]",
+          "4 failed in 0.53s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 1.842,
+        "log": "mutation-retain_failed_hash-restored.log",
+        "summary": [
+          "4 passed in 0.41s"
+        ]
+      },
+      "detected": true
+    },
+    {
+      "name": "retain_failed_verification",
+      "old": "            if key not in (\"episode_sha256\", \"verification\")",
+      "new": "            if key != \"episode_sha256\"",
+      "tests": [
+        "tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody"
+      ],
+      "mutated_sha256": "f53fb8de2b241631a757a844cf6c28b6f9d70900f80929b0bbe8fea75a00b9dc",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 1.537,
+        "log": "mutation-retain_failed_verification.log",
+        "summary": [
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "        failed = _inject_publication_failure(monkeypatch, target, stage, times=1)",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-write]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.json-close]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-write]",
+          "FAILED tests/kaggriculture/test_replay_export.py::test_publication_failure_never_leaves_successful_custody[game_000000.custody.json-close]",
+          "4 failed in 0.38s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 1.629,
+        "log": "mutation-retain_failed_verification-restored.log",
+        "summary": [
+          "4 passed in 0.38s"
+        ]
+      },
+      "detected": true
+    },
+    {
+      "name": "retire_on_error_custody_failure",
+      "old": "            return\n        self._retire(replay)",
+      "new": "            self._retire(replay)\n            return\n        self._retire(replay)",
+      "tests": [
+        "tests/kaggriculture/test_replay_export.py::test_unpublishable_error_custody_leaves_no_files_and_the_game_active"
+      ],
+      "mutated_sha256": "3b2499b15bac96b32e8b22cbf0940e5c23ecf6206428b47c612c07cba05dc6d2",
+      "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "scratch_restored_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8",
+      "outcome": {
+        "exit_code": 1,
+        "wall_seconds": 1.491,
+        "log": "mutation-retire_on_error_custody_failure.log",
+        "summary": [
+          "FAILED tests/kaggriculture/test_replay_export.py::test_unpublishable_error_custody_leaves_no_files_and_the_game_active",
+          "1 failed in 0.35s"
+        ]
+      },
+      "restored": {
+        "exit_code": 0,
+        "wall_seconds": 1.533,
+        "log": "mutation-retire_on_error_custody_failure-restored.log",
+        "summary": [
+          "1 passed in 0.34s"
+        ]
+      },
+      "detected": true
+    }
+  ]
+}

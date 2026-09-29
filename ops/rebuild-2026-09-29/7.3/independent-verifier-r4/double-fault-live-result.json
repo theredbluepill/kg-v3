@@ -1,0 +1,27 @@
+{
+  "output": "/tmp/kg-r4-double-fault-s8_31wtg",
+  "original": "OSError('r4 directory fsync failed')",
+  "observed": "PermissionError('r4 rollback custody unlink failed')",
+  "original_preserved_as_primary": false,
+  "original_preserved_as_context": true,
+  "notes": [
+    "error custody for game 0 was not published: FileExistsError: [Errno 17] File exists: '/tmp/kg-r4-double-fault-s8_31wtg/.game_000000.custody.json.01d5a9aeb89ab0b2.tmp' -> '/tmp/kg-r4-double-fault-s8_31wtg/game_000000.custody.json'",
+    "error custody for game 0 was not published: FileExistsError: replay custody already exists for game_000000"
+  ],
+  "files": [
+    "game_000000.custody.json",
+    "game_000000.json",
+    "game_000001.custody.json"
+  ],
+  "statuses": {
+    "0": "complete",
+    "1": "error"
+  },
+  "game_0_episode_hash_matches": true,
+  "game_0_episode_byte_verified": true,
+  "injection_state": {
+    "fsync_failed": true,
+    "cleanup_failed": true
+  },
+  "source_sha256": "c8170e303fc9eda760f49fab4483720090f72afc5d6dae6bb6bdf9dbb1d5f7c8"
+}
