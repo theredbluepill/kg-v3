@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Record the pod's flash-attn 2.8.3 environment (Phase 6.0)
+
+The new [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment Reference]] promotes the Phase 6.0 receipts (`4fd40c7`, `78df33c`; Codex `verify-flash-attn` r1 APPROVE WITH EDITS, r2 APPROVE). It records the separate venv and its versions, the forward-only flash evidence, and three hazards: the torch 2.9 wheel is a mutable release asset that `uv.lock` does not pin, the old and new venvs share hard-linked files, and two custody claims are operator-reported. Trunk numerics stay unqualified. The compiled-GEMM Reference's "no flash-attn" limit is now stale; its revision is left to the ATEN lane. Evidence: `ops/rebuild-2026-09-29/results.md`, "Phase 6.0".
+
 ## 2026-09-29 — Tighten the compiled-GEMM Reference after Codex's second review
 
 Codex re-verified the GEMM-limit evidence (APPROVE WITH EDITS, no blocking findings; `ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md`). The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] and `results.md` now:

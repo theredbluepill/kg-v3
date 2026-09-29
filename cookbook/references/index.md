@@ -2,6 +2,7 @@
 
 ## Current rebuild
 
+- [[pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|Pod v3 environment runs flash-attn 2.8.3 forward on sm_120]] — Phase 6.0 venv `/workspace/kg-v3-rebuild` (torch 2.9.0, triton 3.5.0, flash-attn 2.8.3 prebuilt wheel with sm_120 cubins); varlen kernel matches SDPA within BF16 spacing and the packed flash path runs in eager and compiled trunk forwards. Forward only, trunk numerics unqualified; wheel digest outside `uv.lock` and hard-linked venvs are hazards. Codex-approved.
 - [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope and Rust parity blocked by missing fixtures.
 
 ## Reference branch
