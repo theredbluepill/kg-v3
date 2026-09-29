@@ -1,0 +1,314 @@
+[kg-probe] {"kind": "diagnostic_hook", "rank": 0, "t": 1790721925.8749516, "hook": "trunk_audit", "diagnostic_only": true, "telemetry_only": true, "trunk_audit_iterations": [1, 2], "grad_audit": "first", "base_launcher": "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py"}
+[kg-probe] {"kind": "diagnostic_hook", "rank": 0, "t": 1790721925.8751106, "hook": "critic_stopgrad", "diagnostic_only": true, "telemetry_only": false, "changes_training": false, "critic_stopgrad": "off", "detach_point": "KaggricultureTransformer._winner_log_probabilities: critic_head(encoded.critic_value_hidden.detach())", "stopgrad_check_iterations": [1, 2], "trunk_audit_hook": "/root/ablation/ablate-D-lr10-bccritic/trunk_audit_launcher.py", "base_launcher": "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py"}
+[kg-probe] {"kind": "start", "rank": 0, "t": 1790721925.8777394, "argv": ["/root/kg-v3/scripts/run_ppo.py", "configs/kaggriculture_2rank.yaml", "/root/runs/ablate-G-dryrun-off", "--load-model-weights", "/root/bc-best/checkpoint_bc_best.pt", "--load-model-weights-mode", "model_fresh_critic_head", "--log-mode", "debug", "--max-env-steps", "32768", "-o", "rl.eval_replay_games=0", "-o", "optimizer.muon_lr=0.0002", "optimizer.adamw_lr=0.00001"], "torch": "2.9.0+cu128", "wandb": "0.26.1"}
+[kg-probe] {"kind": "diagnostic_hook", "rank": 1, "t": 1790721925.8978782, "hook": "trunk_audit", "diagnostic_only": true, "telemetry_only": true, "trunk_audit_iterations": [1, 2], "grad_audit": "first", "base_launcher": "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py"}
+[kg-probe] {"kind": "diagnostic_hook", "rank": 1, "t": 1790721925.8980258, "hook": "critic_stopgrad", "diagnostic_only": true, "telemetry_only": false, "changes_training": false, "critic_stopgrad": "off", "detach_point": "KaggricultureTransformer._winner_log_probabilities: critic_head(encoded.critic_value_hidden.detach())", "stopgrad_check_iterations": [1, 2], "trunk_audit_hook": "/root/ablation/ablate-D-lr10-bccritic/trunk_audit_launcher.py", "base_launcher": "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py"}
+[kg-probe] {"kind": "start", "rank": 1, "t": 1790721925.900751, "argv": ["/root/kg-v3/scripts/run_ppo.py", "configs/kaggriculture_2rank.yaml", "/root/runs/ablate-G-dryrun-off", "--load-model-weights", "/root/bc-best/checkpoint_bc_best.pt", "--load-model-weights-mode", "model_fresh_critic_head", "--log-mode", "debug", "--max-env-steps", "32768", "-o", "rl.eval_replay_games=0", "-o", "optimizer.muon_lr=0.0002", "optimizer.adamw_lr=0.00001"], "torch": "2.9.0+cu128", "wandb": "0.26.1"}
+Launched with the following raw manual overrides: '['rl.eval_replay_games=0', 'optimizer.muon_lr=0.0002', 'optimizer.adamw_lr=0.00001']'
+GEMM workload headroom rollout: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+GEMM workload headroom minibatch: 1024 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 5.776x headroom, <= 1 call(s)); heads 11096 rows/call (10.84x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16384 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 0.361x headroom, <= 3 call(s)); heads 11096 rows/call (0.6772x headroom, 2 call(s)); teacher targets 1674575872 B per chunk, 1674575872 B cached for 16384 rollout rows
+GEMM workload headroom evaluation: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+[kg-probe] {"kind": "env_construct", "rank": 0, "t": 1790721927.0653598, "n_envs": 128, "seed": 0, "seed_stride": 2, "native_threads": 2, "pin_memory": true, "transfer_device": "cuda:0", "episode_steps": 720}
+[kg-probe] {"kind": "env_construct", "rank": 1, "t": 1790721927.1013064, "n_envs": 128, "seed": 1, "seed_stride": 2, "native_threads": 2, "pin_memory": true, "transfer_device": "cuda:1", "episode_steps": 720}
+Compiled GEMM backends: compile_gemm_game=kaggriculture, compile_gemm_backends=ATEN, compile_stack_torch=2.9.0+cu128, compile_stack_triton=3.5.0, compile_stack_nvidia_driver=595.91.07
+0env steps [00:00, ?env steps/s][kg-probe] {"kind": "trunk_audit_theta0", "rank": 1, "t": 1790721928.8370721, "iteration": 1, "optimizer_steps": 0, "groups": {"actor_only": {"params": 873406, "theta0_norm": 88.45065196181787, "critic_head_norm": 0.0}, "critic_only": {"params": 66561, "theta0_norm": 22.697337327145856, "critic_head_norm": 22.649503311075467}, "shared": {"params": 5312256, "theta0_norm": 156.80919935578524, "critic_head_norm": 0.0}}}
+[kg-probe] {"kind": "trunk_audit_theta0", "rank": 0, "t": 1790721928.844202, "iteration": 1, "optimizer_steps": 0, "groups": {"actor_only": {"params": 873406, "theta0_norm": 88.45065196181787, "critic_head_norm": 0.0}, "critic_only": {"params": 66561, "theta0_norm": 22.697337327145856, "critic_head_norm": 22.649503311075467}, "shared": {"params": 5312256, "theta0_norm": 156.80919935578524, "critic_head_norm": 0.0}}}
+[kg-probe] {"kind": "phase", "rank": 1, "t": 1790721937.8592665, "phase": "rollout", "iteration": 1, "seconds": 9.02161387799788, "peak_allocated": 3457939968, "peak_reserved": 4074766336, "device_total": 101975851008, "reserved_fraction": 0.03995814985334454, "native_steps": 64, "native_step_seconds": 2.4859832949805423}
+[kg-probe] {"kind": "phase", "rank": 0, "t": 1790721939.1772275, "phase": "rollout", "iteration": 1, "seconds": 10.332157073000417, "peak_allocated": 3457939968, "peak_reserved": 4074766336, "device_total": 101975851008, "reserved_fraction": 0.03995814985334454, "native_steps": 64, "native_step_seconds": 2.6730647510048584}
+[kg-probe] {"kind": "phase", "rank": 1, "t": 1790721941.1333325, "phase": "teacher_precompute", "iteration": 1, "seconds": 3.2687714970015804, "peak_allocated": 40006680576, "peak_reserved": 67230498816, "device_total": 101975851008, "reserved_fraction": 0.6592786248062374, "native_steps": 0, "native_step_seconds": 0.0}
+[kg-probe] {"kind": "phase", "rank": 0, "t": 1790721942.737688, "phase": "teacher_precompute", "iteration": 1, "seconds": 3.555313822998869, "peak_allocated": 40005632000, "peak_reserved": 67230498816, "device_total": 101975851008, "reserved_fraction": 0.6592786248062374, "native_steps": 0, "native_step_seconds": 0.0}
+0env steps [00:18, ?env steps/s]
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/root/kg-v3/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+    _run_training_session(
+  File "/root/kg-v3/scripts/run_ppo.py", line 416, in _run_training_session
+    env_steps = _run_training_loop(
+                ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+    metrics = trainer.train_iteration()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 130, in train_iteration
+    metrics = original_iteration(self)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 251, in train_iteration
+    metrics = audited(self)
+              ^^^^^^^^^^^^^
+  File "/root/ablation/ablate-D-lr10-bccritic/trunk_audit_launcher.py", line 173, in train_iteration
+    metrics = original_iteration(self)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+    metrics, sampled_segments = self._update(
+                                ^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 82, in wrapped
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 122, in update
+    return original_update(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 1194, in _update
+    update = self._update_minibatch(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 1472, in _update_minibatch
+    metrics, backward_loss = self._ppo_loss(**loss_kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 206, in wrapped
+    _grad_check(trainer, kwargs)
+  File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 141, in _grad_check
+    grads = torch.autograd.grad(
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 503, in grad
+    result = _engine_run_backward(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 315, in apply
+    return user_fn(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2303, in backward
+    return impl_fn()
+           ^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2289, in impl_fn
+    out = CompiledFunction._backward_impl(ctx, all_args)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2449, in _backward_impl
+    torch._check(
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/__init__.py", line 1695, in _check
+    _check_with(RuntimeError, cond, message)
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/__init__.py", line 1677, in _check_with
+    raise error_type(message_evaluated)
+RuntimeError: This backward function was compiled with non-empty donated buffers which requires create_graph=False and retain_graph=False. Please keep backward(create_graph=False, retain_graph=False) across all backward() function calls, or set torch._functorch.config.donated_buffer=False to disable donated buffer.
+[rank1] training failed:
+Traceback (most recent call last):
+  File "/root/kg-v3/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+    _run_training_session(
+  File "/root/kg-v3/scripts/run_ppo.py", line 379, in _run_training_session
+    _run_training_session_worker(
+  File "/root/kg-v3/scripts/run_ppo.py", line 448, in _run_training_session_worker
+    _run_training_loop(
+  File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+    metrics = trainer.train_iteration()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 130, in train_iteration
+    metrics = original_iteration(self)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 251, in train_iteration
+    metrics = audited(self)
+              ^^^^^^^^^^^^^
+  File "/root/ablation/ablate-D-lr10-bccritic/trunk_audit_launcher.py", line 173, in train_iteration
+    metrics = original_iteration(self)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+    metrics, sampled_segments = self._update(
+                                ^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 82, in wrapped
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 122, in update
+    return original_update(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 1194, in _update
+    update = self._update_minibatch(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 1472, in _update_minibatch
+    metrics, backward_loss = self._ppo_loss(**loss_kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 206, in wrapped
+    _grad_check(trainer, kwargs)
+  File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 141, in _grad_check
+    grads = torch.autograd.grad(
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 503, in grad
+    result = _engine_run_backward(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 315, in apply
+    return user_fn(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2303, in backward
+    return impl_fn()
+           ^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2289, in impl_fn
+    out = CompiledFunction._backward_impl(ctx, all_args)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2449, in _backward_impl
+    torch._check(
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/__init__.py", line 1695, in _check
+    _check_with(RuntimeError, cond, message)
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/__init__.py", line 1677, in _check_with
+    raise error_type(message_evaluated)
+RuntimeError: This backward function was compiled with non-empty donated buffers which requires create_graph=False and retain_graph=False. Please keep backward(create_graph=False, retain_graph=False) across all backward() function calls, or set torch._functorch.config.donated_buffer=False to disable donated buffer.
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 279, in <module>
+[rank0]:     BASE.main()
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 230, in main
+[rank0]:     module.main()
+[rank0]:   File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+[rank0]:     _run_training_session(
+[rank0]:   File "/root/kg-v3/scripts/run_ppo.py", line 416, in _run_training_session
+[rank0]:     env_steps = _run_training_loop(
+[rank0]:                 ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+[rank0]:     metrics = trainer.train_iteration()
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 130, in train_iteration
+[rank0]:     metrics = original_iteration(self)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 251, in train_iteration
+[rank0]:     metrics = audited(self)
+[rank0]:               ^^^^^^^^^^^^^
+[rank0]:   File "/root/ablation/ablate-D-lr10-bccritic/trunk_audit_launcher.py", line 173, in train_iteration
+[rank0]:     metrics = original_iteration(self)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+[rank0]:     metrics, sampled_segments = self._update(
+[rank0]:                                 ^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 82, in wrapped
+[rank0]:     result = fn(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 122, in update
+[rank0]:     return original_update(self, *args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/python/owl/train/ppo.py", line 1194, in _update
+[rank0]:     update = self._update_minibatch(
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/python/owl/train/ppo.py", line 1472, in _update_minibatch
+[rank0]:     metrics, backward_loss = self._ppo_loss(**loss_kwargs)
+[rank0]:                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 206, in wrapped
+[rank0]:     _grad_check(trainer, kwargs)
+[rank0]:   File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 141, in _grad_check
+[rank0]:     grads = torch.autograd.grad(
+[rank0]:             ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 503, in grad
+[rank0]:     result = _engine_run_backward(
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+[rank0]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 315, in apply
+[rank0]:     return user_fn(self, *args)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2303, in backward
+[rank0]:     return impl_fn()
+[rank0]:            ^^^^^^^^^
+[rank0]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2289, in impl_fn
+[rank0]:     out = CompiledFunction._backward_impl(ctx, all_args)
+[rank0]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2449, in _backward_impl
+[rank0]:     torch._check(
+[rank0]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/__init__.py", line 1695, in _check
+[rank0]:     _check_with(RuntimeError, cond, message)
+[rank0]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/__init__.py", line 1677, in _check_with
+[rank0]:     raise error_type(message_evaluated)
+[rank0]: RuntimeError: This backward function was compiled with non-empty donated buffers which requires create_graph=False and retain_graph=False. Please keep backward(create_graph=False, retain_graph=False) across all backward() function calls, or set torch._functorch.config.donated_buffer=False to disable donated buffer.
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 279, in <module>
+[rank1]:     BASE.main()
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 230, in main
+[rank1]:     module.main()
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+[rank1]:     _run_training_session(
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 379, in _run_training_session
+[rank1]:     _run_training_session_worker(
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 448, in _run_training_session_worker
+[rank1]:     _run_training_loop(
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+[rank1]:     metrics = trainer.train_iteration()
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 130, in train_iteration
+[rank1]:     metrics = original_iteration(self)
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 251, in train_iteration
+[rank1]:     metrics = audited(self)
+[rank1]:               ^^^^^^^^^^^^^
+[rank1]:   File "/root/ablation/ablate-D-lr10-bccritic/trunk_audit_launcher.py", line 173, in train_iteration
+[rank1]:     metrics = original_iteration(self)
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+[rank1]:     metrics, sampled_segments = self._update(
+[rank1]:                                 ^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 82, in wrapped
+[rank1]:     result = fn(*args, **kwargs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 122, in update
+[rank1]:     return original_update(self, *args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/python/owl/train/ppo.py", line 1194, in _update
+[rank1]:     update = self._update_minibatch(
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/python/owl/train/ppo.py", line 1472, in _update_minibatch
+[rank1]:     metrics, backward_loss = self._ppo_loss(**loss_kwargs)
+[rank1]:                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 206, in wrapped
+[rank1]:     _grad_check(trainer, kwargs)
+[rank1]:   File "/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py", line 141, in _grad_check
+[rank1]:     grads = torch.autograd.grad(
+[rank1]:             ^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 503, in grad
+[rank1]:     result = _engine_run_backward(
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+[rank1]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 315, in apply
+[rank1]:     return user_fn(self, *args)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2303, in backward
+[rank1]:     return impl_fn()
+[rank1]:            ^^^^^^^^^
+[rank1]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2289, in impl_fn
+[rank1]:     out = CompiledFunction._backward_impl(ctx, all_args)
+[rank1]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2449, in _backward_impl
+[rank1]:     torch._check(
+[rank1]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/__init__.py", line 1695, in _check
+[rank1]:     _check_with(RuntimeError, cond, message)
+[rank1]:   File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/__init__.py", line 1677, in _check_with
+[rank1]:     raise error_type(message_evaluated)
+[rank1]: RuntimeError: This backward function was compiled with non-empty donated buffers which requires create_graph=False and retain_graph=False. Please keep backward(create_graph=False, retain_graph=False) across all backward() function calls, or set torch._functorch.config.donated_buffer=False to disable donated buffer.
+[kg-probe] {"kind": "exit", "rank": 0, "t": 1790721948.0945103, "native_step_calls": 64, "native_step_seconds": 2.6730647510048584, "native_step_mean_ms": 41.76663673445091, "terminal_records": 0, "phase_peaks": {"rollout": {"allocated": 3457939968, "reserved": 4074766336}, "teacher_precompute": {"allocated": 40005632000, "reserved": 67230498816}}, "inductor_max_autotune_gemm_backends": "ATEN"}
+[kg-probe] {"kind": "exit", "rank": 1, "t": 1790721948.5469754, "native_step_calls": 64, "native_step_seconds": 2.4859832949805423, "native_step_mean_ms": 38.84348898407097, "terminal_records": 0, "phase_peaks": {"rollout": {"allocated": 3457939968, "reserved": 4074766336}, "teacher_precompute": {"allocated": 40006680576, "reserved": 67230498816}}, "inductor_max_autotune_gemm_backends": "ATEN"}
+W0929 22:45:49.288000 27152 torch/distributed/elastic/multiprocessing/api.py:908] Sending process 27157 closing signal SIGTERM
+E0929 22:45:49.553000 27152 torch/distributed/elastic/multiprocessing/api.py:882] failed (exitcode: 1) local_rank: 0 (pid: 27156) of binary: /root/kg-v3/.venv/bin/python
+Traceback (most recent call last):
+  File "/root/kg-v3/.venv/bin/torchrun", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 357, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 936, in main
+    run(args)
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 927, in run
+    elastic_launch(
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 156, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 293, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+/root/ablation/ablate-G-lr10-critic-stopgrad/critic_stopgrad_launcher.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-09-29_22:45:49
+  host      : 9c9253a4b2ec
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 27156)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
