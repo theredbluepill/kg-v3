@@ -207,3 +207,47 @@ Evidence that the flash path ran:
     - Zero tracked-file changes at 06:26:39Z.
     - Fresh post-run receipt at 06:36:54Z: HEAD `69397da`, detached, `git status --porcelain` empty, `runs/` gitignored.
   - Still **operator-reported**, with no retained receipt: "no credentials copied" and "nothing pushed". The only evidence is the clone's remote list, which shows just the bundle path.
+
+## Model-only SPS ceiling (component) (2026-09-29, 06:45–06:49Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+
+**Component measurement, not end-to-end SPS.** These numbers are an upper bound on env steps/s if the engine, host copies, GAE, logging and DDP cost nothing.
+
+- Pre-run statement: `run-statements/model-sps-ceiling.md`, committed in `ed61770` at 06:44:12Z. Launch was at 06:45:05Z.
+- Source: `e1458d2` (full model with heads).
+- Settings: preset config, bf16 autocast over fp32 params, TF32, trunk compiled with `max-autotune-no-cudagraphs` (dynamic), heads eager, flash forced.
+- Inputs: synthetic `make_obs` observations and synthetic grammar tables.
+- Evidence and limits: `model-sps-ceiling-2026-09-29/README.md`.
+
+| density (tokens/row) | t_A fwd 256 | t_B train 1,024 | t_C teacher-proxy 16,384 | t_D value 256 | update wall | ceiling SPS/rank | ≈2 ranks |
+|---|---|---|---|---|---|---|---|
+| sparse (222) | 11.09 ms | 147.5 ms | 852.0 ms | 7.48 ms | 3.93 s | 2,085 | ~4,170 |
+| mid (303) | 12.87 ms | 177.6 ms | 987.7 ms | 9.50 ms | 4.66 s | 1,757 | ~3,514 |
+| dense (709) | 25.41 ms | 326.6 ms | 1,690.6 ms | 22.04 ms | 8.56 s | 957 | ~1,913 |
+
+**Formulas.**
+- update wall = 64·t_A + t_C + 16·t_B + t_D, using medians over 20 CUDA-event iterations (p90 is within 0.5 %).
+- ceiling = 8,192 / update wall.
+- Two ranks give about 2× that, assuming the all-reduce is small. The all-reduce was not measured.
+
+**What dominates.**
+- The 16 train steps take about 60 % of update wall at every density.
+- Teacher precompute takes 20–22 % and rollout sampling takes 18–19 %.
+
+**Engine budget.**
+- For the engine to cost no more than the model, which halves the ceiling, it must step 8,192 env steps in at most 3.9 s (sparse) to 8.6 s (dense) per rank. That is about 0.48–1.05 ms per env step.
+- To stay within 10 % of the ceiling, it gets 0.39–0.86 s, or 48–105 µs per env step.
+- The 64 rollout steps run serially with the engine. Each batched engine step of 128 envs therefore competes with an 11–25 ms sampling forward.
+
+**Flash and chunks.**
+- `use_flash_attn` was True on every call.
+- Trunk chunks in C were 1, 2 and 3 for sparse, mid and dense, as predicted. There were 2 head chunks.
+
+**Memory.**
+- Peak allocated memory was at most 40.3 GiB (B at dense), 42 % of 94.97 GiB.
+- Caching-allocator **reserved** memory reached 85.0 GiB (89.5 %) during dense C, because C ran after B in the same process. That is above the 85 % line on reserved memory, although live tensors stay under 34 %.
+
+**Compile.**
+- On a cold cache the first call took 20 s for A and 40 s for B.
+- With a warm cache it took 7–11 s.
+
+**Profiling.** `nsys` is absent on the pod and was not installed. In-step phase attribution is unresolved.

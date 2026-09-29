@@ -1,0 +1,12 @@
+2026-09-29T06:49:16Z
+pid, process_name, used_gpu_memory [MiB]
+    PID USER         ELAPSED COMMAND
+      1 root        12:18:54 /sbin/docker-init -- /opt/nvidia/nvidia_entrypoint.sh /start.sh
+    633 root        12:18:53 /bin/bash /start.sh
+    664 root        12:18:53 nginx: master process /usr/sbin/nginx
+    665 nobody      12:18:53 nginx: worker process
+    686 root        12:18:53 sshd: /usr/sbin/sshd [listener] 0 of 10-100 startups
+    696 root        12:18:53 sleep infinity
+ 136566 root           00:02 sshd: root@notty
+ 136577 root           00:00 bash -c cd /workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/receipts && { date -u +%FT%TZ; nvidia-smi; } > idle_nvidia_smi_post.txt 2>&1; { date -u +%FT%TZ; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; ps -eo pid,user,etime,args; } > idle_ps_post.txt 2>&1; cd /workspace/kg-v3-rebuild && { date -u +%FT%TZ; git rev-parse HEAD; git status --porcelain; echo '# end porcelain'; } > /workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/receipts/git_post.txt; cd /workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29 && du -sh inductor_cache triton_cache; ls -la; find . -type f -size +1M -not -path './inductor_cache/*' -not -path './triton_cache/*' -exec sha256sum {} \; ; find inductor_cache triton_cache -type f | wc -l; du -sb inductor_cache triton_cache
+ 136584 root           00:00 ps -eo pid,user,etime,args

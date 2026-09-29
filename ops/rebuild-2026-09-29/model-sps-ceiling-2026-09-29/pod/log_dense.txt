@@ -1,0 +1,23 @@
+{"density": "dense", "density_spec": {"own": 241, "rival": 241, "shops": 8}, "envs": 128, "rows_A_D": 256, "rows_B": 1024, "rows_C": 16384, "tokens_per_row_min": 709, "tokens_per_row_max": 709, "padded_seq_len": 709, "make_obs_s": 2.80046010017395, "n_params": 6252223, "torch": "2.9.0+cu128", "cuda_runtime": "12.8", "flash_attn": "2.8.3", "triton": "3.5.0", "device_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition", "tf32_matmul": true, "trunk_compile": "torch.compile(mode=max-autotune-no-cudagraphs, dynamic=True)", "heads": "eager", "autocast": "bfloat16, fp32 params", "grammar_tables": "expected_grammar_tables (synthetic)", "git_head": "e1458d2a717d9d731a367cbb78b98616ee6649f4", "gpu_total_gib": 94.972412109375}
+[A_rollout_forward_256] first=7.40s median=25.41ms p90=25.42ms peak_alloc=0.97GiB chunks/iter=1.0 flash=True
+[D_compute_value_256] first=0.02s median=22.04ms p90=22.05ms peak_alloc=0.86GiB chunks/iter=1.0 flash=True
+[B_ppo_train_step_1024] first=8.03s median=326.58ms p90=327.01ms peak_alloc=40.28GiB chunks/iter=1.0 flash=True
+[C_teacher_forward_16384] first=1.83s median=1690.58ms p90=1690.82ms peak_alloc=31.93GiB chunks/iter=3.0 flash=True
+{
+  "formula": "update_wall = 64*t_A + t_C + 16*t_B + t_D; ceiling_sps_rank = 8192/update_wall",
+  "env_steps_per_update_per_rank": 8192,
+  "minibatches_per_update": 16,
+  "update_wall_s_median": 8.564337089538574,
+  "update_wall_s_p90": 8.571950189590453,
+  "share": {
+    "A_64x": 0.18990900827225876,
+    "B_16x": 0.6101197542325952,
+    "C": 0.19739727249778846,
+    "D": 0.002573964997357509
+  },
+  "ceiling_sps_per_rank_median": 956.5247040552166,
+  "ceiling_sps_per_rank_p90": 955.6751752883662,
+  "ceiling_sps_2_ranks_approx_median": 1913.0494081104332,
+  "model_s_per_env_step": 0.0010454513048753142
+}
+wrote /workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/results_dense.json

@@ -1,0 +1,12 @@
+2026-09-29T06:44:23Z
+pid, process_name, used_gpu_memory [MiB]
+    PID USER         ELAPSED COMMAND
+      1 root        12:14:01 /sbin/docker-init -- /opt/nvidia/nvidia_entrypoint.sh /start.sh
+    633 root        12:14:00 /bin/bash /start.sh
+    664 root        12:14:00 nginx: master process /usr/sbin/nginx
+    665 nobody      12:14:00 nginx: worker process
+    686 root        12:14:00 sshd: /usr/sbin/sshd [listener] 0 of 10-100 startups
+    696 root        12:14:00 sleep infinity
+ 130887 root           00:02 sshd: root@notty
+ 130898 root           00:00 bash -c mkdir -p /workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/receipts && cd /workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/receipts && { date -u +%FT%TZ; nvidia-smi; } > idle_nvidia_smi_pre.txt 2>&1 && { date -u +%FT%TZ; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; ps -eo pid,user,etime,args; } > idle_ps_pre.txt 2>&1; grep -Ei 'python|torchrun|run_ppo|cargo|pip|maturin' idle_ps_pre.txt | grep -v grep; nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+ 130906 root           00:00 ps -eo pid,user,etime,args
