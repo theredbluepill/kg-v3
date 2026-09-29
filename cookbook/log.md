@@ -54,6 +54,13 @@ The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Re
 ## 2026-09-29 — Build the Kaggriculture encoder on Isaiah's layers (Task 2.1)
 
 The new [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] covers the contract types, the PEP 696 generic model base, and an encoder built entirely from Isaiah's classes, with one-hot stems, per-role tokens, a typed trunk config, his initialization, and the compiled-GEMM chunking guard. `just py-prepare` gives 762 passed. The work sits on branch `kg/rebuild-model`, pending Codex verification before merge.
+## 2026-09-29 — Correct the kaggle-environments pin record after Codex verification
+
+Codex verified `fb65e1f` (APPROVE WITH EDITS): lock reproduced byte-for-byte, `just prepare` green, engine hash matches. The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] now states 55 other changed dependencies (not 50), notes that `click` is shared with W&B, and names the 2 ignored Rust tests as action-angle audits rather than parity tests. Evidence: `ops/deps-independent-verification-fb65e1f/verification.md`.
+
+## 2026-09-29 — Pin kaggle-environments 1.32.7
+
+Owner: “Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture … we will have to update it.” The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records the pin: 1.32.7 via uv, the git source removed, its engine hash matching the Rust kernel, and Isaiah's torch/triton/flash-attn pins unchanged. `just prepare` passes: Rust 155/2 ignored, Python 722/3 skipped. A contract Markdown lint fix is included.
 
 ## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
 
