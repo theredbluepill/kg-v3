@@ -113,3 +113,15 @@ and CLI run stayed below it).
 - CPU FP32 only: no compile, BF16, CUDA transfer, pinned memory or multi-rank.
 - The eval outcome uses the unseeded global torch RNG for seat assignment
   (inherited); the test seeds torch before launching.
+
+## Verification pass
+
+Independent Claude pass at `268b1b4` (report:
+`ops/rebuild-2026-09-29/codex/claude-verify-3.5.md` in the main checkout).
+`verify/mutate.py` applied six mutations to `scripts/run_ppo.py`, each followed by
+the two functional-check cases and a hash-checked restore
+(`verify/mutations.log`): promotion `>=` to `>`, skipped last_best refresh,
+promoted checkpoint written elsewhere, skipped teacher activation and a final
+checkpoint at `env_steps=0` were all killed; `replay_dir` passed unconditionally
+survived as an equivalent mutant, because `_evaluate_games` writes replays only
+when `replay_games > 0`.
