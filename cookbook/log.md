@@ -1,5 +1,13 @@
 # Change log
 
+## 2026-09-29 — Report action-mask shapes in the replay-drift alarm and refresh its evidence
+
+Codex's stream C re-verification (approve with edits) found stale evidence and one diagnostic gap, now corrected in the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:
+- The references index still cited 924 passes, and the note called that Phase 4 prep `py-prepare` run "final". The index now carries the current count, and the note labels the older run.
+- The alarm's `RuntimeError` promised every observation tensor shape but omitted nested action-mask tensors. `_observation_tensor_shapes` now lists `action_mask.can_act` and `action_mask.max_launch` (7 red, then green, over all three Orbit mask types and a second schema). README says so.
+
+Python suite: 941 passed, 3 skipped. No GPU, training or Rust check ran.
+
 ## 2026-09-29 — Narrow the trainer-seam claims after Codex's stream C review
 
 Codex's stream C verification (approve with edits) found three overstated claims, now corrected in the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:

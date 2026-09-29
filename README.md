@@ -229,8 +229,8 @@ to the player-step.
 alarm. Before the first optimizer step of each update, the policy-weighted mean
 log-ratio of the first minibatch (replayed versus rollout log-probs, reduced
 across ranks) must stay within the limit. Otherwise training raises a
-`RuntimeError` that reports the rollout batch and observation shapes, with
-parameters still unchanged. Set it to `null` to disable the check. The limit
+`RuntimeError` that reports the rollout batch shape and every observation
+tensor shape, action-mask tensors included, with parameters still unchanged. Set it to `null` to disable the check. The limit
 uses the same units as `rl.ppo_clip_mode`'s log-ratio: under `per_player` it
 bounds the joint action (entity log-probs are summed, so a coherent drift of
 `d` nats on each of `K` acting entities reads as `K * d`); under `per_entity`

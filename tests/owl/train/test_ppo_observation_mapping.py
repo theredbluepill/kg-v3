@@ -561,3 +561,38 @@ def test_map_observation_rejects_unsupported_field_types() -> None:
 
     with pytest.raises(TypeError, match=r"'turn'.*int"):
         ppo._map_observation(batch, lambda tensor: tensor)
+
+
+# --- Replay-alarm diagnostics --------------------------------------------------
+
+
+def _expected_shapes(obs: BaseModel) -> str:
+    return ", ".join(
+        f"{name}={tuple(tensor.shape)}"
+        for name, tensor in _obs_tensors(obs).items()
+        if tensor is not None
+    )
+
+
+@pytest.mark.parametrize("with_optional", [False, True])
+@pytest.mark.parametrize("mask_kind", _MASK_KINDS)
+def test_observation_tensor_shapes_include_action_mask_tensors(
+    with_optional: bool, mask_kind: MaskKind
+) -> None:
+    obs = _random_obs(
+        seed=0, prefix=(4, 2), with_optional=with_optional, mask_kind=mask_kind
+    )
+
+    shapes = ppo._observation_tensor_shapes(obs)
+
+    assert shapes == _expected_shapes(obs)
+    assert f"action_mask.can_act={tuple(obs.action_mask.can_act.shape)}" in shapes
+
+
+def test_observation_tensor_shapes_follow_other_schema_field_names() -> None:
+    batch = _other_batch(seed=7, prefix=(3, 2), with_market=True)
+
+    assert ppo._observation_tensor_shapes(batch) == (
+        "tiles=(3, 2, 5, 3), market_prices=(3, 2, 4), seat_alive=(3, 2, 2), "
+        "legal_moves.can_act=(3, 2, 2, 6)"
+    )

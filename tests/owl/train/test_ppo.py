@@ -2038,6 +2038,8 @@ def test_first_minibatch_logratio_alarm_raises_before_optimizer_step(
     assert "rl.first_minibatch_logratio_limit=0.05" in message
     assert "(4, 2, 4)" in message
     assert "global_features=(4, 2, 3)" in message
+    assert f"action_mask.can_act=(4, 2, 4, {ACTION_ENTITY_SLOTS})" in message
+    assert f"action_mask.max_launch=(4, 2, 4, {ACTION_ENTITY_SLOTS})" in message
     assert "compiled-gemm-template-overflows-above-2-21-rows" in message
     assert model.evaluate_calls == 1
     assert trainer.optimizer_steps == 0

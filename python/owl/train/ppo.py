@@ -2133,12 +2133,23 @@ def _map_observation_value(
 
 
 def _observation_tensor_shapes(obs: BaseModel) -> str:
-    """Describe an observation batch's tensor shapes for error messages."""
+    """Describe an observation batch's tensor shapes for error messages.
+
+    Lists every set tensor in field order, including action-mask tensors as
+    ``<field>.can_act`` and ``<field>.max_launch``; unset optionals are omitted.
+    """
     shapes = []
     for field in type(obs).model_fields:
         value = getattr(obs, field)
         if isinstance(value, torch.Tensor):
             shapes.append(f"{field}={tuple(value.shape)}")
+        elif isinstance(
+            value,
+            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+        ):
+            shapes.append(f"{field}.can_act={tuple(value.can_act.shape)}")
+            if isinstance(value, PureActionMask | DiscreteTargetActionMask):
+                shapes.append(f"{field}.max_launch={tuple(value.max_launch.shape)}")
     return ", ".join(shapes)
 
 
