@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -212,7 +215,7 @@ def test_non_engine_reason_is_required(value: object) -> None:
         checker.verify(manifest, originals, current)
 
 
-def test_retained_rust_cannot_be_edited_even_when_declared() -> None:
+def test_retained_file_cannot_be_edited_even_when_declared() -> None:
     manifest, originals, current = fixture()
     retained = manifest["retained"][0]
     current[retained["path"]] = b"changed\n"
@@ -220,7 +223,7 @@ def test_retained_rust_cannot_be_edited_even_when_declared() -> None:
     retained["edits"] = [
         {"start_line": 1, "delete_lines": 1, "insert": "changed\n", "reason": "change"}
     ]
-    with pytest.raises(ValueError, match="retained Rust must be unchanged"):
+    with pytest.raises(ValueError, match="retained file must be unchanged"):
         checker.verify(manifest, originals, current)
 
 
@@ -272,3 +275,167 @@ def test_binary_edits_are_rejected(path: str) -> None:
     }
     with pytest.raises(ValueError, match=r"UTF-8|binary fixtures"):
         checker.verify(manifest, {path: original}, {path: original})
+
+
+# --- Task 1.1 check()-level regressions against the real pinned reference ---
+
+_REPO = Path(__file__).parents[2]
+_LOCK = "engine_rs/Cargo.lock"
+_VENDORED = "engine_rs/VENDORED_FROM.md"
+
+
+@pytest.fixture(scope="module")
+def reference() -> dict[str, bytes]:
+    return checker.reference_files(_REPO)
+
+
+@pytest.fixture
+def trimmed(
+    tmp_path: Path, reference: dict[str, bytes], monkeypatch: pytest.MonkeyPatch
+) -> Path:
+    """A copy of the committed engine package whose reference comes from the pin."""
+    for relative, data in checker._current_files(_REPO).items():
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+    manifest = _REPO / "engine_rs/TRIM_MANIFEST.json"
+    (tmp_path / "engine_rs/TRIM_MANIFEST.json").write_bytes(manifest.read_bytes())
+    monkeypatch.setattr(checker, "reference_files", lambda _root: reference)
+    return tmp_path
+
+
+def _declare(root: Path, path: str, current: bytes, edits: list[Any]) -> None:
+    """Write new bytes and update the manifest so they are fully declared."""
+    (root / path).write_bytes(current)
+    manifest_path = root / "engine_rs/TRIM_MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    (entry,) = [e for e in manifest["retained"] if e["path"] == path]
+    entry["sha256"] = checker.sha(current)
+    entry["edits"] = edits
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+
+def _whole_file_edit(original: bytes, current: bytes) -> list[Any]:
+    lines = len(original.decode("utf-8").splitlines())
+    return [
+        {
+            "start_line": 1,
+            "delete_lines": lines,
+            "insert": current.decode("utf-8"),
+            "reason": "declared rewrite",
+        }
+    ]
+
+
+def test_committed_package_passes_check() -> None:
+    checker.check(_REPO)
+
+
+def test_check_entry_point_passes_on_unmodified_copy(trimmed: Path) -> None:
+    checker.check(trimmed)
+
+
+def test_main_reports_failure_exit_code(
+    trimmed: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (trimmed / "engine_rs/src/py_random.rs").write_bytes(b"changed\n")
+    monkeypatch.setattr(sys, "argv", ["check_engine_trim.py", str(trimmed)])
+    assert checker.main() == 1
+
+
+def test_declared_license_edit_is_rejected(
+    trimmed: Path, reference: dict[str, bytes]
+) -> None:
+    path = "engine_rs/LICENSE"
+    changed = reference[path] + b"Additional terms.\n"
+    _declare(trimmed, path, changed, _whole_file_edit(reference[path], changed))
+    with pytest.raises(
+        ValueError, match=re.escape("LICENSE: retained file must be unchanged")
+    ):
+        checker.check(trimmed)
+
+
+def test_declared_removal_of_trim_provenance_is_rejected(
+    trimmed: Path, reference: dict[str, bytes]
+) -> None:
+    original = reference[_VENDORED]
+    lines = len(original.decode("utf-8").splitlines())
+    _declare(trimmed, _VENDORED, original, [])
+    with pytest.raises(
+        ValueError, match=re.escape("VENDORED_FROM.md: Task 1.1 trim appendix")
+    ):
+        checker.check(trimmed)
+    # Also reject a rewritten appendix that keeps the heading.
+    tampered = (
+        original
+        + b"\n## Task 1.1 rules-only trim \xe2\x80\x94 2026-09-29\n\nRewritten.\n"
+    )
+    appended = tampered[len(original) :].decode("utf-8")
+    _declare(
+        trimmed,
+        _VENDORED,
+        tampered,
+        [
+            {
+                "start_line": lines + 1,
+                "delete_lines": 0,
+                "insert": appended,
+                "reason": "rewrite",
+            }
+        ],
+    )
+    with pytest.raises(
+        ValueError, match=re.escape("VENDORED_FROM.md: Task 1.1 trim appendix")
+    ):
+        checker.check(trimmed)
+
+
+def test_later_provenance_append_is_accepted(
+    trimmed: Path, reference: dict[str, bytes]
+) -> None:
+    original = reference[_VENDORED]
+    current = (trimmed / _VENDORED).read_bytes()
+    appended = current + b"\n## Later task\n\nMore provenance.\n"
+    lines = len(original.decode("utf-8").splitlines())
+    _declare(
+        trimmed,
+        _VENDORED,
+        appended,
+        [
+            {
+                "start_line": lines + 1,
+                "delete_lines": 0,
+                "insert": appended[len(original) :].decode("utf-8"),
+                "reason": "append-only provenance",
+            }
+        ],
+    )
+    checker.check(trimmed)
+
+
+def test_declared_extra_lockfile_change_is_rejected(
+    trimmed: Path, reference: dict[str, bytes]
+) -> None:
+    current = (trimmed / _LOCK).read_bytes()
+    changed = current.replace(b'version = "1.0.229"', b'version = "1.0.230"', 1)
+    assert changed != current
+    _declare(trimmed, _LOCK, changed, _whole_file_edit(reference[_LOCK], changed))
+    with pytest.raises(
+        ValueError, match=re.escape("Cargo.lock: Rayon closure removal only")
+    ):
+        checker.check(trimmed)
+
+
+def test_declared_eighth_lib_removal_is_rejected(
+    trimmed: Path, reference: dict[str, bytes]
+) -> None:
+    path = "engine_rs/src/lib.rs"
+    original = reference[path]
+    lines = original.splitlines(keepends=True)
+    removed = {19, 21, 22, 23, 24, 25, 27, 20}
+    changed = b"".join(
+        line for number, line in enumerate(lines, 1) if number not in removed
+    )
+    _declare(trimmed, path, changed, _whole_file_edit(original, changed))
+    with pytest.raises(ValueError, match=re.escape("lib.rs: exact seven removals")):
+        checker.check(trimmed)

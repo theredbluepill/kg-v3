@@ -144,6 +144,10 @@ Task 1.1 retains a standalone `engine_rs` package pinned to reference commit
 113 excluded, plus the authored replay test and non-engine change inventory.
 `python scripts/check_engine_trim.py` checks hashes, exhaustive inventory,
 declared original-line edits, exact Cargo removals and append-only provenance.
+Independently of manifest declarations, only `lib.rs`, `Cargo.toml`,
+`Cargo.lock` and `VENDORED_FROM.md` may differ from the reference; the lockfile
+must equal the reference minus the six-package Rayon closure, and the Task 1.1
+provenance appendix must follow the historical bytes with a pinned SHA-256.
 
 Only reference `lib.rs` lines 19, 21–25 and 27 are removed: declarations for
 `ffi`, `joint_matching`, `myolie_features`, `myolie_sampler`, `native_agents`,

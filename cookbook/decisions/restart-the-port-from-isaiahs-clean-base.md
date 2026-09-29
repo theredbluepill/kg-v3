@@ -78,6 +78,16 @@ tests pass with none ignored. Final offline `just prepare` also
 passes 769 Python tests (three platform skips), including 47 checker regressions;
 build, formatting, lint, typing and documentation checks pass.
 
+Verification round 1 (copied to
+`ops/rebuild-2026-09-29/1.1/verify-r1/verify-1.1-r1.md`) approved with edits and no blocking findings. Its probes showed
+that updated manifest declarations could authorize a LICENSE change or remove
+the trim provenance appendix. The checker now fixes the editable set
+(`lib.rs`, `Cargo.toml`, `Cargo.lock`, `VENDORED_FROM.md`), derives the exact
+trimmed lockfile, and pins the appendix hash. Eight `check()`-level regressions
+(55 checker tests) drive a copy of the package; three failed before the repair
+(`ops/rebuild-2026-09-29/1.1/verify-r1/`). Four gitignored `replay-*.json`
+receipts were force-added, and the receipt opening now matches the 59-test commit.
+
 The package stays standalone, with its own lockfile and no root dependency or
 shared workspace. This is Claude's accepted refinement of the parent plan's
 workspace wording. Root Cargo files and Rust sources stay byte-identical and

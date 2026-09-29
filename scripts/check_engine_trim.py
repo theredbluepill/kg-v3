@@ -14,6 +14,33 @@ from typing import TypedDict, cast
 
 PIN = "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0"
 LIB_SHA256 = "c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd"
+# Only these retained files may carry declared edits; every other retained file
+# (LICENSE, RNG/attribution sources, RNG tests, fixtures) stays byte-identical.
+EDITABLE = frozenset(
+    {
+        "engine_rs/Cargo.lock",
+        "engine_rs/Cargo.toml",
+        "engine_rs/VENDORED_FROM.md",
+        "engine_rs/src/lib.rs",
+    }
+)
+# Packages that `cargo remove rayon` prunes from the pinned lockfile.
+RAYON_CLOSURE = frozenset(
+    {
+        "crossbeam-deque",
+        "crossbeam-epoch",
+        "crossbeam-utils",
+        "either",
+        "rayon",
+        "rayon-core",
+    }
+)
+TRIM_APPENDIX_HEADING = "\n## Task 1.1 rules-only trim \u2014 2026-09-29\n".encode()
+# SHA-256 of the Task 1.1 appendix section, from its heading up to the next
+# `## ` section (later provenance may be appended after it, never inside it).
+TRIM_APPENDIX_SHA256 = (
+    "1d089760261e8fef7ed0fddcaaa1a60776cb9abbb65386ef08d529f863d76c93"
+)
 
 
 class Edit(TypedDict):
@@ -278,8 +305,8 @@ def verify(
             actual == _reconstruct(original, retained["edits"], path),
             f"{path}: undeclared edit",
         )
-        if path.endswith(".rs") and path != "engine_rs/src/lib.rs":
-            _require(not retained["edits"], f"{path}: retained Rust must be unchanged")
+        if path not in EDITABLE:
+            _require(not retained["edits"], f"{path}: retained file must be unchanged")
     for authored in manifest["authored"]:
         path = authored["path"]
         _require(sha(current[path]) == authored["sha256"], f"{path}: authored hash")
@@ -305,19 +332,30 @@ def _current_files(root: Path) -> dict[str, bytes]:
     return current
 
 
-def check(root: Path) -> None:
-    root = root.resolve()
-    manifest_path = root / "engine_rs/TRIM_MANIFEST.json"
-    _require(not manifest_path.is_symlink(), f"{manifest_path}: symlink")
-    manifest = parse_manifest(json.loads(manifest_path.read_text(encoding="utf-8")))
+def reference_files(root: Path) -> dict[str, bytes]:
+    """Read every pinned-reference ``engine_rs`` blob from the Git object store."""
 
     def git(*args: str) -> bytes:
         # check_output has no Node-style 1 MiB limit; the largest blob is 5,099,830 B.
         return subprocess.check_output(["git", *args], cwd=root)
 
     paths = git("ls-tree", "-r", "--name-only", PIN, "engine_rs").decode().splitlines()
-    originals = {path: git("show", f"{PIN}:{path}") for path in paths}
-    current = _current_files(root)
+    return {path: git("show", f"{PIN}:{path}") for path in paths}
+
+
+def check(root: Path) -> None:
+    root = root.resolve()
+    manifest_path = root / "engine_rs/TRIM_MANIFEST.json"
+    _require(not manifest_path.is_symlink(), f"{manifest_path}: symlink")
+    value = json.loads(manifest_path.read_text(encoding="utf-8"))
+    verify_task(value, reference_files(root), _current_files(root))
+
+
+def verify_task(
+    value: object, originals: Mapping[str, bytes], current: Mapping[str, bytes]
+) -> None:
+    """Apply the generic manifest checks plus the fixed Task 1.1 trim contract."""
+    manifest = parse_manifest(value)
     verify(manifest, originals, current)
     retained = [
         "Cargo.toml",
@@ -365,10 +403,42 @@ def check(root: Path) -> None:
         "Cargo.toml: target/dependency removals only",
     )
     _require(
-        current["engine_rs/VENDORED_FROM.md"].startswith(
-            originals["engine_rs/VENDORED_FROM.md"]
-        ),
-        "VENDORED_FROM.md: append-only provenance",
+        current["engine_rs/Cargo.lock"]
+        == _expected_lock(originals["engine_rs/Cargo.lock"]),
+        "Cargo.lock: Rayon closure removal only",
+    )
+    _verify_provenance(
+        originals["engine_rs/VENDORED_FROM.md"], current["engine_rs/VENDORED_FROM.md"]
+    )
+
+
+def _expected_lock(original: bytes) -> bytes:
+    """Derive the trimmed lockfile: drop the Rayon closure and the Rayon edge."""
+    separator = b"\n\n[[package]]\n"
+    header, *packages = original.split(separator)
+    names = [package.split(b"\n", 1)[0] for package in packages]
+    pruned = {f'name = "{name}"'.encode() for name in RAYON_CLOSURE}
+    _require(pruned <= set(names), "Cargo.lock: reference lacks the Rayon closure")
+    kept = [
+        package
+        for package, name in zip(packages, names, strict=True)
+        if name not in pruned
+    ]
+    lock = separator.join([header, *kept])
+    edge = b'\n "rayon",\n'
+    _require(lock.count(edge) == 1, "Cargo.lock: expected one Rayon dependency edge")
+    return lock.replace(edge, b"\n")
+
+
+def _verify_provenance(original: bytes, current: bytes) -> None:
+    """Historical bytes stay intact and the exact Task 1.1 appendix follows them."""
+    _require(current.startswith(original), "VENDORED_FROM.md: append-only provenance")
+    tail = current[len(original) :]
+    end = tail.find(b"\n## ", 1)
+    section = tail if end < 0 else tail[:end]
+    _require(
+        tail.startswith(TRIM_APPENDIX_HEADING) and sha(section) == TRIM_APPENDIX_SHA256,
+        "VENDORED_FROM.md: Task 1.1 trim appendix must follow the history unchanged",
     )
 
 

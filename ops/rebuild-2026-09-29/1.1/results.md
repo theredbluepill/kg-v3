@@ -1,10 +1,12 @@
 # Task 1.1 — trimmed rules kernel result
 
-Task 1.1 implementation, independent Codex review and final acceptance pass.
-Final `just prepare`: root Rust **155 passed / 2 ignored / 0 failed**, engine
-**57 passed / 0 ignored / 0 failed**, Python **769 passed / 3 skipped / 0 failed**.
-Manifest verification, build, formatting, linting, typing and documentation
-checks pass. Changes remain uncommitted for Claude.
+Task 1.1 implementation, independent Codex review, Claude's implementation
+review and commit `0dc9bdd`, then the verification-round-1 edits (see
+[Verification round 1 edits](#verification-round-1-edits) at the end).
+Current state: engine **59 passed / 0 ignored / 0 failed**, root Rust
+**155 passed / 2 ignored / 0 failed**; the checker and final `just prepare` pass.
+Sections before "Claude implementation review" record Codex's uncommitted
+pre-review pass (57 engine tests) and are kept as history, not current counts.
 
 Scope: Task 1.1 brief plus Claude's required Python/pytest and separate-package
 workflow edits. Branch `kg/rebuild-codex`, starting HEAD
@@ -208,3 +210,40 @@ Final checks (`CARGO_BUILD_JOBS=3`, `CARGO_NET_OFFLINE=true`, `UV_OFFLINE=true`)
 | `uv run python scripts/check_engine_trim.py` | PASS | `claude-review-manifest.log` |
 | `uvx --offline --from rust-just just prepare` | PASS: root 155/2 ignored; engine 59; Python 769/3 skipped | `claude-review-prepare.log` |
 | `git diff --exit-code -- Cargo.toml Cargo.lock uv.lock src`; `git diff --check` | PASS | — |
+
+## Verification round 1 edits
+
+Codex verification round 1 (`verify-r1/verify-1.1-r1.md`, verified HEAD
+`0dc9bdd`) approved with edits and no blocking findings. Both non-blocking edits
+are addressed on `kg/rebuild-codex`:
+
+- **Checker hardening (defect, test-first).** Updated manifest declarations
+  could authorize LICENSE changes or remove the trim provenance appendix, and
+  `Cargo.lock` was checked only against manifest-declared edits. The checker now
+  permits declared edits only on `lib.rs`, `Cargo.toml`, `Cargo.lock` and
+  `VENDORED_FROM.md`; derives the expected lockfile as the reference minus the
+  six-package Rayon closure and the single Rayon dependency edge; and requires
+  the Task 1.1 appendix (heading through the next `## ` section, SHA-256
+  `1d089760…d76c93`) to follow the historical bytes. Later appended sections
+  remain allowed. `check()` now delegates to `reference_files()` and
+  `verify_task()`. Eight new tests drive `check()`/`main()` on a copy of the
+  committed package, with the pinned reference read from Git. Before the repair:
+  3 failed / 52 passed, covering the LICENSE, provenance and lockfile tests
+  (`verify-r1/checker-hardening-red.log`). The eighth-`lib.rs`-removal
+  regression already passed. After the repair: 55 passed.
+- **Receipt reconciliation.** The opening now states the committed 59-test
+  state and marks the 57-test sections as pre-review history. `replay-counts.json`,
+  `replay-one-green.json`, `replay-rustfmt.json` and `replay-state-red.json` were
+  matched by the root `.gitignore` pattern `replay-*.json`. They were therefore
+  absent from the commit. Their SHA-256 values match `evidence-sha256.json`, and
+  they are now force-added.
+
+Checks (`CARGO_BUILD_JOBS=3`, `CARGO_NET_OFFLINE=true`, `UV_OFFLINE=true`):
+
+| Command | Outcome | Receipt |
+| --- | --- | --- |
+| `cargo test --manifest-path engine_rs/Cargo.toml --locked --offline` | PASS: 41 + 9 + 9 = 59; 0 ignored | `verify-r1/engine-test.log` |
+| `uv run --offline python scripts/check_engine_trim.py` | PASS | `verify-r1/manifest.log` |
+| `uv run --offline pytest tests/tools/test_check_engine_trim.py -q` | PASS: 55 | `verify-r1/checker-hardening-green.log` |
+| `uvx --offline --from rust-just just prepare` (first attempt) | FAIL: 6 Ruff findings in new code (B905, ARG005, RUF043) | `verify-r1/prepare-1.log` |
+| `uvx --offline --from rust-just just prepare` | PASS: root 155/2 ignored; engine 59; Python 777/3 skipped | `verify-r1/prepare.log` |

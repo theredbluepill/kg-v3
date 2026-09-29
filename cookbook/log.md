@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-09-29 — Harden the rules-kernel checker after verification
+
+Verification round 1 found that manifest declarations alone could authorize
+LICENSE edits or drop the Task 1.1 provenance appendix. The
+[[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] now records
+the fixed editable set, derived lockfile and pinned appendix hash. Eight
+`check()`-level regressions were added test-first; three failed before the fix.
+Engine tests (59), the checker and `just prepare` pass. The receipt now matches
+the committed 59-test state, and four ignored replay receipts are tracked.
+
 ## 2026-09-29 — Rebuild and verify the trimmed rules kernel
 
 The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records
