@@ -503,8 +503,11 @@ def regeneration_harness(
         "scripts/kaggriculture_observation_oracle/record.rs",
         "scripts/kaggriculture_observation_oracle/regenerate.py",
         "engine_rs/TRIM_MANIFEST.json",
-        "engine_rs/src/lib.rs",
+        "engine_rs/Cargo.toml",
         "engine_rs/Cargo.lock",
+        "engine_rs/src/lib.rs",
+        "engine_rs/src/econ_attrib.rs",
+        "engine_rs/src/py_random.rs",
         *(
             f"engine_rs/fixtures/episode-{episode}.jsonl.gz"
             for episode in oracle.EPISODES
@@ -613,6 +616,9 @@ def regeneration_harness(
         ("reference", "scripts/kaggriculture_observation_oracle/regenerate.py"),
         ("admission", "Cargo.lock"),
         ("admission", "engine_rs/fixtures/episode-95324500.jsonl.gz"),
+        ("producer", "engine_rs/src/py_random.rs"),
+        ("admission", "engine_rs/Cargo.toml"),
+        ("export", "engine_rs/src/econ_attrib.rs"),
         ("reference", "HEAD"),
     ],
 )
@@ -658,6 +664,50 @@ def test_regeneration_source_identity_is_captured_before_producer(
         identity["dirty_files"][str(recorder.relative_to(root))]
         == expected_recorder_sha
     )
+
+
+def test_regeneration_identity_records_every_engine_build_input(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, _calls = regeneration_harness(tmp_path, monkeypatch)
+    output = tmp_path / "final"
+    oracle.regenerate(output, oracle.PIN)
+    identity = json.loads((output / "manifest.json").read_bytes())["source_identity"]
+    recorded = {**identity["dirty_files"]}
+    engine_keys = dict(oracle.ENGINE_PATHS)
+    for key, value in identity["engine"].items():
+        recorded[engine_keys[key]] = value
+    for path in (
+        "engine_rs/Cargo.toml",
+        "engine_rs/Cargo.lock",
+        "engine_rs/src/lib.rs",
+        "engine_rs/src/econ_attrib.rs",
+        "engine_rs/src/py_random.rs",
+    ):
+        assert recorded[path] == oracle.hash_file(root / path)
+
+
+@pytest.mark.parametrize("phase", ["", "producer"])
+def test_regeneration_rejects_an_undeclared_engine_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str
+) -> None:
+    root, calls = regeneration_harness(
+        tmp_path,
+        monkeypatch,
+        drift_phase=phase,
+        drift_path="engine_rs/src/undeclared.rs",
+    )
+    if not phase:
+        (root / "engine_rs/src/undeclared.rs").write_bytes(b"mod x;\n")
+    output = tmp_path / "final"
+    with pytest.raises(ValueError, match="undeclared engine source"):
+        oracle.regenerate(output, oracle.PIN)
+    assert ("producer" in calls) == bool(phase)
+    assert not output.exists()
+
+
+def test_declared_engine_inputs_cover_the_live_engine_crate() -> None:
+    oracle.require_declared_engine_sources(ROOT)
 
 
 def test_missing_corpus_names_the_manifest_and_regeneration_command(

@@ -1,5 +1,18 @@
 # Change log
 
+## 2026-09-29 — Capture every engine build input in observation-oracle custody
+
+Codex verification r1 of the Task 1.3 merge (`e197528`, REJECT) found that the
+oracle source snapshot omitted the live engine `Cargo.toml` and `py_random.rs`,
+so edits to either during regeneration survived every recheck. `regenerate.py`
+now captures and rechecks those and `econ_attrib.rs`, recorded in
+`dirty_files`, and fails on any undeclared engine module. Seven new custody
+tests failed first and pass after the repair (53 total). The committed corpus
+predates the repair; its gap is stated in the
+[[references/structured-observations-preserve-legal-state-and-order|observation Reference]]
+and `docs/rules-parity-coverage.md`. Receipts:
+`ops/rebuild-2026-09-29/merge-1.3/verify-r1-fix/`.
+
 ## 2026-09-29 — Merge Task 1.3 structured observations onto the trainer-lane integration
 
 Task 1.3 (Codex APPROVE at `dc6b200`) forked from `f464c3d`, after the Task 1.2

@@ -958,6 +958,13 @@ def validate_inputs(path: Path, generation: dict[str, Any]) -> None:
     )
 
 
+# Engine build inputs outside the named ENGINE_PATHS hashes. They are recorded in
+# ``dirty_files`` so the committed identity schema keeps its exact engine keys.
+ENGINE_SOURCE_PATHS = (
+    "engine_rs/Cargo.toml",
+    "engine_rs/src/econ_attrib.rs",
+    "engine_rs/src/py_random.rs",
+)
 SOURCE_PATHS = (
     "Cargo.toml",
     "Cargo.lock",
@@ -970,6 +977,7 @@ SOURCE_PATHS = (
     "src/kaggriculture/oracle_corpus.rs",
     "scripts/kaggriculture_observation_oracle/record.rs",
     "scripts/kaggriculture_observation_oracle/regenerate.py",
+    *ENGINE_SOURCE_PATHS,
 )
 ENGINE_PATHS = (
     ("trim_manifest", "engine_rs/TRIM_MANIFEST.json"),
@@ -979,8 +987,30 @@ ENGINE_PATHS = (
 SourceSnapshot = tuple[str, tuple[tuple[str, str], ...]]
 
 
+def require_declared_engine_sources(root: Path) -> None:
+    """Every compiled engine source must be captured; a new module fails fast."""
+    declared = {
+        path
+        for path in (*ENGINE_SOURCE_PATHS, *(p for _key, p in ENGINE_PATHS))
+        if path.endswith(".rs")
+    }
+    present = {
+        path.relative_to(root).as_posix()
+        for path in (root / "engine_rs/src").rglob("*.rs")
+    }
+    if (root / "engine_rs/build.rs").exists():
+        present.add("engine_rs/build.rs")
+    undeclared, missing = sorted(present - declared), sorted(declared - present)
+    require(
+        present == declared,
+        "undeclared engine source or missing declared engine source: "
+        f"undeclared {undeclared}, missing {missing}",
+    )
+
+
 def source_snapshot() -> SourceSnapshot:
     """Pin immutable source identity before either executable is built or run."""
+    require_declared_engine_sources(ROOT)
     commit = run(["git", "rev-parse", "HEAD"]).decode().strip()
     paths = (
         *SOURCE_PATHS,
@@ -992,6 +1022,7 @@ def source_snapshot() -> SourceSnapshot:
 
 def check_source_snapshot(snapshot: SourceSnapshot) -> None:
     commit, files = snapshot
+    require_declared_engine_sources(ROOT)
     require(
         run(["git", "rev-parse", "HEAD"]).decode().strip() == commit,
         "source identity changed: root commit",

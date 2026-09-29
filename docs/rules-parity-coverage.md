@@ -494,8 +494,14 @@ These checks discriminate:
 - A one-byte reference corruption fails custody validation.
 - Reversing shed ranks fails the real-schema Python corpus test.
 
-All three mutations were restored. Forty-five custody tests cover corruption,
-ordering, strict metadata, source drift and resource guards. The actual Task
+All three mutations were restored. Fifty-three custody tests cover corruption,
+ordering, strict metadata, source drift and resource guards. Source custody
+captures and rechecks every engine build input: `engine_rs/Cargo.toml`,
+`Cargo.lock`, `TRIM_MANIFEST.json` and each `engine_rs/src` module, and an
+undeclared engine module fails regeneration. The committed corpus predates that
+repair, so its identity omits the engine `Cargo.toml`, `py_random.rs` and
+`econ_attrib.rs` hashes; their committed bytes are unchanged since its root
+commit `469e8ec`. The actual Task
 2.1 `check_contract()` runs on every binding batch and on all 512 records. The
 pinned-memory variants run only where CUDA is available, matching the starter's
 CUDA-only pinning, and then also assert that every buffer is pinned. Elsewhere

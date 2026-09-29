@@ -47,6 +47,7 @@ sources:
   - resource: "repository:scripts/kaggriculture_observation_oracle/record.rs"
   - resource: "repository:scripts/kaggriculture_observation_oracle/regenerate.py"
   - resource: "repository:tests/tools/test_observation_oracle_custody.py"
+  - resource: "repository:ops/rebuild-2026-09-29/merge-1.3/verify-r1-fix/results.md"
   - resource: "repository:tests/kaggriculture/test_observe.py"
   - resource: "repository:docs/rl-api-specs.md"
   - resource: "repository:docs/rules-engine.md"
@@ -99,6 +100,7 @@ the quota itself is unchanged.
   temporary export; custody validates source identity, record/seat hashes,
   quotas, order and sizes. Source identity is fixed before execution and checked
   before installation; the exported recorder bytes must match that identity.
+  It covers every engine build input, and an undeclared engine module fails.
 - `tests/tools/test_observation_oracle_custody.py`: corruption, source drift,
   exported-recorder integrity, lossless byte-plane and resource-guard controls.
 - `tests/kaggriculture/test_observe.py`: direct imports of the real schema, all
@@ -131,7 +133,14 @@ restoration passes with unchanged output allocations.
 
 The custody suite passed 43 tests at Codex's handoff and passes 45 after Claude's
 watchdog fix. Nine source-custody regressions fail before the capture/recheck
-repair and pass afterward.
+repair and pass afterward. Codex's merge verification of `e197528` found that
+source identity omitted the live engine `Cargo.toml` and `py_random.rs`; edits
+to either survived every recheck and the output was installed. Claude added
+those, `econ_attrib.rs` and a guard that rejects an undeclared engine module.
+Seven new tests failed first and pass after the repair; the suite passes 53
+(`merge-1.3/verify-r1-fix/`). The committed corpus predates the repair, so its
+identity lacks those three hashes; their committed bytes are unchanged since its
+root commit `469e8ec`.
 
 Codex's handoff (`results.md`) stopped at two failures. The first was R1: the v1
 seeded policy reaches at most 9 actors, because it hires on at most two of every
