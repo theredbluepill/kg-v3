@@ -393,8 +393,7 @@ def _run_training_session(
         # A telemetry outage stays visible: nothing reaches the W&B server
         # until the run directory's offline run is synced.
         print(
-            f"W&B offline: telemetry stays under {run_dir / 'wandb'} until "
-            "`wandb sync`"
+            f"W&B offline: telemetry stays under {run_dir / 'wandb'} until `wandb sync`"
         )
     with _logger_session(
         create_logger(

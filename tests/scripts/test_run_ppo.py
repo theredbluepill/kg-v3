@@ -3553,6 +3553,7 @@ def test_main_rejects_kaggriculture_seed_before_allocation(
         [
             str(_CONFIGS / "kaggriculture.yaml"),
             str(tmp_path / "runs"),
+            *_teacher_source_argv(tmp_path),
             "-o",
             f"env.seed={seed}",
             "rl.eval_replay_games=0",
@@ -3573,6 +3574,7 @@ def test_main_rejects_kaggriculture_replay_before_allocation(
         [
             str(_CONFIGS / "kaggriculture.yaml"),
             str(tmp_path / "runs"),
+            *_teacher_source_argv(tmp_path),
             "-o",
             "rl.eval_replay_games=1",
         ],
@@ -3592,6 +3594,7 @@ def test_main_rejects_kaggriculture_seed_budget_before_allocation(
         [
             str(_CONFIGS / "kaggriculture.yaml"),
             str(tmp_path / "runs"),
+            *_teacher_source_argv(tmp_path),
             "--max-env-steps",
             str(2**61),
         ],
@@ -3778,6 +3781,7 @@ def test_main_kaggriculture_rollout_factory_uses_rank_seed_and_transfer_device(
         [
             str(_CONFIGS / "kaggriculture.yaml"),
             str(tmp_path / "runs"),
+            *_teacher_source_argv(tmp_path),
             "-o",
             "env.seed=17",
             "env.pin_memory=false",

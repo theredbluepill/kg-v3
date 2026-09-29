@@ -154,4 +154,3 @@ def test_debug_logger_accepts_exit_code() -> None:
 
     logger.close(exit_code=1)
     logger.close()
-
