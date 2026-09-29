@@ -1,3 +1,4 @@
+pub mod kaggriculture;
 mod rl;
 pub mod rules_engine;
 

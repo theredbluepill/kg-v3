@@ -21,9 +21,12 @@ _SPEC.loader.exec_module(checker)
 def fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, bytes]]:
     kept = "engine_rs/src/py_random.rs"
     omitted = "engine_rs/src/ffi.rs"
-    authored = "engine_rs/tests/replay_parity.rs"
+    authored = (
+        "engine_rs/tests/replay_parity.rs",
+        "engine_rs/tests/grammar_kernel.rs",
+    )
     originals = {kept: b"original\n", omitted: b"ffi\n"}
-    current = {kept: originals[kept], authored: b"test\n"}
+    current = {kept: originals[kept], **{path: b"test\n" for path in authored}}
     manifest = {
         "schema_version": 1,
         "reference_commit": checker.PIN,
@@ -44,10 +47,11 @@ def fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, bytes]]:
         ],
         "authored": [
             {
-                "path": authored,
-                "sha256": checker.sha(current[authored]),
-                "reason": "replay regression",
+                "path": path,
+                "sha256": checker.sha(current[path]),
+                "reason": "authored kernel regression",
             }
+            for path in authored
         ],
         "non_engine_changes": [
             {"path": "justfile", "reason": "Separate engine package preparation"}
@@ -60,7 +64,7 @@ def test_valid_full_inventory_passes() -> None:
     checker.verify(*fixture())
 
 
-def test_task_authored_inventory_accepts_replay_test() -> None:
+def test_task_authored_inventory_accepts_exact_two_tests() -> None:
     manifest, _, _ = fixture()
     checker.verify_task_authored(manifest["authored"])
 
@@ -68,14 +72,26 @@ def test_task_authored_inventory_accepts_replay_test() -> None:
 @pytest.mark.parametrize(
     ("paths", "message"),
     [
-        ([], r"Task 1.1 authored set: missing=.*replay_parity"),
+        ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
         (
-            ["engine_rs/tests/replay_parity.rs", "engine_rs/tests/other.rs"],
-            r"Task 1.1 authored set: .*extra=.*other.rs",
+            ["engine_rs/tests/replay_parity.rs"],
+            r"Task 1.2 authored set: missing=.*grammar_kernel",
+        ),
+        (
+            ["engine_rs/tests/grammar_kernel.rs"],
+            r"Task 1.2 authored set: missing=.*replay_parity",
+        ),
+        (
+            [
+                "engine_rs/tests/replay_parity.rs",
+                "engine_rs/tests/grammar_kernel.rs",
+                "engine_rs/tests/other.rs",
+            ],
+            r"Task 1.2 authored set: .*extra=.*other.rs",
         ),
     ],
 )
-def test_task_authored_inventory_requires_exact_replay_test(
+def test_task_authored_inventory_requires_exact_two_tests(
     paths: list[str], message: str
 ) -> None:
     authored = [
@@ -333,6 +349,47 @@ def test_committed_package_passes_check() -> None:
 
 def test_check_entry_point_passes_on_unmodified_copy(trimmed: Path) -> None:
     checker.check(trimmed)
+
+
+@pytest.mark.parametrize("name", ["replay_parity.rs", "grammar_kernel.rs"])
+def test_check_rejects_omitted_authored_test(trimmed: Path, name: str) -> None:
+    """Deleting both the test and its declaration cannot weaken the inventory."""
+    path = f"engine_rs/tests/{name}"
+    (trimmed / path).unlink()
+    manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["authored"] = [
+        entry for entry in manifest["authored"] if entry["path"] != path
+    ]
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match=f"Task 1.2 authored set: missing=.*{name}"):
+        checker.check(trimmed)
+
+
+def test_check_rejects_self_declared_third_authored_source(trimmed: Path) -> None:
+    path = "engine_rs/tests/third.rs"
+    data = b"// Extra authored source is outside the fixed inventory.\n"
+    (trimmed / path).write_bytes(data)
+    manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["authored"].append(
+        {"path": path, "sha256": checker.sha(data), "reason": "self-declared third"}
+    )
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match=r"Task 1.2 authored set: .*extra=.*third.rs"):
+        checker.check(trimmed)
+
+
+@pytest.mark.parametrize("name", ["replay_parity.rs", "grammar_kernel.rs"])
+def test_check_rejects_wrong_authored_hash(trimmed: Path, name: str) -> None:
+    path = f"engine_rs/tests/{name}"
+    manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    (entry,) = [entry for entry in manifest["authored"] if entry["path"] == path]
+    entry["sha256"] = "0" * 64
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match=re.escape(f"{path}: authored hash")):
+        checker.check(trimmed)
 
 
 def test_main_reports_failure_exit_code(

@@ -1,0 +1,160 @@
+[
+  {
+    "id": "constants-red",
+    "question": "Is the grammar compiled in the root module tree with the contract vocabulary?",
+    "inputs": "Section 5.1 constants test against absent module",
+    "expected_discriminator": "Rust unresolved module/symbol errors",
+    "stopping_condition": "One bounded compile attempt",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_constants",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/constants-red.log",
+    "exit_code": 101,
+    "elapsed_seconds": 15.81
+  },
+  {
+    "id": "checker-placeholder-format",
+    "question": "Is the authored placeholder formatted before its inventory hash is computed?",
+    "inputs": "engine_rs/tests/grammar_kernel.rs",
+    "expected_discriminator": "rustfmt exits 0; retained files are not selected",
+    "stopping_condition": "The one authored file is formatted",
+    "command": [
+      "rustfmt",
+      "--edition",
+      "2024",
+      "engine_rs/tests/grammar_kernel.rs"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/checker-placeholder-format.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.028
+  },
+  {
+    "id": "checker-placeholder-hash",
+    "question": "What is the actual SHA-256 of the formatted authored placeholder?",
+    "inputs": "engine_rs/tests/grammar_kernel.rs",
+    "expected_discriminator": "A SHA-256 and file path are printed with exit 0",
+    "stopping_condition": "Use the computed hash for the initial authored manifest entry",
+    "command": [
+      "shasum",
+      "-a",
+      "256",
+      "engine_rs/tests/grammar_kernel.rs"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/checker-placeholder-hash.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.017
+  },
+  {
+    "id": "constants-green",
+    "question": "Does the registered grammar expose the exact vocabulary?",
+    "inputs": "Section 5.1 constants and typed enums",
+    "expected_discriminator": "1 test passes",
+    "stopping_condition": "All selected assertions pass",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--lib",
+      "grammar_constants",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/constants-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 5.629
+  },
+  {
+    "id": "checker-red",
+    "question": "Does the fixed Task 1.1 authored allowlist reject the intended Task 1.2 inventory while the new regressions express the required protections?",
+    "inputs": "New exact-two-test and copied-package omission/third/hash cases against unchanged checker",
+    "expected_discriminator": "Red: intended two-test inventory is rejected by the old one-test allowlist; all existing attacks remain tested",
+    "stopping_condition": "Capture and diagnose every failure before changing only the allowlist",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_check_engine_trim.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/checker-red.log",
+    "exit_code": 1,
+    "elapsed_seconds": 18.797
+  },
+  {
+    "id": "checker-green",
+    "question": "Does the exact two-path allowlist accept the intended tests while preserving all pin and authored-inventory protections?",
+    "inputs": "Checker allowlist and all 62 checker regressions; only two production lines changed",
+    "expected_discriminator": "All tests pass, including omissions/third-file/hash and existing retained-byte attacks",
+    "stopping_condition": "All 62 tests pass or diagnose the failure without weakening expectations",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_check_engine_trim.py",
+      "-q"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/checker-green.log",
+    "exit_code": 0,
+    "elapsed_seconds": 2.08
+  },
+  {
+    "id": "checker-current-inventory",
+    "question": "Do current engine bytes and the declared two authored tests satisfy the pinned trim contract?",
+    "inputs": "Current engine_rs tree and pinned reference Git blobs",
+    "expected_discriminator": "engine trim manifest: OK with exit 0",
+    "stopping_condition": "The real current-tree checker passes without retained-source edits",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "scripts/check_engine_trim.py"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_NET_OFFLINE": "true",
+      "UV_OFFLINE": "true"
+    },
+    "log": "logs/checker-current-inventory.log",
+    "exit_code": 0,
+    "elapsed_seconds": 0.826
+  }
+]

@@ -705,6 +705,11 @@
       "path": "engine_rs/tests/replay_parity.rs",
       "sha256": "a581631ec0837869be81d1aff2479d00d813c739cd712188fa52ecba09ffb8da",
       "reason": "New direct native-reset official-trace parity and comparator regressions"
+    },
+    {
+      "path": "engine_rs/tests/grammar_kernel.rs",
+      "sha256": "8de6d056f619f020686dbbfa38ac49cd8ef23a940ec946e46078e73599f749bf",
+      "reason": "Task 1.2 authored shared-grammar integration tests; independent of retained kernel bytes"
     }
   ],
   "non_engine_changes": [
@@ -714,11 +719,11 @@
     },
     {
       "path": "scripts/check_engine_trim.py",
-      "reason": "Python provenance checker required by Claude review; replaces planned Node tool."
+      "reason": "Python provenance checker required by Claude review; Task 1.2 extends the fixed authored inventory to exactly replay and grammar kernel tests."
     },
     {
       "path": "tests/tools/test_check_engine_trim.py",
-      "reason": "Test-first pytest coverage for provenance and inventory drift."
+      "reason": "Test-first pytest coverage for provenance and inventory drift, including Task 1.2 two-test inventory, omissions, third-file and authored-hash attacks."
     },
     {
       "path": "justfile",

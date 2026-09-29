@@ -1,0 +1,191 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true cargo test --locked --lib grammar_constants -- --test-threads=1
+   Compiling target-lexicon v0.13.5
+   Compiling autocfg v1.5.0
+   Compiling proc-macro2 v1.0.106
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.45
+   Compiling pyo3-build-config v0.28.3
+   Compiling libc v0.2.186
+   Compiling syn v2.0.117
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-utils v0.8.21
+   Compiling pyo3-macros-backend v0.28.3
+   Compiling pyo3-ffi v0.28.3
+   Compiling matrixmultiply v0.3.10
+   Compiling serde_core v1.0.228
+   Compiling heck v0.5.0
+   Compiling crossbeam-epoch v0.9.18
+   Compiling pyo3 v0.28.3
+   Compiling rayon-core v1.13.0
+   Compiling zmij v1.0.21
+   Compiling cfg-if v1.0.4
+   Compiling rand_core v0.10.1
+   Compiling getrandom v0.4.2
+   Compiling rawpointer v0.2.1
+   Compiling pyo3-macros v0.28.3
+   Compiling crossbeam-deque v0.8.6
+   Compiling num-complex v0.4.6
+   Compiling num-integer v0.1.46
+   Compiling numpy v0.28.0
+   Compiling once_cell v1.21.4
+   Compiling serde_json v1.0.149
+   Compiling serde v1.0.228
+   Compiling ndarray v0.17.2
+   Compiling chacha20 v0.10.0
+   Compiling serde_derive v1.0.228
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-grammar)
+   Compiling rustc-hash v2.1.2
+   Compiling memchr v2.8.0
+   Compiling either v1.15.0
+   Compiling itoa v1.0.18
+   Compiling rayon v1.12.0
+   Compiling rand v0.10.1
+error[E0433]: cannot find `kaggriculture` in `crate`
+ --> src/kaggriculture/grammar_tests.rs:1:12
+  |
+1 | use crate::kaggriculture::grammar::*;
+  |            ^^^^^^^^^^^^^ could not find `kaggriculture` in the crate root
+
+error[E0425]: cannot find value `MAX_ACTORS` in this scope
+ --> src/kaggriculture/grammar_tests.rs:5:16
+  |
+5 |     assert_eq!(MAX_ACTORS, 241);
+  |                ^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `MAX_ORDERS` in this scope
+ --> src/kaggriculture/grammar_tests.rs:6:16
+  |
+6 |     assert_eq!(MAX_ORDERS, 10);
+  |                ^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `MAX_FRAMES` in this scope
+ --> src/kaggriculture/grammar_tests.rs:7:16
+  |
+7 |     assert_eq!(MAX_FRAMES, 252);
+  |                ^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `TOKENS_PER_SEAT` in this scope
+ --> src/kaggriculture/grammar_tests.rs:8:16
+  |
+8 |     assert_eq!(TOKENS_PER_SEAT, 3024);
+  |                ^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `DEFAULT_HIRE_LIMIT` in this scope
+ --> src/kaggriculture/grammar_tests.rs:9:16
+  |
+9 |     assert_eq!(DEFAULT_HIRE_LIMIT, 241);
+  |                ^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `QUANTITY_BASE` in this scope
+  --> src/kaggriculture/grammar_tests.rs:10:16
+   |
+10 |     assert_eq!(QUANTITY_BASE, 32);
+   |                ^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `MAX_QUANTITY` in this scope
+  --> src/kaggriculture/grammar_tests.rs:11:16
+   |
+11 |     assert_eq!(MAX_QUANTITY, 1023);
+   |                ^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `GRAMMAR_TABLES_VERSION` in this scope
+  --> src/kaggriculture/grammar_tests.rs:12:16
+   |
+12 |     assert_eq!(GRAMMAR_TABLES_VERSION, 1);
+   |                ^^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `SLOT_NAMES` in this scope
+  --> src/kaggriculture/grammar_tests.rs:15:16
+   |
+15 |     assert_eq!(SLOT_NAMES, names);
+   |                ^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `SLOT_WIDTHS` in this scope
+  --> src/kaggriculture/grammar_tests.rs:16:16
+   |
+16 |     assert_eq!(SLOT_WIDTHS, widths);
+   |                ^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `SLOTS` in this scope
+  --> src/kaggriculture/grammar_tests.rs:17:17
+   |
+17 |     for i in 0..SLOTS {
+   |                 ^^^^^ not found in this scope
+
+error[E0433]: cannot find type `Slot` in this scope
+  --> src/kaggriculture/grammar_tests.rs:18:20
+   |
+18 |         let slot = Slot::try_from(i).unwrap();
+   |                    ^^^^ use of undeclared type `Slot`
+
+error[E0433]: cannot find type `Slot` in this scope
+  --> src/kaggriculture/grammar_tests.rs:23:13
+   |
+23 |     assert!(Slot::try_from(12).is_err());
+   |             ^^^^ use of undeclared type `Slot`
+
+error[E0433]: cannot find type `Slot` in this scope
+  --> src/kaggriculture/grammar_tests.rs:24:13
+   |
+24 |     assert!(Slot::try_from(usize::MAX).is_err());
+   |             ^^^^ use of undeclared type `Slot`
+
+error[E0433]: cannot find type `UnitKind` in this scope
+  --> src/kaggriculture/grammar_tests.rs:25:33
+   |
+25 |     for i in 0..19 { assert_eq!(UnitKind::try_from(i).unwrap() as i64, i); }
+   |                                 ^^^^^^^^ use of undeclared type `UnitKind`
+
+error[E0433]: cannot find type `MarketKind` in this scope
+  --> src/kaggriculture/grammar_tests.rs:26:32
+   |
+26 |     for i in 0..8 { assert_eq!(MarketKind::try_from(i).unwrap() as i64, i); }
+   |                                ^^^^^^^^^^ use of undeclared type `MarketKind`
+
+error[E0433]: cannot find type `ActionItem` in this scope
+  --> src/kaggriculture/grammar_tests.rs:27:33
+   |
+27 |     for i in 0..13 { assert_eq!(ActionItem::try_from(i).unwrap() as i64, i); }
+   |                                 ^^^^^^^^^^ use of undeclared type `ActionItem`
+
+error[E0433]: cannot find type `UnitKind` in this scope
+  --> src/kaggriculture/grammar_tests.rs:28:47
+   |
+28 |     for i in [-1, 19, 20, i64::MAX] { assert!(UnitKind::try_from(i).is_err()); }
+   |                                               ^^^^^^^^ use of undeclared type `UnitKind`
+
+error[E0433]: cannot find type `MarketKind` in this scope
+  --> src/kaggriculture/grammar_tests.rs:29:42
+   |
+29 |     for i in [-1, 8, i64::MAX] { assert!(MarketKind::try_from(i).is_err()); }
+   |                                          ^^^^^^^^^^ use of undeclared type `MarketKind`
+
+error[E0433]: cannot find type `ActionItem` in this scope
+  --> src/kaggriculture/grammar_tests.rs:30:51
+   |
+30 |     for i in [-1, 13, 14, 15, i64::MAX] { assert!(ActionItem::try_from(i).is_err()); }
+   |                                                   ^^^^^^^^^^ use of undeclared type `ActionItem`
+
+error[E0433]: cannot find type `UnitKind` in this scope
+  --> src/kaggriculture/grammar_tests.rs:31:16
+   |
+31 |     assert_eq!(UnitKind::CollectFertilizer.as_str(), "COLLECT_FERTILIZER");
+   |                ^^^^^^^^ use of undeclared type `UnitKind`
+
+error[E0433]: cannot find type `MarketKind` in this scope
+  --> src/kaggriculture/grammar_tests.rs:32:16
+   |
+32 |     assert_eq!(MarketKind::BuyProduct.as_str(), "BUY_PRODUCT");
+   |                ^^^^^^^^^^ use of undeclared type `MarketKind`
+
+error[E0433]: cannot find type `ActionItem` in this scope
+  --> src/kaggriculture/grammar_tests.rs:33:16
+   |
+33 |     assert_eq!(ActionItem::Fertilizer.as_str(), "FERTILIZER");
+   |                ^^^^^^^^^^ use of undeclared type `ActionItem`
+
+Some errors have detailed explanations: E0425, E0433.
+For more information about an error, try `rustc --explain E0425`.
+error: could not compile `owl` (lib test) due to 24 previous errors
+
+EXIT_CODE=101
