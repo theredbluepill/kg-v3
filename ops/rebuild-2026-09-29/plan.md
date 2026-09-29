@@ -165,35 +165,35 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 **Owner:** Claude writes it; Codex reviews. **Files:** create `docs/kaggriculture-contract.md` and add a Kaggriculture section to `docs/rl-api-specs.md`. **Reference inputs (read, don't copy):** `engine_rs/src/myolie_features.rs` (which legal public and own-private facts exist, and their normalizations), `python/owl/model/kaggriculture.py` `_encode` (how the flat vector was grouped), `python/owl/kaggriculture/types.py`, `engine_rs/src/myolie_sampler.rs` (grammar slots and widths), `engine_rs/src/training.rs` (lifecycle), and `ops/coordination-design-2026-09-29/` (the missing-facts finding).
 
-- [ ] Define `KaggricultureObsBatch` as named per-entity tensors, following Isaiah's `ObsBatch`. Candidate groups from the reference: tiles, own/rival actors, storage, shops, products, globals. Give each group its float channels and its categorical index fields (tile kind, cell, actor index, role, product index) as integer tensors, plus entity masks, `still_playing`, and the action mask. State each channel's meaning and normalization.
-- [ ] Information audit table: every reference feature range (e.g. `features[1027:3827]`, the tile maintenance block) maps to a new field, or is recorded as intentionally dropped with a reason. Add the facts L13 found missing.
-- [ ] Action contract: 252 frames × 12 slots, the slot widths, the STOP, EMPTY, NONE and HIRE semantics, and the grammar mask API taken from C3.
-- [ ] Env contract: `reset`/`step` signatures, caller-owned pinned buffers, auto-reset, terminal metrics (raw banks per seat), reward configuration, and seed streams (L3).
-- [ ] Acceptance: Codex's review is recorded in the doc; both streams code against this file.
+- [x] Define `KaggricultureObsBatch` as named per-entity tensors, following Isaiah's `ObsBatch`. Candidate groups from the reference: tiles, own/rival actors, storage, shops, products, globals. Give each group its float channels and its categorical index fields (tile kind, cell, actor index, role, product index) as integer tensors, plus entity masks, `still_playing`, and the action mask. State each channel's meaning and normalization.
+- [x] Information audit table: every reference feature range (e.g. `features[1027:3827]`, the tile maintenance block) maps to a new field, or is recorded as intentionally dropped with a reason. Add the facts L13 found missing.
+- [x] Action contract: 252 frames × 12 slots, the slot widths, the STOP, EMPTY, NONE and HIRE semantics, and the grammar mask API taken from C3.
+- [x] Env contract: `reset`/`step` signatures, caller-owned pinned buffers, auto-reset, terminal metrics (raw banks per seat), reward configuration, and seed streams (L3).
+- [x] Acceptance: Codex's review is recorded in the doc; both streams code against this file.
 
 ### Task 0.2: Reproduce the CUDA illegal memory access on the reference branch (pod) — DONE, root cause in `results.md`
 
 **Owner:** Codex writes `ops/rebuild-2026-09-29/cuda_repro.py`; Claude runs it. It uses the reference branch checkout on the pod and the BC best checkpoint (SHA-256 `ffd7d9e4…`, identical to its pre-PPO copy; confirm the path on the pod before running).
 
-- [ ] Run statement. Question: which hypothesis holds — H1, a dense-state index overflow in compiled kernels; H2, an async copy from reused native buffers; or H3, some other kernel?
-- [ ] Run in order, stopping at the first informative result: `CUDA_LAUNCH_BLOCKING=1` eager, then compiled, then compiled with synchronous host→device copies, then `compute-sanitizer --tool memcheck`. Budget: ≤ 2 GPU-hours.
-- [ ] Record the root cause (or "not reproduced", with the conditions tried) in `ops/rebuild-2026-09-29/results.md`, and turn it into a design requirement for 1.4 (buffers) and 2.3 (index validation).
+- [x] Run statement. Question: which hypothesis holds — H1, a dense-state index overflow in compiled kernels; H2, an async copy from reused native buffers; or H3, some other kernel?
+- [x] Reproduce and localize: a `CUDA_LAUNCH_BLOCKING=1` run of the crashed run's own **compiled** config (fault after 3 iterations in an Inductor Triton GEMM template), then a synthetic compiled-versus-eager probe (`int32_probe.py`) across the 2²¹-row boundary. The planned eager-first order, synchronous-copy run and `compute-sanitizer` step were not needed once the blocking run named the kernel. Budget: ≤ 2 GPU-hours.
+- [x] Record the root cause (or "not reproduced", with the conditions tried) in `ops/rebuild-2026-09-29/results.md`, and turn it into a design requirement for 1.4 (buffers) and 2.3 (index validation).
 
 ### Task 0.3: Report failed runs as failed
 
 **Owner:** Codex; Claude reviews. `logging.py`, `run_ppo.py` and `distributed.py` are still Isaiah's files on the clean base, so the previous plan's Task 1.1 applies unchanged. It covers the tests and the code: `MetricLogger.close(*, exit_code: int = 0)`, `WandbLogger.close` → `finish(exit_code=...)`, `run_ppo._logger_session`, and a rank-tagged traceback printed before `destroy_process_group`. Read it with `git show kg/reference-2026-09-29:ops/gap-closure-2026-09-29/plan.md`.
 
-- [ ] Follow that task's five steps exactly; Isaiah's suites must pass.
+- [x] Follow that task's five steps exactly; Isaiah's suites must pass.
 
 ## Phase 1 — Engine and native environment (Codex)
 
 ### Task 1.1: Vendor the trimmed rules kernel (C1)
 
-- [ ] Add `engine_rs/` as a workspace crate with `lib.rs`, `py_random.rs` and `econ_attrib.rs` kept byte-identical to the reference. Remove `mod` lines only for excluded modules (C2, C4's `myolie_features`, C5's `ffi`), and record every edit to a retained file in `engine_rs/VENDORED_FROM.md`.
-- [ ] Bring only the fixtures the retained tests need; list them with their hashes.
-- [ ] Write `engine_rs/TRIM_MANIFEST.json`: retained files with reference SHA-256, excluded files with reasons.
-- [ ] L4: handle the `arbitrary_precision` feature interaction. Either keep the engine out of the root crate's feature graph, or apply the reference's test-only `fixture_float` decode in `src/rules_engine/generation.rs`, and record which.
-- [ ] Acceptance: `cargo test --manifest-path engine_rs/Cargo.toml --lib --locked` passes, `cargo test` passes (Isaiah's 155), and the manifest check passes.
+- [x] Add `engine_rs/` as a workspace crate with `lib.rs`, `py_random.rs` and `econ_attrib.rs` kept byte-identical to the reference. Remove `mod` lines only for excluded modules (C2, C4's `myolie_features`, C5's `ffi`), and record every edit to a retained file in `engine_rs/VENDORED_FROM.md`.
+- [x] Bring only the fixtures the retained tests need; list them with their hashes.
+- [x] Write `engine_rs/TRIM_MANIFEST.json`: retained files with reference SHA-256, excluded files with reasons.
+- [x] L4: handle the `arbitrary_precision` feature interaction. Either keep the engine out of the root crate's feature graph, or apply the reference's test-only `fixture_float` decode in `src/rules_engine/generation.rs`, and record which.
+- [x] Acceptance: `cargo test --manifest-path engine_rs/Cargo.toml --lib --locked` passes, `cargo test` passes (Isaiah's 155), and the manifest check passes.
 
 ### Task 1.2: Port the grammar kernel (C3)
 
@@ -204,8 +204,8 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 ### Task 1.3: Structured observation encoder (C4)
 
-- [ ] `src/kaggriculture/observe.rs` (v3-owned) writes the 0.1 contract's tensors into caller-owned buffers for both seats, never exposing the rival's private state.
-- [ ] Oracle: record reference `myolie_features` outputs on ≥ 500 states (early, mid and late game; dense actors) into a fixture. For every contract mapping, reconstruct the reference values from the new tensors and assert equality within float tolerance. Also assert that the L13 facts are present.
+- [x] `src/kaggriculture/observe.rs` (v3-owned) writes the 0.1 contract's tensors into caller-owned buffers for both seats, never exposing the rival's private state.
+- [x] Oracle: record reference `myolie_features` outputs on ≥ 500 states (early, mid and late game; dense actors) into a fixture. For every contract mapping, reconstruct the reference values from the new tensors and assert equality within float tolerance. Also assert that the L13 facts are present.
 
 ### Task 1.4: Native environment lifecycle (C5)
 
@@ -224,29 +224,29 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 ### Task 2.1: Encoder with Isaiah's classes
 
-- [ ] `python/owl/model/kaggriculture.py`: one `ObservationInputStem` per entity group, fed [float channels ‖ one-hot categorical fields]. Per-role parameters `player_tokens[2,D]` (self, opponent), `board_tokens[n_scratch,D]`, `actor_plan_tokens[1,D]` (only this seat acts in its observation), `critic_value_tokens[2,D]`. `TransformerBlock` × depth and `final_norm`. Named encoded fields, never positional slices.
-- [ ] Topology test: build Isaiah's 6m model (`configs/scaling_6m.yaml`) and ours. The shared roles must use identical classes (`ObservationInputStem`, `TransformerBlock`, `LayerNorm`, `OutputProjectionMLP`, the `3D→D` `Linear`); token parameters must be separate per role; `nn.Embedding` may appear only under `actor.`.
-- [ ] Stateless tests: outputs depend only on the current observation; hidden-state keys are rejected.
-- [ ] L6 guard: the compiled trunk fails fast (or chunks) when `rows × tokens × max_inner_dim ≥ 2^31`; boundary test with a stub trunk.
-- [ ] Muon: `get_input_layers` returns each stem's `.input` and the token parameters; `get_output_layers` returns `critic_head.out` and the head `.out`s. Isaiah's rule is then satisfied by construction (L11).
+- [x] `python/owl/model/kaggriculture.py`: one `ObservationInputStem` per entity group, fed [float channels ‖ one-hot categorical fields]. Per-role parameters `player_tokens[2,D]` (self, opponent), `board_tokens[n_scratch,D]`, `actor_plan_tokens[1,D]` (only this seat acts in its observation), `critic_value_tokens[2,D]`. `TransformerBlock` × depth and `final_norm`. Named encoded fields, never positional slices.
+- [x] Topology test: build Isaiah's 6m model (`configs/scaling_6m.yaml`) and ours. The shared roles must use identical classes (`ObservationInputStem`, `TransformerBlock`, `LayerNorm`, `OutputProjectionMLP`, the `3D→D` `Linear`); token parameters must be separate per role; `nn.Embedding` may appear only under `actor.`.
+- [x] Stateless tests: outputs depend only on the current observation; hidden-state keys are rejected.
+- [x] L6 guard: the compiled trunk fails fast (or chunks) when `rows × tokens × max_inner_dim ≥ 2^31`; boundary test with a stub trunk.
+- [x] Muon: `get_input_layers` returns each stem's `.input` and the token parameters; `get_output_layers` returns `critic_head.out` and the head `.out`s. Isaiah's rule is then satisfied by construction (L11).
 
 ### Task 2.2: Critic
 
-- [ ] `critic_head = OutputProjectionMLP(cfg, 1)` applied per critic-value token → logits `[B, 2]` → softmax → value = 2p(self) − 1, with log-probabilities exposed for value distillation. The config requires `value_mode=win_loss` and gamma 1.
+- [x] `critic_head = OutputProjectionMLP(cfg, 1)` applied per critic-value token → logits `[B, 2]` → softmax → value = 2p(self) − 1, with log-probabilities exposed for value distillation. The config requires `value_mode=win_loss` and gamma 1.
 
 ### Task 2.3: Grammar action heads
 
-- [ ] `actor_input_proj: Linear(3D, D)` over [entity, player, plan]. An `actor` module holds the game-specific heads, redesigned from the reference's batched heads: `OutputProjectionMLP` per slot, conditioning embeddings, market positions, and the HIRE-capacity coupled Gumbel sampler.
-- [ ] From 0.2 (L6): every index the heads use is validated on device before gather (fail fast, never clamp).
-- [ ] Port the reference density tests: sampling log-prob equals evaluation log-prob; Gumbel frequencies match categorical probabilities; finite-difference policy gradient; full 241-actor and full-market capacity; the private-perspective isolation test.
+- [x] `actor_input_proj: Linear(3D, D)` over [entity, player, plan]. An `actor` module holds the game-specific heads, redesigned from the reference's batched heads: `OutputProjectionMLP` per slot, conditioning embeddings, market positions, and the HIRE-capacity coupled Gumbel sampler.
+- [x] From 0.2 (L6): every index the heads use is validated on device before gather (fail fast, never clamp).
+- [x] Port the reference density tests: sampling log-prob equals evaluation log-prob; Gumbel frequencies match categorical probabilities; finite-difference policy gradient; full 241-actor and full-market capacity; the private-perspective isolation test.
 
 ### Task 2.4: Model size on Isaiah's ladder — owner answer needed
 
-- [ ] The reference test `test_default_model_obeys_owner_parameter_budget` claims a 6–10M owner budget with no recorded source. Isaiah's 6m is 5.68M. Ask the owner once: if there's no budget, use 256×6 with `mlp_ratio` 2; if the budget applies, use the nearest on-ladder point inside it. Record the answer with the owner's quote.
+- [x] The reference test `test_default_model_obeys_owner_parameter_budget` claims a 6–10M owner budget with no recorded source. Isaiah's 6m is 5.68M. Ask the owner once: if there's no budget, use 256×6 with `mlp_ratio` 2; if the budget applies, use the nearest on-ladder point inside it. Record the answer with the owner's quote.
 
 ### Task 2.5: Model docs
 
-- [ ] `docs/kaggriculture-model.md`: a conformance table against Isaiah's `docs/model-architecture.md` (same / game form / deviation), and a parameter count.
+- [x] `docs/kaggriculture-model.md`: a conformance table against Isaiah's `docs/model-architecture.md` (same / game form / deviation), and a parameter count.
 
 ## Phase 3 — Trainer integration (Claude; Codex reviews). One tested change per item on Isaiah's files.
 
@@ -256,21 +256,21 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 ### Task 3.2: Game semantics
 
-- [ ] L1: raw-bank evaluation outcome. L2: truncation keeps the economic reward. Also joint per-player clipping and the value-mode guards. One named test each.
+- [x] L1: raw-bank evaluation outcome. L2: truncation keeps the economic reward. Also joint per-player clipping and the value-mode guards. One named test each.
 
 ### Task 3.3: Evaluation
 
-- [ ] L12: `_evaluation_seed(base_seed, env_steps)` (reproducible and different per evaluation; check the native seed type's range). Isaiah's default evaluation count. Promotion telemetry (`eval/promoted`, `eval/promotion_threshold`, `eval/games`). Orbit is unaffected.
+- [x] L12: `_evaluation_seed(base_seed, env_steps)` (reproducible and different per evaluation; check the native seed type's range). Isaiah's default evaluation count. Promotion telemetry (`eval/promoted`, `eval/promotion_threshold`, `eval/games`). Orbit is unaffected.
 
 ### Task 3.4: Configs from Isaiah's recipe
-- [ ] (From the GEMM-limit audit) startup workload assertion: at config load, compute rows per forward for rollout (n_envs × 2), minibatch (spm × horizon × 2), teacher chunk (min(teacher_spm, n_envs) × horizon × 2), eval and BC batch, and assert each is bounded by the model's trunk and head chunking limits; record the headroom in the run log.
+- [x] (From the GEMM-limit audit) startup workload assertion: at config load, compute rows per forward for rollout (n_envs × 2), minibatch (spm × horizon × 2), teacher chunk (min(teacher_spm, n_envs) × horizon × 2), eval and BC batch, and assert each is bounded by the model's trunk and head chunking limits; record the headroom in the run log.
 
-- [ ] `configs/kaggriculture_2rank.yaml` (128 envs/rank, spm 8, accum 1), `configs/kaggriculture_4rank.yaml` (64/4/1), `target_kl: null`, and the `scaling_6m` optimizer, scheduler, PPO coefficients, compile settings and 20M checkpoint cadence. Economic shaping 0.2 is the owner's choice. `configs/model/kaggriculture_gpu.yaml` forces FlashAttention; a CPU preset and `configs/kaggriculture.yaml` cover local tests.
-- [ ] Workload test: global envs, optimizer steps per iteration, global segments per step and transitions per iteration all equal `scaling_6m`; the optimizer config is equal too. (The previous plan's Task 2.1 has the test code.)
+- [x] `configs/kaggriculture_2rank.yaml` (128 envs/rank, spm 8, accum 1), `configs/kaggriculture_4rank.yaml` (64/4/1), `target_kl: null`, and the `scaling_6m` optimizer, scheduler, PPO coefficients, compile settings and 20M checkpoint cadence. Economic shaping 0.2 is the owner's choice. `configs/model/kaggriculture_gpu.yaml` forces FlashAttention; a CPU preset and `configs/kaggriculture.yaml` cover local tests.
+- [x] Workload test: global envs, optimizer steps per iteration, global segments per step and transitions per iteration all equal `scaling_6m`; the optimizer config is equal too. (The previous plan's Task 2.1 has the test code.)
 
 ### Task 3.6: First-minibatch log-ratio alarm (L6)
 
-- [ ] In `PPOTrainer._update`, before the first optimizer step of each update, compute the mean log-ratio of the first minibatch. If |mean| > 0.05 nats (well above BF16 replay noise), raise with the rollout batch shape and token count. Test with a model whose sampling and replay paths are deliberately made to disagree.
+- [x] In `PPOTrainer._update`, before the first optimizer step of each update, compute the mean log-ratio of the first minibatch. If |mean| > 0.05 nats (the plan's value; GPU/BF16 replay noise is unmeasured, so this threshold is not yet qualified), raise with the rollout batch shape and token count. Test with a model whose sampling and replay paths are deliberately made to disagree.
 
 ### Task 3.5: Bounded local functional check
 
@@ -280,7 +280,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cover: per-slot policy distributions with `slot_kl` (KL(teacher ‖ student) over masked categoricals); the `TeacherTargets` protocol refactor of Isaiah's cached targets (`.index` / `.concat`); Kaggriculture teacher targets; cached path bit-for-bit equal to the combined path; value distillation on the per-seat winner distribution (mean over seats); last-best refresh and resume tests; and the `scaling_6m` teacher coefficients (0.005 / 0.005, `teacher_segments_per_minibatch` 128).
 
-- [ ] 4.1 distributions and KL, 4.2 targets and cache, 4.3 model methods and trainer wiring, 4.4 configs.
+- [ ] 4.1 distributions and KL, 4.2 targets and cache, 4.3 model methods and trainer wiring, 4.4 configs. (4.1–4.3 merged at 8fde43c by a424d8c; 4.4 open, so the box stays unticked)
 
 ## Phase 5 — BC (required)
 
@@ -294,7 +294,7 @@ The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cov
 
 ## Phase 6 — GPU verification (pod, RTX PRO 6000; Claude operates, Codex reviews receipts)
 
-- [ ] **6.0 FlashAttention on the pod (blocking for 6.1–6.4):** the GEMM-limit probe found that the pod venv has **no `flash-attn` package**, and the pod's run config had `force_flash_attn: false` (`results.md`, "GEMM limits at our shapes"). Install or build flash-attn 2.8.3 on the pod with `uv sync --extra flash-attn`, and set `force_flash_attn: true`. Verify that the real FlashAttention varlen path runs (import, kernel in use, compiled vs eager on the packed trunk) before any qualification or throughput claim.
+- [x] **6.0 FlashAttention on the pod (blocking for 6.1–6.4):** (merged at 78df33c by 4974888) the GEMM-limit probe found that the pod venv has **no `flash-attn` package**, and the pod's run config had `force_flash_attn: false` (`results.md`, "GEMM limits at our shapes"). Install or build flash-attn 2.8.3 on the pod with `uv sync --extra flash-attn`, and set `force_flash_attn: true`. Verify that the real FlashAttention varlen path runs (import, kernel in use, compiled vs eager on the packed trunk) before any qualification or throughput claim.
 - [ ] **6.1 Memory smoke, 2 ranks:** one full iteration with the teacher on and a forced evaluation at dense BC positions. Record peak memory per phase against the ≤ 85% target, teacher cache bytes, native step time and the chosen `native_threads`, confirm the FlashAttention path ran, and record the spm/accum split decision (I1/I3; see "Resource fit").
 - [ ] **6.2 Complete-work run, 2 ranks, from the BC best:** 30 min bounded. Report game and learner-seat SPS over complete iterations, 16 optimizer steps per iteration, teacher telemetry, W&B status and whether the L6 fault is absent. Optionally an Nsight capture of one post-warmup iteration.
 - [ ] **6.3 Four ranks:** the same denominators for 15 min.
@@ -319,6 +319,7 @@ The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cov
 
 ## Phase 8 — Docs and closeout
 
+- [ ] **8.1a (owner, 2026-09-29: "treat that cookbook as phase8 deliverable will be good.")** The phase-based record is a Phase 8 deliverable: `ops/rebuild-2026-09-29/phase-status.md` (living tracker, updated at every landing) plus the phase-grouped `cookbook/references/index.md`, finalized and re-verified against git and Codex reports at closeout.
 - [ ] **8.1** Rewrite the cookbook References for the rebuilt tree; they currently describe the reference branch. Record the deliberate differences (truncation reward, raw-bank winners, per-evaluation seeds) in `docs/rl-api-specs.md`.
 - [ ] **8.2** Results inventory, `just prepare`, PR checklist, merge. The owner decides any push, force-push or submission.
 

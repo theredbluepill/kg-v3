@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Merge the value-gap evidence and the phase-grouped References index onto the integration
+
+Two Codex-reviewed branches landed on the integration at `666deec` (after the GPU checks receipts): `kg/rebuild-value-gap` (`bd31cb6`, ops only) and `kg/rebuild-phase-map` (`b1ef31d`; `verify-phase-map-r2` APPROVE at `adcb4e7`, after which `b1ef31d` added only the owner's Phase 8 plan line). The value-gap diagnostic's `verify-value-gap-r1` reviewed `bd31cb6` and returned APPROVE WITH EDITS; its three P2 and two P3 edits (actor-gain attribution, "bit-identical" scope, rerun observation custody, large-file manifest paths, two numerical summaries) are not applied yet and are tracked in `ops/rebuild-2026-09-29/phase-status.md`. `results.md` keeps both the GPU bundle and value-gap sections in run order, and the bundle's "value gap is unattributed" bullet points at the later attribution. The [[references/index|References index]] takes the phase-map grouping with the integration's current entry text for every note. The three References that merged after the phase map forked go in their phases: the [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]] replaces the "no Phase 4 Reference" placeholder, and the [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod flash-attn]] and [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]] References join Phase 6. All 21 References are listed once. `plan.md` now marks 4.1–4.3 merged (the 4.x box stays open for 4.4) and ticks 6.0, both checked with `git merge-base --is-ancestor`. This log keeps both sides, integration first. The phase tracker arrives as the branch wrote it at `b8747b6` and is refreshed in a separate commit.
+
 ## 2026-09-29 — Fix the GPU bundle's launcher idle gate and C2 reference non-finite check
 
 Codex verification r2 of the GPU checks receipts branch (`3f26e49`, REJECT, `ops/rebuild-2026-09-29/codex/verify-merge-gpu-receipts-r2.md`; prompt, transcript and evidence directory committed beside it) resolved all five r1 findings and found one P2 and one P3. Code (post-run revisions under `ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/`; the as-run `pod/attempt*/` scripts and records are unchanged): `launch.sh`'s `gpu_idle` now returns non-idle when either `nvidia-smi` query fails, where a failed compute-apps query beside 0 % utilization passed the gate; `c2_trunk_bwd.py` counts non-finite values in the eager reference as well as the compiled side in all three comparators, where a reference NaN read `nonfinite=0` and could hide a 10 % gradient error in its 512-row chunk. `test_driver_guards.py` adds `launcher_idle` and `c2_nonfinite` (513 rows, spanning `ROW_CHUNK`); both fail against the previous scripts and pass after the fix, and the six earlier checks still pass (receipts in `post-run/`, README fourth-revision section). Neither defect fired in the recorded attempts, so the GPU evidence credited in the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]], the [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]] and the [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] stands unchanged. No GPU run.
@@ -57,6 +61,23 @@ reasons now name those seams instead of the merged configs branch, and the
 records it. No Rust changed; `docs/rules-parity-coverage.md` records the merged
 counts. Full `just prepare`: engine 69, root Rust 254 with four ignored, Python
 1,673 passed with 11 skips; receipt `ops/rebuild-2026-09-29/merge-teacher/prepare.log`.
+
+## 2026-09-29 — Group the References index by rebuild phase and add a phase tracker
+
+The owner asked whether a phase-based cookbook record existed. None did. Notes
+are concept-scoped, and phase state lived only in `plan.md` checkboxes, receipts
+and the untracked pause checkpoint. The
+[[references/index|References index]] is now grouped by phase (0/1 engine,
+2 model, 3 trainer, 4 teacher, 5/7 data preparation, 6 GPU evidence,
+cross-cutting). Its "Reference branch (historical)" section keeps only the five
+notes that describe `kg/reference-2026-09-29`. Four current-tree notes (native
+semantics, compiled GEMM, encoder, grammar heads) and the starter-history note
+moved out of that section. Entry text is unchanged. Task state stays out of the
+cookbook: `ops/rebuild-2026-09-29/phase-status.md` is a dated working tracker,
+built from three surveys and rechecked with `git merge-base --is-ancestor`
+against `b8747b6`. It lists notes that exist only on unmerged branches, which
+are not linked yet. `plan.md` now ticks only tasks merged into integration and
+marks 4.1–4.3 and 6.0 as approved, not merged.
 
 ## 2026-09-29 — Capture every engine build input in observation-oracle custody
 
