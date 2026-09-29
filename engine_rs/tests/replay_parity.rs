@@ -674,7 +674,9 @@ fn env_directory_traces() {
         return;
     };
     let mut paths: Vec<PathBuf> = std::fs::read_dir(&directory)
-        .unwrap_or_else(|error| panic!("KAGG_PARITY_TRACES={directory:?}: {error}"))
+        .unwrap_or_else(|error| {
+            panic!("KAGG_PARITY_TRACES={directory:?} (relative to engine_rs/): {error}")
+        })
         .map(|entry| entry.unwrap().path())
         .filter(|path| {
             let name = path.file_name().unwrap().to_string_lossy();

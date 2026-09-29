@@ -197,6 +197,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-probes", action="store_true")
     parser.add_argument("--include-known-divergences", action="store_true")
     args = parser.parse_args(argv)
+    # cargo runs the test binary from engine_rs/, so pass absolute paths.
+    args.traces = args.traces.resolve()
+    args.out = args.out.resolve()
     if args.traces.exists() and any(args.traces.iterdir()):
         raise SystemExit(f"{args.traces} is not empty; choose a fresh --traces dir")
     args.traces.mkdir(parents=True, exist_ok=True)
@@ -264,6 +267,11 @@ def main(argv: list[str] | None = None) -> int:
     print("+", " ".join(rust), flush=True)
     rust_status = subprocess.run(rust, cwd=REPO_ROOT, env=rust_env, check=False)
     timings["rust_replay_s"] = time.perf_counter() - started_rust
+    if not report_path.is_file():
+        raise SystemExit(
+            f"Rust replay wrote no report (exit {rust_status.returncode}); "
+            "see the cargo output above"
+        )
     report = json.loads(report_path.read_text(encoding="utf-8"))
     summary = {
         "sweep": "kaggriculture-live-differential-parity",
