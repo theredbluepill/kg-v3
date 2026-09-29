@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Native game semantics use v3-owned buffers"
-description: "Task 1.4 adds transactional native lifecycle, checked seed streams, rewards and codec/table bindings over the rebuilt grammar/encoder; the 16-game TrainingBatch oracle matches bit for bit and the release overflow proof passes on the pod, and each recorder semantic inventory guard has its own killing test, while the Task 1.5 adapter and its CUDA fence stay unqualified."
+description: "Task 1.4 adds transactional native lifecycle, checked seed streams, rewards and codec/table bindings over the rebuilt grammar/encoder; the 16-game TrainingBatch oracle matches bit for bit and the release overflow proof passes on the pod, and each recorder semantic inventory, size-budget and archive-hash guard has its own killing test, while the Task 1.5 adapter and its CUDA fence stay unqualified."
 tags: ["kaggriculture-v3", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex; revised by anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -90,6 +90,9 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/codex/verify-env-independent/oracle/semantic-guard-probes.json"
   - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r1-fixes/guard-removal-mutations.json"
   - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r1-fixes/guard_removal_mutations.py"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/verify-env-r2/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r2-fixes/size-hash-guard-mutations.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r2-fixes/size_hash_guard_mutations.py"
 ---
 
 # Native game semantics use v3-owned buffers
@@ -253,6 +256,22 @@ continuity, nonfinite rewards and decreasing counters. Replacing each of the 14
 (`1.4/verify-r1-fixes/guard-removal-mutations.json`); the recorder bytes were
 restored (sha256 `156bee30…3499`). `docs/rl-api-specs.md` now states that
 contract v4.2 incorporates the approved Q1 constructor refinement.
+
+Codex's second verification of `ba9b59b`
+(`ops/rebuild-2026-09-29/codex/verify-env-r2/review.md`) confirmed both fixes
+and again found no production defect. It found that the size and archive-hash
+tests still stopped early: they made the declared size disagree with the file,
+so the size check fired first. The compressed-size cap and both archive hash
+checks could be removed and all tests still passed. The new tests keep every
+other field consistent and assert the exact error. A valid fixture fails
+against a cap lowered one byte below its size, for both the compressed and
+expanded budgets. A declared size one byte too large fails the size check
+while staying within budget. A same-length flipped byte and a wrong
+`fixture_sha256` both fail the archive hash. A wrong `expanded_sha256` fails
+the expanded hash. Every one of these checks runs before `np.load`. Replacing
+each of the six size/hash `require` guards with a no-op fails at least one of
+these tests (`1.4/verify-r2-fixes/size-hash-guard-mutations.json`). The
+recorder bytes were restored (sha256 `156bee30…3499`).
 
 Future consumers may rely on the checked native ABI and the recorded reference
 equivalence. Task 1.5 (the adapter, its pinned CUDA entry fence and the pod DMA

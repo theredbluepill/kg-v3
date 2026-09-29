@@ -1,0 +1,17 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-bindings/python/owl/rs.abi3.so
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_reward_config_requires_plain_dict ____________________
+
+    def test_reward_config_requires_plain_dict() -> None:
+        class DictSubclass(dict[str, Any]):
+            pass
+    
+>       with pytest.raises(ValueError, match="plain dict"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:205: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_reward_config_requires_plain_dict
+1 failed, 343 deselected in 0.05s

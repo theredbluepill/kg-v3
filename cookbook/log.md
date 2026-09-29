@@ -1,5 +1,22 @@
 # Change log
 
+## 2026-09-29 — Test each recorder size budget and archive hash (Codex verify r2)
+
+Codex's second Task 1.4 verification confirmed both r1 fixes, found no
+production defect and approved with one P3 edit.
+
+- **Recorder tests.** The size and hash tests made the declared size disagree
+  with the file, so the size check fired first. The compressed-size cap and
+  both archive hash checks could be removed and every test still passed. The
+  new tests change one field at a time: a cap lowered below a valid fixture, a
+  declared size one byte too large, a same-length flipped byte, and a wrong
+  archive or expanded digest. Each asserts its exact error before `np.load`.
+  Removing any of the six size/hash guards now fails a named test.
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+records the evidence. Receipts: `ops/rebuild-2026-09-29/1.4/verify-r2-fixes/`
+and `ops/rebuild-2026-09-29/codex/verify-env-r2/`.
+
 ## 2026-09-29 — Test each recorder inventory guard and close the stale constructor status (Codex verify r1)
 
 Codex's independent Task 1.4 verification approved with two P3 edits and found

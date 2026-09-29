@@ -252,29 +252,82 @@ def test_semantic_inventory_guard_rejects_coherent_invalid_arrays(
         recorder.validate_arrays(manifest, arrays)
 
 
-def test_expanded_and_compressed_caps_are_enforced(tmp_path: Path) -> None:
-    path = publish_example(tmp_path)
-    for field, size in [
-        ("compressed_bytes", 8 * 1024**2 + 1),
-        ("expanded_bytes", 256 * 1024**2 + 1),
-    ]:
-        manifest = json.loads(path.with_suffix(".json").read_text())
-        manifest[field] = size
-        path.with_suffix(".json").write_text(json.dumps(manifest))
-        with pytest.raises(ValueError, match=r"size|budget"):
-            recorder.load_fixture(path)
-        path = publish_example(tmp_path)
-
-
-def test_fixture_hash_is_verified_before_numpy_load(
-    tmp_path: Path, monkeypatch
-) -> None:
-    path = publish_example(tmp_path)
-    path.write_bytes(path.read_bytes() + b"corrupt")
+def _forbid_numpy_load(monkeypatch) -> None:
     monkeypatch.setattr(
         np, "load", lambda *_a, **_k: pytest.fail("numpy loaded before custody")
     )
-    with pytest.raises(ValueError, match=r"hash|size"):
+
+
+def _rewrite_manifest(path: Path, **fields: object) -> None:
+    manifest = json.loads(path.with_suffix(".json").read_text())
+    manifest.update(fields)
+    path.with_suffix(".json").write_text(json.dumps(manifest))
+
+
+@pytest.mark.parametrize(
+    ("cap", "field", "error"),
+    [
+        ("MAX_COMPRESSED", "compressed_bytes", "compressed size budget exceeded"),
+        ("MAX_EXPANDED", "expanded_bytes", "expanded size budget exceeded"),
+    ],
+)
+def test_size_budget_rejects_coherent_oversize_fixture(
+    tmp_path: Path, monkeypatch, cap: str, field: str, error: str
+) -> None:
+    """A self-consistent fixture one byte over a lowered cap fails its budget."""
+    path = publish_example(tmp_path)
+    manifest, _ = recorder.load_fixture(path)
+    monkeypatch.setattr(recorder, cap, manifest[field] - 1)
+    _forbid_numpy_load(monkeypatch)
+    with pytest.raises(ValueError, match=re.escape(error)):
+        recorder.load_fixture(path)
+
+
+@pytest.mark.parametrize(
+    ("field", "error"),
+    [
+        ("compressed_bytes", "fixture compressed size differs"),
+        ("expanded_bytes", "expanded size budget differs"),
+    ],
+)
+def test_declared_size_mismatch_rejected_within_budget(
+    tmp_path: Path, monkeypatch, field: str, error: str
+) -> None:
+    path = publish_example(tmp_path)
+    manifest, _ = recorder.load_fixture(path)
+    _rewrite_manifest(path, **{field: manifest[field] + 1})
+    _forbid_numpy_load(monkeypatch)
+    with pytest.raises(ValueError, match=re.escape(error)):
+        recorder.load_fixture(path)
+
+
+def test_same_size_archive_corruption_fails_hash_before_numpy_load(
+    tmp_path: Path, monkeypatch
+) -> None:
+    path = publish_example(tmp_path)
+    payload = bytearray(path.read_bytes())
+    payload[len(payload) // 2] ^= 0xFF
+    path.write_bytes(bytes(payload))
+    _forbid_numpy_load(monkeypatch)
+    with pytest.raises(ValueError, match=re.escape("fixture hash differs")):
+        recorder.load_fixture(path)
+
+
+@pytest.mark.parametrize(
+    ("field", "error"),
+    [
+        ("fixture_sha256", "fixture hash differs"),
+        ("expanded_sha256", "expanded fixture hash differs"),
+    ],
+)
+def test_archive_digest_mismatch_rejected_before_numpy_load(
+    tmp_path: Path, monkeypatch, field: str, error: str
+) -> None:
+    """Only the named digest is wrong; sizes, arrays and sources stay coherent."""
+    path = publish_example(tmp_path)
+    _rewrite_manifest(path, **{field: "0" * 64})
+    _forbid_numpy_load(monkeypatch)
+    with pytest.raises(ValueError, match=re.escape(error)):
         recorder.load_fixture(path)
 
 

@@ -1,0 +1,51 @@
+{
+  "name": "step-live-seed",
+  "path": "src/kaggriculture/env.rs",
+  "test": "batch_failure_preserves_every_published_byte",
+  "reason": "Mutate the live seed counter before any failing step admission.",
+  "original_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "classification": "killed_assertion",
+  "mutant_sha256": "28ab281fa8429d3d211d3eccd18fdaafa8c3f67445277dc120415f7630316797",
+  "diff": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-step-live-seed.diff",
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/bounded.py",
+    "--seconds",
+    "115",
+    "--name",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-step-live-seed",
+    "--",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--lib",
+    "batch_failure_preserves_every_published_byte",
+    "--",
+    "--test-threads=1"
+  ],
+  "runner_exit_status": 101,
+  "bounded_receipt": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-step-live-seed.json",
+  "bounded": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "batch_failure_preserves_every_published_byte",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 2.2800225839999997,
+    "sampled_process_group_peak_rss_bytes": 562282496,
+    "stop_reason": null,
+    "time_limit_seconds": 115.0,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "restored_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "restored_byte_exact": true,
+  "primary_unchanged": true
+}
