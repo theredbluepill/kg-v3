@@ -433,7 +433,7 @@ banks draw), never by the shaped training return, and log
 from the candidate's seat. Learner-perspective raw-bank telemetry follows
 (`docs/rl-api-specs.md`): each evaluation adds `eval/bank_games` and the mean
 and p10/p50/p90 of `eval/own_bank_*`, `eval/opponent_bank_*` and the signed
-`eval/margin_*`; each training update adds `train/bank_games`,
+`eval/margin_*` (candidate minus last-best, unlike the seat-0 `eval/margin_0`); each training update adds `train/bank_games`,
 `train/own_bank_{mean,p10,p50,p90}` over both learner seats,
 `train/margin_abs_{mean,p50}`, `train/winner_bank_mean`,
 `train/loser_bank_mean` and `train/draw_rate` over its completed games. The

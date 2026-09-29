@@ -1078,7 +1078,9 @@ Evaluation against last-best, per evaluation over its games, with the candidate
 as "own": `eval/bank_games` (games, equal to `eval/games`) and the mean and
 p10/p50/p90 of `eval/own_bank_*` (candidate bank), `eval/opponent_bank_*`
 (last-best bank) and the signed `eval/margin_*` (own minus opponent). The means
-equal the existing candidate metrics. `run_ppo` has no fixed-opponent panel
+equal the existing candidate metrics. Do not read `eval/margin_mean` as
+`eval/margin_0`: the latter is the seat-0 mean `bank_0 - bank_1`, whichever
+model held seat 0, and says nothing about the candidate. `run_ppo` has no fixed-opponent panel
 yet; a panel reuses `opponent_bank_metrics` with the opponent's name only in
 the key prefix (a label), never as a model input.
 

@@ -4330,3 +4330,66 @@ def test_orbit_evaluation_logs_no_bank_telemetry(
     )
     assert metrics["eval/games"] == 1.0
     assert not {key for key in metrics if "bank" in key or "margin" in key}
+
+
+def test_kaggriculture_eval_bank_telemetry_follows_the_candidate_across_seats(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Mixed candidate seats, pinned rather than left to the evaluation RNG.
+
+    Each game runs the real per-game path (terminal scalars plus
+    ``_evaluation_scores_and_metrics``) and then the real
+    ``_evaluate_against_last_best`` reduction, so seat-ordered banks cannot
+    stand in for the candidate's banks.
+    """
+    cfg = _kaggriculture_eval_config()
+    current, last_best = run_ppo.MODEL_CURRENT, run_ppo.MODEL_LAST_BEST
+    # (bank_0, bank_1, seat assignment): candidate in seat 0 winning, candidate
+    # in seat 1 losing, candidate in seat 1 winning.
+    games = (
+        (3000.0, 1000.0, (current, last_best)),
+        (3000.0, 1000.0, (last_best, current)),
+        (500.0, 4500.0, (last_best, current)),
+    )
+    stats = run_ppo._EvalStats.empty()
+    env_metrics: dict[str, list[float]] = {}
+    for bank_0, bank_1, seats in games:
+        terminal = {
+            "bank_0": bank_0,
+            "bank_1": bank_1,
+            "margin_0": bank_0 - bank_1,
+            "episode_steps": 3.0,
+            "winner": 0.0 if bank_0 > bank_1 else 1.0,
+        }
+        run_ppo._extend_single_env_metrics(env_metrics, terminal)
+        _, outcome = run_ppo._evaluation_scores_and_metrics(
+            cfg, terminal, torch.zeros(2), torch.tensor(seats)
+        )
+        run_ppo._extend_single_env_metrics(env_metrics, outcome)
+        stats.add_game_result(None)
+    monkeypatch.setattr(
+        run_ppo,
+        "_evaluate_games",
+        lambda **_kwargs: (stats, {}, env_metrics, 9),
+    )
+
+    metrics = run_ppo._evaluate_against_last_best(
+        current_model=torch.nn.Linear(1, 1),
+        last_best_model=torch.nn.Linear(1, 1),
+        cfg=cfg,
+        device=torch.device("cpu"),
+        env_steps=1_000,
+    )
+
+    # Candidate banks [3000, 1000, 4500]; last-best [1000, 3000, 500];
+    # signed margins [2000, -2000, 4000] (linear quantiles).
+    assert metrics["eval/bank_games"] == 3.0
+    assert metrics["eval/own_bank_mean"] == pytest.approx(8500.0 / 3)
+    assert metrics["eval/opponent_bank_mean"] == pytest.approx(1500.0)
+    assert metrics["eval/margin_mean"] == pytest.approx(4000.0 / 3)
+    assert metrics["eval/margin_p10"] == pytest.approx(-1200.0)
+    assert metrics["eval/margin_p50"] == pytest.approx(2000.0)
+    assert metrics["eval/margin_p90"] == pytest.approx(3600.0)
+    # Seat-ordered keys keep their meaning and differ from the candidate view.
+    assert metrics["eval/bank_0"] == pytest.approx(6500.0 / 3)
+    assert metrics["eval/margin_0"] == pytest.approx(0.0)

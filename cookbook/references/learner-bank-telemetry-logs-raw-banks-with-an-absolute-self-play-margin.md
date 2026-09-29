@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Learner bank telemetry logs raw banks with an absolute self-play margin"
-description: "Kaggriculture PPO logs learner-perspective raw final banks to W&B, keeping the seat-ordered keys: per update own-bank mean/p10/p50/p90 over both learner seats, absolute margin, winner/loser banks, draw rate and a game count gathered over ranks; per last-best evaluation own/opponent bank and signed margin distributions. Telemetry only, absent for Orbit; CPU tests on the native trainer and a fake W&B logger, nine killed mutations. Live W&B, multi-rank gather and a fixed-opponent panel are unverified."
+description: "Kaggriculture PPO logs learner-perspective raw final banks to W&B, keeping the seat-ordered keys: per update own-bank mean/p10/p50/p90 over both learner seats, absolute margin, winner/loser banks, draw rate and a game count gathered over ranks; per last-best evaluation own/opponent bank and signed margin distributions. Telemetry only, absent for Orbit; CPU tests on the native trainer and a fake W&B logger plus a pinned mixed-seat evaluation; nine author mutations and twelve by an independent Claude review killed. Live W&B, multi-rank gather and a fixed-opponent panel are unverified."
 tags: ["kaggriculture-v3", "adaptation", "evaluation", "diagnostics"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
@@ -17,6 +17,7 @@ sources:
   - resource: "repository:tests/scripts/test_run_ppo.py"
   - resource: "repository:docs/rl-api-specs.md"
   - resource: "repository:README.md"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/claude-verify-bank-metrics-r1.md"
 ---
 
 # Learner bank telemetry logs raw banks with an absolute self-play margin
@@ -71,10 +72,16 @@ those seat-ordered keys and no learner-side telemetry.
   error and the absence of bank keys for Orbit. `test_run_ppo.py` runs a real
   native trainer and a real last-best evaluation through `_run_training_loop`
   into the fake W&B logger, and checks that Orbit evaluation adds no bank key.
+  A second `test_run_ppo.py` test pins three evaluation games with the
+  candidate in seat 0 and seat 1 through the real per-game
+  `_evaluation_scores_and_metrics` and `_evaluate_against_last_best`, and
+  checks `eval/own_bank_*`, `eval/opponent_bank_*` and `eval/margin_*`
+  against hand values, independently of the evaluation's seat RNG.
   The fake Kaggriculture env in `test_teacher.py` now returns the native step's
   four metric keys.
 - `docs/rl-api-specs.md` (Kaggriculture trainer section) and `README.md`
-  document the keys and why the margin is absolute.
+  document the keys and why the margin is absolute, and warn that the
+  candidate's `eval/margin_mean` is not the seat-0 `eval/margin_0`.
 
 ## Verification and limits
 
@@ -84,7 +91,20 @@ hardware skips, docs freshness). Nine mutations
 were each killed by the new tests: swapped evaluation own/opponent, no training
 hook, Orbit hook, seat-0-only own bank, draws counted as decisive, signed
 training margin, no rank gather, NaN on an empty interval, and evaluation keys
-for Orbit. No independent review ran in this change.
+for Orbit.
+
+An independent Claude reviewer (standing in for Codex at its usage limit; not
+a Codex verdict) approved `7425db7` with edits
+(`ops/rebuild-2026-09-29/codex/claude-verify-bank-metrics-r1.md`). It found no
+correctness defect, reran the four touched test modules, ruff and mypy, checked
+a mixed-seat evaluation by hand and killed twelve further mutations. Its
+edits: the end-to-end test reached the seat-1 candidate path only through an
+unasserted RNG draw, so the pinned mixed-seat test above now does, and fails
+when evaluation reads seat-ordered `bank_0`/`bank_1` instead of the candidate's
+banks (checked by that mutation, then restored); the docs separate
+`eval/margin_*` from `eval/margin_0`; and this section cites the review. Its
+extra per-update `all_gather_object` finding needs no action until a profile
+shows it.
 
 Live W&B upload, a real multi-rank gather (tested with a stubbed collective),
 CUDA and the per-update cost of one small `all_gather_object` at production
