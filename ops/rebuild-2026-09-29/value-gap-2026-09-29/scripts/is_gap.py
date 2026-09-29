@@ -177,16 +177,18 @@ def main() -> None:
     from owl.model import create_model
     from owl.train import FullConfig
 
+    # Amendment 3: attempt 3 wrapped st.use_flash_attn with a list-appending
+    # closure. Isaiah's attention calls use_flash_attn inside the compiled trunk,
+    # so Dynamo guarded on the list length, recompiled on every call and hit
+    # recompile_limit (8), running the 1,024-row cells eagerly. No wrapper now:
+    # force_flash_attn=True makes his trunk raise on any non-flash call
+    # (_requires_flash_attn), and a probe records use_flash_attn on a CUDA bf16
+    # tensor; the driver also fails a stage whose log hits recompile_limit.
     flash_flags: list[bool] = []
-    real_use_flash = st.use_flash_attn
-
-    def counting_use_flash(x: torch.Tensor) -> bool:
-        flag = real_use_flash(x)
-        flash_flags.append(bool(flag))
-        return flag
-
-    st.use_flash_attn = counting_use_flash
     C.emit(fh, C.process_record(args.case))
+    if not C.DRYRUN:
+        flash_flags.append(bool(st.use_flash_attn(
+            torch.zeros(1, 8, 8, 32, device=dev, dtype=torch.bfloat16))))
     cfg = FullConfig.from_file(C.ROOT / "configs/scaling_6m.yaml")
     torch.manual_seed(SEED)
     model = create_model(cfg.model, obs_spec=cfg.env.obs_spec,
@@ -237,6 +239,8 @@ def main() -> None:
     finally:
         rec["use_flash_attn_flags"] = sorted(set(flash_flags))
         rec["use_flash_attn_calls"] = len(flash_flags)
+        rec["force_flash_attn"] = cfg.model.force_flash_attn
+        rec["flash_check"] = "probe + force_flash_attn (Amendment 3)"
         rec["compiled_trunk_calls"] = trunk_calls[0]
         rec["memory"] = C.mem(dev)
         try:

@@ -4,7 +4,8 @@
 # a hard 40-min timeout (45-min aggregate with attempts 1-2's 168 s; internal deadline 38 min), post receipts. Never
 # stops, restarts or deletes the pod.
 set -u
-R=/workspace/kg-v3-rebuild/runs/value-gap-2026-09-29
+R=${VGAP_RUN_DIR:-/workspace/kg-v3-rebuild/runs/value-gap-2026-09-29}
+TO=${VGAP_TIMEOUT_S:-2400}
 REPO=/workspace/kg-v3-rebuild
 RC=$R/receipts
 mkdir -p "$RC"
@@ -24,9 +25,9 @@ snap() {  # $1 = tag
   { date -u +%FT%TZ; ps -eo pid,etime,pcpu,rss,args | grep -E "python|torchrun|run_ppo|cargo|pip|maturin" | grep -v grep; } > "$RC/idle_ps_$1.txt" 2>&1
 }
 
-echo "=== launch.sh start $(date -u +%FT%TZ)"
+echo "=== launch.sh start $(date -u +%FT%TZ) R=$R timeout=$TO stageset=${VGAP_STAGESET:-full}"
 { date -u +%FT%TZ; git rev-parse HEAD; git rev-parse 'HEAD^{tree}'; echo "# status --porcelain"; git status --porcelain;
-  echo "# check-ignore runs/"; git check-ignore -v runs/value-gap-2026-09-29/driver.py;
+  echo "# check-ignore runs/"; git check-ignore -v "${R#$REPO/}/driver.py";
   echo "# owl.rs extension"; sha256sum python/owl/rs*.so; } > "$RC/git_pre.txt" 2>&1
 { date -u +%FT%TZ; echo "# which nsys"; which nsys; echo "which rc=$?"; } > "$RC/nsys_check.txt" 2>&1
 { .venv/bin/python -c "import torch, triton, flash_attn, torch._inductor.config as c; print(torch.__version__, torch.version.git_version, triton.__version__, flash_attn.__version__, torch.version.cuda, repr(c.max_autotune_gemm_backends))";
@@ -49,7 +50,7 @@ echo "=== idle gate passed after ${waited}s; driver start $(date -u +%FT%TZ)"
 
 # -s TERM: the driver gets SIGTERM first; its handler terminates every stage
 # group (own sessions, outside timeout's group) within 12 s, before the -k 20 SIGKILL.
-timeout -s TERM -k 20 2400 .venv/bin/python "$R/driver.py" > "$R/driver.out" 2>&1
+timeout -s TERM -k 20 "$TO" .venv/bin/python "$R/driver.py" > "$R/driver.out" 2>&1
 DRC=$?
 echo "=== driver exit $DRC $(date -u +%FT%TZ)"
 

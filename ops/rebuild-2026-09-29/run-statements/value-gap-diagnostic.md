@@ -158,3 +158,25 @@ Attempt 2 is recorded as it stands.
 Scripts: `driver.py 68516ad9…` and `launch.sh bd98fe95…`; the others are unchanged from Amendment 1. The local cleanup test was rerun and passed (`pre-launch/driver_cleanup_test_local_attempt3.txt`).
 
 **Attempt 3** reruns every stage from the start, with fresh caches and states. Attempt 2's files move to `attempt2/` on the pod.
+
+## Amendment 3 — rerun of the two compiled Isaiah stages (written after attempt 3 completed and its results were read)
+
+**Attempt 3 (10:58:27–11:02:23Z, driver 236.5 s, exit 0).** The idle gate passed at 0 s, and every stage passed the driver's criteria. Post receipts show HEAD `8fde43c`, empty porcelain and idle GPUs.
+
+**Instrumentation defect found after the run (information error, mine).**
+- `is_gap.py` replaced `stateless_transformer_v1.use_flash_attn` with a closure that appends to a list.
+- Isaiah's attention calls `use_flash_attn` **inside** the compiled trunk (`stateless_transformer_v1.py:3100–3102`). Dynamo therefore guarded on the list's length and recompiled on every call.
+- Each compiled F stage compiled 8 graphs, one per call of the eight 256-row calls, and then logged `torch._dynamo hit config.recompile_limit (8)`. **All 1,024-row F cells ran eagerly**, so their gap of 2.4e-7 is not a compiled measurement.
+- The 256-row F cells are valid compiled comparisons. S ran graph 0/0 (no grad) and R ran graph 0/1 (grad, recompiled on `grad_mode`).
+- `kg_gap.py` is not affected. It wraps `kaggriculture.use_flash_attn`, which is called only outside the compiled trunk, and every compiled Kaggriculture stage logged exactly one recompile (`grad_mode`) and no limit.
+- The driver's judge missed the defect because the compiled-call counter counts calls into the compiled callable, including those Dynamo runs eagerly.
+
+**Change (Amendment 3).**
+1. `is_gap.py` no longer wraps `use_flash_attn`. Flash use is established by `force_flash_attn: true`: his trunk raises on any CUDA call that cannot use flash (`_requires_flash_attn`, lines 727–735 and 3100–3105). A probe `use_flash_attn(bf16 CUDA tensor)` is also recorded.
+2. The driver fails any compiled stage whose log contains `recompile_limit`.
+3. Only `isF_comp_default` (GPU 0) and `isF_comp_aten` (GPU 1) are rerun, in parallel (`VGAP_STAGESET=frerun`). They run in the sub-dir `frerun/` with fresh caches, on **attempt 3's saved states** (`frerun/obs` → `../obs`, sha256 in `large_files.sha256`), so they compare against attempt 3's `isF_eager` and Kaggriculture stages on identical inputs. The rerun also repeats the valid 256-row cells.
+4. Budget: internal deadline 14 min, `timeout -s TERM -k 20 960`. The aggregate is 95.9 + 72.3 + 236.5 + 960 + 20 = 1,385 s ≤ 45 min.
+
+Thresholds and prediction 5's rule are unchanged. Prediction 5 is evaluated on the rerun's cells. Attempt 3's F cells are retained and reported as the 256-row repeat and the invalid 1,024-row cells.
+
+Scripts: `is_gap.py 6ea882a6…`, `driver.py fe37b01d…`, `launch.sh fff11d40…` (run dir, timeout and stage set taken from the environment); the others are unchanged. The local cleanup test was rerun and passed (`pre-launch/driver_cleanup_test_local_attempt3_frerun.txt`).

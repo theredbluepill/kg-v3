@@ -99,6 +99,14 @@ GPU1: list[Stage] = [
     _is("isF_comp_aten", "ATEN", "compiled"),
 ]
 
+# Amendment 3: rerun of the two compiled Isaiah stages only (attempt 3's
+# 1,024-row F cells ran eagerly after Dynamo's recompile limit), one per GPU,
+# on attempt 3's saved Orbit Wars states (frerun/obs -> ../obs).
+if os.environ.get("VGAP_STAGESET") == "frerun":
+    BUDGET_S = 14 * 60
+    GPU0 = [_is("isF_comp_default", "default", "compiled")]
+    GPU1 = [_is("isF_comp_aten", "ATEN", "compiled")]
+
 if SELFTEST:  # dummy stages for the local cleanup test only
     PY = sys.executable
     ROOT = Path(SELFTEST)
@@ -344,6 +352,10 @@ class Driver:
             errs += judge(events(out), exp)
         except (KeyError, TypeError, ValueError) as exc:
             errs.append(f"judge error {type(exc).__name__}: {exc}")
+        # Amendment 3: a compiled stage must not fall back to eager.
+        stage_log = (RUN / f"{name}.log").read_text(errors="replace")
+        if not SELFTEST and "recompile_limit" in stage_log:
+            errs.append("Dynamo hit recompile_limit (eager fallback)")
         if rc != 0:
             errs.insert(0, f"rc={rc}")
         if errs:
