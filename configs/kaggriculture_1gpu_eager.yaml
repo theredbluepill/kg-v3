@@ -1,0 +1,73 @@
+# Kaggriculture on Isaiah's scaling_6m recipe for ONE GPU (the A100 BC pod,
+# ops/rebuild-2026-09-29/run-statements/bc-a100.md). kaggriculture_2rank.yaml with
+# Isaiah's multi-GPU rule undone: n_envs 256 and segments_per_minibatch 16 on one
+# rank give the same global batch. One other change: rl.model_compile is none
+# (eager), because the pod's NVIDIA driver 580.159.03 is not in the probed
+# compile stack (owl.model.compile_gemm, 595.91.07) and train_bc.py refuses an
+# unprobed stack before compiling. The model, dtype and optimizer are unchanged,
+# so the BC checkpoint's weights load into either PPO config.
+env:
+  n_envs: 256
+  obs_spec:
+    obs_spec: kaggriculture
+    schema_version: 3
+  action_spec:
+    action_spec: kaggriculture
+    hire_limit: 241
+  reward_mode: win_loss
+  # Economic shaping 0.2 is the owner's choice; the other coefficients are the
+  # reference branch's audited reward defaults (plan C8).
+  reward_shaping:
+    econ_shaping: 0.2
+    econ_starvation_weight: 4.0
+    econ_drought_weight: 1.0
+    econ_cap: 0.25
+    econ_ineffective_weight: 0.0
+  pin_memory: true
+  # Provisional: Task 6.1 measures the native step time and verifies or resets it.
+  native_threads: 2
+
+model: kaggriculture
+
+optimizer:
+  optimizer: muon
+  adamw_lr: 0.0001
+  adamw_eps: 1.0e-05
+  weight_decay: 0.0
+  muon_lr: 0.002
+  muon_weight_decay: 0.01
+  muon_momentum: 0.95
+  lr_schedule:
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 1000
+    decay_steps: 400_000
+    lr_min_ratio: 0.01
+
+rl:
+  horizon: 64
+  checkpoint_freq: 20_000_000
+  ppo_epochs: 1
+  segments_per_minibatch: 16
+  gradient_accumulation_steps: 1
+  # gamma=1.0 keeps the critic softmax well-defined
+  gamma: 1.0
+  gae_lambda: 0.9
+  clip_coef: 0.2
+  vf_clip_coef: null
+  vf_coef: 2.0
+  ent_coef: 1e-6
+  max_grad_norm: 10.0
+  target_kl: null
+  ppo_clip_mode: per_player
+  normalize_advantages: true
+  # Kaggriculture replay export is Task 7.3.
+  eval_replay_games: 8
+  teacher_mode: last_best
+  teacher_kl_coef: 0.005
+  teacher_value_coef: 0.005
+  # A chunk size of the teacher precompute, not a batch: kept, as in Isaiah's
+  # per-rank configs (scaling_6m_halfbatch, winner_ce_6m_4x5090).
+  teacher_segments_per_minibatch: 128
+  compile_mode: default
+  model_compile: none
+  dtype: bfloat16
