@@ -3,10 +3,12 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Literal
+from types import SimpleNamespace
+from typing import Any, Literal, cast
 
 import pytest
 import torch
+from owl.kaggriculture.telemetry import self_play_bank_metrics
 from owl.model import (
     ActorDiscreteTargetsConfig,
     BaseModelAPI,
@@ -1133,6 +1135,8 @@ def test_trainer_smoke_keeps_metrics_finite_and_updates_parameters() -> None:
     assert metrics["train/4p_rate"] == pytest.approx(1.0)
     assert metrics["time/teacher_seconds"] == pytest.approx(0.0)
     assert metrics["perf/teacher_sps"] == pytest.approx(0.0)
+    # Kaggriculture's learner bank telemetry never appears for Orbit.
+    assert not {key for key in metrics if "bank" in key or "margin" in key}
     assert metrics["train/player_step_total"] == pytest.approx(80.0)
     assert metrics["train/total_active_entities"] == pytest.approx(80.0)
     assert metrics["perf/tokens_per_second"] == pytest.approx(
@@ -3106,3 +3110,41 @@ def test_orbit_truncation_drops_cut_transition_reward_and_bootstraps() -> None:
         expected_bootstrap = model.compute_value(cut_state._obs())
     torch.testing.assert_close(rollout.bootstrap_values[1], expected_bootstrap)
     assert rollout.bootstrap_values[0].eq(0).all()
+
+
+def test_self_play_bank_metrics_pool_every_ranks_completed_games(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    other_rank = ([5000.0], [1000.0])
+    gathered_from: list[object] = []
+
+    def fake_all_gather_object(value: object, context: object) -> list[object]:
+        gathered_from.append(context)
+        return [value, other_rank]
+
+    monkeypatch.setattr(ppo, "all_gather_object", fake_all_gather_object)
+    context = object()
+    trainer = SimpleNamespace(distributed_context=context)
+    metrics = ppo.PPOTrainer._self_play_bank_metrics(
+        cast(ppo.PPOTrainer, trainer),
+        {
+            "total_games_played": [1.0, 1.0],
+            "terminal_bank_0": [3000.0, 2500.0],
+            "terminal_bank_1": [1000.0, 2500.0],
+            "terminal_margin_0": [2000.0, 0.0],
+        },
+    )
+    assert gathered_from == [context]
+    assert metrics == self_play_bank_metrics(
+        [3000.0, 2500.0, 5000.0], [1000.0, 2500.0, 1000.0]
+    )
+    assert metrics["train/bank_games"] == 3.0
+    assert metrics["train/draw_rate"] == pytest.approx(1.0 / 3)
+
+
+def test_self_play_bank_metrics_reject_steps_without_bank_lists() -> None:
+    trainer = SimpleNamespace(distributed_context=object())
+    with pytest.raises(
+        ValueError, match=r"lack \['terminal_bank_0', 'terminal_bank_1'\]"
+    ):
+        ppo.PPOTrainer._self_play_bank_metrics(cast(ppo.PPOTrainer, trainer), {})

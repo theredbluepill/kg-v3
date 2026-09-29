@@ -1340,7 +1340,15 @@ class _FakeKaggricultureEnv:
 
     def step(self, actions: kt.KaggricultureActions) -> tuple[Any, ...]:
         assert actions.tokens.shape == (2, 2, F, K)
-        return self.reset(), torch.zeros(2, 2), torch.zeros(2, 2, dtype=torch.bool), {}
+        # The native step's metric keys, empty without completed games.
+        metrics: dict[str, list[float]] = {
+            "total_games_played": [],
+            "terminal_bank_0": [],
+            "terminal_bank_1": [],
+            "terminal_margin_0": [],
+        }
+        dones = torch.zeros(2, 2, dtype=torch.bool)
+        return self.reset(), torch.zeros(2, 2), dones, metrics
 
 
 def test_trainer_precomputes_once_and_logs_teacher_metrics(

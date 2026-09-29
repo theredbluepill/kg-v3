@@ -4211,3 +4211,122 @@ def test_startup_workload_check_skips_isaiahs_unchunked_orbit_models(
 
     assert reports == ()
     assert capsys.readouterr().out == ""
+
+
+# Learner-perspective bank telemetry --------------------------------------------------
+
+_TRAIN_BANK_KEYS = {
+    "train/bank_games",
+    "train/own_bank_mean",
+    "train/own_bank_p10",
+    "train/own_bank_p50",
+    "train/own_bank_p90",
+    "train/margin_abs_mean",
+    "train/margin_abs_p50",
+    "train/draw_rate",
+}
+_EVAL_BANK_KEYS = {
+    "eval/bank_games",
+    *(
+        f"eval/{name}_{stat}"
+        for name in ("own_bank", "opponent_bank", "margin")
+        for stat in ("mean", "p10", "p50", "p90")
+    ),
+}
+
+
+def test_kaggriculture_bank_telemetry_reaches_the_logger(tmp_path: Path) -> None:
+    """Real native trainer and evaluation; the fake logger stands in for W&B."""
+    cfg = FullConfig.from_file(
+        _CONFIGS / "kaggriculture.yaml",
+        overrides={
+            "env.config.episodeSteps": 3,
+            "model.n_heads": 1,
+            "model.mlp_ratio": 1,
+            "model.n_scratch_tokens": 0,
+            "rl.horizon": 2,
+        },
+    )
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert cfg.env.n_envs == 2
+    assert cfg.rl.checkpoint_freq == 1_000
+    device = torch.device("cpu")
+    torch.manual_seed(41)
+    model, _ = run_ppo._create_training_model_for_config(
+        cfg, device=device, reset_parameters=True
+    )
+    trainer = PPOTrainer(
+        config=cfg.rl,
+        env=create_env(
+            cfg.env,
+            n_envs=cfg.env.n_envs,
+            base_seed=cfg.env.seed,
+            rank=0,
+            world_size=1,
+            pin_memory=False,
+            transfer_device=device,
+        ),
+        model=model,
+        optimizer=torch.optim.Adam(model.parameters(), lr=1e-4),
+        device=device,
+    )
+    logger = _FakeLogger()
+
+    run_ppo._run_training_loop(
+        trainer=trainer,
+        logger=logger,
+        run_dir=tmp_path,
+        cfg=cfg,
+        # One real update (2 envs x horizon 2) counted as a checkpoint interval.
+        env_steps_per_iteration=1_000,
+        max_env_steps=1_000,
+        max_runtime_seconds=None,
+        dist_ctx=DistributedContext.single_process_cpu(),
+    )
+
+    (train, train_step), (evaluation, eval_step) = logger.logged
+    assert train_step == eval_step == 1_000
+    # Two envs each finish one 2-transition game in the 2-step horizon.
+    assert train["train/bank_games"] == 2.0
+    assert set(train) >= _TRAIN_BANK_KEYS
+    assert set(evaluation) >= _EVAL_BANK_KEYS
+    assert not {key for key in evaluation if key.startswith("train/")}
+    assert all(
+        torch.isfinite(torch.tensor(value))
+        for key, value in {**train, **evaluation}.items()
+        if "bank" in key or "margin" in key or "draw" in key
+    )
+    # Raw-bank units: the pooled own bank is the seat mean of the native records.
+    assert train["train/own_bank_mean"] == pytest.approx(
+        (train["train/terminal_bank_0"] + train["train/terminal_bank_1"]) / 2
+    )
+    # The evaluation keys aggregate the candidate's existing seat metrics, which
+    # stay under their old names.
+    assert evaluation["eval/bank_games"] == evaluation["eval/games"] == 2.0
+    for new, old in (
+        ("eval/own_bank_mean", "eval/candidate_bank"),
+        ("eval/opponent_bank_mean", "eval/last_best_bank"),
+        ("eval/margin_mean", "eval/candidate_bank_margin"),
+    ):
+        assert evaluation[new] == pytest.approx(evaluation[old])
+
+
+def test_orbit_evaluation_logs_no_bank_telemetry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    stats = run_ppo._EvalStats.empty()
+    stats.add_game_result(run_ppo.MODEL_CURRENT)
+    monkeypatch.setattr(
+        run_ppo,
+        "_evaluate_games",
+        lambda **_kwargs: (stats, {}, {"game_length_mean": [12.0]}, 2),
+    )
+    metrics = run_ppo._evaluate_against_last_best(
+        current_model=torch.nn.Linear(1, 1),
+        last_best_model=torch.nn.Linear(1, 1),
+        cfg=_config_with_envs(2),
+        device=torch.device("cpu"),
+        env_steps=1_000,
+    )
+    assert metrics["eval/games"] == 1.0
+    assert not {key for key in metrics if "bank" in key or "margin" in key}
