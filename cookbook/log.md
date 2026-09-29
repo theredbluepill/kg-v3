@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Correct the Task 0.3 Rust status and the root index's References scope
+
+The [[references/failed-training-reports-status-before-distributed-cleanup|failure-reporting Reference]] and its index line still said Claude's cross-review was pending and Rust parity was blocked (148 passed, 7 failed). Both contradicted the Task 0.3 receipt (`ops/rebuild-2026-09-29/0.3-results.md`, "Claude review") and the earlier log entry: the review found no blocker, and with the git-ignored Orbit fixtures copied in, `cargo test` gave 155 passed, 2 ignored. The [[index|root index]] no longer says every Reference describes `kg/reference-2026-09-29`; the References index states each note's scope. Moving current-tree notes out of that index's "Reference branch" section is left until the in-flight lanes land.
+
 ## 2026-09-29 — Record the model-only SPS ceiling and fix non-resolving ops paths
 
 The new [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling Reference]] promotes the component probe (`cb4af49`, `ddf1fb2`; Codex `verify-sps-ceiling` r1 APPROVE WITH EDITS, r2 APPROVE; the ATEN A/B's default arm reproduced its update walls). It is a scoped upper bound with an engine budget of 53–116 µs per env step, not a throughput result, and it is not rankable.
