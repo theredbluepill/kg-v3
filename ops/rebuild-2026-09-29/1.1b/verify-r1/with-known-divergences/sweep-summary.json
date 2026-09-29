@@ -1,0 +1,251 @@
+{
+  "sweep": "kaggriculture-live-differential-parity",
+  "started": "2026-09-29T13:20:52+0800",
+  "git_head": "6217868eabae448f3709c6f512dacf213e896aab",
+  "git_dirty_paths": [
+    "M cookbook/references/index.md",
+    " M cookbook/references/live-differential-parity-checks-the-rust-kernel.md",
+    "?? ops/rebuild-2026-09-29/1.1b/verify-r1/"
+  ],
+  "python_engine": "kaggle-environments==1.32.7",
+  "platform": "macOS-26.4-arm64-arm-64bit",
+  "arguments": {
+    "games": 12,
+    "base_seed": 777,
+    "probes": false,
+    "include_known_divergences": true,
+    "traces_dir": "/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad/r1/known"
+  },
+  "rust_test_exit_code": 101,
+  "timings": {
+    "generate_games_s": 6.1,
+    "rust_replay_s": 2.26,
+    "rust_d1_recheck_s": 0.09
+  },
+  "games": 12,
+  "probes": 0,
+  "traces": 12,
+  "transitions": 6316,
+  "game_transitions": 6316,
+  "python_rejected_steps": 106,
+  "traces_agreeing": 4,
+  "traces_diverging": 8,
+  "divergences_by_class": {
+    "D1": 2,
+    "D2": 6
+  },
+  "new_divergences": 0,
+  "per_policy": {
+    "builtin:pass": {
+      "seats": 1,
+      "games": 1,
+      "transitions": 199
+    },
+    "builtin:random": {
+      "seats": 2,
+      "games": 2,
+      "transitions": 1438
+    },
+    "builtin:starter": {
+      "seats": 3,
+      "games": 3,
+      "transitions": 2157
+    },
+    "edge": {
+      "seats": 10,
+      "games": 8,
+      "transitions": 3960
+    },
+    "random": {
+      "seats": 8,
+      "games": 7,
+      "transitions": 3369
+    }
+  },
+  "per_config_variant": {
+    "custom": {
+      "traces": 2,
+      "transitions": 398
+    },
+    "default": {
+      "traces": 8,
+      "transitions": 5752
+    },
+    "free-hire": {
+      "traces": 1,
+      "transitions": 71
+    },
+    "rich": {
+      "traces": 1,
+      "transitions": 95
+    }
+  },
+  "seeds": [
+    777,
+    8696,
+    16615,
+    24534,
+    32453,
+    40372,
+    48291,
+    56210,
+    64129,
+    72048,
+    79967,
+    87886
+  ],
+  "divergences": [
+    {
+      "file": "sweep-001-edge-vs-edge-default.jsonl.gz",
+      "kind": "game",
+      "seed": 8696,
+      "policies": [
+        "edge",
+        "edge"
+      ],
+      "config_variant": "default",
+      "first_divergence": {
+        "line": 1,
+        "from_step": 0,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "expected": "30.0",
+        "actual": "5.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "sweep-002-random-vs-edge-default.jsonl.gz",
+      "kind": "game",
+      "seed": 16615,
+      "policies": [
+        "random",
+        "edge"
+      ],
+      "config_variant": "default",
+      "first_divergence": {
+        "line": 34,
+        "from_step": 32,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "sweep-003-edge-vs-random-default.jsonl.gz",
+      "kind": "game",
+      "seed": 24534,
+      "policies": [
+        "edge",
+        "random"
+      ],
+      "config_variant": "default",
+      "first_divergence": {
+        "line": 38,
+        "from_step": 37,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "sweep-005-edge-vs-starter-default.jsonl.gz",
+      "kind": "game",
+      "seed": 40372,
+      "policies": [
+        "edge",
+        "builtin:starter"
+      ],
+      "config_variant": "default",
+      "first_divergence": {
+        "line": 59,
+        "from_step": 58,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "sweep-006-random-vs-edge-default.jsonl.gz",
+      "kind": "game",
+      "seed": 48291,
+      "policies": [
+        "builtin:random",
+        "edge"
+      ],
+      "config_variant": "default",
+      "first_divergence": {
+        "line": 1,
+        "from_step": 0,
+        "kind": "public state",
+        "field": "public.farms[1].money",
+        "expected": "1800.0",
+        "actual": "3000.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "sweep-008-edge-vs-edge-free-hire.jsonl.gz",
+      "kind": "game",
+      "seed": 64129,
+      "policies": [
+        "edge",
+        "edge"
+      ],
+      "config_variant": "free-hire",
+      "first_divergence": {
+        "line": 17,
+        "from_step": 16,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "sweep-009-random-vs-edge-rich.jsonl.gz",
+      "kind": "game",
+      "seed": 72048,
+      "policies": [
+        "random",
+        "edge"
+      ],
+      "config_variant": "rich",
+      "first_divergence": {
+        "line": 17,
+        "from_step": 16,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "sweep-010-edge-vs-random-custom.jsonl.gz",
+      "kind": "game",
+      "seed": 79967,
+      "policies": [
+        "edge",
+        "random"
+      ],
+      "config_variant": "custom",
+      "first_divergence": {
+        "line": 90,
+        "from_step": 89,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    }
+  ]
+}

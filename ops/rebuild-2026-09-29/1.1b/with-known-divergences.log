@@ -1,0 +1,46 @@
++ uv run --isolated --no-project --with kaggle-environments==1.32.7 python /Users/poonszesen/kg-v3-parity/scripts/kaggriculture_parity/generate_traces.py --preset sweep --games 12 --base-seed 777 --out /Users/poonszesen/kg-v3-parity/engine_rs/target/kaggriculture-parity/sweep-known-2 --summary /Users/poonszesen/kg-v3-parity/engine_rs/target/kaggriculture-parity/sweep-known-2/generated-games.json --include-known-divergences
+sweep-000-random-vs-random-default.jsonl.gz: 719 transitions, 0 rejected, 103,531 B, 0.5s
+sweep-001-edge-vs-edge-default.jsonl.gz: 719 transitions, 31 rejected, 122,661 B, 0.6s
+sweep-002-random-vs-edge-default.jsonl.gz: 719 transitions, 12 rejected, 115,536 B, 0.6s
+sweep-003-edge-vs-random-default.jsonl.gz: 719 transitions, 17 rejected, 109,304 B, 0.6s
+sweep-004-starter-vs-random-default.jsonl.gz: 719 transitions, 0 rejected, 93,289 B, 0.5s
+sweep-005-edge-vs-starter-default.jsonl.gz: 719 transitions, 15 rejected, 101,175 B, 0.5s
+sweep-006-random-vs-edge-default.jsonl.gz: 719 transitions, 16 rejected, 106,901 B, 0.6s
+sweep-007-starter-vs-random-default.jsonl.gz: 719 transitions, 0 rejected, 84,851 B, 0.5s
+sweep-008-edge-vs-edge-free-hire.jsonl.gz: 71 transitions, 5 rejected, 47,009 B, 0.2s
+sweep-009-random-vs-edge-rich.jsonl.gz: 95 transitions, 5 rejected, 21,996 B, 0.1s
+sweep-010-edge-vs-random-custom.jsonl.gz: 199 transitions, 5 rejected, 74,849 B, 0.3s
+sweep-011-random-vs-pass-custom.jsonl.gz: 199 transitions, 0 rejected, 68,987 B, 0.1s
++ cargo test --manifest-path engine_rs/Cargo.toml --locked --offline --test replay_parity env_directory_traces -- --exact --test-threads=1
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-parity/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.56s
+     Running tests/replay_parity.rs (engine_rs/target/debug/deps/replay_parity-c38030bb30dd03b7)
+
+running 1 test
+test env_directory_traces ... FAILED
+
+failures:
+
+---- env_directory_traces stdout ----
+replayed 12 traces, 8 divergent
+
+thread 'env_directory_traces' (9849944) panicked at tests/replay_parity.rs:718:5:
+parity divergences:
+sweep-001-edge-vs-edge-default.jsonl.gz: line 1 from_step Some(0): public state at public.farms[0].money: expected 30.0 actual 5.0
+sweep-002-random-vs-edge-default.jsonl.gz: line 34 from_step Some(32): rust_accepted at step: expected error ("TypeError: unhashable type: 'Struct'") actual Ok
+sweep-003-edge-vs-random-default.jsonl.gz: line 38 from_step Some(37): rust_accepted at step: expected error ("TypeError: unhashable type: 'Struct'") actual Ok
+sweep-005-edge-vs-starter-default.jsonl.gz: line 59 from_step Some(58): rust_accepted at step: expected error ("TypeError: unhashable type: 'list'") actual Ok
+sweep-006-random-vs-edge-default.jsonl.gz: line 1 from_step Some(0): public state at public.farms[1].money: expected 1800.0 actual 3000.0
+sweep-008-edge-vs-edge-free-hire.jsonl.gz: line 17 from_step Some(16): rust_accepted at step: expected error ("TypeError: unhashable type: 'list'") actual Ok
+sweep-009-random-vs-edge-rich.jsonl.gz: line 17 from_step Some(16): rust_accepted at step: expected error ("TypeError: unhashable type: 'Struct'") actual Ok
+sweep-010-edge-vs-random-custom.jsonl.gz: line 90 from_step Some(89): rust_accepted at step: expected error ("TypeError: unhashable type: 'list'") actual Ok
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    env_directory_traces
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 15 filtered out; finished in 2.17s
+
+error: test failed, to rerun pass `--test replay_parity`
+12 traces (12 games, 0 probes), 6316 transitions: 4 agree, 8 diverge {'D1': 2, 'D2': 6}; summary /Users/poonszesen/kg-v3-parity/ops/rebuild-2026-09-29/1.1b/with-known-divergences/sweep-summary.json

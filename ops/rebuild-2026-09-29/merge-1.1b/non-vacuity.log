@@ -1,0 +1,16 @@
+# Scratch copy of the merge tree (rsync, no .git/ops/cookbook); tracked files untouched.
+# m1: EDITABLE guard reverted to the pre-hardening '.rs and not lib.rs' condition.
+# m2: generated-trace SHA-256 comparison removed from verify_generated.
+
+== orig: 
+71 passed in 2.83s
+
+== m1: <         if path not in EDITABLE: >         if path.endswith(".rs") and path != "engine_rs/src/lib.rs": 
+FAILED tests/tools/test_check_engine_trim.py::test_declared_license_edit_is_rejected
+1 failed, 70 passed in 2.76s
+
+== m2: <         _require(sha(data) == _digest(entry["sha256"], name), f"{name}: trace hash") >         _digest(entry["sha256"], name) 
+FAILED tests/tools/test_check_engine_trim.py::test_generated_manifest_drift_is_rejected[edited trace-trace hash]
+FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_edited_generated_trace
+2 failed, 69 passed in 2.42s
+scratch checker restored byte-for-byte

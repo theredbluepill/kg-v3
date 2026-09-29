@@ -1,4 +1,9 @@
-"""Verify the pinned rules-kernel inventory and every declared byte-level edit."""
+"""Verify the pinned rules-kernel inventory and every declared byte-level edit.
+
+Generated parity traces under ``engine_rs/fixtures/generated`` are pinned
+transitively: TRIM_MANIFEST.json pins the bytes of their MANIFEST.json, which pins
+each trace's SHA-256, size and generation inputs.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +13,7 @@ import json
 import re
 import subprocess
 import sys
+import tomllib
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TypedDict, cast
@@ -41,6 +47,22 @@ TRIM_APPENDIX_HEADING = "\n## Task 1.1 rules-only trim \u2014 2026-09-29\n".enco
 TRIM_APPENDIX_SHA256 = (
     "1d089760261e8fef7ed0fddcaaa1a60776cb9abbb65386ef08d529f863d76c93"
 )
+GENERATED_DIR = "engine_rs/fixtures/generated"
+GENERATED_MANIFEST = f"{GENERATED_DIR}/MANIFEST.json"
+GENERATED_BUDGET_BYTES = 4_000_000
+TRACE_FORMAT = "kaggriculture-re-parity-v1"
+TRACE_KEYS = (
+    "path",
+    "sha256",
+    "bytes",
+    "seed",
+    "policies",
+    "policy_seed",
+    "config_variant",
+    "transitions",
+    "rejected",
+)
+DIVERGENCE_KEYS = ("line", "from_step", "kind", "field", "reason")
 
 
 class Edit(TypedDict):
@@ -234,9 +256,109 @@ def _same_inventory(actual: Sequence[str], expected: Sequence[str], label: str) 
 def verify_task_authored(authored: Sequence[Authored]) -> None:
     _same_inventory(
         [entry["path"] for entry in authored],
-        ["engine_rs/tests/replay_parity.rs"],
+        ["engine_rs/tests/replay_parity.rs", GENERATED_MANIFEST],
         "Task 1.1 authored set",
     )
+
+
+def engine_pin(cargo_toml: bytes) -> tuple[str, str]:
+    """The (kaggle-environments version, Python engine SHA-256) compatibility pin."""
+    metadata = tomllib.loads(cargo_toml.decode("utf-8"))
+    target = metadata["package"]["metadata"]["kaggriculture"]
+    return (
+        _string(target["kaggle-environments-version"], "Cargo pin version"),
+        _digest(target["python-engine-sha256"], "Cargo pin engine"),
+    )
+
+
+def split_generated(
+    current: Mapping[str, bytes],
+) -> tuple[dict[str, bytes], dict[str, bytes]]:
+    """Separate generated traces (pinned by their manifest) from engine files."""
+    prefix = GENERATED_DIR + "/"
+    engine: dict[str, bytes] = {}
+    generated: dict[str, bytes] = {}
+    for path, data in current.items():
+        if path.startswith(prefix) and path != GENERATED_MANIFEST:
+            generated[path.removeprefix(prefix)] = data
+        else:
+            engine[path] = data
+    return engine, generated
+
+
+def verify_generated(
+    manifest_bytes: bytes, traces: Mapping[str, bytes], pin: tuple[str, str]
+) -> int:
+    """Validate the generated-trace manifest against the files; return trace count."""
+    raw = _object(
+        json.loads(manifest_bytes.decode("utf-8")),
+        (
+            "schema_version",
+            "format",
+            "generator",
+            "kaggle_environments_version",
+            "python_engine_sha256",
+            "traces",
+        ),
+        "generated manifest",
+    )
+    _require(
+        _integer(raw["schema_version"], "generated schema_version") == 1,
+        "generated schema_version must be 1",
+    )
+    _require(raw["format"] == TRACE_FORMAT, f"generated format must be {TRACE_FORMAT}")
+    _require(
+        raw["generator"] == "scripts/kaggriculture_parity/generate_traces.py",
+        "generated traces must name their generator",
+    )
+    _require(
+        (raw["kaggle_environments_version"], raw["python_engine_sha256"]) == pin,
+        f"generated traces must target the Cargo engine pin {pin}",
+    )
+    listed: list[str] = []
+    total = 0
+    for value in _array(raw["traces"], "generated traces"):
+        _require(isinstance(value, dict), "generated trace: expected object")
+        entry = cast(dict[str, object], value)
+        optional = {"probe", "expected_divergence"} & set(entry)
+        _require(
+            optional in (set(), {"probe", "expected_divergence"}),
+            "generated trace: probe and expected_divergence go together",
+        )
+        entry = _object(entry, (*TRACE_KEYS, *sorted(optional)), "generated trace")
+        name = _string(entry["path"], "generated trace path")
+        _require(
+            re.fullmatch(r"[a-z0-9][a-z0-9.-]*\.jsonl\.gz", name) is not None,
+            f"{name!r}: generated trace names are plain *.jsonl.gz files",
+        )
+        _require(name not in listed, f"duplicate generated trace: {name}")
+        listed.append(name)
+        _require(name in traces, f"{name}: listed generated trace is missing")
+        data = traces[name]
+        _require(sha(data) == _digest(entry["sha256"], name), f"{name}: trace hash")
+        _require(_integer(entry["bytes"], name) == len(data), f"{name}: trace size")
+        for key in ("seed", "policy_seed", "transitions", "rejected"):
+            _integer(entry[key], f"{name}: {key}")
+        _require(_integer(entry["transitions"], name) > 0, f"{name}: needs transitions")
+        policies = _array(entry["policies"], f"{name}: policies")
+        _require(
+            len(policies) == 2 and all(isinstance(p, str) for p in policies),
+            f"{name}: policies must name both seats",
+        )
+        _string(entry["config_variant"], f"{name}: config_variant")
+        if optional:
+            _string(entry["probe"], f"{name}: probe")
+            divergence = _object(
+                entry["expected_divergence"], DIVERGENCE_KEYS, f"{name}: divergence"
+            )
+            _reason(divergence["reason"], f"{name}: expected_divergence")
+        total += len(data)
+    _same_inventory(sorted(traces), listed, "generated trace inventory")
+    _require(
+        total <= GENERATED_BUDGET_BYTES,
+        f"generated traces use {total:,} B; budget is {GENERATED_BUDGET_BYTES:,} B",
+    )
+    return len(listed)
 
 
 def _reconstruct(original: bytes, edits: Sequence[Edit], path: str) -> bytes:
@@ -356,7 +478,15 @@ def verify_task(
 ) -> None:
     """Apply the generic manifest checks plus the fixed Task 1.1 trim contract."""
     manifest = parse_manifest(value)
+    # Generated traces are pinned by their own manifest, not the trim inventory.
+    current, generated = split_generated(current)
     verify(manifest, originals, current)
+    generated_count = verify_generated(
+        current[GENERATED_MANIFEST],
+        generated,
+        engine_pin(current["engine_rs/Cargo.toml"]),
+    )
+    _require(generated_count >= 6, "expected the committed generated trace set")
     retained = [
         "Cargo.toml",
         "Cargo.lock",
@@ -448,7 +578,13 @@ def main() -> int:
     args = parser.parse_args()
     try:
         check(args.root)
-    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        tomllib.TOMLDecodeError,
+        subprocess.CalledProcessError,
+    ) as error:
         print(error, file=sys.stderr)
         return 1
     print("engine trim manifest: OK")

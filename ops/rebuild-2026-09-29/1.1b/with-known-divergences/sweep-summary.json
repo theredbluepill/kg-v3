@@ -1,0 +1,253 @@
+{
+  "sweep": "kaggriculture-live-differential-parity",
+  "started": "2026-09-29T12:58:53+0800",
+  "git_head": "33e1428cb3de84177fd8b6c1d1b0e5d4abaa24f1",
+  "git_dirty_paths": [
+    "M engine_rs/tests/replay_parity.rs",
+    " M scripts/kaggriculture_parity/sweep.py",
+    "?? ops/rebuild-2026-09-29/1.1b/evidence/first-failing-games/rust-replay.log",
+    "?? ops/rebuild-2026-09-29/1.1b/sweep-summary.json",
+    "?? ops/rebuild-2026-09-29/1.1b/sweep.log",
+    "?? ops/rebuild-2026-09-29/1.1b/with-known-divergences.log"
+  ],
+  "python_engine": "kaggle-environments==1.32.7",
+  "platform": "macOS-26.4-arm64-arm-64bit",
+  "arguments": {
+    "games": 12,
+    "base_seed": 777,
+    "probes": false,
+    "include_known_divergences": true,
+    "traces_dir": "/Users/poonszesen/kg-v3-parity/engine_rs/target/kaggriculture-parity/sweep-known-2"
+  },
+  "rust_test_exit_code": 101,
+  "timings": {
+    "generate_games_s": 6.23,
+    "rust_replay_s": 3.26
+  },
+  "games": 12,
+  "probes": 0,
+  "traces": 12,
+  "transitions": 6316,
+  "game_transitions": 6316,
+  "python_rejected_steps": 106,
+  "traces_agreeing": 4,
+  "traces_diverging": 8,
+  "divergences_by_class": {
+    "D1": 2,
+    "D2": 6
+  },
+  "new_divergences": 0,
+  "per_policy": {
+    "builtin:pass": {
+      "seats": 1,
+      "games": 1,
+      "transitions": 199
+    },
+    "builtin:random": {
+      "seats": 2,
+      "games": 2,
+      "transitions": 1438
+    },
+    "builtin:starter": {
+      "seats": 3,
+      "games": 3,
+      "transitions": 2157
+    },
+    "edge": {
+      "seats": 10,
+      "games": 8,
+      "transitions": 3960
+    },
+    "random": {
+      "seats": 8,
+      "games": 7,
+      "transitions": 3369
+    }
+  },
+  "per_config_variant": {
+    "custom": {
+      "traces": 2,
+      "transitions": 398
+    },
+    "default": {
+      "traces": 8,
+      "transitions": 5752
+    },
+    "free-hire": {
+      "traces": 1,
+      "transitions": 71
+    },
+    "rich": {
+      "traces": 1,
+      "transitions": 95
+    }
+  },
+  "seeds": [
+    777,
+    8696,
+    16615,
+    24534,
+    32453,
+    40372,
+    48291,
+    56210,
+    64129,
+    72048,
+    79967,
+    87886
+  ],
+  "divergences": [
+    {
+      "file": "sweep-001-edge-vs-edge-default.jsonl.gz",
+      "kind": "game",
+      "seed": 8696,
+      "policies": [
+        "edge",
+        "edge"
+      ],
+      "config_variant": "default",
+      "first_divergence": {
+        "line": 1,
+        "from_step": 0,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "expected": "30.0",
+        "actual": "5.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "sweep-002-random-vs-edge-default.jsonl.gz",
+      "kind": "game",
+      "seed": 16615,
+      "policies": [
+        "random",
+        "edge"
+      ],
+      "config_variant": "default",
+      "first_divergence": {
+        "line": 34,
+        "from_step": 32,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "sweep-003-edge-vs-random-default.jsonl.gz",
+      "kind": "game",
+      "seed": 24534,
+      "policies": [
+        "edge",
+        "random"
+      ],
+      "config_variant": "default",
+      "first_divergence": {
+        "line": 38,
+        "from_step": 37,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "sweep-005-edge-vs-starter-default.jsonl.gz",
+      "kind": "game",
+      "seed": 40372,
+      "policies": [
+        "edge",
+        "builtin:starter"
+      ],
+      "config_variant": "default",
+      "first_divergence": {
+        "line": 59,
+        "from_step": 58,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "sweep-006-random-vs-edge-default.jsonl.gz",
+      "kind": "game",
+      "seed": 48291,
+      "policies": [
+        "builtin:random",
+        "edge"
+      ],
+      "config_variant": "default",
+      "first_divergence": {
+        "line": 1,
+        "from_step": 0,
+        "kind": "public state",
+        "field": "public.farms[1].money",
+        "expected": "1800.0",
+        "actual": "3000.0"
+      },
+      "known_class": "D1"
+    },
+    {
+      "file": "sweep-008-edge-vs-edge-free-hire.jsonl.gz",
+      "kind": "game",
+      "seed": 64129,
+      "policies": [
+        "edge",
+        "edge"
+      ],
+      "config_variant": "free-hire",
+      "first_divergence": {
+        "line": 17,
+        "from_step": 16,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "sweep-009-random-vs-edge-rich.jsonl.gz",
+      "kind": "game",
+      "seed": 72048,
+      "policies": [
+        "random",
+        "edge"
+      ],
+      "config_variant": "rich",
+      "first_divergence": {
+        "line": 17,
+        "from_step": 16,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'Struct'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    },
+    {
+      "file": "sweep-010-edge-vs-random-custom.jsonl.gz",
+      "kind": "game",
+      "seed": 79967,
+      "policies": [
+        "edge",
+        "random"
+      ],
+      "config_variant": "custom",
+      "first_divergence": {
+        "line": 90,
+        "from_step": 89,
+        "kind": "rust_accepted",
+        "field": "step",
+        "expected": "error (\"TypeError: unhashable type: 'list'\")",
+        "actual": "Ok"
+      },
+      "known_class": "D2"
+    }
+  ]
+}

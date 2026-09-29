@@ -1,5 +1,52 @@
 # Change log
 
+## 2026-09-29 — Merge live parity with the hardened rules-kernel checker
+
+Task 1.1b (Codex APPROVE at `16e56b6`) and Task 1.1's verification hardening
+edited `scripts/check_engine_trim.py` independently. The merge keeps both
+contracts: `verify_task` separates generated traces, runs the generic and
+fixed Task 1.1 checks (`EDITABLE`, Rayon lockfile derivation, pinned appendix
+hash), then validates the generated manifest (engine pin, budget, at least six
+traces). Two new `check()`-level tests reject an edited or unlisted generated
+trace. The base's owner 1.32.7 project pin made one Task 1.1b test premise
+stale; it now asserts that the project environment passes the engine guard and
+that a mismatched pin exits before writing. The
+[[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]]
+and coverage document say so. Engine 69/69; `just prepare` passes with Python
+1,209 passed and 3 skipped. On a scratch copy, reverting `EDITABLE` or removing
+the trace-hash check fails its regressions. Receipts are in
+`ops/rebuild-2026-09-29/merge-1.1b/`.
+
+## 2026-09-29 — Correct live-parity test totals after Codex re-verification
+
+Codex re-verified Task 1.1b at `25ec814` (APPROVE WITH EDITS, no blocking findings; every round-one finding resolved). The [[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]] and `docs/rules-parity-coverage.md` now state the current totals, 69 engine tests including 19 replay-parity tests, rather than 66 and 16. The compact verification evidence is in `ops/rebuild-2026-09-29/1.1b/verify-r2/`.
+
+## 2026-09-29 — Close Codex verification of the live parity check
+
+Codex approved Task 1.1b with edits; commit `6217868` fixes them test-first. The
+[[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]]
+now records that the sweep classifies D1/D2 only from the observed mismatch (a
+corrupted state on a D1 line stays unclassified), submits the `null` probe
+exactly, checks full-state rollback on rejected steps and keeps seven minimal
+one-step repros. The rerun 40-game sweep matches the first (306/343 agree, 37
+confirmed D1/D2, 0 new); receipts are in `ops/rebuild-2026-09-29/1.1b/verify-r1/`.
+Kernel bytes are unchanged.
+
+## 2026-09-29 — Check the Rust kernel live against Kaggle's engine
+
+Owner: “can you add a parity check after your rust engine, with kaggle envcironments?”
+The new [[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]]
+records Task 1.1b. A hash-guarded generator runs kaggle-environments 1.32.7's
+own engine in an isolated uv environment, leaving the project lock unchanged.
+It records official-format traces plus `rejected` records. The Rust replay
+checks official, committed and swept traces with one first-divergence comparator.
+Eight committed games (3,960 transitions) and a 40-game local sweep (21,824)
+agree. Of 303 probes, 37 diverge in two malformed-input classes: D1, Unicode digit
+strings, and D2, unhashable verbs/items. The pinned kernel is not edited. Seven
+repros are exact expected failures; failing traces are kept in
+`ops/rebuild-2026-09-29/1.1b/`. The trim checker now pins the generated
+manifest. No training or GPU work ran.
+
 ## 2026-09-29 — Report action-mask shapes in the replay-drift alarm and refresh its evidence
 
 Codex's stream C re-verification (approve with edits) found stale evidence and one diagnostic gap, now corrected in the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:
