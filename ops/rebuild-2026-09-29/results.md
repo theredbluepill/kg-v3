@@ -258,7 +258,7 @@ Evidence that the flash path ran:
 
 ## ATEN-only GEMM A/B (2026-09-29, 07:06–07:15Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
 
-**Infrastructure diagnostic, not a learning change.** One setting changed: `torch._inductor.config.max_autotune_gemm_backends` from torch 2.9.0's default `"ATEN,TRITON,CPP"` to `"ATEN"`, so every compiled mm/addmm lowers to extern cuBLAS instead of Inductor's Triton mm templates. The timing half is a **component measurement conditional on the A/B/C/D synthetic schedule** ("Model-only SPS ceiling (component)" above), not end-to-end SPS.
+**Infrastructure diagnostic, not a learning change.** One setting changed: `torch._inductor.config.max_autotune_gemm_backends` from torch 2.9.0's default `"ATEN,TRITON,CPP"` to `"ATEN"`, so every compiled mm/addmm lowers to extern cuBLAS instead of Inductor's Triton mm templates. **Scope:** this excludes only the identified GEMM template paths (mm, addmm, bmm, decompose-K, persistent-TMA). It is not general immunity: FlexAttention generates its own Triton templates independently of this setting (torch `flex_attention.py:348, 776`; unused here), and static-shape compiles, bmm numerics and the real-trunk backward above the bound were not measured. The timing half is a **component measurement conditional on the A/B/C/D synthetic schedule** ("Model-only SPS ceiling (component)" above), not end-to-end SPS.
 
 - Pre-run statement: `run-statements/aten-gemm-ab.md`, committed with the scripts in `9904121` at 07:06:00Z. Driver 07:06:31Z–07:14:55Z, 503.9 s, exit 0; no first-failure stop fired.
 - Source: `e1458d2` (integration HEAD, unchanged); the pod checkout's porcelain was empty before and after.
@@ -285,12 +285,12 @@ The default-backend controls in the same run reproduced the failure: the trunk h
 | density | A fwd 256 | B train 1,024 | C teacher-proxy 16,384 | D value 256 | update wall default → ATEN | cost | ceiling SPS/rank |
 |---|---|---|---|---|---|---|---|
 | mid (303) | 12.90 → 15.23 ms | 177.8 → 186.2 ms | 986.4 → 1,004.7 ms | 9.37 → 11.84 ms | 4.667 → 4.970 s | **+6.5 %** | 1,755 → 1,648 |
-| dense (709) | 25.39 → 29.11 ms | 326.7 → 332.7 ms | 1,687.4 → 1,731.7 ms | 21.97 → 25.75 ms | 8.562 → 8.944 s | **+4.5 %** | 957 → 916 |
+| dense (709) | 25.39 → 29.11 ms | 326.7 → 332.7 ms | 1,687.4 → 1,731.7 ms | 21.97 → 25.75 ms | 8.561 → 8.944 s | **+4.5 %** | 957 → 916 |
 
 - The default arm reproduces the earlier ceiling run (4.662 s and 8.564 s).
-- Every p90 is within 0.53 % of its median.
-- The cost is concentrated in the small no-grad calls (A +15–18 %, D +17–26 %), where cuBLAS cannot absorb Inductor's fused casts, bias+GELU and residual+LayerNorm. B and C lose 1.8–4.7 %.
-- Allocated memory is unchanged. Cold compile is faster (mid B first call: 39.6 s → 26.0 s).
+- Every p90 is within about 0.53 % of its median (largest 0.534 %).
+- The cost is concentrated in the small no-grad calls (A +15–18 %, D +17–26 %). This is consistent with lost prologue/epilogue fusion (casts, bias+GELU, residual+LayerNorm), an inference from the generated code; there is no timeline. B and C lose 1.8–4.7 %.
+- Overall allocated peak is approximately unchanged (dense B about 40.27 GiB in both arms; dense D drops 0.950 → 0.862 GiB). Cold compile is faster (mid B first call: 39.6 s → 26.0 s).
 
 **Limits:**
 - One stack; inputs up to 2³² elements (8,388,608 × 512).

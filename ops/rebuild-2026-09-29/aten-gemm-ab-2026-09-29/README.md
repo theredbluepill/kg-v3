@@ -64,12 +64,12 @@ Same unchanged bench, same iteration counts (first call, 5 warmup, 20 CUDA-event
 | density | update wall default | update wall ATEN | relative cost | ceiling SPS/rank default → ATEN |
 |---|---|---|---|---|
 | mid | 4.667 s | 4.970 s | **+6.5 %** | 1,755 → 1,648 |
-| dense | 8.562 s | 8.944 s | **+4.5 %** | 957 → 916 |
+| dense | 8.561 s | 8.944 s | **+4.5 %** | 957 → 916 |
 
 - update wall = 64·t_A + t_C + 16·t_B + t_D (medians); ceiling = 8,192 / wall. The default arm reproduces the SPS-ceiling run (mid 4.662 s, dense 8.564 s there).
-- Variability: every p90 is within 0.53 % of its median (largest: ATEN dense D); every max sample (`cuda_event_ms`) is within 1.95 % of its median; no tail sample like the earlier 545 ms dense-B outlier occurred.
-- Where the cost sits: small-batch no-grad calls lose most (A +14.6–18.0 %, D +17.3–26.3 %), because cuBLAS cannot take Inductor's fused prologues/epilogues (casts, bias + GELU, residual + LayerNorm), so they become separate Triton kernels. The large calls lose little (B +1.8–4.7 %, C +1.9–2.6 %). Attribution beyond these totals needs a timeline; none exists.
-- Peak `max_memory_allocated` is unchanged (e.g. dense B 40.27 vs 40.28 GiB).
+- Variability: every p90 is within about 0.53 % of its median (largest 0.534 %, ATEN dense D); every max sample (`cuda_event_ms`) is within 2.14 % of its median (largest: default dense D); no tail sample like the earlier 545 ms dense-B outlier occurred.
+- Where the cost sits: small-batch no-grad calls lose most (A +14.6–18.0 %, D +17.3–26.3 %), consistent with cuBLAS not absorbing Inductor's fused prologues/epilogues (casts, bias + GELU, residual + LayerNorm), which then become separate Triton kernels. This is an inference from the generated code, not a timeline measurement. The large calls lose little (B +1.8–4.7 %, C +1.9–2.6 %). Attribution beyond these totals needs a timeline; none exists.
+- Overall peak `max_memory_allocated` is approximately unchanged (dense B 40.27 vs 40.28 GiB); dense D drops 0.950 → 0.862 GiB.
 - First call (compile/autotune), cold mid: A 20.8 s → 15.9 s, B 39.6 s → 26.0 s (fewer autotune candidates); warm dense similar (A 8.2/8.4 s, B 10.0/9.8 s).
 
 ## Limits
