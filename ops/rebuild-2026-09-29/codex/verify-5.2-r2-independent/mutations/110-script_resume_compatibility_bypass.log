@@ -1,0 +1,44 @@
+....................F....                                                [100%]
+=================================== FAILURES ===================================
+__________________ test_script_resume_rejects_an_edited_seed ___________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-208/test_script_resume_rejects_an_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11134dd00>
+
+    def test_script_resume_rejects_an_edited_seed(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2).to_file(config_path)
+        out = tmp_path / "runs"
+        _script_argv(
+            monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+        )
+        train_bc_script.main()
+        (run_dir,) = out.iterdir()
+        saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+        saved.model_copy(update={"seed": saved.seed + 1, "max_steps": 4}).to_file(
+            run_dir / "bc_config.yaml"
+        )
+        _script_argv(monkeypatch, run_dir, data, "--source-commit", "a")
+>       with pytest.raises(ValueError, match=r"bc\.seed"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:732: Failed
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 0.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.017081041005440056, 'time/elapsed_seconds': 0.06727983400924131}
+{'bc/step': 2.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.017765666998457164, 'time/elapsed_seconds': 0.13615245901746675, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 179.86942719236504}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-208/test_script_resume_rejects_an_0/runs/bc-20260929-201527", "stop_reason": "max_steps", "steps": 2, "best_step": 2, "best_validation_nll": 4.253199974695842, "final_validation_nll": 4.253199974695842}
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 4.0, 'bc/validation_nll': 4.244173367818196, 'bc/validation_frame_nll': 4.110989434378488, 'bc/validation_value_ce': 0.7338021993637085, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.244173367818196, 'bc/best_step': 4.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.01825512497453019, 'time/elapsed_seconds': 0.06378670799313113, 'bc/train_nll': 4.224152445793152, 'bc/train_value_ce': 0.747523844242096, 'bc/grad_norm': 2.322445511817932, 'perf/learner_seat_rows_per_second': 177.0685199154999}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-208/test_script_resume_rejects_an_0/runs/bc-20260929-201527", "stop_reason": "max_steps", "steps": 4, "best_step": 4, "best_validation_nll": 4.244173367818196, "final_validation_nll": 4.244173367818196}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_script_resume_rejects_an_edited_seed
+1 failed, 24 passed in 6.69s

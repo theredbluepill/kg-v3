@@ -1563,8 +1563,15 @@ def _run_ppo_main(
         def load_checkpoint(self, path: Path) -> Any:
             return self._load(path)
 
-        def load_model_weights(self, path: Path, *, load_optimizer: bool) -> Any:
+        def load_model_weights(
+            self,
+            path: Path,
+            *,
+            load_optimizer: bool,
+            fresh_state_keys: frozenset[str] = frozenset(),
+        ) -> Any:
             assert not load_optimizer
+            assert fresh_state_keys == frozenset()
             return self._load(path)
 
         def set_teacher_model(self, teacher_model: Any, *, active: bool) -> None:

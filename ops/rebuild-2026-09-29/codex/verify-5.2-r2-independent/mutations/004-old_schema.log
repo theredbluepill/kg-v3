@@ -1,0 +1,79 @@
+..F......................                                                [100%]
+=================================== FAILURES ===================================
+_______________ test_loader_rejects_old_or_foreign_shard_schemas _______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-102/test_loader_rejects_old_or_for0')
+
+    def test_loader_rejects_old_or_foreign_shard_schemas(tmp_path: Path) -> None:
+        root = _dataset_root(tmp_path)
+        shard = root / "train" / "2026-09-21-ep-a.npz"
+        shard.unlink()
+        np.savez_compressed(
+            shard, features=np.zeros((4, 2, 8), np.float32), context=np.zeros((4, 2, 4))
+        )
+        _rehash(root, 0, shard)
+        with pytest.raises(ValueError, match=SHARD_SCHEMA):
+>           load_bc_dataset(root)
+
+tests/kaggriculture/test_bc.py:251: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-102/test_loader_rejects_old_or_for0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='acdff7b9d36ef99208c1705673f9ed0613822641dbda5ec2bf23b18de34ebb64', shard_bytes=412)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if False:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+>               raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+E               ValueError: /Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-102/test_loader_rejects_old_or_for0/bc-data/train/2026-09-21-ep-a.npz arrays must be exactly ['actor_cell', 'actor_inventory', 'actor_inventory_rank', 'actor_mask', 'actor_role', 'actor_slot', 'actors_float', 'banks', 'can_act', 'global_features', 'globals_int', 'lengths', 'market_float', 'market_int', 'market_product', 'order_limits', 'player_features', 'schema', 'shop_mask', 'shop_slot', 'shop_type', 'still_playing', 'storage_counts', 'storage_rank', 'tile_animal', 'tile_cell', 'tile_crop', 'tile_kind', 'tile_role', 'tiles_float', 'tiles_int', 'tokens', 'turn'], got ['context', 'features']
+
+python/owl/kaggriculture/bc_data.py:342: ValueError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-102/test_loader_rejects_old_or_for0')
+
+    def test_loader_rejects_old_or_foreign_shard_schemas(tmp_path: Path) -> None:
+        root = _dataset_root(tmp_path)
+        shard = root / "train" / "2026-09-21-ep-a.npz"
+        shard.unlink()
+        np.savez_compressed(
+            shard, features=np.zeros((4, 2, 8), np.float32), context=np.zeros((4, 2, 4))
+        )
+        _rehash(root, 0, shard)
+>       with pytest.raises(ValueError, match=SHARD_SCHEMA):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'kaggriculture-bc-shard-v1'
+E         Actual message: "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-102/test_loader_rejects_old_or_for0/bc-data/train/2026-09-21-ep-a.npz arrays must be exactly ['actor_cell', 'actor_inventory', 'actor_inventory_rank', 'actor_mask', 'actor_role', 'actor_slot', 'actors_float', 'banks', 'can_act', 'global_features', 'globals_int', 'lengths', 'market_float', 'market_int', 'market_product', 'order_limits', 'player_features', 'schema', 'shop_mask', 'shop_slot', 'shop_type', 'still_playing', 'storage_counts', 'storage_rank', 'tile_animal', 'tile_cell', 'tile_crop', 'tile_kind', 'tile_role', 'tiles_float', 'tiles_int', 'tokens', 'turn'], got ['context', 'features']"
+
+tests/kaggriculture/test_bc.py:250: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_loader_rejects_old_or_foreign_shard_schemas
+1 failed, 24 passed in 4.60s

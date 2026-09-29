@@ -42,7 +42,10 @@ from owl.model.compile_gemm import (
     gemm_backend_claim,
     installed_compile_stack,
 )
-from owl.model.kaggriculture import KaggricultureTransformerConfig
+from owl.model.kaggriculture import (
+    KaggricultureTransformer,
+    KaggricultureTransformerConfig,
+)
 from owl.model.kaggriculture_workload import (
     WorkloadHeadroom,
     check_workload_headroom,
@@ -79,7 +82,12 @@ from owl.train.optimizer import (
     create_lr_scheduler,
     create_optimizer,
 )
-from owl.train.ppo import PPOCheckpointMetadata, _mean_env_metrics, _obs_to_device
+from owl.train.ppo import (
+    PPOCheckpointMetadata,
+    _mean_env_metrics,
+    _obs_to_device,
+    reject_unknown_checkpoint_keys,
+)
 from owl.train.utils import (
     DTypeConfig,
     autocast_context,
@@ -104,10 +112,13 @@ CHECKPOINT_LAST_BEST = "checkpoint_last_best.pt"
 _NUMBERED_CHECKPOINT_RE = re.compile(
     r"^checkpoint_(\d{2})_(\d{3})_(\d{3})_(\d{3})\.pt$"
 )
-LoadModelWeightsMode = Literal["model_only", "model_and_optimizer"]
+LoadModelWeightsMode = Literal[
+    "model_only", "model_and_optimizer", "model_fresh_critic_head"
+]
 LOAD_MODEL_WEIGHTS_MODES: tuple[LoadModelWeightsMode, ...] = (
     "model_only",
     "model_and_optimizer",
+    "model_fresh_critic_head",
 )
 
 
@@ -288,6 +299,10 @@ def main() -> None:
                 launch.load_model_weights_path,
                 load_optimizer=(
                     launch.load_model_weights_mode == "model_and_optimizer"
+                ),
+                fresh_state_keys=_fresh_state_keys_for_mode(
+                    unwrap_model(model),
+                    launch.load_model_weights_mode,
                 ),
             )
             _roundtrip_lora_base_quantization_for_config(
@@ -638,7 +653,10 @@ def _parse_args() -> argparse.Namespace:
         help=(
             "State to load with --load-model-weights. model_and_optimizer also "
             "loads optimizer moment/momentum state while keeping the fresh "
-            "scheduler and fresh optimizer hyperparameters."
+            "scheduler and fresh optimizer hyperparameters. "
+            "model_fresh_critic_head loads every model tensor except the "
+            "Kaggriculture critic head, which keeps its fresh initialization "
+            "(for a BC checkpoint whose critic learned a different target)."
         ),
     )
     parser.add_argument(
@@ -1146,10 +1164,29 @@ def _load_model_weights(
         raise ValueError(f"checkpoint must be a dictionary: {path}")
     if "model" not in checkpoint:
         raise ValueError(f"checkpoint is missing model weights: {path}")
+    try:
+        reject_unknown_checkpoint_keys(checkpoint)
+    except ValueError as error:
+        raise ValueError(f"{error}: {path}") from error
     # Tolerate loading a non-LoRA base checkpoint into a LoRA-wrapped model: base
     # tensors are loaded and the adapters keep their config-initialized values.
     load_model_state_dict_allowing_lora(model, checkpoint["model"])
     model.eval()
+
+
+def _fresh_state_keys_for_mode(
+    model: BaseModelAPI,
+    mode: LoadModelWeightsMode,
+) -> frozenset[str]:
+    """Model state a ``--load-model-weights`` mode keeps at its fresh values."""
+    if mode != "model_fresh_critic_head":
+        return frozenset()
+    if not isinstance(model, KaggricultureTransformer):
+        raise ValueError(
+            "--load-model-weights-mode model_fresh_critic_head supports "
+            f"KaggricultureTransformer only, got {type(model).__name__}"
+        )
+    return frozenset(f"critic_head.{key}" for key in model.critic_head.state_dict())
 
 
 def _with_runtime_gpus(cfg: FullConfig, world_size: int) -> FullConfig:

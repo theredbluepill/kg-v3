@@ -1,0 +1,23 @@
+...F.....................                                                [100%]
+=================================== FAILURES ===================================
+_______________ test_loader_requires_both_splits_and_paired_rows _______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-104/test_loader_requires_both_spli0')
+
+    def test_loader_requires_both_splits_and_paired_rows(tmp_path: Path) -> None:
+        root = _write(tmp_path / "train-only", [_episode("ep-a", "train", 2, seed=1)])
+        with pytest.raises(ValueError, match="no admitted validation rows"):
+            load_bc_dataset(root)
+        unpaired = _episode("ep-u", "train", 2, seed=1)
+        unpaired.obs.still_playing[0, 1] = False
+        root = _write(
+            tmp_path / "unpaired", [unpaired, _episode("ep-v", "validation", 2, seed=4)]
+        )
+>       with pytest.raises(ValueError, match="still_playing"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:263: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_loader_requires_both_splits_and_paired_rows
+1 failed, 24 passed in 4.86s

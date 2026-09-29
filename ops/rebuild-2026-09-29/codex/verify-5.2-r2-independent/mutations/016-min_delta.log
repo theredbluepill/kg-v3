@@ -1,0 +1,62 @@
+............FFF..........                                                [100%]
+=================================== FAILURES ===================================
+____ test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience _____
+
+    def test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience() -> None:
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+        assert selection.observe(3.0, step=0)
+        assert selection.observe(2.0, step=2)
+        # A new minimum inside min_delta is still the best checkpoint; it only fails
+        # to reset the patience count.
+>       assert selection.observe(1.97, step=4)
+E       assert False
+E        +  where False = observe(1.97, step=4)
+E        +    where observe = HeldOutSelection(patience_evals=2, min_delta=0.05, best_nll=2.0, best_step=2, improvement_nll=2.0, evals_since_improvement=1, last_nll=1.97, last_step=4).observe
+
+tests/kaggriculture/test_bc.py:471: AssertionError
+___________ test_held_out_patience_ignores_a_trickle_below_min_delta ___________
+
+    def test_held_out_patience_ignores_a_trickle_below_min_delta() -> None:
+        """Sub-min_delta gains keep the best current but do not slide the reference."""
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+        assert selection.observe(2.0, step=0)
+>       assert selection.observe(1.97, step=1)
+E       assert False
+E        +  where False = observe(1.97, step=1)
+E        +    where observe = HeldOutSelection(patience_evals=2, min_delta=0.05, best_nll=2.0, best_step=0, improvement_nll=2.0, evals_since_improvement=1, last_nll=1.97, last_step=1).observe
+
+tests/kaggriculture/test_bc.py:488: AssertionError
+__________ test_best_checkpoint_is_the_minimum_even_inside_min_delta ___________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-114/test_best_checkpoint_is_the_mi0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112ea1dc0>
+
+    def test_best_checkpoint_is_the_minimum_even_inside_min_delta(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The verifier's probe: NLLs 2.0, 1.97, 2.4 with min_delta 0.05 keep step 1."""
+        data = _dataset_root(tmp_path)
+        scripted = iter([2.0, 1.97, 2.4])
+        _script_validation(monkeypatch, scripted, snapshots={})
+        run_dir = tmp_path / "run"
+        config = _bc_config(
+            eval_interval_steps=1, patience_evals=2, min_delta=0.05, max_steps=50
+        )
+        result, _ = _run(run_dir, data, config)
+        assert result.stop_reason == "no_held_out_improvement"
+>       assert (result.steps, result.best_step, result.best_validation_nll) == (2, 1, 1.97)
+E       assert (2, 0, 2.0) == (2, 1, 1.97)
+E         
+E         At index 1 diff: 0 != 1
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:510: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/validation_nll': 2.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.013268416048958898, 'time/elapsed_seconds': 0.05099687504116446}
+{'bc/step': 1.0, 'bc/validation_nll': 1.97, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.014469832996837795, 'time/elapsed_seconds': 0.09041591599816456, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 240.98502162885092}
+{'bc/step': 2.0, 'bc/validation_nll': 2.4, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.012656666978728026, 'time/elapsed_seconds': 0.12595095799770206, 'bc/train_nll': 3.9168338775634766, 'bc/train_value_ce': 0.7537779808044434, 'bc/grad_norm': 2.7767531871795654, 'perf/learner_seat_rows_per_second': 242.15761973428792}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience
+FAILED tests/kaggriculture/test_bc.py::test_held_out_patience_ignores_a_trickle_below_min_delta
+FAILED tests/kaggriculture/test_bc.py::test_best_checkpoint_is_the_minimum_even_inside_min_delta
+3 failed, 22 passed in 5.16s
