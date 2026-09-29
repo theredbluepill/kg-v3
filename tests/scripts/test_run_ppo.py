@@ -3540,10 +3540,18 @@ def test_main_fails_fast_without_wandb_credentials(
     _patch_kaggriculture_startup(monkeypatch, argv, calls, log_mode=LogMode.WANDB)
     _without_wandb_credentials(monkeypatch, tmp_path)
 
-    def config_loaded(*_args: object, **_kwargs: object) -> None:
-        calls.append("_log_cli_overrides")
+    def reached(name: str) -> object:
+        def record(*_args: object, **_kwargs: object) -> None:
+            calls.append(name)
+            raise AssertionError(f"{name} ran before the telemetry gate")
 
-    monkeypatch.setattr(run_ppo, "_log_cli_overrides", config_loaded)
+        return record
+
+    monkeypatch.setattr(run_ppo, "_log_cli_overrides", reached("_log_cli_overrides"))
+    monkeypatch.setattr(
+        run_ppo.FullConfig, "from_file", reached("FullConfig.from_file")
+    )
+    monkeypatch.setattr(run_ppo, "git_source_commit", reached("git_source_commit"))
 
     with pytest.raises(
         MissingWandbCredentialsError, match=re.escape("api.wandb.ai")

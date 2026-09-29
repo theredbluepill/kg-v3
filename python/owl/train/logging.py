@@ -80,31 +80,73 @@ def telemetry_mode(log_mode: LogMode, wandb_mode: WandbMode) -> TelemetryMode:
 def wandb_credential_source(environ: Mapping[str, str], *, home: Path) -> str | None:
     """Where online W&B would read its API key, or ``None`` when it has none.
 
-    Mirrors wandb's lookup: a non-empty ``WANDB_API_KEY``, else the ``NETRC``
+    Mirrors wandb's lookup: ``WANDB_API_KEY`` when set, else the ``NETRC``
     file (default ``~/.netrc``) entry for the ``WANDB_BASE_URL`` host (default
-    ``api.wandb.ai``) with a non-empty password. Never returns or prints the key.
+    ``api.wandb.ai``, or netrc's ``default``) with a non-empty password.
+    Settings wandb would reject later (a malformed base URL, a blank or padded
+    environment key) fail here instead. Never returns or prints the key.
     """
-    if environ.get("WANDB_API_KEY", "").strip():
+    host = wandb_host(environ)
+    if "WANDB_API_KEY" in environ:
+        key = environ["WANDB_API_KEY"]
+        if not key or key != key.strip():
+            raise MissingWandbCredentialsError(
+                "WANDB_API_KEY is set but blank or padded with whitespace; unset "
+                "it or set the exact key"
+            )
         return "WANDB_API_KEY"
     netrc_path = _netrc_path(environ, home=home)
+    parsed = _read_netrc(netrc_path)
+    if parsed is None:
+        return None
+    entry = parsed.authenticators(host)
+    if entry is None or not entry[2]:
+        return None
+    return str(netrc_path)
+
+
+def _read_netrc(path: Path) -> netrc.netrc | None:
     try:
-        parsed = netrc.netrc(str(netrc_path))
+        return netrc.netrc(str(path))
     except FileNotFoundError:
         return None
     except netrc.NetrcParseError as error:
         # The parser's message can quote a token from the file; keep it out.
         raise MissingWandbCredentialsError(
-            f"cannot parse {netrc_path} (line {error.lineno}); repair it with "
+            f"cannot parse {path} (line {error.lineno}); repair it with "
             f"{WANDB_CREDENTIAL_WORKFLOW}"
         ) from None
     except OSError as error:
         raise MissingWandbCredentialsError(
-            f"cannot read {netrc_path}: {error.strerror}"
+            f"cannot read {path}: {error.strerror}"
         ) from None
-    entry = parsed.authenticators(_wandb_host(environ))
+
+
+_NETRC_UNSAFE = frozenset(" \t\n\r\"'#\\")
+
+
+def wandb_netrc_entry(environ: Mapping[str, str], *, home: Path) -> str:
+    """The netrc line for the W&B host alone, for copying to a pod via stdin.
+
+    Only an explicit ``machine <host>`` entry qualifies (never ``default``), and
+    every token must serialize unquoted. Errors never quote the file.
+    """
+    host = wandb_host(environ)
+    netrc_path = _netrc_path(environ, home=home)
+    parsed = _read_netrc(netrc_path)
+    entry = None if parsed is None else parsed.hosts.get(host)
     if entry is None or not entry[2]:
-        return None
-    return str(netrc_path)
+        raise MissingWandbCredentialsError(
+            f"{netrc_path} has no 'machine {host}' entry with a password"
+        )
+    login, _account, password = entry
+    login = login or "user"
+    if any(char in _NETRC_UNSAFE for char in login + password):
+        raise MissingWandbCredentialsError(
+            f"the 'machine {host}' entry in {netrc_path} has a login or password "
+            "that netrc cannot hold unquoted; repair it before copying"
+        )
+    return f"machine {host} login {login} password {password}\n"
 
 
 def require_wandb_credentials(environ: Mapping[str, str], *, home: Path) -> str:
@@ -112,7 +154,7 @@ def require_wandb_credentials(environ: Mapping[str, str], *, home: Path) -> str:
     if source is None:
         raise MissingWandbCredentialsError(
             "W&B online logging has no credentials: WANDB_API_KEY is unset and "
-            f"{_netrc_path(environ, home=home)} has no '{_wandb_host(environ)}' "
+            f"{_netrc_path(environ, home=home)} has no '{wandb_host(environ)}' "
             "entry. Fix: install the operator's api.wandb.ai netrc entry "
             f"({WANDB_CREDENTIAL_WORKFLOW}: stdin copy, chmod 600, check "
             "wandb.Api()) or export WANDB_API_KEY. To launch without live "
@@ -131,12 +173,13 @@ def check_telemetry(
 ) -> TelemetryMode:
     """Startup gate: online needs credentials; an outage is announced loudly."""
     mode = telemetry_mode(log_mode, wandb_mode)
-    env_mode = environ.get("WANDB_MODE")
-    if mode is not TelemetryMode.DISABLED and env_mode and env_mode != wandb_mode:
-        raise ValueError(
-            f"WANDB_MODE={env_mode} disagrees with --wandb-mode {wandb_mode}; "
-            "unset WANDB_MODE and choose the mode with the flag"
-        )
+    if mode is not TelemetryMode.DISABLED and "WANDB_MODE" in environ:
+        env_mode = environ["WANDB_MODE"]
+        if env_mode != wandb_mode:
+            raise ValueError(
+                f"WANDB_MODE={env_mode!r} disagrees with --wandb-mode {wandb_mode}; "
+                "unset WANDB_MODE and choose the mode with the flag"
+            )
     if mode is TelemetryMode.WANDB_ONLINE:
         require_wandb_credentials(environ, home=home)
     else:
@@ -170,12 +213,23 @@ def _netrc_path(environ: Mapping[str, str], *, home: Path) -> Path:
     return Path(configured).expanduser() if configured else home / ".netrc"
 
 
-def _wandb_host(environ: Mapping[str, str]) -> str:
+def wandb_host(environ: Mapping[str, str]) -> str:
+    """The netrc machine name wandb uses: the base URL's host and port.
+
+    Rejects, without quoting it, a base URL that is not http(s) with a host or
+    that embeds credentials.
+    """
     base_url = environ.get("WANDB_BASE_URL") or DEFAULT_WANDB_BASE_URL
-    host = urlsplit(base_url).netloc
-    if not host:
-        raise ValueError(f"WANDB_BASE_URL has no host: {base_url!r}")
-    return host
+    try:
+        parts = urlsplit(base_url)
+        parts.port  # noqa: B018 - raises for a malformed port
+    except ValueError:
+        raise ValueError("WANDB_BASE_URL is not a valid URL") from None
+    if parts.username is not None or parts.password is not None:
+        raise ValueError("WANDB_BASE_URL must not embed credentials; use netrc")
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        raise ValueError("WANDB_BASE_URL must be an http(s) URL with a host")
+    return parts.netloc
 
 
 # --- v3 run identity ---------------------------------------------------------
@@ -274,20 +328,21 @@ def plan_attempt(
             telemetry=telemetry,
         )
     earlier = read_attempts(path)
-    recorded_id = str(earlier[0]["experiment_id"])
+    recorded_id: str = earlier[0]["experiment_id"]
     if experiment_id is not None and experiment_id != recorded_id:
         raise ValueError(
             f"resume keeps experiment id {recorded_id!r}, got {experiment_id!r}"
+        )
+    if earlier[0]["job_type"] != job_type:
+        raise ValueError(
+            f"{path} records job type {earlier[0]['job_type']!r}, not {job_type!r}"
         )
     return RunIdentity(
         experiment_id=recorded_id,
         job_type=job_type,
         attempt=len(earlier),
         source_commit=source_commit,
-        attempt_source_commits=(
-            *(str(record["source_commit"]) for record in earlier),
-            source_commit,
-        ),
+        attempt_source_commits=(*earlier[-1]["attempt_source_commits"], source_commit),
         config_sha256=config_sha256,
         telemetry=telemetry,
     )
@@ -322,14 +377,56 @@ def read_attempts(path: Path) -> list[dict[str, Any]]:
     ]
     if not records:
         raise ValueError(f"{path} has no attempt records")
+    commits: list[str] = []
     for index, record in enumerate(records):
+        where = f"{path} line {index + 1}"
         if not isinstance(record, dict) or set(record) != _ATTEMPT_KEYS:
-            raise ValueError(
-                f"{path} line {index + 1} must have exactly {sorted(_ATTEMPT_KEYS)}"
-            )
+            raise ValueError(f"{where} must have exactly {sorted(_ATTEMPT_KEYS)}")
+        _check_attempt_types(record, where=where)
         if record["attempt"] != index:
-            raise ValueError(f"{path} line {index + 1} is not attempt {index}")
+            raise ValueError(f"{where} is not attempt {index}")
+        for key in ("experiment_id", "job_type"):
+            if record[key] != records[0][key]:
+                raise ValueError(f"{where} changes {key} from line 1")
+        commits.append(record["source_commit"])
+        if record["attempt_source_commits"] != commits:
+            raise ValueError(f"{where} attempt_source_commits breaks the history")
     return records
+
+
+_SHA256_RE = re.compile(r"[0-9a-f]{64}")
+
+
+def _check_attempt_types(record: dict[str, Any], *, where: str) -> None:
+    def is_int(value: object) -> bool:
+        return isinstance(value, int) and not isinstance(value, bool)
+
+    def is_text(value: object) -> bool:
+        return isinstance(value, str) and bool(value)
+
+    commits = record["attempt_source_commits"]
+    checks = {
+        "attempt": is_int(record["attempt"]),
+        "experiment_id": isinstance(record["experiment_id"], str)
+        and _EXPERIMENT_ID_RE.fullmatch(record["experiment_id"]) is not None,
+        "job_type": is_text(record["job_type"]),
+        "source_commit": is_text(record["source_commit"]),
+        "attempt_source_commits": isinstance(commits, list)
+        and all(is_text(commit) for commit in commits),
+        "config_sha256": isinstance(record["config_sha256"], str)
+        and _SHA256_RE.fullmatch(record["config_sha256"]) is not None,
+        "telemetry_mode": record["telemetry_mode"] in set(TelemetryMode),
+        "start_env_steps": is_int(record["start_env_steps"])
+        and record["start_env_steps"] >= 0,
+        "started_at": is_text(record["started_at"]),
+        **{
+            key: record[key] is None or is_text(record[key])
+            for key in ("wandb_project", "wandb_entity", "wandb_run_id", "wandb_url")
+        },
+    }
+    bad = sorted(key for key, ok in checks.items() if not ok)
+    if bad:
+        raise ValueError(f"{where} has malformed fields: {', '.join(bad)}")
 
 
 def record_attempt(

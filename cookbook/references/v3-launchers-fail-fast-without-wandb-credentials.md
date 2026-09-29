@@ -5,7 +5,7 @@ description: "run_ppo now logs to W&B project kg-v3 by default, grouped by a v3 
 tags: ["kaggriculture-v3", "adaptation", "telemetry"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
-sources: [{"resource": "user-directive:2026-09-29:make-sure-all-v3-experiments-wired-to-wandb"}, {"resource": "repository:python/owl/train/logging.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/owl/train/test_logging.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-audit.md"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-2026-09-29/prepare.log"}]
+sources: [{"resource": "user-directive:2026-09-29:make-sure-all-v3-experiments-wired-to-wandb"}, {"resource": "repository:python/owl/train/logging.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/owl/train/test_logging.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-audit.md"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-2026-09-29/prepare.log"}, {"resource": "repository:scripts/export_wandb_netrc_entry.py"}, {"resource": "repository:tests/scripts/test_export_wandb_netrc_entry.py"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-2026-09-29/install-simulation.log"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-wandb-r1.md"}]
 ---
 
 # v3 launchers fail fast without W&B credentials
@@ -17,19 +17,21 @@ sources: [{"resource": "user-directive:2026-09-29:make-sure-all-v3-experiments-w
 - **`python/owl/train/logging.py`** is extended in place. Isaiah's `LogMode`, `MetricLogger`, `DebugLogger`, `WandbLogger`, `create_logger` and `close(exit_code=...)` are kept.
   - **Project.** `WANDB_PROJECT = "kg-v3"` for every run launched from this repository, Orbit or Kaggriculture.
   - **Mode and gate.** `WandbMode` (online/offline) and `LogMode` resolve to a `TelemetryMode` (`wandb-online`, `wandb-offline`, `disabled`).
-    - `check_telemetry` is the startup gate. Online requires `wandb_credential_source`, which mirrors wandb 0.26.1's lookup: a non-empty `WANDB_API_KEY`, else a password in the `NETRC` (default `~/.netrc`) entry for the `WANDB_BASE_URL` host (default `api.wandb.ai`). Otherwise it raises `MissingWandbCredentialsError`, whose message names the pod workflow, `WANDB_API_KEY`, `--wandb-mode offline` and `--log-mode debug`.
-    - A malformed netrc raises without quoting the file.
-    - A disagreeing `WANDB_MODE` is rejected.
+    - `check_telemetry` is the startup gate. Online requires `wandb_credential_source`, which mirrors wandb 0.26.1's lookup: a set `WANDB_API_KEY`, which must be neither blank nor padded, else a password in the `NETRC` (default `~/.netrc`) entry for the `WANDB_BASE_URL` host (default `api.wandb.ai`). Otherwise it raises `MissingWandbCredentialsError`, whose message names the pod workflow, `WANDB_API_KEY`, `--wandb-mode offline` and `--log-mode debug`.
+    - `WANDB_BASE_URL` must be http(s) with a host and no embedded credentials. It is checked before any key source.
+    - A malformed netrc or URL raises without quoting it.
+    - A set `WANDB_MODE`, even an empty one, that disagrees with the flag is rejected.
     - Offline and disabled print a `W&B TELEMETRY OUTAGE` banner to stderr.
-  - **Identity and receipt.** `RunIdentity`, `plan_attempt`, `record_attempt` and `read_attempts` keep one strict-schema JSON record per launch or resume in `<run_dir>/attempts.jsonl`. The record holds the attempt, experiment id (explicit or the run directory name; resumes keep it), job type, source commit (`git HEAD`, `-dirty` for tracked edits, or `--source-commit`) with all earlier ones, config SHA-256 (canonical JSON), `telemetry_mode`, W&B project, entity, run ID and URL, start env steps, and start time.
+  - **Identity and receipt.** `RunIdentity`, `plan_attempt`, `record_attempt` and `read_attempts` keep one strict-schema JSON record per launch or resume in `<run_dir>/attempts.jsonl`. `read_attempts` checks each field's type and value, the attempt order, a constant experiment id and job type, and the source-commit history. The record holds the attempt, experiment id (explicit or the run directory name; resumes keep it), job type, source commit (`git HEAD`, `-dirty` for tracked edits, or `--source-commit`) with all earlier ones, config SHA-256 (canonical JSON), `telemetry_mode`, W&B project, entity, run ID and URL, start env steps, and start time.
   - **W&B run shape.** The W&B run is grouped by experiment id, typed by job, and tagged `kaggriculture-v3`, job and game. It stores `v3.experiment_id` and `v3.job_type` in its config, which stays constant on resume, and the `v3/*` attempt fields in its summary.
   - **Reuse.** `create_metric_logger` takes a launcher's own config and game, so BC and future probes can reuse the same path.
+  - **Pod copy.** `wandb_netrc_entry` returns only the explicit `machine <W&B host>` netrc entry, and `scripts/export_wandb_netrc_entry.py` pipes it to a pod (it refuses a terminal).
 - **`scripts/run_ppo.py`** stays the one trainer.
   - It adds `--wandb-mode`, `--experiment-id` (fresh launches only) and `--source-commit`.
   - The gate is the first step inside the distributed session, on rank 0, before config load. Non-main ranks only resolve the mode.
   - Rank 0 plans the attempt once the run directory exists, before env or model setup. That rejects a resume without receipts early. It records the attempt immediately after the logger opens, inside the failure-closing logger session, and prints the receipt path again on an outage.
   - `_validate_args` rejects offline mode combined with debug logging, and an `--experiment-id` on resume.
-- **`README.md`** documents the gate, the flags and the receipt.
+- **`README.md`** documents the gate, the flags, the receipt and how to resume an offline run.
 - **Pod procedure.** [[../workflows/install-the-wandb-credential-before-any-pod-launch|Install the W&B credential before any pod launch]].
 
 ## Verification (this version, CPU)
@@ -42,7 +44,12 @@ sources: [{"resource": "user-directive:2026-09-29:make-sure-all-v3-experiments-w
     - the session writes one receipt per telemetry mode, with the outage line only for outages;
     - a main rank without an identity is rejected.
 - **Full preparation.** `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 uvx --from rust-just just prepare` exited 0 (`ops/rebuild-2026-09-29/wandb-2026-09-29/prepare.log`): ruff, format, mypy (64 files), docs-lint, Rust 254 passed and 4 ignored, engine 69 passed, Python 1,718 passed and 11 skipped, docs-fresh.
-- **Codex.** Independent verification in `ops/rebuild-2026-09-29/codex/verify-wandb-r*.md`.
+- **Codex.** Round 1 (`ops/rebuild-2026-09-29/codex/verify-wandb-r1.md`, REQUEST CHANGES) ran 34 mutations: 32 were killed, and the attempt-order check and config-read-before-gate mutants survived. It also reported:
+  - four P2 findings: the `awk` netrc copy, blank or padded keys, an empty `WANDB_MODE` and URLs bypassing the gate, loose receipt types, and URL credentials in error text;
+  - three P3 findings.
+
+  All were fixed with tests. Later rounds are in the same folder.
+- **Install simulation.** `ops/rebuild-2026-09-29/wandb-2026-09-29/install-simulation.log` records the pod copy simulated on synthetic files.
 
 ## Limits and gaps
 

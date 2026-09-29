@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -28,6 +29,8 @@ from owl.train.logging import (
     require_wandb_credentials,
     telemetry_mode,
     wandb_credential_source,
+    wandb_host,
+    wandb_netrc_entry,
 )
 
 _CONFIGS = Path(__file__).parents[3] / "configs"
@@ -85,8 +88,15 @@ def test_environment_key_counts_but_blank_does_not(tmp_path: Path) -> None:
         require_wandb_credentials({"WANDB_API_KEY": _SECRET}, home=tmp_path)
         == "WANDB_API_KEY"
     )
-    with pytest.raises(MissingWandbCredentialsError):
-        require_wandb_credentials({"WANDB_API_KEY": "  "}, home=tmp_path)
+    # wandb reads a set key before netrc and rejects a blank or padded one, so
+    # a valid netrc must not hide it.
+    _netrc(tmp_path, f"machine api.wandb.ai login user password {_SECRET}\n")
+    for bad in ("", "  ", f" {_SECRET}", f"{_SECRET}\n"):
+        with pytest.raises(
+            MissingWandbCredentialsError, match="blank or padded"
+        ) as info:
+            require_wandb_credentials({"WANDB_API_KEY": bad}, home=tmp_path)
+        assert _SECRET not in str(info.value)
 
 
 def test_netrc_needs_the_api_wandb_ai_entry_with_a_password(tmp_path: Path) -> None:
@@ -176,9 +186,9 @@ def test_outage_modes_skip_credentials_and_warn_loudly(
 
 def test_wandb_mode_environment_cannot_override_the_flag(tmp_path: Path) -> None:
     environ = {"WANDB_API_KEY": _SECRET, "WANDB_MODE": "offline"}
-    with pytest.raises(ValueError, match="WANDB_MODE=offline disagrees"):
+    with pytest.raises(ValueError, match="WANDB_MODE='offline' disagrees"):
         check_telemetry(LogMode.WANDB, WandbMode.ONLINE, environ=environ, home=tmp_path)
-    with pytest.raises(ValueError, match="WANDB_MODE=disabled disagrees"):
+    with pytest.raises(ValueError, match="WANDB_MODE='disabled' disagrees"):
         check_telemetry(
             LogMode.WANDB,
             WandbMode.OFFLINE,
@@ -377,3 +387,185 @@ def test_other_launchers_reuse_the_logger_with_their_own_config(
         "v3": {"experiment_id": tmp_path.name, "job_type": "bc"},
     }
     assert isinstance(disabled, DebugLogger)
+
+
+def test_base_url_is_validated_first_and_never_quoted(tmp_path: Path) -> None:
+    assert wandb_host({}) == "api.wandb.ai"
+    assert wandb_host({"WANDB_BASE_URL": "https://w.example:8443/"}) == "w.example:8443"
+    for url, message in (
+        (f"https://user:{_SECRET}@api.wandb.ai", "must not embed credentials"),
+        ("api.wandb.ai", "http\\(s\\) URL with a host"),
+        (f"ftp://{_SECRET}.example", "http\\(s\\) URL with a host"),
+        (f"https://{_SECRET}.example:99999", "not a valid URL"),
+    ):
+        environ = {"WANDB_BASE_URL": url, "WANDB_API_KEY": _SECRET}
+        with pytest.raises(ValueError, match=message) as info:
+            require_wandb_credentials(environ, home=tmp_path)
+        assert _SECRET not in str(info.value)
+        assert info.value.__cause__ is None
+
+
+def test_an_empty_wandb_mode_is_a_disagreement(tmp_path: Path) -> None:
+    environ = {"WANDB_API_KEY": _SECRET, "WANDB_MODE": ""}
+    with pytest.raises(ValueError, match="WANDB_MODE='' disagrees"):
+        check_telemetry(LogMode.WANDB, WandbMode.ONLINE, environ=environ, home=tmp_path)
+    assert (
+        check_telemetry(
+            LogMode.WANDB,
+            WandbMode.ONLINE,
+            environ={"WANDB_API_KEY": _SECRET, "WANDB_MODE": "online"},
+            home=tmp_path,
+        )
+        is TelemetryMode.WANDB_ONLINE
+    )
+
+
+# --- copying only the W&B netrc entry -----------------------------------------
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # packed: another machine and a default on the W&B entry's own line
+        f"machine api.wandb.ai login user password {_SECRET} machine github.com "
+        "login gh password GHSECRET default login a password DEFSECRET\n",
+        # split: every token on its own line
+        f"machine\napi.wandb.ai\nlogin\nuser\npassword\n{_SECRET}\n"
+        "machine github.com login gh password GHSECRET\n",
+        # conventional multi-line layout after other entries
+        "default login a password DEFSECRET\nmachine github.com\n  login gh\n"
+        f"  password GHSECRET\nmachine api.wandb.ai\n  login user\n"
+        f"  password {_SECRET}\n",
+    ],
+)
+def test_netrc_entry_export_keeps_only_the_wandb_host(
+    tmp_path: Path, text: str
+) -> None:
+    _netrc(tmp_path, text)
+
+    entry = wandb_netrc_entry({}, home=tmp_path)
+
+    assert entry == f"machine api.wandb.ai login user password {_SECRET}\n"
+    copied = tmp_path / "copied"
+    copied.write_text(entry)
+    assert wandb_credential_source({"NETRC": str(copied)}, home=tmp_path) == str(copied)
+
+
+def test_netrc_entry_export_refuses_default_only_or_unsafe_entries(
+    tmp_path: Path,
+) -> None:
+    path = _netrc(tmp_path, f"default login a password {_SECRET}\n")
+    # wandb itself would use the default entry, but it is not copied.
+    assert wandb_credential_source({}, home=tmp_path) == str(path)
+    with pytest.raises(
+        MissingWandbCredentialsError, match=re.escape("no 'machine api.wandb.ai'")
+    ):
+        wandb_netrc_entry({}, home=tmp_path)
+
+    path.write_text(f'machine api.wandb.ai login user password "{_SECRET}#x"\n')
+    with pytest.raises(MissingWandbCredentialsError, match="cannot hold") as info:
+        wandb_netrc_entry({}, home=tmp_path)
+    assert _SECRET not in str(info.value)
+
+    (tmp_path / ".netrc").unlink()
+    with pytest.raises(
+        MissingWandbCredentialsError, match=re.escape("no 'machine api.wandb.ai'")
+    ):
+        wandb_netrc_entry({}, home=tmp_path)
+
+
+# --- strict receipts -----------------------------------------------------------
+
+
+def _receipt_lines(tmp_path: Path) -> list[dict[str, Any]]:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    fresh = _plan(run_dir, experiment_id="exp", telemetry=TelemetryMode.DISABLED)
+    record_attempt(run_dir, fresh, _Logger(None), start_env_steps=0)
+    resumed = _plan(
+        run_dir, resume=True, source_commit="c1", telemetry=TelemetryMode.DISABLED
+    )
+    record_attempt(run_dir, resumed, _Logger(None), start_env_steps=8)
+    return [
+        json.loads(line) for line in (run_dir / ATTEMPTS_FILE).read_text().splitlines()
+    ]
+
+
+def _write_receipts(path: Path, records: list[dict[str, Any]]) -> None:
+    path.write_text("".join(json.dumps(r) + "\n" for r in records))
+
+
+@pytest.mark.parametrize(
+    ("line", "field", "value", "message"),
+    [
+        (0, "attempt", False, "malformed fields: attempt"),
+        (0, "experiment_id", ["exp"], "malformed fields: experiment_id"),
+        (0, "telemetry_mode", "sometimes", "malformed fields: telemetry_mode"),
+        (0, "config_sha256", None, "malformed fields: config_sha256"),
+        (1, "start_env_steps", -1, "malformed fields: start_env_steps"),
+        (1, "wandb_run_id", 7, "malformed fields: wandb_run_id"),
+        (1, "attempt", 0, "is not attempt 1"),
+        (1, "experiment_id", "other", "changes experiment_id"),
+        (1, "job_type", "bc", "changes job_type"),
+        (1, "attempt_source_commits", ["zz", "c1"], "breaks the history"),
+    ],
+)
+def test_receipts_are_validated_field_by_field(
+    tmp_path: Path, line: int, field: str, value: object, message: str
+) -> None:
+    records = _receipt_lines(tmp_path)
+    records[line][field] = value
+    path = tmp_path / "attempts.jsonl"
+    _write_receipts(path, records)
+
+    with pytest.raises(ValueError, match=message):
+        read_attempts(path)
+
+
+def test_attempts_out_of_order_are_rejected(tmp_path: Path) -> None:
+    records = _receipt_lines(tmp_path)
+    path = tmp_path / "attempts.jsonl"
+    _write_receipts(path, records[::-1])
+
+    with pytest.raises(ValueError, match="line 1 is not attempt 0"):
+        read_attempts(path)
+
+
+def test_resume_keeps_the_recorded_job_type(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    fresh = _plan(run_dir, telemetry=TelemetryMode.DISABLED)
+    record_attempt(run_dir, fresh, _Logger(None), start_env_steps=0)
+
+    with pytest.raises(ValueError, match="records job type 'ppo', not 'bc'"):
+        _plan(run_dir, resume=True, job_type="bc")
+
+
+@pytest.mark.parametrize("mode", ["online", "offline"])
+def test_resume_forwards_the_saved_run_id_with_resume_must(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mode: str
+) -> None:
+    runs: list[_FakeRun] = []
+
+    def init(**kwargs: Any) -> _FakeRun:
+        runs.append(_FakeRun(kwargs))
+        return runs[-1]
+
+    monkeypatch.setitem(sys.modules, "wandb", SimpleNamespace(init=init, run=None))
+    telemetry = (
+        TelemetryMode.WANDB_ONLINE if mode == "online" else TelemetryMode.WANDB_OFFLINE
+    )
+    cfg = FullConfig.from_file(_CONFIGS / "kaggriculture_2rank.yaml")
+
+    create_logger(
+        LogMode.WANDB,
+        tmp_path,
+        cfg,
+        identity=_plan(tmp_path, telemetry=telemetry),
+        resume_run_id="abc123",
+    )
+
+    (run,) = runs
+    assert run.kwargs["id"] == "abc123"
+    assert run.kwargs["resume"] == "must"
+    assert run.kwargs["mode"] == mode

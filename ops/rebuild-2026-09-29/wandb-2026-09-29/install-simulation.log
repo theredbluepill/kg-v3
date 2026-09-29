@@ -1,0 +1,24 @@
+# Install simulation for cookbook/workflows/install-the-wandb-credential-before-any-pod-launch.md step 1
+# 2026-09-29T15:40:29Z; source tree 05cbd88de6e017b33755d28d39fd77cfa1eb71f2 plus the r1 fixes under test (scripts/export_wandb_netrc_entry.py, python/owl/train/logging.py); synthetic netrc only; sh -c with a temp HOME stands in for ssh <pod>
+synthetic source: one packed line (github, api.wandb.ai, default) and a split kaggle entry
+install exit=0
+installed mode=600 lines=1 wandb-entry-lines=1
+other secrets present=0 wandb key present=1
+gate on installed file: accepted
+pod ~/.netrc exists; merge the api.wandb.ai entry by hand
+the receiver closed the pipe; nothing was sent
+second install exit=1 unchanged=yes
+empty credential; nothing installed
+empty-stream install exit=1 files=0
+Traceback (most recent call last):
+  File "/Users/poonszesen/kg-v3-wandb/scripts/export_wandb_netrc_entry.py", line 44, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/poonszesen/kg-v3-wandb/scripts/export_wandb_netrc_entry.py", line 31, in main
+    entry = wandb_netrc_entry(os.environ, home=Path.home())
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/kg-v3-wandb/python/owl/train/logging.py", line 139, in wandb_netrc_entry
+    raise MissingWandbCredentialsError(
+owl.train.logging.MissingWandbCredentialsError: /private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad/netrc-sim3/nokey/.netrc has no 'machine api.wandb.ai' entry with a password
+empty credential; nothing installed
+missing-entry pipeline exit=1 files=0

@@ -1,11 +1,11 @@
 ---
 type: "Workflow"
 title: "Install the W&B credential before any pod launch"
-description: "Pod setup step for every v3 launch: copy only the operator's api.wandb.ai netrc entry to the pod through stdin, chmod 600, never print or commit it, and check wandb.Api() before any launch. Launchers then default to online W&B in kg-v3 and fail fast without a key. Offline or disabled telemetry takes an explicit flag, a loud banner, an attempts.jsonl record and a report to the owner. The pipeline was simulated locally on synthetic files; it has not yet run on a pod."
+description: "Pod setup step for every v3 launch: copy only the operator's api.wandb.ai netrc entry to the pod through stdin, chmod 600, never print or commit it, and check wandb.Api() before any launch. Launchers then default to online W&B in kg-v3 and fail fast without a key. Offline or disabled telemetry takes an explicit flag, a loud banner, an attempts.jsonl record and a report to the owner. The netrc export script is tested and the pipeline was simulated locally on synthetic files; it has not yet run on a pod."
 tags: ["kaggriculture-v3", "workflows", "telemetry", "pods"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
-sources: [{"resource": "user-directive:2026-09-29:make-sure-all-v3-experiments-wired-to-wandb"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-audit.md"}, {"resource": "repository:python/owl/train/logging.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/owl/train/test_logging.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}]
+sources: [{"resource": "user-directive:2026-09-29:make-sure-all-v3-experiments-wired-to-wandb"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-audit.md"}, {"resource": "repository:scripts/export_wandb_netrc_entry.py"}, {"resource": "repository:tests/scripts/test_export_wandb_netrc_entry.py"}, {"resource": "repository:ops/rebuild-2026-09-29/wandb-2026-09-29/install-simulation.log"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-wandb-r1.md"}, {"resource": "repository:python/owl/train/logging.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/owl/train/test_logging.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}]
 ---
 
 # Install the W&B credential before any pod launch
@@ -14,18 +14,24 @@ sources: [{"resource": "user-directive:2026-09-29:make-sure-all-v3-experiments-w
 
 ## 1. Copy only the api.wandb.ai entry, through stdin
 
-Run this on the operator's Mac. `<pod>` is the SSH target from the live pod read; never write it into tracked files.
+Run this from a checkout of this repository on the operator's Mac. `<pod>` is the SSH target from the live pod read; never write it into tracked files.
 
 ```bash
-awk '$1=="machine"||$1=="default"{keep=($1=="machine"&&$2=="api.wandb.ai")} keep' ~/.netrc \
+set -o pipefail
+uv run python scripts/export_wandb_netrc_entry.py \
   | ssh <pod> 'set -eu; umask 077
       if [ -e "$HOME/.netrc" ]; then
         echo "pod ~/.netrc exists; merge the api.wandb.ai entry by hand" >&2; exit 1
       fi
-      cat > "$HOME/.netrc"; chmod 600 "$HOME/.netrc"'
+      tmp="$HOME/.netrc.wandb.$$"; cat > "$tmp"
+      if [ ! -s "$tmp" ]; then
+        rm -f "$tmp"; echo "empty credential; nothing installed" >&2; exit 1
+      fi
+      chmod 600 "$tmp"; mv "$tmp" "$HOME/.netrc"'
 ```
 
-- The `awk` filter keeps the `machine api.wandb.ai` entry and its continuation lines, and drops every other machine and any `default` entry. To check the extract without printing it, pipe it to `grep -c '^machine api.wandb.ai'` instead of `ssh`; the count must be 1.
+- `scripts/export_wandb_netrc_entry.py` parses the netrc with Python's `netrc` module (so tokens split across lines or packed onto one line are read correctly). It writes exactly one `machine api.wandb.ai login … password …` line: never another machine and never `default`. It refuses a missing entry, and a login or password that netrc cannot hold unquoted, without quoting the file. It refuses to write to a terminal, so the key cannot be printed by mistake.
+- The pod side rejects an empty stream, so a failed export installs nothing. It never overwrites an existing `~/.netrc`.
 - The key travels only on stdin. It must never be a command-line argument (visible in `ps`), an environment variable written to a file, part of a run statement or transcript, or committed. Do not `cat`, `echo` or `grep -v` the file on either host.
 - If the pod already has a `~/.netrc`, the step refuses to overwrite it. Merge only the api.wandb.ai entry by hand, then run `chmod 600`.
 - Use the netrc, not `WANDB_API_KEY` in shell profiles or `docker run -e`, so the key never enters logs that capture the environment.
@@ -61,7 +67,7 @@ The operator must also:
 - tell the owner in the same message that reports the launch;
 - once synced (`wandb sync <run_dir>/wandb/offline-run-*`), record the sync and the W&B URL in the run's evidence.
 
-A sync does not change the recorded mode.
+A sync does not change the recorded mode. A resume reopens the saved W&B run ID with `resume="must"`. To resume an offline run online, sync it first; otherwise the online `wandb.init` fails because the run does not exist remotely. To continue the outage deliberately, resume with `--wandb-mode offline`.
 
 ## Launcher contract
 
@@ -80,11 +86,14 @@ Every v3 launcher that runs on a pod uses the same shared path as `run_ppo`, fro
   - `tests/owl/train/test_logging.py` covers the credential lookup (env key, blank key, netrc host and password, `NETRC` and `WANDB_BASE_URL`, and a malformed file whose error does not quote it). It also covers the online, offline and debug gates, the loud banner, the `WANDB_MODE` conflict, attempt planning and receipts, config hashing, and the `kg-v3` init arguments.
   - `tests/scripts/test_run_ppo.py` covers the fail-fast before config load, the offline banner without credentials, the per-mode receipt and the argument rules.
   - Counts are in the Reference [[../references/v3-launchers-fail-fast-without-wandb-credentials|v3 launchers fail fast without W&B credentials]].
-- The step 1 pipeline was simulated on this Mac with a synthetic four-entry netrc, with `sh -c` and a temporary `HOME` standing in for `ssh <pod>`:
-  - the extract kept exactly the api.wandb.ai entry (count 1; no other secret present);
-  - the installed file had mode 600;
-  - a second install refused to overwrite;
-  - `require_wandb_credentials` accepted the installed file.
+- `tests/owl/train/test_logging.py` and `tests/scripts/test_export_wandb_netrc_entry.py` cover the export. The tests use packed, split and conventional layouts with other machines and a `default` entry, a default-only file, unsafe tokens, a missing file, and the terminal refusal.
+- The step 1 pipeline, with the export script, was simulated on this Mac on a synthetic netrc, with `sh -c` and a temporary `HOME` standing in for `ssh <pod>`. The receipt is `ops/rebuild-2026-09-29/wandb-2026-09-29/install-simulation.log`. The simulation checks:
+  - the installed file holds exactly the api.wandb.ai entry, and no other secret;
+  - the file has mode 600;
+  - a second install refuses to overwrite;
+  - an empty stream installs nothing;
+  - `require_wandb_credentials` accepts the installed file.
+- The first r1 version used an `awk` line filter. Codex's `verify-wandb-r1` showed it copying a second credential from a packed line and missing split tokens, so the export script replaced it.
 - On this Mac, step 2's Python check printed `wandb.Api ok, entity: spoon`. A read-only `wandb.Api()` call from this Mac's netrc found the synced BC run `spoon/kg-v3/kvl4rfda`. It is `finished`, with no field recording its offline launch.
 
 ## Limits
