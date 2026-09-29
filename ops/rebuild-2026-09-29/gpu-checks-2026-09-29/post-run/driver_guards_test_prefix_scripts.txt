@@ -1,0 +1,296 @@
+# test_driver_guards.py  utc=2026-09-29T13:24:45Z
+# platform=macOS-26.4-arm64-arm-64bit python=3.12.13
+# test script sha256=4488d985758f6235d1ae875330febd31645cd6f2f351500d2d497639e6234f44
+# driver.py sha256=bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3
+# c1_fp32_ref.py sha256=21028a5707c742698a4b31bdeb36caae58952bd19a413ada031ad40925e68225
+{
+ "check": "driver:phase1_malformed_record",
+ "pass": false,
+ "fails": [
+  "rc=wall_timeout, want 5",
+  "no driver_error for c3_bad (got [])",
+  "running stage c2_long neither cleaned [] nor stopped []",
+  "stage pids alive after the driver exited: [27603, 27602]",
+  "driver did not exit within 60.0 s"
+ ],
+ "rc": "wall_timeout",
+ "elapsed_s": 60.0,
+ "stage_pids_recorded": 2,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_bad",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_long",
+   "status": "launch"
+  }
+ ]
+}
+# driver:phase1_malformed_record: FAIL
+{
+ "check": "driver:phase1_spawn_error",
+ "pass": false,
+ "fails": [
+  "rc=wall_timeout, want 5",
+  "no driver_error for c3_spawn_fail (got [])",
+  "running stage c2_long neither cleaned [] nor stopped []",
+  "no stage_cleanup SIGKILL of c2_long: []",
+  "stage pids alive after the driver exited: [28051, 28050]",
+  "driver did not exit within 60.0 s"
+ ],
+ "rc": "wall_timeout",
+ "elapsed_s": 60.01,
+ "stage_pids_recorded": 2,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_wait",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_long",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_wait",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_spawn_fail",
+   "status": "launch"
+  }
+ ]
+}
+# driver:phase1_spawn_error: FAIL
+{
+ "check": "driver:phase2_malformed_record",
+ "pass": false,
+ "fails": [
+  "rc=1, want 5",
+  "no driver_error for c4_bad (got [])"
+ ],
+ "rc": 1,
+ "elapsed_s": 0.78,
+ "stage_pids_recorded": 0,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.3,
+   "stage": "c4_bad",
+   "status": "launch"
+  }
+ ]
+}
+# driver:phase2_malformed_record: FAIL
+{
+ "check": "driver:complete",
+ "pass": true,
+ "fails": [],
+ "rc": 0,
+ "elapsed_s": 0.77,
+ "stage_pids_recorded": 0,
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.4,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.4,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.4,
+   "stage": "c4_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.7,
+   "stage": "c4_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.7,
+   "status": "driver_done",
+   "exit": 0
+  }
+ ]
+}
+# driver:complete: PASS
+{
+ "check": "c3_values",
+ "pass": false,
+ "fails": [
+  "teacher_self_combined student_values nonfinite not reported ([\"values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 0.13778984546661377, 'nonfinite': 1, 'n': 256}\"])",
+  "teacher_self_combined student_values below_-1 not reported ([\"values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -1.5, 'max': 0.13778984546661377, 'nonfinite': 0, 'n': 256}\"])",
+  "teacher_self_combined student_values above_1 not reported ([\"values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 1.5, 'nonfinite': 0, 'n': 256}\"])",
+  "teacher_self_cached student_values nonfinite not reported ([])",
+  "teacher_self_cached student_values below_-1 not reported ([])",
+  "teacher_self_cached student_values above_1 not reported ([])",
+  "teacher_perturbed_combined student_values nonfinite not reported ([])",
+  "teacher_perturbed_combined student_values below_-1 not reported ([])",
+  "teacher_perturbed_combined student_values above_1 not reported ([])",
+  "teacher_perturbed_cached student_values nonfinite not reported ([\"values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 0.13778984546661377, 'nonfinite': 1, 'n': 256}\"])",
+  "teacher_perturbed_cached student_values below_-1 not reported ([\"values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -1.5, 'max': 0.13778984546661377, 'nonfinite': 0, 'n': 256}\"])",
+  "teacher_perturbed_cached student_values above_1 not reported ([\"values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 1.5, 'nonfinite': 0, 'n': 256}\"])"
+ ],
+ "retained": [
+  {
+   "file": "c3_dense_aten.jsonl",
+   "errors": []
+  },
+  {
+   "file": "c3_dense_default.jsonl",
+   "errors": []
+  },
+  {
+   "file": "c3_mid_aten.jsonl",
+   "errors": []
+  },
+  {
+   "file": "c3_mid_default.jsonl",
+   "errors": []
+  }
+ ],
+ "mutations": [
+  {
+   "path": "teacher_self_combined",
+   "mutation": "nonfinite",
+   "caught": false
+  },
+  {
+   "path": "teacher_self_combined",
+   "mutation": "below_-1",
+   "caught": false
+  },
+  {
+   "path": "teacher_self_combined",
+   "mutation": "above_1",
+   "caught": false
+  },
+  {
+   "path": "teacher_self_cached",
+   "mutation": "nonfinite",
+   "caught": false
+  },
+  {
+   "path": "teacher_self_cached",
+   "mutation": "below_-1",
+   "caught": false
+  },
+  {
+   "path": "teacher_self_cached",
+   "mutation": "above_1",
+   "caught": false
+  },
+  {
+   "path": "teacher_perturbed_combined",
+   "mutation": "nonfinite",
+   "caught": false
+  },
+  {
+   "path": "teacher_perturbed_combined",
+   "mutation": "below_-1",
+   "caught": false
+  },
+  {
+   "path": "teacher_perturbed_combined",
+   "mutation": "above_1",
+   "caught": false
+  },
+  {
+   "path": "teacher_perturbed_cached",
+   "mutation": "nonfinite",
+   "caught": false
+  },
+  {
+   "path": "teacher_perturbed_cached",
+   "mutation": "below_-1",
+   "caught": false
+  },
+  {
+   "path": "teacher_perturbed_cached",
+   "mutation": "above_1",
+   "caught": false
+  }
+ ]
+}
+# c3_values: FAIL
+{
+ "check": "c1_verdict",
+ "pass": false,
+ "fails": [
+  "single erroneous path at median 0 not flagged: []"
+ ],
+ "retained_regenerated": 6,
+ "median0_single": [],
+ "all_zero": []
+}
+# c1_verdict: FAIL
+# overall: FAIL

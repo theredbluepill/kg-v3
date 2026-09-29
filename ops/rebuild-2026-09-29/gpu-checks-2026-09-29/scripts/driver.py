@@ -9,13 +9,22 @@ Phase 2 runs alone on GPU 0 (GPU 1 idle): c4 timing, mid then dense, ATEN.
 Every stage is a fresh subprocess with its own Inductor/Triton cache (the two
 c4 processes share one ATEN cache). The driver stops at the FIRST unexpected
 failure (a non-control stage failing its pre-declared criteria, nonzero exit,
-timeout or a wrong backend record): the other stream's running subprocess is
-terminated and nothing further starts. Control stages never stop it.
+timeout, a wrong backend record, or an exception while the driver starts or
+judges a stage): the other stream's running subprocess is terminated and
+nothing further starts. Control stages never stop it.
 
 Exit codes: 0 every stage ran and every non-control stage passed; 3 a
-non-control stage failed; 4 the internal deadline ran out; 128 + signum the
-driver received SIGTERM, SIGINT or SIGHUP (for example from launch.sh's outer
-`timeout`) and cleaned up.
+non-control stage failed; 4 the internal deadline ran out; 5 the driver raised
+while starting or judging a stage (for example an unreadable backend record or
+a failed process launch); 128 + signum the driver received SIGTERM, SIGINT or
+SIGHUP (for example from launch.sh's outer `timeout`) and cleaned up.
+
+Stage exceptions (third post-run revision, after Codex review
+verify-merge-gpu-receipts-r1 finding 1): `stream` catches any exception from
+a stage at the stream boundary, logs `driver_error`, records exit 5, and runs
+the bounded cleanup below. The recorded attempts' driver let such an exception
+end the Phase 1 worker thread silently, so Phase 2 still started and the
+driver returned 0.
 
 Stage cleanup (post-run revision, after Codex review verify-gpu-bundle-r1
 finding 3; the recorded attempts ran the earlier driver, which lacked it):
@@ -197,13 +206,19 @@ def judge_c3(ev: list[dict[str, Any]]) -> list[str]:
         if (r[k]["kl_nonfinite"] or not kl["mean"] > 0 or not kl["mean"] > self_mean
                 or not r[k]["kl_event_min"] >= -1e-4):
             errs.append(f"{k} {kl} self_mean={self_mean} event_min={r[k]['kl_event_min']}")
-    vals = [r["sample"]["values"], r["replay_256"]["values"], r["replay_1024"]["values"],
-            r["compute_value_256"]["values"]]
-    vals += [r[k]["student_values"] for k in ("teacher_self_combined",
-                                              "teacher_perturbed_cached")]
-    for v in vals:
+    vals = [("sample", r["sample"]["values"]), ("replay_256", r["replay_256"]["values"]),
+            ("replay_1024", r["replay_1024"]["values"]),
+            ("compute_value_256", r["compute_value_256"]["values"])]
+    # All four teacher paths (post-run revision, after Codex review
+    # verify-merge-gpu-receipts-r1 finding 2; the as-run judge checked only
+    # teacher_self_combined and teacher_perturbed_cached).
+    vals += [(k, r[k]["student_values"]) for k in ("teacher_self_combined",
+                                                   "teacher_self_cached",
+                                                   "teacher_perturbed_combined",
+                                                   "teacher_perturbed_cached")]
+    for k, v in vals:
         if v["nonfinite"] or v["min"] < -1 - 1e-6 or v["max"] > 1 + 1e-6:
-            errs.append(f"values {v}")
+            errs.append(f"{k} values {v}")
     lb = r["loss_backward_1024"]
     if lb["grad_nonfinite"] or lb["loss"] != lb["loss"] or abs(lb["loss"]) == float("inf"):
         errs.append(f"loss_backward {lb}")
@@ -447,7 +462,17 @@ class Driver:
 
     def stream(self, stages: list[Stage], gpu: int) -> None:
         for stage in stages:
-            self.run_stage(stage, gpu)
+            try:
+                self.run_stage(stage, gpu)
+            except Exception as exc:  # noqa: BLE001 - the stream boundary
+                # An exception here would otherwise end a Phase 1 worker
+                # thread silently (Phase 2 would still start, exit 0) or
+                # unwind main() in Phase 2. Stop, and terminate every group.
+                self.log({"stage": stage[0], "gpu": gpu, "status": "driver_error",
+                          "error": f"{type(exc).__name__}: {exc}"[:400]})
+                self.fail(5)
+                self.cleanup(f"driver_error {stage[0]}")
+                return
 
     def main(self) -> int:
         self.install_cleanup()

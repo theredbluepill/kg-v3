@@ -1,12 +1,15 @@
 ---
 type: "Reference"
 title: "Kaggriculture teacher distills per-slot KL and per-seat winner CE"
-description: "Phases 4.1-4.3 on CPU: replay-conditioned per-slot masked logits and a liveness-weighted per-slot KL(teacher || student), cached as KaggricultureTeacherTargets (102,208 B per seat row) with a grammar signature, a cached path bit-for-bit equal to the combined path, a live-seat-mean winner CE owned by the model, stateless PPO teacher dispatch and teacher/cache_bytes; eleven killed mutations. Phase 4 is not complete: the trainer and run_ppo launch/resume tests are written but skipped (the launch/resume pair dry-run with config validation bypassed); after the integration merge an unskipped probe still fails all four on the missing Task 3.1 trainer observation mapping and run_ppo's no-env stop (configs and value-mode guards have landed), and 4.4 is not done though its configs prerequisite has merged."
+description: "Phases 4.1-4.3 on CPU: replay-conditioned per-slot masked logits and a liveness-weighted per-slot KL(teacher || student), cached as KaggricultureTeacherTargets (102,208 B per seat row) with a grammar signature, a cached path bit-for-bit equal to the combined path, a live-seat-mean winner CE owned by the model, stateless PPO teacher dispatch and teacher/cache_bytes; eleven killed mutations. Phase 4 is not complete: the trainer and run_ppo launch/resume tests are written but skipped (the launch/resume pair dry-run with config validation bypassed); after the integration merge an unskipped probe still fails all four on the missing Task 3.1 trainer observation mapping and run_ppo's no-env stop (configs and value-mode guards have landed), and 4.4 is not done though its configs prerequisite has merged. A later GPU component bundle at 8fde43c (synthetic inputs, fresh weights, BF16 and compiled trunk) found self KL near zero, perturbed KL positive, cached and combined paths bit-identical and a finite teacher-term loss backward, and timed target precompute; cross-chunk/minibatch equality, multi-rank and full trainer integration stay open."
 tags: ["kaggriculture-v3", "model", "training", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
 sources:
   - resource: "repository:python/owl/model/kaggriculture_actor.py"
+  - resource: "repository:ops/rebuild-2026-09-29/gpu-checks-2026-09-29/README.md"
+  - resource: "repository:ops/rebuild-2026-09-29/gpu-checks-2026-09-29/summary.json"
+  - resource: "repository:ops/rebuild-2026-09-29/results.md"
   - resource: "repository:python/owl/model/kaggriculture.py"
   - resource: "repository:python/owl/model/actor/common.py"
   - resource: "repository:python/owl/model/kaggriculture_teacher.py"
@@ -144,14 +147,18 @@ The estimator is Isaiah's: teacher-forced conditionals at the behavior policy's 
 
 ## Limits and gaps
 
-- Everything ran on CPU with tiny models and the synthetic grammar tables (Task 1.4 binding pending). BF16, compile on CUDA and GPU memory/time are unmeasured.
+- The Phase 4.1–4.3 checks above ran on CPU with tiny models and the synthetic grammar tables (Task 1.4 binding pending).
+- **Later GPU component evidence** (GPU checks bundle at `8fde43c`, one RTX PRO 6000; `ops/rebuild-2026-09-29/results.md`, "GPU checks bundle (component)", checks 3 and 4; evidence in `gpu-checks-2026-09-29/`). Preset model with fresh weights, synthetic observations and grammar tables, BF16 autocast and the compiled trunk:
+  - **C3 smoke** (mid and dense, ATEN-only and default GEMM backends): self KL per-row mean 1.4e-7–9.8e-7 and max ≤ 8.3e-6; a +5 % noise copy gave positive finite KL (per-row mean 7.1e-5 mid, 5.4e-4 dense); cached and combined paths bit-identical for self and perturbed teachers, with targets and replay on the same 256-row batch; a 1,024-row PPO-shaped loss with both teacher terms gave a finite loss and 210/210 finite gradients. The executed value term there was 0.25·MSE, not the declared 0.5·MSE.
+  - **C4 timing** (ATEN-only): `compute_teacher_distillation_targets` on a rank's rollout took 1,012 ms (mid) and 1,741 ms (dense) at 16,384 rows, with trunk chunk counts matching the guard; model-only component timing.
+  - The small fresh-weight head gain does not qualify the KL or log-ratio margins for trained policies.
 - The per-seat KL sums up to 241 × 5 + 11 × 4 conditional KLs with Isaiah's coefficient 0.005. This scale difference is recorded, not tuned.
 - The grammar digest is taken at construction. An in-place edit of a table buffer after that would not change the signature; the combined path (4.3) also compares tables with `torch.equal`.
-- The cache estimate (1.56 GiB per 2-rank rollout) is arithmetic; GPU peak allocated and reserved memory are unmeasured until Task 6.1.
+- The cache estimate (1.56 GiB per 2-rank rollout) is arithmetic. C4 recorded component peaks at the 2-rank shape (40.70 GiB allocated in the dense cached-teacher PPO step, 69.21 GiB reserved in mid target precompute), but not the cache's own footprint or a trainer-integrated rollout; those wait for Task 6.1.
 - **Phase 4 is not complete** (brief §6, review P2-4). The integration merge (base `b8747b6`, with Tasks 3.1 model side, 3.2/3.3, 3.4 configs and 1.3) landed the configs and the Task 3.2 value-mode guards, so neither is an open dependency. What remains:
   - **T18** (trainer: one precompute under `no_grad`, `teacher/kl`, `teacher/cache_bytes`, coefficients, zero first-minibatch KL for a copy at learning rate 0) and the **trainer-checkpoint test** are written, skipped (`NEEDS_TRAINER_SEAM`) and have never run. They wait for the Task 3.1 trainer seam (Kaggriculture rollout storage and action mapping in `ppo.py`).
   - **T19b's launch/resume pair** is written and was dry-run with config validation bypassed, but is skipped (`NEEDS_RUN_PPO_GAME_SEAM`) until the Task 3.1 run_ppo game seam and the Task 1.4 native env let `run_ppo` build a Kaggriculture environment. The seam may move the env patch point.
   - **Probe after the merge** (`merge-teacher/skip-probe.log`): with the skip marks removed, T18 and the trainer-checkpoint test fail with `TypeError` because `ppo.py` has no mapping for `KaggricultureActionMask`; the launch/resume pair passes the workload headroom check, then fails on run_ppo's explicit "cannot run Kaggriculture yet" stop. Behavior past those first failures is unverified.
   - **Task 4.4** (configs) has not been done. Its stated prerequisite, the configs merge, is satisfied; `TEACHER_TARGET_BYTES_PER_ROW` and its pinned totals are ready for it.
 - The `teacher/cache_bytes` metric is this rank's value, not reduced across ranks.
-- Real multi-rank, BF16 autocast and compiled replay equality of teacher targets across the teacher chunk and the minibatch are unverified until Phase 6.
+- Equality of teacher targets across the teacher chunk and the minibatch under BF16 autocast and the compiled trunk, real multi-rank runs and full trainer integration are unverified until Phase 6. The C3 cached-versus-combined equality used one batch for both.

@@ -1,0 +1,33 @@
+{
+  "refs": {
+    "base": "HEAD^1",
+    "gpu": "HEAD^2",
+    "head": "HEAD",
+    "ancestor": "a78f609e36d40d5254ff909066fe837f2d2540be"
+  },
+  "changed_count": 113,
+  "added_count": 112,
+  "modified_count": 1,
+  "outside_ops": [],
+  "incoming_diff_from_head": [],
+  "base_removed_lines": 0,
+  "test_names": {
+    "base": 1253,
+    "gpu": 771,
+    "head": 1253
+  },
+  "missing_base_tests": [],
+  "missing_gpu_tests": [
+    "tests/kaggriculture/test_model_encoder.py:test_every_api_rejects_hidden_state_and_heads_are_deferred",
+    "tests/kaggriculture/test_model_encoder.py:test_kmax_is_max_of_embed_and_mlp_hidden",
+    "tests/kaggriculture/test_model_encoder.py:test_packed_overflow_boundary_rejects_before_trunk"
+  ],
+  "new_since_base_tests": [],
+  "results_byte_identical_gpu": true,
+  "inherited_test_replacements": {
+    "test_every_api_rejects_hidden_state_and_heads_are_deferred": "test_every_api_rejects_hidden_state (Task 2.3 heads implemented; hidden-state rejection retained, dones rejection added)",
+    "test_kmax_is_max_of_embed_and_mlp_hidden": "test_trunk_gemm_width_matches_every_block_linear + test_preset_trunk_gemm_width (enumerates all actual Linear in/out widths)",
+    "test_packed_overflow_boundary_rejects_before_trunk": "test_packed_path_chunks_at_the_overflow_boundary + chunk order/equality/unfittable-row tests (Task 2.3 changed reject to safe row chunks)"
+  },
+  "test_replacement_scope": "All three replacements already in base; entire tests/ unchanged by this merge."
+}

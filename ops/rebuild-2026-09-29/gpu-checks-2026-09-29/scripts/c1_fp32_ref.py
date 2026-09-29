@@ -148,7 +148,13 @@ def verdict(paths: dict[str, dict[str, Any]]) -> dict[str, Any]:
                        "ratio_to_median": {p: (v / med if med else None)
                                            for p, v in vals.items()}}
         if metric != "max_abs":
-            flagged += [f"{p}:{metric}" for p, v in vals.items() if med and v > 2 * med]
+            # Applied at median 0 too (post-run revision, after Codex review
+            # verify-merge-gpu-receipts-r1 finding 3): the as-run `med and`
+            # guard let one erroneous path beside two exact ones read
+            # "similar". Only ratio_to_median needs the zero guard. Every
+            # retained attempt 2 median is positive, so no recorded verdict
+            # changes.
+            flagged += [f"{p}:{metric}" for p, v in vals.items() if v > 2 * med]
     out["flagged"] = flagged
     out["result"] = "path_specific" if flagged else "similar"
     return out

@@ -1,0 +1,132 @@
+{"probe": "baseline:c1_aten", "passed": true, "detail": []}
+{"probe": "baseline:c1_default", "passed": true, "detail": []}
+{"probe": "baseline:c2_aten_bwd", "passed": true, "detail": []}
+{"probe": "baseline:c3_mid_aten", "passed": true, "detail": []}
+{"probe": "baseline:c3_dense_aten", "passed": true, "detail": []}
+{"probe": "baseline:c3_mid_default", "passed": true, "detail": []}
+{"probe": "baseline:c3_dense_default", "passed": true, "detail": []}
+{"probe": "baseline:c4_mid_aten", "passed": true, "detail": []}
+{"probe": "baseline:c4_dense_aten", "passed": true, "detail": []}
+{"probe": "c1:empty", "passed": true, "detail": null}
+{"probe": "c2:empty", "passed": true, "detail": null}
+{"probe": "c3:empty", "passed": true, "detail": null}
+{"probe": "c4:empty", "passed": true, "detail": null}
+{"probe": "c1_aten:ref_nonfinite", "passed": true, "detail": ["mid: fp32 reference non-finite 1"]}
+{"probe": "c1_aten:vs_fp32.compiled.nonfinite", "passed": true, "detail": ["mid: compiled non-finite 1"]}
+{"probe": "c1_aten:vs_fp32.eager.nonfinite", "passed": true, "detail": ["mid: eager non-finite 1"]}
+{"probe": "c1_aten:vs_fp32.padded.nonfinite", "passed": true, "detail": ["mid: padded non-finite 1"]}
+{"probe": "c1_aten:compiled_pack_calls", "passed": true, "detail": ["mid: compiled pack calls []"]}
+{"probe": "c1_aten:eager_pack_calls", "passed": true, "detail": ["mid: eager pack calls []"]}
+{"probe": "c1_aten:compiled_use_flash", "passed": true, "detail": ["mid: compiled use_flash [False]"]}
+{"probe": "c1_aten:eager_use_flash", "passed": true, "detail": ["mid: eager use_flash [False]"]}
+{"probe": "c2_aten_bwd:compiled.status", "passed": true, "detail": ["warm dense:8: compiled=error eager=ok"]}
+{"probe": "c2_aten_bwd:eager.status", "passed": true, "detail": ["warm dense:8: compiled=ok eager=error"]}
+{"probe": "c2_aten_bwd:compiled.trunk_call_M", "passed": true, "detail": ["warm dense:8: trunk_call_M []"]}
+{"probe": "c2_aten_bwd:out_compiled_vs_eager.wrong_tokens", "passed": true, "detail": ["warm dense:8: out wrong=1 nonfinite=0"]}
+{"probe": "c2_aten_bwd:out_compiled_vs_eager.nonfinite", "passed": true, "detail": ["warm dense:8: out wrong=0 nonfinite=1"]}
+{"probe": "c2_aten_bwd:dx_compiled_vs_eager.nonfinite", "passed": true, "detail": ["warm dense:8: dx nonfinite=1 tok>0.5=0 masked_nonzero=0 rel_max=0.007978723404255319"]}
+{"probe": "c2_aten_bwd:dx_compiled_vs_eager.tokens_rel_gt_0.5", "passed": true, "detail": ["warm dense:8: dx nonfinite=0 tok>0.5=1 masked_nonzero=0 rel_max=0.007978723404255319"]}
+{"probe": "c2_aten_bwd:dx_compiled_vs_eager.masked_nonzero", "passed": true, "detail": ["warm dense:8: dx nonfinite=0 tok>0.5=0 masked_nonzero=1 rel_max=0.007978723404255319"]}
+{"probe": "c2_aten_bwd:dx_compiled_vs_eager.rel_max", "passed": true, "detail": ["warm dense:8: dx nonfinite=0 tok>0.5=0 masked_nonzero=0 rel_max=None"]}
+{"probe": "c2_aten_bwd:dx_compiled_vs_eager.rel_max", "passed": true, "detail": ["warm dense:8: dx nonfinite=0 tok>0.5=0 masked_nonzero=0 rel_max=0.051"]}
+{"probe": "c2_aten_bwd:params_compiled_vs_eager._missing", "passed": true, "detail": ["warm dense:8: param grads missing ['lost']"]}
+{"probe": "c2_aten_bwd:params_compiled_vs_eager.blocks.0.attn.k.bias.nonfinite", "passed": true, "detail": ["warm dense:8: grad blocks.0.attn.k.bias max(|diff|,|c|,|e|)=0.2037343978881836 > 0.05 x |q.bias grad| 46.75 nonfinite=1"]}
+{"probe": "c2_aten_bwd:params_compiled_vs_eager.blocks.0.attn.k.bias.max_abs_diff", "passed": true, "detail": ["warm dense:8: grad blocks.0.attn.k.bias max(|diff|,|c|,|e|)=100000000.0 > 0.05 x |q.bias grad| 46.75 nonfinite=0"]}
+{"probe": "c2_aten_bwd:params_compiled_vs_eager.blocks.0.attn.k.bias.out_max_abs", "passed": true, "detail": ["warm dense:8: grad blocks.0.attn.k.bias max(|diff|,|c|,|e|)=100000000.0 > 0.05 x |q.bias grad| 46.75 nonfinite=0"]}
+{"probe": "c2_aten_bwd:params_compiled_vs_eager.blocks.0.attn.k.bias.ref_max_abs", "passed": true, "detail": ["warm dense:8: grad blocks.0.attn.k.bias max(|diff|,|c|,|e|)=100000000.0 > 0.05 x |q.bias grad| 46.75 nonfinite=0"]}
+{"probe": "c2_aten_bwd:params_compiled_vs_eager.blocks.0.attn.q.bias.nonfinite", "passed": true, "detail": ["warm dense:8: grad blocks.0.attn.q.bias rel_max=0.006380213890224695 nonfinite=1"]}
+{"probe": "c2_aten_bwd:params_compiled_vs_eager.blocks.0.attn.q.bias.rel_max", "passed": true, "detail": ["warm dense:8: grad blocks.0.attn.q.bias rel_max=0.051 nonfinite=0"]}
+{"probe": "c3_mid_aten:error", "passed": true, "detail": ["error: Injected error"]}
+{"probe": "c3_mid_aten:steps", "passed": true, "detail": ["steps {}"]}
+{"probe": "c3_mid_aten:sample.log_probs.nonfinite", "passed": true, "detail": ["sample log-probs non-finite"]}
+{"probe": "c3_mid_aten:replay_256.logratio_per_row.nonfinite", "passed": true, "detail": ["replay_256 logratio mean=5.21540641784668e-06 nonfinite=1"]}
+{"probe": "c3_mid_aten:replay_256.logratio_per_row.mean", "passed": true, "detail": ["replay_256 logratio mean=0.051 nonfinite=0"]}
+{"probe": "c3_mid_aten:replay_256.logratio_per_row.mean", "passed": true, "detail": ["replay_256 logratio mean=-0.051 nonfinite=0"]}
+{"probe": "c3_mid_aten:replay_1024.logratio_per_row.nonfinite", "passed": true, "detail": ["replay_1024 logratio mean=5.3942203521728516e-06 nonfinite=1"]}
+{"probe": "c3_mid_aten:replay_1024.logratio_per_row.mean", "passed": true, "detail": ["replay_1024 logratio mean=0.051 nonfinite=0"]}
+{"probe": "c3_mid_aten:replay_1024.logratio_per_row.mean", "passed": true, "detail": ["replay_1024 logratio mean=-0.051 nonfinite=0"]}
+{"probe": "c3_mid_aten:replay_256.new_logp_nonfinite", "passed": true, "detail": ["replay_256 logratio mean=5.21540641784668e-06 nonfinite=0"]}
+{"probe": "c3_mid_aten:replay_1024.new_logp_nonfinite", "passed": true, "detail": ["replay_1024 logratio mean=5.3942203521728516e-06 nonfinite=0"]}
+{"probe": "c3_mid_aten:teacher_self_combined.kl_nonfinite", "passed": true, "detail": ["teacher_self_combined {'mean': 1.4018246474734042e-07, 'abs_mean': 6.903219968990015e-07, 'abs_max': 2.8133968044130597e-06, 'min': -2.2294912014331203e-06, 'max': 2.8133968044130597e-06, 'nonfinite': 0, 'n': 256} event_min=-3.752365955733694e-07"]}
+{"probe": "c3_mid_aten:teacher_self_cached.kl_nonfinite", "passed": true, "detail": ["teacher_self_cached {'mean': 1.4018246474734042e-07, 'abs_mean': 6.903219968990015e-07, 'abs_max': 2.8133968044130597e-06, 'min': -2.2294912014331203e-06, 'max': 2.8133968044130597e-06, 'nonfinite': 0, 'n': 256} event_min=-3.752365955733694e-07"]}
+{"probe": "c3_mid_aten:teacher_perturbed_combined.kl_nonfinite", "passed": true, "detail": ["teacher_perturbed_combined {'mean': 7.119655492715538e-05, 'abs_mean': 7.119655492715538e-05, 'abs_max': 0.00010156865755561739, 'min': 4.528899444267154e-05, 'max': 0.00010156865755561739, 'nonfinite': 0, 'n': 256} self_mean=1.4018246474734042e-07 event_min=-9.482118912274018e-08"]}
+{"probe": "c3_mid_aten:teacher_perturbed_cached.kl_nonfinite", "passed": true, "detail": ["teacher_perturbed_cached {'mean': 7.119655492715538e-05, 'abs_mean': 7.119655492715538e-05, 'abs_max': 0.00010156865755561739, 'min': 4.528899444267154e-05, 'max': 0.00010156865755561739, 'nonfinite': 0, 'n': 256} self_mean=1.4018246474734042e-07 event_min=-9.482118912274018e-08"]}
+{"probe": "c3_mid_aten:teacher_self_combined.kl_per_row.mean", "passed": true, "detail": ["teacher_self_combined {'mean': 0.0011, 'abs_mean': 6.903219968990015e-07, 'abs_max': 2.8133968044130597e-06, 'min': -2.2294912014331203e-06, 'max': 2.8133968044130597e-06, 'nonfinite': 0, 'n': 256} event_min=-3.752365955733694e-07", "teacher_perturbed_combined {'mean': 7.119655492715538e-05, 'abs_mean': 7.119655492715538e-05, 'abs_max': 0.00010156865755561739, 'min': 4.528899444267154e-05, 'max': 0.00010156865755561739, 'nonfinite': 0, 'n': 256} self_mean=0.0011 event_min=-9.482118912274018e-08"]}
+{"probe": "c3_mid_aten:teacher_self_combined.kl_per_row.max", "passed": true, "detail": ["teacher_self_combined {'mean': 1.4018246474734042e-07, 'abs_mean': 6.903219968990015e-07, 'abs_max': 2.8133968044130597e-06, 'min': -2.2294912014331203e-06, 'max': 0.0101, 'nonfinite': 0, 'n': 256} event_min=-3.752365955733694e-07"]}
+{"probe": "c3_mid_aten:teacher_self_cached.kl_per_row.mean", "passed": true, "detail": ["teacher_self_cached {'mean': 0.0011, 'abs_mean': 6.903219968990015e-07, 'abs_max': 2.8133968044130597e-06, 'min': -2.2294912014331203e-06, 'max': 2.8133968044130597e-06, 'nonfinite': 0, 'n': 256} event_min=-3.752365955733694e-07", "teacher_perturbed_cached {'mean': 7.119655492715538e-05, 'abs_mean': 7.119655492715538e-05, 'abs_max': 0.00010156865755561739, 'min': 4.528899444267154e-05, 'max': 0.00010156865755561739, 'nonfinite': 0, 'n': 256} self_mean=0.0011 event_min=-9.482118912274018e-08"]}
+{"probe": "c3_mid_aten:teacher_self_cached.kl_per_row.max", "passed": true, "detail": ["teacher_self_cached {'mean': 1.4018246474734042e-07, 'abs_mean': 6.903219968990015e-07, 'abs_max': 2.8133968044130597e-06, 'min': -2.2294912014331203e-06, 'max': 0.0101, 'nonfinite': 0, 'n': 256} event_min=-3.752365955733694e-07"]}
+{"probe": "c3_mid_aten:teacher_perturbed_combined.kl_per_row.mean", "passed": true, "detail": ["teacher_perturbed_combined {'mean': 0, 'abs_mean': 7.119655492715538e-05, 'abs_max': 0.00010156865755561739, 'min': 4.528899444267154e-05, 'max': 0.00010156865755561739, 'nonfinite': 0, 'n': 256} self_mean=1.4018246474734042e-07 event_min=-9.482118912274018e-08"]}
+{"probe": "c3_mid_aten:teacher_perturbed_cached.kl_per_row.mean", "passed": true, "detail": ["teacher_perturbed_cached {'mean': 0, 'abs_mean': 7.119655492715538e-05, 'abs_max': 0.00010156865755561739, 'min': 4.528899444267154e-05, 'max': 0.00010156865755561739, 'nonfinite': 0, 'n': 256} self_mean=1.4018246474734042e-07 event_min=-9.482118912274018e-08"]}
+{"probe": "c3_mid_aten:teacher_self_combined.kl_event_min", "passed": true, "detail": ["teacher_self_combined {'mean': 1.4018246474734042e-07, 'abs_mean': 6.903219968990015e-07, 'abs_max': 2.8133968044130597e-06, 'min': -2.2294912014331203e-06, 'max': 2.8133968044130597e-06, 'nonfinite': 0, 'n': 256} event_min=-0.00011"]}
+{"probe": "c3_mid_aten:teacher_self_cached.kl_event_min", "passed": true, "detail": ["teacher_self_cached {'mean': 1.4018246474734042e-07, 'abs_mean': 6.903219968990015e-07, 'abs_max': 2.8133968044130597e-06, 'min': -2.2294912014331203e-06, 'max': 2.8133968044130597e-06, 'nonfinite': 0, 'n': 256} event_min=-0.00011"]}
+{"probe": "c3_mid_aten:teacher_perturbed_combined.kl_event_min", "passed": true, "detail": ["teacher_perturbed_combined {'mean': 7.119655492715538e-05, 'abs_mean': 7.119655492715538e-05, 'abs_max': 0.00010156865755561739, 'min': 4.528899444267154e-05, 'max': 0.00010156865755561739, 'nonfinite': 0, 'n': 256} self_mean=1.4018246474734042e-07 event_min=-0.00011"]}
+{"probe": "c3_mid_aten:teacher_perturbed_cached.kl_event_min", "passed": true, "detail": ["teacher_perturbed_cached {'mean': 7.119655492715538e-05, 'abs_mean': 7.119655492715538e-05, 'abs_max': 0.00010156865755561739, 'min': 4.528899444267154e-05, 'max': 0.00010156865755561739, 'nonfinite': 0, 'n': 256} self_mean=1.4018246474734042e-07 event_min=-0.00011"]}
+{"probe": "c3_mid_aten:loss_backward_1024.grad_nonfinite", "passed": true, "detail": ["loss_backward {'loss': -1.551413893699646, 'pg': 0.008936865255236626, 'v_loss': 0.16520848870277405, 'entropy': 164.64097595214844, 'teacher_kl': 7.119301153579727e-05, 'teacher_value_ce': 0.6908786296844482, 'params_with_grad': 210, 'params_total': 210, 'grad_nonfinite': 1, 'grad_norm': 3.520359992980957}"]}
+{"probe": "c3_mid_aten:loss_backward_1024.loss", "passed": true, "detail": ["loss_backward {'loss': nan, 'pg': 0.008936865255236626, 'v_loss': 0.16520848870277405, 'entropy': 164.64097595214844, 'teacher_kl': 7.119301153579727e-05, 'teacher_value_ce': 0.6908786296844482, 'params_with_grad': 210, 'params_total': 210, 'grad_nonfinite': 0, 'grad_norm': 3.520359992980957}"]}
+{"probe": "c3_mid_aten:loss_backward_1024.loss", "passed": true, "detail": ["loss_backward {'loss': inf, 'pg': 0.008936865255236626, 'v_loss': 0.16520848870277405, 'entropy': 164.64097595214844, 'teacher_kl': 7.119301153579727e-05, 'teacher_value_ce': 0.6908786296844482, 'params_with_grad': 210, 'params_total': 210, 'grad_nonfinite': 0, 'grad_norm': 3.520359992980957}"]}
+{"probe": "c3_mid_aten:use_flash_attn_all_true", "passed": true, "detail": ["flash=False compiled_calls=11"]}
+{"probe": "c3_mid_aten:compiled_trunk_calls", "passed": true, "detail": ["flash=True compiled_calls=0"]}
+{"probe": "c3_mid_aten:sample.values.nonfinite", "passed": true, "detail": ["values {'mean': -0.028800293803215027, 'abs_mean': 0.05561606213450432, 'abs_max': 0.20599418878555298, 'min': -0.20599418878555298, 'max': 0.13778984546661377, 'nonfinite': 1, 'n': 256}"]}
+{"probe": "c3_mid_aten:sample.values.min", "passed": true, "detail": ["values {'mean': -0.028800293803215027, 'abs_mean': 0.05561606213450432, 'abs_max': 0.20599418878555298, 'min': -1.01, 'max': 0.13778984546661377, 'nonfinite': 0, 'n': 256}"]}
+{"probe": "c3_mid_aten:sample.values.max", "passed": true, "detail": ["values {'mean': -0.028800293803215027, 'abs_mean': 0.05561606213450432, 'abs_max': 0.20599418878555298, 'min': -0.20599418878555298, 'max': 1.01, 'nonfinite': 0, 'n': 256}"]}
+{"probe": "c3_mid_aten:replay_256.values.nonfinite", "passed": true, "detail": ["values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 0.13778984546661377, 'nonfinite': 1, 'n': 256}"]}
+{"probe": "c3_mid_aten:replay_256.values.min", "passed": true, "detail": ["values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -1.01, 'max': 0.13778984546661377, 'nonfinite': 0, 'n': 256}"]}
+{"probe": "c3_mid_aten:replay_256.values.max", "passed": true, "detail": ["values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 1.01, 'nonfinite': 0, 'n': 256}"]}
+{"probe": "c3_mid_aten:replay_1024.values.nonfinite", "passed": true, "detail": ["values {'mean': -0.028428630903363228, 'abs_mean': 0.056125253438949585, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 0.13778984546661377, 'nonfinite': 1, 'n': 1024}"]}
+{"probe": "c3_mid_aten:replay_1024.values.min", "passed": true, "detail": ["values {'mean': -0.028428630903363228, 'abs_mean': 0.056125253438949585, 'abs_max': 0.2022506594657898, 'min': -1.01, 'max': 0.13778984546661377, 'nonfinite': 0, 'n': 1024}"]}
+{"probe": "c3_mid_aten:replay_1024.values.max", "passed": true, "detail": ["values {'mean': -0.028428630903363228, 'abs_mean': 0.056125253438949585, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 1.01, 'nonfinite': 0, 'n': 1024}"]}
+{"probe": "c3_mid_aten:compute_value_256.values.nonfinite", "passed": true, "detail": ["values {'mean': -0.028800293803215027, 'abs_mean': 0.05561606213450432, 'abs_max': 0.20599418878555298, 'min': -0.20599418878555298, 'max': 0.13778984546661377, 'nonfinite': 1, 'n': 256}"]}
+{"probe": "c3_mid_aten:compute_value_256.values.min", "passed": true, "detail": ["values {'mean': -0.028800293803215027, 'abs_mean': 0.05561606213450432, 'abs_max': 0.20599418878555298, 'min': -1.01, 'max': 0.13778984546661377, 'nonfinite': 0, 'n': 256}"]}
+{"probe": "c3_mid_aten:compute_value_256.values.max", "passed": true, "detail": ["values {'mean': -0.028800293803215027, 'abs_mean': 0.05561606213450432, 'abs_max': 0.20599418878555298, 'min': -0.20599418878555298, 'max': 1.01, 'nonfinite': 0, 'n': 256}"]}
+{"probe": "c3_mid_aten:teacher_self_combined.student_values.nonfinite", "passed": true, "detail": ["values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 0.13778984546661377, 'nonfinite': 1, 'n': 256}"]}
+{"probe": "c3_mid_aten:teacher_self_combined.student_values.min", "passed": true, "detail": ["values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -1.01, 'max': 0.13778984546661377, 'nonfinite': 0, 'n': 256}"]}
+{"probe": "c3_mid_aten:teacher_self_combined.student_values.max", "passed": true, "detail": ["values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 1.01, 'nonfinite': 0, 'n': 256}"]}
+{"probe": "c3_mid_aten:teacher_perturbed_cached.student_values.nonfinite", "passed": true, "detail": ["values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 0.13778984546661377, 'nonfinite': 1, 'n': 256}"]}
+{"probe": "c3_mid_aten:teacher_perturbed_cached.student_values.min", "passed": true, "detail": ["values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -1.01, 'max': 0.13778984546661377, 'nonfinite': 0, 'n': 256}"]}
+{"probe": "c3_mid_aten:teacher_perturbed_cached.student_values.max", "passed": true, "detail": ["values {'mean': -0.02844388410449028, 'abs_mean': 0.05610999837517738, 'abs_max': 0.2022506594657898, 'min': -0.2022506594657898, 'max': 1.01, 'nonfinite': 0, 'n': 256}"]}
+{"probe": "c4_mid_aten:use_flash_attn_all_true", "passed": true, "detail": ["r8_A_rollout_64 flash not all true"]}
+{"probe": "c4_mid_aten:pack_calls_per_iter", "passed": true, "detail": ["r8_A_rollout_64 chunks 999 != 1"]}
+{"probe": "c4:B_loss", "passed": true, "detail": null}
+{"probe": "c4:no_derived", "passed": true, "detail": null}
+{"probe": "c1:comparison_outlier", "passed": true, "detail": null}
+{"probe": "c1:masked_nan_ignored", "passed": true, "detail": null}
+{"probe": "c1:valid_nan_seen", "passed": true, "detail": null}
+{"probe": "c1:2x_median_mean_abs", "passed": true, "detail": null}
+{"probe": "c1:2x_median_outside_tol_frac", "passed": true, "detail": null}
+{"probe": "c1:jaccard", "passed": true, "detail": null}
+{"probe": "c2:output_wrong_token", "passed": true, "detail": null}
+{"probe": "c2:output_nan", "passed": true, "detail": null}
+{"probe": "c2:dx_token_relative", "passed": true, "detail": null}
+{"probe": "c2:dx_masked_nonzero", "passed": true, "detail": null}
+{"probe": "c2:dx_nonfinite", "passed": true, "detail": null}
+{"probe": "c2:param_relative", "passed": true, "detail": null}
+{"probe": "c2:param_nonfinite", "passed": true, "detail": null}
+{"probe": "c2:param_missing", "passed": true, "detail": null}
+{"probe": "c2:invalid_mask", "passed": true, "detail": null}
+{"probe": "c2:packed_mask", "passed": true, "detail": null}
+{"probe": "c3:stats_nonfinite", "passed": true, "detail": null}
+{"probe": "templates:extern", "passed": true, "detail": null}
+{"probe": "templates:template_defs_launches", "passed": true, "detail": null}
+{"probe": "templates:marker:decompose_k", "passed": true, "detail": null}
+{"probe": "templates:marker:persistent_tma", "passed": true, "detail": null}
+{"probe": "templates:marker:contiguous_subgraph", "passed": true, "detail": null}
+{"probe": "templates:marker:triton_mm_kernel_name", "passed": true, "detail": null}
+wrote summary.json
+{"probe": "summary:byte_exact_regeneration", "passed": true, "detail": null}
+{"probe": "summary:format_guard", "passed": true, "detail": null}
+{"probe": "summary:scaling_efficiency", "passed": true, "detail": null}
+{"probe": "common:CUDA_required", "passed": true, "detail": null}
+{"probe": "common:compile:0:True", "passed": true, "detail": null}
+{"probe": "common:compile:1:False", "passed": true, "detail": null}
+{"probe": "common:force_flash", "passed": true, "detail": null}
+/Users/poonszesen/kg-v3-m-gpu-receipts/.venv/lib/python3.12/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/Context.cpp:85.)
+  return torch._C._get_cublas_allow_tf32()
+{"probe": "common:wrong_tree", "passed": true, "detail": "model imported from the wrong tree: /wrong/tree/kaggriculture.py"}
+{"probe": "common:wrong_head", "passed": true, "detail": "pod HEAD bad != 8fde43cd7408c9c4f9147eeb8f916bd08f8266ed"}
+{"probe": "common:missing_flash", "passed": true, "detail": "flash-attn is not importable"}
+{"probe": "wrapper:environment", "passed": true, "detail": "TORCHINDUCTOR_MAX_AUTOTUNE_GEMM_BACKENDS must be unset\n"}
+{"probe": "wrapper:separator", "passed": true, "detail": "usage: gemm_backend_wrap.py --backends B --record R -- SCRIPT ...\n"}
+{"probe": "wrapper:backend_choice", "passed": true, "detail": "usage: gemm_backend_wrap.py [-h] --backends {default,ATEN} --record RECORD\ngemm_backend_wrap.py: error: argument --backends: invalid choice: 'INVALID' (choose from default, ATEN)\n"}
+GAPS [{"probe": "c3_unchecked_teacher_self_cached_values", "survived": true}, {"probe": "c3_unchecked_teacher_perturbed_combined_values", "survived": true}, {"probe": "c1_zero_median", "survived": true}]
+{"probe": "scratch:restored_byte_exact", "passed": true, "detail": []}
+SUMMARY 127 passed 127 failed 0

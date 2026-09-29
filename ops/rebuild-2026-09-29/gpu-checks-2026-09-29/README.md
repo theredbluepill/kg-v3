@@ -34,10 +34,10 @@ The aggregate driver wall was 535 s, against the 60-min limit. Attempt 1 stopped
 
 ## Files
 
-- `scripts/`: the committed scripts. All are the attempt 2 versions except `driver.py` and `launch.sh`, which were revised after the run (see "Post-run corrections"), and `test_driver_cleanup.py`, which was added then. `pod/attempt{1,2}/` hold the scripts as run (sha256 in `receipts/scripts.sha256`), the logs, JSONL records, backend records, `template_census.*` and receipts.
+- `scripts/`: the committed scripts. All are the attempt 2 versions except `driver.py`, `launch.sh` and `c1_fp32_ref.py`, which were revised after the run (see "Post-run corrections"), and `test_driver_cleanup.py` and `test_driver_guards.py`, which were added then. `pod/attempt{1,2}/` hold the scripts as run (sha256 in `receipts/scripts.sha256`), the logs, JSONL records, backend records, `template_census.*` and receipts.
 - `pod/attempt2/c1_*.outliers.json`: every outlier coordinate (row, token, channel) per density and path.
 - `summarize.py` → `summary.json`: every number quoted in `results.md`, computed from the retained records. The `c1_channels` and `c4_scaling` sections were added after the Codex review; the earlier sections are unchanged.
-- `post-run/`: the key-bias CPU check, the post-copy idle/git capture and the local driver-cleanup test output (`driver_cleanup_test_local.txt`).
+- `post-run/`: the key-bias CPU check, the post-copy idle/git capture, the local driver-cleanup test outputs (`driver_cleanup_test_local.txt`; `driver_cleanup_test_local_r3.txt` against the third driver revision) and the driver/judge guard test outputs (`driver_guards_test_local.txt`; `driver_guards_test_prefix_scripts.txt` against the pre-revision scripts).
 - Not copied: the Inductor/Triton caches (the pod run dir is 977 MB) and attempt 2's `receipts/compile_caches.sha256`, which is 4,123,148 B and over the 1 MB rule (sha256 `52b8e71ad24197ccb3d0b8b4fc55b2dd7efcfd8d6443c3a4cb2c30e7a5323eb9`, 22,125 lines). Both remain on the pod under `/workspace/kg-v3-rebuild/runs/gpu-checks-2026-09-29/`. Attempt 1's cache hash list (865 kB) is included.
 - `MANIFEST.sha256`: sha256 of every file here.
 
@@ -55,3 +55,15 @@ The aggregate driver wall was 535 s, against the 60-min limit. Attempt 1 stopped
     - `test_driver_cleanup.py` adds two deterministic scenarios: `new_spawn_after_popen` (a trace hook sends SIGTERM on the first driver line where the new stage exists unregistered) and `new_spawn_in_popen` (SIGTERM sent from inside the `Popen` call after the child started). Both check that the stage was unregistered when signalled, the driver logged a cleanup of it, exited 143 and left 0 survivors, and the next stage never launched.
     - Against the previous revision (driver sha256 `e0876f73…182a`), both new scenarios FAIL with 2 surviving stage processes each; the other four pass. With the current driver (`bc89e861…9ba3`), all six pass (`post-run/driver_cleanup_test_local.txt`, test sha256 `d6e3c601…f4ae5e`). Phase 1 worker-thread spawn races have no dedicated deterministic scenario.
   - Output: `post-run/driver_cleanup_test_local.txt`. The revised driver has not run on the pod or under GNU `timeout`.
+
+## Post-run corrections, third revision (2026-09-29, after Codex review `verify-merge-gpu-receipts-r1`)
+
+The as-run scripts in `pod/attempt{1,2}/` and every retained record are unchanged. None of these defects fired in either attempt: attempt 2's four C3 records pass the four-path value check, and all six retained C1 verdicts have positive medians and regenerate identically under the revised classifier.
+
+- **Stage exceptions (finding 1).** An exception while the driver started or judged a stage (malformed backend JSON, a failed `Popen`) ended a Phase 1 worker thread silently: Phase 2 still launched and the driver returned 0. In Phase 2 it unwound `main()` (exit 1). `Driver.stream` now catches it at the stream boundary, logs `driver_error`, sets exit **5**, and runs the bounded `cleanup` (SIGTERM, 8 s, SIGKILL, 4 s) over every started group, so nothing further starts.
+- **C3 value guard (finding 2).** `judge_c3` checked student values on only two of the four teacher paths. It now checks `teacher_self_combined`, `teacher_self_cached`, `teacher_perturbed_combined` and `teacher_perturbed_cached`, and each error names its path.
+- **C1 classifier (finding 3).** `verdict` skipped the `> 2 × median` test when the median was 0, so one erroneous path beside two exact ones read "similar". The test now applies at median 0; only `ratio_to_median` keeps the zero guard.
+- `scripts/test_driver_guards.py` (no GPU; dummy stages as in the cleanup test) covers all three. Driver scenarios: Phase 1 malformed record, Phase 1 spawn `OSError` with the running GPU 1 stage ignoring SIGTERM (so the cleanup must SIGKILL it), Phase 2 malformed record, and a passing baseline. Each failing scenario must exit 5, log `driver_error`, launch nothing later and leave no recorded stage PID alive. It also mutates each teacher path's values (non-finite, < −1, > 1) and checks the median-0 C1 case.
+  - Against the revised scripts (driver `d1147ba3…7572`, `c1_fp32_ref.py` `7a0d2c5d…0373`) every check passes (`post-run/driver_guards_test_local.txt`). Against the previous revision (driver `bc89e861…9ba3`, `c1_fp32_ref.py` `21028a57…e225`) all five fault checks fail and the baseline passes (`post-run/driver_guards_test_prefix_scripts.txt`).
+  - `test_driver_cleanup.py` still passes all six scenarios against the revised driver (`post-run/driver_cleanup_test_local_r3.txt`, Python 3.12.13; the earlier receipt ran Python 3.9.6).
+  - Local macOS only. The revised driver has not run on the pod or under GNU `timeout`.

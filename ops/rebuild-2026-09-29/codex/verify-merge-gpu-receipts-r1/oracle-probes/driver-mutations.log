@@ -1,0 +1,58 @@
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "status": "driver_start", "budget_s": 3300}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "stage": "c3_mutated", "gpu": 0, "role": "correct", "backends": "ATEN", "cmd": ["/workspace/kg-v3-rebuild/.venv/bin/python", "/private/tmp/kg-gpu-oracle-verifier/bundle/scripts/gemm_backend_wrap.py", "--backends", "ATEN", "--record", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-tltmcqjv/c3_mutated.backend.json", "--", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-tltmcqjv/noop.py", "--out", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-tltmcqjv/c3_mutated.jsonl"], "status": "launch", "timeout_s": 3300}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "stage": "c3_mutated", "gpu": 0, "role": "correct", "rc": 0, "status": "pass"}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "status": "phase1_done", "stopped": false}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "stage": "c4_after", "gpu": 0, "role": "correct", "backends": "ATEN", "cmd": ["/workspace/kg-v3-rebuild/.venv/bin/python", "/private/tmp/kg-gpu-oracle-verifier/bundle/scripts/gemm_backend_wrap.py", "--backends", "ATEN", "--record", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-tltmcqjv/c4_after.backend.json", "--", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-tltmcqjv/noop.py", "--out", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-tltmcqjv/c4_after.jsonl"], "status": "launch", "timeout_s": 3300}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "stage": "c4_after", "gpu": 0, "role": "correct", "rc": 0, "status": "pass"}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "status": "driver_done", "exit": 0, "elapsed_s": 0.0}
+{"probe": "valid_baseline", "rc": 0, "launched": ["c3_mutated", "c4_after"], "guard_rejected": false, "evidence": "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-tltmcqjv/driver.jsonl"}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "status": "driver_start", "budget_s": 3300}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "stage": "c3_mutated", "gpu": 0, "role": "correct", "backends": "ATEN", "cmd": ["/workspace/kg-v3-rebuild/.venv/bin/python", "/private/tmp/kg-gpu-oracle-verifier/bundle/scripts/gemm_backend_wrap.py", "--backends", "ATEN", "--record", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-iz_p9muf/c3_mutated.backend.json", "--", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-iz_p9muf/noop.py", "--out", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-iz_p9muf/c3_mutated.jsonl"], "status": "launch", "timeout_s": 3300}
+Exception in thread Thread-3 (stream):
+Traceback (most recent call last):
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "/tmp/kg-gpu-oracle-verifier/bundle/scripts/driver.py", line 450, in stream
+    self.run_stage(stage, gpu)
+  File "/tmp/kg-gpu-oracle-verifier/bundle/scripts/driver.py", line 420, in run_stage
+    br = json.loads(record.read_text())
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/decoder.py", line 338, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/decoder.py", line 354, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "status": "phase1_done", "stopped": false}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "stage": "c4_after", "gpu": 0, "role": "correct", "backends": "ATEN", "cmd": ["/workspace/kg-v3-rebuild/.venv/bin/python", "/private/tmp/kg-gpu-oracle-verifier/bundle/scripts/gemm_backend_wrap.py", "--backends", "ATEN", "--record", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-iz_p9muf/c4_after.backend.json", "--", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-iz_p9muf/noop.py", "--out", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-iz_p9muf/c4_after.jsonl"], "status": "launch", "timeout_s": 3300}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "stage": "c4_after", "gpu": 0, "role": "correct", "rc": 0, "status": "pass"}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "status": "driver_done", "exit": 0, "elapsed_s": 0.0}
+{"probe": "malformed_backend_record", "rc": 0, "launched": ["c3_mutated", "c4_after"], "guard_rejected": false, "evidence": "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-iz_p9muf/driver.jsonl"}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "status": "driver_start", "budget_s": 3300}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "stage": "c3_mutated", "gpu": 0, "role": "correct", "backends": "ATEN", "cmd": ["/workspace/kg-v3-rebuild/.venv/bin/python", "/private/tmp/kg-gpu-oracle-verifier/bundle/scripts/gemm_backend_wrap.py", "--backends", "ATEN", "--record", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-frwu3ej3/c3_mutated.backend.json", "--", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-frwu3ej3/noop.py", "--out", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-frwu3ej3/c3_mutated.jsonl"], "status": "launch", "timeout_s": 3300}
+Exception in thread Thread-5 (stream):
+Traceback (most recent call last):
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "/tmp/kg-gpu-oracle-verifier/bundle/scripts/driver.py", line 450, in stream
+    self.run_stage(stage, gpu)
+  File "/tmp/kg-gpu-oracle-verifier/bundle/scripts/driver.py", line 406, in run_stage
+    p = self._spawn(name, cmd, env, fh)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/kg-gpu-oracle-verifier/driver_mutations.py", line 15, in spawn
+    if corruption=='popen' and name=='c3_mutated':raise OSError('injected spawn failure')
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: injected spawn failure
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "status": "phase1_done", "stopped": false}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "stage": "c4_after", "gpu": 0, "role": "correct", "backends": "ATEN", "cmd": ["/workspace/kg-v3-rebuild/.venv/bin/python", "/private/tmp/kg-gpu-oracle-verifier/bundle/scripts/gemm_backend_wrap.py", "--backends", "ATEN", "--record", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-frwu3ej3/c4_after.backend.json", "--", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-frwu3ej3/noop.py", "--out", "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-frwu3ej3/c4_after.jsonl"], "status": "launch", "timeout_s": 3300}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "stage": "c4_after", "gpu": 0, "role": "correct", "rc": 0, "status": "pass"}
+{"utc": "2026-09-29T13:13:18Z", "t": 0.0, "status": "driver_done", "exit": 0, "elapsed_s": 0.0}
+{"probe": "spawn_exception", "rc": 0, "launched": ["c3_mutated", "c4_after"], "guard_rejected": false, "evidence": "/tmp/kg-gpu-oracle-verifier/gpu-driver-mutation-frwu3ej3/driver.jsonl"}

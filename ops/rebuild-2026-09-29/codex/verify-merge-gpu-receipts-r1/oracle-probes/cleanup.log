@@ -1,0 +1,25 @@
+# test_driver_cleanup.py  utc=2026-09-29T13:09:46Z
+# platform=macOS-26.4-arm64-arm-64bit python=3.12.13
+# emulated `timeout -s TERM -k 20 3` (GNU timeout not installed locally)
+# test script sha256=d6e3c6013b5b4e1da1fd74dca12cf0fe215d9939b4725c40c2485c2838f4ae5e
+Traceback (most recent call last):
+  File "/tmp/kg-gpu-oracle-verifier/bundle/scripts/test_driver_cleanup.py", line 342, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/tmp/kg-gpu-oracle-verifier/bundle/scripts/test_driver_cleanup.py", line 303, in main
+    run_scenario("old_phase1", OLD_DRIVER)]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/kg-gpu-oracle-verifier/bundle/scripts/test_driver_cleanup.py", line 256, in run_scenario
+    pid_alive = {f.name: alive(int(f.name.split("-")[1])) for f in pids}
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/kg-gpu-oracle-verifier/bundle/scripts/test_driver_cleanup.py", line 235, in alive
+    st = subprocess.run(["ps", "-o", "stat=", "-p", str(pid)], capture_output=True,
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+PermissionError: [Errno 1] Operation not permitted: 'ps'
