@@ -28,6 +28,7 @@ Grouped by rebuild phase. Task state per phase: `ops/rebuild-2026-09-29/phase-st
 ## Phase 5 and 7 — BC data and evaluation preparation
 
 - [[rebuild-data-preparation-preserves-replay-identity|Replay identity and data/evaluation preparation]] — Typed engine-independent selector preserves all 252 historical episode IDs and splits; offline source custody, v4 preparation, seed replay export and four compact opponent recommendations carry explicit native/runtime gaps.
+- [[snapshot-view-isolates-byte-exact-evaluation-opponents|Snapshot view isolates byte-exact evaluation opponents]] — Four byte-exact controllers run behind the v3 snapshot view and explicit lifecycle; all match their original Python submissions on eight CPython 3.11 oracle games (11,504 actions, both seats) and after mid-episode reconstruction (1,152 resumed actions). CPython 3.12 changes R04 via compensated float sum(), so oracles require the competition's 3.11. Source-notice, default-config and binding limits remain explicit.
 
 ## Phase 6 — GPU evidence
 

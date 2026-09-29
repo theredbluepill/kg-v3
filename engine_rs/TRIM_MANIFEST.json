@@ -202,7 +202,7 @@
     {
       "path": "engine_rs/fixtures/e776-kenjo-trace.json",
       "reference_sha256": "da0d5d1bd326cb5bf068c2065ba1fe8f7e644107db806d7f9a1eae4dafd89692",
-      "reason": "Bot/controller/matching oracle unused by retained rules and RNG tests"
+      "reason": "Bot/controller/matching oracle unused by retained rules and RNG tests; byte-exact copy imported to opponents_rs/fixtures/e776-kenjo-trace.json under OPPONENT_MANIFEST.json (Task 7.1)"
     },
     {
       "path": "engine_rs/fixtures/evgen-c27-trace.json",
@@ -432,12 +432,12 @@
     {
       "path": "engine_rs/src/native_agents/e776.rs",
       "reference_sha256": "02166970e2fc8345178d29ea863fe8532c9a4fa7d227651d0ebc57b0df82b9fe",
-      "reason": "C2 scripted opponents deferred to selected Phase 7 imports"
+      "reason": "C2 scripted opponents deferred to selected Phase 7 imports; byte-exact copy imported to opponents_rs/src/native_agents/e776.rs under OPPONENT_MANIFEST.json (Task 7.1)"
     },
     {
       "path": "engine_rs/src/native_agents/ecobot.rs",
       "reference_sha256": "8794e7cf57ef6663c1578464d8e5a1d2749736bc21ba52d45a2301a58e338ce8",
-      "reason": "C2 scripted opponents deferred to selected Phase 7 imports"
+      "reason": "C2 scripted opponents deferred to selected Phase 7 imports; byte-exact copy imported to opponents_rs/src/native_agents/ecobot.rs under OPPONENT_MANIFEST.json (Task 7.1)"
     },
     {
       "path": "engine_rs/src/native_agents/evgen.rs",
@@ -532,7 +532,7 @@
     {
       "path": "engine_rs/src/native_agents/r04.rs",
       "reference_sha256": "a80f130c636fc9def610027b6a5593c67db3a4ddb5d63ac972d80c4d2ba31431",
-      "reason": "C2 scripted opponents deferred to selected Phase 7 imports"
+      "reason": "C2 scripted opponents deferred to selected Phase 7 imports; byte-exact copy imported to opponents_rs/src/native_agents/r04.rs under OPPONENT_MANIFEST.json (Task 7.1)"
     },
     {
       "path": "engine_rs/src/native_agents/sell_intent_tests.rs",
@@ -552,7 +552,7 @@
     {
       "path": "engine_rs/src/native_agents/starter.rs",
       "reference_sha256": "01b4de943e7ea9df425b97355f8451ce48547b3666cc1c3aa3faa5649eda22e0",
-      "reason": "C2 scripted opponents deferred to selected Phase 7 imports"
+      "reason": "C2 scripted opponents deferred to selected Phase 7 imports; byte-exact copy imported to opponents_rs/src/native_agents/starter.rs under OPPONENT_MANIFEST.json (Task 7.1)"
     },
     {
       "path": "engine_rs/src/native_agents/tetsu342/mod.rs",
@@ -727,11 +727,11 @@
     },
     {
       "path": "justfile",
-      "reason": "Separate engine manifest-path fmt/check, clippy and test invocations under rs-prepare and prepare; preserve feature isolation."
+      "reason": "Separate engine manifest-path fmt/check, clippy and test invocations under rs-prepare and prepare; preserve feature isolation. Task 7.1: check opponent byte custody and standalone fmt, Clippy and tests."
     },
     {
       "path": "docs/rules-parity-coverage.md",
-      "reason": "Document current Kaggriculture replay and unit coverage without changing Orbit coverage. Task 1.1b: live differential parity coverage, divergences and limits. Task 1.2: scope historical Task 1.1 counts and record independent grammar and kernel qualification boundaries. Task 1.3: grammar bridge retirement."
+      "reason": "Document current Kaggriculture replay and unit coverage without changing Orbit coverage. Task 1.1b: live differential parity coverage, divergences and limits. Task 1.2: scope historical Task 1.1 counts and record independent grammar and kernel qualification boundaries. Task 1.3: grammar bridge retirement. Task 7.1: document the compile blocker and zero opponent coverage. Task 7.1: document snapshot-view, lifecycle and original-Python parity coverage."
     },
     {
       "path": "cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md",
@@ -743,7 +743,7 @@
     },
     {
       "path": "cookbook/log.md",
-      "reason": "Prepend material Task 1.1 adaptation record. Task 1.1b: prepend the live parity record. Task 1.2: prepend the native grammar record. Task 1.3: prepend the bridge retirement record."
+      "reason": "Prepend material Task 1.1 adaptation record. Task 1.1b: prepend the live parity record. Task 1.2: prepend the native grammar record. Task 1.3: prepend the bridge retirement record. Task 7.1: prepend the stopped-import finding. Task 7.1: record the import and correct the historical stop attribution."
     },
     {
       "path": "ops/rebuild-2026-09-29/1.1",
@@ -751,7 +751,7 @@
     },
     {
       "path": "scripts/kaggriculture_parity/generate_traces.py",
-      "reason": "Task 1.1b hash-guarded live trace generator over Kaggle's Python engine"
+      "reason": "Task 1.1b hash-guarded live trace generator over Kaggle's Python engine Task 7.1: load pinned original Python submissions with isolated per-seat lifecycle; freeze fresh-controller mid-episode replays (verify r1)."
     },
     {
       "path": "scripts/kaggriculture_parity/sweep.py",
@@ -759,7 +759,7 @@
     },
     {
       "path": "tests/scripts/test_kaggriculture_parity.py",
-      "reason": "Task 1.1b hash guard, trace-format round trip, coverage and optional live regeneration tests"
+      "reason": "Task 1.1b hash guard, trace-format round trip, coverage and optional live regeneration tests Task 7.1: test submission custody, independent original-Python agent instances and prefix-reconstruction refusals."
     },
     {
       "path": "ops/rebuild-2026-09-29/1.1b",
@@ -771,7 +771,7 @@
     },
     {
       "path": "cookbook/references/index.md",
-      "reason": "List the Task 1.1b parity Reference; keep the native semantics Reference description aligned with current rebuild scope (Task 1.2)."
+      "reason": "List the Task 1.1b parity Reference; keep the native semantics Reference description aligned with current rebuild scope (Task 1.2). Task 7.1: index the stopped-import Reference. Task 7.1: index the current opponent-import Reference."
     },
     {
       "path": "Cargo.toml",
@@ -836,6 +836,478 @@
     {
       "path": "ops/rebuild-2026-09-29/1.3",
       "reason": "Task 1.3 receipts, including this grammar-bridge retirement generator."
+    },
+    {
+      "path": "cookbook/references/frozen-engine-api-blocks-standalone-opponent-import.md",
+      "reason": "Task 7.1: record the verified public-API blocker and reopening condition. Task 7.1: retire the stop-only note in favor of the snapshot-view Reference."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/plan.md",
+      "reason": "Task 7.1: separate diagnostic expectations from actual results. Task 7.1: separate planned checks from actual results."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/results.md",
+      "reason": "Task 7.1: report actual commands, scope, coverage and remaining work. Task 7.1: report actual commands, scope, coverage and remaining work."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/native-api-probe.md",
+      "reason": "Task 7.1: describe the compile failure and exact reproducer."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/native-api-probe.json",
+      "reason": "Task 7.1: pin compile inputs, support source and compiler-log hash."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/native-api-probe-red.log",
+      "reason": "Task 7.1: retain the compiler's inaccessible-item diagnostics."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/native-api-probe-red.exit",
+      "reason": "Task 7.1: retain compile exit status 101."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/commands.json",
+      "reason": "Task 7.1: record requested final commands and actual exit statuses."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/opponents-test.log",
+      "reason": "Task 7.1: record missing crate after the mandated stop."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/engine-test.log",
+      "reason": "Task 7.1: record unchanged engine regression results."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/engine-trim.log",
+      "reason": "Task 7.1: record the engine custody check."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/opponent-import.log",
+      "reason": "Task 7.1: record missing opponent checker after the stop."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/targeted-tests.log",
+      "reason": "Task 7.1: record requested pytest collection failure after the stop."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/prepare.log",
+      "reason": "Task 7.1: record the requested repository preparation result."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/closure.log",
+      "reason": "Task 7.1: record bookkeeping, documentation and final byte checks."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/python-oracle-source-audit.json",
+      "reason": "Task 7.1: record read-only original-submission hashes and notice gaps."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/update_trim_manifest.py",
+      "reason": "Task 7.1: idempotently register only non-engine diagnostic changes. Task 7.1: register import reasons and task inventory from pinned inputs."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py",
+      "reason": "Task 7.1: test preservation, idempotency and unexpected-input refusal. Task 7.1: test preservation, committed inputs, idempotency and drift refusal."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/updater-red.log",
+      "reason": "Task 7.1: retain the test-first missing-updater failure."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/updater-green.log",
+      "reason": "Task 7.1: record bookkeeping test results after implementation."
+    },
+    {
+      "path": "cookbook/references/snapshot-view-isolates-byte-exact-evaluation-opponents.md",
+      "reason": "Task 7.1: record implemented import and qualification limits; correct stop attribution."
+    },
+    {
+      "path": "scripts/check_opponent_import.py",
+      "reason": "Task 7.1: validate strict opponent import and trace custody."
+    },
+    {
+      "path": "tests/tools/test_check_opponent_import.py",
+      "reason": "Task 7.1: exercise opponent custody mutation attacks."
+    },
+    {
+      "path": "tests/owl/kaggriculture/test_opponents.py",
+      "reason": "Task 7.1: declare learned-seat checks skipped until the Task 1.4 binding exists."
+    },
+    {
+      "path": "opponents_rs/Cargo.toml",
+      "reason": "Task 7.1: declare the standalone edition-2024 evaluation crate."
+    },
+    {
+      "path": "opponents_rs/Cargo.lock",
+      "reason": "Task 7.1: pin the opponent crate's offline dependency closure."
+    },
+    {
+      "path": "opponents_rs/README.md",
+      "reason": "Task 7.1: document view, execution and parity qualification limits."
+    },
+    {
+      "path": "opponents_rs/OPPONENT_MANIFEST.json",
+      "reason": "Task 7.1: pin imported/authored and oracle custody."
+    },
+    {
+      "path": "opponents_rs/src/lib.rs",
+      "reason": "Task 7.1: isolate engine ownership behind a current snapshot view."
+    },
+    {
+      "path": "opponents_rs/src/native_agents.rs",
+      "reason": "Task 7.1: declare only four byte-exact controller modules."
+    },
+    {
+      "path": "opponents_rs/src/registry.rs",
+      "reason": "Task 7.1: enforce per-seat, per-episode controller lifecycle."
+    },
+    {
+      "path": "opponents_rs/src/runner.rs",
+      "reason": "Task 7.1: execute bounded default-config evaluation matches."
+    },
+    {
+      "path": "opponents_rs/src/view_tests.rs",
+      "reason": "Task 7.1: check the view and private-state visibility."
+    },
+    {
+      "path": "opponents_rs/tests/lifecycle.rs",
+      "reason": "Task 7.1: check lifecycle, determinism and config bounds."
+    },
+    {
+      "path": "opponents_rs/tests/oracle_parity.rs",
+      "reason": "Task 7.1: compare original Python actions and state, continuous and resumed after mid-episode reconstruction."
+    },
+    {
+      "path": "opponents_rs/fixtures/replay/REPLAY.json.gz",
+      "reason": "Task 7.1: freeze original-submission resumed actions after fresh-controller prefix reconstruction (CPython 3.11, verify r1)."
+    },
+    {
+      "path": "opponents_rs/fixtures/e776-kenjo-trace.json",
+      "reason": "Task 7.1: preserve E776 executable policy data."
+    },
+    {
+      "path": "opponents_rs/fixtures/oracle/MANIFEST.json",
+      "reason": "Task 7.1: freeze generated Python oracle metadata."
+    },
+    {
+      "path": "opponents_rs/fixtures/oracle/oracle-00-starter-vs-r04.jsonl.gz",
+      "reason": "Task 7.1: freeze original-submission observations and actions (CPython 3.11, Claude review)."
+    },
+    {
+      "path": "opponents_rs/fixtures/oracle/oracle-01-r04-vs-ecobot.jsonl.gz",
+      "reason": "Task 7.1: freeze original-submission observations and actions (CPython 3.11, Claude review)."
+    },
+    {
+      "path": "opponents_rs/fixtures/oracle/oracle-02-ecobot-vs-e776.jsonl.gz",
+      "reason": "Task 7.1: freeze original-submission observations and actions (CPython 3.11, Claude review)."
+    },
+    {
+      "path": "opponents_rs/fixtures/oracle/oracle-03-e776-vs-starter.jsonl.gz",
+      "reason": "Task 7.1: freeze original-submission observations and actions (CPython 3.11, Claude review)."
+    },
+    {
+      "path": "opponents_rs/fixtures/oracle/oracle-04-starter-vs-r04.jsonl.gz",
+      "reason": "Task 7.1: freeze original-submission observations and actions (CPython 3.11, Claude review)."
+    },
+    {
+      "path": "opponents_rs/fixtures/oracle/oracle-05-r04-vs-ecobot.jsonl.gz",
+      "reason": "Task 7.1: freeze original-submission observations and actions (CPython 3.11, Claude review)."
+    },
+    {
+      "path": "opponents_rs/fixtures/oracle/oracle-06-ecobot-vs-e776.jsonl.gz",
+      "reason": "Task 7.1: freeze original-submission observations and actions (CPython 3.11, Claude review)."
+    },
+    {
+      "path": "opponents_rs/fixtures/oracle/oracle-07-e776-vs-starter.jsonl.gz",
+      "reason": "Task 7.1: freeze original-submission observations and actions (CPython 3.11, Claude review)."
+    },
+    {
+      "path": "opponents_rs/src/native_agents/starter.rs",
+      "reason": "Task 7.1: preserve pinned controller bytes."
+    },
+    {
+      "path": "opponents_rs/src/native_agents/r04.rs",
+      "reason": "Task 7.1: preserve pinned controller bytes."
+    },
+    {
+      "path": "opponents_rs/src/native_agents/ecobot.rs",
+      "reason": "Task 7.1: preserve pinned controller bytes."
+    },
+    {
+      "path": "opponents_rs/src/native_agents/e776.rs",
+      "reason": "Task 7.1: preserve pinned controller bytes."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/clippy-first.log",
+      "reason": "Task 7.1: retain imported-code lint findings before allowances."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/clippy-second.log",
+      "reason": "Task 7.1: retain authored-code lint findings before correction."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/clippy-green.log",
+      "reason": "Task 7.1: record initial standalone Clippy success."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/clippy-final.log",
+      "reason": "Task 7.1: record final standalone Clippy success."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/custody-red.log",
+      "reason": "Task 7.1: retain missing-checker test-first failure."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/custody-content-red.log",
+      "reason": "Task 7.1: retain strict trace-metadata test failures."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/custody-coverage-red.log",
+      "reason": "Task 7.1: reject invented positive coverage counts."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/custody-green.log",
+      "reason": "Task 7.1: record custody mutation tests and binding skips."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/custody-check.log",
+      "reason": "Task 7.1: record final opponent custody verification."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/lifecycle-red.log",
+      "reason": "Task 7.1: retain registry/lifecycle test-first compile failures."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/reset-red.log",
+      "reason": "Task 7.1: retain same-episode reset bypass failure."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/reset-green.log",
+      "reason": "Task 7.1: record fresh-episode reset enforcement."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/rust-first.log",
+      "reason": "Task 7.1: retain initial view/controller compile findings."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/rust-first-green.log",
+      "reason": "Task 7.1: record initial view/controller test success."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/rust-lifecycle-visibility.log",
+      "reason": "Task 7.1: record bounded lifecycle/visibility checks."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-red.log",
+      "reason": "Task 7.1: retain original-submission loader test-first failures."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-green.log",
+      "reason": "Task 7.1: record original-submission loader test success."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-tests.log",
+      "reason": "Task 7.1: record trace generator and coverage test results."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-mypy.log",
+      "reason": "Task 7.1: record trace generator static checking."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-comparator-red.log",
+      "reason": "Task 7.1: retain comparator test-first failure."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-comparator-green.log",
+      "reason": "Task 7.1: record comparator regression success."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-first-generation.log",
+      "reason": "Task 7.1: record bounded original-Python generation."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-first-summary.json",
+      "reason": "Task 7.1: record first Python game's runtime/counts."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-first-parity.log",
+      "reason": "Task 7.1: retain typed-reward comparator harness failure."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-second-parity.log",
+      "reason": "Task 7.1: record original R04 action mismatch."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/oracle-parity.json",
+      "reason": "Task 7.1: pin actual compared/matched action denominators."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/coverage.json",
+      "reason": "Task 7.1: record exact trace coverage and unmeasured categories."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/localize_r04_python.py",
+      "reason": "Task 7.1: localize original R04 decision-path divergence."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/r04-diagnostic.rs",
+      "reason": "Task 7.1: reproduce native R04 debug decisions in scratch."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/r04-native-debug.json",
+      "reason": "Task 7.1: retain native decision-path localization evidence."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/r04-python-debug.json",
+      "reason": "Task 7.1: retain original and counterfactual Python decisions."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/r04-mismatch.md",
+      "reason": "Task 7.1: explain first R04 mismatch and bounded source attribution."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/write_opponent_manifest.py",
+      "reason": "Task 7.1: freeze explicit opponent custody inventory, including the replay oracle."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/updater-red.log",
+      "reason": "Task 7.1: retain six failures before resumed-updater support."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/updater-green.log",
+      "reason": "Task 7.1: record six updater tests and 12 mutation subtests."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/updater-green-final.log",
+      "reason": "Task 7.1: record final updater tests and byte idempotency."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/opponents-test.log",
+      "reason": "Task 7.1: record required opponent crate test status."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/engine-test.log",
+      "reason": "Task 7.1: record frozen engine regression results."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/engine-trim.log",
+      "reason": "Task 7.1: record final engine trim verification."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/opponent-import.log",
+      "reason": "Task 7.1: record required opponent custody checker status."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/targeted-tests.log",
+      "reason": "Task 7.1: record required Python checks and binding skips."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/prepare.log",
+      "reason": "Task 7.1: record full requested repository preparation status."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/py-prepare.log",
+      "reason": "Task 7.1: record required Python preparation status."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/rs-prepare.log",
+      "reason": "Task 7.1: record required Rust preparation status."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/commands.json",
+      "reason": "Task 7.1: record final command arguments, statuses and counts."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/closure.log",
+      "reason": "Task 7.1: record final docs, byte preservation and inventory checks."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/run2/inventory.json",
+      "reason": "Task 7.1: list final changed paths and their task purposes."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/review/oracle-gen-0.json",
+      "reason": "Task 7.1: record bounded CPython 3.11 oracle generation summaries."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/review/oracle-gen-2.json",
+      "reason": "Task 7.1: record bounded CPython 3.11 oracle generation summaries."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/review/oracle-gen-4.json",
+      "reason": "Task 7.1: record bounded CPython 3.11 oracle generation summaries."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/review/oracle-gen-6.json",
+      "reason": "Task 7.1: record bounded CPython 3.11 oracle generation summaries."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/review/oracle-parity.json",
+      "reason": "Task 7.1: pin 3.11 oracle compared/matched denominators."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/review/mutations.log",
+      "reason": "Task 7.1: record production mutations that fail their tests."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/review/results.md",
+      "reason": "Task 7.1: record Claude review findings, checks and limits."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/review/prepare.log",
+      "reason": "Task 7.1: record the review's full repository preparation."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-python-red.log",
+      "reason": "Task 7.1: retain replay generator test-first failures."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-python-green.log",
+      "reason": "Task 7.1: record replay generator unit tests."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-rust-red.log",
+      "reason": "Task 7.1: retain native replay test before the oracle."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-generation.log",
+      "reason": "Task 7.1: record CPython 3.11 replay generation cost."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/generation-replay.json",
+      "reason": "Task 7.1: record replay fixture hash, size and runtime."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-regeneration.log",
+      "reason": "Task 7.1: record byte-identical replay regeneration."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-rust-green.log",
+      "reason": "Task 7.1: record native replay parity and mutations."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/parity-replay.json",
+      "reason": "Task 7.1: pin compared resumed-action denominators."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-controller-mutation.log",
+      "reason": "Task 7.1: record a restored step-700 controller mutation caught on resume."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/updater-red.log",
+      "reason": "Task 7.1: retain the review-input updater failure."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/updater-green.log",
+      "reason": "Task 7.1: record updater tests after replay registration."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/results.md",
+      "reason": "Task 7.1: record verify-r1 resolutions, checks and limits."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/prepare.log",
+      "reason": "Task 7.1: record the verify-r1 repository preparation."
     }
   ]
 }

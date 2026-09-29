@@ -1,0 +1,804 @@
+   Compiling autocfg v1.5.1
+   Compiling proc-macro2 v1.0.107
+   Compiling num-traits v0.2.19
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling serde_core v1.0.229
+   Compiling zmij v1.0.23
+    Checking num-integer v0.1.47
+   Compiling syn v3.0.6
+    Checking hashbrown v0.17.1
+   Compiling serde v1.0.229
+    Checking equivalent v1.0.2
+   Compiling serde_json v1.0.151
+   Compiling serde_derive v1.0.229
+    Checking indexmap v2.14.2
+    Checking num-bigint v0.4.8
+    Checking itoa v1.0.18
+    Checking memchr v2.8.3
+    Checking num-rational v0.4.2
+    Checking kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-t71/engine_rs)
+    Checking kaggriculture-opponents-api-probe v0.1.0 (/Users/poonszesen/kg-v3-t71/.codex-tmp/7.1-native-api-probe)
+error[E0603]: function `fib` is private
+    --> src/lib.rs:3:77
+     |
+   3 | pub use kaggriculture_engine::{Config, Farm, Game, Inventory, PrivateState, fib};
+     |                                                                             ^^^ private function
+     |
+note: the function `fib` is defined here
+    --> /Users/poonszesen/kg-v3-t71/engine_rs/src/lib.rs:3785:1
+     |
+3785 | fn fib(index: usize) -> BigInt {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+  --> src/native_agents/starter.rs:64:10
+   |
+63 |       let farm = game
+   |  ________________-
+64 | |         .farms()
+   | |         -^^^^^ private field, not a method
+   | |_________|
+   |
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+  --> src/native_agents/starter.rs:64:10
+   |
+63 |       let farm = game
+   |  ________________-
+64 | |         .farms()
+   | |         -^^^^^ private field, not a method
+   | |_________|
+   |
+
+error[E0599]: no method named `privates` found for reference `&Game` in the current scope
+  --> src/native_agents/starter.rs:68:10
+   |
+67 |       let private = game
+   |  ___________________-
+68 | |         .privates()
+   | |         -^^^^^^^^ private field, not a method
+   | |_________|
+   |
+
+error[E0599]: no method named `privates` found for reference `&kaggriculture_engine::Game` in the current scope
+  --> src/native_agents/starter.rs:68:10
+   |
+67 |       let private = game
+   |  ___________________-
+68 | |         .privates()
+   | |         -^^^^^^^^ private field, not a method
+   | |_________|
+   |
+
+error[E0599]: no method named `step_index` found for reference `&Game` in the current scope
+  --> src/native_agents/starter.rs:71:21
+   |
+71 |     let step = game.step_index();
+   |                     ^^^^^^^^^^ method not found in `&Game`
+
+error[E0599]: no method named `step_index` found for reference `&kaggriculture_engine::Game` in the current scope
+  --> src/native_agents/starter.rs:71:21
+   |
+71 |     let step = game.step_index();
+   |                     ^^^^^^^^^^ method not found in `&kaggriculture_engine::Game`
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+   --> src/native_agents/starter.rs:126:10
+    |
+125 |       let farm = game
+    |  ________________-
+126 | |         .farms()
+    | |         -^^^^^ private field, not a method
+    | |_________|
+    |
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:126:10
+    |
+125 |       let farm = game
+    |  ________________-
+126 | |         .farms()
+    | |         -^^^^^ private field, not a method
+    | |_________|
+    |
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+   --> src/native_agents/starter.rs:169:10
+    |
+168 |       let farm = game
+    |  ________________-
+169 | |         .farms()
+    | |         -^^^^^ private field, not a method
+    | |_________|
+    |
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:169:10
+    |
+168 |       let farm = game
+    |  ________________-
+169 | |         .farms()
+    | |         -^^^^^ private field, not a method
+    | |_________|
+    |
+
+error[E0599]: no method named `step_index` found for reference `&Game` in the current scope
+   --> src/native_agents/starter.rs:172:21
+    |
+172 |     let step = game.step_index();
+    |                     ^^^^^^^^^^ method not found in `&Game`
+
+error[E0616]: field `config` of struct `Game` is private
+   --> src/native_agents/starter.rs:174:22
+    |
+174 |     let cost = &game.config.farm_hand_cost_mult.0 * fib(farm.hires_today);
+    |                      ^^^^^^ private field
+
+error[E0599]: no method named `step_index` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:172:21
+    |
+172 |     let step = game.step_index();
+    |                     ^^^^^^^^^^ method not found in `&kaggriculture_engine::Game`
+
+error[E0616]: field `config` of struct `kaggriculture_engine::Game` is private
+   --> src/native_agents/starter.rs:174:22
+    |
+174 |     let cost = &game.config.farm_hand_cost_mult.0 * fib(farm.hires_today);
+    |                      ^^^^^^ private field
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+   --> src/native_agents/starter.rs:195:14
+    |
+194 |           let farm = game
+    |  ____________________-
+195 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:195:14
+    |
+194 |           let farm = game
+    |  ____________________-
+195 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `step_index` found for reference `&Game` in the current scope
+   --> src/native_agents/starter.rs:198:25
+    |
+198 |         let step = game.step_index();
+    |                         ^^^^^^^^^^ method not found in `&Game`
+
+error[E0599]: no method named `step_index` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:198:25
+    |
+198 |         let step = game.step_index();
+    |                         ^^^^^^^^^^ method not found in `&kaggriculture_engine::Game`
+
+error[E0599]: no method named `privates` found for struct `kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:250:36
+    |
+250 |             shed_carrots.push(game.privates()[0].shed["CARROT"]);
+    |                                    ^^^^^^^^ private field, not a method
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+   --> src/native_agents/r04.rs:409:14
+    |
+408 |           let farm = game
+    |  ____________________-
+409 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `privates` found for reference `&Game` in the current scope
+   --> src/native_agents/r04.rs:414:14
+    |
+413 |           let private = game
+    |  _______________________-
+414 | |             .privates()
+    | |             -^^^^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `farms` found for struct `kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:318:30
+    |
+318 |             let farm = &game.farms()[0];
+    |                              ^^^^^ private field, not a method
+
+error[E0599]: no method named `step_index` found for reference `&Game` in the current scope
+   --> src/native_agents/r04.rs:418:25
+    |
+418 |         let step = game.step_index();
+    |                         ^^^^^^^^^^ method not found in `&Game`
+
+error[E0599]: no method named `farms` found for struct `kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:327:26
+    |
+327 |         let farm = &game.farms()[0];
+    |                          ^^^^^ private field, not a method
+
+error[E0599]: no method named `market` found for reference `&Game` in the current scope
+   --> src/native_agents/r04.rs:442:36
+    |
+442 |             market_inventory: game.market().inventory.clone(),
+    |                                    ^^^^^^ private field, not a method
+
+error[E0599]: no method named `market` found for reference `&Game` in the current scope
+   --> src/native_agents/r04.rs:443:26
+    |
+443 |             prices: game.market().prices.clone(),
+    |                          ^^^^^^ private field, not a method
+
+error[E0599]: no method named `farms` found for struct `kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:345:25
+    |
+345 |         assert_eq!(game.farms()[0].hands.len(), 1);
+    |                         ^^^^^ private field, not a method
+
+error[E0599]: no method named `town` found for reference `&Game` in the current scope
+   --> src/native_agents/r04.rs:444:25
+    |
+444 |             shops: game.town().unlocked_shops.clone(),
+    |                         ^^^^ private field, not a method
+    |
+help: there is a method `to_owned` with a similar name
+    |
+444 -             shops: game.town().unlocked_shops.clone(),
+444 +             shops: game.to_owned().unlocked_shops.clone(),
+    |
+
+error[E0599]: no method named `farms` found for struct `kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:346:25
+    |
+346 |         assert_eq!(game.farms()[0].hires_today, 1);
+    |                         ^^^^^ private field, not a method
+
+error[E0599]: no method named `farms` found for struct `kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:347:25
+    |
+347 |         assert_eq!(game.farms()[0].money, 2999.0);
+    |                         ^^^^^ private field, not a method
+
+error[E0599]: no method named `step_index` found for struct `kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:350:22
+    |
+350 |         while !(game.step_index() + 1).is_multiple_of(TURNS_PER_DAY) {
+    |                      ^^^^^^^^^^ method not found in `kaggriculture_engine::Game`
+
+error[E0599]: no method named `farms` found for struct `kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:357:22
+    |
+357 |         assert!(game.farms()[0].hands.is_empty(), "hands vanish at the end of the day");
+    |                      ^^^^^ private field, not a method
+
+error[E0599]: no method named `farms` found for struct `kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/starter.rs:358:25
+    |
+358 |         assert_eq!(game.farms()[0].hires_today, 0);
+    |                         ^^^^^ private field, not a method
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/r04.rs:409:14
+    |
+408 |           let farm = game
+    |  ____________________-
+409 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `privates` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/r04.rs:414:14
+    |
+413 |           let private = game
+    |  _______________________-
+414 | |             .privates()
+    | |             -^^^^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `step_index` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/r04.rs:418:25
+    |
+418 |         let step = game.step_index();
+    |                         ^^^^^^^^^^ method not found in `&kaggriculture_engine::Game`
+
+error[E0599]: no method named `market` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/r04.rs:442:36
+    |
+442 |             market_inventory: game.market().inventory.clone(),
+    |                                    ^^^^^^ private field, not a method
+
+error[E0599]: no method named `market` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/r04.rs:443:26
+    |
+443 |             prices: game.market().prices.clone(),
+    |                          ^^^^^^ private field, not a method
+
+error[E0599]: no method named `town` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/r04.rs:444:25
+    |
+444 |             shops: game.town().unlocked_shops.clone(),
+    |                         ^^^^ private field, not a method
+    |
+help: there is a method `to_owned` with a similar name
+    |
+444 -             shops: game.town().unlocked_shops.clone(),
+444 +             shops: game.to_owned().unlocked_shops.clone(),
+    |
+
+error[E0599]: no method named `step_index` found for reference `&Game` in the current scope
+    --> src/native_agents/ecobot.rs:2246:21
+     |
+2246 |     let step = game.step_index();
+     |                     ^^^^^^^^^^ method not found in `&Game`
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+    --> src/native_agents/ecobot.rs:2250:10
+     |
+2249 |       let me = game
+     |  ______________-
+2250 | |         .farms()
+     | |         -^^^^^ private field, not a method
+     | |_________|
+     |
+
+error[E0599]: no method named `privates` found for reference `&Game` in the current scope
+    --> src/native_agents/ecobot.rs:2254:10
+     |
+2253 |       let private = game
+     |  ___________________-
+2254 | |         .privates()
+     | |         -^^^^^^^^ private field, not a method
+     | |_________|
+     |
+
+error[E0599]: no method named `market` found for reference `&Game` in the current scope
+    --> src/native_agents/ecobot.rs:2258:10
+     |
+2257 |       let market: Counts = game
+     |  __________________________-
+2258 | |         .market()
+     | |         -^^^^^^ private field, not a method
+     | |_________|
+     |
+
+error[E0599]: no method named `town` found for reference `&Game` in the current scope
+    --> src/native_agents/ecobot.rs:2270:23
+     |
+2270 |     let shops = &game.town().unlocked_shops;
+     |                       ^^^^ private field, not a method
+     |
+help: there is a method `to_owned` with a similar name
+     |
+2270 -     let shops = &game.town().unlocked_shops;
+2270 +     let shops = &game.to_owned().unlocked_shops;
+     |
+
+error[E0599]: no method named `step_index` found for reference `&Game` in the current scope
+    --> src/native_agents/ecobot.rs:2819:25
+     |
+2819 |         let step = game.step_index();
+     |                         ^^^^^^^^^^ method not found in `&Game`
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+    --> src/native_agents/ecobot.rs:2826:14
+     |
+2825 |           let farm = game
+     |  ____________________-
+2826 | |             .farms()
+     | |             -^^^^^ private field, not a method
+     | |_____________|
+     |
+
+error[E0599]: no method named `privates` found for reference `&Game` in the current scope
+    --> src/native_agents/ecobot.rs:2830:14
+     |
+2829 |           let private = game
+     |  _______________________-
+2830 | |             .privates()
+     | |             -^^^^^^^^ private field, not a method
+     | |_____________|
+     |
+
+error[E0599]: no method named `step_index` found for reference `&kaggriculture_engine::Game` in the current scope
+    --> src/native_agents/ecobot.rs:2246:21
+     |
+2246 |     let step = game.step_index();
+     |                     ^^^^^^^^^^ method not found in `&kaggriculture_engine::Game`
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+    --> src/native_agents/ecobot.rs:2250:10
+     |
+2249 |       let me = game
+     |  ______________-
+2250 | |         .farms()
+     | |         -^^^^^ private field, not a method
+     | |_________|
+     |
+
+error[E0599]: no method named `privates` found for reference `&kaggriculture_engine::Game` in the current scope
+    --> src/native_agents/ecobot.rs:2254:10
+     |
+2253 |       let private = game
+     |  ___________________-
+2254 | |         .privates()
+     | |         -^^^^^^^^ private field, not a method
+     | |_________|
+     |
+
+error[E0599]: no method named `market` found for reference `&kaggriculture_engine::Game` in the current scope
+    --> src/native_agents/ecobot.rs:2258:10
+     |
+2257 |       let market: Counts = game
+     |  __________________________-
+2258 | |         .market()
+     | |         -^^^^^^ private field, not a method
+     | |_________|
+     |
+
+error[E0599]: no method named `farms` found for reference `&'a Game` in the current scope
+   --> src/native_agents/e776.rs:292:14
+    |
+291 |           let farm = game
+    |  ____________________-
+292 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `town` found for reference `&kaggriculture_engine::Game` in the current scope
+    --> src/native_agents/ecobot.rs:2270:23
+     |
+2270 |     let shops = &game.town().unlocked_shops;
+     |                       ^^^^ private field, not a method
+     |
+help: there is a method `to_owned` with a similar name
+     |
+2270 -     let shops = &game.town().unlocked_shops;
+2270 +     let shops = &game.to_owned().unlocked_shops;
+     |
+
+error[E0599]: no method named `privates` found for reference `&'a Game` in the current scope
+   --> src/native_agents/e776.rs:296:14
+    |
+295 |           let private = game
+    |  _______________________-
+296 | |             .privates()
+    | |             -^^^^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `town` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:304:27
+    |
+304 |         for shop in &game.town().unlocked_shops {
+    |                           ^^^^ private field, not a method
+    |
+help: there is a method `to_owned` with a similar name
+    |
+304 -         for shop in &game.town().unlocked_shops {
+304 +         for shop in &game.to_owned().unlocked_shops {
+    |
+
+error[E0599]: no method named `market` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:307:45
+    |
+307 |         let milk_price = float_or_zero(game.market().prices.get("MILK"));
+    |                                             ^^^^^^ private field, not a method
+
+error[E0599]: no method named `market` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:308:45
+    |
+308 |         let wool_price = float_or_zero(game.market().prices.get("WOOL"));
+    |                                             ^^^^^^ private field, not a method
+
+error[E0599]: no method named `market` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:466:44
+    |
+466 |             .map(|item| (item, int_or(game.market().inventory.get(item), I0)))
+    |                                            ^^^^^^ private field, not a method
+
+error[E0599]: no method named `step_index` found for reference `&kaggriculture_engine::Game` in the current scope
+    --> src/native_agents/ecobot.rs:2819:25
+     |
+2819 |         let step = game.step_index();
+     |                         ^^^^^^^^^^ method not found in `&kaggriculture_engine::Game`
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+    --> src/native_agents/ecobot.rs:2826:14
+     |
+2825 |           let farm = game
+     |  ____________________-
+2826 | |             .farms()
+     | |             -^^^^^ private field, not a method
+     | |_____________|
+     |
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:510:14
+    |
+509 |           let farm = game
+    |  ____________________-
+510 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `privates` found for reference `&kaggriculture_engine::Game` in the current scope
+    --> src/native_agents/ecobot.rs:2830:14
+     |
+2829 |           let private = game
+     |  _______________________-
+2830 | |             .privates()
+     | |             -^^^^^^^^ private field, not a method
+     | |_____________|
+     |
+
+error[E0308]: mismatched types
+   --> src/native_agents/e776.rs:562:31
+    |
+562 |                     intended: intended.clone(),
+    |                               ^^^^^^^^^^^^^^^^ expected `Vec<Value>`, found `&[Value]`
+    |
+    = note: expected struct `Vec<Value>`
+            found reference `&[Value]`
+help: try using a conversion method
+    |
+562 -                     intended: intended.clone(),
+562 +                     intended: intended.to_vec(),
+    |
+
+error[E0308]: mismatched types
+   --> src/native_agents/e776.rs:565:25
+    |
+565 |             *intended = vec![Value::String("DIG".into())];
+    |             ---------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `[Value]`, found `Vec<Value>`
+    |             |
+    |             expected due to the type of this binding
+    |
+    = note: expected slice `[Value]`
+              found struct `Vec<Value>`
+
+error[E0599]: no method named `farms` found for reference `&'a kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:292:14
+    |
+291 |           let farm = game
+    |  ____________________-
+292 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0277]: the size for values of type `[Value]` cannot be known at compilation time
+   --> src/native_agents/e776.rs:565:13
+    |
+565 |             *intended = vec![Value::String("DIG".into())];
+    |             ^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[Value]`
+    = note: the left-hand-side of an assignment must have a statically known size
+
+error[E0599]: no method named `privates` found for reference `&'a kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:296:14
+    |
+295 |           let private = game
+    |  _______________________-
+296 | |             .privates()
+    | |             -^^^^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `town` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:304:27
+    |
+304 |         for shop in &game.town().unlocked_shops {
+    |                           ^^^^ private field, not a method
+    |
+help: there is a method `to_owned` with a similar name
+    |
+304 -         for shop in &game.town().unlocked_shops {
+304 +         for shop in &game.to_owned().unlocked_shops {
+    |
+
+error[E0599]: no method named `market` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:619:43
+    |
+619 |                 let current = int_or(game.market().inventory.get(item), I0);
+    |                                           ^^^^^^ private field, not a method
+
+error[E0599]: no method named `market` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:307:45
+    |
+307 |         let milk_price = float_or_zero(game.market().prices.get("MILK"));
+    |                                             ^^^^^^ private field, not a method
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:640:14
+    |
+639 |           let farm = game
+    |  ____________________-
+640 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `market` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:308:45
+    |
+308 |         let wool_price = float_or_zero(game.market().prices.get("WOOL"));
+    |                                             ^^^^^^ private field, not a method
+
+error[E0599]: no method named `market` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:650:51
+    |
+650 |             .map(|item| (item.into(), int_or(game.market().inventory.get(item), I0)))
+    |                                                   ^^^^^^ private field, not a method
+
+error[E0599]: no method named `market` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:761:41
+    |
+761 |             let inventory = int_or(game.market().inventory.get(item), I0);
+    |                                         ^^^^^^ private field, not a method
+
+error[E0599]: no method named `market` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:466:44
+    |
+466 |             .map(|item| (item, int_or(game.market().inventory.get(item), I0)))
+    |                                            ^^^^^^ private field, not a method
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:510:14
+    |
+509 |           let farm = game
+    |  ____________________-
+510 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `step_index` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:898:25
+    |
+898 |         let step = game.step_index().min(MAX_STEPS - 1);
+    |                         ^^^^^^^^^^ method not found in `&Game`
+
+error[E0308]: mismatched types
+   --> src/native_agents/e776.rs:562:31
+    |
+562 |                     intended: intended.clone(),
+    |                               ^^^^^^^^^^^^^^^^ expected `Vec<Value>`, found `&[Value]`
+    |
+    = note: expected struct `Vec<serde_json::Value>`
+            found reference `&[serde_json::Value]`
+help: try using a conversion method
+    |
+562 -                     intended: intended.clone(),
+562 +                     intended: intended.to_vec(),
+    |
+
+error[E0308]: mismatched types
+   --> src/native_agents/e776.rs:565:25
+    |
+565 |             *intended = vec![Value::String("DIG".into())];
+    |             ---------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `[Value]`, found `Vec<Value>`
+    |             |
+    |             expected due to the type of this binding
+    |
+    = note: expected slice `[serde_json::Value]`
+              found struct `Vec<serde_json::Value>`
+
+error[E0277]: the size for values of type `[serde_json::Value]` cannot be known at compilation time
+   --> src/native_agents/e776.rs:565:13
+    |
+565 |             *intended = vec![Value::String("DIG".into())];
+    |             ^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[serde_json::Value]`
+    = note: the left-hand-side of an assignment must have a statically known size
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:904:14
+    |
+903 |           let farm = game
+    |  ____________________-
+904 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `market` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:619:43
+    |
+619 |                 let current = int_or(game.market().inventory.get(item), I0);
+    |                                           ^^^^^^ private field, not a method
+
+error[E0599]: no method named `farms` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:985:10
+    |
+984 |       let farm = game
+    |  ________________-
+985 | |         .farms()
+    | |         -^^^^^ private field, not a method
+    | |_________|
+    |
+
+error[E0599]: no method named `privates` found for reference `&Game` in the current scope
+   --> src/native_agents/e776.rs:989:10
+    |
+988 |       let private = game
+    |  ___________________-
+989 | |         .privates()
+    | |         -^^^^^^^^ private field, not a method
+    | |_________|
+    |
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:640:14
+    |
+639 |           let farm = game
+    |  ____________________-
+640 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `market` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:650:51
+    |
+650 |             .map(|item| (item.into(), int_or(game.market().inventory.get(item), I0)))
+    |                                                   ^^^^^^ private field, not a method
+
+error[E0599]: no method named `market` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:761:41
+    |
+761 |             let inventory = int_or(game.market().inventory.get(item), I0);
+    |                                         ^^^^^^ private field, not a method
+
+error[E0599]: no method named `step_index` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:898:25
+    |
+898 |         let step = game.step_index().min(MAX_STEPS - 1);
+    |                         ^^^^^^^^^^ method not found in `&kaggriculture_engine::Game`
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:904:14
+    |
+903 |           let farm = game
+    |  ____________________-
+904 | |             .farms()
+    | |             -^^^^^ private field, not a method
+    | |_____________|
+    |
+
+error[E0599]: no method named `farms` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:985:10
+    |
+984 |       let farm = game
+    |  ________________-
+985 | |         .farms()
+    | |         -^^^^^ private field, not a method
+    | |_________|
+    |
+
+error[E0599]: no method named `privates` found for reference `&kaggriculture_engine::Game` in the current scope
+   --> src/native_agents/e776.rs:989:10
+    |
+988 |       let private = game
+    |  ___________________-
+989 | |         .privates()
+    | |         -^^^^^^^^ private field, not a method
+    | |_________|
+    |
+
+Some errors have detailed explanations: E0277, E0308, E0599, E0603, E0616.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `kaggriculture-opponents-api-probe` (lib) due to 42 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `kaggriculture-opponents-api-probe` (lib test) due to 51 previous errors

@@ -1,0 +1,70 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+__________________ test_sibling_oracle_rejects_changed_source __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112f474a0>
+
+    def test_sibling_oracle_rejects_changed_source(monkeypatch: pytest.MonkeyPatch) -> None:
+>       monkeypatch.setattr(generator, "_sibling_blob", lambda path: b"changed source")
+E       AttributeError: <module 'kaggriculture_parity_generate_traces' from '/Users/poonszesen/kg-v3-t71/scripts/kaggriculture_parity/generate_traces.py'> has no attribute '_sibling_blob'
+
+tests/scripts/test_kaggriculture_parity.py:401: AttributeError
+___________________ test_sibling_oracle_rejects_unknown_bot ____________________
+
+    def test_sibling_oracle_rejects_unknown_bot() -> None:
+        with pytest.raises(generator.ParityGeneratorError, match="unknown sibling"):
+>           generator.sibling_oracle_files("other")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'kaggriculture_parity_generate_traces' has no attribute 'sibling_oracle_files'
+
+tests/scripts/test_kaggriculture_parity.py:408: AttributeError
+____________ test_sibling_oracle_instances_have_fresh_module_state _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112fc9310>
+
+    def test_sibling_oracle_instances_have_fresh_module_state(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        source = b"count = 0\ndef agent(obs, config=None):\n global count\n count += 1\n return {'count': count}\n"
+>       monkeypatch.setattr(
+            generator, "sibling_oracle_files", lambda bot: {"agents/r04/main.py": source}
+        )
+E       AttributeError: <module 'kaggriculture_parity_generate_traces' from '/Users/poonszesen/kg-v3-t71/scripts/kaggriculture_parity/generate_traces.py'> has no attribute 'sibling_oracle_files'
+
+tests/scripts/test_kaggriculture_parity.py:415: AttributeError
+______ test_opponent_specs_cover_both_seats_and_enforce_live_batch_bound _______
+
+    def test_opponent_specs_cover_both_seats_and_enforce_live_batch_bound() -> None:
+>       specs = generator.opponent_specs(0, 2, 20260929) + generator.opponent_specs(
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+            2, 2, 20260929
+        )
+E       AttributeError: module 'kaggriculture_parity_generate_traces' has no attribute 'opponent_specs'
+
+tests/scripts/test_kaggriculture_parity.py:440: AttributeError
+_________________ test_opponent_coverage_counts_actual_events __________________
+
+    def test_opponent_coverage_counts_actual_events() -> None:
+        public = {"step": 0, "day": 0, "hour": 0, "farms": [
+            {"hands": [], "tiles": [[{"type": "WEEDS"}]]},
+            {"hands": [], "tiles": [[None]]},
+        ], "market": {"inventory": {"WHEAT": 0}}}
+        records = [{"initial": {"public": public}}, {
+            "type": "transition", "from_step": 0,
+            "actions": [{"market": [["HIRE"], ["BUY_PRODUCT", "WHEAT", 1]]}, {}],
+            "expected": {**public, "step": 1, "farms": [
+                {**public["farms"][0], "hands": [[5, 4]]}, public["farms"][1]
+            ]},
+        }]
+>       counts = generator.opponent_coverage(records)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'kaggriculture_parity_generate_traces' has no attribute 'opponent_coverage'
+
+tests/scripts/test_kaggriculture_parity.py:465: AttributeError
+=========================== short test summary info ============================
+FAILED tests/scripts/test_kaggriculture_parity.py::test_sibling_oracle_rejects_changed_source
+FAILED tests/scripts/test_kaggriculture_parity.py::test_sibling_oracle_rejects_unknown_bot
+FAILED tests/scripts/test_kaggriculture_parity.py::test_sibling_oracle_instances_have_fresh_module_state
+FAILED tests/scripts/test_kaggriculture_parity.py::test_opponent_specs_cover_both_seats_and_enforce_live_batch_bound
+FAILED tests/scripts/test_kaggriculture_parity.py::test_opponent_coverage_counts_actual_events
+5 failed, 18 deselected in 0.04s

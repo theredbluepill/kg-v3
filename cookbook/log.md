@@ -90,6 +90,65 @@ built from three surveys and rechecked with `git merge-base --is-ancestor`
 against `b8747b6`. It lists notes that exist only on unmerged branches, which
 are not linked yet. `plan.md` now ticks only tasks merged into integration and
 marks 4.1–4.3 and 6.0 as approved, not merged.
+## 2026-09-29 — Check opponent mid-episode replay against the original submissions
+
+Codex's verification of Task 7.1 rejected the qualification because
+mid-episode replay was checked natively only and stopped at the reconstruction
+boundary (brief §6). The generator's `opponent-replay` preset now rebuilds fresh
+original controllers in both seats from each frozen oracle prefix at steps 37,
+360 and 695 and freezes 24 resumed steps per case; fresh native controllers
+rebuilt the same way match all 1,152 resumed actions and 24 final states, and
+tampering and a scratch controller mutation fail. The stale 19-test count is now
+22. The [[references/snapshot-view-isolates-byte-exact-evaluation-opponents|opponent Reference]]
+and `docs/rules-parity-coverage.md` carry the denominators and the
+foreign-prefix limit. Receipts: `ops/rebuild-2026-09-29/7.1/verify-r1/`.
+
+## 2026-09-29 — Qualify the four opponents against their originals on CPython 3.11
+
+Claude's review of Task 7.1 regenerated the original-submission oracles on
+CPython 3.11.15, the interpreter of Kaggle's simulation image (v163, per v2's
+container Reference). Codex's single 3.12.13 trace had failed at R04 step 12
+because CPython 3.12 made float `sum()` compensated; the native port sums
+sequentially, as 3.11 does. Eight games (seeds 20260929–20260936, each bot
+twice in each seat) now match all 11,504 original actions and every state.
+The generator, custody checker and Rust oracle test refuse non-3.11 oracles,
+and three production mutations fail their tests. The
+[[references/snapshot-view-isolates-byte-exact-evaluation-opponents|opponent Reference]]
+and `docs/rules-parity-coverage.md` carry the denominators and remaining gaps
+(no Python-side shortage, rejection or mid-episode replay coverage; license
+notices; default config only; Task 1.4 binding). Receipts:
+`ops/rebuild-2026-09-29/7.1/review/`.
+
+## 2026-09-29 — Import evaluation controllers through a v3-owned snapshot view
+
+Claude's revised Task 7.1 placement resolves the private-engine boundary with an
+opaque engine owner, current snapshot accessors and the one hire-cost value.
+Four controller files and E776 policy data stay byte-exact in `opponents_rs`;
+registry/lifecycle/default-config runner and custody checks are implemented.
+The first original-Python trace stops at R04 step 12: native `WEST`, Python
+`NORTH` for hand 2. Python 3.12 floating summation versus native sequential
+summation changes an anchor threshold; a 13-observation counterfactual isolates
+that cause. Final review also closes a derived-`Debug` engine-state leak with
+a snapshot/config-only formatter and a failing-then-passing regression; 19
+opponent tests pass and the original-Python comparison remains failing. The
+corpus is not widened. The
+[[references/snapshot-view-isolates-byte-exact-evaluation-opponents|current Reference]]
+replaces the stop-only note and corrects its unsupported owner attribution:
+the old STOP instruction came from Claude's placement prompt. Run-1 receipts
+at `21d0f45` are preserved; final outcomes are recorded in
+`ops/rebuild-2026-09-29/7.1/results.md` and separate `run2/` receipts.
+
+## 2026-09-29 — Stop Task 7.1 at the frozen engine's external-crate boundary
+
+The requested standalone crate cannot compile the byte-exact controllers:
+`fib` and `Game.config` are private, and five required accessors lived in the
+excluded reference `policy_rows.rs`. The all-target compile probe fails before
+any bot can run, triggering Claude's placement prompt's explicit STOP instruction. No production
+crate or oracle traces are added. The
+[[references/snapshot-view-isolates-byte-exact-evaluation-opponents|current opponent Reference, with run-1 history]]
+and coverage page record the exact blocker and unimplemented qualification;
+receipts are in `ops/rebuild-2026-09-29/7.1/`. The trim updater records only
+non-engine bookkeeping and preserves every retained/authored/excluded entry.
 
 ## 2026-09-29 — Capture every engine build input in observation-oracle custody
 
