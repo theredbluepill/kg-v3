@@ -167,9 +167,10 @@ The match runner supports only default configuration and sends official
 It records the applied action, joint engine acceptance per seat, controller
 errors, raw banks and winner. Acceptance is not proof that every individual
 order executed; engine market metrics are available only as joint aggregates.
-The native crate's 20 tests pass: 12 unit tests (including Starter's five
-pinned inline cases), five lifecycle/match integration tests and three oracle
-tests (comparator regression, original-Python parity, per-seat tampering).
+The native crate's 22 tests pass: 12 unit tests (including Starter's five
+pinned inline cases), five lifecycle/match integration tests and five oracle
+tests (comparator regression, original-Python parity, per-seat tampering,
+original-Python mid-episode replay and its tampering checks).
 
 **Original-submission parity (Claude review).** The oracle corpus holds eight
 default-config games generated from Kaggle 1.32.7's Python engine on CPython
@@ -208,11 +209,33 @@ Coverage of the Python traces, per seat-game (eight games, 16 seat-games):
 openings 1 and day resets 29 in every seat-game; own-farm weeds in all;
 hires in every R04, EcoBot and E776 seat-game and none for Starter; day-29
 SELL orders in every R04, EcoBot and E776 seat-game and none for Starter.
-No trace has a whole-step rejection, a BUY_PRODUCT above the inventory index or
-a mid-episode replay. `buy_quantity_above_inventory_index` compares a quantity
-to a price index, not stock, so engine-confirmed shortages and individual-order
-rejection are uncovered. Mid-episode replay and reset are checked natively
-(lifecycle test), not against Python.
+No trace has a whole-step rejection or a BUY_PRODUCT above the inventory index.
+`buy_quantity_above_inventory_index` compares a quantity to a price index, not
+stock, so engine-confirmed shortages and individual-order rejection are
+uncovered. The contiguous traces' `mid_episode_replay` count stays zero; replay
+has its own oracle below. Explicit reset is checked natively (lifecycle test).
+
+**Original-submission mid-episode replay (verify r1).** The generator's
+`opponent-replay` preset rebuilds fresh controllers in both seats (a fresh
+module per original submission) from each frozen oracle's recorded prefix:
+every prefix observation is presented, the controller must choose the recorded
+action, recorded actions drive Kaggle's engine and the rebuilt public/private
+state must equal the trace. The controllers then act on their own for 24 steps.
+Reconstruction points are step 37 (day 1 hour 13), step 360 (a day reset) and
+step 695, whose window covers the whole final day. All eight oracles at all
+three points give 24 cases, so every bot resumes in both seats at every point.
+`opponents_rs/fixtures/replay/REPLAY.json.gz` (23,323 bytes, CPython 3.11.15,
+bound to the oracle MANIFEST SHA-256) freezes the resumed actions and final
+public/private state and statuses; regeneration was byte-identical. Native
+controllers, rebuilt through the same step-zero lifecycle from the same prefix,
+match **1,152 / 1,152** resumed actions (576 per seat) and all 24 final states.
+Tampering the first resumed action of either seat in each step-37 case, the
+last resumed action of one case and one final state each fails with the exact
+case, step and seat. A restored scratch controller mutation at step 700 failed
+all eight step-695 cases on resume (`verify-r1/replay-controller-mutation.log`).
+Limit: each prefix is the controllers' own recorded play, so every resumed
+action also equals the contiguous trace; states the controllers did not
+create (foreign prefixes) are untested.
 
 The eight compressed oracles use **1,779,187 / 4,000,000 bytes**; their
 SHA-256s are in `opponents_rs/fixtures/oracle/MANIFEST.json` and

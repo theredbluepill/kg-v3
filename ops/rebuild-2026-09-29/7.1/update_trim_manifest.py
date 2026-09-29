@@ -17,6 +17,8 @@ STOPPED = "21d0f45effdf76302cc4bf3b163601038d0d2f8e"
 # Codex run 2's committed output; Claude review regenerated the oracles under
 # CPython 3.11 and adds its receipts, so this earlier output is accepted input.
 RUN2 = "7ae9bbfe0573b5f768ea6ce737705ee176c75062"
+# Claude review's committed output; verify r1 adds the original replay oracle.
+REVIEW = "f15a4136923e4e526ca0226c7bbc793cdf25ce12"
 ORACLE_PAIRS = ("starter-vs-r04", "r04-vs-ecobot", "ecobot-vs-e776", "e776-vs-starter")
 MANIFEST = "engine_rs/TRIM_MANIFEST.json"
 OPS = "ops/rebuild-2026-09-29/7.1"
@@ -40,10 +42,12 @@ CHANGES = {
         "exercise opponent custody mutation attacks."
     ),
     "scripts/kaggriculture_parity/generate_traces.py": (
-        "load pinned original Python submissions with isolated per-seat lifecycle."
+        "load pinned original Python submissions with isolated per-seat lifecycle; "
+        "freeze fresh-controller mid-episode replays (verify r1)."
     ),
     "tests/scripts/test_kaggriculture_parity.py": (
-        "test submission custody and independent original-Python agent instances."
+        "test submission custody, independent original-Python agent instances "
+        "and prefix-reconstruction refusals."
     ),
     "tests/owl/kaggriculture/test_opponents.py": (
         "declare learned-seat checks skipped until the Task 1.4 binding exists."
@@ -61,7 +65,14 @@ CHANGES = {
             "src/runner.rs": "execute bounded default-config evaluation matches.",
             "src/view_tests.rs": "check the view and private-state visibility.",
             "tests/lifecycle.rs": "check lifecycle, determinism and config bounds.",
-            "tests/oracle_parity.rs": "compare original Python actions and state.",
+            "tests/oracle_parity.rs": (
+                "compare original Python actions and state, continuous and "
+                "resumed after mid-episode reconstruction."
+            ),
+            "fixtures/replay/REPLAY.json.gz": (
+                "freeze original-submission resumed actions after fresh-controller "
+                "prefix reconstruction (CPython 3.11, verify r1)."
+            ),
             "fixtures/e776-kenjo-trace.json": "preserve E776 executable policy data.",
             "fixtures/oracle/MANIFEST.json": "freeze generated Python oracle metadata.",
             **{
@@ -139,7 +150,10 @@ CHANGES = {
             "r04-mismatch.md": (
                 "explain first R04 mismatch and bounded source attribution."
             ),
-            "write_opponent_manifest.py": "freeze explicit opponent custody inventory.",
+            "write_opponent_manifest.py": (
+                "freeze explicit opponent custody inventory, including the replay "
+                "oracle."
+            ),
             "updater-red.log": "retain six failures before resumed-updater support.",
             "updater-green.log": "record six updater tests and 12 mutation subtests.",
             "updater-green-final.log": (
@@ -171,6 +185,26 @@ CHANGES = {
             "mutations.log": "record production mutations that fail their tests.",
             "results.md": "record Claude review findings, checks and limits.",
             "prepare.log": "record the review's full repository preparation.",
+        }.items()
+    },
+    **{
+        f"{OPS}/verify-r1/{name}": reason
+        for name, reason in {
+            "replay-python-red.log": "retain replay generator test-first failures.",
+            "replay-python-green.log": "record replay generator unit tests.",
+            "replay-rust-red.log": "retain native replay test before the oracle.",
+            "replay-generation.log": "record CPython 3.11 replay generation cost.",
+            "generation-replay.json": "record replay fixture hash, size and runtime.",
+            "replay-regeneration.log": "record byte-identical replay regeneration.",
+            "replay-rust-green.log": "record native replay parity and mutations.",
+            "parity-replay.json": "pin compared resumed-action denominators.",
+            "replay-controller-mutation.log": (
+                "record a restored step-700 controller mutation caught on resume."
+            ),
+            "updater-red.log": "retain the review-input updater failure.",
+            "updater-green.log": "record updater tests after replay registration.",
+            "results.md": "record verify-r1 resolutions, checks and limits.",
+            "prepare.log": "record the verify-r1 repository preparation.",
         }.items()
     },
 }
@@ -233,7 +267,13 @@ def main() -> None:
     baseline, stopped = read(BASE), read(STOPPED)
     target = ROOT / MANIFEST
     target.write_bytes(
-        render(target.read_bytes(), baseline, stopped, CHANGES, (read(RUN2),))
+        render(
+            target.read_bytes(),
+            baseline,
+            stopped,
+            CHANGES,
+            (read(RUN2), read(REVIEW)),
+        )
     )
     print(
         "Task 7.1: import inventory updated; retained/authored engine entries unchanged"

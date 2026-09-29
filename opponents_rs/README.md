@@ -53,7 +53,11 @@ transition. Oracles from other interpreters are refused: CPython 3.12's
 compensated float sum() changes R04's decisions (see
 ops/rebuild-2026-09-29/7.1/run2/r04-mismatch.md). Denominators, coverage and
 gaps are in docs/rules-parity-coverage.md and
-ops/rebuild-2026-09-29/7.1/review/results.md.
+ops/rebuild-2026-09-29/7.1/review/results.md. Mid-episode replay is also checked
+against Python: fresh original controllers rebuilt from each oracle's prefix at
+steps 37, 360 and 695 resume for 24 steps (fixtures/replay/REPLAY.json.gz), and
+fresh native controllers rebuilt the same way match all 1,152 resumed actions
+and the 24 final states (ops/rebuild-2026-09-29/7.1/verify-r1/).
 
 ## Notices and redistribution limits
 

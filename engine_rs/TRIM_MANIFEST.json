@@ -751,7 +751,7 @@
     },
     {
       "path": "scripts/kaggriculture_parity/generate_traces.py",
-      "reason": "Task 1.1b hash-guarded live trace generator over Kaggle's Python engine Task 7.1: load pinned original Python submissions with isolated per-seat lifecycle."
+      "reason": "Task 1.1b hash-guarded live trace generator over Kaggle's Python engine Task 7.1: load pinned original Python submissions with isolated per-seat lifecycle; freeze fresh-controller mid-episode replays (verify r1)."
     },
     {
       "path": "scripts/kaggriculture_parity/sweep.py",
@@ -759,7 +759,7 @@
     },
     {
       "path": "tests/scripts/test_kaggriculture_parity.py",
-      "reason": "Task 1.1b hash guard, trace-format round trip, coverage and optional live regeneration tests Task 7.1: test submission custody and independent original-Python agent instances."
+      "reason": "Task 1.1b hash guard, trace-format round trip, coverage and optional live regeneration tests Task 7.1: test submission custody, independent original-Python agent instances and prefix-reconstruction refusals."
     },
     {
       "path": "ops/rebuild-2026-09-29/1.1b",
@@ -975,7 +975,11 @@
     },
     {
       "path": "opponents_rs/tests/oracle_parity.rs",
-      "reason": "Task 7.1: compare original Python actions and state."
+      "reason": "Task 7.1: compare original Python actions and state, continuous and resumed after mid-episode reconstruction."
+    },
+    {
+      "path": "opponents_rs/fixtures/replay/REPLAY.json.gz",
+      "reason": "Task 7.1: freeze original-submission resumed actions after fresh-controller prefix reconstruction (CPython 3.11, verify r1)."
     },
     {
       "path": "opponents_rs/fixtures/e776-kenjo-trace.json",
@@ -1163,7 +1167,7 @@
     },
     {
       "path": "ops/rebuild-2026-09-29/7.1/run2/write_opponent_manifest.py",
-      "reason": "Task 7.1: freeze explicit opponent custody inventory."
+      "reason": "Task 7.1: freeze explicit opponent custody inventory, including the replay oracle."
     },
     {
       "path": "ops/rebuild-2026-09-29/7.1/run2/updater-red.log",
@@ -1252,6 +1256,58 @@
     {
       "path": "ops/rebuild-2026-09-29/7.1/review/prepare.log",
       "reason": "Task 7.1: record the review's full repository preparation."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-python-red.log",
+      "reason": "Task 7.1: retain replay generator test-first failures."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-python-green.log",
+      "reason": "Task 7.1: record replay generator unit tests."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-rust-red.log",
+      "reason": "Task 7.1: retain native replay test before the oracle."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-generation.log",
+      "reason": "Task 7.1: record CPython 3.11 replay generation cost."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/generation-replay.json",
+      "reason": "Task 7.1: record replay fixture hash, size and runtime."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-regeneration.log",
+      "reason": "Task 7.1: record byte-identical replay regeneration."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-rust-green.log",
+      "reason": "Task 7.1: record native replay parity and mutations."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/parity-replay.json",
+      "reason": "Task 7.1: pin compared resumed-action denominators."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/replay-controller-mutation.log",
+      "reason": "Task 7.1: record a restored step-700 controller mutation caught on resume."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/updater-red.log",
+      "reason": "Task 7.1: retain the review-input updater failure."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/updater-green.log",
+      "reason": "Task 7.1: record updater tests after replay registration."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/results.md",
+      "reason": "Task 7.1: record verify-r1 resolutions, checks and limits."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/7.1/verify-r1/prepare.log",
+      "reason": "Task 7.1: record the verify-r1 repository preparation."
     }
   ]
 }

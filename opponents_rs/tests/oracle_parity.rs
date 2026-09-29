@@ -82,6 +82,25 @@ impl ReplayReport {
     }
 }
 
+fn policy_kinds(header: &Value) -> Result<Vec<OpponentKind>, String> {
+    let policies = header["source"]["policies"]
+        .as_array()
+        .ok_or("missing policies")?;
+    if policies.len() != 2 {
+        return Err("expected two policies".into());
+    }
+    policies
+        .iter()
+        .map(|v| {
+            let key = v.as_str().ok_or("policy must be a string")?;
+            key.strip_prefix("builtin:")
+                .or_else(|| key.strip_prefix("sibling:"))
+                .ok_or("unknown policy namespace")?
+                .parse()
+        })
+        .collect()
+}
+
 fn replay(rows: &[Value]) -> ReplayReport {
     let mut report = ReplayReport::new();
     report.mismatch = replay_inner(rows, &mut report).err();
@@ -107,22 +126,7 @@ fn replay_inner(rows: &[Value], report: &mut ReplayReport) -> Result<(), String>
         2,
     )?;
     let mut game = Game::from_engine(engine, &header.configuration)?;
-    let policies = raw["source"]["policies"]
-        .as_array()
-        .ok_or("missing policies")?;
-    if policies.len() != 2 {
-        return Err("expected two policies".into());
-    }
-    let kinds: Vec<OpponentKind> = policies
-        .iter()
-        .map(|v| {
-            let key = v.as_str().ok_or("policy must be a string")?;
-            key.strip_prefix("builtin:")
-                .or_else(|| key.strip_prefix("sibling:"))
-                .ok_or("unknown policy namespace")?
-                .parse()
-        })
-        .collect::<Result<_, String>>()?;
+    let kinds = policy_kinds(raw)?;
     let mut seats = [
         SeatController::new(kinds[0], 0, &game)?,
         SeatController::new(kinds[1], 1, &game)?,
@@ -289,4 +293,227 @@ fn every_oracle_rejects_tampered_actions_for_both_seats() {
             eprintln!("mutation {} seat {seat}: {mismatch}", entry["path"]);
         }
     }
+}
+
+// ------------------------------------------------ original mid-episode replay
+
+/// Mid-day (day 1 hour 13), a day reset (day 15 hour 0) and the last hour before
+/// the final day; each window resumes for one full day.
+const REPLAY_POINTS: [u64; 3] = [37, 360, 695];
+const REPLAY_RESUME: u64 = 24;
+
+fn replay_document() -> Value {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/replay/REPLAY.json.gz");
+    let output = Command::new("gzip")
+        .args(["-dc"])
+        .arg(&path)
+        .output()
+        .expect("gzip required");
+    assert!(
+        output.status.success(),
+        "generate the original-Python replay oracle first: {}",
+        path.display()
+    );
+    serde_json::from_slice(&output.stdout).unwrap()
+}
+
+/// Rebuild fresh native controllers from the recorded Python prefix, as the
+/// lifecycle requires (a fresh controller only at step zero), then compare their
+/// resumed decisions with the frozen decisions of fresh original Python
+/// controllers rebuilt from the same prefix. Recorded actions drive the prefix;
+/// frozen resumed actions drive the resumed engine steps.
+fn resume(case: &Value, rows: &[Value], compared: &mut [usize; 2]) -> Result<(), String> {
+    let raw = &rows[0];
+    let label = format!(
+        "{}@{}",
+        case["source"].as_str().unwrap_or("?"),
+        case["reconstruct_step"]
+    );
+    if case["policies"] != raw["source"]["policies"] || case["seed"] != raw["seed"] {
+        return Err(format!(
+            "{label}: replay case identity differs from its source"
+        ));
+    }
+    let header: TraceHeader = serde_json::from_value(raw.clone()).map_err(|e| e.to_string())?;
+    let engine = kaggriculture_engine::Game::new_with_seed_decimal(
+        header.configuration.clone(),
+        &header.seed.to_string(),
+        2,
+    )?;
+    let mut game = Game::from_engine(engine, &header.configuration)?;
+    let kinds = policy_kinds(raw)?;
+    let point = case["reconstruct_step"]
+        .as_u64()
+        .ok_or("reconstruct_step")? as usize;
+    let resumed = case["resumed_actions"]
+        .as_array()
+        .ok_or("resumed_actions")?;
+    if resumed.len() as u64 != case["resume_steps"].as_u64().ok_or("resume_steps")? {
+        return Err(format!("{label}: resumed action count"));
+    }
+    let mut seats = [
+        SeatController::new(kinds[0], 0, &game)?,
+        SeatController::new(kinds[1], 1, &game)?,
+    ];
+    for step in 0..point + resumed.len() {
+        let (phase, expected) = if step < point {
+            ("prefix", &rows[1 + step]["actions"])
+        } else {
+            ("resume", &resumed[step - point])
+        };
+        for seat in 0..2 {
+            let action = seats[seat].action(&game, seat)?;
+            if let Some(diff) = difference(
+                &action,
+                &expected[seat],
+                &format!(
+                    "{label} {phase} step {step} seat {seat} {} action",
+                    kinds[seat].key()
+                ),
+                false,
+            ) {
+                return Err(diff);
+            }
+            if phase == "resume" {
+                compared[seat] += 1;
+            }
+        }
+        game.step(expected.as_array().ok_or("actions must be an array")?)?;
+    }
+    let state = game.snapshot();
+    let final_state = &case["final"];
+    for (actual, expected, part, order) in [
+        (
+            serde_json::to_value(&state.public).unwrap(),
+            &final_state["public"],
+            "public",
+            true,
+        ),
+        (
+            serde_json::to_value(&state.privates).unwrap(),
+            &final_state["privates"],
+            "privates",
+            true,
+        ),
+        (
+            json!(state.statuses),
+            &final_state["statuses"],
+            "statuses",
+            false,
+        ),
+    ] {
+        if let Some(diff) = difference(&actual, expected, &format!("{label} final {part}"), order) {
+            return Err(diff);
+        }
+    }
+    Ok(())
+}
+
+fn replay_sources() -> std::collections::BTreeMap<String, Vec<Value>> {
+    entries()
+        .iter()
+        .map(|entry| (entry["path"].as_str().unwrap().to_owned(), read_rows(entry)))
+        .collect()
+}
+
+#[test]
+fn original_python_mid_episode_replays_match_native_resumed_actions() {
+    use sha2::{Digest, Sha256};
+    let document = replay_document();
+    let manifest = std::fs::read(directory().join("MANIFEST.json")).unwrap();
+    assert_eq!(document["format"], "kaggriculture-opponent-replay-v1");
+    assert_eq!(document["module_version"], "1.32.7");
+    assert_eq!(document["engine_sha256"], ENGINE_SHA);
+    let runtime = document["python_runtime"].as_str().unwrap_or_default();
+    assert!(
+        runtime.starts_with("3.11."),
+        "replay runtime {runtime:?} is not CPython 3.11"
+    );
+    assert_eq!(
+        document["oracle_manifest_sha256"],
+        format!("{:x}", Sha256::digest(&manifest)),
+        "replay oracle was generated from another oracle manifest"
+    );
+    assert_eq!(document["points"], json!(REPLAY_POINTS));
+    assert_eq!(document["resume_steps"], REPLAY_RESUME);
+    let sources = replay_sources();
+    let cases = document["cases"].as_array().unwrap();
+    // Every frozen oracle is replayed at every point, so every bot resumes in
+    // both seats at every point.
+    let mut covered = std::collections::BTreeSet::new();
+    for case in cases {
+        let point = case["reconstruct_step"].as_u64().unwrap();
+        assert_eq!(case["resume_steps"], REPLAY_RESUME);
+        for (seat, policy) in case["policies"].as_array().unwrap().iter().enumerate() {
+            covered.insert((policy.as_str().unwrap().to_owned(), seat, point));
+        }
+    }
+    assert_eq!(cases.len(), sources.len() * REPLAY_POINTS.len());
+    assert_eq!(covered.len(), 4 * 2 * REPLAY_POINTS.len(), "{covered:?}");
+    let mut compared = [0; 2];
+    let mut failures = Vec::new();
+    for case in cases {
+        let rows = &sources[case["source"].as_str().unwrap()];
+        if let Err(mismatch) = resume(case, rows, &mut compared) {
+            failures.push(mismatch);
+        }
+    }
+    eprintln!(
+        "replay cases {} compared resumed actions {compared:?}",
+        cases.len()
+    );
+    if let Some(path) = std::env::var_os("OPPONENT_REPLAY_REPORT") {
+        let report = json!({"cases": cases.len(), "compared_actions": compared,
+            "failures": failures});
+        std::fs::write(path, serde_json::to_string_pretty(&report).unwrap() + "\n").unwrap();
+    }
+    assert!(
+        failures.is_empty(),
+        "original Python replay parity failed:\n{}",
+        failures.join("\n")
+    );
+    let expected = cases.len() * REPLAY_RESUME as usize;
+    assert_eq!(compared, [expected; 2]);
+}
+
+#[test]
+fn replay_comparison_rejects_tampered_resumed_actions_and_final_state() {
+    let document = replay_document();
+    let sources = replay_sources();
+    let cases: Vec<&Value> = document["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|case| case["reconstruct_step"] == REPLAY_POINTS[0])
+        .collect();
+    assert_eq!(cases.len(), sources.len());
+    let last = REPLAY_RESUME as usize - 1;
+    for case in &cases {
+        let rows = &sources[case["source"].as_str().unwrap()];
+        for (index, seat) in [(0, 0), (0, 1), (last, 1)] {
+            if index == last && case != &cases[0] {
+                continue;
+            }
+            let mut altered = (*case).clone();
+            altered["resumed_actions"][index][seat]["farmer"] = json!(["TASK_7_1_MUTATION"]);
+            let mismatch =
+                resume(&altered, rows, &mut [0; 2]).expect_err("tampered action must fail");
+            let step = REPLAY_POINTS[0] as usize + index;
+            assert!(
+                mismatch.contains(&format!("resume step {step} seat {seat}"))
+                    && mismatch.contains("action.farmer"),
+                "{mismatch}"
+            );
+            eprintln!("replay mutation: {mismatch}");
+        }
+    }
+    let mut altered = cases[0].clone();
+    altered["final"]["public"]["hour"] = json!(99);
+    let mismatch = resume(
+        &altered,
+        &sources[cases[0]["source"].as_str().unwrap()],
+        &mut [0; 2],
+    )
+    .expect_err("tampered final state must fail");
+    assert!(mismatch.contains("final public.hour"), "{mismatch}");
 }

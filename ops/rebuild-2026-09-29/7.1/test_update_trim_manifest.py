@@ -134,6 +134,31 @@ class UpdaterTests(unittest.TestCase):
         with pytest.raises(ValueError, match="unexpected"):
             updater.render(run2, base, stopped, updater.CHANGES)
 
+    def test_committed_review_output_is_an_accepted_input(self) -> None:
+        """Verify r1: the replay oracle adds CHANGES after the Claude review."""
+
+        def git(revision: str) -> bytes:
+            return subprocess.run(
+                ["git", "show", f"{revision}:engine_rs/TRIM_MANIFEST.json"],
+                cwd=updater.ROOT,
+                check=True,
+                capture_output=True,
+            ).stdout
+
+        base, stopped = git("b8747b6"), git("21d0f45")
+        previous = (git(updater.RUN2), git(updater.REVIEW))
+        review = previous[1]
+        result = updater.render(review, base, stopped, updater.CHANGES, previous)
+        assert result != review
+        assert (
+            updater.render(result, base, stopped, updater.CHANGES, previous) == result
+        )
+        paths = {entry["path"] for entry in json.loads(result)["non_engine_changes"]}
+        assert "opponents_rs/fixtures/replay/REPLAY.json.gz" in paths
+        assert f"{updater.OPS}/verify-r1/parity-replay.json" in paths
+        with pytest.raises(ValueError, match="unexpected"):
+            updater.render(review, base, stopped, updater.CHANGES, previous[:1])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1365,7 +1365,8 @@ def opponent_coverage(records: list[dict[str, Any]]) -> list[dict[str, int]]:
     proxy only: this index is not physical stock, so neither actual shortages
     nor individual-order rejection is measured. Hires count positive changes
     in hands. A day reset is an action at hour zero after step zero. Final-day
-    sell orders count intent, not proceeds. Mid-episode replay is not performed.
+    sell orders count intent, not proceeds. Contiguous traces never replay;
+    mid-episode replay is frozen separately (``opponent_replay``).
     """
     counts = [
         dict.fromkeys(
@@ -1481,17 +1482,220 @@ def write_opponent_manifest(
     return manifest_path
 
 
+# Mid-episode replay: fresh controllers rebuilt from a recorded prefix, then
+# resumed. Points are mid-day (day 1 hour 13), a day reset (day 15 hour 0) and
+# the last pre-liquidation hour, whose window covers the whole final day.
+REPLAY_FORMAT = "kaggriculture-opponent-replay-v1"
+REPLAY_POINTS = (37, 360, 695)
+REPLAY_RESUME_STEPS = 24
+REPLAY_FILE = "REPLAY.json.gz"
+REPLAY_BYTE_BUDGET = 1_000_000
+ORACLE_DIR = REPO_ROOT / "opponents_rs/fixtures/oracle"
+
+
+def replay_window(point: int, resume: int, transitions: int) -> None:
+    """A replay must rebuild a nonempty prefix and resume inside the episode."""
+    if point <= 0 or resume <= 0 or point + resume > transitions:
+        raise ParityGeneratorError(
+            f"replay window {point}+{resume} lies outside {transitions} transitions"
+        )
+
+
+def _canonical(value: Any) -> str:
+    return json.dumps(value, separators=(",", ":"), allow_nan=False)
+
+
+def replay_case(
+    records: list[dict[str, Any]],
+    point: int,
+    resume: int,
+    kaggle: ModuleType,
+    module: ModuleType,
+) -> dict[str, Any]:
+    """Rebuild fresh controllers from a recorded prefix, then resume them.
+
+    This mirrors the native lifecycle, which admits a fresh controller only at
+    step zero: a new controller per seat (a fresh module for original
+    submissions) observes every prefix step and must choose the recorded action,
+    which drives Kaggle's engine; the rebuilt state must equal the recorded state.
+    From ``point`` the controllers act on their own for ``resume`` steps. Their
+    actions and the final state are the frozen expectations for native replay.
+    """
+    header, rows = records[0], records[1:]
+    source = header["source"]
+    replay_window(point, resume, int(header["transitions"]))
+    if source["config_variant"] != "default":
+        raise ParityGeneratorError("opponent replay supports the default config only")
+    spec = GameSpec(
+        name=str(source["name"]),
+        seed=int(header["seed"]),
+        policies=(source["policies"][0], source["policies"][1]),
+        variant="default",
+        policy_seed=int(source["policy_seed"]),
+    )
+    resumed: list[Json] = []
+    with ExitStack() as stack:
+        policies = []
+        for name in spec.policies:
+            policy = resolve_policy(name, module)
+            if isinstance(policy, SiblingPolicy):
+                stack.callback(policy.close)
+            policies.append(policy)
+        rngs = [random.Random(spec.policy_seed * 2 + seat) for seat in range(2)]
+        with _silenced():
+            env = kaggle.make("kaggriculture", configuration=spec.configuration)
+        if env.info.get("seed") != spec.seed:
+            raise ParityGeneratorError(f"{spec.name}: env did not adopt seed")
+        config = _plain(dict(env.configuration))
+        if _public(env) != header["initial"]["public"]:
+            raise ParityGeneratorError(f"{spec.name}: reconstruction initial state")
+        for row in rows[: point + resume]:
+            step = env.state[0].observation.step
+            if row["type"] != "transition" or row["from_step"] != step:
+                raise ParityGeneratorError(f"{spec.name}: record for step {step}")
+            actions = _plain(
+                [
+                    policy(obs, config, rng).action
+                    for policy, obs, rng in zip(
+                        policies, _observations(env), rngs, strict=True
+                    )
+                ]
+            )
+            if step < point:
+                for seat in range(2):
+                    if _canonical(actions[seat]) != _canonical(row["actions"][seat]):
+                        raise ParityGeneratorError(
+                            f"{spec.name}: prefix step {step} seat {seat}: fresh "
+                            "controller diverged from the recorded action"
+                        )
+                submitted = row["actions"]
+            else:
+                resumed.append(actions)
+                submitted = actions
+            with _silenced():
+                env.step(copy.deepcopy(submitted))
+            if step < point and (
+                _public(env) != row["expected"] or _privates(env) != row["privates"]
+            ):
+                raise ParityGeneratorError(
+                    f"{spec.name}: reconstruction step {step} diverged from the "
+                    "recorded state"
+                )
+        final = {
+            "public": _public(env),
+            "privates": _privates(env),
+            "statuses": [agent.status for agent in env.state],
+        }
+    return {
+        "source": f"{spec.name}.jsonl.gz",
+        "seed": spec.seed,
+        "policies": list(spec.policies),
+        "reconstruct_step": point,
+        "resume_steps": resume,
+        "resumed_actions": resumed,
+        # Descriptive only: equal actions show deterministic reconstruction; the
+        # native test compares against resumed_actions, never these counts.
+        "continuous_equal_actions": [
+            sum(
+                _canonical(actions[seat])
+                == _canonical(rows[point + i]["actions"][seat])
+                for i, actions in enumerate(resumed)
+            )
+            for seat in range(2)
+        ],
+        "final": final,
+    }
+
+
+def oracle_sources(oracle_dir: Path) -> tuple[bytes, list[list[dict[str, Any]]]]:
+    """Read the frozen opponent oracles, rechecking their manifest custody."""
+    manifest_bytes = (oracle_dir / "MANIFEST.json").read_bytes()
+    traces = []
+    for entry in json.loads(manifest_bytes)["traces"]:
+        path = oracle_dir / entry["path"]
+        data = path.read_bytes()
+        if (
+            path.parent != oracle_dir
+            or hashlib.sha256(data).hexdigest() != entry["sha256"]
+            or len(data) != entry["bytes"]
+        ):
+            raise ParityGeneratorError(f"oracle custody mismatch: {path}")
+        traces.append(
+            [json.loads(line) for line in gzip.decompress(data).decode().splitlines()]
+        )
+    return manifest_bytes, traces
+
+
+def write_replay_fixture(out: Path, document: dict[str, Any]) -> Path:
+    """Write deterministic gzip JSON; a frozen fixture is never overwritten."""
+    buffer = io.BytesIO()
+    with gzip.GzipFile(filename="", mode="wb", fileobj=buffer, mtime=0) as handle:
+        handle.write((_canonical(document) + "\n").encode("utf-8"))
+    encoded = buffer.getvalue()
+    path = out / REPLAY_FILE
+    if path.exists() and path.read_bytes() != encoded:
+        raise ParityGeneratorError(f"refusing to overwrite frozen replay {path}")
+    if len(encoded) > REPLAY_BYTE_BUDGET:
+        raise ParityGeneratorError(
+            f"replay fixture {len(encoded):,} B exceeds {REPLAY_BYTE_BUDGET:,} B"
+        )
+    out.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(encoded)
+    return path
+
+
+def opponent_replay(
+    oracle_dir: Path,
+    kaggle: ModuleType,
+    module: ModuleType,
+    pin: EnginePin,
+    engine_sha256: str,
+) -> dict[str, Any]:
+    """Replay every frozen oracle at every point; each bot resumes in both seats."""
+    runtime = oracle_python_runtime()
+    manifest_bytes, traces = oracle_sources(oracle_dir)
+    cases = []
+    for records in traces:
+        for point in REPLAY_POINTS:
+            with opponent_deadline():
+                cases.append(
+                    replay_case(records, point, REPLAY_RESUME_STEPS, kaggle, module)
+                )
+            if peak_rss_bytes() >= 1_000_000_000:
+                raise ParityGeneratorError("opponent replay reached 1 GB Mac bound")
+    return {
+        "type": "header",
+        "format": REPLAY_FORMAT,
+        "generator": GENERATOR,
+        "module_version": pin.version,
+        "engine_sha256": engine_sha256,
+        "python_runtime": runtime,
+        "oracle_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "points": list(REPLAY_POINTS),
+        "resume_steps": REPLAY_RESUME_STEPS,
+        "cases": cases,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument(
-        "--preset", choices=["committed", "sweep", "probes", "opponents"], required=True
+        "--preset",
+        choices=["committed", "sweep", "probes", "opponents", "opponent-replay"],
+        required=True,
     )
     parser.add_argument(
         "--games", type=int, help="sweep games (40) or opponent games (1; maximum 2)"
     )
     parser.add_argument(
         "--opponent-start", type=int, default=0, help="first opponent-pair index"
+    )
+    parser.add_argument(
+        "--oracle-dir",
+        type=Path,
+        default=ORACLE_DIR,
+        help="frozen opponent oracles that opponent-replay rebuilds prefixes from",
     )
     parser.add_argument("--base-seed", type=int, default=20260929, help="sweep seed")
     parser.add_argument("--manifest", action="store_true", help="write MANIFEST.json")
@@ -1503,13 +1707,30 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
-        if args.preset == "opponents":
+        if args.preset in ("opponents", "opponent-replay"):
             oracle_python_runtime()
         pin = pinned_engine()
         kaggle, module, digest = load_pinned_kaggle(pin)
     except ParityGeneratorError as error:
         print(f"refusing to generate: {error}", file=sys.stderr)
         return 2
+    if args.preset == "opponent-replay":
+        started = time.perf_counter()
+        document = opponent_replay(args.oracle_dir, kaggle, module, pin, digest)
+        path = write_replay_fixture(args.out, document)
+        replay_summary = {
+            "path": path.name,
+            "sha256": sha256_file(path),
+            "bytes": path.stat().st_size,
+            "cases": len(document["cases"]),
+            "seconds": round(time.perf_counter() - started, 3),
+            "peak_rss_bytes": peak_rss_bytes(),
+            "python_version": sys.version,
+        }
+        print(json.dumps(replay_summary), flush=True)
+        if args.summary:
+            args.summary.write_text(json.dumps(replay_summary, indent=2) + "\n")
+        return 0
     if args.preset == "committed":
         specs = committed_specs()
     elif args.preset == "sweep":
