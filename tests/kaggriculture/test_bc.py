@@ -88,6 +88,7 @@ def _episode(
     *,
     seed: int,
     terminal_banks: tuple[float, float] = (3000.0, 2500.0),
+    policy_seat: tuple[bool, bool] = (True, True),
 ) -> BCEpisode:
     own = [1 + (seed + r) % 3 for r in range(rows)]
     rival = [1 + (seed + 2 * r) % 2 for r in range(rows)]
@@ -108,6 +109,7 @@ def _episode(
         day="2026-09-21",
         obs=obs,
         actions=actions,
+        policy_seat=torch.tensor([policy_seat] * rows, dtype=torch.bool),
         turn=torch.arange(rows, dtype=torch.int64) * 2 + 1,  # rejected gaps
         terminal_banks=terminal_banks,
     )
@@ -220,6 +222,7 @@ def test_shards_round_trip_rows_at_contract_dtypes(tmp_path: Path) -> None:
     assert batch.actions.tokens.dtype == torch.int64
     assert torch.equal(batch.actions.tokens, source.actions.tokens[[3, 0, 3]])
     assert torch.equal(batch.actions.lengths, source.actions.lengths[[3, 0, 3]])
+    assert torch.equal(batch.policy_seat, source.policy_seat[[3, 0, 3]])
     assert batch.final_banks.tolist() == [[3000.0, 2500.0]] * 3
     assert json.loads((root / MANIFEST_NAME).read_text())["run"] == {"git": "test"}
 
@@ -261,6 +264,13 @@ def test_loader_requires_both_splits_and_paired_rows(tmp_path: Path) -> None:
         tmp_path / "unpaired", [unpaired, _episode("ep-v", "validation", 2, seed=4)]
     )
     with pytest.raises(ValueError, match="still_playing"):
+        load_bc_dataset(root)
+
+
+def test_loader_requires_a_policy_seat_on_every_row(tmp_path: Path) -> None:
+    bare = _episode("ep-n", "train", 2, seed=1, policy_seat=(False, False))
+    root = _write(tmp_path / "bare", [bare, _episode("ep-v", "validation", 2, seed=4)])
+    with pytest.raises(ValueError, match="policy_seat"):
         load_bc_dataset(root)
 
 
@@ -367,6 +377,7 @@ def test_bc_loss_matches_a_hand_computed_objective() -> None:
             actions=SimpleNamespace(lengths=lengths),
             # Row 0: seat 0 wins; row 1: a draw.
             final_banks=torch.tensor([[9.0, 1.0], [4.0, 4.0]], dtype=torch.float64),
+            policy_seat=torch.ones(2, 2, dtype=torch.bool),
         ),
     )
     turn_nll = [
@@ -381,6 +392,13 @@ def test_bc_loss_matches_a_hand_computed_objective() -> None:
     assert torch.allclose(terms.turn_nll, torch.tensor(turn_nll))
     assert torch.allclose(terms.value_ce, torch.tensor(value_ce))
     expected = float(np.mean(turn_nll)) + 0.25 * float(np.mean(value_ce))
+    assert float(bc_loss(terms, value_coef=0.25)) == pytest.approx(expected)
+    # Winner-only imitation: row 0 imitates only seat 0 (the winner), the draw
+    # row both seats; the critic still averages over every seat row.
+    batch.policy_seat = torch.tensor([[True, False], [True, True]])
+    terms = bc_terms(evaluation, batch)
+    policy_nll = (turn_nll[0][0] + turn_nll[1][0] + turn_nll[1][1]) / 3
+    expected = policy_nll + 0.25 * float(np.mean(value_ce))
     assert float(bc_loss(terms, value_coef=0.25)) == pytest.approx(expected)
 
 
@@ -573,6 +591,7 @@ def _script_validation(
             frame_nll=metrics.frame_nll,
             value_ce=metrics.value_ce,
             seat_rows=metrics.seat_rows,
+            policy_seat_rows=metrics.policy_seat_rows,
         )
 
     monkeypatch.setattr(bc_module, "evaluate_rows", scripted_eval)

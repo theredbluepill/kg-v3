@@ -14,10 +14,12 @@ program teacher-forced (the model's replay validation admits it) and returns
 log-probabilities and the winner distribution from one encode (Isaiah's I0):
 
 - policy: the turn's negative log-likelihood divided by its program length,
-  averaged over seat rows, so every learner turn weighs the same;
+  averaged over the policy seat rows (``BCBatch.policy_seat``: the episode's
+  winner, both seats on a draw), so every imitated turn weighs the same;
 - critic: Isaiah's winner cross-entropy against the episode's raw final banks
-  (lesson L1: 1 for the seat with the larger bank, 0.5 each on a draw), scaled
-  by ``value_coef``.
+  (lesson L1: 1 for the seat with the larger bank, 0.5 each on a draw), averaged
+  over both seat rows and scaled by ``value_coef``. Both seats keep the critic
+  from seeing only winning outcomes.
 
 The critic is trained, not frozen. Isaiah trains every parameter of the shared
 trunk and both heads together, and distills a teacher's policy and winner
@@ -288,12 +290,13 @@ def winner_targets(final_banks: torch.Tensor) -> torch.Tensor:
 
 @dataclass(frozen=True)
 class BCTerms:
-    """Per seat row ``[rows, 2]``, float32."""
+    """Per seat row ``[rows, 2]``, float32; ``policy`` is the 0/1 policy mask."""
 
     turn_nll: torch.Tensor
     program_nll: torch.Tensor
     frames: torch.Tensor
     value_ce: torch.Tensor
+    policy: torch.Tensor
 
 
 def bc_terms(evaluation: ModelEvaluation, batch: BCBatch) -> BCTerms:
@@ -308,11 +311,14 @@ def bc_terms(evaluation: ModelEvaluation, batch: BCBatch) -> BCTerms:
         program_nll=program_nll,
         frames=frames,
         value_ce=value_ce,
+        policy=batch.policy_seat.to(device=program_nll.device, dtype=program_nll.dtype),
     )
 
 
 def bc_loss(terms: BCTerms, *, value_coef: float) -> torch.Tensor:
-    return terms.turn_nll.mean() + value_coef * terms.value_ce.mean()
+    """Policy NLL over the policy seat rows plus the critic CE over all seat rows."""
+    policy_nll = (terms.turn_nll * terms.policy).sum() / terms.policy.sum()
+    return policy_nll + value_coef * terms.value_ce.mean()
 
 
 def evaluate_bc_batch(
@@ -329,12 +335,13 @@ def evaluate_bc_batch(
 
 @dataclass(frozen=True)
 class RowMetrics:
-    """Means over seat rows, reduced across ranks."""
+    """Means reduced across ranks: NLLs over policy seat rows, value CE over all."""
 
     turn_nll: float
     frame_nll: float
     value_ce: float
     seat_rows: int
+    policy_seat_rows: int
 
 
 def evaluate_rows(
@@ -354,7 +361,7 @@ def evaluate_rows(
     inner = unwrap_model(model)
     was_training = inner.training
     inner.eval()
-    sums = torch.zeros(5, dtype=torch.float64, device=context.device)
+    sums = torch.zeros(6, dtype=torch.float64, device=context.device)
     with torch.no_grad():
         for start in range(0, rows.size, rows_per_forward):
             batch = split.gather(rows[start : start + rows_per_forward]).to(
@@ -365,23 +372,26 @@ def evaluate_rows(
             )
             sums += torch.stack(
                 (
-                    terms.turn_nll.sum(),
-                    terms.program_nll.sum(),
-                    terms.frames.sum(),
+                    (terms.turn_nll * terms.policy).sum(),
+                    (terms.program_nll * terms.policy).sum(),
+                    (terms.frames * terms.policy).sum(),
                     terms.value_ce.sum(),
                     torch.tensor(float(terms.turn_nll.numel()), device=sums.device),
+                    terms.policy.sum(),
                 )
             ).to(sums)
     inner.train(was_training)
     total = all_reduce_sum(sums, context).tolist()
     seat_rows = int(total[4])
-    if seat_rows == 0:
-        raise ValueError("no rows to evaluate on any rank")
+    policy_seat_rows = int(total[5])
+    if seat_rows == 0 or policy_seat_rows == 0:
+        raise ValueError("no policy seat rows to evaluate on any rank")
     return RowMetrics(
-        turn_nll=total[0] / seat_rows,
+        turn_nll=total[0] / policy_seat_rows,
         frame_nll=total[1] / total[2],
         value_ce=total[3] / seat_rows,
         seat_rows=seat_rows,
+        policy_seat_rows=policy_seat_rows,
     )
 
 
@@ -761,6 +771,7 @@ def train_bc(
             "bc/validation_frame_nll": metrics.frame_nll,
             "bc/validation_value_ce": metrics.value_ce,
             "bc/validation_seat_rows": float(metrics.seat_rows),
+            "bc/validation_policy_seat_rows": float(metrics.policy_seat_rows),
             "bc/best_validation_nll": selection.best_nll,
             "bc/best_step": float(selection.best_step),
             "bc/evals_since_improvement": float(selection.evals_since_improvement),
@@ -772,7 +783,7 @@ def train_bc(
         if interval is not None and interval.steps > 0:
             reduced = all_reduce_sum(interval.losses, context).tolist()
             record |= {
-                "bc/train_nll": reduced[0] / reduced[3],
+                "bc/train_nll": reduced[0] / reduced[4],
                 "bc/train_value_ce": reduced[1] / reduced[3],
                 "bc/grad_norm": reduced[2] / (interval.steps * context.world_size),
                 "perf/learner_seat_rows_per_second": (
@@ -902,7 +913,7 @@ def train_bc(
 
 
 def _new_interval(device: torch.device) -> _Interval:
-    return _Interval(losses=torch.zeros(4, dtype=torch.float64, device=device))
+    return _Interval(losses=torch.zeros(5, dtype=torch.float64, device=device))
 
 
 def _train_step(
@@ -918,7 +929,8 @@ def _train_step(
     step: int,
     losses: torch.Tensor,
 ) -> None:
-    """One optimizer step; adds [nll sum, value CE sum, grad norm, seat rows]."""
+    """One optimizer step; adds [policy NLL sum, value CE sum, grad norm, seat
+    rows, policy seat rows]."""
     optimizer.zero_grad(set_to_none=True)
     accumulation = config.gradient_accumulation_steps
     for micro in range(accumulation):
@@ -930,9 +942,10 @@ def _train_step(
             )
             loss = bc_loss(terms, value_coef=config.value_coef)
             (loss / accumulation).backward()
-        losses[0] += terms.turn_nll.detach().sum().to(losses)
+        losses[0] += (terms.turn_nll * terms.policy).detach().sum().to(losses)
         losses[1] += terms.value_ce.detach().sum().to(losses)
         losses[3] += terms.turn_nll.numel()
+        losses[4] += terms.policy.detach().sum().to(losses)
     grad_norm = torch.nn.utils.clip_grad_norm_(
         unwrap_model(model).parameters(),
         config.max_grad_norm,

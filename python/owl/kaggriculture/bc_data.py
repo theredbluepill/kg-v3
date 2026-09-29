@@ -9,6 +9,10 @@ The shard format is the refreshed Task 5.1 brief's ``kaggriculture-bc-shard-v1``
 - the 28 contract-v4 observation fields at their contract dtypes, ``[T, 2, ...]``;
 - ``can_act`` bool ``[T, 2, 252]``, ``tokens`` int64 ``[T, 2, 252, 12]`` and
   ``lengths`` int64 ``[T, 2]`` (STOP included);
+- ``policy_seat`` bool ``[T, 2]``: the seat rows whose recorded program is a
+  policy target (the episode's winner by final bank, both seats on a draw);
+  every row has at least one. Both seat rows always carry the winner target, so
+  the critic sees both outcomes;
 - ``turn`` int64 ``[T]``: the original turn index, so rejected gaps stay visible.
 
 ``manifest.json`` is strict JSON. ``BCManifest`` types and requires the keys BC
@@ -56,7 +60,7 @@ Split = Literal["train", "validation"]
 OBS_FIELDS: tuple[str, ...] = tuple(
     name for name in kt.KaggricultureObsBatch.model_fields if name != "action_mask"
 )
-ACTION_FIELDS: tuple[str, ...] = ("can_act", "tokens", "lengths")
+ACTION_FIELDS: tuple[str, ...] = ("can_act", "tokens", "lengths", "policy_seat")
 ROW_FIELDS: tuple[str, ...] = (*OBS_FIELDS, *ACTION_FIELDS)
 SHARD_ARRAYS: frozenset[str] = frozenset({"schema", *ROW_FIELDS, "turn"})
 
@@ -64,6 +68,7 @@ _ACTION_LAYOUT: dict[str, tuple[torch.dtype, tuple[int, ...]]] = {
     "can_act": (torch.bool, (kt.PLAYERS, kt.MAX_FRAMES)),
     "tokens": (torch.int64, (kt.PLAYERS, kt.MAX_FRAMES, kt.ACTION_SLOTS)),
     "lengths": (torch.int64, (kt.PLAYERS,)),
+    "policy_seat": (torch.bool, (kt.PLAYERS,)),
 }
 # Lossless in-memory storage for exact integers; gather casts back to int64.
 _TOKEN_STORAGE = torch.int16
@@ -103,17 +108,20 @@ class BCEpisode:
     day: str
     obs: kt.KaggricultureObsBatch
     actions: kt.KaggricultureActions
+    policy_seat: torch.Tensor
     turn: torch.Tensor
     terminal_banks: tuple[float, float]
 
 
 @dataclass(frozen=True)
 class BCBatch:
-    """Gathered rows. ``final_banks`` is float64 ``[rows, 2]`` in seat order."""
+    """Gathered rows. ``final_banks`` is float64 ``[rows, 2]`` in seat order;
+    ``policy_seat`` is bool ``[rows, 2]`` (seat rows that are policy targets)."""
 
     obs: kt.KaggricultureObsBatch
     actions: kt.KaggricultureActions
     final_banks: torch.Tensor
+    policy_seat: torch.Tensor
 
     def to(self, device: torch.device) -> BCBatch:
         if device.type == "cpu":
@@ -125,6 +133,7 @@ class BCBatch:
                 lengths=_to_device(self.actions.lengths, device),
             ),
             final_banks=_to_device(self.final_banks, device),
+            policy_seat=_to_device(self.policy_seat, device),
         )
 
 
@@ -177,6 +186,7 @@ class BCSplit:
             final_banks=self._terminal_banks.index_select(
                 0, self.episode.index_select(0, index)
             ),
+            policy_seat=out["policy_seat"],
         )
 
 
@@ -199,8 +209,10 @@ def write_bc_episode(root: Path, episode: BCEpisode) -> BCManifestEpisode:
     """Write one episode shard and return its manifest record; never overwrite."""
     rows = int(episode.turn.shape[0])
     lead = (rows, kt.PLAYERS)
-    if tuple(episode.obs.still_playing.shape) != lead or (
-        tuple(episode.actions.lengths.shape) != lead
+    if (
+        tuple(episode.obs.still_playing.shape) != lead
+        or tuple(episode.actions.lengths.shape) != lead
+        or tuple(episode.policy_seat.shape) != lead
     ):
         raise ValueError(f"episode {episode.episode_id}: rows must lead with {lead}")
     relative = shard_path(episode.split, episode.day, episode.episode_id)
@@ -215,6 +227,7 @@ def write_bc_episode(root: Path, episode: BCEpisode) -> BCManifestEpisode:
     arrays["can_act"] = episode.obs.action_mask.can_act.detach().cpu().numpy()
     arrays["tokens"] = episode.actions.tokens.detach().cpu().numpy()
     arrays["lengths"] = episode.actions.lengths.detach().cpu().numpy()
+    arrays["policy_seat"] = episode.policy_seat.detach().cpu().numpy()
     arrays["turn"] = episode.turn.detach().cpu().numpy()
     with path.open("xb") as handle:
         np.savez_compressed(handle, schema=np.array(SHARD_SCHEMA), **arrays)
@@ -375,6 +388,8 @@ def _read_shard(
         raise ValueError(f"{path}: lengths must be in [1, can_act.sum(-1)]")
     if int(tensors["tokens"].min()) < 0:
         raise ValueError(f"{path}: tokens must be >= 0")
+    if not bool(tensors["policy_seat"].any(dim=-1).all()):
+        raise ValueError(f"{path}: every row needs at least one policy_seat")
     return arrays
 
 
