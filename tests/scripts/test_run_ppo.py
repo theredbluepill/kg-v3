@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 import sys
 import time
@@ -37,7 +38,16 @@ from owl.rl import (
 )
 from owl.train import FullConfig, PPOTrainer
 from owl.train.distributed import DistributedContext
-from owl.train.logging import LogMode, MetricLogger
+from owl.train.logging import (
+    ATTEMPTS_FILE,
+    LogMode,
+    MetricLogger,
+    MissingWandbCredentialsError,
+    RunIdentity,
+    TelemetryMode,
+    WandbMode,
+    WandbRunFacts,
+)
 from owl.train.optimizer import CompositeOptimizer
 
 _RUN_PPO_PATH = Path(__file__).parents[2] / "scripts" / "run_ppo.py"
@@ -445,6 +455,9 @@ class _FakeLogger:
     def run_id(self) -> str | None:
         return self._run_id
 
+    def wandb_run_facts(self) -> WandbRunFacts | None:
+        return None
+
     def log(self, metrics: dict[str, float], *, step: int) -> None:
         self.logged.append((metrics, step))
 
@@ -454,6 +467,18 @@ class _FakeLogger:
     def close(self, *, exit_code: int = 0) -> None:
         self.closed = True
         self.close_exit_codes.append(exit_code)
+
+
+def _identity(telemetry: TelemetryMode = TelemetryMode.DISABLED) -> RunIdentity:
+    return RunIdentity(
+        experiment_id="exp",
+        job_type="ppo",
+        attempt=0,
+        source_commit="abc123",
+        attempt_source_commits=("abc123",),
+        config_sha256="0" * 64,
+        telemetry=telemetry,
+    )
 
 
 class _FakeTrainer:
@@ -627,6 +652,8 @@ def test_validate_args_rejects_non_positive_runtime_hours() -> None:
                 load_model_weights=None,
                 load_model_weights_mode="model_only",
                 log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id=None,
             )
         )
 
@@ -642,6 +669,8 @@ def test_validate_args_rejects_debug_resume() -> None:
                 load_model_weights=None,
                 load_model_weights_mode="model_only",
                 log_mode=LogMode.DEBUG,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id=None,
             )
         )
 
@@ -657,6 +686,8 @@ def test_validate_args_rejects_resume_overrides() -> None:
                 load_model_weights=None,
                 load_model_weights_mode="model_only",
                 log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id=None,
             )
         )
 
@@ -675,6 +706,8 @@ def test_validate_args_rejects_resume_load_model_weights() -> None:
                 load_model_weights=Path("checkpoint.pt"),
                 load_model_weights_mode="model_only",
                 log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id=None,
             )
         )
 
@@ -693,6 +726,59 @@ def test_validate_args_rejects_load_model_weights_mode_without_checkpoint() -> N
                 load_model_weights=None,
                 load_model_weights_mode="model_and_optimizer",
                 log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id=None,
+            )
+        )
+
+
+def test_validate_args_rejects_offline_wandb_mode_with_debug_logging() -> None:
+    with pytest.raises(ValueError, match="applies only to --log-mode wandb"):
+        run_ppo._validate_args(
+            Namespace(
+                max_env_steps=None,
+                max_runtime_hours=None,
+                output_dir=Path("runs"),
+                overrides=None,
+                load_model_weights=None,
+                load_model_weights_mode="model_only",
+                log_mode=LogMode.DEBUG,
+                wandb_mode=WandbMode.OFFLINE,
+                experiment_id=None,
+            )
+        )
+
+
+def test_validate_args_rejects_resume_experiment_id() -> None:
+    with pytest.raises(ValueError, match="keep the recorded --experiment-id"):
+        run_ppo._validate_args(
+            Namespace(
+                max_env_steps=None,
+                max_runtime_hours=None,
+                output_dir=None,
+                overrides=None,
+                load_model_weights=None,
+                load_model_weights_mode="model_only",
+                log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id="other",
+            )
+        )
+
+
+def test_validate_args_rejects_a_malformed_experiment_id_before_the_run_dir() -> None:
+    with pytest.raises(ValueError, match="experiment id must match"):
+        run_ppo._validate_args(
+            Namespace(
+                max_env_steps=None,
+                max_runtime_hours=None,
+                output_dir=Path("runs"),
+                overrides=None,
+                load_model_weights=None,
+                load_model_weights_mode="model_only",
+                log_mode=LogMode.WANDB,
+                wandb_mode=WandbMode.ONLINE,
+                experiment_id="has space",
             )
         )
 
@@ -2181,6 +2267,7 @@ def test_run_training_session_sets_trainable_parameter_summary(
         run_dir=tmp_path,
         cfg=cfg,
         log_mode=LogMode.DEBUG,
+        identity=_identity(),
         env_steps_per_iteration=8,
         max_env_steps=8,
         max_runtime_seconds=None,
@@ -2216,6 +2303,7 @@ def test_run_training_session_records_the_compile_gemm_claim(
         run_dir=tmp_path,
         cfg=_full_config(),
         log_mode=LogMode.DEBUG,
+        identity=_identity(),
         env_steps_per_iteration=8,
         max_env_steps=8,
         max_runtime_seconds=None,
@@ -2263,6 +2351,7 @@ def test_run_training_session_worker_skips_logger_and_final_checkpoint(
         run_dir=tmp_path,
         cfg=cfg,
         log_mode=LogMode.DEBUG,
+        identity=None,
         env_steps_per_iteration=8,
         max_env_steps=8,
         max_runtime_seconds=None,
@@ -2295,6 +2384,7 @@ def test_run_training_session_closes_logger_and_skips_final_checkpoint_on_error(
             run_dir=tmp_path,
             cfg=cfg,
             log_mode=LogMode.DEBUG,
+            identity=_identity(),
             env_steps_per_iteration=8,
             max_env_steps=8,
             max_runtime_seconds=None,
@@ -3210,6 +3300,9 @@ def _patch_kaggriculture_startup(
         monkeypatch.setattr(run_ppo, name, sentinel(name))
     # Hermetic: the compile-stack check reads the probed GPU stack, not the host.
     monkeypatch.setattr(run_ppo, "installed_compile_stack", lambda: _PROBED_STACK)
+    # Hermetic W&B credentials: online launches see a key, never the host's.
+    monkeypatch.delenv("WANDB_MODE", raising=False)
+    monkeypatch.setenv("WANDB_API_KEY", "test-key-not-real")
 
 
 _PROBED_STACK = InstalledCompileStack(
@@ -3427,3 +3520,137 @@ def test_startup_workload_check_skips_isaiahs_unchunked_orbit_models(
 
     assert reports == ()
     assert capsys.readouterr().out == ""
+
+
+# --- W&B telemetry gate and attempt receipts ----------------------------------
+
+
+def _without_wandb_credentials(monkeypatch: pytest.MonkeyPatch, home: Path) -> None:
+    for name in ("WANDB_API_KEY", "NETRC", "WANDB_BASE_URL", "WANDB_MODE"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("HOME", str(home))
+
+
+def test_main_fails_fast_without_wandb_credentials(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+    argv = [str(_CONFIGS / "kaggriculture_2rank.yaml"), str(tmp_path / "runs")]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls, log_mode=LogMode.WANDB)
+    _without_wandb_credentials(monkeypatch, tmp_path)
+
+    def config_loaded(*_args: object, **_kwargs: object) -> None:
+        calls.append("_log_cli_overrides")
+
+    monkeypatch.setattr(run_ppo, "_log_cli_overrides", config_loaded)
+
+    with pytest.raises(
+        MissingWandbCredentialsError, match=re.escape("api.wandb.ai")
+    ) as info:
+        run_ppo.main()
+
+    message = str(info.value)
+    assert "WANDB_API_KEY" in message
+    assert "--wandb-mode offline" in message
+    assert "install-the-wandb-credential-before-any-pod-launch" in message
+    assert calls == []
+    assert not (tmp_path / "runs").exists()
+
+
+def test_main_offline_mode_announces_the_outage_without_credentials(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    calls: list[str] = []
+    argv = [
+        str(_CONFIGS / "kaggriculture_2rank.yaml"),
+        str(tmp_path / "runs"),
+        "--wandb-mode",
+        "offline",
+    ]
+    _patch_kaggriculture_startup(monkeypatch, argv, calls, log_mode=LogMode.WANDB)
+    _without_wandb_credentials(monkeypatch, tmp_path)
+
+    # Past the telemetry gate, startup stops at the explicit not-wired error.
+    with pytest.raises(RuntimeError, match=_NOT_WIRED):
+        run_ppo.main()
+
+    assert calls == []
+    err = capsys.readouterr().err
+    assert "W&B TELEMETRY OUTAGE: telemetry_mode=wandb-offline" in err
+
+
+class _FakeWandbLogger(_FakeLogger):
+    def wandb_run_facts(self) -> WandbRunFacts | None:
+        return WandbRunFacts(project="kg-v3", entity="team", url=None)
+
+
+@pytest.mark.parametrize(
+    ("telemetry", "logger", "outage"),
+    [
+        (TelemetryMode.DISABLED, _FakeLogger(run_id=None), True),
+        (TelemetryMode.WANDB_OFFLINE, _FakeWandbLogger(run_id="off1"), True),
+        (TelemetryMode.WANDB_ONLINE, _FakeWandbLogger(run_id="on1"), False),
+    ],
+)
+def test_run_training_session_records_the_attempt_and_its_telemetry_mode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    telemetry: TelemetryMode,
+    logger: _FakeLogger,
+    outage: bool,
+) -> None:
+    monkeypatch.setattr(run_ppo, "create_logger", lambda *_a, **_k: logger)
+
+    run_ppo._run_training_session(
+        trainer=_FakeTrainer(),
+        run_dir=tmp_path,
+        cfg=_full_config(),
+        log_mode=LogMode.WANDB,
+        identity=_identity(telemetry),
+        env_steps_per_iteration=8,
+        max_env_steps=8,
+        max_runtime_seconds=None,
+        distributed=DistributedContext.single_process_cpu(),
+        start_env_steps=16,
+    )
+
+    records = [
+        json.loads(line) for line in (tmp_path / ATTEMPTS_FILE).read_text().splitlines()
+    ]
+    assert len(records) == 1
+    record = records[0]
+    assert record["telemetry_mode"] == str(telemetry)
+    assert record["experiment_id"] == "exp"
+    assert record["attempt"] == 0
+    assert record["source_commit"] == "abc123"
+    assert record["start_env_steps"] == 16
+    assert record["wandb_run_id"] == logger.run_id
+    assert record["wandb_project"] == (
+        None if telemetry is TelemetryMode.DISABLED else "kg-v3"
+    )
+    err = capsys.readouterr().err
+    assert ("W&B TELEMETRY OUTAGE recorded" in err) is outage
+
+
+def test_run_training_session_requires_the_main_rank_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(run_ppo, "create_logger", lambda *_a, **_k: _FakeLogger())
+
+    with pytest.raises(RuntimeError, match="needs its run identity"):
+        run_ppo._run_training_session(
+            trainer=_FakeTrainer(),
+            run_dir=tmp_path,
+            cfg=_full_config(),
+            log_mode=LogMode.DEBUG,
+            identity=None,
+            env_steps_per_iteration=8,
+            max_env_steps=8,
+            max_runtime_seconds=None,
+            distributed=DistributedContext.single_process_cpu(),
+        )

@@ -311,6 +311,30 @@ uv run python scripts/run_ppo.py configs/baseline.yaml runs --log-mode debug --m
 
 Fresh launches accept `-o`/`--overrides field.path=value`; when provided, rank 0
 prints the flattened override list before loading the config.
+
+Every `run_ppo` launch logs to W&B project `kg-v3` (any game) by default. W&B
+takes the entity from `WANDB_ENTITY` or the key's default entity. Before loading
+the config, rank 0 checks telemetry: `--log-mode wandb` with the default
+`--wandb-mode online` fails fast with `MissingWandbCredentialsError` unless
+`WANDB_API_KEY` is set or the `NETRC` file (default `~/.netrc`) has a password
+for the `WANDB_BASE_URL` host (default `api.wandb.ai`). The error names the fix:
+install the credential with
+`cookbook/workflows/install-the-wandb-credential-before-any-pod-launch.md`.
+`WANDB_MODE` may not disagree with `--wandb-mode`. Running without live
+telemetry takes an explicit flag, either `--wandb-mode offline` (metrics stay in
+the run directory's `wandb/` folder until `wandb sync`) or `--log-mode debug`
+(stdout only). Either prints a `W&B TELEMETRY OUTAGE` banner to stderr at
+startup. Each launch or resume appends one record to the run directory's
+`attempts.jsonl`. The record holds `attempt`, `experiment_id`
+(`--experiment-id`, default the run directory name; resumes keep it), `job_type`
+`ppo`, `source_commit` (`git HEAD`, `-dirty` for tracked edits, or
+`--source-commit`), every earlier attempt's commit, `config_sha256` (canonical
+JSON of the resolved config), `telemetry_mode` (`wandb-online`, `wandb-offline`
+or `disabled`), the W&B project, entity, run ID and URL, `start_env_steps` and
+`started_at`. The W&B run uses the experiment ID as its group, `ppo` as its job
+type, and tags `kaggriculture-v3`, `ppo` and the game. It stores
+`v3.experiment_id` and `v3.job_type` in its config, and the attempt's `v3/*`
+fields in its summary. Resume needs the run's `attempts.jsonl`.
 `rl.model_compile` defaults to `trunk`, which compiles the stateless
 self-attention transformer trunk as one dynamic-shape callable after
 FlashAttention packing and before unpacking, using

@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import argparse
 import itertools
+import os
 import random
 import re
+import sys
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -74,7 +76,21 @@ from owl.train.distributed import (
     unwrap_model,
     wrap_model_for_distributed,
 )
-from owl.train.logging import LogMode, MetricLogger, create_logger
+from owl.train.logging import (
+    LogMode,
+    MetricLogger,
+    RunIdentity,
+    TelemetryMode,
+    WandbMode,
+    check_telemetry,
+    config_sha256,
+    create_logger,
+    git_source_commit,
+    plan_attempt,
+    record_attempt,
+    telemetry_mode,
+    validate_experiment_id,
+)
 from owl.train.optimizer import (
     create_lr_scheduler,
     create_optimizer,
@@ -103,6 +119,8 @@ _EVAL_SEED_FLOOR = 1 << 62
 CHECKPOINT_FINAL = "checkpoint_final.pt"
 CHECKPOINT_LAST_BEST = "checkpoint_last_best.pt"
 _TRAINER = "run_ppo"
+_JOB_TYPE = "ppo"
+_SCRIPT_DIR = Path(__file__).resolve().parent
 _NUMBERED_CHECKPOINT_RE = re.compile(
     r"^checkpoint_(\d{2})_(\d{3})_(\d{3})_(\d{3})\.pt$"
 )
@@ -158,6 +176,13 @@ def main() -> None:
     configure_torch()
     launch = _resolve_launch(args)
     with distributed_session() as distributed:
+        # Before any config, env or model: online W&B without a key fails here.
+        telemetry = _check_launch_telemetry(args, distributed)
+        source_commit = (
+            args.source_commit or git_source_commit(_SCRIPT_DIR)
+            if distributed.is_main_process
+            else None
+        )
         _log_cli_overrides(args.overrides, distributed)
         cfg = FullConfig.from_file(
             launch.config_path,
@@ -191,6 +216,19 @@ def main() -> None:
             run_dir = broadcast_object(run_dir, distributed)
         else:
             run_dir = launch.run_dir
+        identity = (
+            plan_attempt(
+                run_dir,
+                job_type=_JOB_TYPE,
+                resume=isinstance(launch, ResumeLaunch),
+                experiment_id=args.experiment_id,
+                source_commit=source_commit,
+                config_sha256=config_sha256(cfg),
+                telemetry=telemetry,
+            )
+            if source_commit is not None
+            else None
+        )
 
         device = distributed.device
         env = VectorizedEnv(
@@ -297,6 +335,7 @@ def main() -> None:
             run_dir=run_dir,
             cfg=cfg,
             log_mode=args.log_mode,
+            identity=identity,
             env_steps_per_iteration=env_steps_per_iteration,
             max_env_steps=args.max_env_steps,
             max_runtime_seconds=max_runtime_seconds,
@@ -309,6 +348,17 @@ def main() -> None:
             compile_claim=compile_claim,
             lora_application=lora_application,
         )
+
+
+def _check_launch_telemetry(
+    args: argparse.Namespace, distributed: DistributedContext
+) -> TelemetryMode:
+    """Rank 0 owns W&B: it checks credentials and announces an outage."""
+    if not distributed.is_main_process:
+        return telemetry_mode(args.log_mode, args.wandb_mode)
+    return check_telemetry(
+        args.log_mode, args.wandb_mode, environ=os.environ, home=Path.home()
+    )
 
 
 @contextmanager
@@ -328,6 +378,7 @@ def _run_training_session(
     run_dir: Path,
     cfg: FullConfig,
     log_mode: LogMode,
+    identity: RunIdentity | None,
     env_steps_per_iteration: int,
     max_env_steps: int | None,
     max_runtime_seconds: float | None,
@@ -354,9 +405,23 @@ def _run_training_session(
         )
         return
 
+    if identity is None:
+        raise RuntimeError("the main process needs its run identity")
     with _logger_session(
-        create_logger(log_mode, run_dir, cfg, resume_run_id=resume_run_id)
+        create_logger(
+            log_mode, run_dir, cfg, identity=identity, resume_run_id=resume_run_id
+        )
     ) as logger:
+        receipt = record_attempt(
+            run_dir, identity, logger, start_env_steps=start_env_steps
+        )
+        if identity.telemetry.is_outage:
+            print(
+                f"W&B TELEMETRY OUTAGE recorded: telemetry_mode={identity.telemetry} "
+                f"in {receipt}",
+                file=sys.stderr,
+                flush=True,
+            )
         if trainable_parameters is not None:
             logger.set_summary("trainable_parameters", trainable_parameters)
         if compiled_model_modules > 0:
@@ -569,7 +634,31 @@ def _parse_args() -> argparse.Namespace:
         type=LogMode,
         choices=list(LogMode),
         default=LogMode.WANDB,
-        help="Metric logging backend",
+        help="Metric logging backend; debug disables W&B (a recorded outage)",
+    )
+    parser.add_argument(
+        "--wandb-mode",
+        type=WandbMode,
+        choices=list(WandbMode),
+        default=WandbMode.ONLINE,
+        help=(
+            "W&B transport. online (default) needs WANDB_API_KEY or an "
+            "api.wandb.ai ~/.netrc entry and fails fast without one; offline "
+            "keeps metrics local for `wandb sync` and is recorded as an outage"
+        ),
+    )
+    parser.add_argument(
+        "--experiment-id",
+        default=None,
+        help=(
+            "Stable v3 experiment id (W&B group) for a fresh run; defaults to the "
+            "run directory name. Resumes keep the recorded id."
+        ),
+    )
+    parser.add_argument(
+        "--source-commit",
+        default=None,
+        help="This attempt's source identity when the checkout has no git metadata",
     )
     parser.add_argument(
         "-o",
@@ -633,6 +722,11 @@ def _validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--load-model-weights-mode requires --load-model-weights")
     if args.output_dir is None and args.log_mode == LogMode.DEBUG:
         raise ValueError("resume launches require wandb logging")
+    if args.output_dir is None and args.experiment_id is not None:
+        raise ValueError("resume launches keep the recorded --experiment-id")
+    if args.experiment_id is not None:
+        validate_experiment_id(args.experiment_id)
+    telemetry_mode(args.log_mode, args.wandb_mode)
 
 
 def _resolve_launch(args: argparse.Namespace) -> Launch:
