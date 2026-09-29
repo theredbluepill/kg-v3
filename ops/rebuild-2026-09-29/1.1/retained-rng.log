@@ -1,0 +1,21 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --test py_random --locked --offline
+CARGO_BUILD_JOBS=3 CARGO_NET_OFFLINE=true UV_OFFLINE=true
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-codex/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.77s
+     Running tests/py_random.rs (engine_rs/target/debug/deps/py_random-4fe19bb9f2a1d8df)
+
+running 9 tests
+test python_domain_edges_are_explicit_and_zero_bit_draws_consume_nothing ... ok
+test integer_seed_and_mt19937_state_match_cpython ... ok
+test primitive_and_word_seed_adapters_use_the_same_python_integer_path ... ok
+test getrandbits_matches_cpython_across_word_boundaries ... ok
+test random_53_bit_fractions_match_cpython_bit_for_bit ... ok
+test randrange_rejection_sampling_matches_cpython ... ok
+test choice_and_two_successive_shuffles_match_cpython ... ok
+test mt19937_twists_match_cpython_across_multiple_state_rollovers ... ok
+test first_ten_thousand_tempered_words_match_cpython_stream_hashes ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+EXIT_CODE=0

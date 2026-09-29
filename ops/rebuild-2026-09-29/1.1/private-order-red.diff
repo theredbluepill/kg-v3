@@ -1,0 +1,29 @@
+--- complete-comparator
++++ deliberately-broken-comparator
+@@ -8,25 +8,7 @@
+ }
+ 
+ fn assert_private(actual: &Value, expected: &Value, context: &str) {
+-    assert_eq!(actual, expected, "private state: {context}");
+-    for (a, e) in actual.as_array().unwrap().iter().zip(expected.as_array().unwrap()) {
+-        for field in ["shed", "seeds"] {
+-            assert_eq!(
+-                a[field].as_object().unwrap().keys().collect::<Vec<_>>(),
+-                e[field].as_object().unwrap().keys().collect::<Vec<_>>(),
+-                "private map key order: {context}: {field}"
+-            );
+-        }
+-        for (a, e) in a["inventories"].as_array().unwrap().iter()
+-            .zip(e["inventories"].as_array().unwrap())
+-        {
+-            assert_eq!(
+-                a.as_object().unwrap().keys().collect::<Vec<_>>(),
+-                e.as_object().unwrap().keys().collect::<Vec<_>>(),
+-                "private map key order: {context}: inventory"
+-            );
+-        }
+-    }
++    assert_eq!(actual, expected, "{context}");
+ }
+ 
+ #[test]

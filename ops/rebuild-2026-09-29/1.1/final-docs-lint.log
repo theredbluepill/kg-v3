@@ -1,0 +1,6 @@
+$ uvx --offline --from rust-just just docs-lint
+CARGO_BUILD_JOBS=3 CARGO_NET_OFFLINE=true UV_OFFLINE=true
+uvx pymarkdownlnt scan *.md
+uvx pymarkdownlnt scan --recurse python/ scripts/ tests/ src/ docs/
+
+EXIT_CODE=0

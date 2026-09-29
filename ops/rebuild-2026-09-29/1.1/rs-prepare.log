@@ -1,0 +1,1695 @@
+$ uvx --offline --from rust-just just rs-prepare
+CARGO_BUILD_JOBS=3 CARGO_NET_OFFLINE=true UV_OFFLINE=true
+cargo fmt
+cargo fmt --manifest-path engine_rs/Cargo.toml --check
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:12:
+ pub const ATTRIB_VERSION: u32 = 1;
+ /// UNIT_KIND_VALUES[1..19] of the Myolie codec (actor_codec.py), engine command strings.
+ pub const ATTRIB_VERBS: [&str; 18] = [
+[31m-    "PASS", "NORTH", "SOUTH", "EAST", "WEST", "PICKUP", "PLACE", "PLANT", "WATER", "HARVEST", "DROP",
+(B[m[31m-    "BUILD_COOP", "BUILD_PASTURE", "FEED", "FERTILIZE", "COLLECT_FERTILIZER", "CARE", "DIG",
+(B[m[32m+    "PASS",
+(B[m[32m+    "NORTH",
+(B[m[32m+    "SOUTH",
+(B[m[32m+    "EAST",
+(B[m[32m+    "WEST",
+(B[m[32m+    "PICKUP",
+(B[m[32m+    "PLACE",
+(B[m[32m+    "PLANT",
+(B[m[32m+    "WATER",
+(B[m[32m+    "HARVEST",
+(B[m[32m+    "DROP",
+(B[m[32m+    "BUILD_COOP",
+(B[m[32m+    "BUILD_PASTURE",
+(B[m[32m+    "FEED",
+(B[m[32m+    "FERTILIZE",
+(B[m[32m+    "COLLECT_FERTILIZER",
+(B[m[32m+    "CARE",
+(B[m[32m+    "DIG",
+(B[m ];
+ /// Actor slots: farmer 0, hands 1..14, and every hand index >= 15 in slot 15.
+ pub const ATTRIB_SLOTS: usize = 16;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:62:
+ }
+ 
+ fn op_of(action: &Value) -> Option<&str> {
+[31m-    action.as_array().and_then(|parts| parts.first()).and_then(Value::as_str)
+(B[m[32m+    action
+(B[m[32m+        .as_array()
+(B[m[32m+        .and_then(|parts| parts.first())
+(B[m[32m+        .and_then(Value::as_str)
+(B[m }
+ 
+ fn integer_cash(price: &Value) -> u64 {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:69:
+[31m-    price.as_u64().or_else(|| price.as_f64().map(|value| value.round().max(0.0) as u64)).unwrap_or(0)
+(B[m[32m+    price
+(B[m[32m+        .as_u64()
+(B[m[32m+        .or_else(|| price.as_f64().map(|value| value.round().max(0.0) as u64))
+(B[m[32m+        .unwrap_or(0)
+(B[m }
+ 
+ /// The actor's carried count of a PICKUP/PLACE item before the command (None for other commands).
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:73:
+[31m-pub(crate) fn transfer_before(private: &PrivateState, index: usize, action: &Value) -> Option<(String, i64)> {
+(B[m[32m+pub(crate) fn transfer_before(
+(B[m[32m+    private: &PrivateState,
+(B[m[32m+    index: usize,
+(B[m[32m+    action: &Value,
+(B[m[32m+) -> Option<(String, i64)> {
+(B[m     let parts = action.as_array()?;
+     if !matches!(parts.first()?.as_str()?, "PICKUP" | "PLACE") {
+         return None;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:77:
+     }
+     let item = parts.get(1)?.as_str()?;
+[31m-    let held = private.inventories.get(index).and_then(|inv| inv.get(item)).copied().unwrap_or(0);
+(B[m[32m+    let held = private
+(B[m[32m+        .inventories
+(B[m[32m+        .get(index)
+(B[m[32m+        .and_then(|inv| inv.get(item))
+(B[m[32m+        .copied()
+(B[m[32m+        .unwrap_or(0);
+(B[m     Some((item.to_string(), held))
+ }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:87:
+ 
+     fn attrib_row(&mut self, player: usize) -> Option<&mut [u64; ATTRIB_FIELDS]> {
+         self.attrib.get_mut(player).filter(|_| {
+[31m-            #[cfg(test)] { !self.econ_counting_disabled }
+(B[m[31m-            #[cfg(not(test))] { true }
+(B[m[32m+            #[cfg(test)]
+(B[m[32m+            {
+(B[m[32m+                !self.econ_counting_disabled
+(B[m[32m+            }
+(B[m[32m+            #[cfg(not(test))]
+(B[m[32m+            {
+(B[m[32m+                true
+(B[m[32m+            }
+(B[m         })
+     }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:95:
+     /// Idle actor slots of one seat's submitted program (existing actors whose command is PASS or omitted).
+[31m-    pub(crate) fn count_attrib_idle(&mut self, player: usize, farmer_action: &Value, hands_actions: &[Value]) {
+(B[m[31m-        let farmer = farmer_position(&self.farms[player], 0).is_some() && op_of(farmer_action) == Some("PASS");
+(B[m[32m+    pub(crate) fn count_attrib_idle(
+(B[m[32m+        &mut self,
+(B[m[32m+        player: usize,
+(B[m[32m+        farmer_action: &Value,
+(B[m[32m+        hands_actions: &[Value],
+(B[m[32m+    ) {
+(B[m[32m+        let farmer = farmer_position(&self.farms[player], 0).is_some()
+(B[m[32m+            && op_of(farmer_action) == Some("PASS");
+(B[m         let hands = self.farms[player].hands.len();
+         let idle: Vec<usize> = (0..hands)
+[31m-            .filter(|&i| hands_actions.get(i).is_none_or(|a| op_of(a) == Some("PASS")))
+(B[m[32m+            .filter(|&i| {
+(B[m[32m+                hands_actions
+(B[m[32m+                    .get(i)
+(B[m[32m+                    .is_none_or(|a| op_of(a) == Some("PASS"))
+(B[m[32m+            })
+(B[m             .map(|i| (i + 1).min(ATTRIB_SLOTS - 1))
+             .collect();
+[31m-        let Some(c) = self.attrib_row(player) else { return; };
+(B[m[32m+        let Some(c) = self.attrib_row(player) else {
+(B[m[32m+            return;
+(B[m[32m+        };
+(B[m         c[A_SLOT_IDLE] += farmer as u64;
+         for slot in idle {
+             c[A_SLOT_IDLE + slot] += 1;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:109:
+ 
+     /// One existing unit's submitted command after it was applied: effective / ineffective per verb and slot,
+     /// produced units (from the tile before a committed HARVEST), shed-transfer request and movement.
+[31m-    pub(crate) fn count_attrib_unit(&mut self, player: usize, index: usize, action: &Value, exists: bool,
+(B[m[31m-                                    effect: UnitActionEffect, before: Option<&(usize, usize, Value)>,
+(B[m[31m-                                    transfer: Option<(String, i64)>) {
+(B[m[32m+    pub(crate) fn count_attrib_unit(
+(B[m[32m+        &mut self,
+(B[m[32m+        player: usize,
+(B[m[32m+        index: usize,
+(B[m[32m+        action: &Value,
+(B[m[32m+        exists: bool,
+(B[m[32m+        effect: UnitActionEffect,
+(B[m[32m+        before: Option<&(usize, usize, Value)>,
+(B[m[32m+        transfer: Option<(String, i64)>,
+(B[m[32m+    ) {
+(B[m         if !exists {
+             return;
+         }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:118:
+[31m-        let Some(op) = op_of(action) else { return; };
+(B[m[31m-        let Some(verb) = verb_index(op) else { return; };
+(B[m[32m+        let Some(op) = op_of(action) else {
+(B[m[32m+            return;
+(B[m[32m+        };
+(B[m[32m+        let Some(verb) = verb_index(op) else {
+(B[m[32m+            return;
+(B[m[32m+        };
+(B[m         let slot = index.min(ATTRIB_SLOTS - 1);
+         let produced = if op == "HARVEST" && effect != UnitActionEffect::None {
+[31m-            before.and_then(|(_, _, tile)| tile.as_object()).and_then(|t| {
+(B[m[31m-                let units = map_i64(t, "yield_units").max(0) as u64;
+(B[m[31m-                let item = if map_str(t, "kind") == Some("PLANT") { map_str(t, "crop") }
+(B[m[31m-                    else { map_str(t, "animal").and_then(animal).map(|a| a.product) };
+(B[m[31m-                item.and_then(product_index).map(|p| (p, units))
+(B[m[31m-            })
+(B[m[32m+            before
+(B[m[32m+                .and_then(|(_, _, tile)| tile.as_object())
+(B[m[32m+                .and_then(|t| {
+(B[m[32m+                    let units = map_i64(t, "yield_units").max(0) as u64;
+(B[m[32m+                    let item = if map_str(t, "kind") == Some("PLANT") {
+(B[m[32m+                        map_str(t, "crop")
+(B[m[32m+                    } else {
+(B[m[32m+                        map_str(t, "animal").and_then(animal).map(|a| a.product)
+(B[m[32m+                    };
+(B[m[32m+                    item.and_then(product_index).map(|p| (p, units))
+(B[m[32m+                })
+(B[m         } else if op == "COLLECT_FERTILIZER" && effect != UnitActionEffect::None {
+             product_index("FERTILIZER").map(|p| (p, 1))
+         } else {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:131:
+             None
+         };
+         let moved = transfer.map(|(item, held)| {
+[31m-            let after = self.privates[player].inventories.get(index).and_then(|inv| inv.get(&item)).copied()
+(B[m[32m+            let after = self.privates[player]
+(B[m[32m+                .inventories
+(B[m[32m+                .get(index)
+(B[m[32m+                .and_then(|inv| inv.get(&item))
+(B[m[32m+                .copied()
+(B[m                 .unwrap_or(0);
+             let requested = match action.as_array().and_then(|parts| parts.get(2)) {
+                 Some(value) => value.as_i64().filter(|&n| n > 0).unwrap_or(0) as u64,
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:138:
+                 None => 1,
+             };
+[31m-            (usize::from(op == "PLACE"), requested, (after - held).unsigned_abs())
+(B[m[32m+            (
+(B[m[32m+                usize::from(op == "PLACE"),
+(B[m[32m+                requested,
+(B[m[32m+                (after - held).unsigned_abs(),
+(B[m[32m+            )
+(B[m         });
+[31m-        let Some(c) = self.attrib_row(player) else { return; };
+(B[m[32m+        let Some(c) = self.attrib_row(player) else {
+(B[m[32m+            return;
+(B[m[32m+        };
+(B[m         if effect != UnitActionEffect::None {
+             c[A_VERB_EFFECTIVE + verb] += 1;
+             c[A_SLOT_EFFECTIVE + slot] += 1;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:157:
+     }
+ 
+     /// One committed market unit (a quote accepted by commit_unit).
+[31m-    pub(crate) fn count_attrib_commit(&mut self, player: usize, kind: OrderKind, item: &str, price: &Value) {
+(B[m[32m+    pub(crate) fn count_attrib_commit(
+(B[m[32m+        &mut self,
+(B[m[32m+        player: usize,
+(B[m[32m+        kind: OrderKind,
+(B[m[32m+        item: &str,
+(B[m[32m+        price: &Value,
+(B[m[32m+    ) {
+(B[m         let cash = integer_cash(price);
+         let slot = match kind {
+             OrderKind::Sell => product_index(item).map(|p| (A_SELL_UNITS + p, A_SELL_CASH + p)),
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:164:
+[31m-            OrderKind::BuyProduct => product_index(item).map(|p| (A_BUY_PRODUCT_UNITS + p, A_BUY_PRODUCT_CASH + p)),
+(B[m[31m-            OrderKind::BuySeed => product_index(item).filter(|&p| p < 5)
+(B[m[32m+            OrderKind::BuyProduct => {
+(B[m[32m+                product_index(item).map(|p| (A_BUY_PRODUCT_UNITS + p, A_BUY_PRODUCT_CASH + p))
+(B[m[32m+            },
+(B[m[32m+            OrderKind::BuySeed => product_index(item)
+(B[m[32m+                .filter(|&p| p < 5)
+(B[m                 .map(|p| (A_BUY_SEED_UNITS + p, A_BUY_SEED_CASH + p)),
+[31m-            OrderKind::BuyAnimal => ANIMAL_NAMES.iter().position(|a| *a == item)
+(B[m[32m+            OrderKind::BuyAnimal => ANIMAL_NAMES
+(B[m[32m+                .iter()
+(B[m[32m+                .position(|a| *a == item)
+(B[m                 .map(|a| (A_BUY_ANIMAL_UNITS + a, A_BUY_ANIMAL_CASH + a)),
+             OrderKind::Hire | OrderKind::BuyLand => None,
+         };
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:175:
+     }
+ 
+     /// A committed HIRE or BUY_LAND and the cash it cost.
+[31m-    pub(crate) fn count_attrib_investment(&mut self, player: usize, kind: OrderKind, cash_before: f64) {
+(B[m[32m+    pub(crate) fn count_attrib_investment(
+(B[m[32m+        &mut self,
+(B[m[32m+        player: usize,
+(B[m[32m+        kind: OrderKind,
+(B[m[32m+        cash_before: f64,
+(B[m[32m+    ) {
+(B[m         let paid = (cash_before - self.farms[player].money).max(0.0).round() as u64;
+[31m-        let (count, cash) = if kind == OrderKind::Hire { (A_HIRES, A_HIRE_CASH) } else { (A_LANDS, A_LAND_CASH) };
+(B[m[32m+        let (count, cash) = if kind == OrderKind::Hire {
+(B[m[32m+            (A_HIRES, A_HIRE_CASH)
+(B[m[32m+        } else {
+(B[m[32m+            (A_LANDS, A_LAND_CASH)
+(B[m[32m+        };
+(B[m         if let Some(c) = self.attrib_row(player) {
+             c[count] += 1;
+             c[cash] += paid;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:185:
+     }
+ 
+     /// One market queue slot's parsed requested and committed units, for quantity orders.
+[31m-    pub(crate) fn count_attrib_fill(&mut self, player: usize, kind: Option<OrderKind>, requested: u64, committed: u64) {
+(B[m[32m+    pub(crate) fn count_attrib_fill(
+(B[m[32m+        &mut self,
+(B[m[32m+        player: usize,
+(B[m[32m+        kind: Option<OrderKind>,
+(B[m[32m+        requested: u64,
+(B[m[32m+        committed: u64,
+(B[m[32m+    ) {
+(B[m         let k = match kind {
+             Some(OrderKind::BuySeed) => 0,
+             Some(OrderKind::BuyProduct) => 1,
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:202:
+     /// The seat's day-end service state, before the daily refresh.
+     pub(crate) fn count_attrib_day_end(&mut self, player: usize, day: i64) {
+         let mut add = [0u64; 6];
+[31m-        for t in self.farms[player].tiles.iter().flatten().filter_map(Value::as_object) {
+(B[m[32m+        for t in self.farms[player]
+(B[m[32m+            .tiles
+(B[m[32m+            .iter()
+(B[m[32m+            .flatten()
+(B[m[32m+            .filter_map(Value::as_object)
+(B[m[32m+        {
+(B[m             let held = map_i64(t, "yield_units").max(0) as u64;
+             if map_str(t, "kind") == Some("PLANT") {
+                 add[0] += !map_bool(t, "watered_today") as u64;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:209:
+                 if let Some(data) = map_str(t, "crop").and_then(crop)
+[31m-                    && day - map_i64(t, "planted_day") >= data.first_yield_day {
+(B[m[32m+                    && day - map_i64(t, "planted_day") >= data.first_yield_day
+(B[m[32m+                {
+(B[m                     add[3] += held;
+                 }
+             } else if map_str(t, "animal").and_then(animal).is_some() {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/econ_attrib.rs:217:
+                 add[5] += map_bool(t, "fertilizer_available") as u64;
+             }
+         }
+[31m-        const FIELDS: [usize; 6] = [A_EOD_UNWATERED_PLANTS, A_EOD_UNFED_ANIMALS, A_EOD_UNCARED_ANIMALS,
+(B[m[31m-                                    A_EOD_READY_CROP_UNITS, A_EOD_ANIMAL_PRODUCT_UNITS, A_EOD_FERTILIZER_UNCOLLECTED];
+(B[m[32m+        const FIELDS: [usize; 6] = [
+(B[m[32m+            A_EOD_UNWATERED_PLANTS,
+(B[m[32m+            A_EOD_UNFED_ANIMALS,
+(B[m[32m+            A_EOD_UNCARED_ANIMALS,
+(B[m[32m+            A_EOD_READY_CROP_UNITS,
+(B[m[32m+            A_EOD_ANIMAL_PRODUCT_UNITS,
+(B[m[32m+            A_EOD_FERTILIZER_UNCOLLECTED,
+(B[m[32m+        ];
+(B[m         if let Some(c) = self.attrib_row(player) {
+             for (field, value) in FIELDS.into_iter().zip(add) {
+                 c[field] += value;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:581:
+             } else {
+                 integer_json(&BigInt::from(result))?
+             }
+[31m-        }
+(B[m[32m+        },
+(B[m         Value::Number(number) if number.is_u64() => {
+             let result = i128::from(number.as_u64().expect("checked u64")) + i128::from(delta);
+             if let Ok(result) = u64::try_from(result) {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:591:
+             } else {
+                 integer_json(&BigInt::from(result))?
+             }
+[31m-        }
+(B[m[32m+        },
+(B[m         Value::Number(number) => {
+             let rendered = number.to_string();
+             if !rendered.contains(['.', 'e', 'E']) {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:606:
+                     .ok_or_else(|| format!("market inventory {rendered} is not finite"))?;
+                 Value::from(number + delta as f64)
+             }
+[31m-        }
+(B[m[32m+        },
+(B[m         Value::Bool(boolean) => Value::from(i64::from(*boolean) + delta),
+         other => {
+             return Err(format!(
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:613:
+                 "official engine rejects non-numeric market inventory {other}"
+             ));
+[31m-        }
+(B[m[32m+        },
+(B[m     };
+     Ok(())
+ }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1179:
+ macro_rules! econ_mut {
+     ($game:expr, $player:expr) => {
+         $game.econ_counters.get_mut($player).filter(|_| {
+[31m-            #[cfg(test)] { !$game.econ_counting_disabled }
+(B[m[31m-            #[cfg(not(test))] { true }
+(B[m[32m+            #[cfg(test)]
+(B[m[32m+            {
+(B[m[32m+                !$game.econ_counting_disabled
+(B[m[32m+            }
+(B[m[32m+            #[cfg(not(test))]
+(B[m[32m+            {
+(B[m[32m+                true
+(B[m[32m+            }
+(B[m         })
+     };
+ }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1359:
+             #[cfg(test)]
+             econ_counting_disabled: false,
+             // Imported states have no past provenance: initialize from currently occupied tiles.
+[31m-            econ_land_used: std::array::from_fn(|p| public.farms.get(p)
+(B[m[31m-                .map(|f| land_use(f, header.configuration.board_size)).unwrap_or([false; 3])),
+(B[m[32m+            econ_land_used: std::array::from_fn(|p| {
+(B[m[32m+                public
+(B[m[32m+                    .farms
+(B[m[32m+                    .get(p)
+(B[m[32m+                    .map(|f| land_use(f, header.configuration.board_size))
+(B[m[32m+                    .unwrap_or([false; 3])
+(B[m[32m+            }),
+(B[m             attrib: [[0; ATTRIB_FIELDS]; 2],
+         })
+     }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1489:
+             self.rewards = Some(self.farms.iter().map(|farm| farm.money).collect());
+             for player in 0..self.farms.len() {
+                 // econ v4: goods left unsold have no terminal value (reward = money only)
+[31m-                let unsold = held_goods(&self.privates[player]) + held_tile_yield(&self.farms[player]);
+(B[m[32m+                let unsold =
+(B[m[32m+                    held_goods(&self.privates[player]) + held_tile_yield(&self.farms[player]);
+(B[m                 if let Some(counters) = econ_mut!(self, player) {
+                     counters[ECON_UNSOLD_END] = unsold;
+[31m-                    counters[ECON_SEEDS_UNUSED_END] = self.privates[player].seeds.values()
+(B[m[31m-                        .map(|&n| n.max(0) as u64).sum();
+(B[m[31m-                    counters[ECON_TERMINAL_FLAGS] = self.farms[player].tiles.iter().flatten()
+(B[m[31m-                        .filter_map(Value::as_object).filter(|t| t.contains_key("animal"))
+(B[m[31m-                        .map(|t| map_bool(t, "fertilizer_available") as u64
+(B[m[31m-                            + map_i64(t, "pending_care_bonus").max(0) as u64
+(B[m[31m-                            + map_bool(t, "fed_today") as u64).sum();
+(B[m[31m-                    counters[ECON_UNUSED_LAND_CASH] = LAND_ORDER.iter().enumerate()
+(B[m[31m-                        .filter(|(i, q)| !self.econ_land_used[player][*i]
+(B[m[31m-                            && self.farms[player].unlocked_quadrants.iter().any(|v| v == **q))
+(B[m[31m-                        .map(|(i, _)| LAND_PRICES[i] as u64).sum();
+(B[m[32m+                    counters[ECON_SEEDS_UNUSED_END] = self.privates[player]
+(B[m[32m+                        .seeds
+(B[m[32m+                        .values()
+(B[m[32m+                        .map(|&n| n.max(0) as u64)
+(B[m[32m+                        .sum();
+(B[m[32m+                    counters[ECON_TERMINAL_FLAGS] = self.farms[player]
+(B[m[32m+                        .tiles
+(B[m[32m+                        .iter()
+(B[m[32m+                        .flatten()
+(B[m[32m+                        .filter_map(Value::as_object)
+(B[m[32m+                        .filter(|t| t.contains_key("animal"))
+(B[m[32m+                        .map(|t| {
+(B[m[32m+                            map_bool(t, "fertilizer_available") as u64
+(B[m[32m+                                + map_i64(t, "pending_care_bonus").max(0) as u64
+(B[m[32m+                                + map_bool(t, "fed_today") as u64
+(B[m[32m+                        })
+(B[m[32m+                        .sum();
+(B[m[32m+                    counters[ECON_UNUSED_LAND_CASH] = LAND_ORDER
+(B[m[32m+                        .iter()
+(B[m[32m+                        .enumerate()
+(B[m[32m+                        .filter(|(i, q)| {
+(B[m[32m+                            !self.econ_land_used[player][*i]
+(B[m[32m+                                && self.farms[player]
+(B[m[32m+                                    .unlocked_quadrants
+(B[m[32m+                                    .iter()
+(B[m[32m+                                    .any(|v| v == **q)
+(B[m[32m+                        })
+(B[m[32m+                        .map(|(i, _)| LAND_PRICES[i] as u64)
+(B[m[32m+                        .sum();
+(B[m                 }
+             }
+         }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1532:
+         self.count_attrib_idle(player, &farmer_action, &hands_actions);
+         if let Some(counters) = econ_mut!(self, player) {
+             counters[ECON_IDLE_HAND_STEPS] += (0..self.farms[player].hands.len())
+[31m-                .filter(|&i| hands_actions.get(i).is_none_or(|a| a.as_array()
+(B[m[31m-                    .and_then(|p| p.first()).and_then(Value::as_str) == Some("PASS")))
+(B[m[32m+                .filter(|&i| {
+(B[m[32m+                    hands_actions.get(i).is_none_or(|a| {
+(B[m[32m+                        a.as_array().and_then(|p| p.first()).and_then(Value::as_str) == Some("PASS")
+(B[m[32m+                    })
+(B[m[32m+                })
+(B[m                 .count() as u64;
+         }
+         let mut plant_demand: IndexMap<String, i64> = IndexMap::new();
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1575:
+         let farmer_exists = farmer_position(&self.farms[player], 0).is_some();
+         record_unit_submission(&mut metrics, &farmer_action, farmer_exists);
+         let allowed_farmer_action = allowed(&farmer_action);
+[31m-        let drop_before = is_drop(&allowed_farmer_action).then(|| held_goods(&self.privates[player]));
+(B[m[32m+        let drop_before =
+(B[m[32m+            is_drop(&allowed_farmer_action).then(|| held_goods(&self.privates[player]));
+(B[m         let econ_before = self.econ_unit_before(player, 0, &allowed_farmer_action);
+[31m-        let transfer = econ_attrib::transfer_before(&self.privates[player], 0, &allowed_farmer_action);
+(B[m[32m+        let transfer =
+(B[m[32m+            econ_attrib::transfer_before(&self.privates[player], 0, &allowed_farmer_action);
+(B[m         let malformed = self.econ_malformed_unit(player, 0, &farmer_action);
+         let effect = apply_unit_action(
+             &mut self.farms[player],
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1589:
+             &self.config.turns_per_day,
+             &self.config.shed_capacity,
+         )?;
+[31m-        self.count_attrib_unit(player, 0, &farmer_action, farmer_exists, effect, econ_before.as_ref(), transfer);
+(B[m[32m+        self.count_attrib_unit(
+(B[m[32m+            player,
+(B[m[32m+            0,
+(B[m[32m+            &farmer_action,
+(B[m[32m+            farmer_exists,
+(B[m[32m+            effect,
+(B[m[32m+            econ_before.as_ref(),
+(B[m[32m+            transfer,
+(B[m[32m+        );
+(B[m         self.count_econ_tile(player, &allowed_farmer_action, day, econ_before, effect);
+         self.count_drop_overflow(player, drop_before);
+         record_unit_effect(&mut metrics, &farmer_action, effect);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1598:
+             let hand_exists = farmer_position(&self.farms[player], hand_index + 1).is_some();
+             record_unit_submission(&mut metrics, hand_action, hand_exists);
+             let allowed_hand_action = allowed(hand_action);
+[31m-            let drop_before = is_drop(&allowed_hand_action).then(|| held_goods(&self.privates[player]));
+(B[m[32m+            let drop_before =
+(B[m[32m+                is_drop(&allowed_hand_action).then(|| held_goods(&self.privates[player]));
+(B[m             let econ_before = self.econ_unit_before(player, hand_index + 1, &allowed_hand_action);
+[31m-            let transfer = econ_attrib::transfer_before(&self.privates[player], hand_index + 1, &allowed_hand_action);
+(B[m[32m+            let transfer = econ_attrib::transfer_before(
+(B[m[32m+                &self.privates[player],
+(B[m[32m+                hand_index + 1,
+(B[m[32m+                &allowed_hand_action,
+(B[m[32m+            );
+(B[m             let malformed = self.econ_malformed_unit(player, hand_index + 1, hand_action);
+             let effect = apply_unit_action(
+                 &mut self.farms[player],
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1612:
+                 &self.config.turns_per_day,
+                 &self.config.shed_capacity,
+             )?;
+[31m-            self.count_attrib_unit(player, hand_index + 1, hand_action, hand_exists, effect, econ_before.as_ref(),
+(B[m[31m-                                   transfer);
+(B[m[32m+            self.count_attrib_unit(
+(B[m[32m+                player,
+(B[m[32m+                hand_index + 1,
+(B[m[32m+                hand_action,
+(B[m[32m+                hand_exists,
+(B[m[32m+                effect,
+(B[m[32m+                econ_before.as_ref(),
+(B[m[32m+                transfer,
+(B[m[32m+            );
+(B[m             self.count_econ_tile(player, &allowed_hand_action, day, econ_before, effect);
+             self.count_drop_overflow(player, drop_before);
+             record_unit_effect(&mut metrics, hand_action, effect);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1623:
+     }
+ 
+     fn econ_malformed_unit(&self, player: usize, unit: usize, action: &Value) -> bool {
+[31m-        if !malformed_unit(action) { return false; }
+(B[m[32m+        if !malformed_unit(action) {
+(B[m[32m+            return false;
+(B[m[32m+        }
+(B[m         // Animal placement does not inspect its optional quantity, even when inventory is empty.
+         if let Some(parts) = action.as_array()
+             && parts.first().and_then(Value::as_str) == Some("PLACE")
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1630:
+             && let Some(data) = parts.get(1).and_then(Value::as_str).and_then(animal)
+             && let Some((x, y)) = farmer_position(&self.farms[player], unit)
+[31m-            && x >= 0 && y >= 0
+(B[m[31m-            && let Some(tile) = self.farms[player].tiles.get(y as usize).and_then(|r| r.get(x as usize)).and_then(Value::as_object)
+(B[m[31m-            && map_str(tile, "kind") == Some(data.structure) && !tile.contains_key("animal") {
+(B[m[32m+            && x >= 0
+(B[m[32m+            && y >= 0
+(B[m[32m+            && let Some(tile) = self.farms[player]
+(B[m[32m+                .tiles
+(B[m[32m+                .get(y as usize)
+(B[m[32m+                .and_then(|r| r.get(x as usize))
+(B[m[32m+                .and_then(Value::as_object)
+(B[m[32m+            && map_str(tile, "kind") == Some(data.structure)
+(B[m[32m+            && !tile.contains_key("animal")
+(B[m[32m+        {
+(B[m             return false;
+         }
+         true
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1638:
+     }
+ 
+     // Capture only relevant tile commands; gameplay never reads this copy or these counters.
+[31m-    fn econ_unit_before(&self, player: usize, unit: usize, action: &Value) -> Option<(usize, usize, Value)> {
+(B[m[32m+    fn econ_unit_before(
+(B[m[32m+        &self,
+(B[m[32m+        player: usize,
+(B[m[32m+        unit: usize,
+(B[m[32m+        action: &Value,
+(B[m[32m+    ) -> Option<(usize, usize, Value)> {
+(B[m         #[cfg(test)]
+[31m-        if self.econ_counting_disabled { return None; }
+(B[m[32m+        if self.econ_counting_disabled {
+(B[m[32m+            return None;
+(B[m[32m+        }
+(B[m         let op = action.as_array()?.first()?.as_str()?;
+[31m-        if !matches!(op, "WATER" | "HARVEST" | "FERTILIZE" | "DIG" | "PLANT" | "PLACE") { return None; }
+(B[m[32m+        if !matches!(
+(B[m[32m+            op,
+(B[m[32m+            "WATER" | "HARVEST" | "FERTILIZE" | "DIG" | "PLANT" | "PLACE"
+(B[m[32m+        ) {
+(B[m[32m+            return None;
+(B[m[32m+        }
+(B[m         let (x, y) = farmer_position(&self.farms[player], unit)?;
+[31m-        if x < 0 || y < 0 { return None; }
+(B[m[31m-        self.farms[player].tiles.get(y as usize)?.get(x as usize)
+(B[m[32m+        if x < 0 || y < 0 {
+(B[m[32m+            return None;
+(B[m[32m+        }
+(B[m[32m+        self.farms[player]
+(B[m[32m+            .tiles
+(B[m[32m+            .get(y as usize)?
+(B[m[32m+            .get(x as usize)
+(B[m             .map(|tile| (x as usize, y as usize, tile.clone()))
+     }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1652:
+[31m-    fn count_econ_tile(&mut self, player: usize, action: &Value, day: i64,
+(B[m[31m-        before: Option<(usize, usize, Value)>, effect: UnitActionEffect) {
+(B[m[31m-        if effect == UnitActionEffect::None { return; }
+(B[m[31m-        let Some((x, y, value)) = before else { return; };
+(B[m[31m-        let op = action.as_array().and_then(|a| a.first()).and_then(Value::as_str);
+(B[m[32m+    fn count_econ_tile(
+(B[m[32m+        &mut self,
+(B[m[32m+        player: usize,
+(B[m[32m+        action: &Value,
+(B[m[32m+        day: i64,
+(B[m[32m+        before: Option<(usize, usize, Value)>,
+(B[m[32m+        effect: UnitActionEffect,
+(B[m[32m+    ) {
+(B[m[32m+        if effect == UnitActionEffect::None {
+(B[m[32m+            return;
+(B[m[32m+        }
+(B[m[32m+        let Some((x, y, value)) = before else {
+(B[m[32m+            return;
+(B[m[32m+        };
+(B[m[32m+        let op = action
+(B[m[32m+            .as_array()
+(B[m[32m+            .and_then(|a| a.first())
+(B[m[32m+            .and_then(Value::as_str);
+(B[m         let after = &self.farms[player].tiles[y][x];
+[31m-        if matches!(op, Some("PLANT" | "PLACE")) && after.as_object().is_some_and(|t|
+(B[m[31m-            map_str(t, "kind") == Some("PLANT") || t.contains_key("animal")) {
+(B[m[31m-            if let Some(i) = LAND_ORDER.iter().position(|q| *q == quadrant_of(x, y, self.config.board_size)) {
+(B[m[31m-                if let Some(used) = self.econ_land_used.get_mut(player) { used[i] = true; }
+(B[m[32m+        if matches!(op, Some("PLANT" | "PLACE"))
+(B[m[32m+            && after
+(B[m[32m+                .as_object()
+(B[m[32m+                .is_some_and(|t| map_str(t, "kind") == Some("PLANT") || t.contains_key("animal"))
+(B[m[32m+        {
+(B[m[32m+            if let Some(i) = LAND_ORDER
+(B[m[32m+                .iter()
+(B[m[32m+                .position(|q| *q == quadrant_of(x, y, self.config.board_size))
+(B[m[32m+            {
+(B[m[32m+                if let Some(used) = self.econ_land_used.get_mut(player) {
+(B[m[32m+                    used[i] = true;
+(B[m[32m+                }
+(B[m             }
+         }
+[31m-        let Some(t) = value.as_object().filter(|t| map_str(t, "kind") == Some("PLANT")) else { return; };
+(B[m[31m-        let Some(data) = map_str(t, "crop").and_then(crop) else { return; };
+(B[m[31m-        let Some(c) = econ_mut!(self, player) else { return; };
+(B[m[32m+        let Some(t) = value
+(B[m[32m+            .as_object()
+(B[m[32m+            .filter(|t| map_str(t, "kind") == Some("PLANT"))
+(B[m[32m+        else {
+(B[m[32m+            return;
+(B[m[32m+        };
+(B[m[32m+        let Some(data) = map_str(t, "crop").and_then(crop) else {
+(B[m[32m+            return;
+(B[m[32m+        };
+(B[m[32m+        let Some(c) = econ_mut!(self, player) else {
+(B[m[32m+            return;
+(B[m[32m+        };
+(B[m         let held = map_i64(t, "yield_units");
+         let age = day - map_i64(t, "planted_day");
+         let in_window = (data.max_yield_day + 1) / 2 <= age && age <= data.max_yield_day;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1670:
+         match op {
+             Some("WATER") if !data.ongoing && in_window => {
+[31m-                let increment = if map_i64(t, "fertilized_until_day") >= day { 2 } else { 1 };
+(B[m[32m+                let increment = if map_i64(t, "fertilized_until_day") >= day {
+(B[m[32m+                    2
+(B[m[32m+                } else {
+(B[m[32m+                    1
+(B[m[32m+                };
+(B[m                 c[ECON_CLIPPED_UNITS] += (held + increment - data.max_yield).max(0) as u64;
+[31m-            }
+(B[m[31m-            Some("HARVEST") if !data.ongoing && in_window =>
+(B[m[31m-                c[ECON_MISSED_GROWTH_UNITS] += (data.max_yield - held).max(0) as u64,
+(B[m[32m+            },
+(B[m[32m+            Some("HARVEST") if !data.ongoing && in_window => {
+(B[m[32m+                c[ECON_MISSED_GROWTH_UNITS] += (data.max_yield - held).max(0) as u64
+(B[m[32m+            },
+(B[m             Some("DIG") => c[ECON_DUG_UNITS] += held.max(0) as u64 + 1,
+[31m-            Some("FERTILIZE") if map_i64(t, "fertilized_until_day") >= day + 2 =>
+(B[m[31m-                c[ECON_REDUNDANT_FERT] += 1,
+(B[m[31m-            _ => {}
+(B[m[32m+            Some("FERTILIZE") if map_i64(t, "fertilized_until_day") >= day + 2 => {
+(B[m[32m+                c[ECON_REDUNDANT_FERT] += 1
+(B[m[32m+            },
+(B[m[32m+            _ => {},
+(B[m         }
+     }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1695:
+     /// Econ telemetry of one unit's command (the submitted command, as the unit metrics
+     /// record it): commands of existing units, PASS commands, and committed HARVEST,
+     /// WATER and FEED, plus malformed syntax on noncommitting existing-unit slots.
+[31m-    fn count_econ_unit(&mut self, player: usize, action: &Value, exists: bool, effect: UnitActionEffect, malformed: bool) {
+(B[m[32m+    fn count_econ_unit(
+(B[m[32m+        &mut self,
+(B[m[32m+        player: usize,
+(B[m[32m+        action: &Value,
+(B[m[32m+        exists: bool,
+(B[m[32m+        effect: UnitActionEffect,
+(B[m[32m+        malformed: bool,
+(B[m[32m+    ) {
+(B[m         let Some(counters) = econ_mut!(self, player).filter(|_| exists) else {
+             return;
+         };
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1702:
+         counters[ECON_COMMANDS] += 1;
+[31m-        counters[ECON_MALFORMED_UNIT_CMDS] += (effect == UnitActionEffect::None && malformed) as u64;
+(B[m[31m-        let op = action.as_array().and_then(|parts| parts.first()).and_then(Value::as_str);
+(B[m[32m+        counters[ECON_MALFORMED_UNIT_CMDS] +=
+(B[m[32m+            (effect == UnitActionEffect::None && malformed) as u64;
+(B[m[32m+        let op = action
+(B[m[32m+            .as_array()
+(B[m[32m+            .and_then(|parts| parts.first())
+(B[m[32m+            .and_then(Value::as_str);
+(B[m         let field = match op {
+             Some("PASS") => ECON_PASS,
+             Some("HARVEST") if effect != UnitActionEffect::None => ECON_HARVEST,
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1878:
+                 let by_verb: u64 = UPSTREAM_VERBS
+                     .iter()
+                     .map(|(_, submitted, committed)| {
+[31m-                        metrics.by_seat[seat].upstream[submitted] - metrics.by_seat[seat].upstream[committed]
+(B[m[32m+                        metrics.by_seat[seat].upstream[submitted]
+(B[m[32m+                            - metrics.by_seat[seat].upstream[committed]
+(B[m                     })
+                     .sum();
+[31m-                assert_eq!(metrics.by_seat[seat].ineffective_unit_commands(), by_verb, "step {step}");
+(B[m[32m+                assert_eq!(
+(B[m[32m+                    metrics.by_seat[seat].ineffective_unit_commands(),
+(B[m[32m+                    by_verb,
+(B[m[32m+                    "step {step}"
+(B[m[32m+                );
+(B[m                 expected[seat] += by_verb;
+             }
+             let counters = game.econ_counters().unwrap();
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1888:
+[31m-            assert_eq!([counters[0][ECON_INEFFECTIVE], counters[1][ECON_INEFFECTIVE]], expected, "step {step}");
+(B[m[32m+            assert_eq!(
+(B[m[32m+                [counters[0][ECON_INEFFECTIVE], counters[1][ECON_INEFFECTIVE]],
+(B[m[32m+                expected,
+(B[m[32m+                "step {step}"
+(B[m[32m+            );
+(B[m         }
+         assert!(expected[0] > 0 && expected[1] > 0);
+     }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1914:
+         ];
+         let mut money_spent = [0.0f64; 2];
+         for step in 0..199 {
+[31m-            let actions = [commands[step % commands.len()].clone(), commands[(step + 3) % commands.len()].clone()];
+(B[m[32m+            let actions = [
+(B[m[32m+                commands[step % commands.len()].clone(),
+(B[m[32m+                commands[(step + 3) % commands.len()].clone(),
+(B[m[32m+            ];
+(B[m             let before = [game.farms[0].money, game.farms[1].money];
+             game.step(&actions).unwrap();
+[31m-            for p in 0..2 { money_spent[p] += (before[p] - game.farms[p].money).max(0.0); }
+(B[m[32m+            for p in 0..2 {
+(B[m[32m+                money_spent[p] += (before[p] - game.farms[p].money).max(0.0);
+(B[m[32m+            }
+(B[m         }
+         let econ = *game.econ_counters().unwrap();
+         let a = *game.attrib_counters().unwrap();
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1924:
+[31m-        let sum = |row: &[u64; ATTRIB_FIELDS], at: usize, n: usize| row[at..at + n].iter().sum::<u64>();
+(B[m[32m+        let sum =
+(B[m[32m+            |row: &[u64; ATTRIB_FIELDS], at: usize, n: usize| row[at..at + n].iter().sum::<u64>();
+(B[m         let verb = |name: &str| ATTRIB_VERBS.iter().position(|v| *v == name).unwrap();
+         for p in 0..2 {
+             let (c, r) = (&econ[p], &a[p]);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1928:
+[31m-            assert_eq!(sum(r, A_VERB_INEFFECTIVE, 18), c[ECON_INEFFECTIVE], "seat {p} ineffective");
+(B[m[32m+            assert_eq!(
+(B[m[32m+                sum(r, A_VERB_INEFFECTIVE, 18),
+(B[m[32m+                c[ECON_INEFFECTIVE],
+(B[m[32m+                "seat {p} ineffective"
+(B[m[32m+            );
+(B[m             assert_eq!(r[A_VERB_INEFFECTIVE + verb("PASS")], 0);
+             assert_eq!(r[A_VERB_EFFECTIVE + verb("HARVEST")], c[ECON_HARVEST]);
+             assert_eq!(r[A_VERB_EFFECTIVE + verb("WATER")], c[ECON_WATER]);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1932:
+             assert_eq!(r[A_VERB_EFFECTIVE + verb("FEED")], c[ECON_FEED]);
+             assert_eq!(sum(r, A_SLOT_EFFECTIVE, 16), sum(r, A_VERB_EFFECTIVE, 18));
+[31m-            assert_eq!(sum(r, A_SLOT_INEFFECTIVE, 16), sum(r, A_VERB_INEFFECTIVE, 18));
+(B[m[31m-            assert_eq!(sum(r, A_SLOT_IDLE + 1, 15), c[ECON_IDLE_HAND_STEPS], "seat {p} idle hands");
+(B[m[32m+            assert_eq!(
+(B[m[32m+                sum(r, A_SLOT_INEFFECTIVE, 16),
+(B[m[32m+                sum(r, A_VERB_INEFFECTIVE, 18)
+(B[m[32m+            );
+(B[m[32m+            assert_eq!(
+(B[m[32m+                sum(r, A_SLOT_IDLE + 1, 15),
+(B[m[32m+                c[ECON_IDLE_HAND_STEPS],
+(B[m[32m+                "seat {p} idle hands"
+(B[m[32m+            );
+(B[m             // an existing unit's recognized command is effective, ineffective or PASS; a null/unknown one is neither
+[31m-            assert!(sum(r, A_SLOT_EFFECTIVE, 16) + sum(r, A_SLOT_INEFFECTIVE, 16) + c[ECON_PASS] <= c[ECON_COMMANDS]);
+(B[m[31m-            assert!(sum(r, A_SLOT_EFFECTIVE, 16) + sum(r, A_SLOT_INEFFECTIVE, 16) + c[ECON_PASS] > 0);
+(B[m[32m+            assert!(
+(B[m[32m+                sum(r, A_SLOT_EFFECTIVE, 16) + sum(r, A_SLOT_INEFFECTIVE, 16) + c[ECON_PASS]
+(B[m[32m+                    <= c[ECON_COMMANDS]
+(B[m[32m+            );
+(B[m[32m+            assert!(
+(B[m[32m+                sum(r, A_SLOT_EFFECTIVE, 16) + sum(r, A_SLOT_INEFFECTIVE, 16) + c[ECON_PASS] > 0
+(B[m[32m+            );
+(B[m             assert_eq!(sum(r, A_SELL_UNITS, 9), c[ECON_SELL_UNITS]);
+             assert_eq!(sum(r, A_SELL_CASH, 9), c[ECON_SELL_CASH]);
+             assert_eq!(r[A_MARKET_COMMITTED + 3], c[ECON_SELL_UNITS]);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1942:
+[31m-            let bought = sum(r, A_BUY_PRODUCT_CASH, 9) + sum(r, A_BUY_SEED_CASH, 5) + sum(r, A_BUY_ANIMAL_CASH, 3)
+(B[m[31m-                + r[A_HIRE_CASH] + r[A_LAND_CASH];
+(B[m[32m+            let bought = sum(r, A_BUY_PRODUCT_CASH, 9)
+(B[m[32m+                + sum(r, A_BUY_SEED_CASH, 5)
+(B[m[32m+                + sum(r, A_BUY_ANIMAL_CASH, 3)
+(B[m[32m+                + r[A_HIRE_CASH]
+(B[m[32m+                + r[A_LAND_CASH];
+(B[m             // cash conservation: every money change is a sale or a purchase the ledger itemizes
+[31m-            assert_eq!(game.farms[p].money, 20_000.0 + c[ECON_SELL_CASH] as f64 - bought as f64, "seat {p} cash");
+(B[m[32m+            assert_eq!(
+(B[m[32m+                game.farms[p].money,
+(B[m[32m+                20_000.0 + c[ECON_SELL_CASH] as f64 - bought as f64,
+(B[m[32m+                "seat {p} cash"
+(B[m[32m+            );
+(B[m             assert!(money_spent[p] > 0.0);
+             assert!(r[A_HIRES] > 0 && r[A_LANDS] > 0 && r[A_LAND_CASH] >= 1000);
+             assert!(r[A_TRANSFER_REQUESTED] >= r[A_TRANSFER_MOVED] && r[A_TRANSFER_REQUESTED] > 0);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1949:
+             // each committed HARVEST collects at least one unit; each COLLECT_FERTILIZER exactly one
+             assert!(sum(r, A_PRODUCED_UNITS, 8) >= r[A_VERB_EFFECTIVE + verb("HARVEST")]);
+[31m-            assert_eq!(r[A_PRODUCED_UNITS + 8], r[A_VERB_EFFECTIVE + verb("COLLECT_FERTILIZER")]);
+(B[m[32m+            assert_eq!(
+(B[m[32m+                r[A_PRODUCED_UNITS + 8],
+(B[m[32m+                r[A_VERB_EFFECTIVE + verb("COLLECT_FERTILIZER")]
+(B[m[32m+            );
+(B[m             assert!(r[A_EOD_UNWATERED_PLANTS] + r[A_EOD_UNFED_ANIMALS] > 0);
+         }
+     }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1958:
+         use crate::econ_attrib::*;
+         let mut game = Game::from_header(&fresh_header(200)).unwrap();
+         let mut tomato = new_plant("TOMATO", -20, &game.config.turns_per_day);
+[31m-        tomato.as_object_mut().unwrap().insert("yield_units".into(), json!(3));
+(B[m[32m+        tomato
+(B[m[32m+            .as_object_mut()
+(B[m[32m+            .unwrap()
+(B[m[32m+            .insert("yield_units".into(), json!(3));
+(B[m         let pos = game.farms[0].farmer.clone();
+         let (x, y) = (pos[0] as usize, pos[1] as usize);
+         game.farms[0].tiles[y][x] = tomato;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1965:
+[31m-        game.step(&[json!({"farmer":["HARVEST"]}), json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({"farmer":["HARVEST"]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m         assert_eq!(game.attrib[0][A_PRODUCED_UNITS + 2], 3);
+         // shed transfer partial fill: request 5, shed has 2 (the farmer spawns next to the shed)
+         game.privates[0].shed.insert("WHEAT".into(), 2);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1969:
+[31m-        game.step(&[json!({"farmer":["PICKUP","WHEAT",5]}), json!({})]).unwrap();
+(B[m[31m-        assert_eq!((game.attrib[0][A_TRANSFER_REQUESTED], game.attrib[0][A_TRANSFER_MOVED]), (5, 2));
+(B[m[32m+        game.step(&[json!({"farmer":["PICKUP","WHEAT",5]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m[32m+        assert_eq!(
+(B[m[32m+            (
+(B[m[32m+                game.attrib[0][A_TRANSFER_REQUESTED],
+(B[m[32m+                game.attrib[0][A_TRANSFER_MOVED]
+(B[m[32m+            ),
+(B[m[32m+            (5, 2)
+(B[m[32m+        );
+(B[m         // market partial fill and per-item cash: SELL 5 TOMATO holding 3 (carried goods do not sell; shed only)
+         game.privates[0].shed.insert("TOMATO".into(), 3);
+         let money = game.farms[0].money;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:1974:
+[31m-        game.step(&[json!({"market":[["SELL","TOMATO",5]]}), json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({"market":[["SELL","TOMATO",5]]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m         assert_eq!(game.attrib[0][A_MARKET_REQUESTED + 3], 5);
+[31m-        assert_eq!(game.attrib[0][A_MARKET_COMMITTED + 3], game.attrib[0][A_SELL_UNITS + 2]);
+(B[m[31m-        assert_eq!(game.attrib[0][A_SELL_CASH + 2] as f64, game.farms[0].money - money);
+(B[m[32m+        assert_eq!(
+(B[m[32m+            game.attrib[0][A_MARKET_COMMITTED + 3],
+(B[m[32m+            game.attrib[0][A_SELL_UNITS + 2]
+(B[m[32m+        );
+(B[m[32m+        assert_eq!(
+(B[m[32m+            game.attrib[0][A_SELL_CASH + 2] as f64,
+(B[m[32m+            game.farms[0].money - money
+(B[m[32m+        );
+(B[m         let mut idle_only = [0; ATTRIB_FIELDS];
+         idle_only[A_SLOT_IDLE] = 3; // the rival's omitted farmer command is a PASS on every step
+         assert_eq!(game.attrib[1], idle_only);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2000:
+             json!({"farmer":["PASS"]}),
+         ];
+         for step in 0..81 {
+[31m-            let actions = [commands[step % commands.len()].clone(), commands[(step + 3) % commands.len()].clone()];
+(B[m[32m+            let actions = [
+(B[m[32m+                commands[step % commands.len()].clone(),
+(B[m[32m+                commands[(step + 3) % commands.len()].clone(),
+(B[m[32m+            ];
+(B[m             let a = counted.step_with_market_metrics(&actions).unwrap();
+             let b = uncounted.step_with_market_metrics(&actions).unwrap();
+[31m-            assert_eq!(serde_json::to_value(counted.snapshot()).unwrap(),
+(B[m[31m-                serde_json::to_value(uncounted.snapshot()).unwrap(), "snapshot step {step}");
+(B[m[32m+            assert_eq!(
+(B[m[32m+                serde_json::to_value(counted.snapshot()).unwrap(),
+(B[m[32m+                serde_json::to_value(uncounted.snapshot()).unwrap(),
+(B[m[32m+                "snapshot step {step}"
+(B[m[32m+            );
+(B[m             assert_eq!(format!("{a:?}"), format!("{b:?}"), "metrics step {step}");
+             assert_eq!(counted.done, uncounted.done);
+             assert_eq!(counted.rewards, uncounted.rewards);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2021:
+         let mut game = Game::from_header(&fresh_header(720)).unwrap();
+         game.step = 71; // day 2 end
+         let mut drought = new_plant("WHEAT", 0, &game.config.turns_per_day);
+[31m-        drought["consecutive_unwatered"] = json!(1); drought["yield_units"] = json!(3);
+(B[m[32m+        drought["consecutive_unwatered"] = json!(1);
+(B[m[32m+        drought["yield_units"] = json!(3);
+(B[m         game.farms[0].tiles[0][0] = drought;
+         let mut dying = new_animal("GOOSE", 0);
+[31m-        dying["consecutive_unfed"] = json!(1); dying["yield_units"] = json!(2);
+(B[m[31m-        dying["pending_care_bonus"] = json!(3); dying["fertilizer_available"] = json!(true);
+(B[m[31m-        dying["cared_today"] = json!(true); game.farms[0].tiles[0][1] = dying;
+(B[m[31m-        let mut survivor = new_animal("GOOSE", 0); survivor["cared_today"] = json!(true);
+(B[m[32m+        dying["consecutive_unfed"] = json!(1);
+(B[m[32m+        dying["yield_units"] = json!(2);
+(B[m[32m+        dying["pending_care_bonus"] = json!(3);
+(B[m[32m+        dying["fertilizer_available"] = json!(true);
+(B[m[32m+        dying["cared_today"] = json!(true);
+(B[m[32m+        game.farms[0].tiles[0][1] = dying;
+(B[m[32m+        let mut survivor = new_animal("GOOSE", 0);
+(B[m[32m+        survivor["cared_today"] = json!(true);
+(B[m         game.farms[0].tiles[0][2] = survivor;
+         let mut wheat = new_plant("WHEAT", 0, &game.config.turns_per_day);
+[31m-        wheat["fertilized_until_day"] = json!(4); wheat["consecutive_unwatered"] = json!(0); game.farms[0].tiles[0][3] = wheat;
+(B[m[32m+        wheat["fertilized_until_day"] = json!(4);
+(B[m[32m+        wheat["consecutive_unwatered"] = json!(0);
+(B[m[32m+        game.farms[0].tiles[0][3] = wheat;
+(B[m         let mut tomato = new_plant("TOMATO", -5, &game.config.turns_per_day);
+[31m-        tomato["yield_units"] = json!(4); tomato["watered_today"] = json!(true);
+(B[m[31m-        tomato["fertilized_until_day"] = json!(4); game.farms[0].tiles[1][0] = tomato;
+(B[m[32m+        tomato["yield_units"] = json!(4);
+(B[m[32m+        tomato["watered_today"] = json!(true);
+(B[m[32m+        tomato["fertilized_until_day"] = json!(4);
+(B[m[32m+        game.farms[0].tiles[1][0] = tomato;
+(B[m         game.step(&[json!({}), json!({})]).unwrap();
+         let c = game.econ_counters[0];
+         assert_eq!(c[ECON_DEATH_HELD_UNITS], 9);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2049:
+         game.step = 72; // day3, inside wheat growth window
+         game.farms[0].farmer = vec![0, 0];
+         let mut wheat = new_plant("WHEAT", 0, &game.config.turns_per_day);
+[31m-        wheat["yield_units"] = json!(5); wheat["fertilized_until_day"] = json!(5);
+(B[m[32m+        wheat["yield_units"] = json!(5);
+(B[m[32m+        wheat["fertilized_until_day"] = json!(5);
+(B[m         game.farms[0].tiles[0][0] = wheat;
+         game.privates[0].inventories = vec![IndexMap::from([("FERTILIZER".into(), 2)])];
+[31m-        game.step(&[json!({"farmer":["WATER"]}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({"farmer":["WATER"]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m         assert_eq!(game.econ_counters[0][ECON_CLIPPED_UNITS], 1);
+[31m-        game.step(&[json!({"farmer":["FERTILIZE"]}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({"farmer":["FERTILIZE"]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m         assert_eq!(game.econ_counters[0][ECON_REDUNDANT_FERT], 1);
+         game.farms[0].tiles[0][0]["yield_units"] = json!(2);
+[31m-        game.step(&[json!({"farmer":["HARVEST"]}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({"farmer":["HARVEST"]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m         assert_eq!(game.econ_counters[0][ECON_MISSED_GROWTH_UNITS], 4);
+         game.farms[0].tiles[0][0] = new_plant("WHEAT", 3, &game.config.turns_per_day);
+         game.farms[0].tiles[0][0]["yield_units"] = json!(2);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2064:
+[31m-        game.step(&[json!({"farmer":["DIG"]}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({"farmer":["DIG"]}), json!({})]).unwrap();
+(B[m         assert_eq!(game.econ_counters[0][ECON_DUG_UNITS], 3);
+     }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2069:
+     fn econ_v4_terminal_provenance_and_flags() {
+         let mut game = Game::from_header(&fresh_header(30)).unwrap();
+         game.farms[0].money = 20_000.0;
+[31m-        game.step(&[json!({"market":[["BUY_LAND"],["BUY_LAND"],["BUY_LAND"]]}),json!({})]).unwrap();
+(B[m[31m-        game.farms[0].farmer = vec![5,0];
+(B[m[32m+        game.step(&[
+(B[m[32m+            json!({"market":[["BUY_LAND"],["BUY_LAND"],["BUY_LAND"]]}),
+(B[m[32m+            json!({}),
+(B[m[32m+        ])
+(B[m[32m+        .unwrap();
+(B[m[32m+        game.farms[0].farmer = vec![5, 0];
+(B[m         game.privates[0].seeds.insert("WHEAT".into(), 4);
+[31m-        game.step(&[json!({"farmer":["PLANT","WHEAT"]}),json!({})]).unwrap();
+(B[m[31m-        game.step(&[json!({"farmer":["DIG"]}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({"farmer":["PLANT","WHEAT"]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m[32m+        game.step(&[json!({"farmer":["DIG"]}), json!({})]).unwrap();
+(B[m         assert!(game.econ_land_used[0][0]); // remembers used NE after destruction
+         let mut goose = new_animal("GOOSE", 0);
+[31m-        goose["fertilizer_available"] = json!(true); goose["pending_care_bonus"] = json!(2);
+(B[m[31m-        goose["fed_today"] = json!(true); game.farms[0].tiles[0][0] = goose;
+(B[m[32m+        goose["fertilizer_available"] = json!(true);
+(B[m[32m+        goose["pending_care_bonus"] = json!(2);
+(B[m[32m+        goose["fed_today"] = json!(true);
+(B[m[32m+        game.farms[0].tiles[0][0] = goose;
+(B[m         game.step = 28;
+[31m-        game.step(&[json!({}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({}), json!({})]).unwrap();
+(B[m         assert_eq!(game.econ_counters[0][ECON_TERMINAL_FLAGS], 4);
+         assert_eq!(game.econ_counters[0][ECON_SEEDS_UNUSED_END], 3);
+         assert_eq!(game.econ_counters[0][ECON_UNUSED_LAND_CASH], 6000);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2086:
+[31m-        let clone = game.clone(); assert_eq!(clone.econ_land_used, game.econ_land_used);
+(B[m[32m+        let clone = game.clone();
+(B[m[32m+        assert_eq!(clone.econ_land_used, game.econ_land_used);
+(B[m         let before = game.econ_counters;
+[31m-        assert!(game.step(&[json!({}),json!({})]).is_err()); assert_eq!(game.econ_counters, before);
+(B[m[32m+        assert!(game.step(&[json!({}), json!({})]).is_err());
+(B[m[32m+        assert_eq!(game.econ_counters, before);
+(B[m     }
+ 
+     #[test]
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2092:
+     fn econ_v4_labor_and_malformed_commands() {
+         let mut game = Game::from_header(&fresh_header(30)).unwrap();
+         game.step = 22;
+[31m-        game.step(&[json!({"market":[["HIRE"],["HIRE"],["HIRE"]]}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({"market":[["HIRE"],["HIRE"],["HIRE"]]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m         assert_eq!(game.econ_counters[0][ECON_HIRE_WASTED_CASH], 0);
+[31m-        game.step(&[json!({"farmer":[], "hands":[["PASS"],null], "market":[["HIRE"]]}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[
+(B[m[32m+            json!({"farmer":[], "hands":[["PASS"],null], "market":[["HIRE"]]}),
+(B[m[32m+            json!({}),
+(B[m[32m+        ])
+(B[m[32m+        .unwrap();
+(B[m         assert_eq!(game.econ_counters[0][ECON_IDLE_HAND_STEPS], 2); // PASS plus omitted third
+         assert_eq!(game.econ_counters[0][ECON_MALFORMED_UNIT_CMDS], 2);
+         assert_eq!(game.econ_counters[0][ECON_HIRE_WASTED_CASH], 3);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2101:
+         game.step = 28;
+[31m-        game.step(&[json!({"market":[["HIRE"]]}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({"market":[["HIRE"]]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m         assert_eq!(game.econ_counters[0][ECON_HIRE_WASTED_CASH], 4); // final partial day
+         assert!(!malformed_unit(&json!(["PASS"])));
+[31m-        assert!(!malformed_unit(&json!(["PLANT","UNKNOWN"]))); // parsed but ineffective
+(B[m[32m+        assert!(!malformed_unit(&json!(["PLANT", "UNKNOWN"]))); // parsed but ineffective
+(B[m         assert!(malformed_unit(&json!(["PLANT"])));
+         assert!(malformed_unit(&json!(["UNKNOWN"])));
+         let mut placement = Game::from_header(&fresh_header(30)).unwrap();
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2109:
+[31m-        placement.farms[0].farmer = vec![0,0];
+(B[m[32m+        placement.farms[0].farmer = vec![0, 0];
+(B[m         placement.farms[0].tiles[0][0] = json!({"kind":"COOP"});
+[31m-        placement.step(&[json!({"farmer":["PLACE","GOOSE","ignored"]}),json!({})]).unwrap();
+(B[m[32m+        placement
+(B[m[32m+            .step(&[json!({"farmer":["PLACE","GOOSE","ignored"]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m         assert_eq!(placement.econ_counters[0][ECON_MALFORMED_UNIT_CMDS], 0);
+[31m-        placement.privates[0].inventories[0].insert("GOOSE".into(),1);
+(B[m[31m-        placement.step(&[json!({"farmer":["PLACE","GOOSE","ignored"]}),json!({})]).unwrap();
+(B[m[32m+        placement.privates[0].inventories[0].insert("GOOSE".into(), 1);
+(B[m[32m+        placement
+(B[m[32m+            .step(&[json!({"farmer":["PLACE","GOOSE","ignored"]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m         assert_eq!(placement.econ_counters[0][ECON_MALFORMED_UNIT_CMDS], 0);
+     }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2120:
+         let mut game = Game::from_header(&fresh_header(720)).unwrap();
+         game.config.max_market_orders_per_turn = 3usize.into();
+         game.privates[0].shed.insert("WHEAT".into(), 2);
+[31m-        game.step(&[json!({"market":[["SELL","WHEAT",5],null,["BUY_PRODUCT","MELON",4],["HIRE"],["HIRE"]]}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[
+(B[m[32m+            json!({"market":[["SELL","WHEAT",5],null,["BUY_PRODUCT","MELON",4],["HIRE"],["HIRE"]]}),
+(B[m[32m+            json!({}),
+(B[m[32m+        ])
+(B[m[32m+        .unwrap();
+(B[m         assert_eq!(game.econ_counters[0][ECON_MARKET_UNFILLED_UNITS], 10); // 3 + 1 + 4 + 2 truncated
+         assert_eq!(game.econ_counters[0][ECON_SALE_SHORTFALL_CASH], 1); // 25 then24
+[31m-        game.market.inventory.insert("WHEAT".into(), json!(1_000_000_000_000_000i64));
+(B[m[32m+        game.market
+(B[m[32m+            .inventory
+(B[m[32m+            .insert("WHEAT".into(), json!(1_000_000_000_000_000i64));
+(B[m         game.privates[0].shed.insert("WHEAT".into(), 2);
+[31m-        game.step(&[json!({"market":[["SELL","WHEAT",2]]}),json!({})]).unwrap();
+(B[m[32m+        game.step(&[json!({"market":[["SELL","WHEAT",2]]}), json!({})])
+(B[m[32m+            .unwrap();
+(B[m         assert_eq!(game.econ_counters[0][ECON_FLOOR_SALE_UNITS], 2);
+         assert_eq!(game.econ_counters[0][ECON_SALE_SHORTFALL_CASH], 49);
+         game.market.inventory.insert("WHEAT".into(), json!(0));
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2132:
+         let before = game.farms[0].money;
+[31m-        game.step(&[json!({"market":[["BUY_PRODUCT","WHEAT",1],["BUY_SEED","WHEAT",1]]}),json!({})]).unwrap();
+(B[m[31m-        assert_eq!(game.econ_counters[0][ECON_BUY_PREMIUM_CASH], (before - game.farms[0].money - 25.0 - 10.0) as u64);
+(B[m[32m+        game.step(&[
+(B[m[32m+            json!({"market":[["BUY_PRODUCT","WHEAT",1],["BUY_SEED","WHEAT",1]]}),
+(B[m[32m+            json!({}),
+(B[m[32m+        ])
+(B[m[32m+        .unwrap();
+(B[m[32m+        assert_eq!(
+(B[m[32m+            game.econ_counters[0][ECON_BUY_PREMIUM_CASH],
+(B[m[32m+            (before - game.farms[0].money - 25.0 - 10.0) as u64
+(B[m[32m+        );
+(B[m         assert!(game.econ_counters[0][ECON_BUY_PREMIUM_CASH] > 0);
+         let before_unfilled = game.econ_counters[0][ECON_MARKET_UNFILLED_UNITS];
+[31m-        game.step(&[json!({"market":[["BUY_SEED",17,5],["SELL",null,3],["BUY_PRODUCT","WHEAT",0]]}),json!({})]).unwrap();
+(B[m[31m-        assert_eq!(game.econ_counters[0][ECON_MARKET_UNFILLED_UNITS] - before_unfilled, 9);
+(B[m[31m-        assert_eq!(econ_requested_market_units(&json!(["HIRE",999])), 1);
+(B[m[32m+        game.step(&[
+(B[m[32m+            json!({"market":[["BUY_SEED",17,5],["SELL",null,3],["BUY_PRODUCT","WHEAT",0]]}),
+(B[m[32m+            json!({}),
+(B[m[32m+        ])
+(B[m[32m+        .unwrap();
+(B[m[32m+        assert_eq!(
+(B[m[32m+            game.econ_counters[0][ECON_MARKET_UNFILLED_UNITS] - before_unfilled,
+(B[m[32m+            9
+(B[m[32m+        );
+(B[m[32m+        assert_eq!(econ_requested_market_units(&json!(["HIRE", 999])), 1);
+(B[m     }
+ 
+     #[test]
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2180:
+         goose["pending_care_bonus"] = json!(2);
+         goose["fertilizer_available"] = json!(true);
+         game.farms[0].tiles[0][0] = goose;
+[31m-        let empty: usize = game.farms[0].tiles.iter().flatten().filter(|t| t.is_null()).count();
+(B[m[32m+        let empty: usize = game.farms[0]
+(B[m[32m+            .tiles
+(B[m[32m+            .iter()
+(B[m[32m+            .flatten()
+(B[m[32m+            .filter(|t| t.is_null())
+(B[m[32m+            .count();
+(B[m         game.step(&[pass(), pass()]).unwrap();
+         let own = game.econ_counters().unwrap()[0];
+         assert_eq!(own[ECON_OVERFLOW_UNITS], 3); // 98 + 5 into 100
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2211:
+         game.farms[0].tiles[4][4] = wet; // under the farmer's spawn
+         game.privates[0].shed.insert("WHEAT".into(), 3);
+         let before = game.econ_counters().unwrap()[0];
+[31m-        let actions = [json!({"farmer": ["WATER"], "hands": [["PASS"]],
+(B[m[32m+        let actions = [
+(B[m[32m+            json!({"farmer": ["WATER"], "hands": [["PASS"]],
+(B[m                               "market": [["SELL", "WHEAT", 2]]}),
+[31m-                       json!({"hands": []})]; // a missing farmer command is PASS
+(B[m[32m+            json!({"hands": []}),
+(B[m[32m+        ]; // a missing farmer command is PASS
+(B[m         let money = game.farms[0].money;
+         let metrics = game.step_with_market_metrics(&actions).unwrap();
+         let after = game.econ_counters().unwrap();
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2289:
+         assert_eq!(game.farms[0].tiles[0][3], json!({"kind": "COOP"}));
+         // Cumulative per-seat [starvation, drought] counters (econ shaping) follow the same
+         // events; expiry is not a drought death.
+[31m-        assert_eq!(game.econ_counters().map(|c| [c[0][..3].to_vec(), c[1][..3].to_vec()]),
+(B[m[31m-                   Some([vec![1, 1, 0], vec![0, 0, 0]]));
+(B[m[32m+        assert_eq!(
+(B[m[32m+            game.econ_counters()
+(B[m[32m+                .map(|c| [c[0][..3].to_vec(), c[1][..3].to_vec()]),
+(B[m[32m+            Some([vec![1, 1, 0], vec![0, 0, 0]])
+(B[m[32m+        );
+(B[m         let again = game.step_with_market_metrics(&passes()).unwrap().unit;
+[31m-        assert_eq!(game.econ_counters().map(|c| [c[0][..3].to_vec(), c[1][..3].to_vec()]),
+(B[m[31m-                   Some([vec![1, 1, 0], vec![0, 0, 0]]));
+(B[m[32m+        assert_eq!(
+(B[m[32m+            game.econ_counters()
+(B[m[32m+                .map(|c| [c[0][..3].to_vec(), c[1][..3].to_vec()]),
+(B[m[32m+            Some([vec![1, 1, 0], vec![0, 0, 0]])
+(B[m[32m+        );
+(B[m         for key in [
+             "upstream_crop_drought_deaths",
+             "upstream_crop_expiry_deaths",
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2818:
+ }
+ 
+ fn market_price_number(market: &Market, item: &str) -> f64 {
+[31m-    market.prices.get(item).and_then(Value::as_f64).unwrap_or(0.0)
+(B[m[32m+    market
+(B[m[32m+        .prices
+(B[m[32m+        .get(item)
+(B[m[32m+        .and_then(Value::as_f64)
+(B[m[32m+        .unwrap_or(0.0)
+(B[m }
+ 
+ fn seat_wealth(farm: &Farm, private: &PrivateState, market: &Market, day: i64) -> f64 {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2845:
+                 wealth += data.seed as f64;
+                 if day - map_i64(map, "planted_day") >= data.first_yield_day {
+                     let name = map_str(map, "crop").unwrap_or_default();
+[31m-                    wealth += market_price_number(market, name) * map_i64(map, "yield_units") as f64;
+(B[m[32m+                    wealth +=
+(B[m[32m+                        market_price_number(market, name) * map_i64(map, "yield_units") as f64;
+(B[m                 }
+             } else if let Some(data) = map_str(map, "animal").and_then(animal) {
+                 wealth += data.cost as f64;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:2852:
+[31m-                wealth += market_price_number(market, data.product) * map_i64(map, "yield_units") as f64;
+(B[m[32m+                wealth +=
+(B[m[32m+                    market_price_number(market, data.product) * map_i64(map, "yield_units") as f64;
+(B[m             }
+         }
+     }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3088:
+         UnitActionKind::Movement => metrics.submitted_move_actions += 1,
+         UnitActionKind::Production => metrics.submitted_production_actions += 1,
+         UnitActionKind::Logistics => metrics.submitted_logistics_actions += 1,
+[31m-        UnitActionKind::None => {}
+(B[m[32m+        UnitActionKind::None => {},
+(B[m     }
+ }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3107:
+         UnitActionEffect::Movement => metrics.committed_move_actions += 1,
+         UnitActionEffect::Production => metrics.committed_production_actions += 1,
+         UnitActionEffect::Logistics => metrics.committed_logistics_actions += 1,
+[31m-        UnitActionEffect::None => {}
+(B[m[32m+        UnitActionEffect::None => {},
+(B[m     }
+ }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3190:
+         let requested = match parts.get(2) {
+             Some(value) => {
+                 python_int_i64(value, "PICKUP count").map_err(|error| error.to_string())?
+[31m-            }
+(B[m[32m+            },
+(B[m             None => 1,
+         };
+         if requested <= 0 {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3225:
+             let requested = match parts.get(2) {
+                 Some(value) => {
+                     python_int_i64(value, "PLACE count").map_err(|error| error.to_string())?
+[31m-                }
+(B[m[32m+                },
+(B[m                 None => 1,
+             };
+             if requested <= 0 {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3499:
+             };
+             let u = x / t;
+             u + HINGE_GAIN * (u - 1.0).max(0.0).powi(2)
+[31m-        }
+(B[m[32m+        },
+(B[m         _ => x,
+     }
+ }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3521:
+             "hinge" => Ok(BigInt::from(1)),
+             "sqrt" | "log" | "log10" => {
+                 Err("shape denominator uses floating arithmetic".to_string())
+[31m-            }
+(B[m[32m+            },
+(B[m             // Unknown functions deliberately degenerate to linear.
+             _ => Ok(value),
+         }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3589:
+                 .to_f64()
+                 .filter(|value| value.is_finite())
+                 .ok_or_else(|| format!("market amplitude for {item} does not fit a finite float"))?
+[31m-        }
+(B[m[32m+        },
+(B[m         (MarketArithmetic::Integer(numerator), MarketArithmetic::Float(denominator)) => {
+             if denominator == 0.0 {
+                 return Err(format!(
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3603:
+                     format!("market amplitude numerator for {item} does not fit a finite float")
+                 })?;
+             numerator / denominator
+[31m-        }
+(B[m[32m+        },
+(B[m         (MarketArithmetic::Float(numerator), MarketArithmetic::Integer(denominator)) => {
+             if denominator == BigInt::from(0) {
+                 return Err(format!(
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3619:
+                     format!("market amplitude denominator for {item} does not fit a finite float")
+                 })?;
+             numerator / denominator
+[31m-        }
+(B[m[32m+        },
+(B[m         (MarketArithmetic::Float(numerator), MarketArithmetic::Float(denominator)) => {
+             if denominator == 0.0 {
+                 return Err(format!(
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3627:
+                 ));
+             }
+             numerator / denominator
+[31m-        }
+(B[m[32m+        },
+(B[m     };
+ 
+     if !amplitude.is_finite() {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3653:
+                 return distance
+                     .to_f64()
+                     .ok_or_else(|| format!("{label} does not fit a finite float"));
+[31m-            }
+(B[m[32m+            },
+(B[m             "sq" => {
+                 return (&distance * &distance)
+                     .to_f64()
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3660:
+                     .ok_or_else(|| format!("squared {label} does not fit a finite float"));
+[31m-            }
+(B[m[32m+            },
+(B[m             "hinge" => {
+                 let t_value = params
+                     .get(item)
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3676:
+                         .ok_or_else(|| format!("{label}/T does not fit a finite float"))?;
+                     return Ok(u + HINGE_GAIN * (u - 1.0).max(0.0).powi(2));
+                 }
+[31m-            }
+(B[m[31m-            "sqrt" | "log" | "log10" => {}
+(B[m[32m+            },
+(B[m[32m+            "sqrt" | "log" | "log10" => {},
+(B[m             // `_shape` deliberately treats unknown functions as linear.
+             _ => {
+                 return distance
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3684:
+                     .to_f64()
+                     .ok_or_else(|| format!("{label} does not fit a finite float"));
+[31m-            }
+(B[m[32m+            },
+(B[m         }
+     }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3887:
+                 )?;
+             }
+             Ok(true)
+[31m-        }
+(B[m[32m+        },
+(B[m         OrderKind::BuyProduct => {
+             if farm.money < price_number
+                 || !shed_capacity.contains_i64_total(private.shed.values().sum::<i64>())
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3904:
+                 -1,
+             )?;
+             Ok(true)
+[31m-        }
+(B[m[32m+        },
+(B[m         OrderKind::BuySeed => {
+             if farm.money < price_number {
+                 return Ok(false);
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3912:
+             farm.money -= price_number;
+             *private.seeds.entry(item.to_string()).or_default() += 1;
+             Ok(true)
+[31m-        }
+(B[m[32m+        },
+(B[m         OrderKind::BuyAnimal => {
+             if farm.money < price_number
+                 || !shed_capacity.contains_i64_total(private.shed.values().sum::<i64>())
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3922:
+             farm.money -= price_number;
+             *private.shed.entry(item.to_string()).or_default() += 1;
+             Ok(true)
+[31m-        }
+(B[m[32m+        },
+(B[m         OrderKind::Hire | OrderKind::BuyLand => Ok(false),
+     }
+ }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3933:
+         let max_orders = self.config.max_market_orders_per_turn.capped_usize();
+         for (player, action) in actions.iter().enumerate() {
+             if let Some(market) = action.as_object().and_then(|a| a.get("market")) {
+[31m-                let ignored = market.as_array().map(|a| a.len().saturating_sub(max_orders) as u64).unwrap_or(1);
+(B[m[31m-                if let Some(c) = econ_mut!(self, player) { c[ECON_MARKET_UNFILLED_UNITS] += ignored; }
+(B[m[32m+                let ignored = market
+(B[m[32m+                    .as_array()
+(B[m[32m+                    .map(|a| a.len().saturating_sub(max_orders) as u64)
+(B[m[32m+                    .unwrap_or(1);
+(B[m[32m+                if let Some(c) = econ_mut!(self, player) {
+(B[m[32m+                    c[ECON_MARKET_UNFILLED_UNITS] += ignored;
+(B[m[32m+                }
+(B[m             }
+         }
+         let queues: Vec<Vec<Value>> = actions
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3962:
+                 .collect();
+             let requested: [u64; 2] = std::array::from_fn(|player| {
+                 if let Some(state) = states.get(player).and_then(Option::as_ref) {
+[31m-                    if matches!(state.kind, OrderKind::Hire | OrderKind::BuyLand) { 1 }
+(B[m[31m-                    else { state.remaining.max(0) as u64 }
+(B[m[32m+                    if matches!(state.kind, OrderKind::Hire | OrderKind::BuyLand) {
+(B[m[32m+                        1
+(B[m[32m+                    } else {
+(B[m[32m+                        state.remaining.max(0) as u64
+(B[m[32m+                    }
+(B[m                 } else {
+[31m-                    queues.get(player).and_then(|queue| queue.get(slot))
+(B[m[31m-                        .map(econ_requested_market_units).unwrap_or(0)
+(B[m[32m+                    queues
+(B[m[32m+                        .get(player)
+(B[m[32m+                        .and_then(|queue| queue.get(slot))
+(B[m[32m+                        .map(econ_requested_market_units)
+(B[m[32m+                        .unwrap_or(0)
+(B[m                 }
+             });
+[31m-            let slot_kinds: [Option<OrderKind>; 2] =
+(B[m[31m-                std::array::from_fn(|player| states.get(player).and_then(Option::as_ref).map(|state| state.kind));
+(B[m[32m+            let slot_kinds: [Option<OrderKind>; 2] = std::array::from_fn(|player| {
+(B[m[32m+                states
+(B[m[32m+                    .get(player)
+(B[m[32m+                    .and_then(Option::as_ref)
+(B[m[32m+                    .map(|state| state.kind)
+(B[m[32m+            });
+(B[m             let mut submitted = [false; 2];
+             for (player, state) in states.iter().enumerate() {
+                 let Some(state) = state else {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3983:
+                     OrderKind::Sell => {
+                         metrics.sell_orders += 1;
+                         metrics.by_seat[player].sell_orders += 1;
+[31m-                    }
+(B[m[32m+                    },
+(B[m                     OrderKind::BuySeed | OrderKind::BuyProduct | OrderKind::BuyAnimal => {
+                         metrics.buy_orders += 1;
+                         metrics.by_seat[player].buy_orders += 1;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3990:
+[31m-                    }
+(B[m[32m+                    },
+(B[m                     OrderKind::Hire => {
+                         metrics.hire_orders += 1;
+                         metrics.by_seat[player].hire_orders += 1;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3994:
+[31m-                    }
+(B[m[32m+                    },
+(B[m                     OrderKind::BuyLand => {
+                         metrics.land_orders += 1;
+                         metrics.by_seat[player].land_orders += 1;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:3998:
+[31m-                    }
+(B[m[32m+                    },
+(B[m                 }
+             }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4013:
+                             committed_units[player] += 1;
+                             self.count_attrib_investment(player, OrderKind::Hire, cash_before);
+                             if self.config.turns_per_day.divides_usize(self.step + 1)
+[31m-                                || BigInt::from(self.step) >= &self.config.episode_steps.0 - BigInt::from(2) {
+(B[m[32m+                                || BigInt::from(self.step)
+(B[m[32m+                                    >= &self.config.episode_steps.0 - BigInt::from(2)
+(B[m[32m+                            {
+(B[m                                 if let Some(c) = econ_mut!(self, player) {
+[31m-                                    c[ECON_HIRE_WASTED_CASH] += (cash_before - self.farms[player].money).max(0.0) as u64;
+(B[m[32m+                                    c[ECON_HIRE_WASTED_CASH] +=
+(B[m[32m+                                        (cash_before - self.farms[player].money).max(0.0) as u64;
+(B[m                                 }
+                             }
+                         }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4022:
+                         *state = None;
+[31m-                    }
+(B[m[32m+                    },
+(B[m                     Some(OrderKind::BuyLand) => {
+                         let cash_before = self.farms[player].money;
+                         if do_buy_land(&mut self.farms[player], self.config.board_size) {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4028:
+                             self.count_attrib_investment(player, OrderKind::BuyLand, cash_before);
+                         }
+                         *state = None;
+[31m-                    }
+(B[m[31m-                    _ => {}
+(B[m[32m+                    },
+(B[m[32m+                    _ => {},
+(B[m                 }
+             }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4051:
+                                     format!("market inventory has no {}", state.item)
+                                 })?;
+                             Some(market_price_numeric(&state.item, inventory, &self.params)?)
+[31m-                        }
+(B[m[32m+                        },
+(B[m                         OrderKind::BuyProduct
+                             if state.item == "WHEAT" || state.item == "FERTILIZER" =>
+                         {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4063:
+                                 .clone();
+                             add_market_units(&mut inventory, -1)?;
+                             Some(market_price_numeric(&state.item, &inventory, &self.params)?)
+[31m-                        }
+(B[m[32m+                        },
+(B[m                         OrderKind::BuySeed => crop(&state.item).map(|data| Value::from(data.seed)),
+                         OrderKind::BuyAnimal => {
+                             animal(&state.item).map(|data| Value::from(data.cost))
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4070:
+[31m-                        }
+(B[m[32m+                        },
+(B[m                         _ => None,
+                     };
+                     if let Some(price) = price {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4104:
+                         if let Some(c) = econ_mut!(self, player) {
+                             let actual = price.as_f64().unwrap_or(0.0);
+                             if *kind == OrderKind::Sell {
+[31m-                                c[ECON_SALE_SHORTFALL_CASH] += (official_base_price(item) as f64 - actual).max(0.0) as u64;
+(B[m[32m+                                c[ECON_SALE_SHORTFALL_CASH] +=
+(B[m[32m+                                    (official_base_price(item) as f64 - actual).max(0.0) as u64;
+(B[m                                 c[ECON_FLOOR_SALE_UNITS] += (actual <= 1.0) as u64;
+                             } else if matches!(kind, OrderKind::BuyProduct | OrderKind::BuySeed) {
+[31m-                                let base = if *kind == OrderKind::BuySeed { crop(item).map(|d| d.seed).unwrap_or(0) }
+(B[m[31m-                                    else { official_base_price(item) };
+(B[m[32m+                                let base = if *kind == OrderKind::BuySeed {
+(B[m[32m+                                    crop(item).map(|d| d.seed).unwrap_or(0)
+(B[m[32m+                                } else {
+(B[m[32m+                                    official_base_price(item)
+(B[m[32m+                                };
+(B[m                                 c[ECON_BUY_PREMIUM_CASH] += (actual - base as f64).max(0.0) as u64;
+                             }
+                         }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4119:
+                             // prices are integers (Python rounds them); cash is kept exact
+                             counters[ECON_SELL_CASH] += price
+                                 .as_u64()
+[31m-                                .or_else(|| price.as_f64().map(|value| value.round().max(0.0) as u64))
+(B[m[32m+                                .or_else(|| {
+(B[m[32m+                                    price.as_f64().map(|value| value.round().max(0.0) as u64)
+(B[m[32m+                                })
+(B[m                                 .unwrap_or(0);
+                         }
+                     } else {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4133:
+             refresh_prices(&mut self.market, &self.params)?;
+             for (player, was_submitted) in submitted.into_iter().enumerate() {
+                 if let Some(c) = econ_mut!(self, player) {
+[31m-                    c[ECON_MARKET_UNFILLED_UNITS] += requested[player].saturating_sub(committed_units[player]);
+(B[m[32m+                    c[ECON_MARKET_UNFILLED_UNITS] +=
+(B[m[32m+                        requested[player].saturating_sub(committed_units[player]);
+(B[m                 }
+[31m-                self.count_attrib_fill(player, slot_kinds[player], requested[player], committed_units[player]);
+(B[m[32m+                self.count_attrib_fill(
+(B[m[32m+                    player,
+(B[m[32m+                    slot_kinds[player],
+(B[m[32m+                    requested[player],
+(B[m[32m+                    committed_units[player],
+(B[m[32m+                );
+(B[m                 if !was_submitted {
+                     continue;
+                 }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4325:
+                 c[ECON_DEATH_HELD_UNITS] += held.max(0) as u64;
+                 continue;
+             }
+[31m-            let Some(data) = map_str(t, "crop").and_then(crop) else { continue; };
+(B[m[32m+            let Some(data) = map_str(t, "crop").and_then(crop) else {
+(B[m[32m+                continue;
+(B[m[32m+            };
+(B[m             let fertilized = map_i64(t, "fertilized_until_day") >= day;
+             if data.ongoing {
+                 let since = day + 1 - map_i64(t, "planted_day") - data.first_yield_day;
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4332:
+[31m-                if since < 0 || since % data.interval != 0 || since / data.interval + 1 > data.max_yield { continue; }
+(B[m[32m+                if since < 0
+(B[m[32m+                    || since % data.interval != 0
+(B[m[32m+                    || since / data.interval + 1 > data.max_yield
+(B[m[32m+                {
+(B[m[32m+                    continue;
+(B[m[32m+                }
+(B[m                 let increment = if watered && fertilized { 2 } else { 1 };
+                 c[ECON_CLIPPED_UNITS] += (held + increment - data.max_yield).max(0) as u64;
+                 if !watered && fertilized {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4336:
+[31m-                    c[ECON_MISSED_GROWTH_UNITS] += (min(data.max_yield, held + 2) - min(data.max_yield, held + 1)).max(0) as u64;
+(B[m[32m+                    c[ECON_MISSED_GROWTH_UNITS] += (min(data.max_yield, held + 2)
+(B[m[32m+                        - min(data.max_yield, held + 1))
+(B[m[32m+                    .max(0) as u64;
+(B[m                 }
+             } else {
+                 let age = day - map_i64(t, "planted_day");
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4340:
+                 if !watered && (data.max_yield_day + 1) / 2 <= age && age <= data.max_yield_day {
+[31m-                    c[ECON_MISSED_GROWTH_UNITS] += min((data.max_yield - held).max(0), if fertilized { 2 } else { 1 }) as u64;
+(B[m[32m+                    c[ECON_MISSED_GROWTH_UNITS] += min(
+(B[m[32m+                        (data.max_yield - held).max(0),
+(B[m[32m+                        if fertilized { 2 } else { 1 },
+(B[m[32m+                    ) as u64;
+(B[m                 }
+             }
+         } else if map_str(t, "animal").and_then(animal).is_some() {
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4358:
+     let mut used = [false; 3];
+     for (y, row) in farm.tiles.iter().enumerate() {
+         for (x, tile) in row.iter().enumerate() {
+[31m-            if tile.as_object().is_some_and(|t| map_str(t, "kind") == Some("PLANT") || t.contains_key("animal")) {
+(B[m[31m-                if let Some(i) = LAND_ORDER.iter().position(|q| *q == quadrant_of(x, y, board_size)) { used[i] = true; }
+(B[m[32m+            if tile
+(B[m[32m+                .as_object()
+(B[m[32m+                .is_some_and(|t| map_str(t, "kind") == Some("PLANT") || t.contains_key("animal"))
+(B[m[32m+            {
+(B[m[32m+                if let Some(i) = LAND_ORDER
+(B[m[32m+                    .iter()
+(B[m[32m+                    .position(|q| *q == quadrant_of(x, y, board_size))
+(B[m[32m+                {
+(B[m[32m+                    used[i] = true;
+(B[m[32m+                }
+(B[m             }
+         }
+     }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4369:
+ /// Syntax only. Well-formed but ineffective actions are counted independently in v3.
+ /// Extra arguments are accepted by the official engine and therefore are not malformed.
+ fn malformed_unit(action: &Value) -> bool {
+[31m-    let Some(p) = action.as_array() else { return true; };
+(B[m[31m-    let Some(op) = p.first().and_then(Value::as_str) else { return true; };
+(B[m[31m-    if op != "PASS" && !UPSTREAM_VERBS.iter().any(|(verb, _, _)| *verb == op) { return true; }
+(B[m[31m-    if matches!(op, "PLANT" | "PICKUP" | "PLACE") && p.get(1).and_then(Value::as_str).is_none() { return true; }
+(B[m[31m-    if matches!(op, "PICKUP" | "PLACE") && p.get(2).is_some_and(|v| python_int_i64(v, "econ command syntax").is_err()) { return true; }
+(B[m[32m+    let Some(p) = action.as_array() else {
+(B[m[32m+        return true;
+(B[m[32m+    };
+(B[m[32m+    let Some(op) = p.first().and_then(Value::as_str) else {
+(B[m[32m+        return true;
+(B[m[32m+    };
+(B[m[32m+    if op != "PASS" && !UPSTREAM_VERBS.iter().any(|(verb, _, _)| *verb == op) {
+(B[m[32m+        return true;
+(B[m[32m+    }
+(B[m[32m+    if matches!(op, "PLANT" | "PICKUP" | "PLACE") && p.get(1).and_then(Value::as_str).is_none() {
+(B[m[32m+        return true;
+(B[m[32m+    }
+(B[m[32m+    if matches!(op, "PICKUP" | "PLACE")
+(B[m[32m+        && p.get(2)
+(B[m[32m+            .is_some_and(|v| python_int_i64(v, "econ command syntax").is_err())
+(B[m[32m+    {
+(B[m[32m+        return true;
+(B[m[32m+    }
+(B[m     false
+ }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4381:
+ /// rejection. Keep its positive requested count even when the Rust execution parser rejects
+ /// a nonstring item. This observer neither changes parsing/commit behavior nor raises errors.
+ fn econ_requested_market_units(order: &Value) -> u64 {
+[31m-    let Some(p) = order.as_array() else { return 1; };
+(B[m[32m+    let Some(p) = order.as_array() else {
+(B[m[32m+        return 1;
+(B[m[32m+    };
+(B[m     match p.first().and_then(Value::as_str) {
+         Some("HIRE" | "BUY_LAND") => 1,
+[31m-        Some("BUY_SEED" | "BUY_PRODUCT" | "BUY_ANIMAL" | "SELL") if p.len() >= 3 =>
+(B[m[31m-            python_int_i64(&p[2], "econ market request").ok().filter(|&n| n > 0)
+(B[m[31m-                .map(|n| n as u64).unwrap_or(1),
+(B[m[32m+        Some("BUY_SEED" | "BUY_PRODUCT" | "BUY_ANIMAL" | "SELL") if p.len() >= 3 => {
+(B[m[32m+            python_int_i64(&p[2], "econ market request")
+(B[m[32m+                .ok()
+(B[m[32m+                .filter(|&n| n > 0)
+(B[m[32m+                .map(|n| n as u64)
+(B[m[32m+                .unwrap_or(1)
+(B[m[32m+        },
+(B[m         _ => 1,
+     }
+ }
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4393:
+ 
+ fn official_base_price(item: &str) -> i64 {
+     match item {
+[31m-        "WHEAT" => 25, "CARROT" => 35, "TOMATO" => 60, "STRAWBERRY" => 120,
+(B[m[31m-        "MELON" => 250, "EGG" => 50, "MILK" => 160, "WOOL" => 200,
+(B[m[31m-        "FERTILIZER" => 100, _ => 0,
+(B[m[32m+        "WHEAT" => 25,
+(B[m[32m+        "CARROT" => 35,
+(B[m[32m+        "TOMATO" => 60,
+(B[m[32m+        "STRAWBERRY" => 120,
+(B[m[32m+        "MELON" => 250,
+(B[m[32m+        "EGG" => 50,
+(B[m[32m+        "MILK" => 160,
+(B[m[32m+        "WOOL" => 200,
+(B[m[32m+        "FERTILIZER" => 100,
+(B[m[32m+        _ => 0,
+(B[m     }
+ }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4402:
+ fn is_drop(action: &Value) -> bool {
+[31m-    action.as_array().and_then(|parts| parts.first()).and_then(Value::as_str) == Some("DROP")
+(B[m[32m+    action
+(B[m[32m+        .as_array()
+(B[m[32m+        .and_then(|parts| parts.first())
+(B[m[32m+        .and_then(Value::as_str)
+(B[m[32m+        == Some("DROP")
+(B[m }
+ 
+ /// Units held in the shed and every carried inventory (econ v4 overflow and unsold accounting).
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4407:
+ fn held_goods(private: &PrivateState) -> u64 {
+     let shed: i64 = private.shed.values().sum();
+[31m-    let carried: i64 = private.inventories.iter().flat_map(|inv| inv.values()).sum();
+(B[m[32m+    let carried: i64 = private
+(B[m[32m+        .inventories
+(B[m[32m+        .iter()
+(B[m[32m+        .flat_map(|inv| inv.values())
+(B[m[32m+        .sum();
+(B[m     (shed.max(0) + carried.max(0)) as u64
+ }
+ 
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4451:
+                 return Err(format!(
+                     "daily seed mixing requires an integer seed; got Python float {seed}"
+                 ));
+[31m-            }
+(B[m[32m+            },
+(B[m         };
+         let mixed_seed = (seed * BigInt::from(1_000_003_u32)) ^ BigInt::from(day);
+         let mut rng = PyRandom::from_seed_decimal(&mixed_seed.to_string())
+Diff in /Users/poonszesen/kg-v3-codex/engine_rs/src/lib.rs:4461:
+             self.count_attrib_day_end(player, day as i64);
+             let losses = daily_econ_losses(&self.farms[player], day as i64);
+             if let Some(counters) = econ_mut!(self, player) {
+[31m-                for (dst, delta) in counters.iter_mut().zip(losses) { *dst += delta; }
+(B[m[32m+                for (dst, delta) in counters.iter_mut().zip(losses) {
+(B[m[32m+                    *dst += delta;
+(B[m[32m+                }
+(B[m             }
+             let drought_deaths = daily_refresh_plants(
+                 &mut self.farms[player],
+error: recipe `rs-format` failed on line 39 with exit code 1
+
+EXIT_CODE=1

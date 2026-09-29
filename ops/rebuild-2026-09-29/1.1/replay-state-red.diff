@@ -1,0 +1,12 @@
+--- correct-replay
++++ deliberately-broken-initial-state
+@@ -83,7 +83,8 @@
+     let header: TraceHeader = serde_json::from_value(raw.clone()).unwrap();
+     assert_eq!(header.transitions, 719);
+     let mut game = Game::new(header.configuration.clone(), header.seed.as_i64().unwrap(), 2).unwrap();
+-    let initial = game.snapshot();
++    let mut initial = game.snapshot();
++    initial.public.step += 1; // Deliberately broken snapshot, test-first evidence only.
+     assert_public(&serde_json::to_value(&initial.public).unwrap(), &raw["initial"]["public"], file);
+     assert_private(&serde_json::to_value(&initial.privates).unwrap(), &raw["initial"]["privates"], file);
+     assert_eq!(initial.statuses, vec!["ACTIVE", "ACTIVE"]);

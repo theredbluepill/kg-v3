@@ -1,21 +1,5 @@
 # Change log
 
-## 2026-09-29 — Rebuild and verify the trimmed rules kernel
-
-The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records
-Task 1.1's reviewed implementation: 12 retained/113 excluded reference paths,
-exact seven-line trim and `c4b9bac5…` hash, Python checker/pytest, and separate
-engine fmt/Clippy/test invocations. All 59 engine tests pass; four native-reset
-replays cover 2,876 transitions and 2,880 snapshots, checking key order in
-every public and private object (extended in Claude's review, test-first). Broken comparator and
-corrupted-snapshot tests fail before repair. Root Rust remains 155 passed/two
-ignored; final prepare passes 769 Python tests with three platform skips.
-Inherited formatting and six Clippy style findings require two exact
-formatter exclusions and three engine-only lint allowances, re-denied in authored
-replay code. The `ops/rebuild-2026-09-29/1.1/results.md` receipt records all
-commands, file inventory, independent review, limitations and preserved dirty
-history. No training or network operation ran; Claude reviewed and committed it.
-
 ## 2026-09-29 — Specify the trimmed rules kernel before implementation
 
 The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] links
