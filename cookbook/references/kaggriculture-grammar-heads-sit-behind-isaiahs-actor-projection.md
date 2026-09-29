@@ -29,7 +29,7 @@ sources: [{"resource": "repository:python/owl/model/kaggriculture_actor.py"}, {"
   - Every replay-derived index is clamped to a temporary value, and its validity goes into the flags.
   - Three flag groups: support, length and canonical equality.
   - `check_replay_flags` makes one compact host transfer and raises `GrammarReplayError`, naming the groups and the first failing row.
-  - `forward` never syncs.
+  - Sampling adds no policy-validation host synchronization: `forward` never runs the replay check. The encode is not sync-free: packed trunk dispatch sizes its packing on the host (Isaiah's `build_packed_sequence`), and an oversized packed batch transfers per-row token counts to plan chunks. (Corrected after Codex's Task 2.3 verification, `ops/rebuild-2026-09-29/codex/verify-2.3-r1.md`.)
 - **Outputs.** `event [E,2,252,12]`, `per_player_entity = event.sum(-1)`, zero `launch`, per-slot entropy `components`, and critic values from the same encode.
 - **Initialization and optimizer.** The embedding `.weight`s are in `get_input_layers` (std `D^-0.5`). Every `head.out` is in `get_output_layers` with gain 0.01; `reset_parameters` now follows Isaiah's output-layer loop. `actor_input_proj` and every head `.up` go to Muon.
 - **Overflow guards (brief §9):**
@@ -61,6 +61,7 @@ sources: [{"resource": "repository:python/owl/model/kaggriculture_actor.py"}, {"
   - an inclusive raw-HIRE prefix fails the enumeration (3 budgets)
   - dropping the actor-ordinal slot from canonical equality fails 2 canonical cases
   - dropping the head outputs from `get_output_layers` fails the Muon and initialization tests
+- Codex's independent verification of `0e989a1..5ec3af1` (`ops/rebuild-2026-09-29/codex/verify-2.3-heads/report.md`) found no functional defect and approved with one wording edit, applied above. It reran `tests/kaggriculture` (256 passed, 1 skipped) and the full non-slow suite (979 passed, 4 skipped), and three further mutations (raw replay index, partial canonical equality, inclusive raw-HIRE prefix) each failed their tests. Market-position noise independence inside `policy_core` is established by source inspection, not by a dedicated test.
 - Everything ran on CPU at tiny shapes. BF16, CUDA and a real compile are not qualified here; that is Phase 6.
 
 ## Limits and reopening conditions

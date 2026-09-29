@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Close Codex's Task 2.3 verification edit on the heads branch
+
+Codex verified `0e989a1..5ec3af1` (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify-2.3-r1.md`, evidence in `ops/rebuild-2026-09-29/codex/verify-2.3-heads/`). No functional defect. One wording correction: `forward` is not host-sync-free, because packed trunk dispatch sizes its packing on the host and oversized packed batches transfer per-row token counts. The `forward` docstring, `docs/model-architecture.md` and the [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|heads Reference]] now say sampling adds no policy-validation host synchronization. The Reference also records Codex's checks and its source-inspection-only limit on market-noise independence. No code behavior changed.
+
 ## 2026-09-29 — Add the Kaggriculture grammar action heads (Task 2.3)
 
 The new [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|heads Reference]] records Task 2.3 as the approved brief v3 specifies. It covers Isaiah's `3D → D` actor input projection; a `KaggricultureGrammarActor` with nine `OutputProjectionMLP` slot heads and prefix embeddings; typed `GrammarTables`, with synthetic expected tables and a named native hook for Task 1.2; exact coupled-Gumbel HIRE sampling; and same-path replay with support, length and canonical flags checked in one host transfer. It also covers the §9 overflow guards (trunk width by enumeration, packed chunking, head-extent chunking). The preset has 6,252,223 parameters, inside the 6–10M budget at depth 8. `tests/kaggriculture`: 256 passed, 1 skipped (waiting on Task 1.2). `just py-prepare`: 979 passed, 4 skipped. Four deliberate mutations failed their tests and were restored byte-for-byte. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now says the packed path chunks instead of raising. On `kg/rebuild-heads`, pending Codex verification.

@@ -522,7 +522,13 @@ class KaggricultureTransformer(
         deterministic: bool = False,
         hidden_state: ModelHiddenState | None = None,
     ) -> ModelOutput[kt.KaggricultureActions]:
-        """Sample one grammar program per seat row; no host synchronization."""
+        """Sample one grammar program per seat row.
+
+        Sampling adds no policy-validation host synchronization: the replay
+        check runs only in ``evaluate_actions``. The encode is not sync-free;
+        packed trunk dispatch sizes its packing on the host and, for an
+        oversized batch, transfers per-row token counts to plan chunks.
+        """
         self._require_stateless(hidden_state)
         encoded = self.encode_observations(obs)
         result = self._policy(
