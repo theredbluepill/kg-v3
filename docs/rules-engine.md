@@ -232,5 +232,8 @@ Orbit generation and comparison tolerances are unchanged. The native observation
 writer lives entirely in root `src/kaggriculture/`; the kernel remains byte-pinned.
 Its config-bound wrapper uses the public snapshot API and forwards stepping only.
 Exact fields, strict tiles and both-seat privacy checks are observation coverage,
-not new Python-engine rules parity. Task 1.3 receipts and unresolved corpus/schema
-qualification are in `ops/rebuild-2026-09-29/1.3/`.
+not new Python-engine rules parity. Task 1.3 receipts, including the qualified
+512-state oracle and the pending pod timing, are in `ops/rebuild-2026-09-29/1.3/`.
+Contract v4.1 retires the temporary `engine_rs/tests/grammar_kernel.rs` bridge
+at the first production root-to-engine dependency, which Task 1.3 creates. That
+test still exists; moving it into root integration is left to Task 1.4.

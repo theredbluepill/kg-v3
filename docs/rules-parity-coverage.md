@@ -458,20 +458,36 @@ hand expectations and 16 failing/restored mutations; eight reconstruction
 controls and five added-fact tests pass. This is observation information
 coverage, not new Python-engine rules differential parity.
 
-The deterministic generator produces 512 input records, then rejects them:
-the unchanged R1 recipe has zero non-synthetic states with more than 16 actors
-against quota four. No qualified reference fixture is published, and the full
-comparison test remains a visible failure. Other quotas pass, using only the
-reviewed dense shed-order exception. Source-only recorder compilation verifies
-the exported pinned crate, but does not execute feature recording. Forty-three
-custody tests cover corruption, ordering, strict metadata, source drift and
-resource guards; 55 NumPy boundary checks pass separately from the unavailable
-Task 2.1 schema. The real-schema test has an unconditional import and fails
-collection until that merge.
+The deterministic generator produces 512 input records. The original v1 seeded
+policy could not reach R1's quota of four non-synthetic states with more than 16
+actors: it produced zero, because end_of_day clears hands and v1 hires on at most
+two of every eight turns. Claude's reviewed `observation-corpus-v2` correction
+appends HIRE entries during hours 0–7, up to `min(M,4)` entries per turn, and
+stops at 16 hands. It changes no quota, and actual generation now yields six
+such states. Every other quota passes; only the reviewed dense d=31 case covers
+shed reordering.
+
+The pinned reference crate recorded all 1,024 seat rows (33,488,896 raw bytes,
+781,743 bytes compressed across both fixture files). The tensor-only
+reconstruction matches every row bitwise at all 8,176 offsets, with no
+tolerance. Regenerating at a later commit reproduced both compressed fixtures
+byte for byte.
+
+These checks discriminate:
+
+- Swapping the market inventory and price channels in the encoder fails the
+  comparison at offset 889.
+- A one-byte reference corruption fails custody validation.
+- Reversing shed ranks fails the real-schema Python corpus test.
+
+All three mutations were restored. Forty-five custody tests cover corruption,
+ordering, strict metadata, source drift and resource guards. The actual Task
+2.1 `check_contract()` runs on every binding batch and on all 512 records. On
+macOS the pinned-memory variants skip, because torch cannot fill MPS-pinned
+host memory. Pinned and GPU behavior are therefore unqualified.
 
 The exactly-one-snapshot test passes after its two-acquisition mutation fails.
-The optimized timing build stops at the Mac memory limit before any phase runs;
-there is no debug timing substitute. Actual final command counts, fixture and
-schema errors, resource receipts and the pod timing command are recorded in
-`ops/rebuild-2026-09-29/1.3/results.md` and `timing.json`. Task 1.3 is incomplete;
-no test skip or quota reduction makes these gaps green.
+The optimized timing build stops at the Mac memory limit before any phase runs,
+and no debug timing is substituted. The pod command is in
+`ops/rebuild-2026-09-29/1.3/timing.json`; phase costs remain unmeasured. Actual
+command counts and receipts are in `ops/rebuild-2026-09-29/1.3/results.md`.

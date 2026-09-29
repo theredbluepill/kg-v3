@@ -872,10 +872,10 @@ The Kaggriculture game uses the same shared training path through its own observ
 
 The root `src/kaggriculture/` boundary uses the following named buffers. Every
 shape starts with `[E, 2]`; each row is one legal seat perspective. The contract
-is version 4, observation schema 3. Native writing is implemented; the real
-Python `KaggricultureObsBatch.check_contract()` integration awaits Task 2.1's
-schema merge. Task 1.3 remains incomplete until that integration and the required
-corpus checks pass.
+is version 4, observation schema 3. Native writing is implemented. With Task
+2.1's schema merged, the real `KaggricultureObsBatch.check_contract()` runs on
+every binding test batch and on all 512 frozen oracle records. The optimized
+phase timing still needs a pod run, which the Mac could not build.
 
 | Fields | Scalar type | Trailing shape |
 | --- | --- | --- |
@@ -954,9 +954,14 @@ two-acquisition mutation fails. The fat-LTO release timing build was stopped at
 53.81 seconds after sampled process-group RSS reached 1,052,393,472 bytes.
 No phase costs were obtained; the optimized command is handed off for the pod in
 `ops/rebuild-2026-09-29/1.3/timing.json`. Debug timings do not justify changing
-the approved snapshot path. Complete corpus qualification is also pending:
-the unchanged R1 recipe produces zero >16-actor non-synthetic states against
-quota four. See the Task 1.3 receipt for actual checks and unresolved limits.
+the approved snapshot path.
+
+The frozen oracle (`tests/fixtures/kaggriculture/observation-v3/`) holds 512
+states and 1,024 seat rows. The pinned reference `encode_invest` recorded those
+rows, and the tensor-only reconstruction matches them bitwise at all 8,176
+offsets. Seeded states use policy `observation-corpus-v2`, the Claude R1
+correction, and 6 non-synthetic states exceed 16 actors against quota four.
+See the Task 1.3 receipt for actual checks and unresolved limits.
 
 ### Native grammar boundary (Task 1.2)
 

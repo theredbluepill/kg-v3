@@ -1,6 +1,6 @@
 # References
 
-- [[structured-observations-preserve-legal-state-and-order|Structured observation rebuild]] — Native fields and caller buffers; 233 Rust passes/one corpus failure, 59 engine passes, 1,056 fast Python passes/three platform skips. Full oracle, real-schema qualification and optimized costs remain blocked by R1, Task 2.1 and the Mac build limit.
+- [[structured-observations-preserve-legal-state-and-order|Structured observation rebuild]] — Native fields and caller buffers match the frozen 512-state pinned-reference oracle bitwise over 8,176 offsets and pass the real Task 2.1 schema. Seeded states use Claude's R1 policy correction, v2. `just prepare`: 244 Rust passed, 87 engine passed, 1,437 Python passed. Optimized timing is a pod handoff.
 
 ## Current rebuild
 

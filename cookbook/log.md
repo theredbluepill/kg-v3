@@ -1,5 +1,18 @@
 # Change log
 
+## 2026-09-29 — Qualify the structured observation oracle after Claude's R1 correction
+
+Claude reviewed Codex's incomplete Task 1.3 and merged integration, which brought the Task 2.1 schema and the Task 1.2 grammar. Claude then adopted seeded policy `observation-corpus-v2`: HIRE entries during hours 0–7, stopping at 16 hands. This makes R1's unchanged quota of more than 16 actors reachable, with 6 qualifying states.
+
+Results:
+- The frozen 512-state oracle (782 KB compressed) matches bitwise at all 8,176 offsets and reproduces byte for byte.
+- The real `check_contract()` accepts all 512 records.
+- Three restored mutations fail their oracles.
+- Two defects are fixed: the Mac pinned-memory probe, and the watchdog charging pre-existing caller RSS.
+- `just prepare` passes.
+
+The [[references/structured-observations-preserve-legal-state-and-order|observation Reference]] carries the evidence. Optimized timing and the grammar-bridge retirement remain open.
+
 ## 2026-09-29 — Implement structured native observations and record qualification blocks
 
 The [[references/structured-observations-preserve-legal-state-and-order|observation
