@@ -1,5 +1,24 @@
 # Change log
 
+## 2026-09-29 — Draft the Task 7.4 Kaggle packaging brief
+
+`ops/rebuild-2026-09-29/briefs/7.4-packaging.md` plans the packaged agent on
+the starter's existing submission path: in-image `abi3-py311` build and the
+tarball script. Research covered the cached kaggle-environments 1.32.7 source
+(hash-matched to the 7.3 archive), Kaggle competition pages and forum topic
+739874, and Kaggle's Dockerfile.
+
+It found:
+
+- the local loader injects `__raw_path__`, which the Rust configuration
+  envelope rejects;
+- the only merged binding needs both seats' private state;
+- first-turn loading bills to the 60 s overage bank;
+- only the latest 2 submissions count for the final leaderboard.
+
+Nothing was built, timed or submitted; seven open questions remain. See the
+[[references/kaggle-packaging-reuses-the-starter-submission-path|packaging Reference]].
+
 ## 2026-09-29 — Capture every engine build input in observation-oracle custody
 
 Codex verification r1 of the Task 1.3 merge (`e197528`, REJECT) found that the
