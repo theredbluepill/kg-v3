@@ -134,18 +134,19 @@ fn producer_selection_profiles_and_policy_are_literal() {
 fn producer_policy_uses_all_unit_kinds_and_exact_market_cycle() {
     let mut header = native_header(Config::default(), 42).unwrap();
     header.initial.public.farms[0].hands = vec![vec![0, 0]];
-    let initial = policy_actions(&header.initial.public, 3);
+    let initial = policy_actions(&header.initial.public, 3, 24);
     assert_eq!(
         initial[0],
-        json!({"farmer":["PASS"],"hands":[["NORTH"]],"market":[["HIRE"],["BUY_LAND"]]})
+        json!({"farmer":["PASS"],"hands":[["NORTH"]],"market":[["HIRE"],["BUY_LAND"],["HIRE"]]})
     );
     let mut seen = std::collections::BTreeSet::new();
     for step in 0..18 {
         header.initial.public.step = step;
-        let actions = policy_actions(&header.initial.public, 10);
+        let actions = policy_actions(&header.initial.public, 10, 24);
         seen.insert(actions[0]["farmer"][0].as_str().unwrap().to_owned());
         assert_eq!(actions[0]["hands"].as_array().unwrap().len(), 1);
-        assert_eq!(actions[0]["market"].as_array().unwrap().len(), 2);
+        let expected = if step < 8 { 4 } else { 2 };
+        assert_eq!(actions[0]["market"].as_array().unwrap().len(), expected);
         if step == 5 {
             assert_eq!(actions[0]["farmer"], json!(["PICKUP", "EGG", 3]));
         }
@@ -157,6 +158,50 @@ fn producer_policy_uses_all_unit_kinds_and_exact_market_cycle() {
         }
     }
     assert_eq!(seen.len(), 18);
+}
+
+// Claude R1 correction (observation-corpus-v2): the v1 market cycle hires on at
+// most two of every eight turns and end_of_day clears hands, so no seeded state
+// can exceed 16 actors. During hours 0..7 the policy appends [HIRE] entries
+// after the unchanged cycle entries until the turn holds min(M, 4) entries.
+#[test]
+fn producer_policy_v2_appends_hire_burst_within_order_limit() {
+    let header = native_header(Config::default(), 42).unwrap();
+    let mut public = header.initial.public.clone();
+    for (step, orders, expected_len) in [
+        (0, 10, 4),
+        (7, 10, 4),
+        (8, 10, 2),
+        (23, 10, 2),
+        (24, 10, 4),
+        (3, 3, 3),
+        (3, 1, 1),
+        (3, 2, 2),
+    ] {
+        public.step = step;
+        let v1 = policy_actions(&public, orders.min(2), 24);
+        let actions = policy_actions(&public, orders, 24);
+        for seat in 0..2 {
+            let market = &actions[seat]["market"];
+            let entries = market.as_array().unwrap();
+            assert_eq!(entries.len(), expected_len, "step={step} M={orders}");
+            assert!(entries.len() <= orders);
+            let prefix = orders.min(2);
+            assert_eq!(&entries[..prefix], v1[seat]["market"].as_array().unwrap().as_slice());
+            for entry in &entries[prefix..] {
+                assert_eq!(entry, &json!(["HIRE"]));
+            }
+        }
+    }
+    // Burst HIREs stop at 16 hands; cycle entries are never removed.
+    public.step = 0;
+    for (hands, expected_len) in [(14, 4), (15, 3), (16, 2), (20, 2)] {
+        public.farms[0].hands = vec![vec![0, 0]; hands];
+        let actions = policy_actions(&public, 10, 24);
+        assert_eq!(actions[0]["market"].as_array().unwrap().len(), expected_len);
+        assert_eq!(actions[0]["hands"].as_array().unwrap().len(), hands);
+        assert_eq!(actions[1]["market"].as_array().unwrap().len(), 4);
+    }
 }
 
 #[test]
@@ -408,8 +453,18 @@ fn unit_action(step: usize, seat: usize, actor: usize) -> Value {
     Value::Array(command)
 }
 
-fn policy_actions(public: &PublicState, orders: usize) -> Vec<Value> {
+/// Hours per day during which observation-corpus-v2 appends HIRE entries.
+const HIRE_BURST_HOURS: usize = 8;
+/// Upper bound on market entries per turn under observation-corpus-v2.
+const HIRE_BURST_ORDERS: usize = 4;
+/// Burst HIREs stop once a farm holds this many hands (17 actors), so the
+/// Fibonacci hire cost does not exhaust the bank before later days.
+const HIRE_BURST_HANDS: usize = 16;
+
+fn policy_actions(public: &PublicState, orders: usize, turns_per_day: usize) -> Vec<Value> {
+    assert!(turns_per_day > 0, "policy requires a positive day length");
     let step = public.step;
+    let burst = step % turns_per_day < HIRE_BURST_HOURS;
     public
         .farms
         .iter()
@@ -432,6 +487,14 @@ fn policy_actions(public: &PublicState, orders: usize) -> Vec<Value> {
                     _ => unreachable!(),
                 })
                 .collect();
+            let mut market = market;
+            if burst {
+                let extra = orders
+                    .min(HIRE_BURST_ORDERS)
+                    .saturating_sub(market.len())
+                    .min(HIRE_BURST_HANDS.saturating_sub(farm.hands.len()));
+                market.extend(std::iter::repeat_n(json!(["HIRE"]), extra));
+            }
             json!({"farmer":farmer,"hands":hands,"market":market})
         })
         .collect()
@@ -860,7 +923,11 @@ fn produce_seeded(index: usize, steps: &[usize], out: &mut impl Write) -> Corpus
         for step in 0..95 {
             let public = game.public_state();
             require(public.step == step, "seeded first-pass clock")?;
-            let action = policy_actions(&public, PROFILES[index][2] as usize);
+            let action = policy_actions(
+                &public,
+                PROFILES[index][2] as usize,
+                PROFILES[index][1] as usize,
+            );
             serde_json::to_writer(&mut actions, &action)?;
             actions.push(b'\n');
             game.step(&action)?;

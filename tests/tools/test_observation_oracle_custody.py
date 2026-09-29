@@ -93,7 +93,7 @@ def fixture(directory: Path) -> tuple[dict[str, Any], list[dict[str, Any]], byte
         "contract_version": 4,
         "source_identity": identity,
         "profiles": oracle.PROFILES,
-        "policy": "observation-corpus-v1",
+        "policy": "observation-corpus-v2",
         "seed_runs": [],
         "source_counts": {"official": 2, "seeded": 0, "dense": 0},
         "records": [

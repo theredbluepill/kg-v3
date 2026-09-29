@@ -486,7 +486,7 @@ def _check_recipe(
         require(type(profile[9]) in (float, int), "profile weed must be a number")
     require(
         manifest["profiles"] == PROFILES
-        and manifest["policy"] == "observation-corpus-v1",
+        and manifest["policy"] == "observation-corpus-v2",
         "profile/policy recipe changed",
     )
     require(isinstance(manifest["seed_runs"], list), "seed runs array")
@@ -940,7 +940,7 @@ def validate_inputs(path: Path, generation: dict[str, Any]) -> None:
     _check_recipe(
         {
             "profiles": PROFILES,
-            "policy": "observation-corpus-v1",
+            "policy": "observation-corpus-v2",
             "seed_runs": generation["seed_runs"],
             "coverage": coverage,
         },
@@ -1157,7 +1157,7 @@ def regenerate(output: Path, reference: str) -> None:
                 "contract_version": 4,
                 "source_identity": identity,
                 "profiles": PROFILES,
-                "policy": "observation-corpus-v1",
+                "policy": "observation-corpus-v2",
                 "seed_runs": generation["seed_runs"],
                 "source_counts": {"official": 384, "seeded": 96, "dense": 32},
                 "records": records,
