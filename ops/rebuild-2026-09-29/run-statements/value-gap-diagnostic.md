@@ -180,3 +180,10 @@ Scripts: `driver.py 68516ad9…` and `launch.sh bd98fe95…`; the others are unc
 Thresholds and prediction 5's rule are unchanged. Prediction 5 is evaluated on the rerun's cells. Attempt 3's F cells are retained and reported as the 256-row repeat and the invalid 1,024-row cells.
 
 Scripts: `is_gap.py 6ea882a6…`, `driver.py fe37b01d…`, `launch.sh fff11d40…` (run dir, timeout and stage set taken from the environment); the others are unchanged. The local cleanup test was rerun and passed (`pre-launch/driver_cleanup_test_local_attempt3_frerun.txt`).
+
+## Post-run addendum (nothing above is changed)
+
+- **Attempt 2's wall.** Amendment 2 quotes 72.3 s; the receipt (`value-gap-2026-09-29/pod/attempt2/driver.jsonl`) says **72.1 s**.
+- **Aggregate driver wall.** 95.9 + 72.1 + 236.5 + 44.6 (F rerun, 11:06:06–11:06:50Z, exit 0) = **449.1 s**, within the 45-min limit.
+- **Cleanup on the pod.** Every driver ended normally. The attempt-1 and attempt-2 stops terminated the other stream's stage (rc −15), and each atexit cleanup found no live group. No signal reached a driver on the pod, so the signal path is tested locally only.
+- **Results** are in `results.md` "Value gap diagnostic" and `value-gap-2026-09-29/summary.json`. All five pre-declared predictions came out on the H1 side, with prediction 5 on the Amendment 3 rerun.

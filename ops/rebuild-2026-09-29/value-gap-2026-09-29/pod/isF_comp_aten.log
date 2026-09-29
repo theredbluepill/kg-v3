@@ -1,0 +1,76 @@
+{"unix": 1790679587.825, "event": "process", "case": "isF_comp_aten", "dryrun": false, "torch": "2.9.0+cu128", "torch_git": "0fabc3ba44823f257e70ce397d989c8de5e362c1", "cuda_runtime": "12.8", "model_file": "/workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py", "flash_attn_available": true, "max_autotune_gemm_backends": "ATEN", "tf32_matmul": true, "tf32_cudnn": true, "actor_head_init_gain_src": 0.01, "critic_head_init_gain_src": 1.0, "git": {"head": "8fde43cd7408c9c4f9147eeb8f916bd08f8266ed", "tree": "70d50fa37e66aa322e8db00c9359d3f9e3031499", "porcelain": ""}, "flash_attn": "2.8.3", "triton": "3.5.0", "device_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition", "cuda_visible_devices": "1"}
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.030688000842928886}
+AUTOTUNE addmm(15922x256, 15922x256, 256x256)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.0307 ms 100.0% 
+  addmm 0.0407 ms 75.5% 
+SingleProcess AUTOTUNE benchmarking takes 0.0462 seconds and 0.0003 seconds precompiling for 2 choices
+V0929 11:00:03.456000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py:823
+V0929 11:00:03.456000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V0929 11:00:03.456000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     - 0/0: GLOBAL_STATE changed: grad_mode 
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.04073600098490715}
+AUTOTUNE addmm(15922x512, 15922x256, 256x512)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.0407 ms 100.0% 
+  addmm 0.0679 ms 60.0% 
+SingleProcess AUTOTUNE benchmarking takes 0.0471 seconds and 0.0002 seconds precompiling for 2 choices
+V0929 11:00:16.423000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/2] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py:823
+V0929 11:00:16.423000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/2] [__recompiles]     triggered by the following guard failure(s):
+V0929 11:00:16.423000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/2] [__recompiles]     - 0/1: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:16.423000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/2] [__recompiles]     - 0/0: len(G['use_flash_attn'].__closure__[0].cell_contents) == 1    # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:20.043000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/3] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py:823
+V0929 11:00:20.043000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/3] [__recompiles]     triggered by the following guard failure(s):
+V0929 11:00:20.043000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/3] [__recompiles]     - 0/2: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:20.043000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/3] [__recompiles]     - 0/1: len(G['use_flash_attn'].__closure__[0].cell_contents) == 8    # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:20.043000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/3] [__recompiles]     - 0/0: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:24.986000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/4] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py:823
+V0929 11:00:24.986000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/4] [__recompiles]     triggered by the following guard failure(s):
+V0929 11:00:24.986000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/4] [__recompiles]     - 0/3: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:24.986000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/4] [__recompiles]     - 0/2: len(G['use_flash_attn'].__closure__[0].cell_contents) == 15   # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:24.986000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/4] [__recompiles]     - 0/1: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:24.986000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/4] [__recompiles]     - 0/0: len(G['use_flash_attn'].__closure__[0].cell_contents) == 1    # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:26.696000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/5] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py:823
+V0929 11:00:26.696000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/5] [__recompiles]     triggered by the following guard failure(s):
+V0929 11:00:26.696000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/5] [__recompiles]     - 0/4: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:26.696000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/5] [__recompiles]     - 0/3: len(G['use_flash_attn'].__closure__[0].cell_contents) == 22   # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:26.696000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/5] [__recompiles]     - 0/2: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:26.696000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/5] [__recompiles]     - 0/1: len(G['use_flash_attn'].__closure__[0].cell_contents) == 8    # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:26.696000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/5] [__recompiles]     - 0/0: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:30.278000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/6] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py:823
+V0929 11:00:30.278000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/6] [__recompiles]     triggered by the following guard failure(s):
+V0929 11:00:30.278000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/6] [__recompiles]     - 0/5: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:30.278000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/6] [__recompiles]     - 0/4: len(G['use_flash_attn'].__closure__[0].cell_contents) == 29   # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:30.278000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/6] [__recompiles]     - 0/3: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:30.278000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/6] [__recompiles]     - 0/2: len(G['use_flash_attn'].__closure__[0].cell_contents) == 15   # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:30.278000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/6] [__recompiles]     - 0/1: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:30.278000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/6] [__recompiles]     - 0/0: len(G['use_flash_attn'].__closure__[0].cell_contents) == 1    # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:31.335000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/7] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py:823
+V0929 11:00:31.335000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/7] [__recompiles]     triggered by the following guard failure(s):
+V0929 11:00:31.335000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/7] [__recompiles]     - 0/6: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:31.335000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/7] [__recompiles]     - 0/5: len(G['use_flash_attn'].__closure__[0].cell_contents) == 36   # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:31.335000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/7] [__recompiles]     - 0/4: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:31.335000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/7] [__recompiles]     - 0/3: len(G['use_flash_attn'].__closure__[0].cell_contents) == 22   # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:31.335000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/7] [__recompiles]     - 0/2: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:31.335000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/7] [__recompiles]     - 0/1: len(G['use_flash_attn'].__closure__[0].cell_contents) == 8    # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:31.335000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/7] [__recompiles]     - 0/0: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:34.612000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/8] [__recompiles] Recompiling function _forward_transformer_trunk in /workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py:823
+V0929 11:00:34.612000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/8] [__recompiles]     triggered by the following guard failure(s):
+V0929 11:00:34.612000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/8] [__recompiles]     - 0/7: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:34.612000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/8] [__recompiles]     - 0/6: len(G['use_flash_attn'].__closure__[0].cell_contents) == 43   # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:34.612000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/8] [__recompiles]     - 0/5: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:34.612000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/8] [__recompiles]     - 0/4: len(G['use_flash_attn'].__closure__[0].cell_contents) == 29   # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:34.612000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/8] [__recompiles]     - 0/3: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:34.612000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/8] [__recompiles]     - 0/2: len(G['use_flash_attn'].__closure__[0].cell_contents) == 15   # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+V0929 11:00:34.612000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/8] [__recompiles]     - 0/1: GLOBAL_STATE changed: grad_mode 
+V0929 11:00:34.612000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:4181] [0/8] [__recompiles]     - 0/0: len(G['use_flash_attn'].__closure__[0].cell_contents) == 1    # flash_flags.append(bool(flag))  # runs/value-gap-2026-09-29/is_gap.py:185 in counting_use_flash
+W0929 11:00:34.613000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:1358] [0/8] torch._dynamo hit config.recompile_limit (8)
+W0929 11:00:34.613000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:1358] [0/8]    function: '_forward_transformer_trunk' (/workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py:823)
+W0929 11:00:34.613000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:1358] [0/8]    last reason: 0/7: GLOBAL_STATE changed: grad_mode 
+W0929 11:00:34.613000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:1358] [0/8] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+W0929 11:00:34.613000 205104 .venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:1358] [0/8] To diagnose recompilation issues, see https://pytorch.org/docs/main/torch.compiler_troubleshooting.html
+{"unix": 1790679634.781, "event": "result", "case": "isF_comp_aten", "trunk": "compiled", "rows": [256, 1024], "config": {"model": {"model_arch": "stateless_transformer_v1", "embed_dim": 256, "depth": 6, "n_heads": 8, "mlp_ratio": 2.0, "player_count_adapters_enabled": false, "player_count_adapter_blocks": 0, "n_scratch_tokens": 4, "activation": "gelu", "force_flash_attn": true, "use_learned_pairwise_bias": false, "critic_mode": "softmax", "value_mode": "win_loss", "actor": {"action_spec": "discrete_targets", "launch_mode": "binary", "n_action_mixtures": 4, "entropy_ship_quantiles": 16, "scale_min": 0.1, "scale_max_frac": 0.5, "scale_max_abs_floor": 8.0}, "lora": null}, "obs_spec": {"max_entities": 320, "obs_spec": "entity_based_ext_v2"}, "action_spec": {"action_spec": "discrete_targets", "max_per_planet_launches": 1, "min_fleet_size": 3, "targeting_mode": "anything_goes"}, "two_player_weight": 0.75, "rl_model_compile": "trunk", "rl_model_compile_mode": "max-autotune-no-cudagraphs", "rl_dtype": "bfloat16"}, "output_layer_spectral_norms": {"critic": [1.0], "actor": [0.01, 0.01, 0.01, 0.01]}, "tf32_matmul": true, "steps": {"states_256": "ok", "pair_256": "ok", "hidden_256": "ok", "states_1024": "ok", "pair_1024": "ok", "hidden_1024": "ok"}, "states_256": {"source": "loaded", "path": "/workspace/kg-v3-rebuild/runs/value-gap-2026-09-29/obs/orbit_obs_256.pt"}, "default_gain_256": {"pair": {"values": {"n": 652, "max_abs": 0.015609443187713623, "mean_abs": 0.0032185260206460953, "rms
+{"unix": 1790679634.781, "event": "done", "case": "isF_comp_aten"}

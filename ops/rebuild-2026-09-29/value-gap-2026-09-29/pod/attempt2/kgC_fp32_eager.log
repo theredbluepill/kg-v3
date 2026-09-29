@@ -1,0 +1,58 @@
+{"unix": 1790679212.694, "event": "process", "case": "kgC_fp32_eager", "dryrun": false, "torch": "2.9.0+cu128", "torch_git": "0fabc3ba44823f257e70ce397d989c8de5e362c1", "cuda_runtime": "12.8", "model_file": "/workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py", "flash_attn_available": true, "max_autotune_gemm_backends": "ATEN", "tf32_matmul": false, "tf32_cudnn": false, "actor_head_init_gain_src": 0.01, "critic_head_init_gain_src": 1.0, "git": {"head": "8fde43cd7408c9c4f9147eeb8f916bd08f8266ed", "tree": "70d50fa37e66aa322e8db00c9359d3f9e3031499", "porcelain": ""}, "flash_attn": "2.8.3", "triton": "3.5.0", "device_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition", "cuda_visible_devices": "0"}
+{"unix": 1790679220.486, "event": "result", "case": "kgC_fp32_eager", "output_layer_spectral_norms": {"critic": [1.0], "actor": [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]}, "precision": "fp32", "trunk": "eager", "rows": [256, 1024], "force_flash_attn": false, "tf32_matmul": false, "inductor_coalesce_tiling_analysis": true, "steps": {"pair_256": "ok", "hidden_256": "ok", "pair_1024": "started"}, "default_gain_256": {"pair": {"values": {"n": 256, "max_abs": 0.0, "mean_abs": 0.0, "rms": 0.0, "p99_abs": 0.0, "exact_equal_frac": 1.0, "ref_max_abs": 0.20191621780395508, "ref_mean_abs": 0.05583933740854263, "rel_mean": 0.0, "rel_max": 0.0, "nonfinite": 0}, "critic_logit_diff": {"n": 256, "max_abs": 2.384185791015625e-07, "mean_abs": 4.307366907596588e-08, "rms": 6.132601981789776e-08, "p99_abs": 1.4603119780076668e-07, "exact_equal_frac": 0.42578125, "ref_max_abs": 0.4094589352607727, "ref_mean_abs": 0.11202739924192429, "rel_mean": 3.8449226735792763e-07, "rel_max": 5.82277152716415e-07, "nonfinite": 0}, "logp_event": {"n": 774144, "max_abs": 0.0, "mean_abs": 0.0, "rms": 0.0, "p99_abs": 0.0, "exact_equal_frac": 0.9999999403953552, "ref_max_abs": 3.500246286392212, "ref_mean_abs": 0.054444726556539536, "rel_mean": 0.0, "rel_max": 0.0, "nonfinite": 0}, "logratio_row": {"mean": 0.0, "abs_mean": 0.0, "abs_max": 0.0, "min": 0.0, "max": 0.0, "nonfinite": 0, "n": 256}, "entropy_event": {"n": 774144, "max_abs": 0.0, "mean_abs": 0.0, "rms": 0.0, "p99_abs": 0.0, "exact_equal_frac
+Traceback (most recent call last):
+  File "/workspace/kg-v3-rebuild/runs/value-gap-2026-09-29/gemm_backend_wrap.py", line 60, in <module>
+    main()
+  File "/workspace/kg-v3-rebuild/runs/value-gap-2026-09-29/gemm_backend_wrap.py", line 51, in main
+    runpy.run_path(script, run_name="__main__")
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/kg-v3-rebuild/runs/value-gap-2026-09-29/kg_gap.py", line 320, in <module>
+    main()
+  File "/workspace/kg-v3-rebuild/runs/value-gap-2026-09-29/kg_gap.py", line 274, in main
+    rec[f"default_gain_{r}"] = run_pair(model, obs, dev, args.precision, True)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/runs/value-gap-2026-09-29/kg_gap.py", line 115, in run_pair
+    v_g = model.compute_value(obs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/python/owl/model/kaggriculture.py", line 1073, in compute_value
+    values, _ = self._values(self.encode_observations(obs), obs)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/python/owl/model/kaggriculture.py", line 337, in encode_observations
+    x = self._run_trunk(x, token_mask)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/python/owl/model/kaggriculture.py", line 471, in _run_trunk
+    return trunk(x, token_mask, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/python/owl/model/kaggriculture.py", line 514, in _forward_transformer_trunk
+    x = block(x, token_mask, packed)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py", line 3005, in forward
+    x = x + self.attn(self.norm1(x), token_mask, packed)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/python/owl/model/stateless_transformer_v1.py", line 3131, in forward
+    return self.out(attn.reshape(batch_size, seq_len, -1))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 134, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 710.00 MiB. GPU 0 has a total capacity of 94.97 GiB of which 37.56 MiB is free. Including non-PyTorch memory, this process has 94.93 GiB memory in use. Of the allocated memory 92.37 GiB is allocated by PyTorch, and 1.83 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
