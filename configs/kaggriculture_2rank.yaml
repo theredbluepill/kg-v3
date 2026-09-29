@@ -8,8 +8,8 @@
 # seg_per_minibatch * grad_accum stays 8 per rank; the split is set from the
 # pre-launch memory smoke (plan Task 6.1: spm 4 / accum 2 if spm 8 does not fit).
 # See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
-# Loads through FullConfig; run_ppo checks its GEMM workload, then stops until the
-# Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.
+# Loads through FullConfig; run_ppo checks its GEMM workload, then stops until
+# Task 3.1 rollout storage and action mapping land (the native env exists).
 env:
   n_envs: 128
   obs_spec:

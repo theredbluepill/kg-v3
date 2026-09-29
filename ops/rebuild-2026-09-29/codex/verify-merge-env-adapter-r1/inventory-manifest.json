@@ -1,0 +1,420 @@
+{
+  "scratch": "/private/tmp/verify-env-adapter-inventory-3_wr9da7",
+  "python": "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python",
+  "env": {
+    "CARGO_BUILD_JOBS": "2",
+    "OMP_NUM_THREADS": "2",
+    "CARGO_TARGET_DIR": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/cargo-target"
+  },
+  "native_collection_dependency": {
+    "path": "/Users/poonszesen/kg-v3-m-env-adapter/python/owl/rs.abi3.so",
+    "sha256": "c93a81b5f67c3f037ae7f39ea1d49d80d7bd1488f1c181e957d670f95796dd7b",
+    "limitation": "HEAD extension reused for collection only; no parent native behavioral test is credited."
+  },
+  "runs": [
+    {
+      "revision": "666deec789b2e75f56afb6dbb7b7acd40171c6b1",
+      "label": "base",
+      "kind": "import-path",
+      "command": [
+        "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python",
+        "-c",
+        "import owl, owl.rs; print(owl.__file__); print(owl.rs.__file__)"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base/python",
+      "exit_code": 0,
+      "seconds": 0.02,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-base-import-path.log"
+    },
+    {
+      "revision": "666deec789b2e75f56afb6dbb7b7acd40171c6b1",
+      "label": "base",
+      "kind": "pytest-collect",
+      "command": [
+        "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python",
+        "-m",
+        "pytest",
+        "--collect-only",
+        "-q",
+        "tests"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base/python",
+      "exit_code": 0,
+      "seconds": 2.79,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-base-pytest-collect.log"
+    },
+    {
+      "revision": "666deec789b2e75f56afb6dbb7b7acd40171c6b1",
+      "label": "base",
+      "kind": "cargo-engine-list",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "engine_rs/Cargo.toml",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base/python",
+      "exit_code": 0,
+      "seconds": 9.79,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-base-cargo-engine-list.log"
+    },
+    {
+      "revision": "666deec789b2e75f56afb6dbb7b7acd40171c6b1",
+      "label": "base",
+      "kind": "cargo-root-list",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base/python",
+      "exit_code": 101,
+      "seconds": 3.24,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-base-cargo-root-list.log"
+    },
+    {
+      "revision": "8699ca9eab63d0dd3d951fa9cb58e65b1f1c650a",
+      "label": "adapter",
+      "kind": "import-path",
+      "command": [
+        "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python",
+        "-c",
+        "import owl, owl.rs; print(owl.__file__); print(owl.rs.__file__)"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter/python",
+      "exit_code": 0,
+      "seconds": 0.02,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-adapter-import-path.log"
+    },
+    {
+      "revision": "8699ca9eab63d0dd3d951fa9cb58e65b1f1c650a",
+      "label": "adapter",
+      "kind": "pytest-collect",
+      "command": [
+        "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python",
+        "-m",
+        "pytest",
+        "--collect-only",
+        "-q",
+        "tests"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter/python",
+      "exit_code": 0,
+      "seconds": 2.42,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-adapter-pytest-collect.log"
+    },
+    {
+      "revision": "8699ca9eab63d0dd3d951fa9cb58e65b1f1c650a",
+      "label": "adapter",
+      "kind": "cargo-engine-list",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "engine_rs/Cargo.toml",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter/python",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-adapter-cargo-engine-list.log"
+    },
+    {
+      "revision": "8699ca9eab63d0dd3d951fa9cb58e65b1f1c650a",
+      "label": "adapter",
+      "kind": "cargo-root-list",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter/python",
+      "exit_code": 101,
+      "seconds": 0.67,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-adapter-cargo-root-list.log"
+    },
+    {
+      "revision": "49a48350cdd72d6b546320441d677fbcbae2d893",
+      "label": "head",
+      "kind": "import-path",
+      "command": [
+        "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python",
+        "-c",
+        "import owl, owl.rs; print(owl.__file__); print(owl.rs.__file__)"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head/python",
+      "exit_code": 0,
+      "seconds": 0.02,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-head-import-path.log"
+    },
+    {
+      "revision": "49a48350cdd72d6b546320441d677fbcbae2d893",
+      "label": "head",
+      "kind": "pytest-collect",
+      "command": [
+        "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python",
+        "-m",
+        "pytest",
+        "--collect-only",
+        "-q",
+        "tests"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head/python",
+      "exit_code": 0,
+      "seconds": 2.58,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-head-pytest-collect.log"
+    },
+    {
+      "revision": "49a48350cdd72d6b546320441d677fbcbae2d893",
+      "label": "head",
+      "kind": "cargo-engine-list",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "engine_rs/Cargo.toml",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head/python",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-head-cargo-engine-list.log"
+    },
+    {
+      "revision": "49a48350cdd72d6b546320441d677fbcbae2d893",
+      "label": "head",
+      "kind": "cargo-root-list",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head",
+      "PYTHONPATH": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head/python",
+      "exit_code": 101,
+      "seconds": 1.33,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-head-cargo-root-list.log"
+    },
+    {
+      "label": "base",
+      "kind": "cargo-root-list-retry",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base",
+      "PYO3_PYTHON": "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python",
+      "exit_code": 0,
+      "seconds": 18.16,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-base-cargo-root-list-retry.log"
+    },
+    {
+      "label": "adapter",
+      "kind": "cargo-root-list-retry",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter",
+      "PYO3_PYTHON": "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-adapter-cargo-root-list-retry.log"
+    },
+    {
+      "label": "head",
+      "kind": "cargo-root-list-retry",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head",
+      "PYO3_PYTHON": "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python",
+      "exit_code": 0,
+      "seconds": 0.05,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-head-cargo-root-list-retry.log"
+    },
+    {
+      "label": "base",
+      "kind": "cargo-engine-list-isolated",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "engine_rs/Cargo.toml",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base",
+      "env": {
+        "CARGO_BUILD_JOBS": "2",
+        "OMP_NUM_THREADS": "2",
+        "CARGO_TARGET_DIR": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/cargo-isolated-base",
+        "PYO3_PYTHON": "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python"
+      },
+      "exit_code": 0,
+      "seconds": 7.97,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-base-cargo-engine-list-isolated.log"
+    },
+    {
+      "label": "base",
+      "kind": "cargo-root-list-isolated",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/base",
+      "env": {
+        "CARGO_BUILD_JOBS": "2",
+        "OMP_NUM_THREADS": "2",
+        "CARGO_TARGET_DIR": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/cargo-isolated-base",
+        "PYO3_PYTHON": "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python"
+      },
+      "exit_code": 0,
+      "seconds": 21.39,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-base-cargo-root-list-isolated.log"
+    },
+    {
+      "label": "adapter",
+      "kind": "cargo-engine-list-isolated",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "engine_rs/Cargo.toml",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter",
+      "env": {
+        "CARGO_BUILD_JOBS": "2",
+        "OMP_NUM_THREADS": "2",
+        "CARGO_TARGET_DIR": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/cargo-isolated-adapter",
+        "PYO3_PYTHON": "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python"
+      },
+      "exit_code": 0,
+      "seconds": 8.62,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-adapter-cargo-engine-list-isolated.log"
+    },
+    {
+      "label": "adapter",
+      "kind": "cargo-root-list-isolated",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/adapter",
+      "env": {
+        "CARGO_BUILD_JOBS": "2",
+        "OMP_NUM_THREADS": "2",
+        "CARGO_TARGET_DIR": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/cargo-isolated-adapter",
+        "PYO3_PYTHON": "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python"
+      },
+      "exit_code": 0,
+      "seconds": 20.96,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-adapter-cargo-root-list-isolated.log"
+    },
+    {
+      "label": "head",
+      "kind": "cargo-engine-list-isolated",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "engine_rs/Cargo.toml",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head",
+      "env": {
+        "CARGO_BUILD_JOBS": "2",
+        "OMP_NUM_THREADS": "2",
+        "CARGO_TARGET_DIR": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/cargo-isolated-head",
+        "PYO3_PYTHON": "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python"
+      },
+      "exit_code": 0,
+      "seconds": 7.71,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-head-cargo-engine-list-isolated.log"
+    },
+    {
+      "label": "head",
+      "kind": "cargo-root-list-isolated",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--",
+        "--list"
+      ],
+      "cwd": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/head",
+      "env": {
+        "CARGO_BUILD_JOBS": "2",
+        "OMP_NUM_THREADS": "2",
+        "CARGO_TARGET_DIR": "/private/tmp/verify-env-adapter-inventory-3_wr9da7/cargo-isolated-head",
+        "PYO3_PYTHON": "/Users/poonszesen/kg-v3-m-env-adapter/.venv/bin/python"
+      },
+      "exit_code": 0,
+      "seconds": 21.99,
+      "log": "ops/rebuild-2026-09-29/codex/verify-merge-env-adapter-r1/inventory-head-cargo-root-list-isolated.log"
+    }
+  ],
+  "retry_cargo_reason": "Archive snapshots lack .venv/bin/python required by .cargo/config.toml; set PYO3_PYTHON explicitly to shared existing interpreter.",
+  "isolated_cargo_reason": "Shared cargo target reused the BASE test binary across git archives with historical file mtimes; earlier cargo lists are NOT credited. Rebuild into independent initially absent target directories per revision."
+}

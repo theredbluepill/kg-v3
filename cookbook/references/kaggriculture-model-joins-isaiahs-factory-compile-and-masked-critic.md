@@ -58,5 +58,5 @@ Branch `kg/rebuild-trainer-model`, based on `kg/isaiah-gap-closure` at `e1458d2`
 ## Limits
 
 - Nothing here runs a real `torch.compile` or CUDA. Every compile test uses a recording stand-in, so Inductor graph breaks, recompiles and the flash path in the compiled trunk remain Phase 6 GPU qualification.
-- The trainer cannot build this model yet. `FullConfig` now loads it with `KaggricultureEnvConfig` (see the [[kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]]), but `run_ppo` stops at `require_orbit_env` because rollout storage, the Kaggriculture observation mapping (rest of Task 3.1) and the native env (Task 1.4) are open.
+- The trainer cannot build this model yet. `FullConfig` now loads it with `KaggricultureEnvConfig` (see the [[kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]]), but `run_ppo` stops at its explicit Kaggriculture guard because rollout storage and the Kaggriculture observation/action mapping (rest of Task 3.1) are open; the native env and Python adapter exist since the Tasks 1.4/1.5 merge.
 - Reopen the no-raise critic choice if a real batch can carry a row with `still_playing = False`. Contract v4 says it cannot.
