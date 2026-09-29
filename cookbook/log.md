@@ -1,5 +1,17 @@
 # Change log
 
+## 2026-09-29 — Stop Task 7.1 at the frozen engine's external-crate boundary
+
+The requested standalone crate cannot compile the byte-exact controllers:
+`fib` and `Game.config` are private, and five required accessors lived in the
+excluded reference `policy_rows.rs`. The all-target compile probe fails before
+any bot can run, triggering the task's explicit STOP instruction. No production
+crate or oracle traces are added. The
+[[references/frozen-engine-api-blocks-standalone-opponent-import|API-boundary Reference]]
+and coverage page record the exact blocker and unimplemented qualification;
+receipts are in `ops/rebuild-2026-09-29/7.1/`. The trim updater records only
+non-engine bookkeeping and preserves every retained/authored/excluded entry.
+
 ## 2026-09-29 — Capture every engine build input in observation-oracle custody
 
 Codex verification r1 of the Task 1.3 merge (`e197528`, REJECT) found that the

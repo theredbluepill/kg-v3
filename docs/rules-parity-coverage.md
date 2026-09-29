@@ -136,6 +136,30 @@ assertions.
 
 ## Kaggriculture Rules Kernel
 
+### Task 7.1 Opponent Import: Blocked Before Qualification
+
+The requested standalone `opponents_rs` placement cannot compile the four
+byte-exact controllers against the frozen engine at integration `b8747b6e`.
+An offline all-target compile probe reports private `fib` (`E0603`), private
+`Game.config` (`E0616`) and absent `Game::{farms, privates, market, town,
+step_index}` methods (`E0599`). Those accessors lived in the excluded reference
+`policy_rows.rs`. Task 7.1 explicitly requires stopping on this boundary.
+Receipts: `ops/rebuild-2026-09-29/7.1/native-api-probe-red.log` and
+`ops/rebuild-2026-09-29/7.1/results.md`.
+
+No production opponent import, registry, lifecycle/visibility test, match runner
+or original-Python action oracle is implemented. Starter, R04, EcoBot and E776
+each have zero new traces and zero actions compared in either seat. Openings,
+day resets, weeds, shortages/rejected orders, hires, final-day liquidation and
+mid-episode replay remain uncovered. No default-configuration opponent support
+is qualified; non-default support was outside the requested scope. Task 1.4
+binding-dependent tests remain pending. No opponent strength claim follows.
+EcoBot/E776's original software-license/notice gap is still unresolved; existing
+engine licensing does not resolve it. Existing kernel coverage below is separate
+from these unimplemented controller checks.
+
+### Kernel Inventory
+
 Task 1.1 retains a standalone `engine_rs` package pinned to reference commit
 `65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`. Its compatibility target is
 `kaggle-environments==1.32.7`, Python engine SHA-256
