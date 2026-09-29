@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Native replay export preserves Kaggle episodes"
-description: "Task 7.3 seed replay and selected-game custody pass four independent official-fixture round trips, the real pinned-framework oracle and canonical-byte checks, with Kaggle reward representation and JSON number kinds compared strictly after Claude review; live evaluation wiring still awaits Task 1.4."
+description: "Task 7.3 seed replay and selected-game custody pass four independent official-fixture round trips, the real pinned-framework oracle and canonical-byte checks, with Kaggle reward representation and JSON number kinds compared strictly after Claude review. After verification r1 the recorder runs over the merged Task 1.4 native env (consumed seeds, before-reset terminal snapshots, eight default-horizon games byte-verified); run_ppo's evaluation call still awaits Task 1.5."
 tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex", "at": "2026-09-29"}
@@ -9,6 +9,10 @@ sources:
   - resource: "repository:src/kaggriculture/replay_export.rs"
   - resource: "repository:src/kaggriculture/replay_export_tests.rs"
   - resource: "repository:src/kaggriculture/mod.rs"
+  - resource: "repository:src/kaggriculture/env.rs"
+  - resource: "repository:src/kaggriculture/env_tests.rs"
+  - resource: "repository:src/kaggriculture/bindings.rs"
+  - resource: "repository:python/owl/kaggriculture/native_evaluation.py"
   - resource: "repository:python/owl/rs.pyi"
   - resource: "repository:python/owl/kaggriculture/replay_export.py"
   - resource: "repository:tests/kaggriculture/test_replay_export.py"
@@ -35,6 +39,12 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/7.3/final-prepare.log"
   - resource: "repository:ops/rebuild-2026-09-29/7.3/final-results.json"
   - resource: "repository:ops/rebuild-2026-09-29/7.3/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/verify-7.3-r1.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/independent-verifier/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r1-fixes/eight_default_horizon.py"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r1-fixes/eight-default-horizon.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r1-fixes/live-mutations.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.3/r1-fixes/prepare.log"
   - resource: "repository:ops/rebuild-2026-09-29/briefs/7.3-replay-export.md"
   - resource: "repository:ops/rebuild-2026-09-29/plan.md"
 ---
@@ -45,8 +55,10 @@ Task 7.3 adds a stateless replay adapter in the root `owl` crate and an opt-in
 Python recorder. The target is a Kaggle episode reconstructed from the consumed
 seed, supported configuration and submitted actions, with independent evidence
 separate from self-consistent serialization. Four Python-recorded official
-fixtures and a small live framework game pass independent replay comparisons;
-no live eight-game evaluation is claimed. The [[../decisions/the-policy-is-stateless-and-observation-only|stateless
+fixtures and a small live framework game pass independent replay comparisons.
+Since verification r1 the recorder also runs over the live native env (see
+[Verification r1 corrections](#verification-r1-corrections)); the trainer's
+evaluation loop does not call it yet. The [[../decisions/the-policy-is-stateless-and-observation-only|stateless
 policy Decision]] keeps seed/checkpoint/seat custody entirely in host metadata.
 
 Existing-concept searches for replay, export, round-trip and seed header found
@@ -82,8 +94,12 @@ retains its historical checks.
 - `tests/kaggriculture/test_replay_export_oracles.py`: independent fixture-to-
   episode conversion, real pinned-framework envelope checks, byte round trips,
   wide-seed and non-vacuity cases.
-- `tests/kaggriculture/test_replay_export_integration.py`: explicit Task 1.4
-  binding-dependent seed/lifecycle/evaluation placeholders; no substitute env.
+- `tests/kaggriculture/test_replay_export_integration.py`: live native-env
+  seed custody, before-reset terminal capture and eight-of-ten export (the
+  original five skipped placeholders, replaced in verification r1).
+- `python/owl/kaggriculture/native_evaluation.py`, `src/kaggriculture/env.rs`,
+  `src/kaggriculture/bindings.rs`, `src/kaggriculture/env_tests.rs`: the native
+  evaluation seam and the terminal-record snapshot (verification r1).
 - `tests/tools/test_observation_oracle_custody.py`: refresh the imported
   generator's deadline per independent unit test. The new default full replays
   consume the collection-time deadline before later custody tests run; this
@@ -230,19 +246,20 @@ observation or timeout-policy change; the red is preserved rather than hidden.
 
 ## Consequences and limits
 
-The current Task 1.4 binding is absent. Consumed-seed custody at construction,
-explicit reset and simultaneous auto-reset, native terminal-before-reset
-capture, and `_evaluate_games` exporting exactly eight complete episodes remain
-binding-dependent skipped tests. The evaluation loop is unchanged. A pod-scale
-eight-game evaluation and recorder overhead measurement were not run.
+`native_evaluation.evaluate_native_games` is the live seam, but
+`run_ppo._evaluate_games` still stops at `_create_eval_env` for Kaggriculture:
+calling the seam from the trainer needs the Task 1.5 torch adapter and the
+model's token policy. Pod-scale evaluation and recorder overhead were not
+measured. The eight-game receipt used a deterministic diagnostic program, not
+a model, so it qualifies custody and round trip, not play.
 
 The framework oracle is bounded to small supported configurations; it cannot
 establish every admitted configuration or framework timeout/error behavior.
 Four official fixtures qualify their recorded worlds, not exhaustive rules.
-Full-state certification of future selected live games requires captured full
-snapshots at every transition or another independent oracle. Reopen the live
-claims when the native binding lands, and rerun source/hash checks if the pinned
-framework changes. No model-input path accepts replay host identity metadata.
+Selected live games capture a full snapshot at every transition, which is what
+exact live-state certification needs; it costs memory (below). Rerun source/hash
+checks if the pinned framework changes. No model-input path accepts replay host
+identity metadata.
 
 ## Claude review corrections
 
@@ -267,3 +284,40 @@ is kept as `rust-red-attempt1.log`, and that change was reverted.
 
 Malformed captured evidence passed to the recorder now raises `ValueError` and
 writes error custody, instead of a bare `KeyError` that left the game active.
+
+## Verification r1 corrections
+
+Independent verification r1 (`ops/rebuild-2026-09-29/codex/verify-7.3-r1.md`,
+REJECT) raised one P2 and two P3 findings; all three are fixed test-first.
+
+- **P3, completion claims.** `replay_from_seed` now also rejects a tape that
+  reaches DONE with `complete=false` (at `/complete`), so export can no longer
+  emit bytes that fail their own import. A Rust case and a parametrized Python
+  test (every exporting completion variant verifies in byte mode; the false
+  claim on a DONE tape fails export) were red against the old extension.
+- **P3, byte-guard isolation.** The oracle test keeps the integer-spelling
+  number-kind control and adds a same-kind respelling (`3000.0` to `3.0e3`) that
+  must fail with `canonical number bytes differ` at
+  `/steps/0/0/observation/farms/0/money`. This closes a regression-test gap; the
+  guard itself already rejected the mutation.
+- **P2, live evaluation export.** `kg/rebuild-env` (Task 1.4, Codex-approved)
+  is merged into this branch. The native terminal record now keeps the
+  completed game's snapshot JSON, serialized inside the terminal step before
+  auto-reset, exposed as `KaggricultureEnv.terminal_snapshot(i)` with the
+  record's lifetime. `evaluate_native_games` assigns ordinals as
+  `_evaluate_games` does, reads each consumed seed from `seed_state()`, decodes
+  executed tokens against the pre-step observation, records every transition's
+  full snapshot for selected games and fails a game whose snapshot banks differ
+  from the published transition banks. The five skips are now executable tests;
+  four source mutations (seed off by one, terminal snapshot read after
+  auto-reset, swapped seat actions, reversed ordinal order) each fail them
+  (`r1-fixes/live-mutations.log`).
+
+Receipt `r1-fixes/eight-default-horizon.json` (source `1e26f11`): two envs, eight
+default-horizon games, **8/8 complete**, each with 719 transitions, captured
+initial and terminal snapshots, 719 bank rows and 719 full snapshots, and
+byte-mode reverification of the published episode, in 37.88 seconds. Peak RSS was
+1.33 GB, above the Mac's 1 GB tiny-check guideline, because each selected game
+holds its full per-transition snapshots until export. Final `just prepare`:
+2,196 Python passes / 11 skips, 289 root Rust passes / five ignored, 69 engine
+passes (`r1-fixes/prepare.log`).

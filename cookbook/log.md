@@ -1,5 +1,22 @@
 # Change log
 
+## 2026-09-29 — Fix Task 7.3 verification r1: completion claims, byte-guard test and live native export
+
+Codex verification r1 of Task 7.3 (`ops/rebuild-2026-09-29/codex/verify-7.3-r1.md`,
+REJECT) found one P2 and two P3s. Replay now rejects a DONE tape exported with
+`complete=false`; the byte-oracle test adds a same-kind `3000.0` to `3.0e3`
+respelling. To run the recorder live, `kg/rebuild-env` (Task 1.4) is merged
+into `kg/rebuild-7-3`. Conflicts were resolved by union: both sides' bindings,
+both log sides, every References index line, and the Task 1.4 Environment paragraph
+plus 7.3's teacher-targets line in `docs/rl-api-specs.md`. The native terminal record
+keeps the completed game's snapshot (`terminal_snapshot(i)`), and
+`owl.kaggriculture.native_evaluation.evaluate_native_games` replaces the five
+skipped placeholders with live tests. A default-horizon receipt exports and
+byte-verifies 8/8 games (peak RSS 1.33 GB). The
+[[references/native-replay-export-preserves-kaggle-episodes|replay-export
+Reference]] and its index line are revised. `run_ppo._evaluate_games` still needs
+Task 1.5 to call the seam.
+
 ## 2026-09-29 — Keep Kaggle reward representation in native replay export (Claude review)
 
 Claude's review of Codex's Task 7.3 run (`517edc4`) found that native export

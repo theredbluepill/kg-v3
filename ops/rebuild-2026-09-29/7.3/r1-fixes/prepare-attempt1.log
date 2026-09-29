@@ -1,0 +1,57 @@
+uv run maturin develop
+📦 Including license file `LICENSE`
+🍹 Building a mixed python/rust project
+🔗 Found pyo3 bindings with abi3 support
+🐍 Found CPython 3.12 at /Users/poonszesen/kg-v3-t73/.venv/bin/python
+📡 Using build options features from pyproject.toml
+Audited 9 packages in 22ms
+Resolved 44 packages in 559ms
+Audited 44 packages in 1ms
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-t73)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.27s
+📦 Built wheel for abi3 Python ≥ 3.11 to /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/.tmpQX5hEw/owl-0.1.0-cp311-abi3-macosx_11_0_arm64.whl
+✏️ Setting installed package as editable
+🛠 Installed owl-0.1.0
+uv run python scripts/check_engine_trim.py
+Uninstalled 1 package in 17ms
+Installed 1 package in 4ms
+engine trim manifest: OK
+cargo fmt
+cargo fmt --manifest-path engine_rs/Cargo.toml --check
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+2 files reformatted, 129 files left unchanged
+cargo clippy --all-targets -- -D warnings
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-t73)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.38s
+# Six pinned upstream style findings; see ops/rebuild-2026-09-29/1.1/results.md.
+cargo clippy --manifest-path engine_rs/Cargo.toml --all-targets --locked -- -D warnings -A clippy::too_many_arguments -A clippy::collapsible_if -A clippy::needless_range_loop
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+PT018 Assertion should be broken down into multiple parts
+   --> python/owl/kaggriculture/native_evaluation.py:145:13
+    |
+143 |         for env_index in recorded:
+144 |             ordinal = ordinals[env_index]
+145 |             assert ordinal is not None and recorder is not None
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+146 |             snapshot_json = (
+147 |                 env.terminal_snapshot(env_index)
+    |
+help: Break down assertion into multiple parts
+
+ARG001 Unused function argument: `tmp_path`
+   --> tests/kaggriculture/test_replay_export_integration.py:239:58
+    |
+239 | def test_native_evaluation_rejects_inconsistent_schedule(tmp_path: Path) -> None:
+    |                                                          ^^^^^^^^
+240 |     with pytest.raises(ValueError, match="seat_assignments"):
+241 |         evaluate_native_games(
+    |
+
+Found 2 errors.
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+error: recipe `py-lint` failed on line 23 with exit code 1
+CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 uvx --from rust-just just prepare  5.24s user 1.45s system 89% cpu 7.469 total
