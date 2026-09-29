@@ -36,6 +36,7 @@ Phase 6.2 launch: `torchrun --nproc-per-node 2 scripts/run_ppo.py configs/kaggri
 
 ## Checks and limits
 
+- Codex verification r1 returned REQUEST CHANGES (one P2, one P3), both fixed. Round 2 did not run because the Codex CLI hit its usage limit, so the fixes are not independently re-verified.
 - The 14 targeted tests passed with the real checkpoint and shard present. `uvx --from rust-just just py-prepare` ran 2,193 passed, 12 skipped, with docs fresh.
 - `run_ppo` still stops before the environment for Kaggriculture (Task 3.1), so `main` was not run. The tests call the function its fresh-launch branch calls. No PPO update has run from this checkpoint. That the fresh head learns better than the BC head is inferred from the gradient probe, not measured.
 - The saturation figure comes from one validation game, not the corpus. The integration branch now builds the actor from native grammar tables. Those are non-persistent buffers, so the checkpoint keys do not change, but the load was not rerun on that tree.

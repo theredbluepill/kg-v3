@@ -91,3 +91,13 @@ torchrun --nproc-per-node 2 scripts/run_ppo.py configs/kaggriculture_2rank.yaml 
 - The integration branch's model now loads native grammar tables; they are
   non-persistent buffers, so the checkpoint keys are unchanged, but the load was
   not rerun on that tree.
+
+## Verification
+
+- Codex r1 (`ops/rebuild-2026-09-29/codex/verify-bc-handoff.md` in the main
+  worktree): REQUEST CHANGES, one P2 (the `teacher_init` loader accepted unknown
+  top-level keys) and one P3 (evidence wording). Both fixed in `ca51222`. A
+  local mutation that removes the new call makes the targeted test fail.
+- Codex r2 did not run: the Codex CLI hit its usage limit after 39k tokens
+  (`verify-bc-handoff-r2-transcript.log`, no report, no VERDICT). The r1 fixes
+  are therefore not independently re-verified.
