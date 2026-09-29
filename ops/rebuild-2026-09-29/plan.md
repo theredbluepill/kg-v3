@@ -169,7 +169,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 **Owner:** Codex writes `ops/rebuild-2026-09-29/cuda_repro.py`; Claude runs it. It uses the reference branch checkout on the pod and the BC best checkpoint (SHA-256 `ffd7d9e4…`, identical to its pre-PPO copy; confirm the path on the pod before running).
 
 - [x] Run statement. Question: which hypothesis holds — H1, a dense-state index overflow in compiled kernels; H2, an async copy from reused native buffers; or H3, some other kernel?
-- [x] Run in order, stopping at the first informative result: `CUDA_LAUNCH_BLOCKING=1` eager, then compiled, then compiled with synchronous host→device copies, then `compute-sanitizer --tool memcheck`. Budget: ≤ 2 GPU-hours.
+- [x] Reproduce and localize: a `CUDA_LAUNCH_BLOCKING=1` run of the crashed run's own **compiled** config (fault after 3 iterations in an Inductor Triton GEMM template), then a synthetic compiled-versus-eager probe (`int32_probe.py`) across the 2²¹-row boundary. The planned eager-first order, synchronous-copy run and `compute-sanitizer` step were not needed once the blocking run named the kernel. Budget: ≤ 2 GPU-hours.
 - [x] Record the root cause (or "not reproduced", with the conditions tried) in `ops/rebuild-2026-09-29/results.md`, and turn it into a design requirement for 1.4 (buffers) and 2.3 (index validation).
 
 ### Task 0.3: Report failed runs as failed
@@ -262,7 +262,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 ### Task 3.6: First-minibatch log-ratio alarm (L6)
 
-- [x] In `PPOTrainer._update`, before the first optimizer step of each update, compute the mean log-ratio of the first minibatch. If |mean| > 0.05 nats (well above BF16 replay noise), raise with the rollout batch shape and token count. Test with a model whose sampling and replay paths are deliberately made to disagree.
+- [x] In `PPOTrainer._update`, before the first optimizer step of each update, compute the mean log-ratio of the first minibatch. If |mean| > 0.05 nats (the plan's value; GPU/BF16 replay noise is unmeasured, so this threshold is not yet qualified), raise with the rollout batch shape and token count. Test with a model whose sampling and replay paths are deliberately made to disagree.
 
 ### Task 3.5: Bounded local functional check
 

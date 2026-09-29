@@ -7,7 +7,7 @@ This is a working artifact, not a durable cookbook claim. Update it at each land
 ## Path conventions
 
 - **Bare paths** are tracked on integration at `b8747b6`, relative to the repository root. `rebuild/` is short for `ops/rebuild-2026-09-29/`.
-- **`codex/…`** is `/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/…`. Those Codex reports are untracked in the main worktree (`kg/rebuild-model`) and are not committed on any branch.
+- **`codex/…`** is `/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/…`. That is the main worktree (`kg/rebuild-model`) copy. Six cited reports are also tracked on integration at `b8747b6`, byte-identical to that copy: `task-0.1-review.md`, `task-0.1-rereview.md`, `task-0.3-report.md` and `verify-3.4-r1.md`/`-r2.md`/`-r3.md`. `kg/merge-teacher` additionally tracks `brief-4-review.md` and `verify-merge-teacher-r1.md`. Every other cited `codex/…` report is untracked on every branch.
 - **`<branch>:<path>`** is a path tracked on that branch, not on integration.
 - **Absolute paths** are uncommitted files in the named worktree.
 - **"Merged"** means the commit is an ancestor of `b8747b6`. Each was checked with `git merge-base --is-ancestor <sha> b8747b6` at 19:00 HKT.
@@ -132,7 +132,7 @@ Live processes at 19:00 HKT (`ps`): Codex `codex exec resume` for Task 1.4 (PID 
 | Stream C (3.1, 3.6, Phase 4 prep) | merged | `62899de`, merged by `07568e0` | `codex/verify2-lane-C-r2.md` APPROVE | `rebuild/stream-c-*.log`, `rebuild/4-prep-*.log` | `cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md` | — |
 | Stream D (selection, 5.1/7.1/7.3 briefs) | merged | `9d54a8b`, merged by `1177a5b` | `codex/verify2-lane-D-r1.md` APPROVE | `rebuild/checks/` | `cookbook/references/rebuild-data-preparation-preserves-replay-identity.md` | — |
 | Cookbook refresh and codex exec workflow | approved, not merged | `kg/rebuild-model` `bcd9627` … `8093d51` | `codex/verify-cookbook-refresh-r3.md` APPROVE (`8093d51`) | `kg/rebuild-model:cookbook/log.md` | `kg/rebuild-model:cookbook/workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict.md` | The evidence merge has not started. The main worktree has uncommitted cookbook edits (architecture image). |
-| Codex report custody | open | — | — | `codex/` (untracked) | — | No branch tracks the Codex reports. |
+| Codex report custody | open | — | — | `codex/` (main worktree) | — | Integration tracks six cited reports (Task 0.1 review/rereview, Task 0.3 report, Task 3.4 r1–r3); `kg/merge-teacher` adds two. The other cited reports are untracked. |
 
 ## Notes not yet on integration
 
