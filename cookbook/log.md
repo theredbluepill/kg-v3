@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Pin kaggle-environments 1.32.7
+
+Owner: “Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture … we will have to update it.” The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records the pin: 1.32.7 via uv, the git source removed, its engine hash matching the Rust kernel, and Isaiah's torch/triton/flash-attn pins unchanged. `just prepare` passes: Rust 155/2 ignored, Python 722/3 skipped. A contract Markdown lint fix is included.
+
 ## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
 
 Owner decisions:

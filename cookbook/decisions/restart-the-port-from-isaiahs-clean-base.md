@@ -6,7 +6,7 @@ tags: ["kaggriculture-v3", "decisions"]
 status: "adopted"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
 decider: "Owner: restore kg/isaiah-gap-closure and main to 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again from a clean state with Codex, keeping a reference branch and carrying the cookbook with the .claude/.codex setup."
-sources: [{"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}]
+sources: [{"resource": "user-directive:2026-09-29:update-kaggle-environments-1-32-7"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:uv.lock"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}]
 ---
 
 # Restart the port from Isaiah's clean base
@@ -47,3 +47,11 @@ The owner asks to use the reference branch "properly, without blindly copying". 
 - **Reference only:** scripted bots until evaluation needs a few of them, the v2 experiments, and the run receipts.
 
 Lessons from the reference (raw-bank winners, truncation reward, seed streams, the CUDA fault (since traced to a compiler GEMM overflow), cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
+
+## kaggle-environments 1.32.7 — owner, 2026-09-29
+
+> Found that Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture, while 1.32.7 (already cached locally) has it. this we will have to update it.
+
+Source: `user-directive:2026-09-29:update-kaggle-environments-1-32-7`. Isaiah's project took `kaggle-environments` from git HEAD, locked at 1.29.0, which has no Kaggriculture environment. It is now pinned to `==1.32.7` via `uv remove` + `uv add`, which also removes the git source override. 1.32.7's `envs/kaggriculture/kaggriculture.py` has SHA-256 `bc8a5487…`, the engine the vendored Rust kernel targets.
+
+Isaiah's critical pins are unchanged: torch 2.9.0, triton 3.5.0, flash-attn 2.8.3, numpy, pydantic, wandb, mypy. The other 50 lockfile changes are kaggle-environments' own dependency tree (e.g. jax 0.10 → 0.11.2). Checks with 1.32.7: `just prepare` passes, with Rust 155 passed / 2 ignored (Orbit replay and generation parity) and Python 722 passed / 3 skipped.
