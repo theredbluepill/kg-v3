@@ -1,0 +1,43 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_winner_softmax_is_isaiahs_masked_softmax _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c51e1b0>
+
+    def test_winner_softmax_is_isaiahs_masked_softmax(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from dataclasses import replace
+    
+        from owl.model.stateless_transformer_v1 import masked_softmax
+    
+        model = _tiny().eval()
+        obs = make_obs(envs=3)
+        obs.still_playing[0, 1] = False  # flattened row 1
+        obs.still_playing[2, 0] = False  # flattened row 4
+        rows = obs.still_playing.numel()
+        width = model.config.embed_dim
+        torch.manual_seed(17)
+        # Distinct non-zero critic tokens on every row, including the finished ones
+        # (the real encode zeroes those, which would hide an unmasked softmax).
+        hidden = torch.randn(rows, kt.PLAYERS, width) * 3.0
+        with torch.inference_mode():
+            enc = replace(model.encode_observations(obs), critic_value_hidden=hidden)
+            monkeypatch.setattr(model, "encode_observations", lambda _obs: enc)
+            log_probs = model.winner_log_probabilities(obs).reshape(rows, kt.PLAYERS)
+            values = model.compute_value(obs).reshape(rows)
+            logits = model.critic_head(hidden).float().squeeze(-1)
+        live = obs.still_playing.reshape(rows)
+        mask = live[:, None].expand(rows, kt.PLAYERS)
+    
+>       torch.testing.assert_close(log_probs.exp(), masked_softmax(logits, mask, dim=-1))
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 4 / 12 (33.3%)
+E       Greatest absolute difference: 0.4936002790927887 at index (1, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: 0.9872005581855774 at index (1, 0) (up to 1.3e-06 allowed)
+
+tests/kaggriculture/test_model_encoder.py:938: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_model_encoder.py::test_winner_softmax_is_isaiahs_masked_softmax
+1 failed in 0.56s

@@ -6,8 +6,9 @@ from typing import Literal, Protocol, assert_never
 
 import torch
 import torch._dynamo
+from torch import nn
 
-from owl.model import BaseModelAPI, RecurrentTransformerV1, StatelessTransformerV1
+from owl.model import RecurrentTransformerV1, TrunkCompileAPI
 
 ModelCompileTarget = Literal["none", "mlp", "trunk"]
 ModelCompileMode = Literal[
@@ -67,7 +68,14 @@ def autocast_context(
             assert_never(cfg.dtype)
 
 
-def configure_model_compile(model: BaseModelAPI, cfg: ModelCompileConfig) -> int:
+def configure_model_compile(model: nn.Module, cfg: ModelCompileConfig) -> int:
+    """Compile the configured model region in place; never the whole model.
+
+    ``trunk`` dispatches through ``TrunkCompileAPI``, so each model compiles
+    only its trunk and keeps its own dispatch (packing, chunking, overflow
+    guards) in front of the compiled callable. ``mlp`` compiles the trunk's
+    block MLP modules in place.
+    """
     match cfg.model_compile:
         case "none":
             return 0
@@ -81,9 +89,10 @@ def configure_model_compile(model: BaseModelAPI, cfg: ModelCompileConfig) -> int
                 raise RuntimeError(
                     "rl.model_compile='trunk' does not support recurrent_transformer_v1"
                 )
-            if not isinstance(model, StatelessTransformerV1):
+            if not isinstance(model, TrunkCompileAPI):
                 raise RuntimeError(
-                    "rl.model_compile='trunk' requires stateless_transformer_v1"
+                    "rl.model_compile='trunk' requires a model implementing "
+                    f"TrunkCompileAPI, got {type(model).__name__}"
                 )
             return model.compile_transformer_trunk(mode=cfg.model_compile_mode)
         case _:
@@ -91,7 +100,7 @@ def configure_model_compile(model: BaseModelAPI, cfg: ModelCompileConfig) -> int
 
 
 def _compile_transformer_mlp_modules(
-    model: BaseModelAPI,
+    model: nn.Module,
     *,
     mode: ModelCompileMode,
 ) -> int:

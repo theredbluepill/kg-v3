@@ -825,7 +825,11 @@ def test_winner_probabilities_match_a_hand_computed_critic(
     hidden = torch.randn(2, kt.PLAYERS, kt.PLAYERS, width)
     hidden[..., 0] = scores
     with torch.inference_mode():
-        enc = replace(model.encode_observations(obs), critic_value_hidden=hidden)
+        # Encoded tokens are flattened seat rows: [env * seat, player, D].
+        enc = replace(
+            model.encode_observations(obs),
+            critic_value_hidden=hidden.reshape(-1, kt.PLAYERS, width),
+        )
         monkeypatch.setattr(model, "encode_observations", lambda _obs: enc)
         log_probs = model.winner_log_probabilities(obs)
         values = model.compute_value(obs)
@@ -885,3 +889,60 @@ def test_values_are_seat_independent() -> None:
     torch.testing.assert_close(a[:, 0], b[:, 0])
     # The changed seat must respond, or a constant critic would pass.
     assert float((a[:, 1] - b[:, 1]).abs().max()) > 1e-4
+
+
+# --- Task 3.1: Isaiah's masked winner softmax ---------------------------------
+
+
+def test_critic_value_mask_is_the_critic_token_mask() -> None:
+    model = _tiny().eval()
+    obs = make_obs(envs=3)
+    obs.still_playing[1, 0] = False
+    with torch.inference_mode():
+        enc = model.encode_observations(obs)
+    rows = obs.still_playing.numel()
+    critic_start = enc.hidden.shape[1] - kt.PLAYERS
+    assert torch.equal(enc.critic_value_mask, enc.token_mask[:, critic_start:])
+    assert torch.equal(
+        enc.critic_value_mask,
+        obs.still_playing.reshape(rows, 1).expand(rows, kt.PLAYERS),
+    )
+
+
+def test_winner_softmax_is_isaiahs_masked_softmax(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from dataclasses import replace
+
+    from owl.model.stateless_transformer_v1 import masked_softmax
+
+    model = _tiny().eval()
+    obs = make_obs(envs=3)
+    obs.still_playing[0, 1] = False  # flattened row 1
+    obs.still_playing[2, 0] = False  # flattened row 4
+    rows = obs.still_playing.numel()
+    width = model.config.embed_dim
+    torch.manual_seed(17)
+    # Distinct non-zero critic tokens on every row, including the finished ones
+    # (the real encode zeroes those, which would hide an unmasked softmax).
+    hidden = torch.randn(rows, kt.PLAYERS, width) * 3.0
+    with torch.inference_mode():
+        enc = replace(model.encode_observations(obs), critic_value_hidden=hidden)
+        monkeypatch.setattr(model, "encode_observations", lambda _obs: enc)
+        log_probs = model.winner_log_probabilities(obs).reshape(rows, kt.PLAYERS)
+        values = model.compute_value(obs).reshape(rows)
+        logits = model.critic_head(hidden).float().squeeze(-1)
+    live = obs.still_playing.reshape(rows)
+    mask = live[:, None].expand(rows, kt.PLAYERS)
+
+    torch.testing.assert_close(log_probs.exp(), masked_softmax(logits, mask, dim=-1))
+    # Live rows: identical to the unmasked softmax the critic used before.
+    torch.testing.assert_close(log_probs[live], logits[live].log_softmax(-1))
+    assert float((logits[live, 0] - logits[live, 1]).abs().min()) > 1e-3
+    # Finished rows: masked like Isaiah (uniform, value 0), not their logits.
+    torch.testing.assert_close(
+        log_probs[~live], torch.full((2, kt.PLAYERS), math.log(0.5))
+    )
+    torch.testing.assert_close(values[~live], torch.zeros(2))
+    unmasked = logits[~live].log_softmax(-1)
+    assert float((unmasked - log_probs[~live]).abs().max()) > 1e-2

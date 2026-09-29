@@ -4,6 +4,7 @@ from pydantic import Field, model_validator
 
 from owl.config import BaseConfig
 from owl.model import ActorDiscreteTargetBinsConfig, ModelConfig
+from owl.model.kaggriculture import KaggricultureTransformerConfig
 from owl.rl import ActionDiscreteTargetBinsConfig, EnvConfig
 
 from .optimizer import OptimizerConfig
@@ -23,6 +24,13 @@ class FullConfig(BaseConfig):
 
     @model_validator(mode="after")
     def _validate_cross_config_constraints(self) -> Self:
+        if isinstance(self.model, KaggricultureTransformerConfig):
+            # The model is registered, but env is Orbit's EnvConfig: its specs,
+            # rewards and value modes cannot describe a Kaggriculture game.
+            raise ValueError(
+                "model.model_arch='kaggriculture_transformer' requires a "
+                "Kaggriculture env config; FullConfig.env is Orbit's EnvConfig"
+            )
         if self.model.actor.action_spec != self.env.action_spec.action_spec:
             raise ValueError("model actor action_spec must match env action_spec")
         if (

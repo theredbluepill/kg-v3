@@ -1,5 +1,13 @@
 # Change log
 
+## 2026-09-29 — Merge Task 3.1 model registration onto the native grammar
+
+Task 3.1's model side (Codex APPROVE at `4cac1a1`) forked at `e1458d2`, before
+the Task 1.2 merge. The references index keeps Task 3.1's
+compiled-GEMM and encoder lines and the integration branch's grammar-heads line,
+which names the Task 1.4 binding as the remaining native-table dependency. Both
+sides' log entries are kept, integration first.
+
 ## 2026-09-29 — Point the grammar-table dependency at the Task 1.4 binding
 
 After the Task 1.2 merge (Codex APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1.md`), the Rust grammar tables exist and match the Python stand-in (964 bits, no mismatches). The [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|grammar-heads Reference]], its index line and `docs/model-architecture.md` now name the Task 1.4 Python binding as the remaining dependency, including for brief item 11 (recorded reference programs), which also needs model integration.
@@ -43,6 +51,26 @@ Full preparation passes: 164 root Rust tests (two ignored), 77 engine tests,
 1,045 Python tests (three platform skips), formatting/lint/typing/docs and the
 trim checker. The receipt records remaining L4/binding/GPU limits. Historical
 adapter and performance evidence remains reference-scoped.
+
+## 2026-09-29 — Reconcile the compiled-GEMM Reference with Task 3.1's registration
+
+Codex verified `e1458d2...aadba6d` (APPROVE WITH EDITS, no functional defect; `ops/rebuild-2026-09-29/codex/verify-3.1-rest-r2.md`). Its one finding: the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] still said Kaggriculture was absent from `ModelConfig` and the factory and that `configure_model_compile` rejected its trunk target. The Reference now links the [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] for registration and the guarded trunk dispatch, and keeps the limits: CPU recording stand-ins only, `FullConfig` still rejects the model, and integrated workloads and real Inductor/CUDA compilation are unverified. Its description and index line match.
+
+## 2026-09-29 — Apply Codex's r1 wording edits to the Task 3.1 model-side Reference
+
+Codex verified `e1458d2...b1da613` (APPROVE WITH EDITS, no functional defect; `ops/rebuild-2026-09-29/codex/verify-3.1-rest-r1.md`). The [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] now:
+- says the factory keeps Isaiah's exhaustive `match`/`assert_never` but matches config classes where Isaiah matches `model_arch` strings;
+- classifies the 4 `py-prepare` skips as 3 hardware/backend and 1 unavailable native grammar binding, instead of "4 hardware skips";
+- cites the Codex report and its committed evidence.
+
+## 2026-09-29 — Register the Kaggriculture model and align its compile and critic with Isaiah
+
+Task 3.1 model side, on `kg/rebuild-trainer-model` (base `e1458d2`). The new [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] records three changes:
+- **Registration:** `KaggricultureTransformerConfig` joins `ModelConfig`, and `create_model` checks that the specs belong to the model's game. `FullConfig` rejects the model until a Kaggriculture env config exists.
+- **Compile:** `configure_model_compile` dispatches the trunk target through a nominal `TrunkCompileAPI` instead of rejecting every model except `StatelessTransformerV1`. Tests pin the compiled region to the blocks, behind `_run_trunk`'s guard.
+- **Critic:** the winner softmax uses Isaiah's masked form. The encoder and heads References now link here instead of listing these items as open.
+
+Checks: `just py-prepare` passes (1,324 passed, 4 skipped), and Isaiah's suites give 1,048 passed. Red runs are in `ops/rebuild-2026-09-29/trainer-model/`. Everything ran on CPU; real compile and CUDA are unverified.
 
 ## 2026-09-29 — Reconcile overflow notes after merging the heads and GEMM evidence
 

@@ -10,9 +10,14 @@ from owl.model.base import (
     ModelOutput,
     ModelServingOutput,
     ModelTeacherEvaluation,
+    TrunkCompileAPI,
 )
-from owl.model.config import ModelConfig
+from owl.model.config import ModelConfig, OrbitModelConfig
 from owl.model.factory import create_model
+from owl.model.kaggriculture import (
+    KaggricultureTransformer,
+    KaggricultureTransformerConfig,
+)
 from owl.model.lora import (
     LoRAApplication,
     apply_lora_to_stateless_transformer,
@@ -55,6 +60,8 @@ __all__ = [
     "DiscreteTargetActions",
     "DiscreteTargetBinActions",
     "InputLayer",
+    "KaggricultureTransformer",
+    "KaggricultureTransformerConfig",
     "LoRAApplication",
     "LoRAConfig",
     "LoRALinear",
@@ -68,12 +75,14 @@ __all__ = [
     "ModelOutput",
     "ModelServingOutput",
     "ModelTeacherEvaluation",
+    "OrbitModelConfig",
     "PureActions",
     "RecurrentTransformerV1",
     "RecurrentTransformerV1Config",
     "StatelessTransformerV1",
     "StatelessTransformerV1Config",
     "TeacherTargets",
+    "TrunkCompileAPI",
     "ValueMode",
     "apply_lora_to_stateless_transformer",
     "create_model",

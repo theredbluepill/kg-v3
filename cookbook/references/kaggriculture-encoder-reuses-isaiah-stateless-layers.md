@@ -23,7 +23,7 @@ sources: [{"resource": "repository:python/owl/model/kaggriculture.py"}, {"resour
   - the critic (Task 2.2) and the grammar action heads (Task 2.3, [[kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|heads Reference]]) share this encode
 - **Compiled-GEMM guard** (from the [[compiled-gemm-template-overflows-above-2-21-rows|overflow Reference]]): `trunk_gemm_width` is the max of `max(in_features, out_features)` over every trunk `nn.Linear` (`max(D, D·mlp_ratio)` today, checked by enumeration). The padded path chunks complete rows below 2^31. Since Task 2.3, the packed path also splits rows at row boundaries (`packed_row_chunks`) and raises only when a single row cannot fit; it previously raised. At the preset, 5,915 padded rows are allowed per forward, against 256 per rollout forward.
 - **`configs/model/kaggriculture.yaml`:** Isaiah's 6m ladder point with depth 8. Encoder: 5,312,768 parameters.
-- **`tests/owl/model/test_model_config_files.py`:** loads the new preset through its own config class until shared registration (Task 2.3).
+- **`tests/owl/model/test_model_config_files.py`:** loads the new preset; since Task 3.1 through the shared loader, like Isaiah's presets.
 
 ## Checks
 
@@ -43,4 +43,4 @@ sources: [{"resource": "repository:python/owl/model/kaggriculture.py"}, {"resour
 
 ## Limits
 
-Task 2.2 adds Isaiah's critic: an `OutputProjectionMLP` over the two critic-value tokens, a winner softmax, value `2p(self) − 1`, output gain 1.0 excluded from Muon. Task 2.3's action heads and the full-model budget (6,252,223 parameters) are in the [[kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|heads Reference]]. Shared factory registration and trainer integration are open. `check_contract` checks dtypes, shapes and bounds, not the semantic zero-fill and privacy rules; those are asserted only for the synthetic fixture, and the native writer (Task 1.x) must be tested against them separately.
+Task 2.2 adds Isaiah's critic: an `OutputProjectionMLP` over the two critic-value tokens, a winner softmax (masked as Isaiah's since Task 3.1), value `2p(self) − 1`, output gain 1.0 excluded from Muon. Task 2.3's action heads and the full-model budget (6,252,223 parameters) are in the [[kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|heads Reference]]. Shared factory registration, the trunk compile dispatch and the masked critic are in the [[kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]]; trainer integration is open. `check_contract` checks dtypes, shapes and bounds, not the semantic zero-fill and privacy rules; those are asserted only for the synthetic fixture, and the native writer (Task 1.x) must be tested against them separately.
