@@ -1,0 +1,26 @@
+PT018 Assertion should be broken down into multiple parts
+    --> tests/scripts/test_run_ppo.py:3545:9
+     |
+3543 |         tensor, first, second = (getattr(bundle, field) for bundle in (result, a, b))
+3544 |         assert tensor.dtype == torch.int64
+3545 |         assert tensor.device.type == "cpu" and tensor.is_contiguous()
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3546 |         assert torch.equal(tensor[use_a], first[use_a])
+3547 |         assert torch.equal(tensor[~use_a], second[~use_a])
+     |
+help: Break down assertion into multiple parts
+
+PT018 Assertion should be broken down into multiple parts
+    --> tests/scripts/test_run_ppo.py:3567:9
+     |
+3565 |         mode: LogMode, run_dir: Path, config: FullConfig, **kwargs: object
+3566 |     ) -> _FakeLogger:
+3567 |         assert mode == LogMode.WANDB and run_dir == tmp_path and config is cfg
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3568 |         assert kwargs == {"resume_run_id": None, "wandb_mode": "offline"}
+3569 |         return logger
+     |
+help: Break down assertion into multiple parts
+
+Found 2 errors.
+No fixes available (2 hidden fixes can be enabled with the `--unsafe-fixes` option).

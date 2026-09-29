@@ -606,7 +606,13 @@ changes no engine or root-crate Rust, full `just prepare` passes with engine
 lifecycle, five oracle), and Python **2,400 passed, 21 skipped** (Task 7.1 adds
 81 tests and 11 skips: nine learned-seat checks awaiting an `opponents_rs` seat
 in the native env, one broad regeneration and one original-source reread);
-receipt `ops/rebuild-2026-09-29/merge-7.1/prepare-on-5b43062.log`. The trim
+receipt `ops/rebuild-2026-09-29/merge-7.1/prepare-on-5b43062.log`. After
+merging the Task 3.1 remainder and Task 3.5 (`kg/merge-3-1-3-5-c`, onto the
+Task 4.4 integration `f02ed02`), which change no Rust, full `just prepare`
+passes with engine **69**, root **274 passed, five ignored**, opponents **22**
+and Python **2,494 passed, 17 skipped** (the four teacher trainer/run_ppo
+seam tests now run); receipt `ops/rebuild-2026-09-29/merge-3-1-3-5/prepare.log`.
+The trim
 checker's fixed authored set is now exactly the replay-parity test plus the
 generated-trace manifest. The native `grammar_tables()` matches all 964 bits of the Python
 heads' `expected_grammar_tables` in that merge-time cross-check. Task 1.4 now

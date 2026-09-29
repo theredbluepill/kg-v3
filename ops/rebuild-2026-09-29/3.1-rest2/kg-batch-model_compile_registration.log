@@ -1,0 +1,31 @@
+Bounded pytest: ['/Users/poonszesen/kg-v3-t31/.venv/bin/pytest', 'tests/kaggriculture/test_model_compile.py', 'tests/kaggriculture/test_model_registration.py', '-vv', '--color=no']
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0 -- /Users/poonszesen/kg-v3-t31/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/poonszesen/kg-v3-t31
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 18 items
+
+tests/kaggriculture/test_model_compile.py::test_kaggriculture_implements_the_trunk_compile_interface PASSED [  5%]
+tests/kaggriculture/test_model_compile.py::test_trunk_target_compiles_exactly_the_trunk_callable PASSED [ 11%]
+tests/kaggriculture/test_model_compile.py::test_trunk_compiled_region_holds_only_blocks_and_final_norm PASSED [ 16%]
+tests/kaggriculture/test_model_compile.py::test_trunk_guard_stays_in_front_of_the_compiled_callable PASSED [ 22%]
+tests/kaggriculture/test_model_compile.py::test_mlp_target_compiles_only_trunk_block_mlps PASSED [ 27%]
+tests/kaggriculture/test_model_compile.py::test_mlp_target_is_reached_only_through_the_guarded_trunk_dispatch PASSED [ 33%]
+tests/kaggriculture/test_model_compile.py::test_trainer_compile_never_compiles_the_whole_model[none] PASSED [ 38%]
+tests/kaggriculture/test_model_compile.py::test_trainer_compile_never_compiles_the_whole_model[mlp] PASSED [ 44%]
+tests/kaggriculture/test_model_compile.py::test_trainer_compile_never_compiles_the_whole_model[trunk] PASSED [ 50%]
+tests/kaggriculture/test_model_compile.py::test_trainer_path_compile_sites_never_take_a_model PASSED [ 55%]
+tests/kaggriculture/test_model_compile.py::test_trunk_target_rejects_models_without_the_interface PASSED [ 61%]
+tests/kaggriculture/test_model_registration.py::test_preset_round_trips_through_the_shared_model_config_union PASSED [ 66%]
+tests/kaggriculture/test_model_registration.py::test_union_rejects_unknown_kaggriculture_fields PASSED [ 72%]
+tests/kaggriculture/test_model_registration.py::test_factory_builds_the_preset_kaggriculture_transformer PASSED [ 77%]
+tests/kaggriculture/test_model_registration.py::test_factory_dispatches_a_union_typed_config PASSED [ 83%]
+tests/kaggriculture/test_model_registration.py::test_factory_rejects_orbit_specs_for_kaggriculture PASSED [ 88%]
+tests/kaggriculture/test_model_registration.py::test_factory_rejects_kaggriculture_specs_for_orbit_models PASSED [ 94%]
+tests/kaggriculture/test_model_registration.py::test_orbit_full_config_rejects_the_kaggriculture_model PASSED [100%]
+RESOURCE RECEIPT {"elapsed_seconds": 1.1390012500341982, "sampled_pytest_rss_bytes": 315752448, "pytest_ru_maxrss_bytes": 315752448, "exitstatus": 0, "scope": "pytest process only, no descendants; 10ms RSS polling"}
+
+
+============================== 18 passed in 0.28s ==============================

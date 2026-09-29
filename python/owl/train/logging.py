@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from enum import StrEnum, auto
 from pathlib import Path
-from typing import Any, Literal, assert_never
+from typing import Any, Literal, TypeAlias, assert_never
 
-from owl.model.kaggriculture import KaggricultureTransformerConfig
+from owl.kaggriculture.config import KaggricultureEnvConfig
 from owl.train import FullConfig
 
-WandbMode = Literal["online", "offline"]
+WandbMode: TypeAlias = Literal["online", "offline"]
 WANDB_MODES: tuple[WandbMode, ...] = ("online", "offline")
 # Kaggriculture runs publish under the v3 project; Isaiah's retained Orbit runs
 # keep his project.
@@ -17,7 +17,7 @@ ORBIT_WANDB_PROJECT = "orbit-wars"
 
 def wandb_init_identity(cfg: FullConfig) -> dict[str, Any]:
     """The W&B project and labels for a PPO run of this config's game."""
-    if isinstance(cfg.model, KaggricultureTransformerConfig):
+    if isinstance(cfg.env, KaggricultureEnvConfig):
         return {
             "project": KAGGRICULTURE_WANDB_PROJECT,
             "job_type": "ppo",
@@ -72,22 +72,35 @@ class WandbLogger(MetricLogger):
         run_dir: Path,
         cfg: FullConfig,
         *,
-        mode: WandbMode = "online",
         resume_run_id: str | None = None,
+        wandb_mode: WandbMode = "online",
     ) -> None:
+        if wandb_mode == "offline" and resume_run_id is not None:
+            raise ValueError(
+                "W&B offline mode cannot resume an existing run; use online "
+                "mode to preserve its telemetry history"
+            )
+
         import wandb
 
         self._wandb = wandb
+        identity = wandb_init_identity(cfg)
+        name = run_dir.name
         init_kwargs: dict[str, Any] = {}
+        if identity["project"] == KAGGRICULTURE_WANDB_PROJECT:
+            name = f"ppo-{run_dir.name}"
+            init_kwargs["mode"] = wandb_mode
+        elif wandb_mode == "offline":
+            # Orbit's online init arguments stay Isaiah's; only offline adds one.
+            init_kwargs["mode"] = wandb_mode
         if resume_run_id is not None:
             init_kwargs["id"] = resume_run_id
             init_kwargs["resume"] = "must"
         self._run = wandb.init(
-            **wandb_init_identity(cfg),
+            **identity,
             dir=run_dir,
-            name=run_dir.name,
+            name=name,
             config=cfg.model_dump(mode="json"),
-            mode=mode,
             **init_kwargs,
         )
 
@@ -113,15 +126,15 @@ def create_logger(
     run_dir: Path,
     cfg: FullConfig,
     *,
-    wandb_mode: WandbMode = "online",
     resume_run_id: str | None = None,
+    wandb_mode: WandbMode = "online",
 ) -> MetricLogger:
     match log_mode:
         case LogMode.DEBUG:
             return DebugLogger()
         case LogMode.WANDB:
             return WandbLogger(
-                run_dir, cfg, mode=wandb_mode, resume_run_id=resume_run_id
+                run_dir, cfg, resume_run_id=resume_run_id, wandb_mode=wandb_mode
             )
         case _:
             assert_never(log_mode)

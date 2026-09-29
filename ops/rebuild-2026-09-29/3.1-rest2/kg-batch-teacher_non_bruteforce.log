@@ -1,0 +1,63 @@
+Bounded pytest: ['/Users/poonszesen/kg-v3-t31/.venv/bin/pytest', 'tests/kaggriculture/test_teacher.py', '-k', 'not brute_force_oracle', '-vv', '--color=no']
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0 -- /Users/poonszesen/kg-v3-t31/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/poonszesen/kg-v3-t31
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 52 items / 2 deselected / 50 selected
+
+tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[dense] PASSED [  2%]
+tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[hire_capacity] PASSED [  4%]
+tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[stop_every_position] PASSED [  6%]
+tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[mixed] PASSED [  8%]
+tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-dense] PASSED [ 10%]
+tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-hire_capacity] PASSED [ 12%]
+tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-stop_every_position] PASSED [ 14%]
+tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-mixed] PASSED [ 16%]
+tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-dense] PASSED [ 18%]
+tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-hire_capacity] PASSED [ 20%]
+tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-stop_every_position] PASSED [ 22%]
+tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-mixed] PASSED [ 24%]
+tests/kaggriculture/test_teacher.py::test_forward_and_evaluate_actions_leave_the_teacher_fields_unset PASSED [ 26%]
+tests/kaggriculture/test_teacher.py::test_head_and_trunk_chunking_match_the_unchunked_kl PASSED [ 28%]
+tests/kaggriculture/test_teacher.py::test_fullgraph_captured_core_matches_eager_with_teacher_logits PASSED [ 30%]
+tests/kaggriculture/test_teacher.py::test_kl_gradients_reach_every_student_head_and_no_teacher_parameter PASSED [ 32%]
+tests/kaggriculture/test_teacher.py::test_kl_gradient_matches_finite_differences_in_fp64 PASSED [ 34%]
+tests/kaggriculture/test_teacher.py::test_targets_have_the_lead_layout_dtypes_and_optional_fields PASSED [ 36%]
+tests/kaggriculture/test_teacher.py::test_teacher_targets_reject_programs_the_teacher_grammar_does_not_admit PASSED [ 38%]
+tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[1-both] PASSED [ 40%]
+tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[1-kl] PASSED [ 42%]
+tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[1-value] PASSED [ 44%]
+tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[2-both] PASSED [ 46%]
+tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[2-kl] PASSED [ 48%]
+tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[2-value] PASSED [ 50%]
+tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[3-both] PASSED [ 52%]
+tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[3-kl] PASSED [ 54%]
+tests/kaggriculture/test_teacher.py::test_index_then_concat_restores_the_targets[3-value] PASSED [ 56%]
+tests/kaggriculture/test_teacher.py::test_concat_validates_every_chunk_symmetrically PASSED [ 58%]
+tests/kaggriculture/test_teacher.py::test_grammar_signature_tracks_tables_and_hire_limit PASSED [ 60%]
+tests/kaggriculture/test_teacher.py::test_nbytes_counts_every_cached_tensor PASSED [ 62%]
+tests/kaggriculture/test_teacher.py::test_cache_bytes_per_row_follow_the_contract_widths PASSED [ 64%]
+tests/kaggriculture/test_teacher.py::test_chunked_precompute_equals_one_whole_batch_call PASSED [ 66%]
+tests/kaggriculture/test_teacher.py::test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel PASSED [ 68%]
+tests/kaggriculture/test_teacher.py::test_cached_path_is_bit_for_bit_the_combined_path PASSED [ 70%]
+tests/kaggriculture/test_teacher.py::test_a_copied_teacher_gives_zero_kl_and_the_student_winner_entropy PASSED [ 72%]
+tests/kaggriculture/test_teacher.py::test_value_cross_entropy_is_the_live_seat_mean PASSED [ 74%]
+tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel PASSED [ 76%]
+tests/kaggriculture/test_teacher.py::test_combined_path_rejects_foreign_or_mismatched_teachers PASSED [ 78%]
+tests/kaggriculture/test_teacher.py::test_a_grammar_mismatch_that_replay_admits_is_rejected_by_the_signature PASSED [ 80%]
+tests/kaggriculture/test_teacher.py::test_ppo_teacher_wrappers_dispatch_statelessly PASSED [ 82%]
+tests/kaggriculture/test_teacher.py::test_ppo_teacher_wrappers_leave_orbit_results_unchanged PASSED [ 84%]
+tests/kaggriculture/test_teacher.py::test_targets_and_kl_are_seat_isolated_and_stateless PASSED [ 86%]
+tests/kaggriculture/test_teacher.py::test_the_model_supports_both_cached_distillation_paths PASSED [ 88%]
+tests/kaggriculture/test_teacher.py::test_trainer_precomputes_once_and_logs_teacher_metrics PASSED [ 90%]
+tests/kaggriculture/test_teacher.py::test_teacher_obs_spec_dispatch_covers_kaggriculture PASSED [ 92%]
+tests/kaggriculture/test_teacher.py::test_last_best_refresh_keeps_the_tables_and_copies_the_student PASSED [ 94%]
+tests/kaggriculture/test_teacher.py::test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best PASSED [ 96%]
+tests/kaggriculture/test_teacher.py::test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher PASSED [ 98%]
+tests/kaggriculture/test_teacher.py::test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache PASSED [100%]
+RESOURCE RECEIPT {"elapsed_seconds": 5.826366624969523, "sampled_pytest_rss_bytes": 548618240, "pytest_ru_maxrss_bytes": 548945920, "exitstatus": 0, "scope": "pytest process only, no descendants; 10ms RSS polling"}
+
+
+======================= 50 passed, 2 deselected in 4.66s =======================

@@ -159,10 +159,13 @@ Training presets live in `configs/`:
   the world size, as in Isaiah's per-rank configs).
   `run_ppo.py` prints their GEMM workload headroom (or rejects a workload the
   model cannot chunk) and the teacher-target cache bytes per rank (1,674,575,872,
-  837,287,936 and 418,643,968 B) before creating the run directory, then stops
-  with an explicit error: Task 3.1 rollout storage and action mapping are not
-  implemented. The native environment and Python adapter exist; canonical PPO
-  adoption remains Task 3.1.
+  837,287,936 and 418,643,968 B) before creating the run directory. The
+  canonical PPO collector, rollout buffer and update loop support both games
+  through typed observation, action and mask mapping. Kaggriculture uses the
+  native adapter with caller-owned buffers. The presets set
+  `rl.eval_replay_games: 0` until Task 7.3 adds Kaggriculture replay export
+  (restoring `scaling_6m`'s 8); a positive value fails at startup before
+  creating the run directory, environment or model.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.
@@ -320,7 +323,45 @@ uv run python scripts/run_ppo.py configs/baseline.yaml runs --log-mode debug --m
 ```
 
 Fresh launches accept `-o`/`--overrides field.path=value`; when provided, rank 0
-prints the flattened override list before loading the config.
+prints the flattened override list before loading the config. For a Kaggriculture
+launch on a suitable training host:
+
+```sh
+uv run python scripts/run_ppo.py configs/kaggriculture.yaml runs \
+  --load-model-weights BC_BEST_CHECKPOINT --wandb-mode online
+```
+
+The fresh Kaggriculture `last_best` launch names its teacher checkpoint
+(`--load-model-weights` or `-o rl.teacher_init=CHECKPOINT`; see the teacher
+paragraph below).
+
+`--wandb-mode {online,offline}` defaults to `online`. Kaggriculture W&B runs use
+project `kg-v3`, job type and group `ppo`, tags `kaggriculture-v3` and `ppo`,
+and name `ppo-<run-directory-name>`. Both training and evaluation metrics use
+the shared logger calls. For hosts without a W&B key, `--wandb-mode offline`
+saves telemetry under the run directory for a later `wandb sync`. Offline mode
+is explicit; online failures do not silently switch to it, and it requires
+`--log-mode wandb` (debug logging with offline mode fails). Resume requires
+online W&B logging and rejects
+`--wandb-mode offline` before allocating a run. Orbit keeps its existing online
+W&B initialization.
+
+Kaggriculture startup requires `env.seed` in `[0, 2**61)` and bounds the launch
+so every rollout seed remains below `2**62`, apart from the evaluation band.
+The budget reserves construction and trainer-reset seeds, allows both an
+auto-reset and a truncation per environment step, and includes a full update
+of stopping-point overshoot. An excessive `--max-env-steps` fails before run
+allocation; omitting it uses the safe ceiling. The admitted environment-step
+counter also remains in `_evaluation_seed`'s `[0, 2**61)` domain. A
+Kaggriculture launch that keeps a checkpoint's `env_steps` (a resume, or a
+fresh launch with `--load-model-weights` in either mode) starts its rollout
+seeds at `env.seed + 4 * env_steps`, past every seed that checkpoint trained on
+under the same `env.seed`, so it does not replay the earlier launches' worlds.
+Startup reads that step from the checkpoint before allocation (a memory-mapped
+metadata read), and fails if the trainer's later full load finds a different
+`env_steps`. Such a launch whose saved step leaves no seed budget fails at
+startup.
+
 `rl.model_compile` defaults to `trunk`, which compiles the stateless
 self-attention transformer trunk as one dynamic-shape callable after
 FlashAttention packing and before unpacking, using
@@ -407,16 +448,16 @@ checkpoint write and barrier complete) and `eval/promotion_threshold` (0.7).
 Kaggriculture evaluation games are won by the higher raw final bank (equal
 banks draw), never by the shaped training return, and log
 `eval/candidate_bank`, `eval/last_best_bank` and `eval/candidate_bank_margin`
-from the candidate's seat. Each Kaggriculture evaluation is to seed its games
+from the candidate's seat. Each Kaggriculture evaluation seeds its games
 with `_evaluation_seed(base_seed, env_steps)`, a reproducible seed that differs
 per evaluation step within a run (the seed ranges of different evaluations or
 runs are not guaranteed disjoint), in the non-negative int64 band
 `[2**62, 2**62 + 2**61)`. `_create_eval_env` now constructs an independent native
-Kaggriculture adapter through `owl.game.create_env`, with rank 0 and world size 1.
-Short fixed-action tests reproduce its seeds, evolving games and final banks exactly.
-Policy evaluation still fails explicitly until Task 3.1 supplies observation and
-action mapping. Orbit evaluation environments stay unseeded.
-Set `rl.eval_replay_games` to a positive count to save random eval replay
+Kaggriculture adapter through `owl.game.create_env`, with rank 0, world size 1
+and the evaluation transfer device. Policy evaluation uses the same typed
+observation/action mapper as PPO, and the adapter fences device reads before
+reusing its buffers. Orbit evaluation environments stay unseeded.
+For Orbit, set `rl.eval_replay_games` to a positive count to save random eval replay
 samples from the weighted eval game set under
 `eval_replays/<checkpoint-name>/` in the run directory. The sampled game
 ordinals are selected up front rather than taking the first games to finish.
@@ -426,8 +467,8 @@ Each sampled eval game is written as its own JSONL file.
 project `kg-v3` (job type and group `ppo`, tags `kaggriculture-v3` and `ppo`) and
 Orbit runs to `orbit-wars`. `--wandb-mode offline` keeps the W&B run under the
 run directory's `wandb/` for a later `wandb sync` (for a machine without a W&B
-key) and prints that the telemetry is offline; W&B ignores `resume` offline and
-starts a local run with the saved id.
+key) and prints that the telemetry is offline; resume launches reject it (see
+the launch section above).
 Exceptions escaping the training logger session, including `KeyboardInterrupt`
 and `SystemExit`, close W&B with exit code 1; normal completion closes it with
 exit code 0. The distributed session prints and flushes a rank-tagged traceback

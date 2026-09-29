@@ -1,0 +1,189 @@
+[
+  {
+    "name": "typing",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "--noconftest",
+      "tests/kaggriculture/test_base_generics_typing.py",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-typing.log"
+  },
+  {
+    "name": "native",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_codec.py",
+      "tests/kaggriculture/test_env.py",
+      "tests/kaggriculture/test_env_cuda_fence.py",
+      "tests/kaggriculture/test_env_reference.py",
+      "tests/kaggriculture/test_evaluation.py",
+      "tests/kaggriculture/test_game.py",
+      "tests/kaggriculture/test_native_env.py",
+      "tests/kaggriculture/test_native_grammar_bindings.py",
+      "tests/kaggriculture/test_native_tables.py",
+      "tests/kaggriculture/test_observe.py",
+      "tests/kaggriculture/test_rewards.py",
+      "tests/kaggriculture/test_types.py",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-native.log"
+  },
+  {
+    "name": "grammar_configs",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_compile_gemm_backends.py",
+      "tests/kaggriculture/test_configs.py",
+      "tests/kaggriculture/test_gpu_grammar.py",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-grammar_configs.log"
+  },
+  {
+    "name": "model_encoder",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_model_encoder.py",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-model_encoder.log"
+  },
+  {
+    "name": "model_heads",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_model_heads.py",
+      "-k",
+      "not hire_coupling_enumeration_equals_replayed_density",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-model_heads.log"
+  },
+  {
+    "name": "heads_budget_0",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[0]",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-heads_budget_0.log"
+  },
+  {
+    "name": "heads_budget_1",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[1]",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-heads_budget_1.log"
+  },
+  {
+    "name": "heads_budget_2",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[2]",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-heads_budget_2.log"
+  },
+  {
+    "name": "heads_budget_3",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[3]",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-heads_budget_3.log"
+  },
+  {
+    "name": "heads_budget_10",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_model_heads.py::test_hire_coupling_enumeration_equals_replayed_density[10]",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-heads_budget_10.log"
+  },
+  {
+    "name": "model_compile_registration",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_model_compile.py",
+      "tests/kaggriculture/test_model_registration.py",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-model_compile_registration.log"
+  },
+  {
+    "name": "teacher",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_teacher.py",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-teacher.log"
+  },
+  {
+    "name": "training",
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/kaggriculture/test_training_semantics.py",
+      "tests/kaggriculture/test_training_smoke.py",
+      "-vv",
+      "--color=no"
+    ],
+    "log": "kg-batch-training.log"
+  }
+]

@@ -1,0 +1,180 @@
+........................................................................ [ 37%]
+........................................................................ [ 75%]
+...........................FF..................F                         [100%]
+=================================== FAILURES ===================================
+_________ test_kaggriculture_storage_and_every_mapping_preserve_schema _________
+
+    def test_kaggriculture_storage_and_every_mapping_preserve_schema() -> None:
+        source = allocate_observation_buffers(2, pin_memory=False)
+        generator = torch.Generator().manual_seed(917)
+        for tensor in _obs_tensors(source).values():
+            assert tensor is not None
+            tensor.copy_(_random_tensor(tuple(tensor.shape), tensor.dtype, generator))
+>       rollout = ppo._PPORolloutBuffer(
+            horizon=3, n_envs=2, obs_spec=kt.KaggricultureObsConfig(),
+            action_spec=kt.KaggricultureActionConfig(), device=torch.device("cpu"),
+        )
+
+tests/owl/train/test_ppo_observation_mapping.py:617: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:287: in __init__
+    action_spec.n_bins,
+    ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureActionConfig(action_spec='kaggriculture', hire_limit=241)
+item = 'n_bins'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'KaggricultureActionConfig' object has no attribute 'n_bins'
+
+.venv/lib/python3.12/site-packages/pydantic/main.py:1042: AttributeError
+_______ test_kaggriculture_actions_to_cpu_materializes_contiguous_int64 ________
+
+    def test_kaggriculture_actions_to_cpu_materializes_contiguous_int64() -> None:
+        # Same-device .to() alone preserves these noncontiguous strides.
+        tokens = torch.arange(2 * 2 * 252 * 24).reshape(2, 2, 252, 24)[..., ::2]
+        lengths = torch.tensor([[2, 0, 3, 0], [4, 0, 5, 0]])[:, ::2]
+        assert not tokens.is_contiguous() and not lengths.is_contiguous()
+>       result = ppo._actions_to_cpu(kt.KaggricultureActions(tokens=tokens, lengths=lengths))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/owl/train/test_ppo_observation_mapping.py:668: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:2289: in _actions_to_cpu
+    return _map_action_bundle(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[    0,     2,     4,  ...,    18,    20,    22],
+          [   24,    26,    28...4164, 24166],
+          [24168, 24170, 24172,  ..., 24186, 24188, 24190]]]]), lengths=tensor([[2, 3],
+        [4, 5]]))
+fn = <function _actions_to_cpu.<locals>.<lambda> at 0x10f79b4c0>
+
+    def _map_action_bundle(
+        actions: ActionBundle,
+        fn: Callable[[torch.Tensor], torch.Tensor],
+    ) -> ActionBundle:
+        if isinstance(actions, PureActions):
+            return PureActions(
+                launch=fn(actions.launch),
+                angle=fn(actions.angle),
+                ships=fn(actions.ships),
+            )
+        if isinstance(actions, DiscreteTargetActions):
+            return DiscreteTargetActions(
+                launch=fn(actions.launch),
+                target=fn(actions.target),
+                ships=fn(actions.ships),
+            )
+        return DiscreteTargetBinActions(
+>           target=fn(actions.target),
+                      ^^^^^^^^^^^^^^
+            fleet_bin=fn(actions.fleet_bin),
+        )
+E       AttributeError: 'KaggricultureActions' object has no attribute 'target'
+
+python/owl/train/ppo.py:2102: AttributeError
+_________________________ test_no_teacher_two_updates __________________________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-790/test_no_teacher_two_updates0')
+
+    def test_no_teacher_two_updates(tmp_path: Path) -> None:
+        torch.manual_seed(307)
+        device = torch.device("cpu")
+        obs_spec, action_spec = KaggricultureObsConfig(), KaggricultureActionConfig()
+        env = KaggricultureVectorizedEnv(
+            n_envs=1, seed=307, seed_stride=1,
+            config=KaggricultureGameConfig(episodeSteps=3),
+            reward_config=KaggricultureRewardConfig(
+                econ_shaping=0.2, econ_starvation_weight=4.0,
+                econ_drought_weight=1.0, econ_cap=0.25,
+                econ_ineffective_weight=0.0, econ_ineffective_cap=0.10,
+            ),
+            reward_mode="win_loss", native_threads=1, pin_memory=False,
+            transfer_device=device, obs_spec=obs_spec, action_spec=action_spec,
+        )
+        model = KaggricultureTransformer(
+            KaggricultureTransformerConfig(embed_dim=16, depth=1, n_heads=1,
+                mlp_ratio=1, n_scratch_tokens=0),
+            obs_spec=obs_spec, action_spec=action_spec,
+        )
+>       trainer = PPOTrainer(
+            config=PPOConfig(horizon=2, ppo_epochs=1, segments_per_minibatch=1,
+                gradient_accumulation_steps=1, dtype="float32", model_compile="none",
+                compile_mode=None, teacher_mode=None),
+            env=env, model=model, optimizer=torch.optim.Adam(model.parameters(), lr=1e-4),
+            device=device,
+        )
+
+tests/kaggriculture/test_training_smoke.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:565: in __init__
+    self._obs = _obs_to_device(
+python/owl/train/ppo.py:2258: in _obs_to_device
+    return _map_observation(
+python/owl/train/ppo.py:2119: in _map_observation
+    field: _map_observation_value(getattr(obs, field), fn, field=field)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = KaggricultureActionMask(can_act=tensor([[[ True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+      ...lse, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]]))
+fn = <function _obs_to_device.<locals>.<lambda> at 0x10f7128e0>
+
+    def _map_observation_value(
+        value: object,
+        fn: Callable[[torch.Tensor], torch.Tensor],
+        *,
+        field: str,
+    ) -> object:
+        if value is None:
+            return None
+        if isinstance(value, torch.Tensor):
+            return fn(value)
+        if isinstance(
+            value,
+            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+        ):
+            return _map_action_mask(value, fn)
+>       raise TypeError(
+            f"observation field {field!r} has unsupported type {type(value).__name__}; "
+            "expected a tensor, an action mask or None"
+        )
+E       TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+
+python/owl/train/ppo.py:2140: TypeError
+=========================== short test summary info ============================
+FAILED tests/owl/train/test_ppo_observation_mapping.py::test_kaggriculture_storage_and_every_mapping_preserve_schema
+FAILED tests/owl/train/test_ppo_observation_mapping.py::test_kaggriculture_actions_to_cpu_materializes_contiguous_int64
+FAILED tests/kaggriculture/test_training_smoke.py::test_no_teacher_two_updates
+3 failed, 189 passed in 0.35s

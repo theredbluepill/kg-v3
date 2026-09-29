@@ -1,0 +1,39 @@
+BASELINE rc 0 403 passed in 1.23s
+CAUGHT | M6 main drops wandb_mode kwarg | 1 failed, 402 passed in 1.30s | first: FAILED tests/scripts/test_run_ppo.py::test_main_forwards_wandb_mode_and_the_default_step_limit
+CAUGHT | M7 main passes args.max_env_steps | 1 failed, 402 passed in 1.24s | first: FAILED tests/scripts/test_run_ppo.py::test_main_forwards_wandb_mode_and_the_default_step_limit
+CAUGHT | M12b swap banks, negate margin, remap winner | 1 failed, 402 passed in 1.24s | first: FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_evaluation_credits_the_candidates_seat_bank
+CAUGHT | M5b eval terminal drops winner | 1 failed, 402 passed in 1.27s | first: FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_evaluation_credits_the_candidates_seat_bank
+CAUGHT | M17 _evaluate_games replay guard off | 1 failed, 402 passed in 1.26s | first: FAILED tests/scripts/test_run_ppo.py::test_evaluate_games_rejects_kaggriculture_replay_before_the_env
+CAUGHT | M15 eval action-type guard off | 1 failed, 402 passed in 1.32s | first: FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_evaluation_rejects_orbit_actions
+CAUGHT | R1 resume base ignores start step | 2 failed, 401 passed in 1.30s | first: FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_resume_seeds_follow_every_first_launch_seed
+SURVIVED | R2 resume base 2x instead of 4x | 403 passed in 1.28s | first: -
+CAUGHT | R3 main reads no resume step | 1 failed, 402 passed in 1.36s | first: FAILED tests/scripts/test_run_ppo.py::test_main_kaggriculture_resume_starts_a_disjoint_seed_stream
+CAUGHT | R4 budget ignores start step | 1 failed, 402 passed in 1.55s | first: FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_resume_budget_counts_the_resumed_start
+CAUGHT | W1 offline+debug accepted | 1 failed, 402 passed in 1.32s | first: FAILED tests/scripts/test_run_ppo.py::test_validate_args_rejects_offline_wandb_with_debug_logging
+CAUGHT | M1 kag obs + orbit actions guard off | 1 failed, 402 passed in 1.32s | first: FAILED tests/owl/train/test_ppo_observation_mapping.py::test_rollout_buffer_rejects_mixed_game_specs[obs_spec0-action_spec0-Kaggriculture observations require Kaggriculture actions]
+CAUGHT | M2 orbit obs + kag actions guard off | 1 failed, 402 passed in 1.33s | first: FAILED tests/owl/train/test_ppo_observation_mapping.py::test_rollout_buffer_rejects_mixed_game_specs[obs_spec1-action_spec1-Orbit observations require Orbit actions]
+CAUGHT | M8 max_entities from shop_mask | 2 failed, 401 passed in 1.36s | first: FAILED tests/owl/train/test_ppo_observation_mapping.py::test_max_entity_count_is_one_seats_actors_for_kaggriculture
+CAUGHT | M11 max_entities from still_playing | 2 failed, 401 passed in 1.30s | first: FAILED tests/owl/train/test_ppo_observation_mapping.py::test_max_entity_count_is_one_seats_actors_for_kaggriculture
+CAUGHT | M9 seat-swap stored rewards | 1 failed, 402 passed in 1.32s | first: FAILED tests/owl/train/test_ppo_observation_mapping.py::test_kaggriculture_rollout_keeps_each_seat_and_step_through_gae
+CAUGHT | M14 seat-swap stored values | 1 failed, 402 passed in 1.34s | first: FAILED tests/owl/train/test_ppo_observation_mapping.py::test_kaggriculture_rollout_keeps_each_seat_and_step_through_gae
+CAUGHT | I1 action copy fallthrough silent | 1 failed, 402 passed in 1.35s | first: FAILED tests/owl/train/test_ppo_observation_mapping.py::test_copy_actions_time_step_rejects_an_unknown_action_bundle
+CAUGHT | I2 winner_ce guard off | 1 failed, 402 passed in 1.29s | first: FAILED tests/kaggriculture/test_training_smoke.py::test_trainer_rejects_winner_ce_for_kaggriculture
+CAUGHT | I3 rates back to four slots | 2 failed, 401 passed in 1.31s | first: FAILED tests/owl/train/test_ppo_observation_mapping.py::test_player_count_rates_follow_the_games_seats
+       53.99 real        49.24 user         7.12 sys
+           406388736  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+             1062448  page reclaims
+                 211  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                4790  voluntary context switches
+              496253  involuntary context switches
+           596691841  instructions retired
+           432969456  cycles elapsed
+            10568064  peak memory footprint

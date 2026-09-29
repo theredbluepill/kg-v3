@@ -1,0 +1,36 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_evaluation_mapper_keeps_cuda_nonblocking_copy ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110efc6b0>
+
+    def test_evaluation_mapper_keeps_cuda_nonblocking_copy(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        calls: list[bool] = []
+        def mapper(obs: object, device: torch.device, *, non_blocking: bool = False) -> object:
+            assert device.type == "cuda"
+            calls.append(non_blocking)
+            return obs
+        def stop(*_args: object, **_kwargs: object) -> None:
+            raise RuntimeError("after transfer")
+        monkeypatch.setattr(run_ppo, "_obs_to_device", mapper)
+        monkeypatch.setattr(run_ppo, "_model_output_for_eval", stop)
+        with pytest.raises(RuntimeError, match="after transfer"):
+            run_ppo._eval_actions_for_assignments_and_hidden(
+                _two_seat_obs(1), torch.zeros((1, 2), dtype=torch.int64),
+                current_model=_LaunchPolicy(launch=True),
+                last_best_model=_LaunchPolicy(launch=False),
+                hidden_current=None, hidden_last_best=None,
+                config=_full_config().rl, device=torch.device("cuda"),
+            )
+>       assert calls == [True]
+E       assert [False] == [True]
+E         
+E         At index 0 diff: False != True
+E         Use -v to get more diff
+
+tests/scripts/test_run_ppo.py:3600: AssertionError
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_evaluation_mapper_keeps_cuda_nonblocking_copy
+1 failed, 119 deselected in 0.25s

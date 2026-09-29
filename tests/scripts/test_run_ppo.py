@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import math
 import re
 import sys
 import time
@@ -9,6 +10,7 @@ from collections.abc import Mapping
 from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 import torch
@@ -17,10 +19,15 @@ from owl.checkpoint_quantization import (
     dequantize_model_state_dict,
     quantize_model_state_dict,
 )
+from owl.game import create_env
 from owl.kaggriculture.codec import encode_actions
 from owl.kaggriculture.config import KaggricultureEnvConfig
 from owl.kaggriculture.env import KaggricultureVectorizedEnv
-from owl.kaggriculture.types import MAX_ACTORS, KaggricultureObsConfig
+from owl.kaggriculture.types import (
+    MAX_ACTORS,
+    KaggricultureActions,
+    KaggricultureObsConfig,
+)
 from owl.model import LoRALinear
 from owl.model.compile_gemm import (
     CompileStackReport,
@@ -701,7 +708,9 @@ def test_validate_args_rejects_load_model_weights_mode_without_checkpoint() -> N
 
 
 def test_validate_args_rejects_wandb_mode_without_wandb_logging() -> None:
-    with pytest.raises(ValueError, match="--wandb-mode requires --log-mode wandb"):
+    with pytest.raises(
+        ValueError, match="--wandb-mode offline requires --log-mode wandb"
+    ):
         run_ppo._validate_args(
             Namespace(
                 max_env_steps=None,
@@ -3234,23 +3243,58 @@ def test_kaggriculture_eval_env_is_independent() -> None:
     assert second.seed_state() == seeds
 
 
-def test_kaggriculture_policy_evaluation_names_remaining_mapping_blocker() -> None:
-    with pytest.raises(
-        RuntimeError,
-        match=(
-            r"Kaggriculture policy evaluation needs Task 3\.1 observation "
-            "and action mapping"
-        ),
-    ):
-        run_ppo._evaluate_games(
-            current_model=_LaunchPolicy(launch=True),
-            last_best_model=_LaunchPolicy(launch=False),
-            cfg=_kaggriculture_eval_config(),
-            n_games=1,
-            n_envs=1,
+def test_kaggriculture_policy_evaluation_runs_native_games() -> None:
+    cfg = FullConfig.from_file(
+        _CONFIGS / "kaggriculture.yaml",
+        overrides={
+            "env.n_envs": 2,
+            "env.native_threads": 1,
+            "env.pin_memory": False,
+            "env.config.episodeSteps": 3,
+            "model.embed_dim": 16,
+            "model.depth": 1,
+            "model.n_heads": 1,
+            "model.mlp_ratio": 1,
+            "model.n_scratch_tokens": 0,
+            "rl.dtype": "float32",
+            "rl.model_compile": "none",
+            "rl.segments_per_minibatch": 1,
+            "rl.gradient_accumulation_steps": 1,
+            "rl.eval_replay_games": 0,
+        },
+    )
+    torch.manual_seed(31)
+    current, _ = run_ppo._create_training_model_for_config(
+        cfg, device=torch.device("cpu"), reset_parameters=True
+    )
+    last_best = run_ppo._create_eval_model_from_weights(
+        current, cfg, device=torch.device("cpu")
+    )
+    current.eval()
+    with torch.no_grad():
+        stats, by_count, metrics, steps = run_ppo._evaluate_games(
+            current_model=current,
+            last_best_model=last_best,
+            cfg=cfg,
+            n_games=2,
+            n_envs=2,
             device=torch.device("cpu"),
             env_steps=1000,
         )
+    margins = metrics["candidate_bank_margin"]
+    expected_wins = sum(1.0 if x > 0 else 0.5 if x == 0 else 0.0 for x in margins)
+    assert stats.model_games == [2, 2]
+    assert stats.wins == [expected_wins, 2 - expected_wins]
+    assert by_count[2].wins == stats.wins
+    assert steps == 4
+    assert metrics["episode_steps"] == [2, 2]
+    for candidate, incumbent, margin in zip(
+        metrics["candidate_bank"], metrics["last_best_bank"], margins, strict=True
+    ):
+        assert torch.isfinite(torch.tensor([candidate, incumbent, margin])).all()
+        assert candidate - incumbent == margin
+    logged = run_ppo._eval_env_metrics(metrics)
+    assert logged["eval/candidate_bank_margin"] == sum(margins) / 2
 
 
 # Rebuild Task 3.3: promotion telemetry ----------------------------------------------
@@ -3373,10 +3417,6 @@ def test_run_training_loop_reports_promotion_only_after_it_completes(
 # allocation steps are replaced by sentinels that record and fail if reached.
 
 _CONFIGS = Path(__file__).parents[2] / "configs"
-_NOT_WIRED = (
-    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action "
-    "mapping are not implemented"
-)
 
 
 def _patch_kaggriculture_startup(
@@ -3406,6 +3446,7 @@ def _patch_kaggriculture_startup(
     for name in (
         "_create_run_dir",
         "VectorizedEnv",
+        "create_env",
         "_create_training_model_for_config",
     ):
         monkeypatch.setattr(run_ppo, name, sentinel(name))
@@ -3414,10 +3455,30 @@ def _patch_kaggriculture_startup(
 
 
 def _teacher_source_argv(tmp_path: Path) -> list[str]:
-    """A placeholder teacher checkpoint: these launches stop before loading it."""
+    """A metadata-only teacher checkpoint at env step 0.
+
+    Task 4.4 requires a teacher source at a fresh Kaggriculture last-best launch;
+    Task 3.1's startup reads its ``env_steps`` before allocation. These launches
+    stop before the trainer loads its (empty) weights.
+    """
     weights = tmp_path / "bc_best.pt"
-    weights.write_bytes(b"")
+    _write_metadata_checkpoint(weights, env_steps=0)
     return ["--load-model-weights", str(weights)]
+
+
+def _kaggriculture_teacher_checkpoint(tmp_path: Path) -> Path:
+    """A real tiny-model teacher checkpoint (with its config) for rl.teacher_init."""
+    cfg = FullConfig.from_file(_CONFIGS / "kaggriculture.yaml")
+    teacher_dir = tmp_path / "teacher"
+    teacher_dir.mkdir()
+    cfg.to_file(teacher_dir / "config.yaml")
+    torch.manual_seed(7)
+    model = run_ppo._create_eval_model_for_config(
+        cfg, device=torch.device("cpu"), roundtrip_lora_base=False
+    )
+    path = teacher_dir / "bc_best.pt"
+    torch.save({"model": model.state_dict()}, path)
+    return path
 
 
 _PROBED_STACK = InstalledCompileStack(
@@ -3509,6 +3570,935 @@ def _headroom_lines(out: str) -> list[str]:
     return [line for line in out.splitlines() if line.startswith("GEMM workload")]
 
 
+@pytest.mark.parametrize("seed", [2**61, 2**62, 2**63 - 1])
+def test_main_rejects_kaggriculture_seed_before_allocation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, seed: int
+) -> None:
+    calls: list[str] = []
+    _patch_kaggriculture_startup(
+        monkeypatch,
+        [
+            str(_CONFIGS / "kaggriculture.yaml"),
+            str(tmp_path / "runs"),
+            *_teacher_source_argv(tmp_path),
+            "-o",
+            f"env.seed={seed}",
+            "rl.eval_replay_games=0",
+        ],
+        calls,
+    )
+    with pytest.raises(ValueError, match=r"env\.seed must be in"):
+        run_ppo.main()
+    assert calls == []
+
+
+def test_main_rejects_kaggriculture_replay_before_allocation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str] = []
+    _patch_kaggriculture_startup(
+        monkeypatch,
+        [
+            str(_CONFIGS / "kaggriculture.yaml"),
+            str(tmp_path / "runs"),
+            *_teacher_source_argv(tmp_path),
+            "-o",
+            "rl.eval_replay_games=1",
+        ],
+        calls,
+    )
+    with pytest.raises(ValueError, match=r"Task 7\.3"):
+        run_ppo.main()
+    assert calls == []
+
+
+def test_main_rejects_kaggriculture_seed_budget_before_allocation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str] = []
+    _patch_kaggriculture_startup(
+        monkeypatch,
+        [
+            str(_CONFIGS / "kaggriculture.yaml"),
+            str(tmp_path / "runs"),
+            *_teacher_source_argv(tmp_path),
+            "--max-env-steps",
+            str(2**61),
+        ],
+        calls,
+    )
+    with pytest.raises(ValueError, match="seed budget"):
+        run_ppo.main()
+    assert calls == []
+
+
+def test_select_kaggriculture_actions_preserves_seats_and_native_storage() -> None:
+    a = KaggricultureActions(
+        tokens=torch.arange(2 * 2 * 12 * 252).view(2, 2, 12, 252).transpose(-1, -2),
+        lengths=torch.tensor([[2, 3], [4, 5]]).T,
+    )
+    b = KaggricultureActions(tokens=a.tokens + 10000, lengths=a.lengths + 3)
+    use_a = torch.tensor([[True, False], [False, True]])
+    result = run_ppo._select_actions(a, b, use_a)
+    assert isinstance(result, KaggricultureActions)
+    for field in ("tokens", "lengths"):
+        tensor, first, second = (getattr(bundle, field) for bundle in (result, a, b))
+        assert tensor.dtype == torch.int64
+        assert tensor.device.type == "cpu"
+        assert tensor.is_contiguous()
+        assert torch.equal(tensor[use_a], first[use_a])
+        assert torch.equal(tensor[~use_a], second[~use_a])
+
+
+def test_kaggriculture_session_forwards_offline_mode_and_shared_metrics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cfg = _kaggriculture_eval_config()
+    cfg = cfg.model_copy(
+        update={"rl": cfg.rl.model_copy(update={"checkpoint_freq": 2})}
+    )
+    training = {"loss/total_loss": 1.0, "train/terminal_bank_0": 3000.0}
+    evaluation = {
+        "eval/win_rate_against_last_best": 0.5,
+        "eval/candidate_bank_margin": 0.0,
+    }
+    trainer, logger = _FakeTrainer(metrics=training), _FakeLogger()
+
+    def make_logger(
+        mode: LogMode, run_dir: Path, config: FullConfig, **kwargs: object
+    ) -> _FakeLogger:
+        assert mode == LogMode.WANDB
+        assert run_dir == tmp_path
+        assert config is cfg
+        assert kwargs == {"resume_run_id": None, "wandb_mode": "offline"}
+        return logger
+
+    monkeypatch.setattr(run_ppo, "create_logger", make_logger)
+    monkeypatch.setattr(
+        run_ppo, "_evaluate_against_last_best", lambda **_kwargs: evaluation
+    )
+    _patch_eval_model_from_weights(monkeypatch)
+    run_ppo._run_training_session(
+        trainer=trainer,
+        run_dir=tmp_path,
+        cfg=cfg,
+        log_mode=LogMode.WANDB,
+        wandb_mode="offline",
+        env_steps_per_iteration=2,
+        max_env_steps=2,
+        max_runtime_seconds=None,
+        distributed=DistributedContext.single_process_cpu(),
+    )
+    assert trainer.iterations == 1
+    assert logger.logged[0][0].items() >= training.items()
+    assert logger.logged[1] == (
+        {**evaluation, "eval/promoted": 0.0, "eval/promotion_threshold": 0.7},
+        2,
+    )
+    assert logger.closed
+
+
+@pytest.mark.parametrize("mode", ["online", "offline"])
+def test_parse_wandb_mode(monkeypatch: pytest.MonkeyPatch, mode: str) -> None:
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_ppo.py",
+            "config.yaml",
+            "runs",
+            "--wandb-mode",
+            mode,
+        ],
+    )
+    assert run_ppo._parse_args().wandb_mode == mode
+
+
+def test_parse_wandb_mode_defaults_online(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys, "argv", ["run_ppo.py", "config.yaml", "runs"])
+    assert run_ppo._parse_args().wandb_mode == "online"
+
+
+def test_resume_offline_fails_before_reading_checkpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_ppo.py",
+            "nonexistent-run",
+            "--wandb-mode",
+            "offline",
+        ],
+    )
+    with pytest.raises(ValueError, match=r"resume.*offline"):
+        run_ppo.main()
+
+
+def test_kaggriculture_seed_budget_covers_resets_truncation_and_update_overshoot() -> (
+    None
+):
+    cfg = _kaggriculture_eval_config()
+    cfg = cfg.model_copy(update={"env": cfg.env.model_copy(update={"seed": 2**61 - 1})})
+    ctx = DistributedContext(
+        device=torch.device("cpu"),
+        rank=2,
+        local_rank=2,
+        world_size=3,
+        initialized=False,
+    )
+
+    limit = run_ppo._kaggriculture_step_limit(cfg, ctx, max_env_steps=None)
+    width = cfg.env.n_envs * ctx.world_size
+    update = width * cfg.rl.horizon
+    worst_steps = limit + update - 1
+    assert cfg.env.seed + 2 * width + 2 * worst_steps <= 2**62
+    assert worst_steps < 2**61
+    assert run_ppo._kaggriculture_step_limit(cfg, ctx, max_env_steps=limit) == limit
+    with pytest.raises(ValueError, match="seed budget"):
+        run_ppo._kaggriculture_step_limit(cfg, ctx, max_env_steps=limit + 1)
+    # Orbit has no new limit or seed checks.
+    assert (
+        run_ppo._kaggriculture_step_limit(_full_config(), ctx, max_env_steps=None)
+        is None
+    )
+
+
+# --- Task 3.1 verify r1: resume seeds, seat crediting, launch forwarding -------
+
+
+def _write_metadata_checkpoint(path: Path, *, env_steps: int) -> None:
+    """A checkpoint with only the metadata that startup reads before allocation."""
+    torch.save(
+        {
+            "model": {},
+            "optimizer": {},
+            "lr_scheduler": None,
+            "env_steps": env_steps,
+            "optimizer_steps": 0,
+            "player_step_total": 0,
+            "total_games_played": 0,
+            "target_kl_exceeded_total": 0,
+            "wandb_run_id": "run-id",
+        },
+        path,
+    )
+
+
+def test_kaggriculture_resume_budget_counts_the_resumed_start() -> None:
+    cfg = _kaggriculture_eval_config()
+    cfg = cfg.model_copy(update={"env": cfg.env.model_copy(update={"seed": 5})})
+    ctx = DistributedContext.single_process_cpu()
+    width = cfg.env.n_envs * ctx.world_size
+    update = width * cfg.rl.horizon
+    fresh = run_ppo._kaggriculture_step_limit(cfg, ctx, max_env_steps=None)
+    start = 2**59
+    limit = run_ppo._kaggriculture_step_limit(
+        cfg, ctx, max_env_steps=None, start_env_steps=start
+    )
+    assert limit is not None
+    assert fresh is not None
+    assert limit < fresh
+    base = run_ppo._kaggriculture_rollout_base_seed(5, start_env_steps=start)
+    worst_steps = limit + update - 1
+    # A resumed launch reserves construction, reset and two seeds per step from
+    # its own base; the admitted limit keeps all of them below the band.
+    assert base + 2 * width + 2 * (worst_steps - start) <= 2**62
+    with pytest.raises(ValueError, match="seed budget"):
+        run_ppo._kaggriculture_step_limit(
+            cfg, ctx, max_env_steps=limit + 1, start_env_steps=start
+        )
+    with pytest.raises(ValueError, match="resumed at env step"):
+        run_ppo._kaggriculture_step_limit(
+            cfg, ctx, max_env_steps=None, start_env_steps=fresh
+        )
+
+
+def test_kaggriculture_resume_bases_clear_worst_case_launches() -> None:
+    # Chain of launches, each resumed from a checkpoint one update (horizon 1,
+    # the smallest) after its start, with changing world sizes. Worst case per
+    # launch: construction and reset of every env, then an auto-reset and a
+    # truncation on every transition.
+    start = 0
+    for global_envs in (1, 256, 3, 64, 2):
+        base = run_ppo._kaggriculture_rollout_base_seed(7, start_env_steps=start)
+        end = start + global_envs  # one update at horizon 1
+        worst_seed = base + 2 * global_envs + 2 * (end - start) - 1
+        next_base = run_ppo._kaggriculture_rollout_base_seed(7, start_env_steps=end)
+        assert worst_seed < next_base
+        start = end
+
+
+def test_kaggriculture_resume_seeds_follow_every_first_launch_seed() -> None:
+    cfg = _kaggriculture_eval_config()
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    env_config = cfg.env.model_copy(
+        update={
+            "seed": 41,
+            "native_threads": 1,
+            "pin_memory": False,
+            "config": cfg.env.config.model_copy(update={"episode_steps": 3}),
+        }
+    )
+    n_envs, transitions = 2, 4
+
+    def launch(base_seed: int) -> KaggricultureVectorizedEnv:
+        env = create_env(
+            env_config,
+            n_envs=n_envs,
+            base_seed=base_seed,
+            rank=0,
+            world_size=1,
+            pin_memory=False,
+            transfer_device=torch.device("cpu"),
+        )
+        assert isinstance(env, KaggricultureVectorizedEnv)
+        return env
+
+    # First launch: construction, the trainer's reset, then passing turns that
+    # finish (and auto-reset) every game twice.
+    first = launch(41)
+    first_seeds = set(first.seed_state()[1])
+    obs = first.reset()
+    first_seeds |= set(first.seed_state()[1])
+    for _ in range(transitions):
+        programs = [
+            tuple(
+                {
+                    "farmer": ["PASS"],
+                    "hands": [["PASS"]]
+                    * (int(obs.actor_mask[i, s, :MAX_ACTORS].sum()) - 1),
+                    "market": [],
+                }
+                for s in range(2)
+            )
+            for i in range(n_envs)
+        ]
+        obs, _rewards, dones, _metrics = first.step(
+            encode_actions(programs, obs, action_spec=first.action_spec)
+        )
+        first_seeds |= set(first.seed_state()[1])
+    assert int(dones.all(dim=1).sum()) == n_envs
+    first_next = first.seed_state()[0]
+    assert first_next > 41 + 2 * n_envs  # auto-resets drew seeds
+    resume_base = run_ppo._kaggriculture_rollout_base_seed(
+        41, start_env_steps=n_envs * transitions
+    )
+    resumed = launch(resume_base)
+    resumed.reset()
+    resumed_next, resumed_seeds = resumed.seed_state()
+    assert min(resumed_seeds) >= first_next
+    assert first_seeds.isdisjoint(range(resume_base, resumed_next))
+
+
+def test_main_kaggriculture_resume_starts_a_disjoint_seed_stream(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    saved = FullConfig.from_file(_CONFIGS / "kaggriculture.yaml")
+    saved = saved.model_copy(update={"env": saved.env.model_copy(update={"seed": 17})})
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    saved.to_file(run_dir / "config.yaml")
+    _write_metadata_checkpoint(run_dir / "checkpoint_final.pt", env_steps=1_000)
+    _write_metadata_checkpoint(run_dir / "checkpoint_last_best.pt", env_steps=0)
+    calls: list[str] = []
+    _patch_kaggriculture_startup(
+        monkeypatch, [str(run_dir)], calls, log_mode=LogMode.WANDB
+    )
+    seen: list[dict[str, object]] = []
+
+    def factory(_config: object, **kwargs: object) -> None:
+        seen.append(kwargs)
+        raise AssertionError("factory reached")
+
+    monkeypatch.setattr(run_ppo, "create_env", factory)
+    with pytest.raises(AssertionError, match="factory reached"):
+        run_ppo.main()
+    assert seen[0]["base_seed"] == run_ppo._kaggriculture_rollout_base_seed(
+        17, start_env_steps=1_000
+    )
+    assert seen[0]["base_seed"] != 17
+    assert calls == []
+
+
+def _kaggriculture_resume_run(tmp_path: Path, *, env_steps: int) -> Path:
+    saved = FullConfig.from_file(_CONFIGS / "kaggriculture.yaml")
+    saved = saved.model_copy(update={"env": saved.env.model_copy(update={"seed": 17})})
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    saved.to_file(run_dir / "config.yaml")
+    _write_metadata_checkpoint(run_dir / "checkpoint_final.pt", env_steps=env_steps)
+    _write_metadata_checkpoint(run_dir / "checkpoint_last_best.pt", env_steps=0)
+    return run_dir
+
+
+def test_main_kaggriculture_resume_past_the_seed_budget_fails_before_allocation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cfg = FullConfig.from_file(_CONFIGS / "kaggriculture.yaml")
+    cfg = cfg.model_copy(update={"env": cfg.env.model_copy(update={"seed": 17})})
+    fresh = run_ppo._kaggriculture_step_limit(
+        cfg, DistributedContext.single_process_cpu(), max_env_steps=None
+    )
+    assert fresh is not None
+    # Admissible for a fresh launch, but a resume there has no budget left.
+    run_dir = _kaggriculture_resume_run(tmp_path, env_steps=fresh)
+    calls: list[str] = []
+    _patch_kaggriculture_startup(
+        monkeypatch, [str(run_dir)], calls, log_mode=LogMode.WANDB
+    )
+    with pytest.raises(ValueError, match=f"resumed at env step {fresh}"):
+        run_ppo.main()
+    assert calls == []
+
+
+def _make_run_dir(output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True)
+    return output_dir
+
+
+class _CheckpointRewritingTrainer:
+    """Rewrites the checkpoint with new env_steps before the trainer's own load."""
+
+    rewritten_env_steps = 2_000
+
+    def __init__(self, **_kwargs: object) -> None:
+        pass
+
+    def _reload(self, path: Path) -> Any:
+        _write_metadata_checkpoint(path, env_steps=self.rewritten_env_steps)
+        return run_ppo._checkpoint_metadata(
+            torch.load(path, weights_only=False), path=path
+        )
+
+    def load_checkpoint(self, path: Path) -> Any:
+        return self._reload(path)
+
+    def load_model_weights(self, path: Path, *, load_optimizer: bool) -> Any:
+        assert not load_optimizer
+        return self._reload(path)
+
+
+@pytest.mark.parametrize("launch", ["resume", "load_model_weights"])
+def test_main_kaggriculture_fails_when_the_checkpoint_changes_during_startup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, launch: str
+) -> None:
+    run_dir = _kaggriculture_resume_run(tmp_path, env_steps=1_000)
+    checkpoint = run_dir / "checkpoint_final.pt"
+    argv = (
+        [str(run_dir)]
+        if launch == "resume"
+        else [
+            str(run_dir / "config.yaml"),
+            str(tmp_path / "runs"),
+            "--load-model-weights",
+            str(checkpoint),
+        ]
+    )
+    calls: list[str] = []
+    _patch_kaggriculture_startup(monkeypatch, argv, calls, log_mode=LogMode.WANDB)
+    seen: list[dict[str, object]] = []
+
+    def factory(_config: object, **kwargs: object) -> object:
+        seen.append(kwargs)
+        return object()
+
+    monkeypatch.setattr(run_ppo, "_create_run_dir", _make_run_dir)
+    monkeypatch.setattr(run_ppo, "create_env", factory)
+    monkeypatch.setattr(
+        run_ppo,
+        "_create_training_model_for_config",
+        lambda *_a, **_k: (torch.nn.Linear(1, 1), None),
+    )
+    monkeypatch.setattr(run_ppo, "configure_model_compile", lambda *_a: 0)
+    monkeypatch.setattr(
+        run_ppo,
+        "create_optimizer",
+        lambda model, _cfg: torch.optim.SGD(model.parameters(), lr=0.1),
+    )
+    monkeypatch.setattr(run_ppo, "create_lr_scheduler", lambda *_a: None)
+    monkeypatch.setattr(run_ppo, "PPOTrainer", _CheckpointRewritingTrainer)
+    with pytest.raises(RuntimeError, match="changed during startup"):
+        run_ppo.main()
+    # The env was seeded from the step read first, before the rewrite.
+    assert seen[0]["base_seed"] == run_ppo._kaggriculture_rollout_base_seed(
+        17, start_env_steps=1_000
+    )
+    assert calls == []
+
+
+def test_main_kaggriculture_load_weights_continues_the_seed_stream(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = _kaggriculture_resume_run(tmp_path, env_steps=1_000)
+    calls: list[str] = []
+    _patch_kaggriculture_startup(
+        monkeypatch,
+        [
+            str(run_dir / "config.yaml"),
+            str(tmp_path / "runs"),
+            "--load-model-weights",
+            str(run_dir / "checkpoint_final.pt"),
+        ],
+        calls,
+        log_mode=LogMode.WANDB,
+    )
+    monkeypatch.setattr(run_ppo, "_create_run_dir", _make_run_dir)
+    seen: list[dict[str, object]] = []
+
+    def factory(_config: object, **kwargs: object) -> None:
+        seen.append(kwargs)
+        raise AssertionError("factory reached")
+
+    monkeypatch.setattr(run_ppo, "create_env", factory)
+    with pytest.raises(AssertionError, match="factory reached"):
+        run_ppo.main()
+    # The launch keeps the checkpoint's env_steps, so its rollout seeds start
+    # past every seed the loaded weights trained on, as a resume's do.
+    assert seen[0]["base_seed"] == run_ppo._kaggriculture_rollout_base_seed(
+        17, start_env_steps=1_000
+    )
+    assert calls == []
+
+
+def test_main_forwards_wandb_mode_and_the_default_step_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Build the real tiny CPU launch and stop at the training session.
+    real = (
+        run_ppo._create_run_dir,
+        run_ppo.create_env,
+        run_ppo._create_training_model_for_config,
+    )
+    calls: list[str] = []
+    _patch_kaggriculture_startup(
+        monkeypatch,
+        [
+            str(_CONFIGS / "kaggriculture.yaml"),
+            str(tmp_path / "runs"),
+            "--wandb-mode",
+            "offline",
+            "-o",
+            f"rl.teacher_init={_kaggriculture_teacher_checkpoint(tmp_path)}",
+        ],
+        calls,
+        log_mode=LogMode.WANDB,
+    )
+    monkeypatch.setattr(run_ppo, "_create_run_dir", real[0])
+    monkeypatch.setattr(run_ppo, "create_env", real[1])
+    monkeypatch.setattr(run_ppo, "_create_training_model_for_config", real[2])
+    session: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        run_ppo, "_run_training_session", lambda **kwargs: session.append(kwargs)
+    )
+    run_ppo.main()
+    (kwargs,) = session
+    assert kwargs["log_mode"] == LogMode.WANDB
+    assert kwargs["wandb_mode"] == "offline"
+    cfg = kwargs["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert kwargs["max_env_steps"] == run_ppo._kaggriculture_step_limit(
+        cfg, DistributedContext.single_process_cpu(), max_env_steps=None
+    )
+    assert kwargs["start_env_steps"] == 0
+    assert calls == []
+
+
+# Plan Task 3.5, the bounded local functional check: the shipped CPU config
+# (tiny model, 2 envs) runs 2 real updates through run_ppo.main() on the native
+# Kaggriculture env, with an evaluation after each update and both outcomes of
+# the promotion branch. Only launch plumbing is patched: the release-build and
+# torch setup, the single-process CPU session, the probed compile stack, a
+# recording metric logger, and the evaluation cadence below Isaiah's
+# checkpoint_freq floor of 1000 env steps (unreachable in 2 updates at 2 envs
+# within the local memory bound). Evaluation, promotion, teacher activation,
+# checkpoint writes and the trainer are the real shared path.
+_FUNCTIONAL_HORIZON = 2
+_FUNCTIONAL_UPDATES = 2
+_FUNCTIONAL_EPISODE_STEPS = 6
+
+
+def _run_functional_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, threshold: float
+) -> tuple[dict[str, Any], dict[str, torch.Tensor], _FakeLogger]:
+    n_envs = 2
+    update_steps = _FUNCTIONAL_HORIZON * n_envs
+    # Task 4.4: a fresh Kaggriculture last-best launch names its teacher.
+    teacher = _kaggriculture_teacher_checkpoint(tmp_path)
+    argv = [
+        str(_CONFIGS / "kaggriculture.yaml"),
+        str(tmp_path / "runs"),
+        "--max-env-steps",
+        str(_FUNCTIONAL_UPDATES * update_steps),
+        "-o",
+        f"rl.horizon={_FUNCTIONAL_HORIZON}",
+        f"env.config.episodeSteps={_FUNCTIONAL_EPISODE_STEPS}",
+        f"rl.teacher_init={teacher}",
+    ]
+    monkeypatch.setattr(
+        sys, "argv", ["run_ppo.py", *argv, "--log-mode", LogMode.DEBUG.value]
+    )
+    monkeypatch.setattr(run_ppo, "assert_release_build", lambda: None)
+    monkeypatch.setattr(run_ppo, "configure_torch", lambda: None)
+    monkeypatch.setattr(
+        run_ppo,
+        "distributed_session",
+        lambda: nullcontext(DistributedContext.single_process_cpu()),
+    )
+    monkeypatch.setattr(run_ppo, "installed_compile_stack", lambda: _PROBED_STACK)
+    monkeypatch.setattr(run_ppo, "LAST_BEST_WIN_RATE_THRESHOLD", threshold)
+    real_from_file = FullConfig.from_file
+
+    def from_file_evaluating_each_update(
+        path: Path, *, overrides: dict[str, Any] | None = None
+    ) -> FullConfig:
+        cfg = real_from_file(path, overrides=overrides)
+        assert cfg.rl.checkpoint_freq == 1_000
+        return cfg.model_copy(
+            update={"rl": cfg.rl.model_copy(update={"checkpoint_freq": update_steps})}
+        )
+
+    monkeypatch.setattr(
+        run_ppo.FullConfig, "from_file", staticmethod(from_file_evaluating_each_update)
+    )
+    logger = _FakeLogger(run_id=None)
+    monkeypatch.setattr(run_ppo, "create_logger", lambda *_args, **_kwargs: logger)
+    real_session = run_ppo._run_training_session
+    session: dict[str, Any] = {}
+    initial: dict[str, torch.Tensor] = {}
+
+    def recording_session(**kwargs: Any) -> None:
+        session.update(kwargs)
+        model = run_ppo.unwrap_model(kwargs["trainer"].model)
+        initial.update({k: v.clone() for k, v in model.state_dict().items()})
+        real_session(**kwargs)
+
+    monkeypatch.setattr(run_ppo, "_run_training_session", recording_session)
+    run_ppo.main()
+    return session, initial, logger
+
+
+def _checkpoint_state(path: Path) -> tuple[dict[str, Any], dict[str, torch.Tensor]]:
+    checkpoint = torch.load(path, map_location="cpu", weights_only=False)
+    assert isinstance(checkpoint, dict)
+    return checkpoint, checkpoint["model"]
+
+
+def _states_equal(left: Mapping[str, torch.Tensor], right: Mapping[str, Any]) -> bool:
+    return left.keys() == right.keys() and all(
+        torch.equal(value, right[key]) for key, value in left.items()
+    )
+
+
+@pytest.mark.parametrize("promote", [True, False], ids=["promoted", "held"])
+def test_kaggriculture_two_update_functional_check_through_main(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, promote: bool
+) -> None:
+    torch.manual_seed(353)
+    # Threshold 0.0 promotes on any win rate; above 1.0 never promotes.
+    threshold = 0.0 if promote else 1.5
+    session, initial, logger = _run_functional_check(
+        tmp_path, monkeypatch, threshold=threshold
+    )
+    cfg = session["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert cfg.env.n_envs == 2
+    assert cfg.model.model_arch == "kaggriculture_transformer"
+    assert cfg.model.embed_dim == 16
+    assert cfg.rl.eval_replay_games == 0
+    assert cfg.rl.teacher_mode == "last_best"
+    assert session["log_mode"] == LogMode.DEBUG
+    trainer = session["trainer"]
+    assert isinstance(trainer, PPOTrainer)
+    assert trainer.device.type == "cpu"
+    run_dir = session["run_dir"]
+    assert isinstance(run_dir, Path)
+
+    # Two updates, each logging finite training losses, then its evaluation.
+    update_steps = _FUNCTIONAL_HORIZON * cfg.env.n_envs
+    steps = [update_steps * (i + 1) for i in range(_FUNCTIONAL_UPDATES)]
+    assert [step for _metrics, step in logger.logged] == [
+        step for step in steps for _ in range(2)
+    ]
+    training_logs = [metrics for metrics, _step in logger.logged[0::2]]
+    eval_logs = [metrics for metrics, _step in logger.logged[1::2]]
+    for metrics in training_logs:
+        losses = {k: v for k, v in metrics.items() if k.startswith("loss/")}
+        assert "loss/total_loss" in losses
+        assert all(math.isfinite(value) for value in metrics.values())
+    assert trainer.optimizer_steps == _FUNCTIONAL_UPDATES * cfg.env.n_envs
+    for metrics in eval_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        # Both seats of both native games are played to the engine's end.
+        assert metrics["eval/games"] == float(cfg.env.n_envs)
+        assert metrics["eval/episode_steps"] == float(_FUNCTIONAL_EPISODE_STEPS - 1)
+        assert 0.0 <= metrics["eval/win_rate_against_last_best"] <= 1.0
+        assert metrics["eval/promoted"] == float(promote)
+        assert metrics["eval/promotion_threshold"] == threshold
+    assert not (run_dir / "eval_replays").exists()
+
+    # Checkpoints: one per evaluation, the final one and last_best; all load.
+    final_path = run_dir / run_ppo.CHECKPOINT_FINAL
+    last_best_path = run_dir / run_ppo.CHECKPOINT_LAST_BEST
+    periodic = [
+        run_dir / f"checkpoint_{run_ppo._format_checkpoint_step(step)}.pt"
+        for step in steps
+    ]
+    assert sorted(path.name for path in run_dir.glob("*.pt")) == sorted(
+        path.name for path in [final_path, last_best_path, *periodic]
+    )
+    current = run_ppo.unwrap_model(trainer.model).state_dict()
+    final_checkpoint, final_state = _checkpoint_state(final_path)
+    assert _states_equal(current, final_state)
+    assert final_checkpoint["env_steps"] == steps[-1]
+    loaded_model = run_ppo._create_eval_model_for_config(
+        cfg, device=torch.device("cpu"), roundtrip_lora_base=False
+    )
+    metadata = run_ppo._load_model_from_checkpoint(
+        loaded_model, path=final_path, device=torch.device("cpu")
+    )
+    assert metadata.env_steps == steps[-1]
+    assert metadata.total_games_played == trainer.total_games_played
+    assert _states_equal(loaded_model.state_dict(), current)
+    assert not _states_equal(initial, current)
+    _periodic_checkpoint, periodic_state = _checkpoint_state(periodic[-1])
+    assert _states_equal(periodic_state, final_state)
+
+    # The launch-time teacher (rl.teacher_init, Task 4.4) is the active last-best
+    # teacher from update 1. Promoted, last_best is refreshed and rewritten at the
+    # latest evaluation; held, it stays the teacher checkpoint's weights.
+    _teacher_checkpoint, teacher_state = _checkpoint_state(
+        tmp_path / "teacher" / "bc_best.pt"
+    )
+    assert not _states_equal(teacher_state, initial)
+    last_best_checkpoint, last_best_state = _checkpoint_state(last_best_path)
+    assert trainer.teacher_model is not None
+    assert trainer.teacher_active
+    assert all(m["teacher/cache_bytes"] > 0.0 for m in training_logs)
+    if promote:
+        assert last_best_checkpoint["env_steps"] == steps[-1]
+        assert _states_equal(last_best_state, final_state)
+        assert _states_equal(trainer.teacher_model.state_dict(), current)
+    else:
+        assert last_best_checkpoint["env_steps"] == 0
+        assert _states_equal(last_best_state, teacher_state)
+        assert _states_equal(trainer.teacher_model.state_dict(), teacher_state)
+
+
+class _SeatPinnedNativeEvalEnv(KaggricultureVectorizedEnv):
+    """One-step native-typed fake: seat 1 ends with the larger raw bank."""
+
+    def __init__(self) -> None:  # no native state; only the eval loop's calls
+        self.stepped_with: list[object] = []
+
+    def reset(self) -> Any:
+        return SimpleNamespace(still_playing=torch.ones((1, 2), dtype=torch.bool))
+
+    def step(self, actions: object) -> Any:
+        self.stepped_with.append(actions)
+        return (
+            self.reset(),
+            torch.zeros((1, 2)),
+            torch.ones((1, 2), dtype=torch.bool),
+            {},
+        )
+
+    def terminal_metrics(self, i: int) -> Any:
+        assert i == 0
+        return {
+            "bank_0": 1000.0,
+            "bank_1": 4000.0,
+            "margin_0": -3000.0,
+            "winner": 1,
+            "episode_steps": 1,
+            "counters_0": [0, 0],
+        }
+
+
+def _patch_native_eval(
+    monkeypatch: pytest.MonkeyPatch, env: _SeatPinnedNativeEvalEnv, actions: object
+) -> None:
+    monkeypatch.setattr(run_ppo, "_create_eval_env", lambda *_a, **_k: env)
+
+    def pin_candidate_to_seat_1(
+        assignments: torch.Tensor, env_index: int, **_kwargs: object
+    ) -> None:
+        assignments[env_index] = torch.tensor(
+            [run_ppo.MODEL_LAST_BEST, run_ppo.MODEL_CURRENT]
+        )
+
+    monkeypatch.setattr(run_ppo, "_assign_eval_models", pin_candidate_to_seat_1)
+    monkeypatch.setattr(
+        run_ppo,
+        "_eval_actions_for_assignments_and_hidden",
+        lambda *_a, **_k: (actions, None, None),
+    )
+
+
+def _evaluate_one_native_game() -> tuple[Any, dict[str, list[float]]]:
+    stats, _by_count, metrics, _steps = run_ppo._evaluate_games(
+        current_model=_LaunchPolicy(launch=True),
+        last_best_model=_LaunchPolicy(launch=False),
+        cfg=_kaggriculture_eval_config(),
+        n_games=1,
+        n_envs=1,
+        device=torch.device("cpu"),
+        env_steps=1000,
+    )
+    return stats, metrics
+
+
+def test_kaggriculture_evaluation_credits_the_candidates_seat_bank(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    env = _SeatPinnedNativeEvalEnv()
+    actions = KaggricultureActions(
+        tokens=torch.zeros((1, 2, 252, 12), dtype=torch.int64),
+        lengths=torch.ones((1, 2), dtype=torch.int64),
+    )
+    _patch_native_eval(monkeypatch, env, actions)
+    stats, metrics = _evaluate_one_native_game()
+    assert env.stepped_with == [actions]
+    # Candidate in seat 1 with bank_1 > bank_0 wins; its bank is bank_1.
+    assert stats.model_games == [1, 1]
+    assert stats.wins == [1.0, 0.0]
+    assert metrics["candidate_bank"] == [4000.0]
+    assert metrics["last_best_bank"] == [1000.0]
+    assert metrics["candidate_bank_margin"] == [3000.0]
+    # The native winner reaches the scorer, which cross-checks it with the banks.
+    assert metrics["winner"] == [1.0]
+    assert metrics["margin_0"] == [-3000.0]
+
+
+def test_kaggriculture_evaluation_rejects_orbit_actions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    env = _SeatPinnedNativeEvalEnv()
+    _patch_native_eval(monkeypatch, env, SimpleNamespace(launch=None))
+    with pytest.raises(TypeError, match="requires KaggricultureActions"):
+        _evaluate_one_native_game()
+    assert env.stepped_with == []
+
+
+def test_evaluate_games_rejects_kaggriculture_replay_before_the_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        run_ppo,
+        "_create_eval_env",
+        lambda *_a, **_k: pytest.fail("the eval env must not be built"),
+    )
+    with pytest.raises(ValueError, match=r"Task 7\.3"):
+        run_ppo._evaluate_games(
+            current_model=_LaunchPolicy(launch=True),
+            last_best_model=_LaunchPolicy(launch=False),
+            cfg=_kaggriculture_eval_config(),
+            n_games=1,
+            n_envs=1,
+            device=torch.device("cpu"),
+            env_steps=1000,
+            replay_games=1,
+        )
+
+
+def test_validate_args_rejects_offline_wandb_with_debug_logging() -> None:
+    with pytest.raises(ValueError, match="--wandb-mode offline requires --log-mode"):
+        run_ppo._validate_args(
+            Namespace(
+                max_env_steps=None,
+                max_runtime_hours=None,
+                output_dir=Path("runs"),
+                overrides=None,
+                load_model_weights=None,
+                load_model_weights_mode="model_only",
+                log_mode=LogMode.DEBUG,
+                wandb_mode="offline",
+            )
+        )
+
+
+def test_evaluation_mapper_keeps_cuda_nonblocking_copy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[bool] = []
+
+    def mapper(
+        obs: object, device: torch.device, *, non_blocking: bool = False
+    ) -> object:
+        assert device.type == "cuda"
+        calls.append(non_blocking)
+        return obs
+
+    def stop(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("after transfer")
+
+    monkeypatch.setattr(run_ppo, "_obs_to_device", mapper)
+    monkeypatch.setattr(run_ppo, "_model_output_for_eval", stop)
+    with pytest.raises(RuntimeError, match="after transfer"):
+        run_ppo._eval_actions_for_assignments_and_hidden(
+            _two_seat_obs(1),
+            torch.zeros((1, 2), dtype=torch.int64),
+            current_model=_LaunchPolicy(launch=True),
+            last_best_model=_LaunchPolicy(launch=False),
+            hidden_current=None,
+            hidden_last_best=None,
+            config=_full_config().rl,
+            device=torch.device("cuda"),
+        )
+    assert calls == [True]
+
+
+@pytest.mark.parametrize("device_type", ["cpu", "cuda"])
+def test_main_kaggriculture_rollout_factory_uses_rank_seed_and_transfer_device(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, device_type: str
+) -> None:
+    calls: list[str] = []
+    _patch_kaggriculture_startup(
+        monkeypatch,
+        [
+            str(_CONFIGS / "kaggriculture.yaml"),
+            str(tmp_path / "runs"),
+            *_teacher_source_argv(tmp_path),
+            "-o",
+            "env.seed=17",
+            "env.pin_memory=false",
+            "rl.eval_replay_games=0",
+        ],
+        calls,
+    )
+    ctx = DistributedContext(
+        device=torch.device(device_type),
+        rank=1,
+        local_rank=1,
+        world_size=2,
+        initialized=False,
+    )
+    monkeypatch.setattr(run_ppo, "distributed_session", lambda: nullcontext(ctx))
+    monkeypatch.setattr(run_ppo, "broadcast_object", lambda _obj, _ctx: tmp_path)
+    seen: list[tuple[object, dict[str, object]]] = []
+
+    def factory(config: object, **kwargs: object) -> None:
+        seen.append((config, kwargs))
+        raise AssertionError("factory reached")
+
+    monkeypatch.setattr(run_ppo, "create_env", factory)
+    with pytest.raises(AssertionError, match="factory reached"):
+        run_ppo.main()
+    config, kwargs = seen[0]
+    assert isinstance(config, KaggricultureEnvConfig)
+    assert kwargs == {
+        "n_envs": config.n_envs,
+        "base_seed": 17,
+        "rank": 1,
+        "world_size": 2,
+        "pin_memory": False,
+        "transfer_device": ctx.device,
+    }
+    assert calls == []
+
+
 def test_main_rejects_unserviceable_kaggriculture_workload_before_allocation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -3553,6 +4543,7 @@ def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
     cache_bytes: int,
 ) -> None:
     calls: list[str] = []
+    # The shipped presets pass startup unmodified (no replay override).
     argv = [
         str(_CONFIGS / name),
         str(tmp_path / "runs"),
@@ -3560,10 +4551,10 @@ def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
     ]
     _patch_kaggriculture_startup(monkeypatch, argv, calls)
 
-    with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+    with pytest.raises(AssertionError, match="_create_run_dir ran"):
         run_ppo.main()
 
-    assert calls == []
+    assert calls == ["_create_run_dir"]
     assert not (tmp_path / "runs").exists()
     headroom = _headroom_lines(capsys.readouterr().out)
     assert [line.split(":")[0] for line in headroom] == [
@@ -3632,10 +4623,11 @@ def test_main_accepts_teacher_init_as_the_kaggriculture_teacher_source(
     ]
     _patch_kaggriculture_startup(monkeypatch, argv, calls)
 
-    with pytest.raises(RuntimeError, match=_NOT_WIRED):
+    # The teacher check passes; the launch proceeds to the run directory.
+    with pytest.raises(AssertionError, match="_create_run_dir ran"):
         run_ppo.main()
 
-    assert calls == []
+    assert calls == ["_create_run_dir"]
 
 
 def test_main_rejects_a_missing_kaggriculture_teacher_init_checkpoint(
@@ -3673,10 +4665,10 @@ def test_main_runs_a_kaggriculture_launch_without_a_teacher_when_disabled(
     ]
     _patch_kaggriculture_startup(monkeypatch, argv, calls)
 
-    with pytest.raises(RuntimeError, match=_NOT_WIRED):
+    with pytest.raises(AssertionError, match="_create_run_dir ran"):
         run_ppo.main()
 
-    assert calls == []
+    assert calls == ["_create_run_dir"]
     headroom = _headroom_lines(capsys.readouterr().out)
     assert [line.split(":")[0] for line in headroom] == [
         "GEMM workload headroom rollout",
@@ -3720,13 +4712,17 @@ def test_resume_startup_checks_the_runtime_adapted_workload(
     # per-rank envs to 256, so the checked rollout is 512 rows, not the file's 256.
     saved = FullConfig.from_file(_CONFIGS / "kaggriculture_2rank.yaml")
     saved = saved.model_copy(
-        update={"runtime": saved.runtime.model_copy(update={"n_runtime_gpus": 2})}
+        update={
+            "runtime": saved.runtime.model_copy(update={"n_runtime_gpus": 2}),
+            "rl": saved.rl.model_copy(update={"eval_replay_games": 0}),
+        }
     )
     run_dir = tmp_path / "run"
     run_dir.mkdir()
     saved.to_file(run_dir / "config.yaml")
+    # Startup reads the resumed env step for the rollout seed budget.
     for checkpoint in ("checkpoint_final.pt", "checkpoint_last_best.pt"):
-        (run_dir / checkpoint).write_bytes(b"")
+        _write_metadata_checkpoint(run_dir / checkpoint, env_steps=0)
     calls: list[str] = []
     # Resume requires W&B logging; the check runs before any logger exists.
     _patch_kaggriculture_startup(
@@ -3736,10 +4732,10 @@ def test_resume_startup_checks_the_runtime_adapted_workload(
         log_mode=LogMode.WANDB,
     )
 
-    with pytest.raises(RuntimeError, match=re.escape(_NOT_WIRED)):
+    with pytest.raises(AssertionError, match="create_env ran"):
         run_ppo.main()
 
-    assert calls == []
+    assert calls == ["create_env"]
     headroom = _headroom_lines(capsys.readouterr().out)
     assert headroom[0].startswith(
         "GEMM workload headroom rollout: 512 rows x 709 padded tokens;"

@@ -12,6 +12,7 @@ from typing import Any
 import torch
 from owl.checkpoint_quantization import dequantize_model_state_dict
 from owl.int8_emulation import apply_int8_emulation
+from owl.kaggriculture.config import KaggricultureEnvConfig
 from owl.model import (
     BaseModelAPI,
     ModelHiddenState,
@@ -39,14 +40,13 @@ from owl.rl import (
     VectorizedEnv,
 )
 from owl.rs import assert_release_build
-from owl.train import FullConfig, configure_torch, require_orbit_env
+from owl.train import FullConfig, configure_torch
 from owl.train.utils import autocast_context
 from tqdm import tqdm
 
 MODEL_A = 0
 MODEL_B = 1
 PLAYER_COUNTS = (2, 4)
-_BENCHMARK = "benchmark_checkpoints"
 
 
 @dataclass(frozen=True)
@@ -59,8 +59,11 @@ class LoadedCheckpoint:
 
     @property
     def env(self) -> EnvConfig:
-        """The checkpoint's Orbit env config; Kaggriculture has no env here."""
-        return require_orbit_env(self.config.env, context=_BENCHMARK)
+        """The Orbit-only benchmark's checkpoint environment configuration."""
+        env = self.config.env
+        if isinstance(env, KaggricultureEnvConfig):
+            raise RuntimeError("benchmark_checkpoints supports only Orbit checkpoints")
+        return env
 
 
 @dataclass(frozen=True)
@@ -355,7 +358,9 @@ def _load_checkpoint(
         raise ValueError(f"{path} must contain a checkpoint mapping")
 
     config = FullConfig.from_file(_checkpoint_config_path(path))
-    env = require_orbit_env(config.env, context=_BENCHMARK)
+    env = config.env
+    if isinstance(env, KaggricultureEnvConfig):
+        raise RuntimeError("benchmark_checkpoints supports only Orbit checkpoints")
     model = create_model(
         config.model,
         obs_spec=env.obs_spec,

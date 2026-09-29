@@ -867,16 +867,6 @@ def test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel(
 
 # === 4.3 model methods and trainer wiring ============================================
 
-NEEDS_TRAINER_SEAM = (
-    "needs Task 3.1 trainer seam (Kaggriculture rollout storage and action "
-    "mapping in ppo.py; the merged trainer rejects KaggricultureActionMask)"
-)
-NEEDS_RUN_PPO_GAME_SEAM = (
-    "needs the Task 3.1 run_ppo game seam (the merged configs load and the "
-    "Task 1.4/1.5 native env exists, but run_ppo stops for Kaggriculture until "
-    "Task 3.1 rollout storage and action mapping land)"
-)
-
 
 def _cached(student: Any, teacher: Any, obs: Any, actions: Any, **flags: bool) -> Any:
     targets = teacher.compute_teacher_distillation_targets(
@@ -1353,7 +1343,6 @@ class _FakeKaggricultureEnv:
         return self.reset(), torch.zeros(2, 2), torch.zeros(2, 2, dtype=torch.bool), {}
 
 
-@pytest.mark.skip(reason=NEEDS_TRAINER_SEAM)
 def test_trainer_precomputes_once_and_logs_teacher_metrics(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1495,6 +1484,7 @@ def _kaggriculture_run_config() -> Any:
                 "model_compile": "none",
                 "compile_mode": None,
                 "dtype": "float32",
+                "eval_replay_games": 0,
             },
         }
     )
@@ -1590,7 +1580,7 @@ def _run_ppo_main(
     )
     # The env patch point follows the Task 3.1 run_ppo game seam's constructor.
     monkeypatch.setattr(
-        run_ppo, "VectorizedEnv", lambda **_kwargs: _FakeKaggricultureEnv()
+        run_ppo, "create_env", lambda _env_config, **_kwargs: _FakeKaggricultureEnv()
     )
     monkeypatch.setattr(run_ppo, "PPOTrainer", FakeTrainer)
     monkeypatch.setattr(run_ppo, "_run_training_session", session.update)
@@ -1622,7 +1612,6 @@ def _assert_active_last_best_teacher(
     return teacher
 
 
-@pytest.mark.skip(reason=NEEDS_RUN_PPO_GAME_SEAM)
 def test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1651,7 +1640,6 @@ def test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best(
     _assert_active_last_best_teacher(trainer, session, source=last_best)
 
 
-@pytest.mark.skip(reason=NEEDS_RUN_PPO_GAME_SEAM)
 def test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1687,7 +1675,6 @@ def test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher(
     )
 
 
-@pytest.mark.skip(reason=NEEDS_TRAINER_SEAM)
 def test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache(
     tmp_path: Path,
 ) -> None:

@@ -8,8 +8,8 @@
 # seg_per_minibatch * grad_accum stays 4 per rank; the split is set from the
 # pre-launch memory smoke (plan Task 6.1; Task 6.3 runs four ranks).
 # See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
-# Loads through FullConfig; run_ppo checks its GEMM workload, then stops until
-# Task 3.1 rollout storage and action mapping land (the native env exists).
+# Loads through FullConfig; run_ppo checks its GEMM workload, then builds the
+# native env and trains through the shared PPO path (Task 3.1).
 env:
   n_envs: 64
   obs_spec:
@@ -65,8 +65,9 @@ rl:
   target_kl: null
   ppo_clip_mode: per_player
   normalize_advantages: true
-  # Kaggriculture replay export is Task 7.3.
-  eval_replay_games: 8
+  # scaling_6m saves 8 replays; Kaggriculture replay export is Task 7.3, which
+  # restores 8. A positive value fails at startup until then.
+  eval_replay_games: 0
   # Teacher (Phase 4.4): scaling_6m's last-best teacher. The teacher is the
   # last-best model, refreshed in place when the student wins >= 0.7 of the
   # evaluation at each checkpoint_freq (20M global env steps). Its targets are

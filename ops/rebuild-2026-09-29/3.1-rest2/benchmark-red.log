@@ -1,0 +1,151 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______________ test_loaded_checkpoint_env_rejects_kaggriculture _______________
+
+    def test_loaded_checkpoint_env_rejects_kaggriculture() -> None:
+        cfg = FullConfig.from_file(
+            _BENCHMARK_PATH.parent.parent / "configs/kaggriculture.yaml"
+        )
+        checkpoint = benchmark_checkpoints.LoadedCheckpoint(
+            path=Path("checkpoint.pt"), config=cfg, model=object(), env_steps=0
+        )
+    
+        with pytest.raises(
+            RuntimeError, match="benchmark_checkpoints supports only Orbit checkpoints"
+        ):
+>           _ = checkpoint.env
+                ^^^^^^^^^^^^^^
+
+tests/scripts/test_benchmark_checkpoints.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/benchmark_checkpoints.py:63: in env
+    return require_orbit_env(self.config.env, context=_BENCHMARK)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=2, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=720, starting_mon..._weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=False, native_threads=1)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: benchmark_checkpoints cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+    def test_loaded_checkpoint_env_rejects_kaggriculture() -> None:
+        cfg = FullConfig.from_file(
+            _BENCHMARK_PATH.parent.parent / "configs/kaggriculture.yaml"
+        )
+        checkpoint = benchmark_checkpoints.LoadedCheckpoint(
+            path=Path("checkpoint.pt"), config=cfg, model=object(), env_steps=0
+        )
+    
+>       with pytest.raises(
+            RuntimeError, match="benchmark_checkpoints supports only Orbit checkpoints"
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'benchmark_checkpoints supports only Orbit checkpoints'
+E         Actual message: 'benchmark_checkpoints cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land'
+
+tests/scripts/test_benchmark_checkpoints.py:80: AssertionError
+_______ test_load_checkpoint_rejects_kaggriculture_before_model_creation _______
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-804/test_load_checkpoint_rejects_k0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111153ec0>
+
+    def test_load_checkpoint_rejects_kaggriculture_before_model_creation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cfg = FullConfig.from_file(
+            _BENCHMARK_PATH.parent.parent / "configs/kaggriculture.yaml"
+        )
+        cfg.to_file(tmp_path / "config.yaml")
+        checkpoint_path = tmp_path / "checkpoint.pt"
+        torch.save({}, checkpoint_path)
+    
+        def forbidden_model(*args: object, **kwargs: object) -> None:
+            pytest.fail("the Orbit benchmark must reject Kaggriculture before allocation")
+    
+        monkeypatch.setattr(benchmark_checkpoints, "create_model", forbidden_model)
+        with pytest.raises(
+            RuntimeError, match="benchmark_checkpoints supports only Orbit checkpoints"
+        ):
+>           benchmark_checkpoints._load_checkpoint(
+                checkpoint_path, device=torch.device("cpu")
+            )
+
+tests/scripts/test_benchmark_checkpoints.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/benchmark_checkpoints.py:358: in _load_checkpoint
+    env = require_orbit_env(config.env, context=_BENCHMARK)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=2, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=720, starting_mon..._weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=False, native_threads=1)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: benchmark_checkpoints cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-804/test_load_checkpoint_rejects_k0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111153ec0>
+
+    def test_load_checkpoint_rejects_kaggriculture_before_model_creation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cfg = FullConfig.from_file(
+            _BENCHMARK_PATH.parent.parent / "configs/kaggriculture.yaml"
+        )
+        cfg.to_file(tmp_path / "config.yaml")
+        checkpoint_path = tmp_path / "checkpoint.pt"
+        torch.save({}, checkpoint_path)
+    
+        def forbidden_model(*args: object, **kwargs: object) -> None:
+            pytest.fail("the Orbit benchmark must reject Kaggriculture before allocation")
+    
+        monkeypatch.setattr(benchmark_checkpoints, "create_model", forbidden_model)
+>       with pytest.raises(
+            RuntimeError, match="benchmark_checkpoints supports only Orbit checkpoints"
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'benchmark_checkpoints supports only Orbit checkpoints'
+E         Actual message: 'benchmark_checkpoints cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land'
+
+tests/scripts/test_benchmark_checkpoints.py:100: AssertionError
+=========================== short test summary info ============================
+FAILED tests/scripts/test_benchmark_checkpoints.py::test_loaded_checkpoint_env_rejects_kaggriculture
+FAILED tests/scripts/test_benchmark_checkpoints.py::test_load_checkpoint_rejects_kaggriculture_before_model_creation
+2 failed, 37 deselected in 0.10s
