@@ -79,19 +79,13 @@ Each of them covers one layer, so this record is new rather than a revision.
 
 ## Verification
 
-- I checked that every cited test function and each of the 27 file or receipt
-  paths exists at `bde3374`. I spot-checked the numbers against their receipts:
-  probe arithmetic from the 1.1b sweep summary, codec 321/43 and three
-  96-transition extreme reward games from the Stage 2 native results, and the BC
-  pairing JSON. The review notes are in `ops/rebuild-2026-09-29/7.5/results.md`.
-- Engine `cargo test` passed 69 tests with 0 failed and 0 ignored.
-  `check_engine_trim.py` passed.
-- `uvx --from rust-just just py-prepare` exited 0 with 2,319 passed and
-  10 skipped, and docs-fresh reported "No doc updates required".
-- The root Rust suite was not rerun. Codex's guarded run stopped at its 960 MiB
-  guard. No Rust source, Cargo manifest or lockfile changed after merge commit
-  `7f797a3`. The page therefore cites the merge's `just prepare` result
-  (274 passed, 5 ignored) as the latest full run.
+- First round, at `bde3374` (superseded; details in
+  `ops/rebuild-2026-09-29/7.5/results.md`): cited paths and spot-checked
+  numbers were confirmed, engine `cargo test` passed 69, the trim check passed,
+  and `just py-prepare` passed 2,319 with 10 skipped. The current checks at this
+  tip are in the second-review item below, and the page now cites the
+  `994818b` `just prepare` (`merge-7.1/prepare-on-5b43062.log`) as the latest
+  full run.
 - Codex verify round 1
   (`ops/rebuild-2026-09-29/codex/verify-7.5-r1-prompt.md`) and its resume both
   stopped on Codex's usage limit before doing any work, so there is no Codex
@@ -104,7 +98,9 @@ Each of them covers one layer, so this record is new rather than a revision.
   caught. The P3 fixes followed on the branch:
   - the "Current checks" environment sentence now covers only Codex's rows;
   - the `just py-prepare` row now states that its environment and peak memory
-    were not recorded, and that it probably exceeded 1 GB;
+    were not recorded, and that it probably exceeded 1 GB (softened after the
+    third review to "may have exceeded", because the guarded run used a
+    different test selection);
   - the BC paragraph now cites `7.5/bc-audit.txt` as its receipt at this tip;
   - stale receipt lines are marked as superseded;
   - this note's correction count is fixed;
@@ -128,6 +124,15 @@ Each of them covers one layer, so this record is new rather than a revision.
   Rust suite and the full Python suite were not rerun. No Rust or Python outside
   that test file changed after `994818b`, so the page cites that tip's
   `just prepare` (root 274 with 5 ignored, Python 2,400 with 21 skipped).
+- A third independent Claude subagent review of `78b78fb`
+  (`ops/rebuild-2026-09-29/codex/claude-verify-7.5-r3.md`, local) resolved all
+  r2 findings, reran the engine suite (72 passed), both pytest shards, the trim
+  and docs-fresh checks, and caught all seven scratch mutations. It raised two
+  wording P3s, both applied: the page now says the guarded `7.5/pytest.json`
+  run used a different selection from `just py-prepare` (a subset with slow
+  tests included) and that the unguarded run "may have exceeded" 1 GB; and the
+  first-round item above is now marked as superseded history. Only prose
+  changed, so the fix commit reran docs-fresh and the cookbook lint only.
 
 ## Gaps and reopening conditions
 

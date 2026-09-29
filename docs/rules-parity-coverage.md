@@ -287,10 +287,13 @@ their latest full runs are the Task 7.1 merge receipt for `994818b`
 The first version of this summary ran its checks at `bde3374` (receipts in
 `ops/rebuild-2026-09-29/7.5/`): engine 69 passed, trim OK, and an unguarded
 `just py-prepare` with 2,319 passed and 10 skipped. That run recorded neither its
-environment nor its peak memory. Codex's guarded run of the same pytest
-selection had already reached a sampled process-tree peak of 989,744 KiB after
-21.6 s and was stopped by its 960 MiB limit before finishing (`7.5/pytest.json`),
-so the unguarded run probably exceeded the 1 GB check limit. Mac-limited review
+environment nor its peak memory. Codex's guarded run covered a different
+selection: a subset of the tests (the parity and trim test files and
+`tests/kaggriculture`) with slow tests included, whereas `just py-prepare` runs
+`pytest tests/ -m "not slow"`. That guarded run had already reached a sampled
+process-tree peak of 989,744 KiB after 21.6 s and was stopped by its 960 MiB
+limit before finishing (`7.5/pytest.json`), so the unguarded run may have
+exceeded the 1 GB check limit. Mac-limited review
 checks in this rebuild therefore use targeted shards, as above; this does not
 change the `just py-prepare` / `just prepare` workflow.
 
