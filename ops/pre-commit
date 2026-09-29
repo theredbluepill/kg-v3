@@ -1,0 +1,18 @@
+#!/bin/sh
+# The writing half of the knowledge contract, enforced at the only choke point
+# that sees a whole change at once: a commit that touches cookbook notes must
+# also touch cookbook/log.md (three edits together — note, index, log).
+# Install: copy into the repo (e.g. ops/pre-commit), chmod +x, then
+#   git config core.hooksPath <dir>
+# Harness-independent: checks staged note changes, including deletions, for
+# the log record and validates declared source resources in surviving notes.
+
+copied_cookbook_lint=.codex/hooks/cookbook-lint.mjs
+if [ ! -f "$copied_cookbook_lint" ]; then
+  copied_cookbook_lint=.claude/hooks/cookbook-lint.mjs
+fi
+if ! node "$copied_cookbook_lint" --staged-sources --require-log; then
+  echo "pre-commit: repair staged cookbook declarations and include log.md with note changes." >&2
+  exit 1
+fi
+exit 0
