@@ -998,8 +998,14 @@ def test_fresh_launch_from_checkpoint_uses_starting_checkpoint_as_teacher(
     checkpoint_path = tmp_path / "checkpoint.pt"
     checkpoint_path.write_bytes(checkpoint_content)
     # The documented launch passes a relative path; the record must resolve it.
+    # The ``..`` segment makes the resolved path differ from the merely absolute
+    # one, so recording ``Path.absolute()`` instead of ``Path.resolve()`` fails.
+    (tmp_path / "sub").mkdir()
     monkeypatch.chdir(tmp_path)
-    relative_checkpoint_path = Path("checkpoint.pt")
+    relative_checkpoint_path = Path("sub/../checkpoint.pt")
+    assert relative_checkpoint_path.absolute() != checkpoint_path.resolve(), (
+        "the path oracle must distinguish absolute from resolved"
+    )
     output_dir = tmp_path / "runs"
     run_dir = output_dir / "run"
     student_model = torch.nn.Linear(1, 1)

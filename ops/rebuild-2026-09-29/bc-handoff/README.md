@@ -79,6 +79,17 @@ torchrun --nproc-per-node 2 scripts/run_ppo.py configs/kaggriculture_2rank.yaml 
 The run directory's `warm_start.json` (and the `warm_start/*` metric-run summary
 keys) must then show SHA-256 `fd854587…6f51` and mode `model_fresh_critic_head`.
 
+Actor drift (Claude r3 P3-2, unmeasured). The fresh head's probe gradient norm
+(12.4) is above `max_grad_norm: 10.0` (`vf_coef: 2.0`), and value gradients
+reach the shared trunk. So early critic gradients could dominate the clipped
+step and move the BC actor. The Phase 6.2 run statement must name, for the
+first updates, `optimizer/grad_norm` (per-update mean of the pre-clip norm;
+no clip rate is logged) against 10.0, `policy/approx_kl`, `policy/clipfrac`,
+and held-out BC NLL at the first checkpoints against 0.480. It names these
+beside `train/explained_variance` and `loss/value_loss`. No script yet scores
+a PPO checkpoint on the BC validation split (`owl.train.bc.evaluate_rows` is
+the function to reuse).
+
 ## Checks
 
 - `targeted-tests.log`: "14 passed, 30 deselected" (the new handoff tests,
@@ -152,6 +163,24 @@ checkout; no P1 or P2; both r1 P2s resolved; four P3s).
   real-checkpoint selection was not rerun (its peak RSS, 1.54 GB, is over the
   1 GB tiny-check budget).
 
+## Claude verification r3 fixes
+
+Report: `ops/rebuild-2026-09-29/codex/claude-verify-bchandoff-r3.md` (main
+checkout; APPROVE WITH EDITS; no P1 or P2; a Claude stand-in, not a Codex
+verdict). It re-ran M8, M9, R3, R4 and R14 with the recorded counts and found
+three P3s.
+
+- P3-1 (path oracle checked "absolute", not "resolved"; N1 `.resolve()` ->
+  `.absolute()` passed 196/196): the `main` test now passes
+  `sub/../checkpoint.pt` and asserts that its absolute form differs from the
+  resolved path. `mutations-r3fix.txt`: N1 and R4 each give 3 failures.
+- P3-2 (actor drift unwatched): see "Decision and launch" above, and the
+  Reference's reopen condition.
+- P3-3 (stale "not re-verified" wording): this section, the Reference, its
+  index line and the log now cite r3.
+- Checks: three-file shard 196 passed, 6 skipped (peak RSS 1.26 GB, over the
+  1 GB tiny-check budget); `py-prepare-r3fix.log` records `just py-prepare`.
+
 ## Limits
 
 - `run_ppo` still stops before the environment for Kaggriculture; `main`'s
@@ -175,5 +204,7 @@ checkout; no P1 or P2; both r1 P2s resolved; four P3s).
   are therefore not independently re-verified.
 - Claude r1 and r2 (independent Claude subagents standing in for Codex during
   its usage limit; not Codex verdicts): r1 REQUEST CHANGES (two P2s, four
-  P3s); r2 found both P2s resolved and raised four P3s, fixed above. The r2
-  fixes are not re-verified by a separate reviewer.
+  P3s); r2 found both P2s resolved and raised four P3s, fixed above; r3
+  re-verified the r2 fixes (APPROVE WITH EDITS, three P3s, fixed above, with
+  N1 the one surviving mutant before the fix). The r3 fixes are not
+  re-verified by a separate reviewer.
