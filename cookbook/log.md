@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Reconcile the compiled-GEMM Reference with Task 3.1's registration
+
+Codex verified `e1458d2...aadba6d` (APPROVE WITH EDITS, no functional defect; `ops/rebuild-2026-09-29/codex/verify-3.1-rest-r2.md`). Its one finding: the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] still said Kaggriculture was absent from `ModelConfig` and the factory and that `configure_model_compile` rejected its trunk target. The Reference now links the [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] for registration and the guarded trunk dispatch, and keeps the limits: CPU recording stand-ins only, `FullConfig` still rejects the model, and integrated workloads and real Inductor/CUDA compilation are unverified. Its description and index line match.
+
 ## 2026-09-29 — Apply Codex's r1 wording edits to the Task 3.1 model-side Reference
 
 Codex verified `e1458d2...b1da613` (APPROVE WITH EDITS, no functional defect; `ops/rebuild-2026-09-29/codex/verify-3.1-rest-r1.md`). The [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] now:
