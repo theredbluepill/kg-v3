@@ -11,7 +11,8 @@ it does not qualify a trainer, model, GPU path or learning result.
 
 Only `docs/rules-parity-coverage.md` and this `7.5/` evidence directory changed.
 No code, fixture, config, lockfile, engine or cookbook edit was made. No Git write
-was attempted. Claude owns the cookbook record. Read-only subagents audited BC,
+was attempted. *(Superseded by the Claude review section below: Claude added the
+cookbook note, index and log entries and committed the branch.)* Claude owns the cookbook record. Read-only subagents audited BC,
 grammar/observation and native/adapter evidence; their final review caught an
 overbroad observation-timing gap and two ledger references, now corrected.
 
@@ -82,6 +83,8 @@ ancestry. `bc-audit.txt` records the read-only branch check and pairing sums.
   arithmetic alone is insufficient. No remote archive access was attempted.
 - Full current root/Python pass/fail/ignore/skip totals. Both commands stopped
   before summaries. Historical full-prepare totals remain historical.
+  *(Superseded for Python by the Claude review section below: `just py-prepare`
+  passed 2,319 with 10 skipped. Root Rust totals were still not rerun.)*
 - Fresh live-regeneration completion. The requested pytest did not finish.
 - Later approval/results on unmerged branches. The summary uses this tip's
   dated tracker for 7.1/7.3/7.4 and only the expressly permitted BC evidence.
@@ -197,3 +200,12 @@ VERDICT: DONE
   is cited as the latest full run.
 - BC paragraph: added that the receipt itself calls the mismatch turns day ends,
   still unconfirmed here.
+
+## Verify r1 P3 fixes (2026-09-30)
+
+A Claude subagent reviewed `e9aafba` (`codex/claude-verify-7.5-r1.md` in the main checkout,
+local). Its verdict was APPROVE WITH EDITS with five P3s; it is not a Codex verdict. The fixes
+cover the environment scope of the "Current checks" section and the unrecorded memory of the
+`just py-prepare` run, the BC receipt at this tip (`bc-audit.txt`), the superseded markers above
+and in `structure-check.txt`, the cookbook wording, and the tracker's 7.5 row. The fixes are text
+only. The checks for this round are listed in the commit message.

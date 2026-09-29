@@ -200,6 +200,9 @@ Its local evidence paths are
 on that branch. The implementation is
 `scripts/kaggriculture_prepare_bc.py::pairing_check` and `PAIRING_PUBLIC_KEYS`
 at that commit. The receipt says the pairing result was copied, not rerun there.
+The receipt at this tip is `ops/rebuild-2026-09-29/7.5/bc-audit.txt`. It records
+the `pairing.json` SHA-256, the aggregate sums and the read-only branch check, so
+the figures below stay checkable if that branch is rebased or deleted.
 
 Kaggle's own 1.32.7 Python interpreter re-steps each archived `steps[t]`
 observation with the recorded `steps[t+1]` actions and episode configuration.
@@ -242,13 +245,18 @@ No Rust engine participates. This is not engine parity or proof of label correct
 
 ### Current checks
 
-Checks run on 2026-09-29 at HEAD
-`bde337465a9fa7c07bedded88d5d696d7cefb7ef` use the owner's offline CPU/thread
-limits. Logs and resource receipts are under `ops/rebuild-2026-09-29/7.5/`.
-Codex's bounded runs of the root Rust suite and the Kaggriculture pytest
-selection stopped at its 960 MiB process-tree guard without a final summary
-(`7.5/root-tests-after-setup.log`, `7.5/pytest.log`). Claude then ran
-`just py-prepare` unguarded, which includes that pytest selection. The root Rust
+Checks ran on 2026-09-29 at HEAD
+`bde337465a9fa7c07bedded88d5d696d7cefb7ef`. Logs and resource receipts are under
+`ops/rebuild-2026-09-29/7.5/`. Codex's rows (engine tests, trim) used the owner's
+offline CPU/thread limits recorded in `7.5/results.md`. Codex's bounded runs of
+the root Rust suite and the Kaggriculture pytest selection stopped at its 960 MiB
+process-tree guard without a final summary (`7.5/root-tests-after-setup.log`,
+`7.5/pytest.log`). Claude then ran `just py-prepare` without that guard; it
+includes that pytest selection. Its environment exports and peak memory were not
+recorded, and uv rebuilt the local package during the run. That run probably
+exceeded the owner's 1 GB check limit: `tests/kaggriculture` alone later peaked
+at 1.94 GiB RSS in a separate scratch run. Future checks use targeted pytest
+shards instead of an unguarded full run. The root Rust
 suite was not rerun for this documentation change; its latest full run is the
 Tasks 1.4/1.5 merge receipt, and no Rust source, Cargo manifest or lockfile
 changed between merge commit `7f797a3` and this HEAD.

@@ -12,6 +12,7 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/7.5/results.md"
   - resource: "repository:ops/rebuild-2026-09-29/7.5/py-prepare.log"
   - resource: "repository:ops/rebuild-2026-09-29/7.5/engine-tests.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.5/bc-audit.txt"
   - resource: "repository:ops/rebuild-2026-09-29/merge-env-adapter/prepare.log"
   - resource: "bc-branch:kg/rebuild-bc-now@933d661/ops/rebuild-2026-09-29/bc-a100-2026-09-29/pairing.json"
 ---
@@ -41,8 +42,8 @@ Each of them covers one layer, so this record is new rather than a revision.
     denominator, test entry points, receipts and a link to the detail;
   - "Local evidence that is not parity";
   - "What is not tested" and "Current checks".
-- The same page also gets eight minimal corrections of statements that are
-  stale at this tip. For example, replay parity now names
+- The same page also gets seven minimal corrections of statements that are
+  stale at this tip, plus a pointer to the summary in its opening paragraph. For example, replay parity now names
   `Game::new_with_seed_decimal`, the Task 1.3 retirement of the grammar include
   is recorded as done, and Task 1.5 is marked as merged on CPU with its CUDA
   fence still open. The Orbit Wars sections are byte-identical.
@@ -84,11 +85,24 @@ Each of them covers one layer, so this record is new rather than a revision.
   guard. No Rust source, Cargo manifest or lockfile changed after merge commit
   `7f797a3`. The page therefore cites the merge's `just prepare` result
   (274 passed, 5 ignored) as the latest full run.
-- No independent verification exists yet. Codex verify round 1
+- Codex verify round 1
   (`ops/rebuild-2026-09-29/codex/verify-7.5-r1-prompt.md`) and its resume both
-  stopped on Codex's usage limit before doing any work, so there is no verdict.
-  The limit resets 2026-10-06. The transcripts are kept as local working files
-  in the main checkout.
+  stopped on Codex's usage limit before doing any work, so there is no Codex
+  verdict. The owner then asked: "please ask you subagents to review instead for
+  now". An independent Claude subagent reviewed `e9aafba`
+  (`ops/rebuild-2026-09-29/codex/claude-verify-7.5-r1.md`, a local working file
+  in the main checkout). Its verdict was APPROVE WITH EDITS with five P3s and no
+  P1 or P2. It reran the engine suite (69 passed), the trim check, docs-fresh and
+  targeted pytest shards, and six scratch mutations of cited oracles were all
+  caught. The P3 fixes followed on the branch:
+  - the "Current checks" environment sentence now covers only Codex's rows;
+  - the `just py-prepare` row now states that its environment and peak memory
+    were not recorded, and that it probably exceeded 1 GB;
+  - the BC paragraph now cites `7.5/bc-audit.txt` as its receipt at this tip;
+  - stale receipt lines are marked as superseded;
+  - this note's correction count is fixed;
+  - the tracker row is updated.
+  The subagent review is not a Codex verdict.
 
 ## Gaps and reopening conditions
 
