@@ -815,9 +815,15 @@ def group_rss(group: int) -> int:
 def run(
     argv: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None
 ) -> bytes:
-    """Hard wall/process-group cleanup; sampled aggregate RSS stays below 1 GB."""
+    """Hard wall/process-group cleanup; sampled aggregate RSS stays below 1 GB.
+
+    The budget charges the child group plus caller-group growth after launch.
+    Memory the caller already held (for example pytest with torch loaded under
+    `just prepare`) is the caller's, not this command's.
+    """
     if time.monotonic() >= RUN_DEADLINE:
         raise RuntimeError("shared oracle execution deadline expired before launch")
+    caller_baseline = group_rss(os.getpgrp())
     with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
         start = time.monotonic()
         peak = 0
@@ -828,7 +834,8 @@ def run(
         try:
             while process.poll() is None:
                 # Include the driver/caller group as well as this new child group.
-                peak = max(peak, group_rss(process.pid) + group_rss(os.getpgrp()))
+                caller_growth = max(0, group_rss(os.getpgrp()) - caller_baseline)
+                peak = max(peak, group_rss(process.pid) + caller_growth)
                 now = time.monotonic()
                 if peak >= 1_000_000_000 or now - start >= 120 or now >= RUN_DEADLINE:
                     reason = (
@@ -856,7 +863,7 @@ def run(
                 "argv": argv,
                 "exit_status": code,
                 "wall_seconds": time.monotonic() - start,
-                "sampled_caller_and_child_group_peak_rss_bytes": peak,
+                "sampled_child_group_and_caller_growth_peak_rss_bytes": peak,
                 "stop_reason": reason,
             }
         )

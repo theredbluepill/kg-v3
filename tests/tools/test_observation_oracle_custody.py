@@ -323,6 +323,35 @@ def test_bounded_command_returns_exact_stdout() -> None:
     )
 
 
+def test_preexisting_caller_memory_is_not_charged_to_the_child(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A large caller (pytest with torch under `just prepare`) already holds more
+    # than the budget before launch; only growth after launch counts.
+    real = oracle.group_rss
+    caller = os.getpgrp()
+    monkeypatch.setattr(
+        oracle,
+        "group_rss",
+        lambda group: 1_500_000_000 if group == caller else real(group),
+    )
+    assert oracle.run([sys.executable, "-c", "print('ok')"]) == b"ok\n"
+
+
+def test_caller_growth_after_launch_still_counts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    caller = os.getpgrp()
+    samples = iter([0])
+    monkeypatch.setattr(
+        oracle,
+        "group_rss",
+        lambda group: next(samples, 1_000_000_000) if group == caller else 0,
+    )
+    with pytest.raises(RuntimeError, match="reason=aggregate RSS"):
+        oracle.run([sys.executable, "-c", "import time; time.sleep(30)"])
+
+
 def test_shared_deadline_stops_child_group_before_outer_limit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
