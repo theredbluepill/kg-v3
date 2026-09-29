@@ -115,8 +115,17 @@ def categorical_kl_from_logits(
     student_logits: torch.Tensor,
     mask: torch.Tensor,
 ) -> torch.Tensor:
-    teacher_log_prob = F.log_softmax(teacher_logits.float(), dim=-1)
-    student_log_prob = F.log_softmax(student_logits.float(), dim=-1)
+    """``KL(teacher || student)`` over the last dim, zeroed outside ``mask``.
+
+    Computes in at least FP32: BF16/FP16 inputs are upcast and FP64 inputs stay
+    FP64 (never demoted), so a ``finfo(dtype).min`` mask fill stays finite.
+    """
+    dtype = torch.promote_types(
+        torch.promote_types(teacher_logits.dtype, student_logits.dtype),
+        torch.float32,
+    )
+    teacher_log_prob = F.log_softmax(teacher_logits.to(dtype), dim=-1)
+    student_log_prob = F.log_softmax(student_logits.to(dtype), dim=-1)
     teacher_prob = teacher_log_prob.exp()
     kl = teacher_prob * (teacher_log_prob - student_log_prob)
     return kl.masked_fill(~mask, 0.0).sum(dim=-1)

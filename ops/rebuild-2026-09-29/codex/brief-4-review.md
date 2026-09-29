@@ -1,0 +1,19 @@
+Reviewed `kg/rebuild-trainer-model` at `4ba9081`. No files changed.
+
+1. **P1 — Teacher-enabled PPO would fail on `dones`.** [Brief §3.1](/Users/poonszesen/kg-v3-trainer-model/ops/rebuild-2026-09-29/briefs/4-teacher.md:172) requires the existing stateless checks, which reject non-`None` `dones`. However, the [cached-teacher wrapper](/Users/poonszesen/kg-v3-trainer-model/python/owl/train/ppo.py:2762) always passes them. Specify stateless dispatch for both teacher wrappers, matching ordinary evaluation, and add a helper-level regression test that runs without the pending rollout seam.
+
+2. **P1 — Cached KL does not establish identical supports.** The [claim that replay admission detects differing tables](/Users/poonszesen/kg-v3-trainer-model/ops/rebuild-2026-09-29/briefs/4-teacher.md:166) is false. A tiny CPU check confirmed that removing HIRE from one model’s table leaves PASS-plus-STOP replay legal for both models while changing its probability. Table equality is checked only by the proposed combined path. With mismatched supports, Isaiah’s helper can even return negative “KL”—a minimal probe returned `−0.27031`. Validate grammar compatibility on the production cached path, and test a mismatch whose replay remains legal under both grammars.
+
+3. **P2 — The dtype contract conflicts with the FP64 tests.** [The proposed masking](/Users/poonszesen/kg-v3-trainer-model/ops/rebuild-2026-09-29/briefs/4-teacher.md:73) uses `finfo(logits.dtype).min`, while `_density_dtype` preserves FP64 and [Isaiah’s KL helper](/Users/poonszesen/kg-v3-trainer-model/python/owl/model/actor/common.py:118) immediately casts to FP32. FP64’s minimum therefore becomes `−inf`, contradicting the numerical claim. That cast also undermines T6’s inherited double-precision finite-difference tolerance: a small probe gave analytic `0.08540231` versus finite difference `0.08940697` at ε=`1e−6`. Specify consistent calculation/cache dtypes and a compatible gradient test.
+
+4. **P2 — Phase completion permits missing integration evidence.** [Acceptance](/Users/poonszesen/kg-v3-trainer-model/ops/rebuild-2026-09-29/briefs/4-teacher.md:304) allows T18/T19 to remain skipped, although Phase 4 includes trainer wiring and last-best refresh/resume. Named skips are reasonable during intermediate subtasks; require these tests to execute before declaring Phase 4 complete.
+
+5. **P2 — T18’s metric assertion needs correction.** [T18](/Users/poonszesen/kg-v3-trainer-model/ops/rebuild-2026-09-29/briefs/4-teacher.md:285) names `train/teacher_kl`; the existing metric is `teacher/kl`. A copied teacher guarantees zero KL before the first optimizer step, not across an iteration containing subsequent student updates. Check the first minibatch, or explicitly use a single-step/zero-learning-rate setup.
+
+The substantive design otherwise holds: replay-conditioned conditional KL correctly follows the stated Isaiah-style surrogate; exclusive final-HIRE-prefix masking and inclusive STOP scoring are correct; post-STOP terms vanish. The live-seat mean of winner CE matches the plan and existing state weighting.
+
+Cache arithmetic is correct: **102,208 bytes per seat row**, yielding **1,674,575,872 bytes** per rank for 2 ranks and **837,287,936 bytes** for 4 ranks. The proposed entry points retain trunk/head guards. GPU peak estimates remain unverified, appropriately including the reserved-memory caveat. Single-chunk no-copy `concat` and preserving Orbit’s documented asymmetry are acceptable.
+
+Also remove the stale `--extra reference` test option. Verification comprised source inspection and tiny CPU probes; no full suite or GPU run.
+
+**VERDICT: REVISE**

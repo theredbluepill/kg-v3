@@ -1,0 +1,38 @@
+mutation: python/owl/model/kaggriculture_actor.py: 'teacher_logits[slot], floored, mask, unit_live' -> 'teacher_logits[slot], logits, mask, unit_live' (1 site(s))
+exit 1
+E             comparison failed
+E             comparison failed
+E         comparison failed
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[dense]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[hire_capacity]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[stop_every_position]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[mixed]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_matches_a_brute_force_oracle_over_the_admissible_values[base]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_matches_a_brute_force_oracle_over_the_admissible_values[hire]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_gradient_matches_finite_differences_in_fp64
+7 failed, 12 passed in 3.56s
+== (a) above: unit KL against unmasked student logits
+mutation: python/owl/model/kaggriculture_actor.py: 'floored, kind_mask, market_live' -> 'floored, kind_mask, torch.ones_like(market_live)' (1 site(s))
+exit 1
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[dense]
+FAILED tests/kaggriculture/test_teacher.py::test_kl_is_zero_for_the_same_teacher_and_exactly_zero_off_support[mixed]
+2 failed, 17 passed in 4.12s
+== (b) above: market-kind KL not weighted by market_live
+mutation: python/owl/model/actor/common.py: '    dtype = torch.promote_types(\n        torch.promote_types(teacher_logits.dtype, student_logits.dtype),\n        torch.float32,\n    )' -> '    dtype = torch.float32' (1 site(s))
+exit 1
+E         comparison failed
+FAILED tests/kaggriculture/test_teacher.py::test_kl_gradient_matches_finite_differences_in_fp64
+1 failed, 18 passed in 3.81s
+== (c) above: KL helper demotes to FP32 again (Isaiah's .float())
+mutation: python/owl/model/kaggriculture_actor.py: 'return logits.masked_fill(~mask, torch.finfo(logits.dtype).min)' -> 'return logits.masked_fill(~mask, -torch.inf)' (1 site(s))
+exit 1
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-dense]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-hire_capacity]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-stop_every_position]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp32-mixed]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-dense]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-hire_capacity]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-stop_every_position]
+FAILED tests/kaggriculture/test_teacher.py::test_collected_logits_reproduce_the_replay_density[fp64-mixed]
+8 failed, 11 passed in 4.78s
+== (d) above: slot logits collected with -inf masking

@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Expose replay-conditioned per-slot logits and KL in the Kaggriculture grammar core (Phase 4.1)
+
+The Phase 4 brief is now v2 after Codex's REVISE review (`ops/rebuild-2026-09-29/codex/brief-4-review.md`). The changes are stateless teacher dispatch, a grammar signature on the cached path, one KL dtype rule, and phase completion gated on the trainer tests. Task 4.1 follows it. `policy_core` returns each slot's masked logits and the liveness-weighted per-slot KL in the log-prob layout. Isaiah's `categorical_kl_from_logits` promotes instead of demoting FP64. The shared test helpers moved to `tests/kaggriculture/helpers.py`. The new [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|Phase 4 teacher Reference]] lists the checks: T1–T6, a brute-force oracle, four killed mutations and `py-prepare` with 1,343 passed. It also lists three test-level deviations: an FP32 rounding bound, `assert_close` for head chunking, and a small HIRE oracle case.
+
 ## 2026-09-29 — Reconcile the compiled-GEMM Reference with Task 3.1's registration
 
 Codex verified `e1458d2...aadba6d` (APPROVE WITH EDITS, no functional defect; `ops/rebuild-2026-09-29/codex/verify-3.1-rest-r2.md`). Its one finding: the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] still said Kaggriculture was absent from `ModelConfig` and the factory and that `configure_model_compile` rejected its trunk target. The Reference now links the [[references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Task 3.1 model-side Reference]] for registration and the guarded trunk dispatch, and keeps the limits: CPU recording stand-ins only, `FullConfig` still rejects the model, and integrated workloads and real Inductor/CUDA compilation are unverified. Its description and index line match.

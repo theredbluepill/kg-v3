@@ -14,7 +14,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypeVar
 
 import torch
 import torch.nn.functional as F
@@ -58,6 +58,8 @@ from owl.model.stateless_transformer_v1 import (
     pack_sequence,
     unpack_sequence,
 )
+
+_T = TypeVar("_T")
 
 KAGGRICULTURE_TRANSFORMER: Literal["kaggriculture_transformer"] = (
     "kaggriculture_transformer"
@@ -578,6 +580,15 @@ class KaggricultureTransformer(
             encoded, self._grammar_context(obs), actions, deterministic=False
         )
         check_replay_flags(result.valid)
+        return self._evaluation_from(result, encoded, obs)
+
+    def _evaluation_from(
+        self,
+        result: GrammarPolicyResult,
+        encoded: KaggricultureEncoded,
+        obs: kt.KaggricultureObsBatch,
+    ) -> ModelEvaluation:
+        """The replay ``ModelEvaluation``, shared by the plain and teacher paths."""
         _, log_probs, entropies = self._policy_outputs(result, obs)
         values, winner_log_probs = self._values(encoded, obs)
         return ModelEvaluation(
@@ -606,8 +617,14 @@ class KaggricultureTransformer(
         actions: kt.KaggricultureActions | None,
         *,
         deterministic: bool,
+        teacher_logits: dict[int, torch.Tensor] | None = None,
+        collect_logits: bool = False,
     ) -> GrammarPolicyResult:
-        """Run the heads in row chunks below the head GEMM-extent limit."""
+        """Run the heads in row chunks below the head GEMM-extent limit.
+
+        ``teacher_logits`` (row layout, keyed by ``POLICY_SLOTS``) is sliced
+        per chunk; ``slot_logits`` and ``kl`` are joined across chunks.
+        """
         rows = context.live.shape[0]
         tokens = (
             None
@@ -624,17 +641,31 @@ class KaggricultureTransformer(
                 lengths,
                 slice(start, min(start + chunk, rows)),
                 deterministic=deterministic,
+                teacher_logits=teacher_logits,
+                collect_logits=collect_logits,
             )
             for start in range(0, max(rows, 1), chunk)
         ]
         if len(results) == 1:
             return results[0]
+        slot_logits: dict[int, torch.Tensor] | None = None
+        if collect_logits:
+            slot_logits = {
+                slot: torch.cat([_require(r.slot_logits)[slot] for r in results])
+                for slot in POLICY_SLOTS
+            }
         return GrammarPolicyResult(
             tokens=torch.cat([r.tokens for r in results]),
             lengths=torch.cat([r.lengths for r in results]),
             log_probs=torch.cat([r.log_probs for r in results]),
             entropies=torch.cat([r.entropies for r in results]),
             valid=torch.cat([r.valid for r in results]),
+            slot_logits=slot_logits,
+            kl=(
+                None
+                if teacher_logits is None
+                else torch.cat([_require(r.kl) for r in results])
+            ),
         )
 
     def _policy_chunk(
@@ -646,7 +677,33 @@ class KaggricultureTransformer(
         rows: slice,
         *,
         deterministic: bool,
+        teacher_logits: dict[int, torch.Tensor] | None = None,
+        collect_logits: bool = False,
     ) -> GrammarPolicyResult:
+        unit_input, market_input = self._actor_inputs(encoded, rows)
+        core = self._compiled_actor_core or self.actor.policy_core
+        return core(
+            unit_input,
+            market_input,
+            context.actor_counts[rows],
+            context.order_limits[rows],
+            context.live[rows],
+            self.action_spec.hire_limit,
+            None if tokens is None else tokens[rows],
+            None if lengths is None else lengths[rows],
+            deterministic,
+            (
+                None
+                if teacher_logits is None
+                else {slot: logits[rows] for slot, logits in teacher_logits.items()}
+            ),
+            collect_logits,
+        )
+
+    def _actor_inputs(
+        self, encoded: KaggricultureEncoded, rows: slice
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """``actor_input_proj`` outputs: unit ``[B, 241, D]``, market ``[B, D]``."""
         entity = encoded.own_actor_hidden[rows]
         player = encoded.player_hidden[rows, 0]  # this seat's own player token
         plan = encoded.actor_plan_hidden[rows, 0]
@@ -663,18 +720,7 @@ class KaggricultureTransformer(
         )
         # No market entity exists: the plan hidden stands in for it.
         market_input = self.actor_input_proj(torch.cat((plan, player, plan), dim=-1))
-        core = self._compiled_actor_core or self.actor.policy_core
-        return core(
-            unit_input,
-            market_input,
-            context.actor_counts[rows],
-            context.order_limits[rows],
-            context.live[rows],
-            self.action_spec.hire_limit,
-            None if tokens is None else tokens[rows],
-            None if lengths is None else lengths[rows],
-            deterministic,
-        )
+        return unit_input, market_input
 
     @staticmethod
     def _policy_outputs(
@@ -750,6 +796,12 @@ class KaggricultureTransformer(
             ~encoded.critic_value_mask, torch.finfo(logits.dtype).min
         )
         return F.log_softmax(masked_logits, dim=-1)
+
+
+def _require(value: _T | None) -> _T:
+    if value is None:
+        raise RuntimeError("a requested policy-core output is missing")
+    return value
 
 
 def _check_action_layout(
