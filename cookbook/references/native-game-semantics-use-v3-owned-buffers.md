@@ -1,10 +1,10 @@
 ---
 type: "Reference"
 title: "Native game semantics use v3-owned buffers"
-description: "Task 1.4 adds transactional native lifecycle, checked seed streams, rewards and codec/table bindings over the rebuilt grammar/encoder; CPU checks are scoped separately from pending full trajectory and release qualification and the Task 1.5 adapter."
+description: "Task 1.4 adds transactional native lifecycle, checked seed streams, rewards and codec/table bindings over the rebuilt grammar/encoder; the 16-game TrainingBatch oracle matches bit for bit and the release overflow proof passes on the pod, while the Task 1.5 adapter and its CUDA fence stay unqualified."
 tags: ["kaggriculture-v3", "adaptation"]
 status: "verified-scoped"
-generated: {"by": "openai/codex", "at": "2026-09-29"}
+generated: {"by": "openai/codex; revised by anthropic/claude-opus-5-5", "at": "2026-09-29"}
 sources:
   - resource: "repository:ops/rebuild-2026-09-29/briefs/1.2.md"
   - resource: "repository:ops/rebuild-2026-09-29/1.2/results.md"
@@ -74,6 +74,18 @@ sources:
   - resource: "repository:tests/kaggriculture/test_native_grammar_bindings.py"
   - resource: "repository:tests/kaggriculture/test_env_reference.py"
   - resource: "repository:tests/tools/test_record_kaggriculture_env_reference.py"
+  - resource: "repository:tests/fixtures/kaggriculture_env_reference_v1.npz"
+  - resource: "repository:tests/fixtures/kaggriculture_env_reference_v1.json"
+  - resource: "repository:docs/kaggriculture-contract.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/run-statement-pod-oracle.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/record.log"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/replay-green.log"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/mutation-done.log"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/release-overflow.log"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/timing-enabled.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/timing-disabled.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/just-prepare.log"
 ---
 
 # Native game semantics use v3-owned buffers
@@ -105,8 +117,8 @@ Task 1.4 does not implement that adapter or claim the GPU fence is qualified.
 Native seed admission is nonnegative i64 with checked successor reservation;
 there is no training-only `2**62` cap. Rank partition is `base+rank+k*world_size`.
 Any narrower training/evaluation band policy belongs to the factory. The Q1
-constructor refinement is recorded here and in the API; the contract document
-awaits Claude's agreed wording update.
+constructor refinement is recorded here, in the API and as contract v4.2 (a
+refinement both agents agreed in the 1.4 brief review, not a semantic change).
 
 Reward shaping uses only own starvation/drought/ineffective counters and raw
 terminal banks, with the reference's float64 → float32 economic rounding before
@@ -144,16 +156,21 @@ Adaptation inventory and reasons:
   TrainingBatch recording, fixed observation-local actions, source/fixture
   custody and strict full-trajectory comparison; incomplete recording may never
   publish a partial fixture.
+  `tests/fixtures/kaggriculture_env_reference_v1.{npz,json}` is the recorded
+  16-game fixture (pod recording, Claude review).
 - `src/kaggriculture/lifecycle_timing_tests.rs` and
   `ops/rebuild-2026-09-29/1.4/`: bounded phase harness, cast audit, planned run
   conditions, actual command receipts, mutation custody and pod handoffs.
   `docs/rl-api-specs.md`, `docs/rules-parity-coverage.md`, this Reference, its
   index and the cookbook log record the exact ABI, evidence and remaining gaps.
+  `docs/kaggriculture-contract.md` records the agreed Q1 constructor refinement
+  as v4.2. `ops/rebuild-2026-09-29/1.4/claude-review/` holds the review, the pod
+  run statement and receipts, and the mutation logs.
 
 Actual scoped checks: the trim checker and nine root kernel tests confirm the
 bridge was already retired. The native lifecycle suite passes 12 tests and the
 cast helper suite passes six; Python native environment and grammar suites
-pass 383 (340 + 43), including two-thread versus one-thread native-pool
+pass 387 (344 + 43) after Claude's review, including two-thread versus one-thread native-pool
 equivalence. The grammar corpus contributes 321 accepted round trips
 (320 scheduled, 64 dense, 22 full-length) and 43 rejection classes. World sizes
 2 and 8 each consume 67 seeds per rank, running rank batches sequentially with
@@ -169,40 +186,59 @@ that wrongly admitted zero rewards; the corrected independent endpoint and ULP
 budget reject the mutation. Malformed initial tests and diagnostic-pattern
 repairs are retained in operational receipts, not counted as behavior reds.
 
-The release overflow attempt exceeded the Mac RSS budget before its test body
-(28.873 seconds, 1,007,714,304 sampled bytes); release proof is PENDING (pod).
-The optimized timing build also stopped before its test body (7.840 seconds,
-1,018,937,344 sampled bytes). `ops/rebuild-2026-09-29/1.4/timing.json` preserves
-the paired commands with and without dependency overflow checks; phase costs
-and policy cost remain PENDING (pod). The sole full-oracle recording attempt
-also stopped during exported-reference debug engine compilation: the inner
-watchdog killed its worker at 11.297 seconds and 1,012,252,672 sampled bytes;
-the outer command exited 1 at 11.443 seconds. Zero games/transitions were
-recorded and no fixture/manifest was published. Reference-harness compilation,
-the full 16-game TrainingBatch comparison, its reward/done mutation, trajectory
-coverage and fixture-size/hash qualification remain PENDING (pod). The missing
-fixture makes replay fail loudly. Final root Rust tests pass 274 with five
-ignored and no failures; engine tests pass 69 with none ignored or failed.
-`just rs-prepare`, trim verification and debug extension installation exit zero.
-The requested five-file Python command passes 497 and fails only the full
-16-game replay and frozen-fixture custody tests because the NPZ is absent (zero
-skips). The native environment/grammar subset contributes 383 passes; the
-recorder tooling contributes 35 synthetic custody passes and one of the
-missing-fixture failures.
+Codex's Mac attempts at the release overflow proof, the optimized timing build
+and the reference recording all stopped at the 960 MiB watchdog before their
+test bodies ran. `results.md`, `timing.json` and
+`reference-recording-attempt.json` keep those receipts. Claude then ran these
+checks on the pod (`w7ia3zvxqsvs3g`, CPU only, separate clone at `9dc2d02`,
+run statement `claude-review/run-statement-pod-oracle.md`):
 
-`just py-prepare` passes formatting, Ruff, syntax and mypy over 65 files. Its
-pytest run collects 2,045 tests, then the watchdog kills it during the first
-existing typing test at 15.693 seconds and 1,015,529,472 sampled bytes; no broad
-suite completion counts are claimed. The repaired full `just prepare` passes
-formatting, lint, documentation checks, mypy, build, trim and the same Rust
-suites before its Python stage stops at that existing test (56.574 seconds,
-1,017,036,800 sampled bytes). Broad Python completion for `just py-prepare`
-and `just prepare` remains PENDING (pod). Exact commands and limits are
-retained in `results.md` and
-`final-checks.json`. No debug timing substitutes for optimized costs. Future
-consumers may rely on the checked native ABI; completing Task 1.5, the oracle
-and pod checks is required before widening claims to the Python adapter,
-trainer integration, pinned DMA safety or complete-update throughput.
+- **Trajectory oracle.** The recorder compiled the exported reference and
+  recorded all 16 games (seeds 17000–17015, 719 transitions each) in 32 s.
+  Every coverage counter was positive in every game. The fixture is 310,365
+  bytes compressed (npz sha256 `494bbf2c…c976`, manifest `aa6cc641…28b7`).
+  The native replay matches the reference TrainingBatch bit for bit on rewards,
+  dones, banks, counters, seeds and terminal records over all 11,504
+  transitions. The replay and custody suites pass 37 tests, on the pod and on
+  the Mac (14 s, 411 MB). One deviation was recorded: the reference lockfile's
+  crates were missing from the pod cache, so an explicit `cargo fetch --locked`
+  (lockfile-checksum verified) preceded the offline build.
+- **Oracle mutation.** Inverting native `dones` fails with
+  `first divergence game=0 seed=17000 step=0 seat=0 … field=dones`. After a
+  byte-exact restore, the replay passes again.
+- **Release overflow proof.** `release_dependency_overflow_is_caught` passes in
+  release with the root engine overflow-check override. With the override
+  disabled through `--config`, the same test fails, so the override is what
+  makes the release step fail safely.
+- **Release phase timing** (fat LTO, one live env, one thread, component only).
+  Dense 241-actor states take a 747.6 µs median for the composed clone, step,
+  prepare and write. The outer candidate clone is 159.5 µs of that, the kernel
+  step including its inner clone 270.3 µs and snapshot acquisition 171.7 µs.
+  Early states take 54.8 µs. Engine overflow checks cost no measurable time
+  (752.0 µs dense with them off). These numbers make no complete-update or
+  throughput claim.
+
+Claude's review added one oracle,
+`test_calls_overwrite_every_output_byte_of_the_same_buffer_set`. It is the
+native half of L6: observe, reset, step and terminal step rewrite all 35
+outputs of the one caller-owned buffer set in place, including padding. Two
+runs that start from different poison bytes produce identical outputs, and the
+buffer addresses do not change. Dropping the `transition_econ_after` copy makes
+it fail. Further restored native mutations fail their named oracles:
+
+- advancing seeds by 1 instead of `seed_stride` fails world sizes 2 and 8;
+- clearing selected terminal records before reset staging succeeds fails the
+  reset/truncate rollback test.
+
+Full `just prepare` on the Mac, without Codex's 960 MiB watchdog, exits 0:
+Python 2,042 passed with 7 skips (1.95 GB peak RSS). The skips include
+`test_native_tables_match_expected_tables`, which waits for Task 1.5's
+`native_grammar_tables(device)`.
+
+Future consumers may rely on the checked native ABI and the recorded reference
+equivalence. Task 1.5 (the adapter, its pinned CUDA entry fence and the pod DMA
+test) is required before widening claims to trainer integration, pinned DMA
+safety or complete-update throughput.
 
 ## Task 1.2 — grammar checkpoint
 

@@ -1202,12 +1202,23 @@ The root release profile enables overflow checks for `kaggriculture-engine`;
 caught arithmetic panics roll the candidate batch back. The cast audit identifies
 two reachable unbounded HIRE cash casts, guarded using exact Fibonacci costs
 for executed hires before commit. No additional game-envelope caps are imposed.
-The release overflow test and optimized phase/cost measurements remain pending
-pod qualification. The timing build stopped before its test body after
-7.840 seconds at 1,018,937,344 sampled process-group RSS bytes. Exact paired
-commands with and without the overflow policy are in
-`ops/rebuild-2026-09-29/1.4/timing.json`; debug checks do not establish release
-results or phase costs.
+On the pod, the release overflow test passes with the override and fails with
+`--config 'profile.release.package.kaggriculture-engine.overflow-checks=false'`.
+Optimized phase medians (fat LTO, one env, one thread) for a dense 241-actor
+state:
+
+| Phase | Median |
+| --- | --- |
+| outer clone | 159.5 µs |
+| kernel step including its inner clone | 270.3 µs |
+| snapshot | 171.7 µs |
+| composed clone/step/prepare/write | 747.6 µs |
+
+The same composed work on an early state takes 54.8 µs. Engine overflow checks
+cost no measurable time. These are component timings, not complete-update
+throughput. Receipts are in `ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/`.
+Codex's Mac attempts, which stopped at the memory watchdog, are in
+`ops/rebuild-2026-09-29/1.4/timing.json`.
 
 The four cold grammar functions are also exported through `owl.rs`:
 
@@ -1228,14 +1239,12 @@ Both call the existing root grammar. Constants are version 1, names
 "unit_quantity_high", "unit_quantity", "market_kind", "market_item",
 "market_quantity_high", "market_quantity", "stop")`, and widths
 `(241,20,128,16,2,32,32,8,16,32,32,2)`. Cold JSON does not enter live `step`.
-Actual qualification and pending oracle/release work are tracked in
-`ops/rebuild-2026-09-29/1.4/` and the Task 1.4 coverage section. The sole
-16-game reference recording attempt stopped during exported-reference debug
-compilation at the Mac RSS limit: zero games/transitions were recorded and no
-fixture or manifest was published. Full trajectory comparison, its reward/done
-mutation and optimized checks remain PENDING (pod); the replay test fails on
-the missing fixture instead of skipping. Final native environment/grammar
-suites pass 383 cases (340 + 43). The broader five-file Python check has two
-missing-fixture failures, and both broad preparation commands exceed the Mac
-RSS budget during pytest. Full command outcomes and limits are recorded in
-`ops/rebuild-2026-09-29/1.4/results.md` and `final-checks.json`.
+Qualification is tracked in `ops/rebuild-2026-09-29/1.4/`: Codex's `results.md`
+and Claude's `claude-review/review.md`. The pinned reference TrainingBatch was
+recorded on the pod: 16 games, seeds 17000–17015, 719 transitions each, fixture
+`tests/fixtures/kaggriculture_env_reference_v1.{npz,json}`.
+`tests/kaggriculture/test_env_reference.py` replays it through this native env
+and requires every reward, done, bank, counter, seed and terminal record to be
+bit-identical over all 11,504 transitions. It passes on the pod and on the Mac.
+Inverting native `dones` makes it fail at game 0, step 0. Native environment and
+grammar suites pass 387 cases (344 + 43). Full `just prepare` passes.

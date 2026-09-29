@@ -1,5 +1,31 @@
 # Change log
 
+## 2026-09-29 — Qualify the Task 1.4 native env against the reference oracle (Claude review)
+
+Claude reviewed Codex's Task 1.4 implementation (`8d98ea8`, `9dc2d02`) against
+the brief and found no production defect.
+
+- **Oracle on the pod.** The review ran the checks the Mac budget blocked. The
+  pinned reference TrainingBatch was recorded for 16 games and the native env
+  matches it bit for bit over all 11,504 transitions.
+- **Mutations.** An inverted-`dones` mutant fails at game 0, step 0. The release
+  overflow proof passes, and fails when the engine override is disabled.
+  Advancing seeds by 1 instead of the stride fails world sizes 2 and 8. A
+  premature terminal-record clear fails the reset/truncate rollback test.
+- **New test.** A native L6 test proves that every call rewrites all 35 outputs
+  of the one buffer set in place, including padding. Dropping one transition
+  copy makes it fail.
+- **Timings.** Release timings are recorded as component numbers only.
+- **Contract.** v4.2 now records the agreed Q1 constructor refinement.
+- **Checks.** Full `just prepare` passes on the Mac: Python 2,042 passed with 7
+  skips.
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+now carries this evidence. The
+[[references/evaluation-and-truncation-follow-the-kaggriculture-objective|evaluation Reference]]
+now places any training-only seed band in the Task 1.5 factory, not in native
+admission. Receipts: `ops/rebuild-2026-09-29/1.4/claude-review/`.
+
 ## 2026-09-29 — Add transactional native lifecycle and the codec/table ABI
 
 Task 1.4 extends the existing root module over the merged grammar and structured

@@ -670,3 +670,47 @@ def test_one_and_two_thread_pools_publish_identical_batches() -> None:
 
     serial = run(1)
     assert run(2) == serial
+
+
+def poison(arrays: dict[str, Any], fill: int) -> None:
+    """Overwrite every output byte; bool fields stay valid (True or False)."""
+    for array in arrays.values():
+        if array.dtype == np.bool_:
+            array[...] = fill == 0x5A
+        else:
+            array.view(np.uint8)[...] = fill
+
+
+@pytest.mark.parametrize("operation", ["observe", "reset", "step", "terminal_step"])
+def test_calls_overwrite_every_output_byte_of_the_same_buffer_set(
+    operation: str,
+) -> None:
+    """L6, native half: the one caller-owned set is rewritten in place and fully.
+
+    Two identical runs start from different poison bytes; equal results prove
+    that every byte of all 35 outputs, padding included, was written by the
+    call. Step t+1 therefore replaces step t's bytes in the same storage, and
+    Task 1.5's entry fence is what keeps queued device copies of step t valid.
+    """
+    results = []
+    for fill in (0x5A, 0xA5):
+        config = '{"episodeSteps":2}' if operation == "terminal_step" else "{}"
+        env = make_env(2, config=config)
+        arrays = buffers(2)
+        env.observe(**arrays)
+        addresses = {name: array.ctypes.data for name, array in arrays.items()}
+        poison(arrays, fill)
+        if operation == "observe":
+            env.observe(**arrays)
+        elif operation == "reset":
+            env.reset(**arrays)
+        else:
+            tokens, lengths = pass_actions(2)
+            env.step(tokens, lengths, **arrays)
+            assert arrays["dones"].all() == (operation == "terminal_step")
+        assert {name: a.ctypes.data for name, a in arrays.items()} == addresses
+        results.append(snapshot(arrays))
+        del env
+    assert results[0].keys() == set(DESTINATIONS)
+    for name in DESTINATIONS:
+        assert results[0][name] == results[1][name], f"{name} kept poison bytes"

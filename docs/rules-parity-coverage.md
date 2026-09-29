@@ -592,52 +592,42 @@ The cast audit examines 99 numeric casts plus saturating/wrapping expressions
 and identifies two reachable unbounded HIRE cash casts. Root `admission.rs`
 checks the exact executed hire costs; six helper tests and a transactional
 native rejection test pass. Root Cargo release policy enables engine overflow
-checks. The release overflow proof attempt stopped before its test body after
-28.873 seconds at 1,007,714,304 sampled process-group RSS bytes. Its result is
-**PENDING (pod)**, not a release pass. The separate optimized timing build
-stopped before its test body after 7.840 seconds at 1,018,937,344 sampled
-process-group RSS bytes. `ops/rebuild-2026-09-29/1.4/timing.json` records the
-exact paired pod commands with and without the overflow-check policy. No debug
-timing substitutes for release phase costs or the policy-cost measurement.
+checks.
 
-Task G implements the deterministic recorder, policy, custody and replay
-checks for exactly 16 games, seeds 17000–17015 and 719 transitions each, with
-one live reference game at a time. The sole recording attempt stopped during
-exported-reference debug engine compilation: the inner watchdog observed
-1,012,252,672 process-group RSS bytes at 11.297 seconds and killed the worker;
-the outer receipt reports exit 1 at 11.443 seconds. It recorded **zero games and
-zero transitions** and published no fixture or manifest. The reference Rust
-harness, complete native replay and reward/done trajectory mutation remain
-**PENDING (pod)**; missing-fixture replay fails loudly, without a skip.
+On the Mac, Codex's release overflow proof and optimized timing builds stopped at
+the 960 MiB watchdog before their test bodies ran (`timing.json`,
+`d-release-attempt.json`). Claude ran both on the pod (`claude-review/pod-oracle/`):
 
-Acceptance still requires exact reward/done/bank/counter/seed/terminal values,
-positive starvation/drought/ineffective counters, executed hires, animal
-placement and sales, and the 8 MiB compressed / 256 MiB expanded budget. None of
-those full-trajectory coverage, size or hash assertions was qualified by the
-failed build. The exact recording command and resource evidence are in
-`reference-recording-attempt.json` and `g-reference-recording.{json,log}` under
-`ops/rebuild-2026-09-29/1.4/`.
+- `release_dependency_overflow_is_caught` passes in release, and fails when the
+  engine overflow-check override is disabled with `--config`.
+- The fat-LTO phase timings are component measurements only: dense 241-actor
+  composed work has a 747.6 µs median, and overflow checks show no measurable
+  cost.
 
-Final root Rust checks pass **274 tests, zero failures, five ignored**; the
-engine passes **69, zero failures, none ignored**. `just rs-prepare`, the trim
-checker and debug `maturin develop --locked` exit zero. The requested five-file
-Python command reports **497 passed, two failed, zero skipped**: only the full
-16-game native replay and frozen-fixture custody test fail, both because the
-required `tests/fixtures/kaggriculture_env_reference_v1.npz` is absent.
-The recorder tooling contributes 35 passing synthetic custody tests and the one
-missing-fixture failure; these do not qualify a recorded trajectory.
+Task G implements the deterministic recorder, policy, custody and replay checks
+for exactly 16 games, seeds 17000–17015, 719 transitions each, with one live
+reference game at a time. The Mac recording attempt stopped during
+exported-reference compilation and published nothing
+(`reference-recording-attempt.json`). The pod recording completed in 32 s. Every
+game reached positive starvation, drought and ineffective counters, executed
+hires, animal placement and sales. The fixture is 310,365 bytes compressed,
+under the 8 MiB / 256 MiB budget; its hashes are in the manifest.
 
-`just py-prepare` passes formatting, Ruff, syntax and mypy over 65 files, then
-its broad pytest run is killed by the Mac memory watchdog after 15.693 seconds
-at 1,015,529,472 sampled process-group RSS bytes. Pytest collected 2,045 tests
-and stopped during the first existing `test_base_generics_typing.py` case;
-there are no completed-suite pass/fail counts. The repaired full `just prepare`
-passes formatting, lint, documentation checks, mypy, build, trim and the same
-root/engine Rust suites, then is killed at the same existing Python test after
-56.574 seconds at 1,017,036,800 sampled bytes. Broad Python completion for both
-`just py-prepare` and `just prepare` is **PENDING (pod)**. Actual command details
-and remaining pod work are in
-`ops/rebuild-2026-09-29/1.4/results.md` and `final-checks.json`.
+The native replay matches the reference bit for bit on rewards, dones,
+transition banks, economic counters, seeds and terminal records over all 11,504
+transitions. It also agrees with the independent Python reward formula within
+one f32 ULP. Inverting native `dones` fails at
+`first divergence game=0 seed=17000 step=0 seat=0 … field=dones`. The
+restored source passes again.
+
+Root Rust passes **274 tests, zero failures, five ignored**; the engine passes
+**69**. Claude's review adds a native L6 oracle: every call rewrites all 35
+outputs of the one caller-owned set in place, including padding. With it the
+native environment and grammar suites pass **387**. Full `just prepare` on the
+Mac passes Rust, build, trim, documentation, mypy and **2,042 Python tests with
+7 skips** (`claude-review/just-prepare.log`). Among those skips,
+`test_native_tables_match_expected_tables` waits for Task 1.5's
+`native_grammar_tables(device)`.
 
 The Python adapter, `rewards.py`, Python codec, device table bridge and pinned
 CUDA reuse-fence qualification belong to Task 1.5. CPU checks establish no GPU,
