@@ -264,6 +264,62 @@ def test_codec_batch_rejects_mismatched_environment_count() -> None:
         )
 
 
+@pytest.mark.parametrize("seats", [1, 3])
+def test_codec_batch_rejects_wrong_seat_count_before_native(
+    monkeypatch: pytest.MonkeyPatch, seats: int
+) -> None:
+    def encode(*_args: object) -> int:
+        raise AssertionError("native encode must not run for a malformed seat pair")
+
+    monkeypatch.setattr(rs, "kaggriculture_encode", encode, raising=False)
+    first, second = _programs()
+    pairs: list[Any] = [first, (*second, second[1])[:seats]]
+    with pytest.raises(ValueError, match="exactly two seats"):
+        codec.encode_actions(
+            pairs, _observation(), action_spec=KaggricultureActionConfig()
+        )
+
+
+def _valid_actions() -> KaggricultureActions:
+    return KaggricultureActions(
+        tokens=torch.zeros((2, 2, MAX_FRAMES, 12), dtype=torch.int64),
+        lengths=torch.ones((2, 2), dtype=torch.int64),
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "bad", "message"),
+    [
+        ("tokens", torch.zeros((2, 2, MAX_FRAMES, 12), dtype=torch.int32), "CPU int64"),
+        ("lengths", torch.ones((2, 2), dtype=torch.float32), "CPU int64"),
+        ("tokens", torch.zeros((2, 2, MAX_FRAMES, 11), dtype=torch.int64), "shape"),
+        ("lengths", torch.ones((2, 3), dtype=torch.int64), "shape"),
+        (
+            "tokens",
+            torch.zeros((2, 2, 12, MAX_FRAMES), dtype=torch.int64).transpose(-1, -2),
+            "C-contiguous",
+        ),
+        ("lengths", torch.ones((2, 2), dtype=torch.int64).t(), "C-contiguous"),
+    ],
+)
+def test_codec_decode_batch_rejects_malformed_tensors_before_native(
+    monkeypatch: pytest.MonkeyPatch, field: str, bad: torch.Tensor, message: str
+) -> None:
+    def decode(*_args: object) -> str:
+        raise AssertionError("native decode must not run for malformed tensors")
+
+    monkeypatch.setattr(rs, "kaggriculture_decode", decode, raising=False)
+    valid = _valid_actions()
+    actions = KaggricultureActions(
+        tokens=bad if field == "tokens" else valid.tokens,
+        lengths=bad if field == "lengths" else valid.lengths,
+    )
+    with pytest.raises(ValueError, match=message):
+        codec.decode_actions(
+            actions, _observation(), action_spec=KaggricultureActionConfig()
+        )
+
+
 def test_reference_programs_round_trip() -> None:
     fixtures = Path(__file__).parents[1] / "fixtures" / "kaggriculture"
     fixture = fixtures / "grammar-v4-reference.jsonl.gz"

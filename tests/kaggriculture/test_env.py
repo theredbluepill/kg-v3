@@ -406,6 +406,59 @@ def test_requested_pinning_without_cuda_rejected_before_allocation(monkeypatch):
         allocate_observation_buffers(1, pin_memory=True)
 
 
+@pytest.mark.parametrize("n_envs", [0, -1, True, 1.0, "1"])
+def test_allocation_rejects_invalid_env_count_before_allocating(monkeypatch, n_envs):
+    monkeypatch.setattr(
+        torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+    )
+    with pytest.raises(ValueError, match="n_envs must be a positive integer"):
+        allocate_observation_buffers(n_envs, pin_memory=False)
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("n_envs", 0),
+        ("n_envs", True),
+        ("n_envs", 2.0),
+        ("seed", -1),
+        ("seed", 2**63),
+        ("seed", False),
+        ("seed_stride", 0),
+        ("seed_stride", 2**63),
+        ("native_threads", 0),
+        ("native_threads", 1.5),
+    ],
+)
+def test_constructor_rejects_invalid_integers_before_allocation_and_native(
+    monkeypatch, name, value
+):
+    def fail_native(*_args, **_kwargs):
+        pytest.fail("native environment constructed")
+
+    monkeypatch.setattr(rs, "KaggricultureEnv", fail_native, raising=False)
+    monkeypatch.setattr(
+        torch, "empty", lambda *_args, **_kwargs: pytest.fail("allocated buffers")
+    )
+    arguments = {
+        "n_envs": 2,
+        "seed": 41,
+        "seed_stride": 2,
+        "native_threads": 1,
+    } | {name: value}
+    with pytest.raises(ValueError, match=f"{name} must be an integer"):
+        KaggricultureVectorizedEnv(
+            **arguments,
+            config=KaggricultureGameConfig(),
+            reward_config=reward_config(),
+            reward_mode="win_loss",
+            pin_memory=False,
+            transfer_device=_CPU_DEVICE,
+            obs_spec=KaggricultureObsConfig(),
+            action_spec=KaggricultureActionConfig(),
+        )
+
+
 def native_actions(env, *, farmer=None, market=None):
     """Cold native encoding uses only each seat's current legal observation."""
     programs = []

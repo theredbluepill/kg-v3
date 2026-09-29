@@ -1,5 +1,18 @@
 # Change log
 
+## 2026-09-29 — Task 1.5 verify r1: boundary tests and stale native-status claims
+
+Codex's independent verification of `832b836` found no production defect and
+approved with four P3 edits. Tests now reject malformed codec seat pairs and
+decode tensors before native calls, the board-size and per-turn order upper
+bounds, a negative inactive death cap, and invalid allocator/constructor
+integers before allocation or native construction; each guard's removal fails
+a named test. The [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|config]],
+[[references/evaluation-and-truncation-follow-the-kaggriculture-objective|evaluation]]
+and [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|grammar-head]]
+References and their index lines no longer say the native env or tables are
+missing; they name Task 3.1 as the remaining blocker.
+
 ## 2026-09-29 — Task 1.5 Stage 2: adapter, codec and tables on the real native binding
 
 Codex's Stage 2 (`d0d65f7`) runs the Stage 1 adapter, factory and codec against

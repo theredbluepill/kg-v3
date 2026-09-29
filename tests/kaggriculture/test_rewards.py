@@ -67,6 +67,9 @@ def test_reward_coefficients_required_and_bounded() -> None:
         for bad in (-0.01, float("nan"), float("inf"), -float("inf"), True, "1"):
             with pytest.raises(ValidationError, match=name):
                 KaggricultureRewardConfig.model_validate(_RECIPE | {name: bad})
+    # With shaping inactive, only nonnegative admission rejects a negative cap.
+    with pytest.raises(ValidationError, match="econ_cap"):
+        _config(econ_shaping=0, econ_cap=-0.01)
     for extra in ({"extra": 0}, {"reward_mode": "win_loss"}):
         with pytest.raises(ValidationError, match="Extra inputs"):
             KaggricultureRewardConfig.model_validate(_RECIPE | extra)

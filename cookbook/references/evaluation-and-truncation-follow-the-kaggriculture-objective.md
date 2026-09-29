@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Evaluation and truncation follow the Kaggriculture objective"
-description: "Rebuild Tasks 3.2/3.3: raw-bank evaluation winners, truncation that keeps the economic reward, joint per-player clipping and value-mode guards, a per-evaluation seed in a checked int64 band (distinct per step within a run, not a global stream separator), and promotion telemetry logged only after promotion completes, all proven on the trainer seam with CPU TDD, a fake env and 1,344 Python passes; since the Task 3.4 merge the guards run through the registered Kaggriculture env config and every `configs/kaggriculture*.yaml`, while the native env and a real Kaggriculture run are still missing."
+description: "Rebuild Tasks 3.2/3.3: raw-bank evaluation winners, truncation that keeps the economic reward, joint per-player clipping and value-mode guards, a per-evaluation seed in a checked int64 band (distinct per step within a run, not a global stream separator), and promotion telemetry logged only after promotion completes, all proven on the trainer seam with CPU TDD, a fake env and 1,344 Python passes; since the Task 3.4 merge the guards run through the registered Kaggriculture env config and every `configs/kaggriculture*.yaml`, and since Task 1.5 the evaluation env is the seeded native adapter, while policy evaluation mapping and a real Kaggriculture run still wait for Task 3.1."
 tags: ["kaggriculture-v3", "adaptation", "evaluation", "rewards"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
@@ -33,13 +33,15 @@ sources:
   - resource: "reference-branch:kg/reference-2026-09-29/python/owl/train/ppo.py"
   - resource: "reference-branch:kg/reference-2026-09-29/python/owl/train/config.py"
   - resource: "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"
+  - resource: "repository:python/owl/game.py"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/1.5.md"
 ---
 
 # Evaluation and truncation follow the Kaggriculture objective
 
 This note records rebuild Tasks 3.2 (game semantics) and 3.3 (evaluation) from `ops/rebuild-2026-09-29/plan.md`, serving the [[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] and the [[../decisions/evaluation-preserves-generality-and-evidence|evaluation Decision]]. They implement reference lessons L1 (raw-bank winners), L2 (truncation reward) and L12 (a fresh seed per evaluation). The reference branch's `run_ppo.py`, `ppo.py` and `config.py` diffs and its gap-closure plan served as the oracle; the code was rebuilt, not copied. A cookbook search found the historical [[reward-reuse-preserves-objective-and-critic-semantics|reward-reuse Reference]] and [[shared-ppo-adapts-game-batches-without-a-second-loop|shared-PPO Reference]], which state the same rules for the reference branch. The [[ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer-seams Reference]] covers the schema-generic mapping these changes sit on.
 
-The native Kaggriculture environment (Tasks 1.4/1.5) doesn't exist yet. So each rule is a game-dispatched function on the trainer seam, proven with Kaggriculture tensors or a fake environment. When these tasks were built, the Kaggriculture env and model configs weren't registered either; Task 3.1 registered the model and Task 3.4 the env (see "Merge with Tasks 3.1 and 3.4" below). The remaining skipped integration test names what must pass once the native env lands.
+When these tasks were built, the native Kaggriculture environment (Tasks 1.4/1.5) didn't exist. So each rule is a game-dispatched function on the trainer seam, proven with Kaggriculture tensors or a fake environment. When these tasks were built, the Kaggriculture env and model configs weren't registered either; Task 3.1 registered the model and Task 3.4 the env (see "Merge with Tasks 3.1 and 3.4" below). Task 1.5 Stage 2 later un-skipped the integration test (see Limits).
 
 ## Contract and adaptation inventory
 
@@ -67,10 +69,10 @@ The native Kaggriculture environment (Tasks 1.4/1.5) doesn't exist yet. So each 
   - The result lies in `[2**62, 2**62 + 2**61)`. That band is non-negative (contract v4) and fits `engine_rs` `Game::new`'s `i64` seed, leaving `2**61` seeds of headroom for the consecutive seeds one evaluation env consumes.
   - Repeating an evaluation repeats its seed. For a fixed base seed, distinct evaluation steps get distinct seeds; for a fixed step, distinct base seeds do. That is what Task 3.3 requires.
   - It is not injective over `(base_seed, env_steps)` pairs, and it does not keep the consecutive seed ranges of different evaluations or runs apart: `(0, 0)` and `(1, 2131737497183550101)` collide, and `(0, 787325655728545358)` starts one seed later than `(0, 0)` (Codex verify-3.2-3.3-r1; pinned by a test).
-  - Training streams (`base_seed + rank + k·world_size`) stay below the band only while that value is below `2**62`. Contract v4 requires only non-negative seeds. The Task 1.4 native ABI deliberately admits every nonnegative i64 seed with checked consumption (brief Q2), and it adds no training-only cap. If training and evaluation seeds must be kept apart, the Task 1.5 factory has to enforce the bound; nothing enforces it yet.
+  - Training streams (`base_seed + rank + k·world_size`) stay below the band only while that value is below `2**62`. Contract v4 requires only non-negative seeds. The Task 1.4 native ABI deliberately admits every nonnegative i64 seed with checked consumption (brief Q2), and it adds no training-only cap. If training and evaluation seeds must be kept apart, the rollout factory adoption in Task 3.1 has to enforce the bound; the Task 1.5 factory does not.
 - `_run_training_loop` passes `env_steps` to `_evaluate_against_last_best`, which passes it to `_evaluate_games` and the new `_create_eval_env`.
   - `_create_eval_env` builds Isaiah's unseeded Orbit `VectorizedEnv` with the same arguments as before.
-  - For a Kaggriculture config it raises `NotImplementedError` naming Tasks 1.4/1.5 and the seed rule, so a run fails before touching a non-native env.
+  - For a Kaggriculture config it raised `NotImplementedError` at Task 3.3. Since Task 1.5 Stage 2 it returns an independent native adapter from `owl.game.create_env` with `base_seed=_evaluation_seed(cfg.env.seed, env_steps)`, rank 0 and world 1.
 - Isaiah's evaluation count is kept: `cfg.env.n_envs` games on the main process, with no `eval_n_games` knob.
 - Every evaluation log now carries `eval/games`, `eval/promoted` (1 or 0) and `eval/promotion_threshold` (0.7). The evaluation record is logged once, after the incumbent refresh, teacher update, promoted-checkpoint write and barrier complete (the reference's order), so a failed promotion leaves no `eval/promoted` record. Isaiah logged the evaluation before promoting; this moves that log, and a promotion failure now loses that step's evaluation metrics along with the run.
 
@@ -109,7 +111,7 @@ These tasks forked before Task 3.1 registered `KaggricultureTransformerConfig` a
 ## Limits and gaps
 
 - **Config registration landed with Tasks 3.1 and 3.4** (see below). The guards and the Kaggriculture evaluation branches are now reachable through validated configs; `EnvConfig` itself stays Orbit-only.
-- **The evaluation path is not Kaggriculture-ready.** `_create_eval_env` rejects Kaggriculture, and `_evaluation_seed` has no caller until the env config carries a seed. The script-local `_obs_to_device` and `_select_actions` still handle only Orbit batches, and replay export is Orbit-only. The skipped `test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds` reopens this once `owl.game.create_env` exists.
+- **Policy evaluation is not Kaggriculture-ready.** Since Task 1.5 Stage 2, `_create_eval_env` builds the seeded native adapter, and `test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds` runs: different `env_steps` draw different worlds, and a repeated evaluation reproduces its worlds and final banks with fixed legal actions. The script-local `_obs_to_device` and `_select_actions` still handle only Orbit batches, so `_evaluate_games` stops explicitly for Kaggriculture until Task 3.1; replay export is Orbit-only.
 - **The truncation path needs the mask type.** It indexes the observation through `_obs_index`, whose action-mask dispatch doesn't yet include `KaggricultureActionMask`, so the pure cut rule is tested but not a Kaggriculture `_apply_truncation`. The Kaggriculture `truncate_envs` must also keep the transition buffers (contract).
 - **Orbit keeps a quirk.** Its truncation zeroes the whole cut row, including a 4-player elimination reward (−1) earned on that same step. That is Isaiah's behavior, recorded here, not changed.
 - **Telemetry is new for Orbit too.** Orbit runs now log `eval/games`, `eval/promoted` and `eval/promotion_threshold`. No selection behavior changed.

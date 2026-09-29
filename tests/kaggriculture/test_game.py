@@ -86,8 +86,11 @@ def test_game_envelope() -> None:
             kt.KaggricultureGameConfig.model_validate({field: _I64_MAX + 1})
     rejected: list[dict[str, Any]] = [
         {"boardSize": 9},
+        {"boardSize": 11},
         {"maxMarketOrdersPerTurn": 0},
         {"maxMarketOrdersPerTurn": 11},
+        # Product 11 <= 240: only the per-turn order bound rejects this.
+        {"maxMarketOrdersPerTurn": 11, "turnsPerDay": 1},
         {"turnsPerDay": 25},
         {"turnsPerDay": 0},
         {"episodeSteps": 0},
