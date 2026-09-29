@@ -4193,8 +4193,15 @@ class _CheckpointRewritingTrainer:
     def load_checkpoint(self, path: Path) -> Any:
         return self._reload(path)
 
-    def load_model_weights(self, path: Path, *, load_optimizer: bool) -> Any:
+    def load_model_weights(
+        self,
+        path: Path,
+        *,
+        load_optimizer: bool,
+        fresh_state_keys: frozenset[str],
+    ) -> Any:
         assert not load_optimizer
+        assert fresh_state_keys == frozenset()
         return self._reload(path)
 
 

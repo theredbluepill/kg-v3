@@ -51,7 +51,8 @@ This is a working record of which local rebuild evidence was committed and which
 
 | Task | Files | Status |
 |---|---:|---|
-| 5.x BC | 30 | Deferred |
+| 5.x BC | 28 | Committed with `kg/merge-bc-c` (see "Phase 5 BC landing"); 6 of them were already tracked, identical, via the BC branches |
+| 5.x BC | 2 | Local: `brief-5.1-rereview-transcript.log` and `verify-5.2-trainer-r1-transcript.log` exceed 512 KiB |
 | Phase 7 (7.3, 7.4) | 11 | Deferred |
 | Phase 7 (7.1) | 11 | Committed with `kg/merge-7-1` (see "Task 7.1 landing") |
 | Phase 7 (7.1) | 2 | Local: `task-7.1-impl-transcript.log` and `task-7.1-impl-r2-transcript.log` exceed 512 KiB |
@@ -72,6 +73,14 @@ This is a working record of which local rebuild evidence was committed and which
 - **Promoted from DEFER:** 11 of the 13 Task 7.1 entries (677,342 B): the implementation and verification prompts and reports, the view-probe source and the two verification transcripts (431,881 B and 217,598 B, under the 512 KiB cap). Each source re-hashed equal to this manifest. The two implementation transcripts (1,140,805 B and 1,197,029 B) stay local in the main checkout; their entries now say so.
 - **Written after the inventory:** Codex's `verify-7.1-r2/` evidence directory in `/Users/poonszesen/kg-v3-t71` was unclassified. 46 compact files (115,127 B) are committed at the same paths. 12 files (2,287,580 B) stay local: the two tracked-file inventories (reconstructible from git) and the regenerated oracle, oracle manifest and replay copies, which `regeneration/byte-comparison.json` records as byte-equal to the committed fixtures.
 - **Copy-time checks:** every copy hashed equal to its source; the strict credential patterns, Fernet blobs and the pod SSH host and port matched nothing.
+
+## Phase 5 BC landing
+
+`kg/merge-bc-c` merged `kg/rebuild-bc-handoff` `41c95f7` (which contains `kg/rebuild-bc-now` up to `218a05b`), the later `kg/rebuild-bc-now` commit `954f640` and `kg/rebuild-bc-brief` `74428e8`, and committed the BC reviews. The JSON's `committed.landed_with_phase_5_bc` lists every file with source, bytes and SHA-256.
+
+- **Promoted from DEFER:** 28 of the 30 `5.x BC` entries (1,896,929 B): the 5.1 brief, 5.1 preparer and 5.2 trainer review prompts, reports and transcripts under the cap. Each source re-hashed equal to this manifest; 6 were already tracked with identical content through the merged branches. The two transcripts over 512 KiB (644,062 B and 554,699 B) stay local in the main checkout; their entries now say so.
+- **Written after the inventory:** 18 BC review files (1,197,549 B) from the main checkout: Codex `verify-5.1-team-filter` r1/r2, `review-bc-a100-receipts` and `verify-bc-handoff` r1/r2 (prompts, reports and transcripts; r2 has no report because Codex hit its usage limit), and the Claude stand-in reviews `claude-verify-bchandoff-r1`..`r4`.
+- **Copy-time checks:** every copy hashed equal to its source. The strict credential patterns, Fernet blobs, the pod SSH host and port, public IPv4 addresses and `root@` logins matched nothing (one `127.0.0.1`). The 40-hex hits are git object ids, except one `kaggriculture-v2` directory name; the one `secret = '…Player Canary'` hit is the preparer tests' synthetic team-name canary.
 
 ## Custody gaps
 

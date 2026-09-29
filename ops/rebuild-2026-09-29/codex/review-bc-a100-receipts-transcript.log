@@ -1,0 +1,2213 @@
+Reading additional input from stdin...
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-bcnow
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0edb4-1302-7020-b4a2-9c226dfdd09f
+--------
+user
+You are Codex, reviewing Claude's receipts for the A100 behavior-cloning (BC) run. READ-ONLY: do not modify files. The owner wants BC kept lean: report BLOCKING findings only (a false, missing or misleading claim in the receipts or cookbook note that a later reader would act on). Do not report style, wording preferences or non-blocking suggestions.
+
+Worktree: branch `kg/rebuild-bc-now` at `218a05b`. Files under review:
+- `ops/rebuild-2026-09-29/run-statements/bc-a100.md` (run statement, committed in `f0b7a38`)
+- `ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md`, `manifest-summary.json`, `pairing.json`, `prepare-top1.log`, `run-top1.sh` (data preparation, committed in `933d661`)
+- `ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/` (training: `README.md`, `bc_history.jsonl`, `bc_result.json`, `checkpoint_bc_best.json`, `bc_attempts.jsonl`, `train.log`, `SHA256SUMS`, `launch.start`, `gpu-samples.csv`, configs, `run-bc-a100.sh`; committed in `218a05b`)
+- `cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md`, its entry in `cookbook/references/index.md`, and the matching top entry of `cookbook/log.md`
+- Supporting code if needed: `scripts/train_bc.py`, `scripts/kaggriculture_prepare_bc.py`, `configs/bc/kaggriculture_1gpu_eager.yaml`, `configs/kaggriculture_1gpu_eager.yaml`.
+
+Facts Claude checked on the pod (you cannot reach the pod; take these as given):
+- `sha256sum` on the pod now: `checkpoint_bc_best.pt` = `fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51`, `bc_state.pt` = `7644ded6a1544981495fc27390a61026ff4112cd10a1b33c3962d188ac80529f`.
+- W&B: the run was launched with `--wandb-mode offline`, but it has since been synced. The pod run dir holds `wandb/offline-run-20260929_142222-kvl4rfda/run-kvl4rfda.wandb.synced` (mtime 2026-09-29 15:01:13Z); the orchestrator reports the final sync at 15:01:14Z to `https://wandb.ai/spoon/kg-v3/runs/kvl4rfda`. The receipts and note still say "not synced"; that is a known error Claude will correct. Say exactly which lines must change and give the replacement text.
+
+Check, citing files and lines:
+1. The run statement precedes the launch: compare the commit time of `f0b7a38` (`git log --format=%ci`) with `train/launch.start` and the start times in `train.log` / `bc_result.json`, and confirm `bc_attempts.jsonl` records source `f0b7a38...`.
+2. Data denominators agree across `receipts.md`, `manifest-summary.json`, `prepare-top1.log`, the run statement, the train README and the note: 842 team episodes seen, 523 kept (team won), 3356 team absent, 319 team lost (4198 listed; 523 + 3356 + 319 = 4198); 507 train / 16 validation episodes; 182,273 + 5,748 = 188,021 rows; turn stride 2 with its stated reason (the `--resident-budget-gib` formula counts all listed episodes; applied to the 523 kept episodes it gives stride 2). Check the arithmetic.
+3. The pairing diagnostic is reported as 5743/5752 and presented as a diagnostic, not as parity proof or label correctness proof beyond what `pairing.json` supports.
+4. The NLL curve in the train README matches `bc_history.jsonl`; best step 3200 at 0.480 (0.48018); the L9 stop at step 5200 with `stop_reason` `no_held_out_improvement`; the stated patience (10 evaluations x 200 steps) is consistent with 3200 + 2000 = 5200 and with `train_bc.py` / the BC config.
+5. Checkpoint custody: SHA-256 `fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51` agrees across `SHA256SUMS`, `bc_result.json`, `checkpoint_bc_best.json`, the README and the note; the local compact-file hashes in `SHA256SUMS` match the committed files (run `shasum -a 256` on them).
+6. The eager-mode deviation (driver 580.159.03 outside the probed compile stack) is declared in the run statement before launch, and the receipts limit throughput claims accordingly (no ceiling claim, no correctness claim that depends on compile).
+7. W&B: every "offline only" / "not synced" claim in the receipts, README and note (and the log/index entry if present). List each line to correct.
+8. The cookbook note claims selection only, not playing strength, legality in play or PPO warm-start benefit; its frontmatter (`type`, `title`, `description`, `tags` with first tag `kaggriculture-v3`, `status`, `generated`, `sources` as `repository:` paths that exist) is valid.
+9. The superseded mixed-winner shards (`/workspace/kg-v3-bc-2026-09-29/shards/`) are marked as not trained on, and nothing states or implies the run used them.
+
+FINAL REPORT: numbered BLOCKING findings only, each with file, line and the exact replacement text. If an item passes, say so in one line. End the report with exactly one line of the form `VERDICT: APPROVE`, `VERDICT: APPROVE WITH EDITS` or `VERDICT: REVISE`.
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll verify the receipts against the committed files, hashes and supporting code, keeping the review read-only and reporting only claims that need correction.
+exec
+/bin/zsh -lc "cat cookbook/index.md; sed -n '1,35p' cookbook/log.md; cat cookbook/decisions/evaluation-preserves-generality-and-evidence.md; cat cookbook/decisions/diagnose-the-mechanism-before-spending-on-runs.md; cat cookbook/decisions/throughput-means-correct-complete-work.md" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References are not all reference-branch notes: the References index's sections and entries state whether each describes the current tree or branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]]
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Record the top-1 team BC checkpoint (selection only)
+
+The owner asked to train BC on the 7-day top-1 team data within 1.5–2 h. `configs/bc/kaggriculture_1gpu_eager.yaml` and `configs/kaggriculture_1gpu_eager.yaml` adapt the 2-rank BC config to one A100: same global batch, eager because the pod's driver is outside the probed compile stack. The run (`f0b7a38`, run statement `ops/rebuild-2026-09-29/run-statements/bc-a100.md`) stopped by the L9 rule at step 5,200. Its best held-out NLL was 0.480 at step 3,200. The checkpoint stays on the pod volume. See [[references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only|BC checkpoint Reference]]; receipts are in `ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/`.
+
+## 2026-09-29 — Credit the SPS run's GPU chunk counts in the compiled-GEMM Reference
+
+Codex verification r1 of the evidence merge (`4974888`, APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/verify-merge-evidence-r1.md`) found one P3: the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] still said the chunked teacher-sized packed path was "not measured on the GPU", although the [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]] run counted 1/2/3 teacher-proxy trunk chunks there. The Reference, its description and the [[references/index|References index]] line now credit that timing-only measurement and keep the numerical-correctness and production teacher-integration gaps.
+
+## 2026-09-29 — Merge the kg/rebuild-model ops evidence and cookbook refresh onto the integration
+
+The Codex-approved `kg/rebuild-model` commits `4fd40c7`..`8093d51` change only `ops/` and `cookbook/`: Phase 6.0 flash-attn, model-only SPS ceiling and ATEN-only GEMM A/B receipts, the cookbook refresh and the [[workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict|codex exec Workflow]]. Two files conflicted. This log keeps both sides, integration first. The [[references/index|References index]] keeps every integration line, including the cuBLAS-only lane's [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] text, adds the two new References at the top and takes the corrected Task 0.3 Rust status. `results.md` auto-merged to the branch's copy, so the integration's "`results.md` lines 259–303" citations now resolve in this tree. The [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment Reference]] no longer says the compiled-GEMM FlashAttention limit awaits revision, because the cuBLAS-only lane revised it.
+
+## 2026-09-29 — Keep BC patience on the scheduled cadence across restarts
+
+Codex verification r2 of Task 5.2 (`ops/rebuild-2026-09-29/codex/verify-5.2-trainer-r2.md`, APPROVE WITH EDITS) found one P3: the terminal evaluation of a budget or runtime stop between scheduled evaluations counted toward patience, so a run stopped at step 1 and extended stopped at step 2 where the uninterrupted run stopped at step 4, contradicting the exact-restart claim. `HeldOutSelection.observe` now takes `scheduled`; the off-cadence terminal evaluation still selects (it can keep a lower checkpoint) but leaves patience alone, and `bc_history.jsonl` marks it with `bc/scheduled_evaluation` 0. The restart claim in `bc.py`, `README.md` and the Reference now names rows, updates, evaluation steps and stopping step, with a best never higher in NLL. New tests also pin the rank in the permutation seed and the attempt-record guards, two of r2's surviving-mutant gaps. 11/11 targeted mutants killed; `just py-prepare`: 1,703 passed, 11 skipped. See [[references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best|BC trainer Reference]].
+
+## 2026-09-29 — Fix the BC trainer's verification r1 findings
+
+Codex verification r1 of Task 5.2 (`ops/rebuild-2026-09-29/codex/verify-5.2-trainer-r1.md`, REJECT) found two P2s. `HeldOutSelection` gated the best checkpoint by `min_delta`, so NLLs 2.0 → 1.97 with `min_delta` 0.05 kept 2.0; selection now follows every strict minimum and a separate `improvement_nll` / `evals_since_improvement` pair carries patience. A restart reused `launch.json`'s source and admitted a changed seed or batch; `launch.json` is replaced by `bc_attempts.jsonl`, one record per launch or restart with that checkout's source, source lineage and parent `bc_state.pt` SHA-256, copied into the best record and `bc_result.json`, and `bc_state.pt` now stores the trajectory settings, which a restart must match except `max_steps`. New tests also add a hand-computed objective oracle and prove the real update path lowers the loss, closing the reported loss-sign and `optimizer.step()` gaps. Seven tests red before the fix, 11/11 targeted mutants killed; `just py-prepare`: 1,698 passed, 11 skipped. See [[references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best|BC trainer Reference]].
+
+## 2026-09-29 — Build the Task 5.2 BC trainer script
+
+`scripts/train_bc.py`, `python/owl/train/bc.py` and `python/owl/kaggriculture/bc_data.py` add the BC warm start on the rebuilt model. It reuses Isaiah's `create_model`, `create_optimizer`, `autocast_context`, `configure_model_compile` and DDP adapter, and it reads the refreshed 5.1 brief's `kaggriculture-bc-shard-v1` format (`bcefd02`). Changes from the reference trainer: the critic is trained with a raw-bank winner CE (Isaiah's equal policy/value distillation weights) instead of frozen; training order is deterministic per rank, so a restart reproduces the uninterrupted run; the best checkpoint by held-out NLL has exactly `run_ppo.py`'s keys; a patience rule stops the run (L9). `configs/bc/kaggriculture_2rank.yaml` carries unmeasured starting values. 18 CPU tests and 11 of 12 mutants killed; `just py-prepare`: 1,691 passed, 11 skipped. No GPU, real-data or W&B execution; the run waits for the 5.1 shards and the pod. See [[references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best|BC trainer Reference]].
+
+## 2026-09-29 — Reconcile the teacher Reference's open dependencies after the merge
+
+Codex verification r1 of the Phase 4 merge (`a424d8c`, APPROVE WITH EDITS,
+`ops/rebuild-2026-09-29/codex/verify-merge-teacher-r1.md`) found one P3: the
+[[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]]
+still said T18 awaited the Task 3.2 value-mode guards, T19b and Task 4.4 awaited
+the configs merge, and described the old skip reason, while its appended
+post-merge line said those had landed. The launch-pair, T19-split and "Phase 4
+is not complete" prose now states the current seams in place: T18 and the
+---
+type: "Decision"
+title: "Evaluation preserves generality and evidence"
+description: "Measure win rate and bank margin across opponents, retain source-bound evidence and telemetry, and keep submission authority with the owner."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:.gitignore"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/candidates-are-measured-by-win-rate-and-margin.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/no-candidate-agent-overfits-to-a-single-opponent.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/myolie-uses-wandb-for-telemetry-and-monitoring.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/repository-tracking-preserves-evidence-and-excludes-local-state.md"}]
+---
+
+# Evaluation preserves generality and evidence
+
+The owner's current reuse instruction carries forward v2's documented evaluation and custody discipline. Candidates are judged on win rate plus final-bank margin across differently playing opponents. Record versions, seeds, both seats, denominators, legality, completion and runtime. Keep diagnostic margin distinct from official win/loss/tie outcome. A gain against one opponent is scoped evidence; use fresh seeds and held-out opponents for generalization, and distinguish selection panels from final qualification. Local gate success does not establish public-ladder robustness.
+
+Keep experiment identity stable through retries, using separate attempt/checkpoint metadata. Select a v3 name when an experiment exists; do not import the v2 prefix or conceal continuation by renaming. The owner decides which artifact is submitted; development authorization alone is not a submission decision.
+
+Original v2 telemetry directive:
+
+> 你幫忙下一個cookbook record 去用wandb做telemetry做監控
+
+Use W&B for training/evaluation telemetry alongside durable local evidence, with explicit run identity, phase, source/checkpoint hashes and completed-work denominators. Configure v3 identifiers; do not publish into v2's project/group. Telemetry implementation, authentication and live readback need their own verification. Record outages and pending synchronization honestly; a dashboard is not an independent causal check.
+
+Original bulk-artifact directive:
+
+> why are we pushing the training artifacts as well? They should be gitignored.
+
+Track source, lockfiles, compact results, receipts and hash manifests. Exclude credentials, environments, caches, bulk weights/optimizer state and generated corpora; retain path, bytes and SHA-256 custody manifests for local artifacts. Ignoring is not deletion. No competitive result, cloud connection or submission is established here.
+---
+type: "Decision"
+title: "Diagnose the mechanism before spending on runs"
+description: "Keep decisions reproducible, map game capabilities to executable mechanisms, and distinguish four failure classes before repairing."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/kaggriculture-v2-starts-with-a-clean-design.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/the-architecture-must-express-the-decisions-needed-to-win.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/failures-must-distinguish-information-decision-execution-and-architecture-errors.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/stalled-improvement-requires-attribution-and-explicit-architecture-limits.md"}]
+---
+
+# Diagnose the mechanism before spending on runs
+
+The owner's reuse instruction adopts useful v2 discipline for this adaptation. Its original owner directives include:
+
+> crafting a system that is undebuggable and reuqesting blind guess/ experiment is banned explicitly in this project.
+
+> 證據是你有信心的時候才去收集的，不是沒有信心下的賭博.
+
+> 贏所需的決策，架構能否表達？
+
+V3 operationalizes those requirements as follows. Before a costly run, state the observed problem, code/data path, supported mechanism or diagnostic question, expected discriminating observation, and stopping condition. Preserve source/configuration, inputs, seeds and outputs sufficient to replay and localize it. Inspect implementation or add focused diagnostics when visibility is missing. A diagnostic may resolve an unknown cause; mark uncertainty rather than inventing confidence.
+
+Before relying on an architecture, map investment payback, labor allocation, sale timing and market adaptation to available information, represented state, a choice mechanism and executable actions. Trace a worked case through those boundaries. Explicit capacity is necessary, but does not prove effective learned use.
+
+Distinguish **information insufficiency**, **decision error**, **execution error**, and **architecture error**, following the original owner quote “資訊不足、決策錯誤與執行錯誤，或者是架構錯誤”. Trace observed inputs → representation → intended choice → emitted action → engine outcome. Information available but discarded by representation is not an environmental information shortage. Multiple causes may coexist; unresolved attribution must be named.
+
+When repeated repairs fail, inspect the engine, relevant original research and applicable competition discussion before spending again. A justified repair needs a mechanism and discriminating check. Record `ARCHITECTURE LIMITATION` only with its evidence, conditions, attempted repairs and reopening condition; qualify it as suspected when attribution remains unresolved. Repeated poor scores alone never prove impossibility. These rules add no approval step.
+---
+type: "Decision"
+title: "Throughput means correct complete work"
+description: "High throughput is required; preserve semantic parity and measure equivalent work rather than inferring gains from language or kernels."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/high-throughput-is-mandatory.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/myolie-native-sampling-grammar.md"}]
+---
+
+# Throughput means correct complete work
+
+Original v2 owner directive:
+
+> cookbook decision 下一個-高吞吐量是必須不是選擇
+
+Under today's instruction to reuse useful discipline, high throughput is a requirement for the v3 collection, model and training design. Preserve correctness while reporting collection rate, valid learner turns through a full update, phase timings and the total workflow cost. Separate startup/compilation from steady state. State hardware, precision, batch/rollout work, recording settings, transfer and evaluation boundaries. No absolute SPS floor or allowed regression percentage has been supplied.
+
+Rust preparation must actually execute in the path being measured. Preserve game ordering, no-op/STOP distinctions, conditional legality, masks, sampled behavior density and feature semantics; pin source/lockfile/binary and inputs/outputs. Compare equivalent work with an independent oracle where applicable. A faster parser or sampler does not establish a full-training speedup.
+
+The v2 native-sampler Reference is useful contrary evidence: its saved shared-host run lowered sampler CPU time while complete collection elapsed time increased. That is a scoped counterexample to extrapolating component gains, not a ban on native sampling and not a v3 benchmark. Reducing environments, histories or data volume is a workload change unless comparable end-to-end measurements show an optimization.
+
+Use [[../workflows/profile-cuda-bottlenecks-with-nsight-systems|Nsight Systems]] for NVIDIA timeline attribution. Temporary downscaling can diagnose a fault but does not close the throughput requirement. Historical measured scopes (the rejected old decoder and the fixed-minibatch sweep) live on branch `kg/reference-2026-09-29` at `ops/gpu-sps-2026-09-29/results.md`, not in the current tree. The rebuild so far has only component measurements, recorded as the [[../references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]], an upper bound rather than a throughput result. None of them establishes playing strength, dense-game capacity or an owner-specified performance floor, and each recipe change, including the Isaiah-aligned cadence, needs its own complete-work qualification.
+
+exec
+/bin/zsh -lc "rg --files ops/rebuild-2026-09-29/bc-a100-2026-09-29; nl -ba ops/rebuild-2026-09-29/run-statements/bc-a100.md; nl -ba cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md; rg -n 'top-1-team-bc|top.1 team|offline|synced' cookbook/references/index.md" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_config.yaml
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/checkpoint_bc_best.json
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/SHA256SUMS
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/gpu-samples.csv
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/run-bc-a100.sh
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_result.json
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/config.yaml
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_attempts.jsonl
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_history.jsonl
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/launch.start
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/manifest-summary.json
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/prepare-top1.log
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/pairing.json
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/run-top1.sh
+     1	# Run statement: BC warm start on the A100 pod (top-1 team, 7 days, 1 GPU)
+     2	
+     3	- **Question.** Can a warm-start policy be trained by behavior cloning the
+     4	  leaderboard #1 team's winning seats over 2026-09-22..28 within the owner's
+     5	  whole-BC window ("train it within whole BC time 1.5-2h for 7 days"), and
+     6	  where does its held-out NLL bottom out? This is a selection run: it picks the
+     7	  checkpoint with the lowest held-out NLL. It does not test playing strength.
+     8	- **Inputs.**
+     9	  - Source: `kg/rebuild-bc-now`, the commit that adds this statement and the two
+    10	    1-GPU configs (its hash is recorded by `train_bc.py` in
+    11	    `bc_attempts.jsonl` and in the receipts). Trainer code is unchanged from
+    12	    `89ca39c` (the pod's `owl_rs` build is reused; no Rust change).
+    13	  - Data: `/workspace/kg-v3-bc-2026-09-29/shards-top1/` (the single-team
+    14	    dataset), manifest SHA-256
+    15	    `ba5fe1c417741c587473b5696a6ca55227240b394236948cb4f4f5c4ed9a3036`;
+    16	    507 train episodes / 182,273 turn rows, 16 validation episodes / 5,748
+    17	    rows, turn stride 2. The superseded mixed-winner `shards/` is not used.
+    18	  - Config: `configs/bc/kaggriculture_1gpu_eager.yaml` ->
+    19	    `configs/kaggriculture_1gpu_eager.yaml`.
+    20	- **Method.** One A100 80GB PCIe, plain `python scripts/train_bc.py` (world
+    21	  size 1 via `distributed_session`). Isaiah's 1-GPU rule: the 2-rank BC config's
+    22	  global batch is kept (rows_per_rank 256 x 2 ranks -> 512 on one rank,
+    23	  gradient accumulation 1; fall back to 256 x accum 2 only on OOM). Optimizer,
+    24	  LR schedule, seed, value_coef, eval cadence and patience are the 2-rank
+    25	  config's. **Deviation:** eager model (`rl.model_compile: none`), because the
+    26	  pod's NVIDIA driver 580.159.03 is not in the probed compile stack
+    27	  (`owl.model.compile_gemm`, 595.91.07) and `train_bc.py` refuses it; this
+    28	  costs throughput, not correctness. BF16 autocast and flash-attn 2.8.3 as
+    29	  configured. W&B: no key on the pod, so `--wandb-mode offline` into the run
+    30	  directory (telemetry outage stays visible; sync later if wanted).
+    31	- **Expected observation.** Held-out policy NLL falls from its step-0 value and
+    32	  either reaches a minimum then rises (L9 stop fires) or is still falling at the
+    33	  cap (then the cap, not the data, limited selection).
+    34	- **Stopping.** First of: best held-out NLL followed by the trainer's L9 stop
+    35	  (10 scheduled evaluations x 200 steps without improvement), `max_steps`
+    36	  100,000, the hard cap `--max-runtime-hours 2` (clock starts inside
+    37	  `train_bc` after data load and model build, so preflight replay counts), or
+    38	  a crash (diagnose once, fix only the obvious cause, relaunch).
+    39	- **Budget.** Pod 23f7xiz368x9jf at $1.66/h; about 2.5 h wall including data
+    40	  load, so about $4. No new billable resource.
+    41	- **Artifacts.** Pod run dir under `/workspace/kg-v3-bc-2026-09-29/run/`
+    42	  (`checkpoint_bc_best.pt` + `.json`, `bc_state.pt`, `bc_history.jsonl`,
+    43	  `bc_result.json`, `bc_attempts.jsonl`, configs, offline W&B), launch log in
+    44	  the same directory. Compact receipts (history, result, attempts, sidecar,
+    45	  log excerpt, SHA-256, GPU samples) copied to
+    46	  `ops/rebuild-2026-09-29/bc-a100-2026-09-29/`.
+    47	- **Safety.** Read-only on existing `/workspace` data; new outputs only under
+    48	  `/workspace/kg-v3-bc-2026-09-29/run/`; scratch under `/root`. No driver,
+    49	  CUDA or torch changes; no credentials printed or committed. The pod is left
+    50	  running after the run; the owner decides when to stop it.
+     1	---
+     2	type: "Reference"
+     3	title: "Top-1 team BC checkpoint is selected by held-out NLL only"
+     4	description: "First real BC run (A100, 1 GPU, eager, source f0b7a38): imitating the leaderboard #1 team's winning seats over 2026-09-22..28 (507 train / 16 validation episodes, stride 2), held-out policy NLL fell from 3.73 to a best of 0.480 at step 3,200 (9 epochs) and the L9 stop fired at step 5,200 while train NLL kept falling. Checkpoint fd854587... on the pod volume. Selection only; playing strength and PPO warm-start benefit are untested."
+     5	tags: ["kaggriculture-v3", "bc", "checkpoint"]
+     6	status: "verified-scoped"
+     7	generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+     8	sources: [{"resource": "repository:ops/rebuild-2026-09-29/run-statements/bc-a100.md"}, {"resource": "repository:ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_history.jsonl"}, {"resource": "repository:ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_result.json"}, {"resource": "repository:ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/SHA256SUMS"}, {"resource": "repository:ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md"}, {"resource": "repository:configs/bc/kaggriculture_1gpu_eager.yaml"}, {"resource": "repository:configs/kaggriculture_1gpu_eager.yaml"}, {"resource": "pod-artifact:23f7xiz368x9jf:/workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/"}]
+     9	---
+    10	
+    11	# Top-1 team BC checkpoint is selected by held-out NLL only
+    12	
+    13	The first real run of the [[kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best|BC trainer]] produced a warm-start checkpoint. It was **selected** by the lowest held-out policy NLL. Nothing here shows that it plays well.
+    14	
+    15	## What was run
+    16	
+    17	- Data: the leaderboard #1 team's winning seats, days 2026-09-22..28, turn stride 2; 507 train episodes (182,273 turn rows) and 16 validation episodes (5,748 rows). Shard manifest SHA-256 `ba5fe1c4…3036` (`ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md`).
+    18	- Source `f0b7a38` on `kg/rebuild-bc-now`, `scripts/train_bc.py`, one A100 80GB, `configs/bc/kaggriculture_1gpu_eager.yaml`: the 2-rank config's global batch (512 turn rows per step), same optimizer, seed and L9 patience. The model runs **eager**, because this pod's NVIDIA driver (580.159.03) is outside the probed compile stack and `train_bc.py` refuses it.
+    19	
+    20	## Result
+    21	
+    22	- Held-out NLL 3.732 → **0.480 at step 3,200** (9.0 epochs), then 0.48–0.53 while train NLL fell from 0.37 to 0.21. The L9 stop (`no_held_out_improvement`) fired at step 5,200, after 36 min inside the trainer. The 2 h cap was not reached.
+    23	- Checkpoint `/workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/checkpoint_bc_best.pt` on pod `23f7xiz368x9jf`'s network volume, SHA-256 `fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51`. It uses run_ppo's checkpoint schema.
+    24	- Throughput, eager: 2,739 learner seat rows/s mean over training steps (about 1,370 turn rows/s). Complete work including preflight and evaluations was 1,245 turn rows/s. nvidia-smi peak was 34,003 MiB.
+    25	
+    26	## Limits and consequence
+    27	
+    28	- **Selection, not qualification.** The same 16 episodes select the checkpoint and report its NLL. No separate held-out set, no game play, no legality check in live play and no PPO warm-start comparison exists.
+    29	- There is one seed. The LR was still at its post-warmup plateau when the run stopped. The small train set (507 episodes) overfit after about 9 epochs at these settings. Other data, stride or regularization were not tried.
+    30	- W&B telemetry is offline only (no key on the pod; run `kvl4rfda`, not synced).
+    31	- The saved `config.yaml` is the eager 1-GPU PPO config. Loading the weights into `kaggriculture_2rank.yaml` with `--load-model-weights` is expected to work because the model sections match, but that load has not been run.
+    32	
+    33	Reopen this note when the checkpoint is evaluated in play or used to start PPO.
+5:- [[top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only|Top-1 team BC checkpoint is selected by held-out NLL only]] — First real BC run (1× A100, eager, `f0b7a38`) on the leaderboard #1 team's winning seats over 7 days. Held-out NLL 3.73 → best 0.480 at step 3,200; the L9 stop fired at 5,200. Checkpoint `fd854587…` kept on the pod volume. Selection only; strength and PPO benefit untested.
+17:- [[rebuild-data-preparation-preserves-replay-identity|Replay identity and data/evaluation preparation]] — Typed engine-independent selector preserves all 252 historical episode IDs and splits; offline source custody, v4 preparation, seed replay export and four compact opponent recommendations carry explicit native/runtime gaps.
+18:- [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope; Rust `cargo test` passed 155 with 2 ignored once the git-ignored Orbit fixtures were copied in.
+
+exec
+/bin/zsh -lc "git status --short && git branch --show-current && git rev-parse HEAD && git log -1 --format='%H%n%ci%n%ai' f0b7a38" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+kg/rebuild-bc-now
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+218a05b8b00d945f04317aeedbc3c1972c62aaff
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+f0b7a3877eb16657f973aaf55c70779b040e5b46
+2026-09-29 22:18:50 +0800
+2026-09-29 22:18:50 +0800
+
+exec
+/bin/zsh -lc 'nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_result.json; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/checkpoint_bc_best.json; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_attempts.jsonl; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_history.jsonl' in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+     1	{
+     2	  "attempt": 0,
+     3	  "attempt_source_commits": [
+     4	    "f0b7a3877eb16657f973aaf55c70779b040e5b46"
+     5	  ],
+     6	  "best_checkpoint": "checkpoint_bc_best.pt",
+     7	  "best_checkpoint_sha256": "fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51",
+     8	  "best_step": 3200,
+     9	  "best_validation_nll": 0.4801823178678232,
+    10	  "dataset_manifest_sha256": "ba5fe1c417741c587473b5696a6ca55227240b394236948cb4f4f5c4ed9a3036",
+    11	  "dataset_root": "/workspace/kg-v3-bc-2026-09-29/shards-top1",
+    12	  "final_validation_nll": 0.5282435221396641,
+    13	  "parent_state_sha256": null,
+    14	  "rows_per_step": 512,
+    15	  "selection": "lowest held-out policy NLL; not PPO promotion",
+    16	  "source_commit": "f0b7a3877eb16657f973aaf55c70779b040e5b46",
+    17	  "start_step": 0,
+    18	  "started_at": "2026-09-29T14:22:16+00:00",
+    19	  "steps": 5200,
+    20	  "steps_per_epoch": 356,
+    21	  "stop_reason": "no_held_out_improvement",
+    22	  "world_size": 1
+    23	}
+     1	{
+     2	  "attempt": 0,
+     3	  "attempt_source_commits": [
+     4	    "f0b7a3877eb16657f973aaf55c70779b040e5b46"
+     5	  ],
+     6	  "bc_step": 3200,
+     7	  "checkpoint": "checkpoint_bc_best.pt",
+     8	  "dataset_manifest_sha256": "ba5fe1c417741c587473b5696a6ca55227240b394236948cb4f4f5c4ed9a3036",
+     9	  "dataset_root": "/workspace/kg-v3-bc-2026-09-29/shards-top1",
+    10	  "parent_state_sha256": null,
+    11	  "sha256": "fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51",
+    12	  "source_commit": "f0b7a3877eb16657f973aaf55c70779b040e5b46",
+    13	  "start_step": 0,
+    14	  "started_at": "2026-09-29T14:22:16+00:00",
+    15	  "validation_nll": 0.4801823178678232,
+    16	  "wandb_run_id": "kvl4rfda",
+    17	  "world_size": 1
+    18	}
+     1	{"attempt": 0, "attempt_source_commits": ["f0b7a3877eb16657f973aaf55c70779b040e5b46"], "dataset_manifest_sha256": "ba5fe1c417741c587473b5696a6ca55227240b394236948cb4f4f5c4ed9a3036", "dataset_root": "/workspace/kg-v3-bc-2026-09-29/shards-top1", "parent_state_sha256": null, "source_commit": "f0b7a3877eb16657f973aaf55c70779b040e5b46", "start_step": 0, "started_at": "2026-09-29T14:22:16+00:00", "world_size": 1}
+     1	{"bc/best_step": 0.0, "bc/best_validation_nll": 3.7321066010222306, "bc/epoch": 0.0, "bc/evals_since_improvement": 0.0, "bc/learner_seat_rows": 0.0, "bc/learning_rate": 0.0, "bc/scheduled_evaluation": 1.0, "bc/step": 0.0, "bc/validation_frame_nll": 3.769940830887819, "bc/validation_nll": 3.7321066010222306, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.7243405410458665, "time/elapsed_seconds": 116.62939675524831, "time/eval_seconds": 3.429266929626465}
+     2	{"bc/best_step": 200.0, "bc/best_validation_nll": 3.309651336988477, "bc/epoch": 0.5617977528089888, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 5.095723662376404, "bc/learner_seat_rows": 204800.0, "bc/learning_rate": 0.0004, "bc/scheduled_evaluation": 1.0, "bc/step": 200.0, "bc/train_nll": 3.5830036878585814, "bc/train_value_ce": 0.5172972961142659, "bc/validation_frame_nll": 3.3422631412181905, "bc/validation_nll": 3.309651336988477, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.07009383250046042, "perf/learner_seat_rows_per_second": 2482.852317220154, "time/elapsed_seconds": 202.5366158913821, "time/eval_seconds": 3.0239745285362005}
+     3	{"bc/best_step": 400.0, "bc/best_validation_nll": 2.398249090588914, "bc/epoch": 1.1235955056179776, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 6.0497632610797885, "bc/learner_seat_rows": 409600.0, "bc/learning_rate": 0.0008, "bc/scheduled_evaluation": 1.0, "bc/step": 400.0, "bc/train_nll": 2.824166033267975, "bc/train_value_ce": 0.0248689293616917, "bc/validation_frame_nll": 2.4443713573901356, "bc/validation_nll": 2.398249090588914, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.026915938253679734, "perf/learner_seat_rows_per_second": 2517.2652544848347, "time/elapsed_seconds": 287.33004030399024, "time/eval_seconds": 2.820320276543498}
+     4	{"bc/best_step": 600.0, "bc/best_validation_nll": 1.719105592434325, "bc/epoch": 1.6853932584269662, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 3.602344877719879, "bc/learner_seat_rows": 614400.0, "bc/learning_rate": 0.0012, "bc/scheduled_evaluation": 1.0, "bc/step": 600.0, "bc/train_nll": 2.0452368772029876, "bc/train_value_ce": 0.008800687441253103, "bc/validation_frame_nll": 1.7927248896277055, "bc/validation_nll": 1.719105592434325, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.03901243505135278, "perf/learner_seat_rows_per_second": 2497.5296221873155, "time/elapsed_seconds": 372.7373624164611, "time/eval_seconds": 2.716773370280862}
+     5	{"bc/best_step": 800.0, "bc/best_validation_nll": 1.1153746401176905, "bc/epoch": 2.247191011235955, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 4.341027307510376, "bc/learner_seat_rows": 819200.0, "bc/learning_rate": 0.0016, "bc/scheduled_evaluation": 1.0, "bc/step": 800.0, "bc/train_nll": 1.387742090821266, "bc/train_value_ce": 0.0080253048799932, "bc/validation_frame_nll": 1.1829849735927667, "bc/validation_nll": 1.1153746401176905, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.04049747475405588, "perf/learner_seat_rows_per_second": 2599.817903453755, "time/elapsed_seconds": 454.7356141824275, "time/eval_seconds": 2.4249729961156845}
+     6	{"bc/best_step": 1000.0, "bc/best_validation_nll": 0.8456222836807028, "bc/epoch": 2.808988764044944, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 4.378433260917664, "bc/learner_seat_rows": 1024000.0, "bc/learning_rate": 0.002, "bc/scheduled_evaluation": 1.0, "bc/step": 1000.0, "bc/train_nll": 0.9057024541497231, "bc/train_value_ce": 0.00788422390818596, "bc/validation_frame_nll": 0.8979903146015576, "bc/validation_nll": 0.8456222836807028, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.05912510942840703, "perf/learner_seat_rows_per_second": 2530.021957729411, "time/elapsed_seconds": 539.3253050055355, "time/eval_seconds": 2.917211439460516}
+     7	{"bc/best_step": 1200.0, "bc/best_validation_nll": 0.7506565447059371, "bc/epoch": 3.3707865168539324, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 3.794420794248581, "bc/learner_seat_rows": 1228800.0, "bc/learning_rate": 0.0019999804582475755, "bc/scheduled_evaluation": 1.0, "bc/step": 1200.0, "bc/train_nll": 0.7528200456500054, "bc/train_value_ce": 0.0069344632851425555, "bc/validation_frame_nll": 0.8007227548449277, "bc/validation_nll": 0.7506565447059371, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.04459432854616791, "perf/learner_seat_rows_per_second": 2848.926262849362, "time/elapsed_seconds": 613.856330672279, "time/eval_seconds": 2.054674692451954}
+     8	{"bc/best_step": 1400.0, "bc/best_validation_nll": 0.6836591148509196, "bc/epoch": 3.932584269662921, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 3.285445944070816, "bc/learner_seat_rows": 1433600.0, "bc/learning_rate": 0.0019999218337617784, "bc/scheduled_evaluation": 1.0, "bc/step": 1400.0, "bc/train_nll": 0.6780712023377419, "bc/train_value_ce": 0.0066047451169288255, "bc/validation_frame_nll": 0.73596749716911, "bc/validation_nll": 0.6836591148509196, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.08090215180886921, "perf/learner_seat_rows_per_second": 2811.4726569267127, "time/elapsed_seconds": 690.0149975121021, "time/eval_seconds": 2.7153310384601355}
+     9	{"bc/best_step": 1600.0, "bc/best_validation_nll": 0.6461419070355994, "bc/epoch": 4.49438202247191, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 3.83968621134758, "bc/learner_seat_rows": 1638400.0, "bc/learning_rate": 0.001999824128857001, "bc/scheduled_evaluation": 1.0, "bc/step": 1600.0, "bc/train_nll": 0.6015725293755532, "bc/train_value_ce": 0.006563757189724129, "bc/validation_frame_nll": 0.693998489606744, "bc/validation_nll": 0.6461419070355994, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.06999654374167143, "perf/learner_seat_rows_per_second": 2803.9034918131706, "time/elapsed_seconds": 766.0252773147076, "time/eval_seconds": 2.5254678819328547}
+    10	{"bc/best_step": 1800.0, "bc/best_validation_nll": 0.5894430753831326, "bc/epoch": 5.056179775280899, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 3.2171184343099593, "bc/learner_seat_rows": 1843200.0, "bc/learning_rate": 0.001999687347390467, "bc/scheduled_evaluation": 1.0, "bc/step": 1800.0, "bc/train_nll": 0.5635407032072544, "bc/train_value_ce": 0.005807602164568379, "bc/validation_frame_nll": 0.6385421686454084, "bc/validation_nll": 0.5894430753831326, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.059882215564367985, "perf/learner_seat_rows_per_second": 2898.087059927775, "time/elapsed_seconds": 838.8331288136542, "time/eval_seconds": 1.5320967342704535}
+    11	{"bc/best_step": 2000.0, "bc/best_validation_nll": 0.5665169970061767, "bc/epoch": 5.617977528089888, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 3.048300348520279, "bc/learner_seat_rows": 2048000.0, "bc/learning_rate": 0.0019995114947620744, "bc/scheduled_evaluation": 1.0, "bc/step": 2000.0, "bc/train_nll": 0.5054601560533046, "bc/train_value_ce": 0.005849709936737782, "bc/validation_frame_nll": 0.6145499632835191, "bc/validation_nll": 0.5665169970061767, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.06129165841550771, "perf/learner_seat_rows_per_second": 2841.1761764189914, "time/elapsed_seconds": 914.1483771912754, "time/eval_seconds": 2.6445246767252684}
+    12	{"bc/best_step": 2200.0, "bc/best_validation_nll": 0.5386168573494993, "bc/epoch": 6.179775280898877, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 2.6413399636745454, "bc/learner_seat_rows": 2252800.0, "bc/learning_rate": 0.0019992965779141833, "bc/scheduled_evaluation": 1.0, "bc/step": 2200.0, "bc/train_nll": 0.475360272526741, "bc/train_value_ce": 0.00552199765930709, "bc/validation_frame_nll": 0.5858316294756695, "bc/validation_nll": 0.5386168573494993, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.05812608178148993, "perf/learner_seat_rows_per_second": 2846.527685868598, "time/elapsed_seconds": 988.715633444488, "time/eval_seconds": 1.9184255041182041}
+    13	{"bc/best_step": 2400.0, "bc/best_validation_nll": 0.523077905717291, "bc/epoch": 6.741573033707865, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 2.8751171201467516, "bc/learner_seat_rows": 2457600.0, "bc/learning_rate": 0.0019990426053313436, "bc/scheduled_evaluation": 1.0, "bc/step": 2400.0, "bc/train_nll": 0.4454123295843601, "bc/train_value_ce": 0.00564776759914821, "bc/validation_frame_nll": 0.5683414219441515, "bc/validation_nll": 0.523077905717291, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.052855507730811636, "perf/learner_seat_rows_per_second": 2867.560349882104, "time/elapsed_seconds": 1062.8334163408726, "time/eval_seconds": 2.2376242466270924}
+    14	{"bc/best_step": 2600.0, "bc/best_validation_nll": 0.5093203911618716, "bc/epoch": 7.303370786516854, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 2.6347122985124587, "bc/learner_seat_rows": 2662400.0, "bc/learning_rate": 0.0019987495870399576, "bc/scheduled_evaluation": 1.0, "bc/step": 2600.0, "bc/train_nll": 0.41581025168299673, "bc/train_value_ce": 0.005314847886975258, "bc/validation_frame_nll": 0.5545313376211772, "bc/validation_nll": 0.5093203911618716, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.058902683896868965, "perf/learner_seat_rows_per_second": 2635.4381348079123, "time/elapsed_seconds": 1143.7340277004987, "time/eval_seconds": 2.4252655170857906}
+    15	{"bc/best_step": 2800.0, "bc/best_validation_nll": 0.49390332335470116, "bc/epoch": 7.865168539325842, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 2.7006284272670746, "bc/learner_seat_rows": 2867200.0, "bc/learning_rate": 0.0019984175346078855, "bc/scheduled_evaluation": 1.0, "bc/step": 2800.0, "bc/train_nll": 0.4029519294202328, "bc/train_value_ce": 0.005188499198757199, "bc/validation_frame_nll": 0.5383513097998496, "bc/validation_nll": 0.49390332335470116, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.03448494306705411, "perf/learner_seat_rows_per_second": 2889.3881528014676, "time/elapsed_seconds": 1217.0327777620405, "time/eval_seconds": 1.836846001446247}
+    16	{"bc/best_step": 2800.0, "bc/best_validation_nll": 0.49390332335470116, "bc/epoch": 8.426966292134832, "bc/evals_since_improvement": 1.0, "bc/grad_norm": 2.945905238389969, "bc/learner_seat_rows": 3072000.0, "bc/learning_rate": 0.0019980464611439887, "bc/scheduled_evaluation": 1.0, "bc/step": 3000.0, "bc/train_nll": 0.3704025322198868, "bc/train_value_ce": 0.004791424221766647, "bc/validation_frame_nll": 0.5432328392151736, "bc/validation_nll": 0.49793108685944093, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.05941229707135137, "perf/learner_seat_rows_per_second": 2669.675617604669, "time/elapsed_seconds": 1296.9304512776434, "time/eval_seconds": 2.429952157661319}
+    17	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 8.98876404494382, "bc/evals_since_improvement": 0.0, "bc/grad_norm": 2.36928165435791, "bc/learner_seat_rows": 3276800.0, "bc/learning_rate": 0.001997636381297613, "bc/scheduled_evaluation": 1.0, "bc/step": 3200.0, "bc/train_nll": 0.3666767302155495, "bc/train_value_ce": 0.005081465291732456, "bc/validation_frame_nll": 0.524289673349602, "bc/validation_nll": 0.4801823178678232, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.08482402152067048, "perf/learner_seat_rows_per_second": 3052.0272577293094, "time/elapsed_seconds": 1366.0331724248827, "time/eval_seconds": 1.7304503954946995}
+    18	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 9.55056179775281, "bc/evals_since_improvement": 1.0, "bc/grad_norm": 2.3498540914058683, "bc/learner_seat_rows": 3481600.0, "bc/learning_rate": 0.0019971873112580077, "bc/scheduled_evaluation": 1.0, "bc/step": 3400.0, "bc/train_nll": 0.3260388508439064, "bc/train_value_ce": 0.005069953722716037, "bc/validation_frame_nll": 0.531196898865375, "bc/validation_nll": 0.4865748990137874, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.10292944925302508, "perf/learner_seat_rows_per_second": 2921.8677176071556, "time/elapsed_seconds": 1438.835835583508, "time/eval_seconds": 2.032279893755913}
+    19	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 10.112359550561798, "bc/evals_since_improvement": 2.0, "bc/grad_norm": 2.7563720607757567, "bc/learner_seat_rows": 3686400.0, "bc/learning_rate": 0.0019966992687536897, "bc/scheduled_evaluation": 1.0, "bc/step": 3600.0, "bc/train_nll": 0.32933453276753427, "bc/train_value_ce": 0.004861837138114424, "bc/validation_frame_nll": 0.5375428516516406, "bc/validation_nll": 0.4929298919858249, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.1022134603522862, "perf/learner_seat_rows_per_second": 2650.3761657442656, "time/elapsed_seconds": 1518.4255562461913, "time/eval_seconds": 2.1161759328097105}
+    20	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 10.674157303370787, "bc/evals_since_improvement": 3.0, "bc/grad_norm": 2.469514832496643, "bc/learner_seat_rows": 3891200.0, "bc/learning_rate": 0.001996172273051741, "bc/scheduled_evaluation": 1.0, "bc/step": 3800.0, "bc/train_nll": 0.3017867957055569, "bc/train_value_ce": 0.00520178026139547, "bc/validation_frame_nll": 0.5263221765519112, "bc/validation_nll": 0.4815954123425998, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.09499459310013122, "perf/learner_seat_rows_per_second": 2564.7553668106502, "time/elapsed_seconds": 1600.84978348203, "time/eval_seconds": 2.36431797593832}
+    21	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 11.235955056179776, "bc/evals_since_improvement": 4.0, "bc/grad_norm": 2.3618251502513887, "bc/learner_seat_rows": 4096000.0, "bc/learning_rate": 0.001995606344957049, "bc/scheduled_evaluation": 1.0, "bc/step": 4000.0, "bc/train_nll": 0.29350000388920305, "bc/train_value_ce": 0.0045775265328484235, "bc/validation_frame_nll": 0.5428751742969237, "bc/validation_nll": 0.4968941740966457, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.08025269551948716, "perf/learner_seat_rows_per_second": 2801.3970617167, "time/elapsed_seconds": 1675.635409982875, "time/eval_seconds": 1.4361647590994835}
+    22	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 11.797752808988765, "bc/evals_since_improvement": 5.0, "bc/grad_norm": 2.6247309839725492, "bc/learner_seat_rows": 4300800.0, "bc/learning_rate": 0.0019950015068114875, "bc/scheduled_evaluation": 1.0, "bc/step": 4200.0, "bc/train_nll": 0.28288157656788826, "bc/train_value_ce": 0.004603628803683932, "bc/validation_frame_nll": 0.5327304720590078, "bc/validation_nll": 0.48860723141090856, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.08914473773547017, "perf/learner_seat_rows_per_second": 2812.96141409645, "time/elapsed_seconds": 1750.3720176387578, "time/eval_seconds": 1.6585490126162767}
+    23	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 12.359550561797754, "bc/evals_since_improvement": 6.0, "bc/grad_norm": 2.484623931646347, "bc/learner_seat_rows": 4505600.0, "bc/learning_rate": 0.001994357782493029, "bc/scheduled_evaluation": 1.0, "bc/step": 4400.0, "bc/train_nll": 0.2617490359395742, "bc/train_value_ce": 0.004847775407043855, "bc/validation_frame_nll": 0.5476516258303584, "bc/validation_nll": 0.5025829057686845, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.07871566743025397, "perf/learner_seat_rows_per_second": 2690.9958395131985, "time/elapsed_seconds": 1829.1866570618004, "time/eval_seconds": 2.3946111127734184}
+    24	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 12.92134831460674, "bc/evals_since_improvement": 7.0, "bc/grad_norm": 2.179260990023613, "bc/learner_seat_rows": 4710400.0, "bc/learning_rate": 0.0019936751974148083, "bc/scheduled_evaluation": 1.0, "bc/step": 4600.0, "bc/train_nll": 0.26529083110392093, "bc/train_value_ce": 0.0046721110603948545, "bc/validation_frame_nll": 0.5375964947207144, "bc/validation_nll": 0.4920573310878597, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.10770744726478651, "perf/learner_seat_rows_per_second": 2601.8836368039783, "time/elapsed_seconds": 1910.7264136560261, "time/eval_seconds": 2.5143234338611364}
+    25	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 13.48314606741573, "bc/evals_since_improvement": 8.0, "bc/grad_norm": 2.140557324886322, "bc/learner_seat_rows": 4915200.0, "bc/learning_rate": 0.0019929537785241154, "bc/scheduled_evaluation": 1.0, "bc/step": 4800.0, "bc/train_nll": 0.2307519168406725, "bc/train_value_ce": 0.004321985452037325, "bc/validation_frame_nll": 0.5648556759344098, "bc/validation_nll": 0.5192203508455386, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.13235604712830157, "perf/learner_seat_rows_per_second": 2935.2433278382355, "time/elapsed_seconds": 1982.8351644668728, "time/eval_seconds": 1.968711281195283}
+    26	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 14.044943820224718, "bc/evals_since_improvement": 9.0, "bc/grad_norm": 2.27648719727993, "bc/learner_seat_rows": 5120000.0, "bc/learning_rate": 0.0019921935543013333, "bc/scheduled_evaluation": 1.0, "bc/step": 5000.0, "bc/train_nll": 0.24531717866659164, "bc/train_value_ce": 0.005049530661422068, "bc/validation_frame_nll": 0.570611328732777, "bc/validation_nll": 0.522972759971539, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.07080229275477035, "perf/learner_seat_rows_per_second": 2742.7370038581535, "time/elapsed_seconds": 2059.9331302512437, "time/eval_seconds": 2.133231647312641}
+    27	{"bc/best_step": 3200.0, "bc/best_validation_nll": 0.4801823178678232, "bc/epoch": 14.606741573033707, "bc/evals_since_improvement": 10.0, "bc/grad_norm": 2.1677920591831206, "bc/learner_seat_rows": 5324800.0, "bc/learning_rate": 0.0019913945547588114, "bc/scheduled_evaluation": 1.0, "bc/step": 5200.0, "bc/train_nll": 0.211872578561306, "bc/train_value_ce": 0.00459890728094706, "bc/validation_frame_nll": 0.5755802455000194, "bc/validation_nll": 0.5282435221396641, "bc/validation_policy_seat_rows": 5748.0, "bc/validation_seat_rows": 11496.0, "bc/validation_value_ce": 0.07422464076110538, "perf/learner_seat_rows_per_second": 2702.7533173769802, "time/elapsed_seconds": 2138.233659468591, "time/eval_seconds": 2.327961867675185}
+
+exec
+/bin/zsh -lc 'nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/SHA256SUMS; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/launch.start; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/run-bc-a100.sh' in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+     1	# BC training receipts: A100 pod, 2026-09-29 (top-1 team, 1 GPU, eager)
+     2	
+     3	Run statement: `../../run-statements/bc-a100.md` (committed in `f0b7a38` before
+     4	launch). Compact copies only; weights and optimizer state stay on the pod's
+     5	network volume.
+     6	
+     7	## Identity
+     8	
+     9	- Pod `23f7xiz368x9jf`, 1x A100 80GB PCIe, NVIDIA driver 580.159.03, torch
+    10	  2.9.0+cu128, triton 3.5.0, flash-attn 2.8.3 (checkout venv `/root/kg-v3-bc/.venv`).
+    11	- Source `f0b7a3877eb16657f973aaf55c70779b040e5b46` (clean checkout; recorded by
+    12	  `train_bc.py` in `bc_attempts.jsonl`). Trainer code as at `89ca39c`; `owl_rs`
+    13	  build reused.
+    14	- Data `/workspace/kg-v3-bc-2026-09-29/shards-top1`, manifest SHA-256
+    15	  `ba5fe1c417741c587473b5696a6ca55227240b394236948cb4f4f5c4ed9a3036`
+    16	  (507 train episodes / 182,273 turn rows; 16 validation episodes / 5,748 rows).
+    17	- Config `configs/bc/kaggriculture_1gpu_eager.yaml` -> `configs/kaggriculture_1gpu_eager.yaml`:
+    18	  512 turn rows per step (the 2-rank config's global batch), accumulation 1,
+    19	  eager model (`Compiled model regions: 0`), BF16 autocast.
+    20	- Command: `run-bc-a100.sh` (nohup, plain python, world size 1,
+    21	  `--wandb-mode offline --max-runtime-hours 2`).
+    22	- Pod run dir: `/workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/`.
+    23	- W&B: offline only (no key on the pod), run id `kvl4rfda`, project from
+    24	  `BC_WANDB_PROJECT`; not synced. Sync command is in `train.log`.
+    25	
+    26	## Result
+    27	
+    28	- Stop: `no_held_out_improvement` (the L9 rule: 10 scheduled evaluations,
+    29	  200 steps apart, without a new minimum) at step 5,200 (14.6 epochs,
+    30	  356 steps/epoch). The 2 h cap was not reached.
+    31	- Best: step 3,200 (9.0 epochs), held-out policy NLL 0.48018 per turn.
+    32	  Final (step 5,200): 0.52824. Initial train NLL 3.7106 (preflight replay).
+    33	- Best checkpoint: `/workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/checkpoint_bc_best.pt`,
+    34	  51,911,591 bytes, SHA-256
+    35	  `fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51`
+    36	  (matches `checkpoint_bc_best.json` and `bc_result.json`).
+    37	- Wall: launch 14:19:23Z, data loaded and run dir created 14:22:16Z, result
+    38	  written 14:58:01Z (38.6 min total; 2,138 s inside `train_bc`, including the
+    39	  117 s preflight replay of all train rows and 27 held-out evaluations of
+    40	  about 3 s each).
+    41	
+    42	### Held-out NLL curve (every 200 steps; train NLL is the interval mean)
+    43	
+    44	| step | val NLL | train NLL | val value CE |
+    45	| ---: | ---: | ---: | ---: |
+    46	| 0 | 3.7321 | - | 0.7243 |
+    47	| 400 | 2.3982 | 2.8242 | 0.0269 |
+    48	| 800 | 1.1154 | 1.3877 | 0.0405 |
+    49	| 1200 | 0.7507 | 0.7528 | 0.0446 |
+    50	| 1600 | 0.6461 | 0.6016 | 0.0700 |
+    51	| 2000 | 0.5665 | 0.5055 | 0.0613 |
+    52	| 2400 | 0.5231 | 0.4454 | 0.0529 |
+    53	| 2800 | 0.4939 | 0.4030 | 0.0345 |
+    54	| **3200** | **0.4802** | 0.3667 | 0.0848 |
+    55	| 3800 | 0.4816 | 0.3018 | 0.0950 |
+    56	| 4400 | 0.5026 | 0.2617 | 0.0787 |
+    57	| 5200 | 0.5282 | 0.2119 | 0.0742 |
+    58	
+    59	Full curve: `train/bc_history.jsonl`. Train NLL kept falling (0.37 -> 0.21)
+    60	while held-out NLL rose after step 3,200: overfitting on 507 episodes, the L9
+    61	pattern. Held-out value CE also rose from its 0.027-0.035 low (steps 400,
+    62	2800) to 0.07-0.13.
+    63	
+    64	## Throughput and memory
+    65	
+    66	- Learner seat rows/s over training steps only (`perf/learner_seat_rows_per_second`,
+    67	  26 intervals): mean 2,739, min 2,483, max 3,052, i.e. about 1,370 turn rows/s
+    68	  at 512 turn rows per step, about 0.37 s per step.
+    69	- Complete work inside `train_bc` (preflight, evaluations and checkpoint writes
+    70	  included): 5,200 x 512 = 2,662,400 turn rows in 2,138 s = 1,245 turn rows/s.
+    71	- GPU memory: nvidia-smi samples every 30 s (`train/gpu-samples.csv`) peaked at
+    72	  34,003 MiB used (process-wide, allocator reserve included) of 80 GB;
+    73	  utilization samples 32-99 %. `torch.cuda.max_memory_allocated` was not logged.
+    74	- Eager only; no compiled comparison and no nsys capture on this pod, so this
+    75	  is not a throughput ceiling.
+    76	
+    77	## Scope and gaps
+    78	
+    79	- Selection only: the checkpoint is chosen on the same 16 validation episodes
+    80	  it is reported on; no separate held-out qualification. Playing strength,
+    81	  legality in live play and PPO warm-start benefit are untested.
+    82	- One seed, one learning-rate setting (Muon 0.002 / AdamW 1e-4, LR still at its
+    83	  warmup plateau when stopped; cosine decays over 100 k steps), turn stride 2.
+    84	- The PPO `config.yaml` saved with the checkpoint is the eager 1-GPU config;
+    85	  the model section is identical to `kaggriculture_2rank.yaml`, so
+    86	  `--load-model-weights` into the 2-rank config is expected to work but was not
+    87	  run.
+    88	
+    89	## Files
+    90	
+    91	`train/`: `bc_history.jsonl`, `bc_result.json`, `checkpoint_bc_best.json`,
+    92	`bc_attempts.jsonl`, `config.yaml`, `bc_config.yaml`, `train.log`,
+    93	`gpu-samples.csv`, `run-bc-a100.sh`, `launch.start`, `SHA256SUMS` (pod-side
+    94	hashes, including the checkpoint and `bc_state.pt`).
+     1	# BC data receipts: A100 pod, 2026-09-29 (top-1 team, winning seats)
+     2	
+     3	Working artifact for the BC-now lane. It holds counts and hashes only; the
+     4	shards stay on the pod's network volume.
+     5	
+     6	## Scope
+     7	
+     8	- Imitated player: the live Kaggle leaderboard #1 team "M & M & P & Q"
+     9	  (public leaderboard, 3086.5 on 2026-09-29). Only that team's winning seats
+    10	  are policy seats (both seats on a draw; none occurred).
+    11	- Days 2026-09-22..28 from `/root/bc-archives` (7 day archives, 4198 episodes
+    12	  listed; archive SHA-256 values are in the pod manifest under
+    13	  `source.archive_sha256`).
+    14	- Source: `kg/rebuild-bc-now` at `89ca39c` (Codex verify-5.1-team-filter-r2
+    15	  APPROVE). The pod checkout `/root/kg-v3-bc` was fast-forwarded from `49255ac`
+    16	  by bundle; `git diff --stat 49255ac 89ca39c` touches only
+    17	  `scripts/kaggriculture_prepare_bc.py` and its test, so the existing
+    18	  `owl_rs` build was reused without a maturin rebuild.
+    19	
+    20	## Superseded mixed-winner shards
+    21	
+    22	`/workspace/kg-v3-bc-2026-09-29/shards/` holds the earlier mixed-winner
+    23	preparation (4198 episodes, stride 10, manifest SHA-256
+    24	`bdc5978b1b49d0b822936d9df88c41173b9485432ffc281b438db153d1393986`). It was
+    25	prepared but superseded by the owner's one-player update and was not trained
+    26	on. It is left in place, untouched, for reference.
+    27	
+    28	## Pairing
+    29	
+    30	Not rerun. `pairing.json` is a copy of the earlier run's
+    31	`/workspace/kg-v3-bc-2026-09-29/shards/pairing.json` (SHA-256
+    32	`a2c2db5786f91129897aa6c60e757561ca2887a688b66548ee9bc9a5a7128add`):
+    33	5743/5752 transitions match (0.9984) over 8 episodes, kaggle_environments
+    34	1.32.7. All misses are private-only at day ends; labels are unaffected.
+    35	
+    36	## Memory check and stride
+    37	
+    38	- `bytes_per_turn_row` = 216612 (printed at startup).
+    39	- Stride 1 would give 523 x 719 = 376037 rows, about 81.5 GB (75.9 GiB) resident,
+    40	  over the about-60 GB budget of the pod's 125 GB container limit.
+    41	- Deviation from the brief: `--resident-budget-gib 60` was **not** used.
+    42	  `stride_for_budget` counts every listed episode (4198 x 719), not the team's
+    43	  kept episodes, so it would have chosen stride 11 (about 34k rows). The same
+    44	  formula applied to the 523 kept episodes gives
+    45	  ceil(376037 / floor(60 GiB / 216612) = 297418) = 2, so the run used
+    46	  `--turn-stride 2` explicitly. Resident size: 188021 rows x 216612 = about
+    47	  40.7 GB.
+    48	- Open gap: `--resident-budget-gib` over-strides whenever `--team` filters most
+    49	  episodes. It was not changed here.
+    50	
+    51	## Run
+    52	
+    53	- Command: `run-top1.sh` (launched with nohup; started 2026-09-29T14:07:59Z,
+    54	  manifest written 14:13:58Z, about 6 minutes, 12 workers).
+    55	- Output: `/workspace/kg-v3-bc-2026-09-29/shards-top1/`.
+    56	- Log: `/workspace/kg-v3-bc-2026-09-29/logs/prepare-top1.log` (copied as
+    57	  `prepare-top1.log`).
+    58	
+    59	## Manifest
+    60	
+    61	- SHA-256 of `shards-top1/manifest.json`:
+    62	  `ba5fe1c417741c587473b5696a6ca55227240b394236948cb4f4f5c4ed9a3036`.
+    63	- `run.git_head` `89ca39cfd259de328338c1b15c5251f9a9be8b57`; `turn_stride` 2;
+    64	  `validation_fraction` 0.03; `team_sha256`
+    65	  `bdf5243c27ea6e5caf82529c401a47e30f7b9e20731c385ea6a626ac09d8ea24`; the
+    66	  recorded command redacts the team value as `<team>`.
+    67	
+    68	| Quantity | Count |
+    69	| --- | ---: |
+    70	| Episodes listed | 4198 |
+    71	| Team episodes seen (kept + team lost) | 842 |
+    72	| Admitted (team won) | 523 |
+    73	| Rejected: team absent | 3356 |
+    74	| Rejected: team lost | 319 |
+    75	| Turn rejections / normalizations | 0 / 0 |
+    76	| Train episodes / rows | 507 / 182273 |
+    77	| Validation episodes / rows | 16 / 5748 |
+    78	| Draw episodes (train / validation) | 0 / 0 |
+    79	| Shard bytes, train | 320964518 |
+    80	| Shard bytes, validation | 10248233 |
+    81	| Shard bytes, total | 331212751 |
+    82	
+    83	Validation has 16 episodes, so no `--validation-fraction 0.05` rerun was needed.
+    84	
+    85	## Files here
+    86	
+    87	- `manifest-summary.json`: the manifest's `schema`, `run`, `totals`,
+    88	  `episode_rejections`, `turn_rejections` and `normalizations` (no per-episode
+    89	  lists).
+    90	- `pairing.json`, `prepare-top1.log`, `run-top1.sh`.
+     1	fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51  pod:/workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/checkpoint_bc_best.pt
+     2	7644ded6a1544981495fc27390a61026ff4112cd10a1b33c3962d188ac80529f  pod:/workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/bc_state.pt
+     3	90e91f6d0fe4e56e0da7251f645a56463a55c471267eb4845eb0eb72ddfaa4dc  bc_history.jsonl
+     4	90afdb16b16b8ea47e43ba4482970583852ae8414874dfb8d93c59aec46d1e77  bc_result.json
+     5	545867732db096564151f7afe7b90c747ce91152561ba0834075e7f794d135a7  checkpoint_bc_best.json
+     6	77ebc620e9e7a282c926c88c788647b4f5dfb941bae8a2c3d43ad47dd749a90c  bc_attempts.jsonl
+     7	36cf8cfb7adeb98e2e25bed2e0fea06b9922ad72da19b59b4ac42a63af705b42  config.yaml
+     8	8bc55cbd71419323dbb6332bec5aae9356470792cf04d73b8fd58c5ac8839129  bc_config.yaml
+     9	20a028f56a02f81a8623386f47b3f6cfff9d00f2e985a71385b09f9676b4e6d1  train.log
+    10	27e635258757ba1040a903eb2a6fd09f24e2521016cc17187f50fd8207c53d57  gpu-samples.csv
+    11	1c992f574963224ac54d9f2da7e44cf9228d7ce59187ce88f5ea2a8c163e70ec  run-bc-a100.sh
+     1	2026-09-29T14:19:23Z
+     1	#!/bin/bash
+     2	cd /root/kg-v3-bc
+     3	R=/workspace/kg-v3-bc-2026-09-29/run
+     4	date -u +%Y-%m-%dT%H:%M:%SZ > $R/launch.start
+     5	exec .venv/bin/python scripts/train_bc.py configs/bc/kaggriculture_1gpu_eager.yaml --data /workspace/kg-v3-bc-2026-09-29/shards-top1 --output-dir $R --wandb-mode offline --max-runtime-hours 2
+
+exec
+/bin/zsh -lc "nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log; nl -ba configs/bc/kaggriculture_1gpu_eager.yaml; rg -n 'patience|eval_every|evaluation|no_held_out|wandb|source|started|elapsed|runtime' scripts/train_bc.py python/owl/train/bc.py; rg -n -i 'offline|sync|ceiling|throughput|compile|stride|mixed.winner' ops/rebuild-2026-09-29/bc-a100-2026-09-29 cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md ops/rebuild-2026-09-29/run-statements/bc-a100.md" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+     1	wandb: Tracking run with wandb version 0.26.1
+     2	wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+     3	wandb: Run data is saved locally in /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda
+     4	wandb: 
+     5	wandb: Run history:
+     6	wandb:               bc/best_step ▁▁▂▂▃▃▄▄▅▅▅▆▆▇▇▇███████████
+     7	wandb:     bc/best_validation_nll █▇▅▄▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+     8	wandb:                   bc/epoch ▁▁▂▂▂▂▃▃▃▃▄▄▄▅▅▅▅▆▆▆▆▇▇▇▇██
+     9	wandb: bc/evals_since_improvement ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▂▂▃▄▅▅▆▇▇█
+    10	wandb:               bc/grad_norm ▆█▄▅▅▄▃▄▃▃▂▂▂▂▂▁▁▂▂▁▂▂▁▁▁▁
+    11	wandb:       bc/learner_seat_rows ▁▁▂▂▂▂▃▃▃▃▄▄▄▅▅▅▅▆▆▆▆▇▇▇▇██
+    12	wandb:           bc/learning_rate ▁▂▄▅▇██████████████████████
+    13	wandb:    bc/scheduled_evaluation ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+    14	wandb:                    bc/step ▁▁▂▂▂▂▃▃▃▃▄▄▄▅▅▅▅▆▆▆▆▇▇▇▇██
+    15	wandb:               bc/train_nll █▆▅▃▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+    16	wandb:                         +9 ...
+    17	wandb: 
+    18	wandb: Run summary:
+    19	wandb:               bc/best_step 3200
+    20	wandb:     bc/best_validation_nll 0.48018
+    21	wandb:                   bc/epoch 14.60674
+    22	wandb: bc/evals_since_improvement 10
+    23	wandb:    bc/final_validation_nll 0.52824
+    24	wandb:               bc/grad_norm 2.16779
+    25	wandb:       bc/initial_train_nll 3.71063
+    26	wandb:       bc/learner_seat_rows 5324800.0
+    27	wandb:           bc/learning_rate 0.00199
+    28	wandb:    bc/scheduled_evaluation 1
+    29	wandb:                        +13 ...
+    30	wandb: 
+    31	wandb: You can sync this run to the cloud by running:
+    32	wandb: wandb sync /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda
+    33	wandb: Find logs at: /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda/logs
+    34	GEMM workload headroom bc_microbatch: 1024 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 5.776x headroom, <= 1 call(s)); heads 11096 rows/call (10.84x headroom, 1 call(s))
+    35	GEMM workload headroom bc_validation: 512 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 11.55x headroom, <= 1 call(s)); heads 11096 rows/call (21.67x headroom, 1 call(s))
+    36	Compiled model regions: 0
+    37	{"run_dir": "/workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216", "stop_reason": "no_held_out_improvement", "steps": 5200, "best_step": 3200, "best_validation_nll": 0.4801823178678232, "final_validation_nll": 0.5282435221396641}
+     1	# BC warm start on ONE GPU (A100 pod): configs/bc/kaggriculture_2rank.yaml with
+     2	# the per-rank batch doubled (Isaiah's rule: same global batch) and the eager PPO
+     3	# config configs/kaggriculture_1gpu_eager.yaml. Run with scripts/train_bc.py.
+     4	# The model and BF16 autocast come from ppo_config (eager: no trunk compile), so
+     5	# the BC best checkpoint loads into a PPO run (--load-model-weights). Unmeasured
+     6	# starting values, not a tuned recipe; the run statement records any change.
+     7	ppo_config: ../kaggriculture_1gpu_eager.yaml
+     8	
+     9	# Isaiah's optimizer factory with the PPO config's Muon/AdamW values; the cosine
+    10	# decays over max_steps instead of PPO's 400k-step schedule.
+    11	optimizer:
+    12	  optimizer: muon
+    13	  adamw_lr: 0.0001
+    14	  adamw_eps: 1.0e-05
+    15	  weight_decay: 0.0
+    16	  muon_lr: 0.002
+    17	  muon_weight_decay: 0.01
+    18	  muon_momentum: 0.95
+    19	  lr_schedule:
+    20	    schedule: linear_warmup_cosine_decay
+    21	    warmup_steps: 1000
+    22	    decay_steps: 100_000
+    23	    lr_min_ratio: 0.01
+    24	
+    25	seed: 20260929
+    26	# 512 turn rows per step on one rank = the 2-rank config's global 2 x 256.
+    27	rows_per_rank: 512
+    28	gradient_accumulation_steps: 1
+    29	# Isaiah's rl.max_grad_norm.
+    30	max_grad_norm: 10.0
+    31	# Isaiah's equal teacher_kl_coef / teacher_value_coef ratio (critic handling in
+    32	# python/owl/train/bc.py).
+    33	value_coef: 1.0
+    34	# L9: the reference's held-out NLL bottomed out near 14.6k updates and then rose
+    35	# for 60k; evaluate every 200 steps and stop after 10 evaluations (2,000 steps)
+    36	# without an improvement of more than min_delta. min_delta sets only the patience
+    37	# count; every strict new minimum still replaces the best checkpoint.
+    38	eval_interval_steps: 200
+    39	patience_evals: 10
+    40	min_delta: 0.0
+    41	max_steps: 100_000
+    42	# Every validation row is evaluated each time (each rank its partition).
+    43	validation_rows_per_forward: 256
+    44	preflight_train_replay: true
+scripts/train_bc.py:14:Every resume is a new attempt. It reads its own source identity (``git`` or
+scripts/train_bc.py:15:``--source-commit``) and records it with the parent ``bc_state.pt`` SHA-256 and
+scripts/train_bc.py:16:every earlier attempt's source, so records written after a resume never carry
+scripts/train_bc.py:17:the launch's source alone. The resumed settings must match the saved trajectory
+scripts/train_bc.py:145:                source_commit=args.source_commit or _git_head(),
+scripts/train_bc.py:179:                wandb_mode=args.wandb_mode,
+scripts/train_bc.py:180:                resume_run_id=None if resume is None else resume.wandb_run_id,
+scripts/train_bc.py:201:                max_runtime_seconds=(
+scripts/train_bc.py:203:                    if args.max_runtime_hours is None
+scripts/train_bc.py:204:                    else args.max_runtime_hours * 3600.0
+scripts/train_bc.py:236:    source_commit: str,
+scripts/train_bc.py:245:    attempt overwrites it) and carries every earlier attempt's source, since the
+scripts/train_bc.py:256:        "source_commit": source_commit,
+scripts/train_bc.py:257:        "attempt_source_commits": [
+scripts/train_bc.py:258:            *(str(a["source_commit"]) for a in earlier),
+scripts/train_bc.py:259:            source_commit,
+scripts/train_bc.py:268:        "started_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+scripts/train_bc.py:286:        if not isinstance(record.get("source_commit"), str):
+scripts/train_bc.py:287:            raise ValueError(f"{path} attempt {index} has no source_commit")
+scripts/train_bc.py:309:            "cannot read the source commit with git; pass --source-commit"
+scripts/train_bc.py:352:        "--wandb-mode",
+scripts/train_bc.py:355:        help="offline keeps telemetry local for a later `wandb sync`",
+scripts/train_bc.py:357:    parser.add_argument("--max-runtime-hours", type=float, default=None)
+scripts/train_bc.py:359:        "--source-commit",
+scripts/train_bc.py:361:        help="This attempt's source identity when the checkout has no git metadata",
+scripts/train_bc.py:380:    if args.max_runtime_hours is not None and args.max_runtime_hours <= 0.0:
+scripts/train_bc.py:381:        raise ValueError("--max-runtime-hours must be positive")
+python/owl/train/bc.py:33:after ``patience_evals`` evaluations without an improvement of more than
+python/owl/train/bc.py:36:sets the patience count; it never discards a lower checkpoint. Patience counts
+python/owl/train/bc.py:37:scheduled evaluations only; the terminal evaluation of a budget or runtime stop
+python/owl/train/bc.py:43:row. Under the same source and settings, a restart from ``bc_state.pt`` repeats
+python/owl/train/bc.py:44:the uninterrupted run's rows, updates, evaluation steps and stopping step (on a
+python/owl/train/bc.py:45:deterministic device); if it was stopped between evaluations, its kept checkpoint
+python/owl/train/bc.py:46:is the lowest over those evaluations plus that terminal one, so never higher in
+python/owl/train/bc.py:50:Every evaluation covers all validation rows (each rank its partition, reduced
+python/owl/train/bc.py:108:StopReason = Literal["no_held_out_improvement", "max_steps", "max_runtime"]
+python/owl/train/bc.py:130:    patience_evals: int = Field(ge=1)
+python/owl/train/bc.py:302:def bc_terms(evaluation: ModelEvaluation, batch: BCBatch) -> BCTerms:
+python/owl/train/bc.py:303:    if evaluation.winner_log_probabilities is None:
+python/owl/train/bc.py:305:    program_nll = -evaluation.log_probs.per_player_entity.float().sum(dim=-1)
+python/owl/train/bc.py:308:    value_ce = -(targets * evaluation.winner_log_probabilities.float()).sum(dim=-1)
+python/owl/train/bc.py:332:        evaluation = model.evaluate_actions(batch.obs, batch.actions)
+python/owl/train/bc.py:333:    return bc_terms(evaluation, batch)
+python/owl/train/bc.py:405:    Selection and patience are separate. ``best_nll``/``best_step`` follow every
+python/owl/train/bc.py:407:    of the last scheduled evaluation that beat the previous one by more than
+python/owl/train/bc.py:408:    ``min_delta``; ``evals_since_improvement`` counts scheduled evaluations since
+python/owl/train/bc.py:410:    do not reset the patience count.
+python/owl/train/bc.py:412:    An unscheduled evaluation (the terminal one when a budget or runtime stop
+python/owl/train/bc.py:418:    patience_evals: int
+python/owl/train/bc.py:428:        """Record one evaluation; ``True`` when it is the new lowest NLL."""
+python/owl/train/bc.py:433:                f"evaluations must advance: step {step} after {self.last_step}"
+python/owl/train/bc.py:451:        return self.evals_since_improvement >= self.patience_evals
+python/owl/train/bc.py:462:    wandb_run_id: str | None,
+python/owl/train/bc.py:479:        "wandb_run_id": wandb_run_id,
+python/owl/train/bc.py:522:    wandb_run_id: str | None
+python/owl/train/bc.py:534:    "wandb_run_id",
+python/owl/train/bc.py:554:        wandb_run_id=state["wandb_run_id"],
+python/owl/train/bc.py:634:        import wandb
+python/owl/train/bc.py:640:        self._wandb = wandb
+python/owl/train/bc.py:641:        self._run = wandb.init(
+python/owl/train/bc.py:672:    wandb_mode: Literal["online", "offline"],
+python/owl/train/bc.py:678:        run_dir, config=config, mode=wandb_mode, resume_run_id=resume_run_id
+python/owl/train/bc.py:715:    max_runtime_seconds: float | None = None,
+python/owl/train/bc.py:718:    """Train until held-out NLL stops improving, ``max_steps`` or the runtime cap.
+python/owl/train/bc.py:722:    all-reduced metrics. ``provenance`` identifies this attempt (its own source,
+python/owl/train/bc.py:741:    started = clock()
+python/owl/train/bc.py:745:            patience_evals=config.patience_evals, min_delta=config.min_delta
+python/owl/train/bc.py:754:    wandb_run_id = logger.run_id
+python/owl/train/bc.py:757:        eval_started = clock()
+python/owl/train/bc.py:769:            "bc/scheduled_evaluation": float(scheduled),
+python/owl/train/bc.py:780:            "time/eval_seconds": clock() - eval_started,
+python/owl/train/bc.py:781:            "time/elapsed_seconds": clock() - started,
+python/owl/train/bc.py:803:                    wandb_run_id=wandb_run_id,
+python/owl/train/bc.py:813:                    "wandb_run_id": wandb_run_id,
+python/owl/train/bc.py:843:        "no_held_out_improvement" if selection.should_stop else None
+python/owl/train/bc.py:849:        if max_runtime_seconds is not None and all_reduce_any(
+python/owl/train/bc.py:850:            clock() - started >= max_runtime_seconds, context
+python/owl/train/bc.py:852:            stop_reason = "max_runtime"
+python/owl/train/bc.py:854:        step_started = clock()
+python/owl/train/bc.py:872:        interval.train_seconds += clock() - step_started
+python/owl/train/bc.py:877:                stop_reason = "no_held_out_improvement"
+python/owl/train/bc.py:879:        # A budget/runtime stop between evaluations: select, but keep patience
+python/owl/train/bc.py:967:    wandb_run_id: str | None,
+python/owl/train/bc.py:974:            model, optimizer, bc_steps=step, wandb_run_id=wandb_run_id
+python/owl/train/bc.py:986:                "wandb_run_id": wandb_run_id,
+python/owl/train/bc.py:998:    """Drop history lines written after the resume state's evaluation."""
+cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:4:description: "First real BC run (A100, 1 GPU, eager, source f0b7a38): imitating the leaderboard #1 team's winning seats over 2026-09-22..28 (507 train / 16 validation episodes, stride 2), held-out policy NLL fell from 3.73 to a best of 0.480 at step 3,200 (9 epochs) and the L9 stop fired at step 5,200 while train NLL kept falling. Checkpoint fd854587... on the pod volume. Selection only; playing strength and PPO warm-start benefit are untested."
+cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:17:- Data: the leaderboard #1 team's winning seats, days 2026-09-22..28, turn stride 2; 507 train episodes (182,273 turn rows) and 16 validation episodes (5,748 rows). Shard manifest SHA-256 `ba5fe1c4…3036` (`ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md`).
+cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:18:- Source `f0b7a38` on `kg/rebuild-bc-now`, `scripts/train_bc.py`, one A100 80GB, `configs/bc/kaggriculture_1gpu_eager.yaml`: the 2-rank config's global batch (512 turn rows per step), same optimizer, seed and L9 patience. The model runs **eager**, because this pod's NVIDIA driver (580.159.03) is outside the probed compile stack and `train_bc.py` refuses it.
+cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:24:- Throughput, eager: 2,739 learner seat rows/s mean over training steps (about 1,370 turn rows/s). Complete work including preflight and evaluations was 1,245 turn rows/s. nvidia-smi peak was 34,003 MiB.
+cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:29:- There is one seed. The LR was still at its post-warmup plateau when the run stopped. The small train set (507 episodes) overfit after about 9 epochs at these settings. Other data, stride or regularization were not tried.
+cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:30:- W&B telemetry is offline only (no key on the pod; run `kvl4rfda`, not synced).
+ops/rebuild-2026-09-29/run-statements/bc-a100.md:17:    rows, turn stride 2. The superseded mixed-winner `shards/` is not used.
+ops/rebuild-2026-09-29/run-statements/bc-a100.md:25:  config's. **Deviation:** eager model (`rl.model_compile: none`), because the
+ops/rebuild-2026-09-29/run-statements/bc-a100.md:26:  pod's NVIDIA driver 580.159.03 is not in the probed compile stack
+ops/rebuild-2026-09-29/run-statements/bc-a100.md:27:  (`owl.model.compile_gemm`, 595.91.07) and `train_bc.py` refuses it; this
+ops/rebuild-2026-09-29/run-statements/bc-a100.md:28:  costs throughput, not correctness. BF16 autocast and flash-attn 2.8.3 as
+ops/rebuild-2026-09-29/run-statements/bc-a100.md:29:  configured. W&B: no key on the pod, so `--wandb-mode offline` into the run
+ops/rebuild-2026-09-29/run-statements/bc-a100.md:30:  directory (telemetry outage stays visible; sync later if wanted).
+ops/rebuild-2026-09-29/run-statements/bc-a100.md:43:  `bc_result.json`, `bc_attempts.jsonl`, configs, offline W&B), launch log in
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:2:wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:3:wandb: Run data is saved locally in /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:31:wandb: You can sync this run to the cloud by running:
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:32:wandb: wandb sync /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:33:wandb: Find logs at: /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda/logs
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:36:Compiled model regions: 0
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/run-bc-a100.sh:5:exec .venv/bin/python scripts/train_bc.py configs/bc/kaggriculture_1gpu_eager.yaml --data /workspace/kg-v3-bc-2026-09-29/shards-top1 --output-dir $R --wandb-mode offline --max-runtime-hours 2
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:19:  eager model (`Compiled model regions: 0`), BF16 autocast.
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:21:  `--wandb-mode offline --max-runtime-hours 2`).
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:23:- W&B: offline only (no key on the pod), run id `kvl4rfda`, project from
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:24:  `BC_WANDB_PROJECT`; not synced. Sync command is in `train.log`.
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:64:## Throughput and memory
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:74:- Eager only; no compiled comparison and no nsys capture on this pod, so this
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:75:  is not a throughput ceiling.
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:83:  warmup plateau when stopped; cosine decays over 100 k steps), turn stride 2.
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:20:## Superseded mixed-winner shards
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:22:`/workspace/kg-v3-bc-2026-09-29/shards/` holds the earlier mixed-winner
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:23:preparation (4198 episodes, stride 10, manifest SHA-256
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:36:## Memory check and stride
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:39:- Stride 1 would give 523 x 719 = 376037 rows, about 81.5 GB (75.9 GiB) resident,
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:42:  `stride_for_budget` counts every listed episode (4198 x 719), not the team's
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:43:  kept episodes, so it would have chosen stride 11 (about 34k rows). The same
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:46:  `--turn-stride 2` explicitly. Resident size: 188021 rows x 216612 = about
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:48:- Open gap: `--resident-budget-gib` over-strides whenever `--team` filters most
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:63:- `run.git_head` `89ca39cfd259de328338c1b15c5251f9a9be8b57`; `turn_stride` 2;
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/config.yaml:44:  compile_mode: default
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/config.yaml:54:  model_compile: none
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/config.yaml:55:  model_compile_mode: max-autotune-no-cudagraphs
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/run-top1.sh:5:exec .venv/bin/python scripts/kaggriculture_prepare_bc.py /root/bc-archives /workspace/kg-v3-bc-2026-09-29/shards-top1 --days 22-28 --workers 12 --turn-stride 2 --team "M & M & P & Q"
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/prepare-top1.log:1:episodes=4198 days=[22, 23, 24, 25, 26, 27, 28] turn_stride=2 bytes_per_turn_row=216612 workers=12
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/manifest-summary.json:19:      "--turn-stride",
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/manifest-summary.json:26:    "turn_stride": 2,
+
+exec
+/bin/zsh -lc "nl -ba scripts/train_bc.py | sed -n '85,225p'; nl -ba python/owl/train/bc.py | sed -n '400,455p'; nl -ba python/owl/train/bc.py | sed -n '730,920p'; nl -ba python/owl/model/compile_gemm.py | sed -n '1,150p'" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+    85	        self,
+    86	        key: str,  # noqa: ARG002
+    87	        value: int | float | str,  # noqa: ARG002
+    88	    ) -> None:
+    89	        return None
+    90	
+    91	    def close(self, *, exit_code: int = 0) -> None:  # noqa: ARG002
+    92	        return None
+    93	
+    94	
+    95	def main() -> None:
+    96	    args = _parse_args()
+    97	    configure_torch()
+    98	    with distributed_session() as context:
+    99	        resume_dir = None if args.output_dir is not None else args.target
+   100	        if resume_dir is None:
+   101	            bc_config, ppo_config = load_bc_configs(
+   102	                args.target, _parse_overrides(args.overrides)
+   103	            )
+   104	        else:
+   105	            bc_config, ppo_config = load_bc_configs(resume_dir / BC_CONFIG_NAME)
+   106	        headroom = check_bc_workload(bc_config, ppo_config)
+   107	        if ppo_config.rl.model_compile != "none":
+   108	            report = check_compile_stack(installed_compile_stack())
+   109	            if context.is_main_process:
+   110	                print(
+   111	                    f"Compile stack check: torch {report.torch}; triton "
+   112	                    f"{report.triton}; NVIDIA driver {report.nvidia_driver}"
+   113	                )
+   114	        if context.is_main_process:
+   115	            for line in headroom_log_lines(headroom):
+   116	                print(line)
+   117	
+   118	        dataset = load_bc_dataset(
+   119	            args.data, rank=context.rank, world_size=context.world_size
+   120	        )
+   121	        resume: BCResumeState | None = None
+   122	        if resume_dir is not None:
+   123	            resume = load_bc_state(resume_dir / BC_STATE)
+   124	            check_resume_compatible(
+   125	                resume,
+   126	                dataset=dataset,
+   127	                world_size=context.world_size,
+   128	                config=bc_config,
+   129	                ppo_config=ppo_config,
+   130	            )
+   131	            run_dir = resume_dir
+   132	        else:
+   133	            created = (
+   134	                _create_run_dir(args.output_dir) if context.is_main_process else None
+   135	            )
+   136	            run_dir = broadcast_object(created, context)
+   137	            if context.is_main_process:
+   138	                ppo_config.to_file(run_dir / PPO_CONFIG_NAME)
+   139	                bc_config.model_copy(
+   140	                    update={"ppo_config": Path(PPO_CONFIG_NAME)}
+   141	                ).to_file(run_dir / BC_CONFIG_NAME)
+   142	        attempt = (
+   143	            _start_attempt(
+   144	                run_dir,
+   145	                source_commit=args.source_commit or _git_head(),
+   146	                data=args.data,
+   147	                dataset_manifest_sha256=dataset.manifest_sha256,
+   148	                world_size=context.world_size,
+   149	                resume=resume,
+   150	            )
+   151	            if context.is_main_process
+   152	            else None
+   153	        )
+   154	        provenance: Provenance = broadcast_object(attempt, context)
+   155	        context.barrier()
+   156	
+   157	        model = build_bc_model(ppo_config, device=context.device, seed=bc_config.seed)
+   158	        compiled = configure_model_compile(model, ppo_config.rl)
+   159	        claim = gemm_backend_claim()
+   160	        if context.is_main_process:
+   161	            print(f"Compiled model regions: {compiled}")
+   162	            if claim is not None:
+   163	                fields = ", ".join(f"{k}={v}" for k, v in claim.summary().items())
+   164	                print(f"Compiled GEMM backends: {fields}")
+   165	        optimizer = create_optimizer(model, bc_config.optimizer)
+   166	        lr_scheduler = create_lr_scheduler(optimizer, bc_config.optimizer.lr_schedule)
+   167	        if resume is not None:
+   168	            restore_bc_state(
+   169	                resume, model=model, optimizer=optimizer, lr_scheduler=lr_scheduler
+   170	            )
+   171	        wrapped = wrap_bc_model_for_distributed(model, context)
+   172	
+   173	        logger: MetricLogger
+   174	        if context.is_main_process:
+   175	            logger = create_bc_logger(
+   176	                args.log_mode,
+   177	                run_dir,
+   178	                config=_logger_config(bc_config, ppo_config, provenance),
+   179	                wandb_mode=args.wandb_mode,
+   180	                resume_run_id=None if resume is None else resume.wandb_run_id,
+   181	            )
+   182	            run_id = logger.run_id
+   183	        else:
+   184	            run_id = None
+   185	        run_id = broadcast_object(run_id, context)
+   186	        if not context.is_main_process:
+   187	            logger = _NoopLogger(run_id)
+   188	        with _logger_session(logger):
+   189	            result = train_bc(
+   190	                config=bc_config,
+   191	                ppo_config=ppo_config,
+   192	                dataset=dataset,
+   193	                model=wrapped,
+   194	                optimizer=optimizer,
+   195	                lr_scheduler=lr_scheduler,
+   196	                context=context,
+   197	                run_dir=run_dir,
+   198	                logger=logger,
+   199	                provenance=provenance,
+   200	                resume=resume,
+   201	                max_runtime_seconds=(
+   202	                    None
+   203	                    if args.max_runtime_hours is None
+   204	                    else args.max_runtime_hours * 3600.0
+   205	                ),
+   206	            )
+   207	        if context.is_main_process:
+   208	            print(json.dumps({"run_dir": str(run_dir), **result.__dict__}))
+   209	
+   210	
+   211	@contextmanager
+   212	def _logger_session(logger: MetricLogger) -> Iterator[MetricLogger]:
+   213	    """Close the metric run as failed when training raises (as run_ppo)."""
+   214	    try:
+   215	        yield logger
+   216	    except BaseException:
+   217	        logger.close(exit_code=1)
+   218	        raise
+   219	    logger.close(exit_code=0)
+   220	
+   221	
+   222	def _logger_config(
+   223	    bc_config: BCConfig, ppo_config: FullConfig, provenance: Provenance
+   224	) -> dict[str, Any]:
+   225	    return {
+   400	
+   401	@dataclass
+   402	class HeldOutSelection:
+   403	    """Lowest-held-out-NLL selection and the sustained-non-improvement stop.
+   404	
+   405	    Selection and patience are separate. ``best_nll``/``best_step`` follow every
+   406	    strict new minimum, whose checkpoint is kept. ``improvement_nll`` is the NLL
+   407	    of the last scheduled evaluation that beat the previous one by more than
+   408	    ``min_delta``; ``evals_since_improvement`` counts scheduled evaluations since
+   409	    then, so gains smaller than ``min_delta`` still update the best checkpoint but
+   410	    do not reset the patience count.
+   411	
+   412	    An unscheduled evaluation (the terminal one when a budget or runtime stop
+   413	    falls between ``eval_interval_steps``) takes part in selection only. Patience
+   414	    stays on the scheduled cadence, so a run resumed from such a stop evaluates
+   415	    and stops at the same steps as the uninterrupted run.
+   416	    """
+   417	
+   418	    patience_evals: int
+   419	    min_delta: float
+   420	    best_nll: float = math.inf
+   421	    best_step: int = -1
+   422	    improvement_nll: float = math.inf
+   423	    evals_since_improvement: int = 0
+   424	    last_nll: float = math.nan
+   425	    last_step: int = -1
+   426	
+   427	    def observe(self, nll: float, *, step: int, scheduled: bool = True) -> bool:
+   428	        """Record one evaluation; ``True`` when it is the new lowest NLL."""
+   429	        if not math.isfinite(nll):
+   430	            raise ValueError(f"held-out NLL must be finite, got {nll} at step {step}")
+   431	        if step <= self.last_step:
+   432	            raise ValueError(
+   433	                f"evaluations must advance: step {step} after {self.last_step}"
+   434	            )
+   435	        self.last_nll = nll
+   436	        self.last_step = step
+   437	        if scheduled:
+   438	            if nll < self.improvement_nll - self.min_delta:
+   439	                self.improvement_nll = nll
+   440	                self.evals_since_improvement = 0
+   441	            else:
+   442	                self.evals_since_improvement += 1
+   443	        if nll < self.best_nll:
+   444	            self.best_nll = nll
+   445	            self.best_step = step
+   446	            return True
+   447	        return False
+   448	
+   449	    @property
+   450	    def should_stop(self) -> bool:
+   451	        return self.evals_since_improvement >= self.patience_evals
+   452	
+   453	
+   454	# --- checkpoints ----------------------------------------------------------------
+   455	
+   730	            f"is rank {context.rank}/{context.world_size}"
+   731	        )
+   732	    sharding = TrainSharding(
+   733	        seed=config.seed,
+   734	        rows_per_rank=config.rows_per_rank,
+   735	        gradient_accumulation_steps=config.gradient_accumulation_steps,
+   736	        rank_rows=dataset.train.rank_rows,
+   737	    )
+   738	    held_out = np.arange(dataset.validation.num_rows, dtype=np.int64)
+   739	    continuation = continuation_settings(config, ppo_config)
+   740	    history_path = run_dir / BC_HISTORY
+   741	    started = clock()
+   742	    if resume is None:
+   743	        step = 0
+   744	        selection = HeldOutSelection(
+   745	            patience_evals=config.patience_evals, min_delta=config.min_delta
+   746	        )
+   747	        if context.is_main_process:
+   748	            _write_text_atomic("", history_path)
+   749	    else:
+   750	        step = resume.step
+   751	        selection = resume.selection
+   752	        if context.is_main_process:
+   753	            _truncate_history(history_path, last_step=step)
+   754	    wandb_run_id = logger.run_id
+   755	
+   756	    def evaluate_and_record(interval: _Interval | None, *, scheduled: bool) -> None:
+   757	        eval_started = clock()
+   758	        metrics = evaluate_rows(
+   759	            model,
+   760	            dataset.validation,
+   761	            held_out,
+   762	            rows_per_forward=config.validation_rows_per_forward,
+   763	            ppo_config=ppo_config,
+   764	            context=context,
+   765	        )
+   766	        improved = selection.observe(metrics.turn_nll, step=step, scheduled=scheduled)
+   767	        record: dict[str, float] = {
+   768	            "bc/step": float(step),
+   769	            "bc/scheduled_evaluation": float(scheduled),
+   770	            "bc/validation_nll": metrics.turn_nll,
+   771	            "bc/validation_frame_nll": metrics.frame_nll,
+   772	            "bc/validation_value_ce": metrics.value_ce,
+   773	            "bc/validation_seat_rows": float(metrics.seat_rows),
+   774	            "bc/validation_policy_seat_rows": float(metrics.policy_seat_rows),
+   775	            "bc/best_validation_nll": selection.best_nll,
+   776	            "bc/best_step": float(selection.best_step),
+   777	            "bc/evals_since_improvement": float(selection.evals_since_improvement),
+   778	            "bc/learner_seat_rows": float(step * sharding.rows_per_step * kt.PLAYERS),
+   779	            "bc/epoch": step / sharding.steps_per_epoch,
+   780	            "time/eval_seconds": clock() - eval_started,
+   781	            "time/elapsed_seconds": clock() - started,
+   782	        }
+   783	        if interval is not None and interval.steps > 0:
+   784	            reduced = all_reduce_sum(interval.losses, context).tolist()
+   785	            record |= {
+   786	                "bc/train_nll": reduced[0] / reduced[4],
+   787	                "bc/train_value_ce": reduced[1] / reduced[3],
+   788	                "bc/grad_norm": reduced[2] / (interval.steps * context.world_size),
+   789	                "perf/learner_seat_rows_per_second": (
+   790	                    interval.seat_rows * context.world_size / interval.train_seconds
+   791	                ),
+   792	            }
+   793	        if lr_scheduler is not None:
+   794	            record["bc/learning_rate"] = float(lr_scheduler.get_last_lr()[0])
+   795	        if context.is_main_process:
+   796	            if improved:
+   797	                _save_best(
+   798	                    run_dir,
+   799	                    model=model,
+   800	                    optimizer=optimizer,
+   801	                    step=step,
+   802	                    nll=metrics.turn_nll,
+   803	                    wandb_run_id=wandb_run_id,
+   804	                    dataset=dataset,
+   805	                    provenance=provenance,
+   806	                )
+   807	            with history_path.open("a", encoding="utf-8") as handle:
+   808	                handle.write(json.dumps(record, sort_keys=True) + "\n")
+   809	            write_atomic(
+   810	                {
+   811	                    "step": step,
+   812	                    "selection": asdict(selection),
+   813	                    "wandb_run_id": wandb_run_id,
+   814	                    "dataset_manifest_sha256": dataset.manifest_sha256,
+   815	                    "world_size": context.world_size,
+   816	                    "continuation": continuation,
+   817	                    "model": _cpu_state_dict(model),
+   818	                    "optimizer": optimizer.state_dict(),
+   819	                    "lr_scheduler": (
+   820	                        None if lr_scheduler is None else lr_scheduler.state_dict()
+   821	                    ),
+   822	                },
+   823	                run_dir / BC_STATE,
+   824	            )
+   825	            logger.log(record, step=step)
+   826	        context.barrier()
+   827	
+   828	    if resume is None:
+   829	        if config.preflight_train_replay:
+   830	            initial_train = evaluate_rows(
+   831	                model,
+   832	                dataset.train,
+   833	                np.arange(dataset.train.num_rows, dtype=np.int64),
+   834	                rows_per_forward=config.validation_rows_per_forward,
+   835	                ppo_config=ppo_config,
+   836	                context=context,
+   837	            )
+   838	            if context.is_main_process:
+   839	                logger.set_summary("bc/initial_train_nll", initial_train.turn_nll)
+   840	        evaluate_and_record(None, scheduled=True)
+   841	    interval = _new_interval(device)
+   842	    stop_reason: StopReason | None = (
+   843	        "no_held_out_improvement" if selection.should_stop else None
+   844	    )
+   845	    while stop_reason is None:
+   846	        if step >= config.max_steps:
+   847	            stop_reason = "max_steps"
+   848	            break
+   849	        if max_runtime_seconds is not None and all_reduce_any(
+   850	            clock() - started >= max_runtime_seconds, context
+   851	        ):
+   852	            stop_reason = "max_runtime"
+   853	            break
+   854	        step_started = clock()
+   855	        _train_step(
+   856	            config=config,
+   857	            ppo_config=ppo_config,
+   858	            dataset=dataset,
+   859	            sharding=sharding,
+   860	            model=model,
+   861	            optimizer=optimizer,
+   862	            lr_scheduler=lr_scheduler,
+   863	            context=context,
+   864	            step=step,
+   865	            losses=interval.losses,
+   866	        )
+   867	        step += 1
+   868	        interval.steps += 1
+   869	        interval.seat_rows += (
+   870	            config.rows_per_rank * config.gradient_accumulation_steps * kt.PLAYERS
+   871	        )
+   872	        interval.train_seconds += clock() - step_started
+   873	        if step % config.eval_interval_steps == 0:
+   874	            evaluate_and_record(interval, scheduled=True)
+   875	            interval = _new_interval(device)
+   876	            if selection.should_stop:
+   877	                stop_reason = "no_held_out_improvement"
+   878	    if selection.last_step != step:
+   879	        # A budget/runtime stop between evaluations: select, but keep patience
+   880	        # on the scheduled cadence so a resume repeats the uninterrupted run.
+   881	        evaluate_and_record(interval, scheduled=False)
+   882	    result = BCResult(
+   883	        stop_reason=stop_reason,
+   884	        steps=step,
+   885	        best_step=selection.best_step,
+   886	        best_validation_nll=selection.best_nll,
+   887	        final_validation_nll=selection.last_nll,
+   888	    )
+   889	    if context.is_main_process:
+   890	        _write_text_atomic(
+   891	            json.dumps(
+   892	                {
+   893	                    **asdict(result),
+   894	                    "selection": "lowest held-out policy NLL; not PPO promotion",
+   895	                    "best_checkpoint": CHECKPOINT_BC_BEST,
+   896	                    "best_checkpoint_sha256": file_sha256(run_dir / CHECKPOINT_BC_BEST),
+   897	                    "dataset_manifest_sha256": dataset.manifest_sha256,
+   898	                    "world_size": context.world_size,
+   899	                    "rows_per_step": sharding.rows_per_step,
+   900	                    "steps_per_epoch": sharding.steps_per_epoch,
+   901	                    **provenance,
+   902	                },
+   903	                indent=2,
+   904	                sort_keys=True,
+   905	            )
+   906	            + "\n",
+   907	            run_dir / BC_RESULT,
+   908	        )
+   909	        for key, value in asdict(result).items():
+   910	            logger.set_summary(f"bc/{key}", value)
+   911	    context.barrier()
+   912	    return result
+   913	
+   914	
+   915	def _new_interval(device: torch.device) -> _Interval:
+   916	    return _Interval(losses=torch.zeros(5, dtype=torch.float64, device=device))
+   917	
+   918	
+   919	def _train_step(
+   920	    *,
+     1	"""Process-global Inductor GEMM backends, claimed for one game per process.
+     2	
+     3	Compiled Kaggriculture regions lower GEMMs to cuBLAS only (``"ATEN"``) on the
+     4	probed torch/triton/driver stack; Isaiah's Orbit models keep the backends they
+     5	find. ``torch._inductor.config`` is process-global and Inductor reads it when a
+     6	compiled callable first runs or recompiles, not at ``torch.compile``, so every
+     7	public compile entry point (``configure_model_compile`` and each model's
+     8	``compile_transformer_trunk``) claims the setting for its game before compiling,
+     9	and compiling the other game in the same process raises.
+    10	
+    11	Evidence: cookbook/decisions/kaggriculture-compiles-gemms-with-cublas-only.md.
+    12	"""
+    13	
+    14	from __future__ import annotations
+    15	
+    16	import shutil
+    17	import subprocess
+    18	import threading
+    19	from dataclasses import dataclass
+    20	from importlib import metadata
+    21	from typing import Literal
+    22	
+    23	import torch
+    24	import torch._inductor.config as inductor_config
+    25	
+    26	CompileGame = Literal["kaggriculture", "orbit"]
+    27	COMPILED_GEMM_BACKENDS = "ATEN"
+    28	_GEMM_BACKENDS_DECISION = (
+    29	    "cookbook/decisions/kaggriculture-compiles-gemms-with-cublas-only.md"
+    30	)
+    31	
+    32	
+    33	@dataclass(frozen=True)
+    34	class ProbedCompileStack:
+    35	    """The software stack on which the cuBLAS-only GEMM setting was measured."""
+    36	
+    37	    torch: str
+    38	    triton: str
+    39	    nvidia_drivers: tuple[str, ...]
+    40	
+    41	
+    42	# The ATEN-only GEMM A/B (ops/rebuild-2026-09-29/results.md, "ATEN-only GEMM
+    43	# A/B") ran on torch 2.9.0+cu128, triton 3.5.0 and NVIDIA driver 595.91.07.
+    44	# Another version must repeat that A/B before it is added here.
+    45	KAGGRICULTURE_PROBED_COMPILE_STACK = ProbedCompileStack(
+    46	    torch="2.9.0",
+    47	    triton="3.5.0",
+    48	    nvidia_drivers=("595.91.07",),
+    49	)
+    50	
+    51	
+    52	@dataclass(frozen=True)
+    53	class InstalledCompileStack:
+    54	    """Versions read from this host; ``None`` means not installed or no GPU."""
+    55	
+    56	    torch: str
+    57	    triton: str | None
+    58	    cuda_available: bool
+    59	    nvidia_drivers: tuple[str, ...] | None
+    60	
+    61	
+    62	@dataclass(frozen=True)
+    63	class CompileStackReport:
+    64	    """Checked versions, or ``skipped: <reason>`` where a host cannot check."""
+    65	
+    66	    torch: str
+    67	    triton: str
+    68	    nvidia_driver: str
+    69	
+    70	
+    71	@dataclass(frozen=True)
+    72	class GemmBackendClaim:
+    73	    """The one game whose compile settings own this process's Inductor config."""
+    74	
+    75	    game: CompileGame
+    76	    gemm_backends: str
+    77	    stack: CompileStackReport | None
+    78	
+    79	    def summary(self) -> dict[str, str]:
+    80	        """Telemetry fields for the run summary and startup log."""
+    81	        fields = {
+    82	            "compile_gemm_game": self.game,
+    83	            "compile_gemm_backends": self.gemm_backends,
+    84	        }
+    85	        if self.stack is not None:
+    86	            fields |= {
+    87	                "compile_stack_torch": self.stack.torch,
+    88	                "compile_stack_triton": self.stack.triton,
+    89	                "compile_stack_nvidia_driver": self.stack.nvidia_driver,
+    90	            }
+    91	        return fields
+    92	
+    93	
+    94	_GEMM_BACKEND_CLAIM: GemmBackendClaim | None = None
+    95	# Serializes check-and-set, so a concurrent claim for the other game raises
+    96	# instead of landing between this claim's check and its write.
+    97	_GEMM_BACKEND_CLAIM_LOCK = threading.Lock()
+    98	
+    99	
+   100	def installed_compile_stack() -> InstalledCompileStack:
+   101	    """Read torch, triton and (on CUDA hosts) the NVIDIA driver versions.
+   102	
+   103	    ``torch.cuda.is_available()`` decides whether this is a GPU host; the
+   104	    driver version comes from ``nvidia-smi`` because torch exposes only the
+   105	    CUDA driver API level. Without CUDA (the owner's Mac) no driver is read.
+   106	    """
+   107	    try:
+   108	        triton_version: str | None = metadata.version("triton")
+   109	    except metadata.PackageNotFoundError:
+   110	        triton_version = None
+   111	    cuda_available = torch.cuda.is_available()
+   112	    return InstalledCompileStack(
+   113	        torch=str(torch.__version__),
+   114	        triton=triton_version,
+   115	        cuda_available=cuda_available,
+   116	        nvidia_drivers=_nvidia_driver_versions() if cuda_available else None,
+   117	    )
+   118	
+   119	
+   120	def _nvidia_driver_versions() -> tuple[str, ...]:
+   121	    executable = shutil.which("nvidia-smi")
+   122	    if executable is None:
+   123	        raise RuntimeError(
+   124	            "CUDA is available but nvidia-smi is not on PATH, so the NVIDIA "
+   125	            "driver of the compiled Kaggriculture stack cannot be checked"
+   126	        )
+   127	    completed = subprocess.run(
+   128	        [executable, "--query-gpu=driver_version", "--format=csv,noheader"],
+   129	        check=True,
+   130	        capture_output=True,
+   131	        text=True,
+   132	    )
+   133	    drivers = tuple(line.strip() for line in completed.stdout.splitlines())
+   134	    if not drivers or not all(drivers):
+   135	        raise RuntimeError(
+   136	            f"nvidia-smi reported no driver version: {completed.stdout!r}"
+   137	        )
+   138	    return drivers
+   139	
+   140	
+   141	def check_compile_stack(
+   142	    installed: InstalledCompileStack,
+   143	    probed: ProbedCompileStack = KAGGRICULTURE_PROBED_COMPILE_STACK,
+   144	) -> CompileStackReport:
+   145	    """Reject a torch, triton or NVIDIA driver version the A/B did not probe.
+   146	
+   147	    The GEMM-backend setting's name, its source gating of the Triton templates
+   148	    and the overflow it avoids are version-specific, so an unprobed stack fails
+   149	    before anything compiles. An installed triton is always checked. A GPU host
+   150	    must have triton; a host without CUDA may lack it, and the triton check is
+
+exec
+/bin/zsh -lc 'shasum -a 256 bc_history.jsonl bc_result.json checkpoint_bc_best.json bc_attempts.jsonl config.yaml bc_config.yaml train.log gpu-samples.csv run-bc-a100.sh' in /Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train
+ succeeded in 0ms:
+90e91f6d0fe4e56e0da7251f645a56463a55c471267eb4845eb0eb72ddfaa4dc  bc_history.jsonl
+90afdb16b16b8ea47e43ba4482970583852ae8414874dfb8d93c59aec46d1e77  bc_result.json
+545867732db096564151f7afe7b90c747ce91152561ba0834075e7f794d135a7  checkpoint_bc_best.json
+77ebc620e9e7a282c926c88c788647b4f5dfb941bae8a2c3d43ad47dd749a90c  bc_attempts.jsonl
+36cf8cfb7adeb98e2e25bed2e0fea06b9922ad72da19b59b4ac42a63af705b42  config.yaml
+8bc55cbd71419323dbb6332bec5aae9356470792cf04d73b8fd58c5ac8839129  bc_config.yaml
+20a028f56a02f81a8623386f47b3f6cfff9d00f2e985a71385b09f9676b4e6d1  train.log
+27e635258757ba1040a903eb2a6fd09f24e2521016cc17187f50fd8207c53d57  gpu-samples.csv
+1c992f574963224ac54d9f2da7e44cf9228d7ce59187ce88f5ea2a8c163e70ec  run-bc-a100.sh
+
+exec
+/bin/zsh -lc 'nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_config.yaml; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/config.yaml; git show --stat f0b7a38; git diff 89ca39c f0b7a38 -- scripts/train_bc.py python/owl/train/bc.py' in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+     1	wandb: Tracking run with wandb version 0.26.1
+     2	wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+     3	wandb: Run data is saved locally in /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda
+     4	wandb: 
+     5	wandb: Run history:
+     6	wandb:               bc/best_step ▁▁▂▂▃▃▄▄▅▅▅▆▆▇▇▇███████████
+     7	wandb:     bc/best_validation_nll █▇▅▄▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+     8	wandb:                   bc/epoch ▁▁▂▂▂▂▃▃▃▃▄▄▄▅▅▅▅▆▆▆▆▇▇▇▇██
+     9	wandb: bc/evals_since_improvement ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▂▂▃▄▅▅▆▇▇█
+    10	wandb:               bc/grad_norm ▆█▄▅▅▄▃▄▃▃▂▂▂▂▂▁▁▂▂▁▂▂▁▁▁▁
+    11	wandb:       bc/learner_seat_rows ▁▁▂▂▂▂▃▃▃▃▄▄▄▅▅▅▅▆▆▆▆▇▇▇▇██
+    12	wandb:           bc/learning_rate ▁▂▄▅▇██████████████████████
+    13	wandb:    bc/scheduled_evaluation ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+    14	wandb:                    bc/step ▁▁▂▂▂▂▃▃▃▃▄▄▄▅▅▅▅▆▆▆▆▇▇▇▇██
+    15	wandb:               bc/train_nll █▆▅▃▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+    16	wandb:                         +9 ...
+    17	wandb: 
+    18	wandb: Run summary:
+    19	wandb:               bc/best_step 3200
+    20	wandb:     bc/best_validation_nll 0.48018
+    21	wandb:                   bc/epoch 14.60674
+    22	wandb: bc/evals_since_improvement 10
+    23	wandb:    bc/final_validation_nll 0.52824
+    24	wandb:               bc/grad_norm 2.16779
+    25	wandb:       bc/initial_train_nll 3.71063
+    26	wandb:       bc/learner_seat_rows 5324800.0
+    27	wandb:           bc/learning_rate 0.00199
+    28	wandb:    bc/scheduled_evaluation 1
+    29	wandb:                        +13 ...
+    30	wandb: 
+    31	wandb: You can sync this run to the cloud by running:
+    32	wandb: wandb sync /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda
+    33	wandb: Find logs at: /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda/logs
+    34	GEMM workload headroom bc_microbatch: 1024 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 5.776x headroom, <= 1 call(s)); heads 11096 rows/call (10.84x headroom, 1 call(s))
+    35	GEMM workload headroom bc_validation: 512 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 11.55x headroom, <= 1 call(s)); heads 11096 rows/call (21.67x headroom, 1 call(s))
+    36	Compiled model regions: 0
+    37	{"run_dir": "/workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216", "stop_reason": "no_held_out_improvement", "steps": 5200, "best_step": 3200, "best_validation_nll": 0.4801823178678232, "final_validation_nll": 0.5282435221396641}
+     1	eval_interval_steps: 200
+     2	gradient_accumulation_steps: 1
+     3	max_grad_norm: 10.0
+     4	max_steps: 100000
+     5	min_delta: 0.0
+     6	optimizer:
+     7	  adamw_eps: 1.0e-05
+     8	  adamw_lr: 0.0001
+     9	  lr_schedule:
+    10	    decay_steps: 100000
+    11	    lr_min_ratio: 0.01
+    12	    schedule: linear_warmup_cosine_decay
+    13	    warmup_steps: 1000
+    14	  muon_lr: 0.002
+    15	  muon_momentum: 0.95
+    16	  muon_weight_decay: 0.01
+    17	  optimizer: muon
+    18	  weight_decay: 0.0
+    19	patience_evals: 10
+    20	ppo_config: config.yaml
+    21	preflight_train_replay: true
+    22	rows_per_rank: 512
+    23	seed: 20260929
+    24	validation_rows_per_forward: 256
+    25	value_coef: 1.0
+     1	env:
+     2	  action_spec:
+     3	    action_spec: kaggriculture
+     4	    hire_limit: 241
+     5	  n_envs: 256
+     6	  native_threads: 2
+     7	  obs_spec:
+     8	    obs_spec: kaggriculture
+     9	    schema_version: 3
+    10	  pin_memory: true
+    11	  reward_mode: win_loss
+    12	  reward_shaping:
+    13	    econ_cap: 0.25
+    14	    econ_drought_weight: 1.0
+    15	    econ_ineffective_cap: 0.1
+    16	    econ_ineffective_weight: 0.0
+    17	    econ_shaping: 0.2
+    18	    econ_starvation_weight: 4.0
+    19	model:
+    20	  activation: gelu
+    21	  depth: 8
+    22	  embed_dim: 256
+    23	  force_flash_attn: true
+    24	  mlp_ratio: 2.0
+    25	  model_arch: kaggriculture_transformer
+    26	  n_heads: 8
+    27	  n_scratch_tokens: 4
+    28	optimizer:
+    29	  adamw_eps: 1.0e-05
+    30	  adamw_lr: 0.0001
+    31	  lr_schedule:
+    32	    decay_steps: 400000
+    33	    lr_min_ratio: 0.01
+    34	    schedule: linear_warmup_cosine_decay
+    35	    warmup_steps: 1000
+    36	  muon_lr: 0.002
+    37	  muon_momentum: 0.95
+    38	  muon_weight_decay: 0.01
+    39	  optimizer: muon
+    40	  weight_decay: 0.0
+    41	rl:
+    42	  checkpoint_freq: 20000000
+    43	  clip_coef: 0.2
+    44	  compile_mode: default
+    45	  dtype: bfloat16
+    46	  ent_coef: 1.0e-06
+    47	  eval_replay_games: 8
+    48	  first_minibatch_logratio_limit: 0.05
+    49	  gae_lambda: 0.9
+    50	  gamma: 1.0
+    51	  gradient_accumulation_steps: 1
+    52	  horizon: 64
+    53	  max_grad_norm: 10.0
+    54	  model_compile: none
+    55	  model_compile_mode: max-autotune-no-cudagraphs
+    56	  normalize_advantages: true
+    57	  ppo_clip_mode: per_player
+    58	  ppo_epochs: 1
+    59	  segments_per_minibatch: 16
+    60	  target_kl: null
+    61	  teacher_init: null
+    62	  teacher_kl_coef: 0.005
+    63	  teacher_mode: last_best
+    64	  teacher_schedule:
+    65	    mode: none
+    66	  teacher_segments_per_minibatch: 128
+    67	  teacher_value_coef: 0.005
+    68	  truncation_prob: 0.0
+    69	  truncation_step: null
+    70	  value_loss: mse
+    71	  vf_clip_coef: null
+    72	  vf_coef: 2.0
+    73	runtime:
+    74	  n_runtime_gpus: 1
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+commit f0b7a3877eb16657f973aaf55c70779b040e5b46
+Author: Season <seasonluke@gmail.com>
+Date:   Tue Sep 29 22:18:50 2026 +0800
+
+    Add the A100 BC run statement and 1-GPU eager BC configs
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+ configs/bc/kaggriculture_1gpu_eager.yaml         | 44 ++++++++++++++
+ configs/kaggriculture_1gpu_eager.yaml            | 73 ++++++++++++++++++++++++
+ ops/rebuild-2026-09-29/run-statements/bc-a100.md | 50 ++++++++++++++++
+ 3 files changed, 167 insertions(+)
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+
+codex
+The run statement was committed 33 seconds before launch, and all nine compact-file hashes match. The saved config and history support the step-3,200 selection and step-5,200 patience stop. So far, I’ve found two stale W&B claims to correct: one in the training README and one in the cookbook note.
+exec
+/bin/zsh -lc "python3 -B -c 'import json,re,hashlib,subprocess,statistics
+from pathlib import Path
+from datetime import datetime, timezone
+root=Path.cwd()
+b=root/'\\''ops/rebuild-2026-09-29/bc-a100-2026-09-29'\\''
+t=b/'\\''train'\\''
+h=[json.loads(s) for s in (t/'\\''bc_history.jsonl'\\'').read_text().splitlines()]
+by_step={int(x['\\''bc/step'\\'']):x for x in h}
+readme=(t/'\\''README.md'\\'').read_text()
+for line_no,line in enumerate(readme.splitlines(),1):
+    if not re.match(r'\\''"'^'"\\| [*\\d]'\\'',line):continue
+    cells=[x.strip().replace('\\''*'\\'','\\'''\\'') for x in line.strip('\\''|'\\'').split('\\''|'\\'')]
+    step=int(cells[0]);rec=by_step[step]
+    for val,key in zip(cells[1:],('\\''bc/validation_nll'\\'','\\''bc/train_nll'\\'','\\''bc/validation_value_ce'\\'')):
+        if val=='\\''-'\\'':continue
+        assert abs(float(val)-rec[key])<=0.00005,(line_no,key,val,rec[key])
+print('\\''README table: every displayed value matches history rounding; steps'\\'',sorted(by_step))
+best=min(h,key=lambda r:r['\\''bc/validation_nll'\\''])
+print('\\''best'\\'',{'\\''step'\\'':best['\\''bc/step'\\''],'\\''nll'\\'':best['\\''bc/validation_nll'\\'']})
+print('\\''patience after best'\\'',[(int(r['\\''bc/step'\\'']),int(r['\\''bc/evals_since_improvement'\\''])) for r in h if r['\\''bc/step'\\'']>=3200])
+assert all(r['\\''bc/scheduled_evaluation'\\'']==1 for r in h)
+perf=[r['\\''perf/learner_seat_rows_per_second'\\''] for r in h if '\\''perf/learner_seat_rows_per_second'\\'' in r]
+print('\\''throughput intervals, mean, min, max'\\'',len(perf),statistics.mean(perf),min(perf),max(perf))
+print('\\''final elapsed, turn rows, rows/s'\\'',h[-1]['\\''time/elapsed_seconds'\\''],5200*512,5200*512/h[-1]['\\''time/elapsed_seconds'\\''])
+print('\\''initial elapsed/eval seconds'\\'',h[0]['\\''time/elapsed_seconds'\\''],h[0]['\\''time/eval_seconds'\\''])
+print('\\''eval seconds sum, mean'\\'',sum(r['\\''time/eval_seconds'\\''] for r in h),statistics.mean(r['\\''time/eval_seconds'\\''] for r in h))
+for line in (t/'\\''SHA256SUMS'\\'').read_text().splitlines():
+    sha,name=line.split(None,1)
+    if name.startswith('\\''pod:'\\''):continue
+    p=t/name
+    content=p.read_bytes()
+    assert hashlib.sha256(content).hexdigest()==sha,name
+    committed=subprocess.check_output(['\\''git'\\'','\\''show'\\'',f'\\''HEAD:{p.relative_to(root)}'\\''],stderr=subprocess.DEVNULL)
+    assert committed==content,name
+print('\\''SHA256SUMS: all nine local listed files match hashes and committed HEAD bytes'\\'')
+sha='\\''fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51'\\''
+for p in (t/'\\''SHA256SUMS'\\'',t/'\\''bc_result.json'\\'',t/'\\''checkpoint_bc_best.json'\\'',t/'\\''README.md'\\'',root/'\\''cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md'\\''):
+    assert sha in p.read_text(),str(p)
+print('\\''checkpoint hash: exact match across all five reviewed claims'\\'')
+commit=datetime.fromisoformat(subprocess.check_output(['\\''git'\\'','\\''log'\\'','\\''-1'\\'','\\''--format=%ci'\\'','\\''f0b7a38'\\''],text=True,stderr=subprocess.DEVNULL).strip()).astimezone(timezone.utc)
+launch=datetime.fromisoformat((t/'\\''launch.start'\\'').read_text().strip().replace('\\''Z'\\'','\\''+00:00'\\''))
+result=json.loads((t/'\\''bc_result.json'\\'').read_text())
+print('\\''commit'\\'',commit.isoformat(),'\\''launch'\\'',launch.isoformat(),'\\''lead_seconds'\\'',(launch-commit).total_seconds(),'\\''recorded_start'\\'',result['\\''started_at'\\''])
+'" in /Users/poonszesen/kg-v3-bcnow
+ exited 1 in 103ms:
+python3: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+Traceback (most recent call last):
+  File "<string>", line 40, in <module>
+ValueError: Invalid isoformat string: '2026-09-29 22:18:50 +0800'
+README table: every displayed value matches history rounding; steps [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4600, 4800, 5000, 5200]
+best {'step': 3200.0, 'nll': 0.4801823178678232}
+patience after best [(3200, 0), (3400, 1), (3600, 2), (3800, 3), (4000, 4), (4200, 5), (4400, 6), (4600, 7), (4800, 8), (5000, 9), (5200, 10)]
+throughput intervals, mean, min, max 26 2739.1015674258197 2482.852317220154 3052.0272577293094
+final elapsed, turn rows, rows/s 2138.233659468591 2662400 1245.139878988566
+initial elapsed/eval seconds 116.62939675524831 3.429266929626465
+eval seconds sum, mean 62.32950530387461 2.3085001964398004
+SHA256SUMS: all nine local listed files match hashes and committed HEAD bytes
+checkpoint hash: exact match across all five reviewed claims
+
+exec
+/bin/zsh -lc "nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/pairing.json; nl -ba scripts/kaggriculture_prepare_bc.py | sed -n '565,640p'; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/manifest-summary.json; nl -ba ops/rebuild-2026-09-29/bc-a100-2026-09-29/prepare-top1.log | tail -28" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+     1	{
+     2	  "engine": {
+     3	    "kaggle_environments": "1.32.7",
+     4	    "interpreter_sha256": "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e"
+     5	  },
+     6	  "episodes": [
+     7	    {
+     8	      "episode_id": "112158749",
+     9	      "day": "2026-09-22",
+    10	      "matches": 719,
+    11	      "total": 719,
+    12	      "mismatches": []
+    13	    },
+    14	    {
+    15	      "episode_id": "111810488",
+    16	      "day": "2026-09-22",
+    17	      "matches": 718,
+    18	      "total": 719,
+    19	      "mismatches": [
+    20	        {
+    21	          "turn": 383,
+    22	          "differs": [
+    23	            "private1"
+    24	          ]
+    25	        }
+    26	      ]
+    27	    },
+    28	    {
+    29	      "episode_id": "112490397",
+    30	      "day": "2026-09-23",
+    31	      "matches": 719,
+    32	      "total": 719,
+    33	      "mismatches": []
+    34	    },
+    35	    {
+    36	      "episode_id": "112862572",
+    37	      "day": "2026-09-24",
+    38	      "matches": 717,
+    39	      "total": 719,
+    40	      "mismatches": [
+    41	        {
+    42	          "turn": 383,
+    43	          "differs": [
+    44	            "private1"
+    45	          ]
+    46	        },
+    47	        {
+    48	          "turn": 527,
+    49	          "differs": [
+    50	            "private0"
+    51	          ]
+    52	        }
+    53	      ]
+    54	    },
+    55	    {
+    56	      "episode_id": "114483925",
+    57	      "day": "2026-09-28",
+    58	      "matches": 715,
+    59	      "total": 719,
+    60	      "mismatches": [
+    61	        {
+    62	          "turn": 335,
+    63	          "differs": [
+    64	            "private0"
+    65	          ]
+    66	        },
+    67	        {
+    68	          "turn": 431,
+    69	          "differs": [
+    70	            "private1"
+    71	          ]
+    72	        },
+    73	        {
+    74	          "turn": 455,
+    75	          "differs": [
+    76	            "private1"
+    77	          ]
+    78	        },
+    79	        {
+    80	          "turn": 623,
+    81	          "differs": [
+    82	            "private1"
+    83	          ]
+    84	        }
+    85	      ]
+    86	    },
+    87	    {
+    88	      "episode_id": "113637101",
+    89	      "day": "2026-09-26",
+    90	      "matches": 719,
+    91	      "total": 719,
+    92	      "mismatches": []
+    93	    },
+    94	    {
+    95	      "episode_id": "113243404",
+    96	      "day": "2026-09-25",
+    97	      "matches": 718,
+    98	      "total": 719,
+    99	      "mismatches": [
+   100	        {
+   101	          "turn": 623,
+   102	          "differs": [
+   103	            "private0"
+   104	          ]
+   105	        }
+   106	      ]
+   107	    },
+   108	    {
+   109	      "episode_id": "114001770",
+   110	      "day": "2026-09-27",
+   111	      "matches": 718,
+   112	      "total": 719,
+   113	      "mismatches": [
+   114	        {
+   115	          "turn": 527,
+   116	          "differs": [
+   117	            "private1"
+   118	          ]
+   119	        }
+   120	      ]
+   121	    }
+   122	  ],
+   123	  "matches": 5743,
+   124	  "total": 5752,
+   125	  "fraction": 0.9984353268428373
+   126	}
+   565	    Struct, structify = utils.Struct, utils.structify
+   566	
+   567	    env = Struct(
+   568	        configuration=structify(copy.deepcopy(data["configuration"])),
+   569	        info={"seed": data["info"]["seed"]},
+   570	        done=False,
+   571	    )
+   572	    steps = data["steps"]
+   573	    matches = 0
+   574	    mismatches: list[dict[str, Any]] = []
+   575	    for t in range(PAIRED_TURNS):
+   576	        # structify copies every container. Kaggle shares one public
+   577	        # farms/market/town object across seats, so both seats get the same one.
+   578	        public = structify({k: steps[t][0]["observation"][k] for k in PUBLIC_KEYS})
+   579	        state = []
+   580	        for seat in (0, 1):
+   581	            own = structify(
+   582	                {
+   583	                    k: v
+   584	                    for k, v in steps[t][seat]["observation"].items()
+   585	                    if k not in PUBLIC_KEYS
+   586	                }
+   587	            )
+   588	            state.append(
+   589	                Struct(
+   590	                    observation=Struct(**own, **public),
+   591	                    action=structify(steps[t + 1][seat]["action"]),
+   592	                    status="ACTIVE",
+   593	                    reward=0,
+   594	                )
+   595	            )
+   596	        interpreter(state, env)
+   597	        predicted: dict[str, Any] = _plain(
+   598	            {
+   599	                "public": {k: state[0].observation[k] for k in PAIRING_PUBLIC_KEYS},
+   600	                "privates": [state[s].observation["private"] for s in (0, 1)],
+   601	            }
+   602	        )
+   603	        nxt = steps[t + 1][0]["observation"]
+   604	        expected: dict[str, Any] = {
+   605	            "public": {k: nxt[k] for k in PAIRING_PUBLIC_KEYS},
+   606	            "privates": [steps[t + 1][s]["observation"]["private"] for s in (0, 1)],
+   607	        }
+   608	        if predicted == expected:
+   609	            matches += 1
+   610	        else:
+   611	            differing = [
+   612	                k
+   613	                for k in PAIRING_PUBLIC_KEYS
+   614	                if predicted["public"][k] != expected["public"][k]
+   615	            ] + [
+   616	                f"private{s}"
+   617	                for s in (0, 1)
+   618	                if predicted["privates"][s] != expected["privates"][s]
+   619	            ]
+   620	            mismatches.append({"turn": t, "differs": differing})
+   621	    return matches, mismatches
+   622	
+   623	
+   624	def _plain(value: object) -> Any:
+   625	    return json.loads(json.dumps(value))
+   626	
+   627	
+   628	def _pairing_task(task: EpisodeTask) -> dict[str, Any]:
+   629	    data, _, _ = _read_member(task)
+   630	    try:
+   631	        check_envelope(data, task.episode_id)
+   632	    except EpisodeRejected as error:
+   633	        return {
+   634	            "episode_id": task.episode_id,
+   635	            "day": task.day,
+   636	            "matches": 0,
+   637	            "total": 0,
+   638	            "rejected": str(error),
+   639	        }
+   640	    matches, mismatches = pairing_check(data)
+     1	{
+     2	  "schema": "kaggriculture-bc-shard-v1",
+     3	  "run": {
+     4	    "git_head": "89ca39cfd259de328338c1b15c5251f9a9be8b57",
+     5	    "uv_lock_sha256": "f3311c310217ad8593e487a1846e2069649e427531b0ebc4b415790ec51507f5",
+     6	    "cargo_lock_sha256": "01f02e3cb9fd915e5b0678f9c5f986524929f55262850dc237d46e989440a352",
+     7	    "prepare_sha256": "cfc090144b7d76520d4c194cec3cf5ace30ac72fd06b870e41c533506aaf8e03",
+     8	    "owl_rs_extension": "rs.abi3.so",
+     9	    "owl_rs_sha256": "5ad74acde8162e800763987a83e9aca4952b603cdadf9fe52eb0cf947a49de69",
+    10	    "command": [
+    11	      "/root/kg-v3-bc/.venv/bin/python",
+    12	      "scripts/kaggriculture_prepare_bc.py",
+    13	      "/root/bc-archives",
+    14	      "/workspace/kg-v3-bc-2026-09-29/shards-top1",
+    15	      "--days",
+    16	      "22-28",
+    17	      "--workers",
+    18	      "12",
+    19	      "--turn-stride",
+    20	      "2",
+    21	      "--team",
+    22	      "<team>"
+    23	    ],
+    24	    "workers": 12,
+    25	    "hire_limit": 241,
+    26	    "turn_stride": 2,
+    27	    "bytes_per_turn_row": 216612,
+    28	    "validation_fraction": 0.03,
+    29	    "label_pairing": "observation steps[t], action steps[t+1]",
+    30	    "policy_seats": "the --team seats (by TeamNames SHA-256) that won; both on a draw",
+    31	    "team_sha256": "bdf5243c27ea6e5caf82529c401a47e30f7b9e20731c385ea6a626ac09d8ea24",
+    32	    "include_losses": false
+    33	  },
+    34	  "totals": {
+    35	    "train": {
+    36	      "episodes": 507,
+    37	      "admitted_turns": 182273,
+    38	      "policy_seat_rows": 182273,
+    39	      "draw_episodes": 0
+    40	    },
+    41	    "validation": {
+    42	      "episodes": 16,
+    43	      "admitted_turns": 5748,
+    44	      "policy_seat_rows": 5748,
+    45	      "draw_episodes": 0
+    46	    }
+    47	  },
+    48	  "episode_rejections": {
+    49	    "team absent": 3356,
+    50	    "team lost": 319
+    51	  },
+    52	  "turn_rejections": {},
+    53	  "normalizations": {}
+    54	}
+    73	episodes 3550/4198
+    74	episodes 3600/4198
+    75	episodes 3650/4198
+    76	episodes 3700/4198
+    77	episodes 3750/4198
+    78	episodes 3800/4198
+    79	episodes 3850/4198
+    80	episodes 3900/4198
+    81	episodes 3950/4198
+    82	episodes 4000/4198
+    83	episodes 4050/4198
+    84	episodes 4100/4198
+    85	episodes 4150/4198
+    86	episodes 4198/4198
+    87	{
+    88	  "train": {
+    89	    "episodes": 507,
+    90	    "admitted_turns": 182273,
+    91	    "policy_seat_rows": 182273,
+    92	    "draw_episodes": 0
+    93	  },
+    94	  "validation": {
+    95	    "episodes": 16,
+    96	    "admitted_turns": 5748,
+    97	    "policy_seat_rows": 5748,
+    98	    "draw_episodes": 0
+    99	  }
+   100	}
+
+exec
+/bin/zsh -lc "rg -n 'def stride_for_budget|stride_for_budget\\(|episode_count|total_turns' scripts/kaggriculture_prepare_bc.py; nl -ba configs/kaggriculture_1gpu_eager.yaml; nl -ba configs/kaggriculture_2rank.yaml | sed -n '1,85p'; nl -ba configs/bc/kaggriculture_2rank.yaml; rg -n 'kvl4rfda|not synced|offline only' cookbook/log.md cookbook/references/index.md ops/rebuild-2026-09-29/bc-a100-2026-09-29 cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+299:def stride_for_budget(episodes: int, budget_gib: float) -> int:
+898:        turn_stride = stride_for_budget(len(tasks), args.resident_budget_gib)
+     1	# Kaggriculture on Isaiah's scaling_6m recipe for ONE GPU (the A100 BC pod,
+     2	# ops/rebuild-2026-09-29/run-statements/bc-a100.md). kaggriculture_2rank.yaml with
+     3	# Isaiah's multi-GPU rule undone: n_envs 256 and segments_per_minibatch 16 on one
+     4	# rank give the same global batch. One other change: rl.model_compile is none
+     5	# (eager), because the pod's NVIDIA driver 580.159.03 is not in the probed
+     6	# compile stack (owl.model.compile_gemm, 595.91.07) and train_bc.py refuses an
+     7	# unprobed stack before compiling. The model, dtype and optimizer are unchanged,
+     8	# so the BC checkpoint's weights load into either PPO config.
+     9	env:
+    10	  n_envs: 256
+    11	  obs_spec:
+    12	    obs_spec: kaggriculture
+    13	    schema_version: 3
+    14	  action_spec:
+    15	    action_spec: kaggriculture
+    16	    hire_limit: 241
+    17	  reward_mode: win_loss
+    18	  # Economic shaping 0.2 is the owner's choice; the other coefficients are the
+    19	  # reference branch's audited reward defaults (plan C8).
+    20	  reward_shaping:
+    21	    econ_shaping: 0.2
+    22	    econ_starvation_weight: 4.0
+    23	    econ_drought_weight: 1.0
+    24	    econ_cap: 0.25
+    25	    econ_ineffective_weight: 0.0
+    26	  pin_memory: true
+    27	  # Provisional: Task 6.1 measures the native step time and verifies or resets it.
+    28	  native_threads: 2
+    29	
+    30	model: kaggriculture
+    31	
+    32	optimizer:
+    33	  optimizer: muon
+    34	  adamw_lr: 0.0001
+    35	  adamw_eps: 1.0e-05
+    36	  weight_decay: 0.0
+    37	  muon_lr: 0.002
+    38	  muon_weight_decay: 0.01
+    39	  muon_momentum: 0.95
+    40	  lr_schedule:
+    41	    schedule: linear_warmup_cosine_decay
+    42	    warmup_steps: 1000
+    43	    decay_steps: 400_000
+    44	    lr_min_ratio: 0.01
+    45	
+    46	rl:
+    47	  horizon: 64
+    48	  checkpoint_freq: 20_000_000
+    49	  ppo_epochs: 1
+    50	  segments_per_minibatch: 16
+    51	  gradient_accumulation_steps: 1
+    52	  # gamma=1.0 keeps the critic softmax well-defined
+    53	  gamma: 1.0
+    54	  gae_lambda: 0.9
+    55	  clip_coef: 0.2
+    56	  vf_clip_coef: null
+    57	  vf_coef: 2.0
+    58	  ent_coef: 1e-6
+    59	  max_grad_norm: 10.0
+    60	  target_kl: null
+    61	  ppo_clip_mode: per_player
+    62	  normalize_advantages: true
+    63	  # Kaggriculture replay export is Task 7.3.
+    64	  eval_replay_games: 8
+    65	  teacher_mode: last_best
+    66	  teacher_kl_coef: 0.005
+    67	  teacher_value_coef: 0.005
+    68	  # A chunk size of the teacher precompute, not a batch: kept, as in Isaiah's
+    69	  # per-rank configs (scaling_6m_halfbatch, winner_ce_6m_4x5090).
+    70	  teacher_segments_per_minibatch: 128
+    71	  compile_mode: default
+    72	  model_compile: none
+    73	  dtype: bfloat16
+     1	# Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 2 ranks
+     2	# (2x RTX PRO 6000). Isaiah's multi-GPU rule (winner_ce_6m_4x5090.yaml): n_envs
+     3	# and segments_per_minibatch are divided by the world size, so the GLOBAL batch
+     4	# (256 envs), optimizer steps/iter (16), global segments per optimizer step (16)
+     5	# and env steps/iter (16,384) equal scaling_6m; the optimizer, LR schedule, PPO
+     6	# coefficients, compile settings, teacher and checkpoint cadence are unchanged.
+     7	# seg_per_minibatch * grad_accum stays 8 per rank; the split is set from the
+     8	# pre-launch memory smoke (plan Task 6.1: spm 4 / accum 2 if spm 8 does not fit).
+     9	# See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
+    10	# Loads through FullConfig; run_ppo checks its GEMM workload, then stops until the
+    11	# Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.
+    12	env:
+    13	  n_envs: 128
+    14	  obs_spec:
+    15	    obs_spec: kaggriculture
+    16	    schema_version: 3
+    17	  action_spec:
+    18	    action_spec: kaggriculture
+    19	    hire_limit: 241
+    20	  reward_mode: win_loss
+    21	  # Economic shaping 0.2 is the owner's choice; the other coefficients are the
+    22	  # reference branch's audited reward defaults (plan C8).
+    23	  reward_shaping:
+    24	    econ_shaping: 0.2
+    25	    econ_starvation_weight: 4.0
+    26	    econ_drought_weight: 1.0
+    27	    econ_cap: 0.25
+    28	    econ_ineffective_weight: 0.0
+    29	  pin_memory: true
+    30	  # Provisional: Task 6.1 measures the native step time and verifies or resets it.
+    31	  native_threads: 2
+    32	
+    33	model: kaggriculture
+    34	
+    35	optimizer:
+    36	  optimizer: muon
+    37	  adamw_lr: 0.0001
+    38	  adamw_eps: 1.0e-05
+    39	  weight_decay: 0.0
+    40	  muon_lr: 0.002
+    41	  muon_weight_decay: 0.01
+    42	  muon_momentum: 0.95
+    43	  lr_schedule:
+    44	    schedule: linear_warmup_cosine_decay
+    45	    warmup_steps: 1000
+    46	    decay_steps: 400_000
+    47	    lr_min_ratio: 0.01
+    48	
+    49	rl:
+    50	  horizon: 64
+    51	  checkpoint_freq: 20_000_000
+    52	  ppo_epochs: 1
+    53	  segments_per_minibatch: 8
+    54	  gradient_accumulation_steps: 1
+    55	  # gamma=1.0 keeps the critic softmax well-defined
+    56	  gamma: 1.0
+    57	  gae_lambda: 0.9
+    58	  clip_coef: 0.2
+    59	  vf_clip_coef: null
+    60	  vf_coef: 2.0
+    61	  ent_coef: 1e-6
+    62	  max_grad_norm: 10.0
+    63	  target_kl: null
+    64	  ppo_clip_mode: per_player
+    65	  normalize_advantages: true
+    66	  # Kaggriculture replay export is Task 7.3.
+    67	  eval_replay_games: 8
+    68	  teacher_mode: last_best
+    69	  teacher_kl_coef: 0.005
+    70	  teacher_value_coef: 0.005
+    71	  # A chunk size of the teacher precompute, not a batch: kept, as in Isaiah's
+    72	  # per-rank configs (scaling_6m_halfbatch, winner_ce_6m_4x5090).
+    73	  teacher_segments_per_minibatch: 128
+    74	  compile_mode: default
+    75	  dtype: bfloat16
+     1	# BC warm start for configs/kaggriculture_2rank.yaml (rebuild plan Task 5.2), run
+     2	# with scripts/train_bc.py under torchrun on 2x RTX PRO 6000. The model, BF16
+     3	# autocast and trunk compile come from ppo_config, so the BC best checkpoint
+     4	# loads into that PPO run (--load-model-weights). Unmeasured starting values, not
+     5	# a tuned recipe; the run statement records any change.
+     6	ppo_config: ../kaggriculture_2rank.yaml
+     7	
+     8	# Isaiah's optimizer factory with the PPO config's Muon/AdamW values; the cosine
+     9	# decays over max_steps instead of PPO's 400k-step schedule.
+    10	optimizer:
+    11	  optimizer: muon
+    12	  adamw_lr: 0.0001
+    13	  adamw_eps: 1.0e-05
+    14	  weight_decay: 0.0
+    15	  muon_lr: 0.002
+    16	  muon_weight_decay: 0.01
+    17	  muon_momentum: 0.95
+    18	  lr_schedule:
+    19	    schedule: linear_warmup_cosine_decay
+    20	    warmup_steps: 1000
+    21	    decay_steps: 100_000
+    22	    lr_min_ratio: 0.01
+    23	
+    24	seed: 20260929
+    25	# 256 turn rows = 512 seat rows per rank per step (half PPO's per-rank minibatch
+    26	# of 8 segments x 64 steps x 2 seats); 2 ranks give 512 turn rows per step.
+    27	rows_per_rank: 256
+    28	gradient_accumulation_steps: 1
+    29	# Isaiah's rl.max_grad_norm.
+    30	max_grad_norm: 10.0
+    31	# Isaiah's equal teacher_kl_coef / teacher_value_coef ratio (critic handling in
+    32	# python/owl/train/bc.py).
+    33	value_coef: 1.0
+    34	# L9: the reference's held-out NLL bottomed out near 14.6k updates and then rose
+    35	# for 60k; evaluate every 200 steps and stop after 10 evaluations (2,000 steps)
+    36	# without an improvement of more than min_delta. min_delta sets only the patience
+    37	# count; every strict new minimum still replaces the best checkpoint.
+    38	eval_interval_steps: 200
+    39	patience_evals: 10
+    40	min_delta: 0.0
+    41	max_steps: 100_000
+    42	# Every validation row is evaluated each time (each rank its partition).
+    43	validation_rows_per_forward: 256
+    44	preflight_train_replay: true
+cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:30:- W&B telemetry is offline only (no key on the pod; run `kvl4rfda`, not synced).
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/checkpoint_bc_best.json:16:  "wandb_run_id": "kvl4rfda",
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:3:wandb: Run data is saved locally in /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:32:wandb: wandb sync /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:33:wandb: Find logs at: /workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/wandb/offline-run-20260929_142222-kvl4rfda/logs
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:23:- W&B: offline only (no key on the pod), run id `kvl4rfda`, project from
+ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:24:  `BC_WANDB_PROJECT`; not synced. Sync command is in `train.log`.
+
+exec
+/bin/zsh -lc "python3 -B -c 'import json,math,subprocess,csv,re
+from pathlib import Path
+from datetime import datetime,timezone
+root=Path.cwd()
+base=root/'\\''ops/rebuild-2026-09-29/bc-a100-2026-09-29'\\''
+train=base/'\\''train'\\''
+commit_text=subprocess.check_output(['\\''git'\\'','\\''log'\\'','\\''-1'\\'','\\''--format=%ci'\\'','\\''f0b7a38'\\''],text=True,stderr=subprocess.DEVNULL).strip()
+commit=datetime.strptime(commit_text,'\\''%Y-%m-%d %H:%M:%S %z'\\'').astimezone(timezone.utc)
+launch=datetime.fromisoformat((train/'\\''launch.start'\\'').read_text().strip().replace('\\''Z'\\'','\\''+00:00'\\''))
+res=json.loads((train/'\\''bc_result.json'\\'').read_text())
+attempt=json.loads((train/'\\''bc_attempts.jsonl'\\'').read_text())
+assert attempt['\\''source_commit'\\'']=='\\''f0b7a3877eb16657f973aaf55c70779b040e5b46'\\''
+assert attempt['\\''started_at'\\'']==res['\\''started_at'\\'']
+print('\\''Timeline:'\\'',commit.isoformat(),'\\''commit;'\\'',launch.isoformat(),'\\''launch;'\\'',res['\\''started_at'\\''],'\\''attempt/result start; lead'\\'',(launch-commit).total_seconds(),'\\''seconds; W&B log path has 14:22:22'\\'')
+note=root/'\\''cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md'\\''
+front=note.read_text().split('\\''---'\\'',2)[1]
+meta={}
+for line in front.splitlines():
+    if line:
+        key,value=line.split('\\'':'\\'',1)
+        meta[key]=json.loads(value)
+assert {'\\''type'\\'','\\''title'\\'','\\''description'\\'','\\''tags'\\'','\\''status'\\'','\\''generated'\\'','\\''sources'\\''}<=meta.keys()
+assert meta['\\''tags'\\''][0]=='\\''kaggriculture-v3'\\''
+assert set(meta['\\''generated'\\''])=={'\\''by'\\'','\\''at'\\''}
+sources=[]
+for source in meta['\\''sources'\\'']:
+    resource=source['\\''resource'\\'']
+    if resource.startswith('\\''repository:'\\''):
+        rel=resource[len('\\''repository:'\\''):]
+        assert not rel.startswith('\\''/'\\'') and '\\''\\\\'\\'' not in rel
+        assert all(part not in ('\\'''\\'','\\''.'\\'', '\\''..'\\'') for part in rel.split('\\''/'\\''))
+        assert (root/rel).is_file(),rel
+        sources.append(rel)
+print('\\''Frontmatter valid:'\\'',meta['\\''type'\\''],meta['\\''status'\\''],'\\'';'\\'',len(sources),'\\''repository sources exist; pod-artifact source has separate namespace'\\'')
+m=json.loads((base/'\\''manifest-summary.json'\\'').read_text())
+rows=sum(v['\\''admitted_turns'\\''] for v in m['\\''totals'\\''].values())
+eps=sum(v['\\''episodes'\\''] for v in m['\\''totals'\\''].values())
+lost=m['\\''episode_rejections'\\'']['\\''team lost'\\''];absent=m['\\''episode_rejections'\\'']['\\''team absent'\\'']
+budget=math.floor(60*1024**3/m['\\''run'\\'']['\\''bytes_per_turn_row'\\''])
+print('\\''Data:'\\'',eps,'\\''kept +'\\'',lost,'\\''lost ='\\'',eps+lost,'\\''seen;'\\'',eps+lost+absent,'\\''listed;'\\'',rows,'\\''rows'\\'')
+print('\\''Stride:'\\'',budget,'\\''budget rows;'\\'',math.ceil((eps+lost+absent)*719/budget),'\\''all-listed;'\\'',math.ceil(eps*719/budget),'\\''kept-only;'\\'',rows*216612,'\\''resident bytes'\\'')
+p=json.loads((base/'\\''pairing.json'\\'').read_text())
+assert sum(x['\\''matches'\\''] for x in p['\\''episodes'\\''])==p['\\''matches'\\'']
+assert sum(x['\\''total'\\''] for x in p['\\''episodes'\\''])==p['\\''total'\\'']
+mismatches=[x for e in p['\\''episodes'\\''] for x in e['\\''mismatches'\\'']]
+assert all(set(x['\\''differs'\\''])<={'\\''private0'\\'','\\''private1'\\''} and (x['\\''turn'\\'']+1)%24==0 for x in mismatches)
+print('\\''Pairing:'\\'',p['\\''matches'\\''],p['\\''total'\\''],p['\\''fraction'\\''],'\\'';'\\'',len(mismatches),'\\''private-key mismatches on day ends'\\'')
+gpu=list(csv.reader((train/'\\''gpu-samples.csv'\\'').read_text().splitlines()))
+print('\\''GPU CSV first and last rows:'\\'',gpu[:2],gpu[-1:])
+'" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+python3: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+Timeline: 2026-09-29T14:18:50+00:00 commit; 2026-09-29T14:19:23+00:00 launch; 2026-09-29T14:22:16+00:00 attempt/result start; lead 33.0 seconds; W&B log path has 14:22:22
+Frontmatter valid: Reference verified-scoped ; 8 repository sources exist; pod-artifact source has separate namespace
+Data: 523 kept + 319 lost = 842 seen; 4198 listed; 188021 rows
+Stride: 297418 budget rows; 11 all-listed; 2 kept-only; 40727604852 resident bytes
+Pairing: 5743 5752 0.9984353268428373 ; 9 private-key mismatches on day ends
+GPU CSV first and last rows: [['14:19:23', ' 0 MiB', ' 0 %'], ['14:19:53', ' 425 MiB', ' 0 %']] [['15:01:29', ' 0 MiB', ' 0 %']]
+
+codex
+The data totals, stride calculation, NLL table and frontmatter checks pass. I found one additional blocking claim: `pairing.json` supports 5,743/5,752 state matches, but it does not prove that “labels are unaffected.” I’m limiting the report to that overclaim and the two stale W&B lines.
+codex
+1. **BLOCKING — pairing overclaim.** [receipts.md:33–34](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:33) says labels are unaffected, but [pairing.json](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/pairing.json:123) records state comparisons, not label validation. Replace lines 33–34 with:
+
+   ```text
+   5743/5752 transitions match (0.9984) over 8 episodes, kaggle_environments
+   1.32.7. The nine mismatches name only private0/private1 at day-end turns.
+   This is a pairing diagnostic; it does not establish parity or prove label correctness.
+   ```
+
+2. **BLOCKING — stale W&B receipt.** Replace [train/README.md:23–24](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:23) with:
+
+   ```markdown
+   - W&B: launched with `--wandb-mode offline` (no key on the pod), then synced
+     to [spoon/kg-v3/kvl4rfda](https://wandb.ai/spoon/kg-v3/runs/kvl4rfda).
+     The pod's `wandb/offline-run-20260929_142222-kvl4rfda/run-kvl4rfda.wandb.synced`
+     marker has mtime `2026-09-29T15:01:13Z`; the orchestrator reports final sync
+     at `2026-09-29T15:01:14Z`.
+   ```
+
+3. **BLOCKING — stale W&B cookbook claim.** Replace [cookbook note:30](/Users/poonszesen/kg-v3-bcnow/cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:30) with:
+
+   ```markdown
+   - W&B telemetry was collected offline, then synced at `2026-09-29T15:01:14Z` to [spoon/kg-v3/kvl4rfda](https://wandb.ai/spoon/kg-v3/runs/kvl4rfda), supported by the pod sync marker and orchestrator report.
+   ```
+
+Check 1 PASS — `git log --format=%ci` gives 14:18:50Z, 33 seconds before [launch.start:1](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/launch.start:1); [attempts:1](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_attempts.jsonl:1) records `f0b7a3877eb16657f973aaf55c70779b040e5b46` and 14:22:16Z, matching [result:18](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_result.json:18) and preceding the [log’s 14:22:22 W&B directory](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:3).
+
+Check 2 PASS — All reviewed denominators agree: 523+319=842; 523+3356+319=4198; 507+16=523; 182273+5748=188021; the 297418-row budget yields stride 11 for all listed episodes and 2 for kept episodes ([receipts:38–77](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:38)).
+
+Check 4 PASS — Every README table value matches history rounding; best NLL is 0.4801823178678232 at 3200, then ten scheduled evaluations give 3200+10×200=5200 and `no_held_out_improvement` ([history:17](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_history.jsonl:17), [config:38](/Users/poonszesen/kg-v3-bcnow/configs/bc/kaggriculture_1gpu_eager.yaml:38), [selection code:438](/Users/poonszesen/kg-v3-bcnow/python/owl/train/bc.py:438)).
+
+Check 5 PASS — Checkpoint SHA-256 agrees across all five requested locations; both pod hashes match the supplied facts; `shasum -a 256` matches all nine local files listed in [SHA256SUMS:1–11](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/SHA256SUMS:1), whose bytes also match HEAD.
+
+Check 6 PASS — Eager mode and driver mismatch were declared [before launch:25](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/run-statements/bc-a100.md:25); [receipts:74–75](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:74) explicitly exclude a throughput-ceiling claim; correctness does not depend on compilation.
+
+Check 8 PASS — [Note frontmatter:1–8](/Users/poonszesen/kg-v3-bcnow/cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:1) is valid, all eight repository sources exist, and [scope:28](/Users/poonszesen/kg-v3-bcnow/cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:28) explicitly excludes playing-strength, live-legality and PPO-benefit qualification.
+
+Check 9 PASS — Mixed-winner shards are explicitly [superseded and untrained:22–26](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:22); the [training command:5](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/run-bc-a100.sh:5) uses `shards-top1`.
+
+VERDICT: APPROVE WITH EDITS
+hook: Stop
+hook: Stop Completed
+tokens used
+69,841
+1. **BLOCKING — pairing overclaim.** [receipts.md:33–34](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:33) says labels are unaffected, but [pairing.json](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/pairing.json:123) records state comparisons, not label validation. Replace lines 33–34 with:
+
+   ```text
+   5743/5752 transitions match (0.9984) over 8 episodes, kaggle_environments
+   1.32.7. The nine mismatches name only private0/private1 at day-end turns.
+   This is a pairing diagnostic; it does not establish parity or prove label correctness.
+   ```
+
+2. **BLOCKING — stale W&B receipt.** Replace [train/README.md:23–24](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:23) with:
+
+   ```markdown
+   - W&B: launched with `--wandb-mode offline` (no key on the pod), then synced
+     to [spoon/kg-v3/kvl4rfda](https://wandb.ai/spoon/kg-v3/runs/kvl4rfda).
+     The pod's `wandb/offline-run-20260929_142222-kvl4rfda/run-kvl4rfda.wandb.synced`
+     marker has mtime `2026-09-29T15:01:13Z`; the orchestrator reports final sync
+     at `2026-09-29T15:01:14Z`.
+   ```
+
+3. **BLOCKING — stale W&B cookbook claim.** Replace [cookbook note:30](/Users/poonszesen/kg-v3-bcnow/cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:30) with:
+
+   ```markdown
+   - W&B telemetry was collected offline, then synced at `2026-09-29T15:01:14Z` to [spoon/kg-v3/kvl4rfda](https://wandb.ai/spoon/kg-v3/runs/kvl4rfda), supported by the pod sync marker and orchestrator report.
+   ```
+
+Check 1 PASS — `git log --format=%ci` gives 14:18:50Z, 33 seconds before [launch.start:1](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/launch.start:1); [attempts:1](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_attempts.jsonl:1) records `f0b7a3877eb16657f973aaf55c70779b040e5b46` and 14:22:16Z, matching [result:18](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_result.json:18) and preceding the [log’s 14:22:22 W&B directory](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/train.log:3).
+
+Check 2 PASS — All reviewed denominators agree: 523+319=842; 523+3356+319=4198; 507+16=523; 182273+5748=188021; the 297418-row budget yields stride 11 for all listed episodes and 2 for kept episodes ([receipts:38–77](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:38)).
+
+Check 4 PASS — Every README table value matches history rounding; best NLL is 0.4801823178678232 at 3200, then ten scheduled evaluations give 3200+10×200=5200 and `no_held_out_improvement` ([history:17](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/bc_history.jsonl:17), [config:38](/Users/poonszesen/kg-v3-bcnow/configs/bc/kaggriculture_1gpu_eager.yaml:38), [selection code:438](/Users/poonszesen/kg-v3-bcnow/python/owl/train/bc.py:438)).
+
+Check 5 PASS — Checkpoint SHA-256 agrees across all five requested locations; both pod hashes match the supplied facts; `shasum -a 256` matches all nine local files listed in [SHA256SUMS:1–11](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/SHA256SUMS:1), whose bytes also match HEAD.
+
+Check 6 PASS — Eager mode and driver mismatch were declared [before launch:25](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/run-statements/bc-a100.md:25); [receipts:74–75](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/README.md:74) explicitly exclude a throughput-ceiling claim; correctness does not depend on compilation.
+
+Check 8 PASS — [Note frontmatter:1–8](/Users/poonszesen/kg-v3-bcnow/cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:1) is valid, all eight repository sources exist, and [scope:28](/Users/poonszesen/kg-v3-bcnow/cookbook/references/top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only.md:28) explicitly excludes playing-strength, live-legality and PPO-benefit qualification.
+
+Check 9 PASS — Mixed-winner shards are explicitly [superseded and untrained:22–26](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md:22); the [training command:5](/Users/poonszesen/kg-v3-bcnow/ops/rebuild-2026-09-29/bc-a100-2026-09-29/train/run-bc-a100.sh:5) uses `shards-top1`.
+
+VERDICT: APPROVE WITH EDITS

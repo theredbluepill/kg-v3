@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Rebuild data preparation preserves replay identity"
-description: "The engine-independent selector reproduces the historical 252-episode split; the BC data brief binds preparation to the merged encoder and grammar, specifies an offline Rust transition check for the step+1 pairing (the executed evidence so far is a Python-engine measurement) that needs the recorded episode seed, and runs on the current GPU pod that holds the hash-matched selected ZIP; only the 1.4 codec binding blocks tokens; replay/opponent briefs bound the remaining evaluation work."
+description: "The engine-independent selector reproduces the historical 252-episode split; the BC data brief binds preparation to the merged encoder and grammar, specifies an offline Rust transition check for the step+1 pairing (the executed evidence so far is a Python-engine measurement) that needs the recorded episode seed, and runs on the current GPU pod that holds the hash-matched selected ZIP; only the 1.4 codec binding blocked tokens. Since then the 5.1 preparer (scripts/kaggriculture_prepare_bc.py) landed with Phase 5 (kg/merge-bc-c) and ran once on an A100 pod for the owner's top-1 team selection, not the 252-episode reference slice (see the top-1 team BC checkpoint Reference); replay/opponent briefs bound the remaining evaluation work."
 tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex", "at": "2026-09-29"}
@@ -9,6 +9,8 @@ sources:
   - resource: "repository:scripts/kaggriculture_bc/select_replays.py"
   - resource: "repository:tests/scripts/test_kaggriculture_select_replays.py"
   - resource: "repository:ops/rebuild-2026-09-29/briefs/5.1-bc-data.md"
+  - resource: "repository:scripts/kaggriculture_prepare_bc.py"
+  - resource: "repository:ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md"
   - resource: "repository:ops/rebuild-2026-09-29/briefs/7.1-opponents.md"
   - resource: "repository:ops/rebuild-2026-09-29/briefs/7.3-replay-export.md"
   - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-source-audit.json"
@@ -141,7 +143,16 @@ reference `actor_codec.py` by path. Run on one local episode outside the slice
 (`ops/rebuild-2026-09-29/checks/5.1-brief-refresh/ref-admission-probe.log`).
 That shows the oracle is cheap and runnable. It is not evidence about the
 slice.
-Preparation, native replay export, opponent import and full-payload admission
-remain deferred until their native seams exist. Reopen when the engine lands or
+Since the Phase 5 BC landing (`kg/merge-bc-c`), preparation exists on
+integration as `scripts/kaggriculture_prepare_bc.py` (Codex
+`verify-5.1-prepare-r2` and `verify-5.1-team-filter-r2` APPROVE). Its one run
+prepared the owner's top-1 team selection on an A100 pod, not the 252-episode
+reference slice, so the plan's reference-receipt comparison (158,772 admitted /
+22,416 rejected turns) has not run; see
+[[top-1-team-bc-checkpoint-is-selected-by-held-out-nll-only|the top-1 team BC checkpoint Reference]]
+and `ops/rebuild-2026-09-29/bc-a100-2026-09-29/receipts.md`. The step+1 pairing
+evidence stays the 5,743/5,752 Python-engine diagnostic, not the specified Rust
+transition check. Native replay export, opponent import and full-payload
+admission remain deferred until their native seams exist. Reopen when the engine lands or
 custody changes; qualify these interfaces before BC or panel results can claim
 current-tree parity.

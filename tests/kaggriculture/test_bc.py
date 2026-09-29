@@ -1009,6 +1009,35 @@ def test_ranked_ppo_configs_share_the_bc_run_model() -> None:
     }
 
 
+def test_one_gpu_ppo_config_is_the_two_rank_config_on_one_rank() -> None:
+    """The 1-GPU config differs from the 2-rank one only as its header says.
+
+    It undoes Isaiah's multi-GPU division (same global batch on one rank) and
+    runs eager; everything else, including the reward schema and the replay
+    count ``run_ppo`` accepts before Task 7.3, is the 2-rank config's.
+    """
+    one = FullConfig.from_file(_BC_RUN_PPO_CONFIG)
+    two = FullConfig.from_file(_REPO / "configs" / "kaggriculture_2rank.yaml")
+    assert one.env.n_envs == 2 * two.env.n_envs
+    assert one.rl.segments_per_minibatch == 2 * two.rl.segments_per_minibatch
+    assert one.rl.model_compile == "none"
+    assert one.rl.eval_replay_games == 0
+    assert (
+        one.model_copy(
+            update={
+                "env": one.env.model_copy(update={"n_envs": two.env.n_envs}),
+                "rl": one.rl.model_copy(
+                    update={
+                        "segments_per_minibatch": two.rl.segments_per_minibatch,
+                        "model_compile": two.rl.model_compile,
+                    }
+                ),
+            }
+        )
+        == two
+    )
+
+
 @pytest.mark.parametrize(
     "config_path",
     [_BC_RUN_PPO_CONFIG, *_RANKED_PPO_CONFIGS],

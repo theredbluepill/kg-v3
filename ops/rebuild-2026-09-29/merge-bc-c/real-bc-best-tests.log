@@ -1,0 +1,18 @@
+# 5399139cb01668a1b8a80dc59b3829f6c54fb0ad + uncommitted test-double fix (tests/scripts/test_run_ppo.py); KG_V3_BC_BEST=/private/tmp/kg-v3-bc-best/checkpoint_bc_best.pt (sha256 fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51) KG_V3_BC_SHARDS=/private/tmp/kg-v3-bc-best/shards-top1 OMP_NUM_THREADS=2 uv run pytest -q -rA tests/kaggriculture/test_bc.py -k 'bc_best or ranked or prohibited or fresh_critic'
+PASSED tests/kaggriculture/test_bc.py::test_ranked_ppo_configs_share_the_bc_run_model
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_only-kaggriculture_1gpu_eager]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_only-kaggriculture_2rank]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_only-kaggriculture_4rank]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_only-kaggriculture_8rank]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_and_optimizer-kaggriculture_1gpu_eager]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_and_optimizer-kaggriculture_2rank]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_and_optimizer-kaggriculture_4rank]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_and_optimizer-kaggriculture_8rank]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_fresh_critic_head-kaggriculture_1gpu_eager]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_fresh_critic_head-kaggriculture_2rank]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_fresh_critic_head-kaggriculture_4rank]
+PASSED tests/kaggriculture/test_bc.py::test_bc_best_loads_through_ppo_load_model_weights[model_fresh_critic_head-kaggriculture_8rank]
+PASSED tests/kaggriculture/test_bc.py::test_ppo_load_rejects_prohibited_checkpoint_state
+PASSED tests/kaggriculture/test_bc.py::test_fresh_critic_head_mode_is_explicit
+PASSED tests/kaggriculture/test_bc.py::test_real_bc_best_loads_and_forwards_on_a_real_shard
+16 passed, 31 deselected in 25.82s

@@ -86,7 +86,7 @@ All v3 launchers on integration (today only `run_ppo`) use this shared path from
   - `tests/owl/train/test_logging.py` covers the credential lookup (env key, blank key, netrc host and password, `NETRC` and `WANDB_BASE_URL`, and a malformed file whose error does not quote it). It also covers the online, offline and debug gates, the loud banner, the `WANDB_MODE` conflict, attempt planning and receipts, config hashing, and the `kg-v3` init arguments.
   - The gate's offline-mode checks of the base URL and key are tested beside the online ones.
   - `tests/scripts/test_run_ppo.py` covers the fail-fast before config load, the offline banner without credentials, the per-mode receipt, the argument rules, and `main`'s receipt wiring for fresh, resumed and receipt-less launches.
-  - Counts are in the Reference [[../references/v3-launchers-fail-fast-without-wandb-credentials|All v3 launchers on integration fail fast without W&B credentials]].
+  - Counts are in the Reference [[../references/v3-launchers-fail-fast-without-wandb-credentials|v3 launchers fail fast without W&B credentials (run_ppo; train_bc pending)]].
 - `tests/owl/train/test_logging.py` and `tests/scripts/test_export_wandb_netrc_entry.py` cover the export. The tests use packed, split and conventional layouts with other machines and a `default` entry, a default-only file, unsafe tokens, a missing file, and the terminal refusal.
 - The step 1 pipeline, with the export script, was simulated on this Mac on a synthetic netrc, with `sh -c` and a temporary `HOME` standing in for `ssh <pod>`. The receipt is `ops/rebuild-2026-09-29/wandb-2026-09-29/install-simulation.log`. The simulation checks:
   - the installed file holds exactly the api.wandb.ai entry, and no other secret;

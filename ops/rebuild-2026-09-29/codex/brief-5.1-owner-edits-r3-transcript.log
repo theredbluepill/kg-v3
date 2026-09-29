@@ -1,0 +1,675 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-bcbrief
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ed13-b304-7621-b3ed-a819deec963f
+--------
+user
+You are Codex. READ-ONLY confirmation on branch kg/rebuild-bc-brief. Your r2 report (ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r2.md in /Users/poonszesen/kg-v3) left two edits: P2 Q1 normalization probe must be a separate mode with its own count and direct raw-vs-normalized snapshot comparison; P3 the Reference description must not say the unwritten Rust check 'proves' pairing. Verify commit 4fdd61e resolves both (including the matching index line and log entry) and changes nothing else. End with VERDICT: APPROVE / APPROVE WITH EDITS / REVISE.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll compare `4fdd61e` with its parent and the r2 report, checking both corrections, the index and log, and whether the commit changes anything else. I’ll keep this read-only.
+
+exec
+/bin/zsh -lc 'cat ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r2.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+Read-only confirmation at `ac0496e` on `kg/rebuild-bc-brief`; worktree is clean. Using the original report’s four numbered findings:
+
+| Finding | Status | Confirmation |
+|---|---|---|
+| 1 — Recorded seed | **RESOLVED** | Transition headers use `info.seed`; encoding retains the placeholder and shards exclude seeds. |
+| 2 — Executable check | **RESOLVED** | Offline Rust binary, invocation, per-turn results, tests and source custody are specified. |
+| 3 — Hard-link safeguard | **RESOLVED** | Explicit prohibition on installed-file edits plus a fresh copy-linked venv. |
+| 4 — Custody reconciliation | **RESOLVED** | Current-pod placement and `source.json` hash are consistent; cookbook note/index/log updated together. |
+
+Two new inconsistencies need edits:
+
+- **P2 — Normalization probe protocol.** [Q1](/Users/poonszesen/kg-v3-bcbrief/ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:553) requests extra records, but the client requires exactly 719 results. The output also reports differences against recorded state, which cannot establish raw-versus-normalized equality when both mismatch. Specify a separate normalization probe with its own count and direct snapshot comparison, separate from baseline admission accounting.
+- **P3 — Unexecuted Rust proof overstated.** The [Reference description](/Users/poonszesen/kg-v3-bcbrief/cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:4) says the Rust check “proves” the pairing, although the harness is unwritten. Change this to “specifies an offline Rust transition check”; the executed evidence is Python.
+
+`git diff --check` passes. No files changed, builds run or live pod state checked. No other new inconsistency found.
+
+VERDICT: APPROVE WITH EDITS
+exec
+/bin/zsh -lc "rg --files -g AGENTS.md -g '*replay*' -g '*normaliz*' -g '*5.1*' cookbook ops/rebuild-2026-09-29; cat cookbook/index.md; sed -n '1,38p' cookbook/log.md" in /Users/poonszesen/kg-v3-bcbrief
+ succeeded in 0ms:
+cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md
+cookbook/references/rebuild-data-preparation-preserves-replay-identity.md
+cookbook/references/bc-bootstrap-uses-native-replay-features-and-current-heads.md
+ops/rebuild-2026-09-29/briefs/7.3-replay-export.md
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md
+ops/rebuild-2026-09-29/1.2/logs/replay-walk-negative-corrected.log
+ops/rebuild-2026-09-29/1.2/logs/replay-walk-negative.log
+ops/rebuild-2026-09-29/1.2/logs/claude-review/replay-plant-item.log
+ops/rebuild-2026-09-29/1.2/logs/replay-walk-green.log
+ops/rebuild-2026-09-29/1.2/logs/replay-walk-green-corrected.log
+ops/rebuild-2026-09-29/1.2/controls/replay-render-corrected.before
+ops/rebuild-2026-09-29/1.2/controls/replay-render.patch
+ops/rebuild-2026-09-29/1.2/controls/replay-render.before
+ops/rebuild-2026-09-29/1.2/controls/replay-render-corrected.patch
+ops/rebuild-2026-09-29/1.1b/verify-r2/controls-replay.log
+ops/rebuild-2026-09-29/codex/brief-5.1-rereview.md
+ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md
+ops/rebuild-2026-09-29/1.1b/evidence/first-failing-games/rust-replay.log
+ops/rebuild-2026-09-29/1.1/replay_parity.complete.rs
+ops/rebuild-2026-09-29/1.1/replay-counts.json
+ops/rebuild-2026-09-29/1.1/manifest-replay.log
+ops/rebuild-2026-09-29/1.1/replay-state-red.diff
+ops/rebuild-2026-09-29/1.1/replay-one-green.log
+ops/rebuild-2026-09-29/1.1/replay-rustfmt.log
+ops/rebuild-2026-09-29/1.1/manifest-replay.json
+ops/rebuild-2026-09-29/1.1/replay-one-green.json
+ops/rebuild-2026-09-29/1.1/replay-state-red.json
+ops/rebuild-2026-09-29/codex/verify-2.3-heads/mutation-unsafe-replay-index.log
+ops/rebuild-2026-09-29/codex/verify-merge-teacher-r1/guard-mutations/cached_student_replay.log
+ops/rebuild-2026-09-29/codex/verify-merge-teacher-r1/guard-mutations/teacher_replay.log
+ops/rebuild-2026-09-29/codex/verify-merge-teacher-r1/guard-mutations/combined_teacher_replay.log
+ops/rebuild-2026-09-29/1.1/checker-repository-pending-replay.log
+ops/rebuild-2026-09-29/1.1/replay-state-red.log
+ops/rebuild-2026-09-29/1.1/replay-rustfmt.json
+ops/rebuild-2026-09-29/codex/verify-merge-teacher-r1/numerical-mutations/plain-replay-exposes-teacher-logits.log
+ops/rebuild-2026-09-29/1.3/independent-7b5eacd/tests-scripts-test_kaggriculture_select_replays-runner.log
+ops/rebuild-2026-09-29/1.3/independent-7b5eacd/tests-scripts-test_download_replays-runner.log
+ops/rebuild-2026-09-29/1.3/independent-7b5eacd/tests-owl-test_replay.log
+ops/rebuild-2026-09-29/1.3/independent-7b5eacd/tests-scripts-test_kaggriculture_select_replays.json
+ops/rebuild-2026-09-29/1.3/independent-7b5eacd/tests-scripts-test_download_replays.json
+ops/rebuild-2026-09-29/1.3/independent-7b5eacd/tests-owl-test_replay-runner.log
+ops/rebuild-2026-09-29/1.3/independent-7b5eacd/tests-scripts-test_kaggriculture_select_replays.log
+ops/rebuild-2026-09-29/1.3/independent-7b5eacd/tests-owl-test_replay.json
+ops/rebuild-2026-09-29/1.3/independent-7b5eacd/tests-scripts-test_download_replays.log
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References describe branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]]
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Separate the 5.1 normalization probe and narrow the pairing claim
+
+Codex's confirmation (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r2.md`) asked for two edits:
+- The 5.1 brief's Q1 now specifies a separate normalization probe that compares raw and normalized snapshots directly.
+- The [[references/rebuild-data-preparation-preserves-replay-identity|data-preparation Reference]] now says the Rust transition check is specified, not yet executed. The executed evidence is Codex's Python-engine measurement.
+
+## 2026-09-29 — Apply Codex's review of the Task 5.1 owner-direction edits
+
+Codex reviewed the 5.1 BC data brief after the owner's two directions ("kaggle
+obs shd be step+1"; "you can use current pod to do the BC") and returned
+REVISE (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md`). All
+findings are applied to `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md`. The
+step+1 transition check now builds its header with the recorded `info.seed`:
+on local episode 114406062 the pinned Python engine matched 719/719
+transitions with it, 704/719 with placeholder 0 and 0/719 with the shifted
+pairing, so a placeholder would reject valid demonstrations. The seed stays
+out of encoding, model inputs and shards. The check is an offline root-crate
+Rust binary whose per-turn results go into the manifest, leaving 1.4's
+production API unchanged. The pod run uses a fresh copy-linked venv because
+the existing venvs share hard-linked files. Custody text now cites the
+reference `source.json` archive hash and the ZIP found on the current pod;
+no volume access is needed for the pinned slice. Brief only, no code; the
+Rust harness has not run. The
+[[references/rebuild-data-preparation-preserves-replay-identity|replay identity Reference]]
+records the seed finding and the custody correction.
+
+## 2026-09-29 — Apply Codex's rereview to the Task 5.1 BC data brief
+
+Codex reread `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` at `bcefd02`
+(APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/brief-5.1-rereview.md`).
+All findings are applied. The reference's `raw.get(k) or []` normalized every
+falsy `hands`/`market` value, not only absent or `null`; preparation now
+reproduces that rule so admission stays comparable, counts it by field and
+kind, and tests the eight `false`/`0`/`""`/`{}` combinations. A HEAD plus
+dirty flag could not identify modified preparation or oracle code, so runs
+now require a clean immutable checkout on both routes, record per-file source
+
+exec
+/bin/zsh -lc 'git status --short --branch; git show --format=fuller --stat 4fdd61e; git diff 4fdd61e''^ 4fdd61e --' in /Users/poonszesen/kg-v3-bcbrief
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+## kg/rebuild-bc-brief
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+commit 4fdd61e7f978af5b94b82407c5e12e3786c522c9
+Author:     Season <seasonluke@gmail.com>
+AuthorDate: Tue Sep 29 20:11:26 2026 +0800
+Commit:     Season <seasonluke@gmail.com>
+CommitDate: Tue Sep 29 20:11:26 2026 +0800
+
+    Separate the 5.1 normalization probe and narrow the pairing claim
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+ cookbook/log.md                                                  | 6 ++++++
+ .../rebuild-data-preparation-preserves-replay-identity.md        | 2 +-
+ ops/rebuild-2026-09-29/briefs/5.1-bc-data.md                     | 9 +++++++--
+ 3 files changed, 14 insertions(+), 3 deletions(-)
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+diff --git a/cookbook/log.md b/cookbook/log.md
+index 5181349..0daeabb 100644
+--- a/cookbook/log.md
++++ b/cookbook/log.md
+@@ -1,5 +1,11 @@
+ # Change log
+ 
++## 2026-09-29 — Separate the 5.1 normalization probe and narrow the pairing claim
++
++Codex's confirmation (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r2.md`) asked for two edits:
++- The 5.1 brief's Q1 now specifies a separate normalization probe that compares raw and normalized snapshots directly.
++- The [[references/rebuild-data-preparation-preserves-replay-identity|data-preparation Reference]] now says the Rust transition check is specified, not yet executed. The executed evidence is Codex's Python-engine measurement.
++
+ ## 2026-09-29 — Apply Codex's review of the Task 5.1 owner-direction edits
+ 
+ Codex reviewed the 5.1 BC data brief after the owner's two directions ("kaggle
+diff --git a/cookbook/references/rebuild-data-preparation-preserves-replay-identity.md b/cookbook/references/rebuild-data-preparation-preserves-replay-identity.md
+index 95c3ff0..89afcd8 100644
+--- a/cookbook/references/rebuild-data-preparation-preserves-replay-identity.md
++++ b/cookbook/references/rebuild-data-preparation-preserves-replay-identity.md
+@@ -1,7 +1,7 @@
+ ---
+ type: "Reference"
+ title: "Rebuild data preparation preserves replay identity"
+-description: "The engine-independent selector reproduces the historical 252-episode split; the BC data brief binds preparation to the merged encoder and grammar, proves the step+1 pairing with an offline Rust transition check that needs the recorded episode seed, and runs on the current GPU pod that holds the hash-matched selected ZIP; only the 1.4 codec binding blocks tokens; replay/opponent briefs bound the remaining evaluation work."
++description: "The engine-independent selector reproduces the historical 252-episode split; the BC data brief binds preparation to the merged encoder and grammar, specifies an offline Rust transition check for the step+1 pairing (the executed evidence so far is a Python-engine measurement) that needs the recorded episode seed, and runs on the current GPU pod that holds the hash-matched selected ZIP; only the 1.4 codec binding blocks tokens; replay/opponent briefs bound the remaining evaluation work."
+ tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
+ status: "verified-scoped"
+ generated: {"by": "openai/codex", "at": "2026-09-29"}
+diff --git a/ops/rebuild-2026-09-29/briefs/5.1-bc-data.md b/ops/rebuild-2026-09-29/briefs/5.1-bc-data.md
+index 30d7df8..edcd5f7 100644
+--- a/ops/rebuild-2026-09-29/briefs/5.1-bc-data.md
++++ b/ops/rebuild-2026-09-29/briefs/5.1-bc-data.md
+@@ -555,8 +555,13 @@ the pod run, then the acceptance diff, then the receipt and the cookbook record.
+   normalized these silently, and their incidence is unknown. If any count is
+   above zero, check per occurring kind that stepping from the same header
+   with the raw action and with the normalized action gives equal snapshots.
+-  The offline transition harness already does this: send a second record
+-  per affected turn with the normalized action. A kind the engine treats
++  This uses a **separate normalization probe mode** of the offline
++  transition harness, not the 719-record pairing run. It takes its own
++  record count (one pair per affected turn), steps the same header once with
++  the raw action and once with the normalized action, and compares the two
++  resulting snapshots directly with each other (raw vs normalized), not
++  against the recorded next state. It reports the number of pairs and any
++  differing fields. A kind the engine treats
+   differently from `[]` is a recorded finding against reproducing the
+   reference rule. The harness is an offline binary, not a binding, so this
+   opens no production load-state route (1.4 allows `from_header` in tests
+
+exec
+/bin/zsh -lc "sed -n '60,210p' ops/rebuild-2026-09-29/briefs/5.1-bc-data.md; nl -ba ops/rebuild-2026-09-29/briefs/5.1-bc-data.md | sed -n '541,580p'; rg --files -g AGENTS.md -g '"'!target'"' -g '"'!node_modules'"' ." in /Users/poonszesen/kg-v3-bcbrief
+ succeeded in 0ms:
+- The old arrays sit at
+  `/workspace/kg-v3/replays/bc-bootstrap/arrays/{train,validation}/*.npz`.
+  They are schema-incompatible (flat `features/context`, int16 tokens) and
+  are never loaded.
+- Raw selected JSON totals **8,940,727,054 bytes**, about 35 MB per episode.
+  Per-episode SHA-256 and byte counts are in the reference `data-manifest.json`
+  `selection.episodes[*]`, and step A checks each payload against them.
+
+## Selection (ported; unchanged)
+
+`python scripts/kaggriculture_bc/select_replays.py SOURCE_ROOT SELECTED.zip`:
+days 21–27, sorted `.json` names, `random.Random(20260929 + day)` shuffle,
+first 36 per day, of which the first 4 are validation and the next 32 train.
+It rejects duplicate basenames, short days, unsafe or duplicate members and
+existing outputs, and embeds an authoritative `selection.json` (`volume`,
+`source_root`, `sampling`, `episodes[{member, split, source_archive,
+source_member, sha256, bytes}]`). ZIP container bytes are not a
+reproducibility criterion. IDs, splits and payload hashes are.
+
+## Data flow (exact APIs)
+
+New file `scripts/kaggriculture_bc/prepare.py` (next to the selector; the
+reference's `ops/` location is not retained). CLI:
+`prepare.py SELECTED.zip OUT_DIR --workers N`. Episodes are processed
+independently in a process pool, one worker per episode.
+
+**A. Selection admission.** Read `selection.json` from the ZIP and validate it
+strictly: exact keys, 252 records, split ∈ {train, validation}, unique
+basenames. Before parsing a payload, check its SHA-256 and byte length against
+the record. Use explicit `ValueError`s, not `assert`, which `-O` strips.
+
+**B. Episode envelope.** `json.loads` (it preserves key order). Require
+`len(steps) == 720`, two seat entries per step, and `info.EpisodeId` equal to the member
+basename (a local non-slice episode has both `info.EpisodeId` and `info.seed`).
+Require `info.seed` to be a JSON integer (not a bool); otherwise the episode
+is a hard error. The seed has exactly two uses: custody (the manifest's
+`info_seed`), and the transition check's header in step C, because Kaggle
+and the Rust engine both derive daily weeds and shop unlocks from it. It is
+never used for observation encoding (placeholder header seed, below). It is
+never a model input and never enters a shard. Agent
+names and team names are never read into shards or the manifest. Discover the
+shared keys from `specification.observation[*].shared` (on the local sample:
+`day, farms, hour, market, step, town`).
+
+**C. Explicit-state header per turn.** For `t in range(719)`: the observation
+is `steps[t][seat].observation`, and the label is `steps[t+1][seat].action`.
+The owner restated this pairing on 2026-09-29 ("kaggle obs shd be step+1"):
+the action that answers the observation at step t is recorded at step t+1.
+Kaggle core supports it independently: it attaches the submitted actions,
+runs the interpreter, then appends the resulting state
+(`kaggle_environments/core.py:275`), and the pinned reference `prepare.py`
+pairs the same way. A **transition check** proves the pairing per turn
+rather than assuming it:
+
+- **Input.** Raw Kaggle episode JSON (the `steps[...]` envelope; not the
+  `engine_rs/fixtures` parity traces, which use a different format).
+- **Rule.** Build the transition header for `steps[t]` (below) with
+  **`"seed": info.seed`**, the episode's recorded seed. Step it with both
+  seats' raw recorded `steps[t+1][seat].action`. The result must reproduce
+  the public state `(step, day, hour, farms, market, town)` and both
+  privates of `steps[t+1]`.
+- **Why the recorded seed.** Kaggle's interpreter
+  (`env.info["seed"]`) and the Rust engine (`engine_rs/src/lib.rs:4448`)
+  both seed each day's RNG from it for weeds and shop unlocks. Codex measured
+  this on local episode 114406062
+  (`/Users/poonszesen/kaggriculture-v2/ops/kaggle-ladder-failure-2026-09-28/episode-114406062-replay.json`,
+  SHA-256 `603674fb…9b59018`, `info.seed` 863363664), using the Python
+  engine whose SHA-256 equals the Rust pin (`bc8a5487…c653e`)
+  (`../codex/brief-5.1-owner-edits.md`):
+
+  | Pairing and header seed | Matching transitions |
+  |---|---:|
+  | `steps[t+1].action`, recorded seed 863363664 | 719/719 |
+  | `steps[t+1].action`, placeholder seed 0 | 704/719 (first mismatches at t = 47 `farms`, 71 `town`, 143 `town`, 167 `farms`) |
+  | shifted `steps[t].action`, recorded seed | 0/719 |
+
+  A placeholder seed would therefore reject correctly paired
+  demonstrations. The Rust harness is expected to reproduce all three rows;
+  any difference is an engine-parity finding to report, not to absorb.
+- **Where it runs.** The offline Rust harness below executes it. On the Mac
+  it runs on episode 114406062. On the pod it runs on all 719 turns of every
+  slice episode, as part of preparation. A value mismatch or a step error
+  rejects the turn (never the episode), is counted, and is listed per turn
+  in the manifest.
+- **Mutation tests.** The shifted pairing (`steps[t].action`) must fail, and
+  so must the placeholder seed 0 on the turns listed above.
+
+**Transition harness (offline Rust).** The check lives in a new binary
+target, **`src/bin/kaggriculture_transition_check.rs`**, in the root crate.
+It uses only `kaggriculture_engine::{Game, TraceHeader}` and `serde_json`,
+which are already root dependencies. It does not use pyo3. Adding a binary
+leaves the `rs` extension and 1.4's production API unchanged: no load-state
+or `from_header` binding is added to Python, and 1.4 still owns every
+binding.
+
+- **Protocol.** Input is JSON Lines on stdin, one record per turn:
+  `{"episode_id", "turn", "header", "actions": [a0, a1], "expected":
+  {"public": {...}, "privates": [p0, p1]}}`. For each record the binary runs
+  `Game::from_header(&header)` → `step(&actions)` → `snapshot()`. It then
+  compares `snapshot.public` and `snapshot.privates` with `expected` by
+  value first and then by key order, the same semantics as `first_difference`
+  in `engine_rs/tests/replay_parity.rs:35`. That function is test code, so
+  the binary carries its own small copy, and its unit tests cover the same
+  number, object and order cases.
+- **Output.** One JSON line per input record, in order: `{"episode_id",
+  "turn", "result": "match" | "mismatch" | "step_error",
+  "first_difference": path | null, "key_order_difference": path | null,
+  "error": str | null}`. A key-order-only difference is counted but does
+  not reject: the predicted state's ordering is not a label, and step D
+  encodes the recorded `steps[t+1]` itself. Malformed input, a header that
+  fails `from_header`, or an output count different from the input count
+  makes the process exit nonzero, and preparation treats that as a hard
+  error, not as a rejected turn.
+- **Invocation from preparation.** Build it once from the clean checkout
+  with `cargo build --release --locked --bin
+  kaggriculture_transition_check`. Then run `prepare.py ... --transition-check-bin
+  target/release/kaggriculture_transition_check`. Each episode worker streams
+  its 719 records to one subprocess (`subprocess.run(..., input=...,
+  check=True)`). It requires exactly 719 results in turn order and stores
+  them in the manifest (see "Custody manifest").
+- **Build risk to check first.** The root crate is cdylib-only for maturin.
+  The first implementation step confirms three things with the binary
+  present: `maturin develop --release --locked` still builds the extension,
+  the built wheel contains no binary, and `cargo clippy --all-targets` and
+  `cargo test` cover the binary. If maturin rejects the target, move the
+  harness to an authored engine file under the same fixed trim-inventory
+  procedure as `engine_rs/tests/replay_parity.rs`
+  (`scripts/check_engine_trim.py`, `engine_rs/TRIM_MANIFEST.json`). Do not
+  add a Python binding.
+
+Seat 1's shared keys are copied from seat 0 (seat 1 omits `step` in the
+sample). Build one `TraceHeader` (`engine_rs/src/lib.rs:818`) per turn:
+
+```python
+{"format": "kaggriculture-re-parity-v1", "seed": 0,   # encoding: placeholder, as the reference
+                                                      # transition check: info.seed (integer)
+ "configuration": episode_configuration,              # verbatim, key order kept
+ "shop_schedule": [], "rng_schedule": [],
+ "initial": {"public": {k: obs0[k] for k in ("step","day","hour","farms","market","town")},
+             "privates": [obs0["private"], obs1["private"]]},
+ "terminal_banks": [], "transitions": 0}
+```
+
+The two headers differ only in `seed`. The encoding header keeps the
+placeholder so the recorded seed can never reach the observation buffers. A
+test encodes the same turn with seed 0 and with the recorded seed and
+requires byte-identical arrays.
+
+The Rust `Config` is `#[serde(default)]` (`lib.rs:668`). A missing key would
+therefore silently take a default. Before serialization, prepare requires the
+full key set: `episodeSteps, boardSize, startingMoney, maxMarketOrdersPerTurn,
+   541	Blocked on 1.4's `kaggriculture_encode` and `kaggriculture_decode`: step E3/E4
+   542	and acceptance items 3–4. Write their tests red against the approved
+   543	signature. Add no substitute Python grammar and no ad hoc binding; 1.4 owns
+   544	the bindings.
+   545	
+   546	The transition harness and step C need nothing from 1.4.
+   547	
+   548	After 1.4 merges: turn E green, run the Mac smoke on one local episode, then
+   549	the pod run, then the acceptance diff, then the receipt and the cookbook record.
+   550	
+   551	## Open questions
+   552	
+   553	- Q1. Are there turns where `hands` or `market` is falsy but not `[]`
+   554	  (absent, `null`, `false`, zero, `""`, `{}`) in the slice? The reference
+   555	  normalized these silently, and their incidence is unknown. If any count is
+   556	  above zero, check per occurring kind that stepping from the same header
+   557	  with the raw action and with the normalized action gives equal snapshots.
+   558	  This uses a **separate normalization probe mode** of the offline
+   559	  transition harness, not the 719-record pairing run. It takes its own
+   560	  record count (one pair per affected turn), steps the same header once with
+   561	  the raw action and once with the normalized action, and compares the two
+   562	  resulting snapshots directly with each other (raw vs normalized), not
+   563	  against the recorded next state. It reports the number of pairs and any
+   564	  differing fields. A kind the engine treats
+   565	  differently from `[]` is a recorded finding against reproducing the
+   566	  reference rule. The harness is an offline binary, not a binding, so this
+   567	  opens no production load-state route (1.4 allows `from_header` in tests
+   568	  only).
+   569	- Q2. The compression ratio and load time decide 5.2's residency. The first
+   570	  pod step measures them.
+   571	
+   572	## Review history
+   573	
+   574	- 2026-09-29, stream D (Codex): selection port, custody and v4 preparation
+   575	  boundary, written before Tasks 1.3/1.4 existed.
+   576	- 2026-09-29, Claude refresh at base `2390c8e`: bound to the merged 1.3
+   577	  explicit-header binding and the 1.2 grammar; 1.4 codec signatures from the
+   578	  approved brief (absent from `kg/rebuild-env@8d98ea8`); strict config key
+   579	  set against `serde(default)`; counted envelope normalization matching the
+   580	  reference; per-seat admission with reference-comparable first rejection;
+./AGENTS.md
+
+exec
+/bin/zsh -lc 'git rev-parse HEAD; git diff --check 4fdd61e''^ 4fdd61e; git diff-tree --no-commit-id --name-status -r 4fdd61e; rg -n '"'rebuild-data-preparation|normaliz|pairing|proves|719|transition' cookbook/references/index.md cookbook/references/rebuild-data-preparation-preserves-replay-identity.md ops/rebuild-2026-09-29/briefs/5.1-bc-data.md; cat cookbook/references/rebuild-data-preparation-preserves-replay-identity.md" in /Users/poonszesen/kg-v3-bcbrief
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+4fdd61e7f978af5b94b82407c5e12e3786c522c9
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+M	cookbook/log.md
+M	cookbook/references/rebuild-data-preparation-preserves-replay-identity.md
+M	ops/rebuild-2026-09-29/briefs/5.1-bc-data.md
+cookbook/references/index.md:12:- [[rebuild-data-preparation-preserves-replay-identity|Replay identity and data/evaluation preparation]] — Typed engine-independent selector preserves all 252 historical episode IDs and splits; the refreshed, Codex-reviewed BC data brief binds preparation to the merged encoder/grammar with falsy-envelope normalization counted, clean-checkout source identity, a tracked shard inventory, a step+1 transition check run by an offline Rust binary with the recorded episode seed, and execution on the current GPU pod holding the hash-matched ZIP (tokens wait on the 1.4 codec binding); seed replay export and four compact opponent recommendations carry explicit native/runtime gaps.
+cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:4:description: "The engine-independent selector reproduces the historical 252-episode split; the BC data brief binds preparation to the merged encoder and grammar, specifies an offline Rust transition check for the step+1 pairing (the executed evidence so far is a Python-engine measurement) that needs the recorded episode seed, and runs on the current GPU pod that holds the hash-matched selected ZIP; only the 1.4 codec binding blocks tokens; replay/opponent briefs bound the remaining evaluation work."
+cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:66:  silently normalized every falsy `hands`/`market` value (absent, `null`,
+cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:76:  stays external. A fourth finding binds any replay-based transition check:
+cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:82:  engine on local episode 114406062 matched 719/719 transitions with the
+cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:83:  recorded seed, 704/719 with placeholder 0, and 0/719 with the shifted
+cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:84:  `steps[t]` pairing (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md`).
+cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:127:Four pinned native fixtures were structurally inspected: **2,876 transitions**,
+cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:140:(114406062), it admitted 719 of 719 paired turns in 0.2 s
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:19:| Transition check harness (`src/bin/kaggriculture_transition_check.rs`) | 5.1 deliverable, not written; uses only merged `kaggriculture_engine` APIs | nothing |
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:96:`info_seed`), and the transition check's header in step C, because Kaggle
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:104:**C. Explicit-state header per turn.** For `t in range(719)`: the observation
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:106:The owner restated this pairing on 2026-09-29 ("kaggle obs shd be step+1"):
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:111:pairs the same way. A **transition check** proves the pairing per turn
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:116:- **Rule.** Build the transition header for `steps[t]` (below) with
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:130:  | Pairing and header seed | Matching transitions |
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:132:  | `steps[t+1].action`, recorded seed 863363664 | 719/719 |
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:133:  | `steps[t+1].action`, placeholder seed 0 | 704/719 (first mismatches at t = 47 `farms`, 71 `town`, 143 `town`, 167 `farms`) |
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:134:  | shifted `steps[t].action`, recorded seed | 0/719 |
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:140:  it runs on episode 114406062. On the pod it runs on all 719 turns of every
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:144:- **Mutation tests.** The shifted pairing (`steps[t].action`) must fail, and
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:148:target, **`src/bin/kaggriculture_transition_check.rs`**, in the root crate.
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:175:  kaggriculture_transition_check`. Then run `prepare.py ... --transition-check-bin
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:176:  target/release/kaggriculture_transition_check`. Each episode worker streams
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:177:  its 719 records to one subprocess (`subprocess.run(..., input=...,
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:178:  check=True)`). It requires exactly 719 results in turn order and stores
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:195:                                                      # transition check: info.seed (integer)
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:200: "terminal_banks": [], "transitions": 0}
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:220:**D. Observation encoding (all 719 turns).** Allocate CPU buffers of `[B,2,…]` for all 29
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:236:1. *Envelope normalization.* This replicates the reference exactly and is
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:246:   field and kind as `normalized_{hands,market}_{absent,null,false,zero,
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:247:   empty_string,empty_object}`. An empty list is not a normalization. Any
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:269:   the turn's transition check (step C) is `match` or key-order-only **and**
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:270:   both seats encode. A transition rejection is counted under its own
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:271:   category, `transition mismatch` or `transition step error`, and the seats
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:278:   241))` equals the normalized action. The comparison uses Python equality on
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:354:  command line and the worker count; the transition harness's build command
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:355:  (`cargo build --release --locked --bin kaggriculture_transition_check`),
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:357:  `src/bin/kaggriculture_transition_check.rs` and of `engine_rs/src/lib.rs`;
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:370:  `info_seed`, `terminal_banks`, `paired_turns` (719), `admitted`,
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:371:  first-rejection counts, per-seat rejection counts, normalization counts,
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:372:  `transition_check` (counts of `match`, `mismatch`, `step_error` and
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:381:re-selection and the transition-harness build run from an immutable clean checkout of the committed
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:402:The reference receipt: 252 episodes × 719 = **181,188 paired turns**;
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:417:   reference seats independently** (normalization plus `encode_action` per
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:422:   its rule, for example envelope normalization, a grammar change or a
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:423:   transition-check rejection (a turn the reference admitted but whose
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:424:   transition does not match is listed with its `first_difference`). This
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:426:   (114406062): 719/719 admitted, in 0.2 s
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:445:7. **Pairing.** The transition check covers all 181,188 paired turns. Every
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:459:  non-slice episode as a smoke (719 turns, about 200 MB of arrays: under
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:499:  `market.params` absent); normalization counting for absent and `null`
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:511:  transition-harness client against a stub binary (record serialization,
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:512:  719-result count and order check, nonzero exit and malformed output as
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:514:  `transition_check`); and no seed in any shard array.
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:520:- [ ] `src/bin/kaggriculture_transition_check.rs`, test first with
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:521:  `cargo test --bin kaggriculture_transition_check`: synthetic headers built
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:529:  outside the repository): recorded seed → 719/719 `match`; placeholder
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:530:  seed 0 → 15 mismatches, first at t = 47, 71, 143, 167; shifted pairing →
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:531:  0/719. Keep the log and the episode SHA-256 in
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:546:The transition harness and step C need nothing from 1.4.
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:555:  normalized these silently, and their incidence is unknown. If any count is
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:557:  with the raw action and with the normalized action gives equal snapshots.
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:558:  This uses a **separate normalization probe mode** of the offline
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:559:  transition harness, not the 719-record pairing run. It takes its own
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:561:  the raw action and once with the normalized action, and compares the two
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:562:  resulting snapshots directly with each other (raw vs normalized), not
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:579:  set against `serde(default)`; counted envelope normalization matching the
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:585:  `../codex/brief-5.1-rereview.md`), all applied: normalization now
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:593:- Owner directions (2026-09-29): the step+1 pairing is restated and gets a proving test with a shifted-pairing mutation; the current GPU pod is the primary execution host for 5.1 and 5.2, using the ZIP already there (hash verified); a data pod or S3 access is used only for data beyond the slice.
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:595:  `../codex/brief-5.1-owner-edits.md`), all applied. P1: the transition
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:598:  recorded seed matches 719/719, placeholder 0 matches 704/719, and the
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:599:  shifted pairing matches 0/719. The seed stays out of encoding, model
+ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:601:  (`src/bin/kaggriculture_transition_check.rs`,
+---
+type: "Reference"
+title: "Rebuild data preparation preserves replay identity"
+description: "The engine-independent selector reproduces the historical 252-episode split; the BC data brief binds preparation to the merged encoder and grammar, specifies an offline Rust transition check for the step+1 pairing (the executed evidence so far is a Python-engine measurement) that needs the recorded episode seed, and runs on the current GPU pod that holds the hash-matched selected ZIP; only the 1.4 codec binding blocks tokens; replay/opponent briefs bound the remaining evaluation work."
+tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
+status: "verified-scoped"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+sources:
+  - resource: "repository:scripts/kaggriculture_bc/select_replays.py"
+  - resource: "repository:tests/scripts/test_kaggriculture_select_replays.py"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/5.1-bc-data.md"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/7.1-opponents.md"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/7.3-replay-export.md"
+  - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-source-audit.json"
+  - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/checks/5.1-brief-refresh/ref-admission-probe.log"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/brief-5.1-rereview.md"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md"
+  - resource: "repository:engine_rs/src/lib.rs"
+  - resource: "repository:src/kaggriculture/mod.rs"
+  - resource: "repository:src/kaggriculture/grammar.rs"
+  - resource: "repository:docs/kaggriculture-contract.md"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/select_replays.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/prepare.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/data-manifest.json"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/source.json"
+  - resource: "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/actor_codec.py"
+  - resource: "external-repository:/Users/poonszesen/kaggriculture-v2/ops/kaggle-public-episodes-2026-09-28/manifest.json"
+---
+
+# Rebuild data preparation preserves replay identity
+
+The [[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]]
+classifies replay selection as reviewed porting and preparation as a rebuild.
+Searches for replay selection, split leakage, source volume, seed export and
+native opponents found the historical [[bc-bootstrap-uses-native-replay-features-and-current-heads|BC]]
+and [[shared-ppo-adapts-game-batches-without-a-second-loop|PPO]] References, not a
+current-tree data pipeline. This record covers stream D's bounded preparation
+work; it does not promote the old model, admission run or evaluation results.
+
+## Adaptation inventory and consequence
+
+- `scripts/kaggriculture_bc/select_replays.py` ports the standard-library
+  selection recipe with types and an explicit source-root argument. It retains
+  sorted JSON names, `20260929 + day` RNG seeds, September 21–27, first four
+  validation and next 32 train episodes per day, payload hashes and manifest
+  fields. Episode basename duplication is rejected before export; this guard
+  previously lived in preparation. Short days and duplicate ZIP entries now
+  fail explicitly. Existing outputs are not replaced. No v2 implementation
+  names, absolute legacy paths or engine imports remain in the selector.
+- `tests/scripts/test_kaggriculture_select_replays.py` supplies synthetic ZIPs
+  and manifests, golden shuffled IDs, leakage/count/hash checks, isolated CLI
+  execution, no-overwrite and interrupted-copy cleanup. Tests require no corpus
+  or native engine. Future selection changes must retain the audited identity
+  or explain the resulting dataset change.
+- `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` records source volume custody
+  and the preparation data flow against the merged APIs (Claude refresh at
+  `2390c8e`). Explicit per-turn `TraceHeader`s are encoded for both seats
+  through the merged `owl.rs.encode_kaggriculture_headers_into`. Recorded
+  actions are admitted per seat through 1.4's planned `kaggriculture_encode`
+  and `kaggriculture_decode`, which are the only blocked step. The brief also
+  sets shard schema `kaggriculture-bc-shard-v1` and a custody manifest, and
+  runs on the current GPU pod (owner direction, below). Three findings bind future preparation. First, the Rust
+  `Config` is `serde(default)`, so the full configuration key set must be
+  checked before encoding. Second, the reference's `raw.get(k) or []`
+  silently normalized every falsy `hands`/`market` value (absent, `null`,
+  `false`, zero, `""`, `{}`) to `[]`, while the grammar requires the exact
+  keys, so that rule is replicated and counted by kind; Codex's rereview
+  corrected the earlier absent-or-null-only claim with an in-memory probe of
+  the pinned reference codec. Third, the new grammar checks in a different
+  order, which can move first-rejection categories but not admission. The
+  old flat features/context arrays cannot be loaded as the new schema. After
+  that rereview, a run must come from a clean immutable checkout with
+  per-file source hashes rechecked before the manifest is published, and a
+  compact per-shard path/bytes/SHA-256 inventory is committed while NPZ bulk
+  stays external. A fourth finding binds any replay-based transition check:
+  the owner restated that the action answering `steps[t]` is recorded at
+  `steps[t+1]`, and a check that steps the engine from an explicit
+  `steps[t]` header must use the episode's **recorded** `info.seed`, because
+  Kaggle and the Rust engine seed daily weeds and shop unlocks from it
+  (`engine_rs/src/lib.rs:4448`). Codex's in-memory probe of the pinned Python
+  engine on local episode 114406062 matched 719/719 transitions with the
+  recorded seed, 704/719 with placeholder 0, and 0/719 with the shifted
+  `steps[t]` pairing (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md`).
+  Observation encoding keeps the placeholder seed; the recorded seed stays
+  out of model inputs and shards. The brief names an offline root-crate Rust
+  binary for the check, so 1.4's production API gains no load-state binding,
+  and requires a fresh copy-linked venv on the pod because the existing
+  venvs share hard-linked installed files.
+- `ops/rebuild-2026-09-29/briefs/7.3-replay-export.md` distinguishes Kaggle
+  episode JSON from native JSONL oracles. Export must retain the resolved seed,
+  full config, action timing/order and completed state before auto-reset; seed
+  replay must not load expected snapshots or diagnostic RNG schedules as truth.
+- `ops/rebuild-2026-09-29/briefs/7.1-opponents.md` recommends starter, R04,
+  EcoBot and E776 by source behavior and dependency footprint, with hashes and
+  explicit lifecycle/parity gaps. The four source modules plus E776's policy
+  tape total 335,571 bytes before shared support. This is a recommendation,
+  not an adopted or qualified panel; no bot code is imported.
+- The companion source audit, fixture custody and result receipt under
+  `ops/rebuild-2026-09-29/checks/stream-d-*` bind checks to source and disclose
+  missing live evidence. The historical BC note corrects the false claim that
+  omitted units become NONE: preparation inserts `None`, which the codec rejects.
+- `docs/kaggriculture-contract.md` gains the missing blank line before its token
+  list so repository Markdown lint passes. No v4 contract semantics change.
+
+## Independent checks and limits
+
+The synced source corpus inventory, separate from the reference selection
+receipt, reproduces all **252 ordered episode IDs, split assignments and byte
+lengths** through the ported selector: 224 train / 28 validation. No raw payload
+was opened or rehashed. The receipt's 158,772 admitted / 22,416 rejected
+paired turns are historical arithmetic, not new admission evidence.
+
+The provenance source is network volume **4llk4uaf20, EU-RO-1**. A historical
+reader mounted it at `/data`, copied the selected ZIP to GPU pod
+`w7ia3zvxqsvs3g`, then terminated. The reference `source.json` records the
+archive hash (`data_archive_sha256 = 619ca7a8…81433c9dd0`). On 2026-09-29 the
+operator found the ZIP at `/workspace/kg-v3/replays/bc-bootstrap/selected.zip`
+(519,191,507 bytes, 253 entries, the same SHA-256); that read has no
+committed receipt, so the pod run re-hashes it before use. The owner directed
+that the current pod does the BC ("you can use current pod to do the BC"), so
+the pinned slice needs no volume access; the volume, via a data pod or S3,
+matters only for data beyond the slice. The old prepared arrays at
+`/workspace/kg-v3/replays/bc-bootstrap/arrays` are schema-incompatible and
+never loaded.
+
+Four pinned native fixtures were structurally inspected: **2,876 transitions**,
+with consecutive steps and matching final banks/statuses. Archived official
+engine source hashes match their engine pin. This is not engine execution or an
+export/import round trip. Opponent source sizes/dependencies and policy JSON were
+inspected, without playing games or inheriting strength claims.
+
+The final `py-prepare` and `prepare` each pass **739 Python tests / 3 backend
+skips**, including **17 selector cases**; `prepare` also passes **155 Rust tests /
+2 ignored**. The result receipt retains commands, logs and the initial Markdown
+failure. Rust checks concern the retained Orbit starter, not the absent
+Kaggriculture engine.
+The refreshed brief's per-turn differential oracle loads the stdlib-only
+reference `actor_codec.py` by path. Run on one local episode outside the slice
+(114406062), it admitted 719 of 719 paired turns in 0.2 s
+(`ops/rebuild-2026-09-29/checks/5.1-brief-refresh/ref-admission-probe.log`).
+That shows the oracle is cheap and runnable. It is not evidence about the
+slice.
+Preparation, native replay export, opponent import and full-payload admission
+remain deferred until their native seams exist. Reopen when the engine lands or
+custody changes; qualify these interfaces before BC or panel results can claim
+current-tree parity.
+
+codex
+Both r2 corrections are resolved, but the matching index still needs one edit.
+
+- **P2 resolved:** [Q1](/Users/poonszesen/kg-v3-bcbrief/ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:558) specifies a separate normalization mode, its own pair count, and direct raw-versus-normalized snapshot comparison.
+- **P3 resolved in Reference:** [Description](/Users/poonszesen/kg-v3-bcbrief/cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:4) now says “specifies” and identifies Python as the executed evidence. The new log entry agrees.
+- **P3 remaining — index reconciliation:** [Index line](/Users/poonszesen/kg-v3-bcbrief/cookbook/references/index.md:12) is unchanged and still says “a step+1 transition check run by an offline Rust binary.” Make its specified/unexecuted status explicit, matching the Reference and the cookbook’s required note/index/log update.
+
+`4fdd61e` changes only the brief, Reference description, and log entry; no unrelated changes. Branch and HEAD match, worktree is clean, and `git diff --check` passes. No files changed or builds run.
+
+VERDICT: APPROVE WITH EDITS
+hook: Stop
+hook: Stop Completed
+tokens used
+28,188
+Both r2 corrections are resolved, but the matching index still needs one edit.
+
+- **P2 resolved:** [Q1](/Users/poonszesen/kg-v3-bcbrief/ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:558) specifies a separate normalization mode, its own pair count, and direct raw-versus-normalized snapshot comparison.
+- **P3 resolved in Reference:** [Description](/Users/poonszesen/kg-v3-bcbrief/cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:4) now says “specifies” and identifies Python as the executed evidence. The new log entry agrees.
+- **P3 remaining — index reconciliation:** [Index line](/Users/poonszesen/kg-v3-bcbrief/cookbook/references/index.md:12) is unchanged and still says “a step+1 transition check run by an offline Rust binary.” Make its specified/unexecuted status explicit, matching the Reference and the cookbook’s required note/index/log update.
+
+`4fdd61e` changes only the brief, Reference description, and log entry; no unrelated changes. Branch and HEAD match, worktree is clean, and `git diff --check` passes. No files changed or builds run.
+
+VERDICT: APPROVE WITH EDITS

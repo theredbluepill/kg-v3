@@ -286,11 +286,11 @@ The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cov
 
 ### Task 5.1: Data preparation for the new observation (Codex)
 
-- [ ] Port `select_replays.py` (P): the same source volume, seeds, per-day counts and episode-identity split. Rebuild `prepare.py` (R) on the explicit-state native constructor, emitting the 0.1 contract's tensors. Acceptance: episode IDs, split and admission and rejection counts match the reference receipt (158,772 admitted / 22,416 rejected turns for the 252-episode slice), or the differences are explained.
+- [x] Port `select_replays.py` (P): the same source volume, seeds, per-day counts and episode-identity split. Rebuild `prepare.py` (R) on the explicit-state native constructor, emitting the 0.1 contract's tensors. Acceptance: episode IDs, split and admission and rejection counts match the reference receipt (158,772 admitted / 22,416 rejected turns for the 252-episode slice), or the differences are explained. (Done, merged by `kg/merge-bc-c`: selection `1177a5b`; brief `74428e8`; preparer `scripts/kaggriculture_prepare_bc.py` at `89ca39c`, Codex `verify-5.1-prepare-r2` and `verify-5.1-team-filter-r2` APPROVE. Its one run, on the owner's direction, prepared the top-1 team's winning seats on an A100 pod (523 episodes, stride 2, manifest `ba5fe1c4…`), not the 252-episode reference slice, so the reference-receipt comparison has not run.)
 
 ### Task 5.2: BC training on the pod (Claude)
 
-- [ ] Rebuild `train_bc.py` (R) on the new model, reusing Isaiah's optimizer factory, BF16 and compile. Two-rank RTX PRO 6000. Keep the best checkpoint by held-out NLL and stop on sustained held-out degradation (L9). Run statement first. Record the checkpoint SHA-256, the NLL curve and the stopping step.
+- [x] Rebuild `train_bc.py` (R) on the new model, reusing Isaiah's optimizer factory, BF16 and compile. Two-rank RTX PRO 6000. Keep the best checkpoint by held-out NLL and stop on sustained held-out degradation (L9). Run statement first. Record the checkpoint SHA-256, the NLL curve and the stopping step. (Done, merged by `kg/merge-bc-c`: trainer `b626f24` (Codex `verify-5.2-trainer-r3` APPROVE). The run (owner-requested top-1 team data) was 1× A100, eager (`f0b7a38`, run statement `bc-a100.md`), not two RTX PRO 6000 ranks: best held-out NLL 0.480 at step 3,200, L9 stop at step 5,200, checkpoint SHA-256 `fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51`, W&B run `kvl4rfda` (offline, later synced); NLL curve in `bc-a100-2026-09-29/train/`. PPO starts from it with `--load-model-weights-mode model_fresh_critic_head`. Selection only; strength untested.)
 
 ## Phase 6 — GPU verification (pod, RTX PRO 6000; Claude operates, Codex reviews receipts)
 
