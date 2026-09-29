@@ -1,0 +1,6 @@
+{
+  "oracle_and_tests_unchanged_from_base": true,
+  "deadline_definition": "# A shared Unix deadline spans Mac Python 3.9/3.11 process clock differences.\n# Convert once to this process's monotonic clock, leaving five seconds to clean up.\nRUN_DEADLINE = (\n    time.monotonic()\n    + min(\n        115.0,\n        float(os.environ.get(\"KG_BOUNDED_DEADLINE_UNIX\", time.time() + 115))\n        - time.time(),\n    )\n    - 5\n)\nCOMMAND_RECEIPTS: list[dict[str, Any]] = []\n",
+  "initial_result": "4 failed, 2315 passed, 10 skipped in 170.92s; all failures shared deadline expired before launch",
+  "recovery": "Run full 53-case oracle module in a fresh process; rerun all other tests with that module excluded. No production guards modified."
+}
