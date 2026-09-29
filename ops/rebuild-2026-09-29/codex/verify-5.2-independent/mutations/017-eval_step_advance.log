@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_held_out_selection_keeps_best_and_stops_after_patience __________
+
+    def test_held_out_selection_keeps_best_and_stops_after_patience() -> None:
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+        assert selection.observe(3.0, step=0)
+        assert selection.observe(2.0, step=2)
+        assert not selection.observe(1.97, step=4)  # inside min_delta
+        assert not selection.should_stop
+        assert not selection.observe(2.4, step=6)
+        assert selection.should_stop
+        assert (selection.best_nll, selection.best_step) == (2.0, 2)
+>       with pytest.raises(ValueError, match="advance"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:402: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_held_out_selection_keeps_best_and_stops_after_patience
+1 failed, 17 deselected in 0.06s

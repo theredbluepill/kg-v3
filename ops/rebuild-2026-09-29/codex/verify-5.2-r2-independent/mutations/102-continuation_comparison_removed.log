@@ -1,0 +1,79 @@
+..................F.F....                                                [100%]
+=================================== FAILURES ===================================
+_______________ test_resume_rejects_changed_trajectory_settings ________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-199/test_resume_rejects_changed_tr0')
+
+    def test_resume_rejects_changed_trajectory_settings(tmp_path: Path) -> None:
+        """Only max_steps may change on resume; the rest set the continued trajectory."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(max_steps=2)
+        _run(tmp_path / "run", data, config)
+        state = load_bc_state(tmp_path / "run" / BC_STATE)
+        dataset = load_bc_dataset(data)
+        ppo_config = _ppo_config()
+    
+        def check(bc: BCConfig, ppo: FullConfig = ppo_config) -> None:
+            bc_module.check_resume_compatible(
+                state, dataset=dataset, world_size=1, config=bc, ppo_config=ppo
+            )
+    
+        check(config.model_copy(update={"max_steps": 40}))
+        for field, value in (
+            ("seed", 12),
+            ("rows_per_rank", 1),
+            ("gradient_accumulation_steps", 2),
+            ("min_delta", 0.1),
+            ("optimizer", AdamWConfig(learning_rate=1e-4)),
+        ):
+>           with pytest.raises(ValueError, match=rf"bc\.{field}\b"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:649: Failed
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.014344000024721026, 'time/elapsed_seconds': 0.06234474998200312}
+{'bc/step': 2.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.013675292022526264, 'time/elapsed_seconds': 0.11458591697737575, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 234.21831842131166}
+__________________ test_script_resume_rejects_an_edited_seed ___________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-199/test_script_resume_rejects_an_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110fc4980>
+
+    def test_script_resume_rejects_an_edited_seed(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2).to_file(config_path)
+        out = tmp_path / "runs"
+        _script_argv(
+            monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+        )
+        train_bc_script.main()
+        (run_dir,) = out.iterdir()
+        saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+        saved.model_copy(update={"seed": saved.seed + 1, "max_steps": 4}).to_file(
+            run_dir / "bc_config.yaml"
+        )
+        _script_argv(monkeypatch, run_dir, data, "--source-commit", "a")
+>       with pytest.raises(ValueError, match=r"bc\.seed"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:732: Failed
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 0.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.014839124982245266, 'time/elapsed_seconds': 0.05576229200232774}
+{'bc/step': 2.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.013998000009451061, 'time/elapsed_seconds': 0.2722193750087172, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 212.00617490579674}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-199/test_script_resume_rejects_an_0/runs/bc-20260929-201502", "stop_reason": "max_steps", "steps": 2, "best_step": 2, "best_validation_nll": 4.253199974695842, "final_validation_nll": 4.253199974695842}
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 4.0, 'bc/validation_nll': 4.244173367818196, 'bc/validation_frame_nll': 4.110989434378488, 'bc/validation_value_ce': 0.7338021993637085, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.244173367818196, 'bc/best_step': 4.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.013251124997623265, 'time/elapsed_seconds': 0.05368270794861019, 'bc/train_nll': 4.224152445793152, 'bc/train_value_ce': 0.747523844242096, 'bc/grad_norm': 2.322445511817932, 'perf/learner_seat_rows_per_second': 199.500624929144}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-199/test_script_resume_rejects_an_0/runs/bc-20260929-201502", "stop_reason": "max_steps", "steps": 4, "best_step": 4, "best_validation_nll": 4.244173367818196, "final_validation_nll": 4.244173367818196}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_resume_rejects_changed_trajectory_settings
+FAILED tests/kaggriculture/test_bc.py::test_script_resume_rejects_an_edited_seed
+2 failed, 23 passed in 5.73s

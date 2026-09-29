@@ -1,0 +1,26 @@
+.................F.......                                                [100%]
+=================================== FAILURES ===================================
+______________ test_resume_rejects_another_dataset_or_world_size _______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-120/test_resume_rejects_another_da0')
+
+    def test_resume_rejects_another_dataset_or_world_size(tmp_path: Path) -> None:
+        data = _dataset_root(tmp_path)
+        _run(tmp_path / "run", data, _bc_config(max_steps=2))
+        state = load_bc_state(tmp_path / "run" / BC_STATE)
+        other = _write(
+            tmp_path / "other",
+            [_episode("x", "train", 4, seed=7), _episode("y", "validation", 2, seed=8)],
+        )
+        config, ppo_config = _bc_config(max_steps=2), _ppo_config()
+>       with pytest.raises(ValueError, match="manifest"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:609: Failed
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.01247637503547594, 'time/elapsed_seconds': 0.04695529100717977}
+{'bc/step': 2.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.01090379199013114, 'time/elapsed_seconds': 0.0987928329850547, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 221.95146600850882}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_resume_rejects_another_dataset_or_world_size
+1 failed, 24 passed in 4.91s

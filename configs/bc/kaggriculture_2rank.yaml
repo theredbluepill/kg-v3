@@ -1,0 +1,44 @@
+# BC warm start for configs/kaggriculture_2rank.yaml (rebuild plan Task 5.2), run
+# with scripts/train_bc.py under torchrun on 2x RTX PRO 6000. The model, BF16
+# autocast and trunk compile come from ppo_config, so the BC best checkpoint
+# loads into that PPO run (--load-model-weights). Unmeasured starting values, not
+# a tuned recipe; the run statement records any change.
+ppo_config: ../kaggriculture_2rank.yaml
+
+# Isaiah's optimizer factory with the PPO config's Muon/AdamW values; the cosine
+# decays over max_steps instead of PPO's 400k-step schedule.
+optimizer:
+  optimizer: muon
+  adamw_lr: 0.0001
+  adamw_eps: 1.0e-05
+  weight_decay: 0.0
+  muon_lr: 0.002
+  muon_weight_decay: 0.01
+  muon_momentum: 0.95
+  lr_schedule:
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 1000
+    decay_steps: 100_000
+    lr_min_ratio: 0.01
+
+seed: 20260929
+# 256 turn rows = 512 seat rows per rank per step (half PPO's per-rank minibatch
+# of 8 segments x 64 steps x 2 seats); 2 ranks give 512 turn rows per step.
+rows_per_rank: 256
+gradient_accumulation_steps: 1
+# Isaiah's rl.max_grad_norm.
+max_grad_norm: 10.0
+# Isaiah's equal teacher_kl_coef / teacher_value_coef ratio (critic handling in
+# python/owl/train/bc.py).
+value_coef: 1.0
+# L9: the reference's held-out NLL bottomed out near 14.6k updates and then rose
+# for 60k; evaluate every 200 steps and stop after 10 evaluations (2,000 steps)
+# without an improvement of more than min_delta. min_delta sets only the patience
+# count; every strict new minimum still replaces the best checkpoint.
+eval_interval_steps: 200
+patience_evals: 10
+min_delta: 0.0
+max_steps: 100_000
+# Every validation row is evaluated each time (each rank its partition).
+validation_rows_per_forward: 256
+preflight_train_replay: true

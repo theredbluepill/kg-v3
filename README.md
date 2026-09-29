@@ -440,6 +440,62 @@ rates use total iteration time, including rollout, teacher precompute, and PPO
 update time. The active-entity count is also accumulated as
 `train/total_active_entities` and saved in checkpoints.
 
+## Kaggriculture BC warm start
+
+`scripts/train_bc.py` behavior-clones public replays into the Kaggriculture
+policy before PPO (rebuild plan Task 5.2). It is offline supervised training,
+not a second PPO loop, and launches like `run_ppo.py` (torchrun for several
+GPUs):
+
+```bash
+torchrun --nproc-per-node 2 scripts/train_bc.py configs/bc/kaggriculture_2rank.yaml \
+  --data <task-5.1-dataset> --output-dir runs/bc [--wandb-mode offline]
+torchrun --nproc-per-node 2 scripts/train_bc.py runs/bc/<run> --data <dataset>  # restart
+```
+
+A restart is a new attempt: `bc_attempts.jsonl` gains a record with the
+checkout's own source (`git`, or `--source-commit`), the parent `bc_state.pt`
+SHA-256 and every earlier attempt's source, and the best-checkpoint record and
+`bc_result.json` carry the attempt that wrote them. The restart must keep the
+saved trajectory's settings (the BC config except `max_steps`, and the whole
+PPO config); only `max_steps` in the run's `bc_config.yaml` may be raised.
+
+A BC config (`BCConfig`, `owl.train.bc`) names the PPO config it warm-starts
+(`ppo_config`); the model, `rl.dtype` (BF16 autocast) and `rl.model_compile`
+(through `configure_model_compile`, so the Kaggriculture cuBLAS-only claim
+applies) come from it, and the optimizer is built by `create_optimizer` /
+`create_lr_scheduler`. The GEMM workload check covers the BC microbatch and
+validation forwards. Data are Task 5.1 `kaggriculture-bc-shard-v1` shards
+(`owl.kaggriculture.bc_data`: `manifest.json` plus one compressed `.npz` per
+episode, episode-level `train`/`validation` split). Loading verifies every
+shard's SHA-256, schema id and full contract, and each rank keeps rows
+`[rank::world_size]` of every episode in host memory (exact integers stored as
+range-checked int32, tokens as int16, gathered back as int64).
+
+The loss is each seat's teacher-forced program NLL divided by its length
+(`evaluate_actions`, whose replay validation admits the recorded programs),
+plus `value_coef` times the winner cross-entropy against the episode's raw
+final banks. The critic is trained, not frozen. Each rank draws its training
+rows from a permutation seeded by `(seed, epoch, rank)`, so a restart from
+`bc_state.pt` repeats the uninterrupted run's rows, updates, evaluation steps and
+stopping step on a deterministic device. Every `eval_interval_steps` all
+validation rows are evaluated; the lowest held-out NLL is saved as
+`checkpoint_bc_best.pt` with exactly `run_ppo.py`'s checkpoint keys (`env_steps`
+0), beside the PPO `config.yaml`, so PPO can start from it with
+`--load-model-weights` or `rl.teacher_init` once `run_ppo.py` runs
+Kaggriculture (it stops before the environment until Tasks 1.4 and 3.1 land;
+the loaders accept the checkpoint today). Training stops after
+`patience_evals` evaluations without an improvement of more than `min_delta`
+over the last such improvement, at `max_steps` or at `--max-runtime-hours`;
+`min_delta` sets only that patience count, and every strict new minimum still
+replaces the best checkpoint. A budget or runtime stop between scheduled
+evaluations evaluates once more; that evaluation can replace the best checkpoint
+but does not count toward patience, so a resumed run keeps the uninterrupted
+cadence and its best is never higher in NLL than the uninterrupted run's. `bc_history.jsonl` holds the NLL curve,
+`checkpoint_bc_best.json` the best checkpoint's SHA-256 and step, and
+`bc_result.json` the stopping reason. W&B runs go to project `kg-v3` with
+`job_type` `bc`.
+
 ## Replay capture
 
 `scripts/benchmark_checkpoints.py` can save replay JSONL samples with

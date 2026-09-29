@@ -1,0 +1,634 @@
+{
+  "source": {
+    "python/owl/kaggriculture/bc_data.py": "823b8772ca0124479947c593230432f7c8eddf0b7d3a29a7669b403161844636",
+    "python/owl/train/bc.py": "e6cfe19000c6c0a72b3dd4a4c54c5fbd98c48a443c2a25e9e5cb72e8b0ab72a8",
+    "scripts/train_bc.py": "bf33c7a70c70f6cd911ac85b810b3d35c7b9959c5d4cfd8acab95df2a0f30363"
+  },
+  "scratch": "/private/tmp/kg-bc-mutations-6rh7xrc6",
+  "python": "/Users/poonszesen/kg-v3-bc/.venv/bin/python",
+  "cases": [
+    {
+      "name": "round_trip_restore_int64",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "return values.to(torch.int64) if values.dtype in _COMPACT_INTEGERS else values",
+      "new": "return values",
+      "test": "shards_round_trip"
+    },
+    {
+      "name": "tampered_hash",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if _sha256(path) != record.shard_sha256:",
+      "new": "if False:",
+      "test": "tampered"
+    },
+    {
+      "name": "duplicate_episode",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if duplicates:",
+      "new": "if False:",
+      "test": "tampered"
+    },
+    {
+      "name": "old_schema",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if \"schema\" not in names or str(shard[\"schema\"][()]) != SHARD_SCHEMA:",
+      "new": "if False:",
+      "test": "foreign_shard"
+    },
+    {
+      "name": "missing_split",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if not records:",
+      "new": "if False:",
+      "test": "both_splits"
+    },
+    {
+      "name": "unpaired_rows",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if not bool(obs.still_playing.all()):",
+      "new": "if False:",
+      "test": "both_splits"
+    },
+    {
+      "name": "integer_range",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if values.numel() and (\n        int(values.min()) < info.min or int(values.max()) > info.max\n    ):",
+      "new": "if False:",
+      "test": "range_checks"
+    },
+    {
+      "name": "rank_partition",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "mine = slice(rank, None, world_size)",
+      "new": "mine = slice(0, None, world_size)",
+      "test": "fake_ranks"
+    },
+    {
+      "name": "winner_draw",
+      "file": "python/owl/train/bc.py",
+      "old": "torch.where(final_banks[:, 0] < final_banks[:, 1], 0.0, 0.5)",
+      "new": "torch.where(final_banks[:, 0] < final_banks[:, 1], 0.0, 0.0)",
+      "test": "winner_targets"
+    },
+    {
+      "name": "winner_seat_order",
+      "file": "python/owl/train/bc.py",
+      "old": "self_wins = torch.stack((seat0, 1.0 - seat0), dim=1)",
+      "new": "self_wins = torch.stack((seat0, seat0), dim=1)",
+      "test": "winner_targets"
+    },
+    {
+      "name": "loss_sign",
+      "file": "python/owl/train/bc.py",
+      "old": "return terms.turn_nll.mean() + value_coef * terms.value_ce.mean()",
+      "new": "return -terms.turn_nll.mean() - value_coef * terms.value_ce.mean()",
+      "test": "loss_decreases"
+    },
+    {
+      "name": "critic_omitted",
+      "file": "python/owl/train/bc.py",
+      "old": "return terms.turn_nll.mean() + value_coef * terms.value_ce.mean()",
+      "new": "return terms.turn_nll.mean()",
+      "test": "every_parameter"
+    },
+    {
+      "name": "rank_seed",
+      "file": "python/owl/train/bc.py",
+      "old": "np.random.default_rng([seed, epoch, rank])",
+      "new": "np.random.default_rng([seed, epoch, 0])",
+      "test": "sharding_is_deterministic"
+    },
+    {
+      "name": "epoch_seed",
+      "file": "python/owl/train/bc.py",
+      "old": "np.random.default_rng([seed, epoch, rank])",
+      "new": "np.random.default_rng([seed, 0, rank])",
+      "test": "sharding_is_deterministic"
+    },
+    {
+      "name": "small_partition",
+      "file": "python/owl/train/bc.py",
+      "old": "if self.steps_per_epoch < 1:",
+      "new": "if False:",
+      "test": "sharding_is_deterministic"
+    },
+    {
+      "name": "min_delta",
+      "file": "python/owl/train/bc.py",
+      "old": "if nll < self.best_nll - self.min_delta:",
+      "new": "if nll < self.best_nll:",
+      "test": "held_out_selection"
+    },
+    {
+      "name": "eval_step_advance",
+      "file": "python/owl/train/bc.py",
+      "old": "if step <= self.last_step:",
+      "new": "if False:",
+      "test": "held_out_selection"
+    },
+    {
+      "name": "finite_nll",
+      "file": "python/owl/train/bc.py",
+      "old": "if not math.isfinite(nll):",
+      "new": "if False:",
+      "test": "held_out_selection"
+    },
+    {
+      "name": "patience_stop",
+      "file": "python/owl/train/bc.py",
+      "old": "return self.evals_since_best >= self.patience_evals",
+      "new": "return False",
+      "test": "held_out_selection or training_keeps"
+    },
+    {
+      "name": "best_save_unconditional",
+      "file": "python/owl/train/bc.py",
+      "old": "            if improved:\n                _save_best(",
+      "new": "            if True:\n                _save_best(",
+      "test": "training_keeps"
+    },
+    {
+      "name": "resume_step_reset",
+      "file": "python/owl/train/bc.py",
+      "old": "step = resume.step",
+      "new": "step = 0",
+      "test": "restart_from_state"
+    },
+    {
+      "name": "resume_manifest_guard",
+      "file": "python/owl/train/bc.py",
+      "old": "if state.dataset_manifest_sha256 != dataset.manifest_sha256:",
+      "new": "if False:",
+      "test": "resume_rejects"
+    },
+    {
+      "name": "resume_world_guard",
+      "file": "python/owl/train/bc.py",
+      "old": "if state.world_size != world_size:",
+      "new": "if False:",
+      "test": "resume_rejects"
+    },
+    {
+      "name": "ppo_checkpoint_schema",
+      "file": "python/owl/train/bc.py",
+      "old": "        \"env_steps\": 0,",
+      "new": "        \"env_steps\": 12,",
+      "test": "best_checkpoint_loads"
+    },
+    {
+      "name": "ppo_checkpoint_optimizer_step",
+      "file": "python/owl/train/bc.py",
+      "old": "        \"optimizer_steps\": bc_steps,",
+      "new": "        \"optimizer_steps\": 0,",
+      "test": "best_checkpoint_loads"
+    },
+    {
+      "name": "bc_workload_validation_removed",
+      "file": "python/owl/train/bc.py",
+      "old": "        ForwardWorkload(\n            \"bc_validation\", config.validation_rows_per_forward * kt.PLAYERS\n        ),",
+      "new": "",
+      "test": "two_rank_bc_config"
+    },
+    {
+      "name": "script_provenance_ignored",
+      "file": "scripts/train_bc.py",
+      "old": "\"source_commit\": args.source_commit or _git_head(),",
+      "new": "\"source_commit\": \"incorrect\",",
+      "test": "script_runs"
+    },
+    {
+      "name": "observation_field_removed",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if name != \"action_mask\"",
+      "new": "if name not in (\"action_mask\", \"globals_int\")",
+      "test": "contract_shapes"
+    },
+    {
+      "name": "writer_paired_shape",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if tuple(episode.obs.still_playing.shape) != lead or (\n        tuple(episode.actions.lengths.shape) != lead\n    ):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "loader_rank",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if not 0 <= rank < world_size:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "loader_manifest_exists",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if not manifest_path.is_file():",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "banks_finite",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if not all(math.isfinite(bank) for bank in record.terminal_banks):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "shard_exists",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if not path.is_file():",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "shard_bytes",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if path.stat().st_size != record.shard_bytes:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "shard_arrays",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if names != SHARD_ARRAYS:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "shard_admitted_shape",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if array.shape[:1] != (record.admitted,):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "turn_layout",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if turn.dtype != np.int64 or turn.ndim != 1:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "turn_increasing",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "action_layout",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "observation_contract",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "        obs.check_contract()",
+      "new": "        pass",
+      "test": ""
+    },
+    {
+      "name": "length_bounds",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if int(lengths.min()) < 1 or bool(\n        (lengths > obs.action_mask.can_act.sum(dim=-1)).any()\n    ):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "tokens_nonnegative",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if int(tensors[\"tokens\"].min()) < 0:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "shard_path",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "    posix = PurePosixPath(path)",
+      "new": "    return\n    posix = PurePosixPath(path)",
+      "test": ""
+    },
+    {
+      "name": "gather_nonempty",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if index.ndim != 1 or index.numel() == 0:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "gather_range",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if int(index.min()) < 0 or int(index.max()) >= self.num_rows:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "obs_field_tensor",
+      "file": "python/owl/kaggriculture/bc_data.py",
+      "old": "if not isinstance(value, torch.Tensor):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "config_game",
+      "file": "python/owl/train/bc.py",
+      "old": "if not isinstance(cfg.model, KaggricultureTransformerConfig) or not isinstance(\n        cfg.env, KaggricultureEnvConfig\n    ):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "sharding_step_micro",
+      "file": "python/owl/train/bc.py",
+      "old": "if step < 0 or not 0 <= micro < self.gradient_accumulation_steps:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "sharding_rank",
+      "file": "python/owl/train/bc.py",
+      "old": "if not 0 <= rank < self.world_size:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "winner_shape",
+      "file": "python/owl/train/bc.py",
+      "old": "if final_banks.ndim != 2 or final_banks.shape[1] != kt.PLAYERS:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "winner_log_probs_present",
+      "file": "python/owl/train/bc.py",
+      "old": "if evaluation.winner_log_probabilities is None:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "evaluation_nonempty",
+      "file": "python/owl/train/bc.py",
+      "old": "if seat_rows == 0:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "resume_state_keys",
+      "file": "python/owl/train/bc.py",
+      "old": "if not isinstance(state, dict) or set(state) != _RESUME_KEYS:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "resume_selection_mapping",
+      "file": "python/owl/train/bc.py",
+      "old": "if not isinstance(selection, dict):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "resume_lr_schedule",
+      "file": "python/owl/train/bc.py",
+      "old": "if (lr_scheduler is None) != (state.lr_scheduler is None):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "trainer_rank_context",
+      "file": "python/owl/train/bc.py",
+      "old": "if (dataset.rank, dataset.world_size) != (context.rank, context.world_size):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "history_exists",
+      "file": "python/owl/train/bc.py",
+      "old": "if not path.is_file():",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "script_provenance_mapping",
+      "file": "scripts/train_bc.py",
+      "old": "if not isinstance(record, dict):",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "script_override_syntax",
+      "file": "scripts/train_bc.py",
+      "old": "if not separator or not field_path:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "script_override_duplicate",
+      "file": "scripts/train_bc.py",
+      "old": "if field_path in overrides:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "script_fresh_config_exists",
+      "file": "scripts/train_bc.py",
+      "old": "if fresh and not args.target.is_file():",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "script_resume_dir",
+      "file": "scripts/train_bc.py",
+      "old": "if not args.target.is_dir():",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "script_resume_overrides",
+      "file": "scripts/train_bc.py",
+      "old": "if args.overrides is not None:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "script_resume_source_override",
+      "file": "scripts/train_bc.py",
+      "old": "if args.source_commit is not None:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "script_runtime_positive",
+      "file": "scripts/train_bc.py",
+      "old": "if args.max_runtime_hours is not None and args.max_runtime_hours <= 0.0:",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "config_seed",
+      "file": "python/owl/train/bc.py",
+      "old": "seed: int = Field(ge=0)",
+      "new": "seed: int = Field()",
+      "test": ""
+    },
+    {
+      "name": "config_rows_per_rank",
+      "file": "python/owl/train/bc.py",
+      "old": "rows_per_rank: int = Field(ge=1)",
+      "new": "rows_per_rank: int = Field()",
+      "test": ""
+    },
+    {
+      "name": "config_gradient_accumulation_steps",
+      "file": "python/owl/train/bc.py",
+      "old": "gradient_accumulation_steps: int = Field(default=1, ge=1)",
+      "new": "gradient_accumulation_steps: int = Field(default=1)",
+      "test": ""
+    },
+    {
+      "name": "config_max_grad_norm",
+      "file": "python/owl/train/bc.py",
+      "old": "max_grad_norm: float = Field(gt=0.0)",
+      "new": "max_grad_norm: float = Field()",
+      "test": ""
+    },
+    {
+      "name": "config_value_coef",
+      "file": "python/owl/train/bc.py",
+      "old": "value_coef: float = Field(default=1.0, ge=0.0)",
+      "new": "value_coef: float = Field(default=1.0)",
+      "test": ""
+    },
+    {
+      "name": "config_eval_interval_steps",
+      "file": "python/owl/train/bc.py",
+      "old": "eval_interval_steps: int = Field(ge=1)",
+      "new": "eval_interval_steps: int = Field()",
+      "test": ""
+    },
+    {
+      "name": "config_patience_evals",
+      "file": "python/owl/train/bc.py",
+      "old": "patience_evals: int = Field(ge=1)",
+      "new": "patience_evals: int = Field()",
+      "test": ""
+    },
+    {
+      "name": "config_min_delta",
+      "file": "python/owl/train/bc.py",
+      "old": "min_delta: float = Field(default=0.0, ge=0.0)",
+      "new": "min_delta: float = Field(default=0.0)",
+      "test": ""
+    },
+    {
+      "name": "config_max_steps",
+      "file": "python/owl/train/bc.py",
+      "old": "max_steps: int = Field(ge=1)",
+      "new": "max_steps: int = Field()",
+      "test": ""
+    },
+    {
+      "name": "config_validation_rows_per_forward",
+      "file": "python/owl/train/bc.py",
+      "old": "validation_rows_per_forward: int = Field(ge=1)",
+      "new": "validation_rows_per_forward: int = Field()",
+      "test": ""
+    },
+    {
+      "name": "policy_length_normalization",
+      "file": "python/owl/train/bc.py",
+      "old": "turn_nll=program_nll / frames,",
+      "new": "turn_nll=program_nll,",
+      "test": ""
+    },
+    {
+      "name": "autocast_seam",
+      "file": "python/owl/train/bc.py",
+      "old": "with autocast_context(ppo_config.rl, device):",
+      "new": "with torch.autocast(device_type=device.type, enabled=False):",
+      "test": ""
+    },
+    {
+      "name": "compile_seam",
+      "file": "scripts/train_bc.py",
+      "old": "compiled = configure_model_compile(model, ppo_config.rl)",
+      "new": "compiled = []",
+      "test": ""
+    },
+    {
+      "name": "ddp_seam",
+      "file": "python/owl/train/bc.py",
+      "old": "return wrap_model_for_distributed(cast(BaseModelAPI, model), context)",
+      "new": "return model",
+      "test": ""
+    },
+    {
+      "name": "workload_guard_seam",
+      "file": "scripts/train_bc.py",
+      "old": "headroom = check_bc_workload(bc_config, ppo_config)",
+      "new": "headroom = []",
+      "test": ""
+    },
+    {
+      "name": "compile_stack_seam",
+      "file": "scripts/train_bc.py",
+      "old": "if ppo_config.rl.model_compile != \"none\":",
+      "new": "if False:",
+      "test": ""
+    },
+    {
+      "name": "optimizer_step_removed",
+      "file": "python/owl/train/bc.py",
+      "old": "    optimizer.step()",
+      "new": "    pass",
+      "test": ""
+    },
+    {
+      "name": "gradient_accumulation_scaling",
+      "file": "python/owl/train/bc.py",
+      "old": "(loss / accumulation).backward()",
+      "new": "loss.backward()",
+      "test": ""
+    },
+    {
+      "name": "gradient_clipping_disabled",
+      "file": "python/owl/train/bc.py",
+      "old": "        config.max_grad_norm,",
+      "new": "        float(\"inf\"),",
+      "test": ""
+    },
+    {
+      "name": "nonfinite_gradient_guard",
+      "file": "python/owl/train/bc.py",
+      "old": "        error_if_nonfinite=True,",
+      "new": "        error_if_nonfinite=False,",
+      "test": ""
+    },
+    {
+      "name": "scheduler_step_removed",
+      "file": "python/owl/train/bc.py",
+      "old": "        lr_scheduler.step()",
+      "new": "        pass",
+      "test": ""
+    },
+    {
+      "name": "preflight_disabled",
+      "file": "python/owl/train/bc.py",
+      "old": "        if config.preflight_train_replay:",
+      "new": "        if False:",
+      "test": ""
+    },
+    {
+      "name": "runtime_cap_removed",
+      "file": "python/owl/train/bc.py",
+      "old": "if max_runtime_seconds is not None and all_reduce_any(",
+      "new": "if False and all_reduce_any(",
+      "test": ""
+    },
+    {
+      "name": "best_checkpoint_weights_zero",
+      "file": "python/owl/train/bc.py",
+      "old": "return {k: v.detach().cpu() for k, v in unwrap_model(model).state_dict().items()}",
+      "new": "return {k: torch.zeros_like(v).cpu() for k, v in unwrap_model(model).state_dict().items()}",
+      "test": "best_checkpoint_loads or training_keeps"
+    }
+  ]
+}

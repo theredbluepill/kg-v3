@@ -1,0 +1,838 @@
+F......F.FF...FFFFFFFF.F.                                                [100%]
+=================================== FAILURES ===================================
+________________ test_shards_round_trip_rows_at_contract_dtypes ________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_shards_round_trip_rows_at0')
+
+    def test_shards_round_trip_rows_at_contract_dtypes(tmp_path: Path) -> None:
+        episodes = [
+            _episode("ep-a", "train", 4, seed=1),
+            _episode("ep-v", "validation", 2, seed=4),
+        ]
+        root = _write(tmp_path / "data", episodes)
+        assert (root / "train" / "2026-09-21-ep-a.npz").is_file()
+        dataset = load_bc_dataset(root)
+        assert dataset.train.num_rows == 4
+        assert dataset.validation.episode_ids == ("ep-v",)
+        assert dataset.train.turn.tolist() == [1, 3, 5, 7]
+        batch = dataset.train.gather(np.array([3, 0, 3]))
+>       batch.obs.check_contract()
+
+tests/kaggriculture/test_bc.py:211: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3,  ..., 0, 4, 1],
+         [2, 1, 5,  ..., 5, 2, 2]],
+
+        [[2, 1...      [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]])))
+
+    def check_contract(self) -> None:
+        """Check contract v4; raise ``ValueError`` naming the first bad field."""
+        lead = self.still_playing.shape
+        if len(lead) != 2 or lead[1] != PLAYERS:
+            raise ValueError(
+                f"still_playing must have shape [env, {PLAYERS}], got {tuple(lead)}"
+            )
+        # Iterating the pinned schema's known field names is the sanctioned
+        # dynamic-access case (AGENTS.md).
+        for name, (dtype, trailing, low, high) in _SCHEMA.items():
+            tensor: torch.Tensor = getattr(self, name)
+            if tensor.dtype != dtype:
+>               raise ValueError(f"{name} must be {dtype}, got {tensor.dtype}")
+E               ValueError: tile_kind must be torch.int64, got torch.int32
+
+python/owl/kaggriculture/types.py:186: ValueError
+__________________ test_loss_decreases_on_a_memorizable_batch __________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_loss_decreases_on_a_memor0')
+
+    def test_loss_decreases_on_a_memorizable_batch(tmp_path: Path) -> None:
+        dataset = load_bc_dataset(_dataset_root(tmp_path))
+        batch = dataset.train.gather(np.array([0, 4]))
+        model = _tiny(seed=3)
+        optimizer = create_optimizer(model, AdamWConfig(learning_rate=1e-2))
+        losses = []
+        for _ in range(25):
+            optimizer.zero_grad(set_to_none=True)
+            loss = bc_loss(
+>               bc_terms(model.evaluate_actions(batch.obs, batch.actions), batch),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                value_coef=1.0,
+            )
+
+tests/kaggriculture/test_bc.py:340: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 5]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+_______________ test_the_real_training_loop_lowers_the_objective _______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_the_real_training_loop_lo0')
+
+    def test_the_real_training_loop_lowers_the_objective(tmp_path: Path) -> None:
+        """train_bc's own update path moves every tensor and lowers the train loss."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(
+            optimizer=AdamWConfig(learning_rate=1e-2), max_steps=12, eval_interval_steps=12
+        )
+        initial = build_bc_model(_ppo_config(), device=_CONTEXT.device, seed=config.seed)
+>       before = _train_objective(initial, data)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:404: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:392: in _train_objective
+    cast(Any, model).evaluate_actions(batch.obs, batch.actions), batch
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...],
+        [7, 5],
+        [2, 5],
+        [3, 5],
+        [3, 4],
+        [6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([10, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+_____________________ test_bc_loss_reaches_every_parameter _____________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_bc_loss_reaches_every_par0')
+
+    def test_bc_loss_reaches_every_parameter(tmp_path: Path) -> None:
+        """The critic is trained with the policy; DDP needs no unused-parameter scan."""
+        dataset = load_bc_dataset(_dataset_root(tmp_path))
+        batch = dataset.train.gather(np.array([0, 1]))
+        model = _tiny(seed=3)
+        bc_loss(
+>           bc_terms(model.evaluate_actions(batch.obs, batch.actions), batch),
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            value_coef=1.0,
+        ).backward()
+
+tests/kaggriculture/test_bc.py:424: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+__________ test_best_checkpoint_is_the_minimum_even_inside_min_delta ___________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_best_checkpoint_is_the_mi0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f6499d0>
+
+    def test_best_checkpoint_is_the_minimum_even_inside_min_delta(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The verifier's probe: NLLs 2.0, 1.97, 2.4 with min_delta 0.05 keep step 1."""
+        data = _dataset_root(tmp_path)
+        scripted = iter([2.0, 1.97, 2.4])
+        _script_validation(monkeypatch, scripted, snapshots={})
+        run_dir = tmp_path / "run"
+        config = _bc_config(
+            eval_interval_steps=1, patience_evals=2, min_delta=0.05, max_steps=50
+        )
+>       result, _ = _run(run_dir, data, config)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:508: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:173: in _run
+    result = train_bc(
+python/owl/train/bc.py:806: in train_bc
+    initial_train = evaluate_rows(
+tests/kaggriculture/test_bc.py:528: in scripted_eval
+    metrics = real(model, split, rows, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/train/bc.py:357: in evaluate_rows
+    terms = evaluate_bc_batch(
+python/owl/train/bc.py:320: in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+_______ test_training_keeps_the_best_checkpoint_and_stops_on_degradation _______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_training_keeps_the_best_c0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f6495b0>
+
+    def test_training_keeps_the_best_checkpoint_and_stops_on_degradation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        snapshots: dict[int, dict[str, torch.Tensor]] = {}
+        _script_validation(
+            monkeypatch, iter([3.0, 2.0, 2.5, 2.6, 2.7]), snapshots=snapshots
+        )
+        run_dir = tmp_path / "run"
+        config = _bc_config(eval_interval_steps=1, patience_evals=2, max_steps=50)
+>       result, _ = _run(run_dir, data, config)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:552: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:173: in _run
+    result = train_bc(
+python/owl/train/bc.py:806: in train_bc
+    initial_train = evaluate_rows(
+tests/kaggriculture/test_bc.py:528: in scripted_eval
+    metrics = real(model, split, rows, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/train/bc.py:357: in evaluate_rows
+    terms = evaluate_bc_batch(
+python/owl/train/bc.py:320: in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+_____________ test_restart_from_state_matches_an_uninterrupted_run _____________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_restart_from_state_matche0')
+
+    def test_restart_from_state_matches_an_uninterrupted_run(tmp_path: Path) -> None:
+        data = _dataset_root(tmp_path)
+>       straight, straight_model = _run(
+            tmp_path / "straight", data, _bc_config(max_steps=4)
+        )
+
+tests/kaggriculture/test_bc.py:578: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:173: in _run
+    result = train_bc(
+python/owl/train/bc.py:806: in train_bc
+    initial_train = evaluate_rows(
+python/owl/train/bc.py:357: in evaluate_rows
+    terms = evaluate_bc_batch(
+python/owl/train/bc.py:320: in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+______________ test_resume_rejects_another_dataset_or_world_size _______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_resume_rejects_another_da0')
+
+    def test_resume_rejects_another_dataset_or_world_size(tmp_path: Path) -> None:
+        data = _dataset_root(tmp_path)
+>       _run(tmp_path / "run", data, _bc_config(max_steps=2))
+
+tests/kaggriculture/test_bc.py:602: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:173: in _run
+    result = train_bc(
+python/owl/train/bc.py:806: in train_bc
+    initial_train = evaluate_rows(
+python/owl/train/bc.py:357: in evaluate_rows
+    terms = evaluate_bc_batch(
+python/owl/train/bc.py:320: in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+_______________ test_resume_rejects_changed_trajectory_settings ________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_resume_rejects_changed_tr0')
+
+    def test_resume_rejects_changed_trajectory_settings(tmp_path: Path) -> None:
+        """Only max_steps may change on resume; the rest set the continued trajectory."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(max_steps=2)
+>       _run(tmp_path / "run", data, config)
+
+tests/kaggriculture/test_bc.py:631: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:173: in _run
+    result = train_bc(
+python/owl/train/bc.py:806: in train_bc
+    initial_train = evaluate_rows(
+python/owl/train/bc.py:357: in evaluate_rows
+    terms = evaluate_bc_batch(
+python/owl/train/bc.py:320: in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+_________ test_script_resume_records_a_new_attempt_with_its_own_source _________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_script_resume_records_a_n0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f895070>
+
+    def test_script_resume_records_a_new_attempt_with_its_own_source(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2, eval_interval_steps=1).to_file(config_path)
+        out = tmp_path / "runs"
+        _script_argv(
+            monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+        )
+>       train_bc_script.main()
+
+tests/kaggriculture/test_bc.py:686: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/train_bc.py:189: in main
+    result = train_bc(
+python/owl/train/bc.py:806: in train_bc
+    initial_train = evaluate_rows(
+python/owl/train/bc.py:357: in evaluate_rows
+    terms = evaluate_bc_batch(
+python/owl/train/bc.py:320: in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+----------------------------- Captured stderr call -----------------------------
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/scripts/train_bc.py", line 189, in main
+    result = train_bc(
+             ^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 806, in train_bc
+    initial_train = evaluate_rows(
+                    ^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 357, in evaluate_rows
+    terms = evaluate_bc_batch(
+            ^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 320, in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/model/kaggriculture.py", line 611, in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/model/kaggriculture.py", line 1145, in _check_action_layout
+    raise ValueError(
+ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+__________________ test_script_resume_rejects_an_edited_seed ___________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_script_resume_rejects_an_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f894fb0>
+
+    def test_script_resume_rejects_an_edited_seed(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2).to_file(config_path)
+        out = tmp_path / "runs"
+        _script_argv(
+            monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+        )
+>       train_bc_script.main()
+
+tests/kaggriculture/test_bc.py:725: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/train_bc.py:189: in main
+    result = train_bc(
+python/owl/train/bc.py:806: in train_bc
+    initial_train = evaluate_rows(
+python/owl/train/bc.py:357: in evaluate_rows
+    terms = evaluate_bc_batch(
+python/owl/train/bc.py:320: in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+----------------------------- Captured stderr call -----------------------------
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/scripts/train_bc.py", line 189, in main
+    result = train_bc(
+             ^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 806, in train_bc
+    initial_train = evaluate_rows(
+                    ^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 357, in evaluate_rows
+    terms = evaluate_bc_batch(
+            ^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 320, in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/model/kaggriculture.py", line 611, in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/model/kaggriculture.py", line 1145, in _check_action_layout
+    raise ValueError(
+ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+__________________ test_best_checkpoint_loads_through_run_ppo __________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_best_checkpoint_loads_thr0')
+
+    def test_best_checkpoint_loads_through_run_ppo(tmp_path: Path) -> None:
+        data = _dataset_root(tmp_path)
+        run_dir = tmp_path / "run"
+>       _run(run_dir, data, _bc_config(max_steps=2, eval_interval_steps=1))
+
+tests/kaggriculture/test_bc.py:743: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:173: in _run
+    result = train_bc(
+python/owl/train/bc.py:806: in train_bc
+    initial_train = evaluate_rows(
+python/owl/train/bc.py:357: in evaluate_rows
+    terms = evaluate_bc_batch(
+python/owl/train/bc.py:320: in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+__________________ test_script_runs_fresh_and_resumes_on_cpu ___________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-99/test_script_runs_fresh_and_res0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f896150>
+
+    def test_script_runs_fresh_and_resumes_on_cpu(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2).to_file(config_path)
+        out = tmp_path / "runs"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "train_bc.py",
+                str(config_path),
+                "--data",
+                str(data),
+                "--output-dir",
+                str(out),
+                "--log-mode",
+                "debug",
+                "--source-commit",
+                "test-commit",
+            ],
+        )
+>       train_bc_script.main()
+
+tests/kaggriculture/test_bc.py:817: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/train_bc.py:189: in main
+    result = train_bc(
+python/owl/train/bc.py:806: in train_bc
+    initial_train = evaluate_rows(
+python/owl/train/bc.py:357: in evaluate_rows
+    terms = evaluate_bc_batch(
+python/owl/train/bc.py:320: in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture.py:611: in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[ 0,  8,  0,  ...,  0,  0,  0],
+          [ 1, 18,  0,  ...,  0,  0,  0],
+      ...    [ 0,  0,  0,  ...,  0,  0,  0]]]], dtype=torch.int16), lengths=tensor([[6, 6],
+        [7, 6]], dtype=torch.int32))
+lead = torch.Size([2, 2])
+
+    def _check_action_layout(
+        actions: kt.KaggricultureActions, lead: torch.Size | tuple[int, ...]
+    ) -> None:
+        """Python-side shape/dtype admission before any policy kernel (no sync)."""
+        expected = (*lead, kt.MAX_FRAMES, kt.ACTION_SLOTS)
+        if tuple(actions.tokens.shape) != expected:
+            raise ValueError(
+                f"action tokens must have shape {expected}, "
+                f"got {tuple(actions.tokens.shape)}"
+            )
+        if tuple(actions.lengths.shape) != tuple(lead):
+            raise ValueError(
+                f"action lengths must have shape {tuple(lead)}, "
+                f"got {tuple(actions.lengths.shape)}"
+            )
+        if actions.tokens.dtype != torch.int64 or actions.lengths.dtype != torch.int64:
+>           raise ValueError(
+                "action tokens and lengths must be int64, got "
+                f"{actions.tokens.dtype} and {actions.lengths.dtype}"
+            )
+E           ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+
+python/owl/model/kaggriculture.py:1145: ValueError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+----------------------------- Captured stderr call -----------------------------
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/scripts/train_bc.py", line 189, in main
+    result = train_bc(
+             ^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 806, in train_bc
+    initial_train = evaluate_rows(
+                    ^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 357, in evaluate_rows
+    terms = evaluate_bc_batch(
+            ^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/train/bc.py", line 320, in evaluate_bc_batch
+    evaluation = model.evaluate_actions(batch.obs, batch.actions)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/model/kaggriculture.py", line 611, in evaluate_actions
+    _check_action_layout(actions, obs.still_playing.shape)
+  File "/private/tmp/kg-bc-r2-w0-lu__0zwe/python/owl/model/kaggriculture.py", line 1145, in _check_action_layout
+    raise ValueError(
+ValueError: action tokens and lengths must be int64, got torch.int16 and torch.int32
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_shards_round_trip_rows_at_contract_dtypes
+FAILED tests/kaggriculture/test_bc.py::test_loss_decreases_on_a_memorizable_batch
+FAILED tests/kaggriculture/test_bc.py::test_the_real_training_loop_lowers_the_objective
+FAILED tests/kaggriculture/test_bc.py::test_bc_loss_reaches_every_parameter
+FAILED tests/kaggriculture/test_bc.py::test_best_checkpoint_is_the_minimum_even_inside_min_delta
+FAILED tests/kaggriculture/test_bc.py::test_training_keeps_the_best_checkpoint_and_stops_on_degradation
+FAILED tests/kaggriculture/test_bc.py::test_restart_from_state_matches_an_uninterrupted_run
+FAILED tests/kaggriculture/test_bc.py::test_resume_rejects_another_dataset_or_world_size
+FAILED tests/kaggriculture/test_bc.py::test_resume_rejects_changed_trajectory_settings
+FAILED tests/kaggriculture/test_bc.py::test_script_resume_records_a_new_attempt_with_its_own_source
+FAILED tests/kaggriculture/test_bc.py::test_script_resume_rejects_an_edited_seed
+FAILED tests/kaggriculture/test_bc.py::test_best_checkpoint_loads_through_run_ppo
+FAILED tests/kaggriculture/test_bc.py::test_script_runs_fresh_and_resumes_on_cpu
+13 failed, 12 passed in 2.55s

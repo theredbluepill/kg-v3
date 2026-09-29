@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_winner_targets_follow_raw_final_banks __________________
+
+    def test_winner_targets_follow_raw_final_banks() -> None:
+        targets = winner_targets(
+            torch.tensor([[10.0, 5.0], [1.0, 2.0], [7.0, 7.0]], dtype=torch.float64)
+        )
+>       assert targets.tolist() == [
+            [[1.0, 0.0], [0.0, 1.0]],
+            [[0.0, 1.0], [1.0, 0.0]],
+            [[0.5, 0.5], [0.5, 0.5]],
+        ]
+E       assert [[[1.0, 0.0],..., [1.0, 0.0]]] == [[[1.0, 0.0],..., [0.5, 0.5]]]
+E         
+E         At index 2 diff: [[0.0, 1.0], [1.0, 0.0]] != [[0.5, 0.5], [0.5, 0.5]]
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:321: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_winner_targets_follow_raw_final_banks
+1 failed, 17 deselected in 0.07s

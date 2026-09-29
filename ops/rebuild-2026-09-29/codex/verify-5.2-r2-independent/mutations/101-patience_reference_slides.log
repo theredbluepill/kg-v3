@@ -1,0 +1,18 @@
+.............F...........                                                [100%]
+=================================== FAILURES ===================================
+___________ test_held_out_patience_ignores_a_trickle_below_min_delta ___________
+
+    def test_held_out_patience_ignores_a_trickle_below_min_delta() -> None:
+        """Sub-min_delta gains keep the best current but do not slide the reference."""
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+        assert selection.observe(2.0, step=0)
+        assert selection.observe(1.97, step=1)
+        assert selection.observe(1.94, step=2)  # 0.06 below 2.0, only 0.03 below 1.97
+>       assert selection.evals_since_improvement == 0
+E       assert 2 == 0
+E        +  where 2 = HeldOutSelection(patience_evals=2, min_delta=0.05, best_nll=1.94, best_step=2, improvement_nll=2.0, evals_since_improvement=2, last_nll=1.94, last_step=2).evals_since_improvement
+
+tests/kaggriculture/test_bc.py:490: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_held_out_patience_ignores_a_trickle_below_min_delta
+1 failed, 24 passed in 5.61s
