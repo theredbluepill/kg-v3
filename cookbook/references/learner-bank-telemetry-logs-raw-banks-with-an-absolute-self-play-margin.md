@@ -18,6 +18,7 @@ sources:
   - resource: "repository:docs/rl-api-specs.md"
   - resource: "repository:README.md"
   - resource: "repository:ops/rebuild-2026-09-29/codex/claude-verify-bank-metrics-r1.md"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/claude-verify-merge-bank-metrics.md"
 ---
 
 # Learner bank telemetry logs raw banks with an absolute self-play margin
@@ -105,6 +106,17 @@ banks (checked by that mutation, then restored); the docs separate
 `eval/margin_*` from `eval/margin_0`; and this section cites the review. Its
 extra per-update `all_gather_object` finding needs no action until a profile
 shows it.
+
+Landed on the integration by merge `cb82973` (staging `kg/merge-bank-metrics-c`,
+onto the Phase 5 BC landing `4895b4e`, which already carried Task 3.1 and the
+W&B wiring). The keys ride its single `MetricLogger.log` W&B path unchanged; only
+the cookbook log, the References index and `test_run_ppo.py`'s appended tests
+conflicted. `just prepare` on the merged tree passed (Rust 274 plus 72, Python
+2,683 passed with 18 hardware or pod skips, docs fresh), and five merge-level
+mutations were killed. The merge check
+(`ops/rebuild-2026-09-29/codex/claude-verify-merge-bank-metrics.md`, APPROVE)
+is by the landing Claude agent standing in for Codex, not independent of the
+merge and not a Codex verdict.
 
 Live W&B upload, a real multi-rank gather (tested with a stubbed collective),
 CUDA and the per-update cost of one small `all_gather_object` at production
