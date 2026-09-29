@@ -2,6 +2,7 @@
 
 ## Current rebuild
 
+- [[kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|Kaggriculture configs follow Isaiah's scaling_6m recipe]] — Task 3.4: 2-rank 128/8 and 4-rank 64/4 configs deliberately keep scaling_6m's global batch, optimizer, PPO, teacher and compile settings; a startup workload check sizes every forward against the model's GEMM chunking; schema-tested only until Task 3.1 lets them load.
 - [[live-differential-parity-checks-the-rust-kernel|Live differential parity checks the Rust kernel]] — Task 1.1b generates traces from Kaggle's hash-pinned engine; 8 committed games and a 40-game sweep agree with Rust; 303 probes find two malformed-input divergence classes (Unicode digits, unhashable items), kept as minimal expected failures and classified only from their observed mismatch.
 - [[ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|PPO trainer seams and replay-drift alarm]] — Tasks 3.1/3.6 and Phase 4 prep: schema-generic observation mapping, a default-on 0.05-nat first-minibatch log-ratio alarm and a `TeacherTargets` protocol, proven on Orbit types with CPU TDD and 941 Python passes (the replay-alarm error lists action-mask shapes too); GPU noise, multi-rank and Kaggriculture use unverified.
 - [[rebuild-data-preparation-preserves-replay-identity|Replay identity and data/evaluation preparation]] — Typed engine-independent selector preserves all 252 historical episode IDs and splits; offline source custody, v4 preparation, seed replay export and four compact opponent recommendations carry explicit native/runtime gaps.

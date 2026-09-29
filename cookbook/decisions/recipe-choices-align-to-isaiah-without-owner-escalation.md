@@ -36,4 +36,4 @@ After the restart, both targets are built in from the start of the rebuild rathe
 
 ## Limits
 
-This record changes no training config and starts no run. The historical 4,096/spm 1/accumulation 2 cadence with teachers disabled lives only on the reference branch. After the [[restart-the-port-from-isaiahs-clean-base|restart]], the rebuilt configs must adopt these targets from the start, and alignment is complete only after GPU qualification.
+This record changes no training config and starts no run. The historical 4,096/spm 1/accumulation 2 cadence with teachers disabled lives only on the reference branch. After the [[restart-the-port-from-isaiahs-clean-base|restart]], the rebuilt configs must adopt these targets from the start, and alignment is complete only after GPU qualification. Rebuild Task 3.4 encodes target 1 in `configs/kaggriculture_2rank.yaml` and `configs/kaggriculture_4rank.yaml` ([[../references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]]); they are schema-tested only until Task 3.1 lets them load.
