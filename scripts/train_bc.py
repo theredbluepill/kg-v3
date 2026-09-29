@@ -158,6 +158,7 @@ def main() -> None:
             args.data, rank=context.rank, world_size=context.world_size
         )
         resume: BCResumeState | None = None
+        resume_run_id: str | None = None
         if resume_dir is not None:
             resume = load_bc_state(resume_dir / BC_STATE)
             check_resume_compatible(
@@ -167,7 +168,7 @@ def main() -> None:
                 config=bc_config,
                 ppo_config=ppo_config,
             )
-            _resume_wandb_run_id(resume)
+            resume_run_id = _resume_wandb_run_id(resume)
             run_dir = resume_dir
         else:
             created = (
@@ -229,7 +230,7 @@ def main() -> None:
                 config=_logger_config(bc_config, ppo_config, provenance),
                 game=BC_GAME,
                 identity=identity,
-                resume_run_id=None if resume is None else resume.wandb_run_id,
+                resume_run_id=resume_run_id,
             )
             run_id = logger.run_id
         else:
