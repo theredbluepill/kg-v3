@@ -100,8 +100,11 @@ _I64, _F32, _F64, _BOOL = torch.int64, torch.float32, torch.float64, torch.bool
 
 # field: (dtype, trailing shape, inclusive lower bound, exclusive upper bound).
 # Categorical fields use [0, cardinality); exact counts are non-negative; ranks
-# are 0 (absent) .. ITEM_COUNT; tiles_int allows the -1 sentinels; signed
-# channels (floats, market_int) are unbounded but must be finite.
+# are 0 (absent) .. ITEM_COUNT; tiles_int allows the -1 sentinels on its
+# day/deadline channels only (the count channels are checked separately);
+# signed channels (floats, market_int) are unbounded but must be finite.
+# tiles_int count channels: yield_units, consecutive_unwatered, consecutive_unfed.
+_TILE_COUNT_CHANNELS = (0, 5, 6)
 _Bounds = tuple[torch.dtype, tuple[int, ...], int | None, int | None]
 _SCHEMA: dict[str, _Bounds] = {
     "tile_kind": (_I64, (TILES,), 0, len(TILE_KINDS)),
@@ -192,6 +195,11 @@ class KaggricultureObsBatch(BaseModel):
                 raise ValueError(f"{name} values must be < {high}")
             if dtype in (_F32, _F64) and not bool(torch.isfinite(tensor).all()):
                 raise ValueError(f"{name} contains non-finite values")
+        tile_counts = self.tiles_int[..., list(_TILE_COUNT_CHANNELS)]
+        if tile_counts.numel() and int(tile_counts.min()) < 0:
+            raise ValueError(
+                f"tiles_int count channels {_TILE_COUNT_CHANNELS} must be >= 0"
+            )
         can_act = self.action_mask.can_act
         if can_act.dtype != _BOOL or tuple(can_act.shape) != (*lead, MAX_FRAMES):
             raise ValueError(

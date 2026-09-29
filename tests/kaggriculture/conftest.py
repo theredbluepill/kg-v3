@@ -129,6 +129,17 @@ def _farm(
     return kind, crop, animal, ints, floats
 
 
+_FARM_HAND_COST_MULT = 100
+
+
+def _next_hire_cost(hires_today: int) -> int:
+    """Engine rule: ``farmHandCostMult * fib(hires_today)``, fib = 1, 1, 2, 3, 5."""
+    a, b = 1, 1
+    for _ in range(hires_today):
+        a, b = b, a + b
+    return _FARM_HAND_COST_MULT * a
+
+
 def _player(generator: torch.Generator, *, actors: int, step: int, day: int) -> _Player:
     if not 1 <= actors <= kt.MAX_ACTORS:
         raise ValueError(f"actor count must be in [1, {kt.MAX_ACTORS}], got {actors}")
@@ -151,7 +162,7 @@ def _player(generator: torch.Generator, *, actors: int, step: int, day: int) -> 
                     float((kind == _EMPTY).sum()) / 100,
                     float((kind == _LOCKED).sum()) / 100,
                     hires / 240,
-                    (100 * (actors + hires)) / 200_000,
+                    _next_hire_cost(hires) / 200_000,
                 ]
             ),
         )
@@ -200,8 +211,10 @@ def make_obs(
     own_counts = _per_env(own_actors, envs, "own_actors")
     rival_counts = _per_env(rival_actors, envs, "rival_actors")
     shop_counts = _per_env(shops, envs, "shops")
-    if not 0 <= order_limit <= kt.MAX_ORDER_LIMIT:
-        raise ValueError(f"order_limit must be in [0, {kt.MAX_ORDER_LIMIT}]")
+    # The fixture writes one value as both the per-turn limit and the configured
+    # maximum, whose supported envelope is 1..MAX_ORDER_LIMIT.
+    if not 1 <= order_limit <= kt.MAX_ORDER_LIMIT:
+        raise ValueError(f"order_limit must be in [1, {kt.MAX_ORDER_LIMIT}]")
     generator = torch.Generator().manual_seed(7)
     lead = (envs, kt.PLAYERS)
 

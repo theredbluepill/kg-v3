@@ -284,3 +284,27 @@ def test_make_obs_is_contract_valid(envs, own, rival, shops) -> None:  # type: i
             assert int(torch.count_nonzero(obs.tiles_float[row][inapplicable])) == 0
             assert int((obs.tiles_int[row][:, 1:4][not_plant] != 0).sum()) == 0
             assert int((obs.tiles_int[row][:, 4][no_animal] != 0).sum()) == 0
+
+
+@pytest.mark.parametrize("channel", [0, 5, 6])
+def test_tiles_int_count_channels_reject_the_sentinel(channel: int) -> None:
+    obs = make_obs()
+    obs.tiles_int[0, 0, 0, channel] = -1
+    with pytest.raises(ValueError, match=r"tiles_int count channels"):
+        obs.check_contract()
+
+
+def test_fixture_next_hire_cost_follows_the_engine_fibonacci_rule() -> None:
+    # Independent of the fixture helper: fib(0..4) = 1, 1, 2, 3, 5; mult 100.
+    expected_cost = {0: 100, 1: 100, 2: 200, 3: 300, 4: 500}
+    obs = make_obs(envs=4)
+    features = obs.player_features
+    hires = torch.round(features[..., 9] * 240).long()
+    cost = features[..., 10].double() * 200_000
+    for h, c in zip(hires.flatten().tolist(), cost.flatten().tolist(), strict=True):
+        assert c == pytest.approx(expected_cost[h], abs=1e-2)
+
+
+def test_fixture_rejects_a_zero_configured_order_limit() -> None:
+    with pytest.raises(ValueError, match="order_limit"):
+        make_obs(order_limit=0)

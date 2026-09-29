@@ -718,6 +718,41 @@ def test_values_are_two_p_self_minus_one_from_a_winner_softmax() -> None:
     torch.testing.assert_close(log_probs.exp().sum(-1), torch.ones(3, 2))
     torch.testing.assert_close(values, 2 * log_probs[..., 0].exp() - 1)
     assert bool(((values > -1) & (values < 1)).all())
+    # A constant critic (e.g. zero logits) would give p = 0.5 and value 0 everywhere.
+    assert float(values.abs().max()) > 1e-3
+    assert float((values - values[:1, :1]).abs().max()) > 1e-4
+
+
+def test_winner_probabilities_match_a_hand_computed_critic(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from dataclasses import replace
+
+    model = _tiny().eval()
+    obs = make_obs(envs=2)
+    width = model.config.embed_dim
+    head = model.critic_head
+    with torch.no_grad():
+        head.up.weight.copy_(torch.eye(width))
+        head.up.bias.zero_()
+        head.out.weight.zero_()
+        head.out.weight[0, 0] = 1.0
+        head.out.bias.fill_(0.25)
+    # Controlled critic tokens: channel 0 carries a distinct score per
+    # (env, seat, player); every other channel is noise the head must ignore.
+    scores = torch.tensor([[[2.0, 0.5], [-1.0, 1.5]], [[0.0, 3.0], [1.0, -2.0]]])
+    hidden = torch.randn(2, kt.PLAYERS, kt.PLAYERS, width)
+    hidden[..., 0] = scores
+    with torch.inference_mode():
+        enc = replace(model.encode_observations(obs), critic_value_hidden=hidden)
+        monkeypatch.setattr(model, "encode_observations", lambda _obs: enc)
+        log_probs = model.winner_log_probabilities(obs)
+        values = model.compute_value(obs)
+    logits = torch.nn.functional.gelu(scores) + 0.25
+    expected = logits.softmax(-1)
+    torch.testing.assert_close(log_probs.exp(), expected)
+    torch.testing.assert_close(values, 2 * expected[..., 0] - 1)
+    assert float((expected[..., 0] - 0.5).abs().min()) > 0.05
 
 
 def test_critic_logits_follow_player_token_order(
@@ -767,3 +802,5 @@ def test_values_are_seat_independent() -> None:
     with torch.inference_mode():
         a, b = model.compute_value(obs), model.compute_value(changed)
     torch.testing.assert_close(a[:, 0], b[:, 0])
+    # The changed seat must respond, or a constant critic would pass.
+    assert float((a[:, 1] - b[:, 1]).abs().max()) > 1e-4
