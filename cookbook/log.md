@@ -1,5 +1,16 @@
 # Change log
 
+## 2026-09-29 — Measure the compiled-GEMM limit at the rebuild's shapes (Codex-verified)
+
+A bounded probe ran on GPU 0 of the running pod (GEMM-limits run statement in `ops/rebuild-2026-09-29/run-statements/`). Codex verified it (`ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md`, APPROVE WITH EDITS), and all its findings are applied. This revises the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]:
+- **Input-side overflow.** At these shapes the overflow is on the input side: the A-load wraps once M·K > 2³¹ while the template size argument stays int32. Input-wide GEMMs failed at L_in+1, and output-wide GEMMs stayed correct to M·N = 2³². The universal `M·max(K, N)` rule is withdrawn. M × max(in, out) remains the design bound, justified by backward reading forward outputs as inputs.
+- **Silent in the trunk.** With the guard off, the real trunk corrupts silently at L+1. The guard is measured correct at L−1 and rejects L with zero trunk calls. Unguarded-at-L and real-trunk backward are inferred, not measured.
+- **Production compliance is unproven.** Kaggriculture is not yet wired through `ModelConfig`, the factory or `configure_model_compile`.
+- **No flash-attn on the pod.** The pod venv has no `flash-attn`, and its config had `force_flash_attn: false`. The plan's Phase 6 now installs and verifies it before any qualification.
+- **Analyzer and custody fixes.** `analyze_kernels.py` was fixed and its summaries regenerated. The git-archive hash was reconciled: `--prefix` accounts for the difference.
+
+Full evidence is in `ops/rebuild-2026-09-29/results.md`.
+
 ## 2026-09-29 — Close Codex's lane B re-verification edits on the model branch
 
 Codex re-verified `4fdb526` (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify2-lane-B-r1b.md`). Three edits: `check_contract` now rejects −1 on the `tiles_int` count channels (yield, unwatered, unfed) while keeping the day/deadline sentinels; the contract-valid fixture uses the engine's `farmHandCostMult × fib(hires_today)` next-hire cost and rejects a zero configured order limit; the critic tests assert hand-computed, nonuniform winner probabilities and changed-seat responsiveness, and fail when critic logits are forced to zero (3 failures, source restored). `just py-prepare`: 884 passed, 3 skipped. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder reference]] is unchanged: its claims were already scoped to these checks.
