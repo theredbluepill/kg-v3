@@ -173,11 +173,13 @@ def main() -> None:
             cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
         )
         _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
-        # A resumed Kaggriculture launch continues the rollout seed stream past
-        # every seed its checkpoint trained on, so it reads the saved step first.
+        # A Kaggriculture launch that keeps a checkpoint's env_steps (a resume or
+        # --load-model-weights) continues the rollout seed stream past every seed
+        # that checkpoint trained on, so it reads the saved step first.
+        start_checkpoint_path = _start_checkpoint_path(launch)
         rollout_start_env_steps = (
-            _checkpoint_env_steps(launch.checkpoint_path)
-            if isinstance(launch, ResumeLaunch)
+            _checkpoint_env_steps(start_checkpoint_path)
+            if start_checkpoint_path is not None
             and isinstance(cfg.env, KaggricultureEnvConfig)
             else 0
         )
@@ -277,14 +279,11 @@ def main() -> None:
             checkpoint_metadata = trainer.load_checkpoint(launch.checkpoint_path)
             resume_run_id = _resume_wandb_run_id(checkpoint_metadata, args.log_mode)
             start_env_steps = checkpoint_metadata.env_steps
-            if (
-                isinstance(env_config, KaggricultureEnvConfig)
-                and start_env_steps != rollout_start_env_steps
-            ):
-                raise RuntimeError(
-                    f"resume checkpoint {launch.checkpoint_path} changed during "
-                    f"startup: env_steps {rollout_start_env_steps} became "
-                    f"{start_env_steps}"
+            if isinstance(env_config, KaggricultureEnvConfig):
+                _require_unchanged_start_env_steps(
+                    launch.checkpoint_path,
+                    read_at_startup=rollout_start_env_steps,
+                    loaded=start_env_steps,
                 )
             last_best_model = _create_eval_model_for_config(
                 cfg,
@@ -311,11 +310,17 @@ def main() -> None:
                     launch.load_model_weights_mode == "model_and_optimizer"
                 ),
             )
+            start_env_steps = checkpoint_metadata.env_steps
+            if isinstance(env_config, KaggricultureEnvConfig):
+                _require_unchanged_start_env_steps(
+                    launch.load_model_weights_path,
+                    read_at_startup=rollout_start_env_steps,
+                    loaded=start_env_steps,
+                )
             _roundtrip_lora_base_quantization_for_config(
                 unwrap_model(model),
                 cfg.model,
             )
-            start_env_steps = checkpoint_metadata.env_steps
             if cfg.rl.teacher_mode == "last_best":
                 last_best_model = _create_eval_model_from_weights(
                     unwrap_model(model),
@@ -779,8 +784,32 @@ def _parse_numbered_checkpoint_step(name: str) -> int | None:
 
 
 def _checkpoint_env_steps(path: Path) -> int:
-    checkpoint = torch.load(path, map_location="cpu", weights_only=False)
+    """Read a checkpoint's ``env_steps`` without reading its tensors.
+
+    ``mmap=True`` maps tensor storage lazily instead of copying the model and
+    optimizer into host memory, so the startup metadata reads stay small before
+    the trainer's one full load. The checkpoint schema is validated in full.
+    """
+    checkpoint = torch.load(path, map_location="cpu", weights_only=False, mmap=True)
     return _checkpoint_metadata(checkpoint, path=path).env_steps
+
+
+def _start_checkpoint_path(launch: Launch) -> Path | None:
+    """The checkpoint whose ``env_steps`` this launch continues, if any."""
+    if isinstance(launch, ResumeLaunch):
+        return launch.checkpoint_path
+    return launch.load_model_weights_path
+
+
+def _require_unchanged_start_env_steps(
+    path: Path, *, read_at_startup: int, loaded: int
+) -> None:
+    """Fail if the checkpoint seeding the rollouts differs from the one loaded."""
+    if loaded != read_at_startup:
+        raise RuntimeError(
+            f"checkpoint {path} changed during startup: env_steps "
+            f"{read_at_startup} became {loaded}"
+        )
 
 
 def _parse_cli_overrides(raw_overrides: list[list[str]] | None) -> dict[str, Any]:

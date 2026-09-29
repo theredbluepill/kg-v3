@@ -1017,19 +1017,22 @@ Kaggriculture rollouts call `owl.game.create_env` with
 `base_seed=_kaggriculture_rollout_base_seed(cfg.env.seed, start_env_steps)`
 (`cfg.env.seed + 4 * start_env_steps`), the distributed rank and world size, and
 `transfer_device=distributed.device`. A fresh launch starts at `cfg.env.seed`. A
-resume reads the checkpoint's global `env_steps` before allocation, so its
-stream starts past every seed of the launches its checkpoint trained on. A
-launch from step `S0` to `S1` draws below `base + 2 * global_envs + 2 * (S1 -
-S0)`, and one update gives `S1 - S0 >= global_envs`. The rule holds across
-repeated resumes and world-size changes. A `--load-model-weights` fresh launch
-starts at `cfg.env.seed`. Orbit retains its original `VectorizedEnv` constructor
-call. The trainer accepts Kaggriculture base seeds only in `[0, 2**61)` and
+resume, and a `--load-model-weights` fresh launch in either mode (which keeps
+the checkpoint's `env_steps`), read that global `env_steps` before allocation
+with a memory-mapped `torch.load`, so the stream starts past every seed of the
+launches the checkpoint trained on under the same `cfg.env.seed`. If the
+trainer's full load then returns different `env_steps`, startup raises
+`RuntimeError` ("changed during startup"). A launch from step `S0` to `S1` draws
+below `base + 2 * global_envs + 2 * (S1 - S0)`, and one update gives
+`S1 - S0 >= global_envs`. The rule holds across repeated resumes and world-size
+changes. Orbit retains its original `VectorizedEnv` constructor call. The trainer accepts Kaggriculture base seeds only in `[0, 2**61)` and
 computes a conservative step budget before allocating a run. From the launch's
 base, construction plus the trainer reset, up to two new seeds per global
 environment step (auto-reset and truncation), and a full update of
-stopping-point overshoot must keep all rollout seeds below `2**62`. A resume
-whose saved step leaves no budget fails at startup. The admitted
-environment-step counter also remains below `2**61` for evaluation seed hashing.
+stopping-point overshoot must keep all rollout seeds below `2**62`. A launch
+that continues a checkpoint's step and leaves no budget fails at startup. The
+admitted environment-step counter also remains below `2**61` for evaluation seed
+hashing.
 An explicit step limit beyond the safe budget fails at startup; a launch without
 one uses the computed ceiling. Native/factory seed admission remains the wider
 nonnegative i64 contract.

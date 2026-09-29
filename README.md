@@ -339,10 +339,15 @@ The budget reserves construction and trainer-reset seeds, allows both an
 auto-reset and a truncation per environment step, and includes a full update
 of stopping-point overshoot. An excessive `--max-env-steps` fails before run
 allocation; omitting it uses the safe ceiling. The admitted environment-step
-counter also remains in `_evaluation_seed`'s `[0, 2**61)` domain. A resumed
-Kaggriculture launch starts its rollout seeds at `env.seed + 4 * env_steps`,
-using the checkpoint's saved steps, past every seed its checkpoint trained on.
-It therefore does not replay the first launch's worlds.
+counter also remains in `_evaluation_seed`'s `[0, 2**61)` domain. A
+Kaggriculture launch that keeps a checkpoint's `env_steps` (a resume, or a
+fresh launch with `--load-model-weights` in either mode) starts its rollout
+seeds at `env.seed + 4 * env_steps`, past every seed that checkpoint trained on
+under the same `env.seed`, so it does not replay the earlier launches' worlds.
+Startup reads that step from the checkpoint before allocation (a memory-mapped
+metadata read), and fails if the trainer's later full load finds a different
+`env_steps`. Such a launch whose saved step leaves no seed budget fails at
+startup.
 
 `rl.model_compile` defaults to `trunk`, which compiles the stateless
 self-attention transformer trunk as one dynamic-shape callable after

@@ -18,6 +18,7 @@ from owl.model.kaggriculture import (
     KaggricultureTransformer,
     KaggricultureTransformerConfig,
 )
+from owl.train import ppo
 from owl.train.ppo import PPOConfig, PPOTrainer
 
 
@@ -135,12 +136,51 @@ def test_no_teacher_two_updates(tmp_path: Path) -> None:
     )
 
 
-def test_truncation_bootstraps_through_the_native_trainer() -> None:
+def test_truncation_bootstraps_through_the_native_trainer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     torch.manual_seed(311)
     env = _native_env(seed=311)
     model = _tiny_model()
     trainer = _trainer(env, model, truncation_step=1, truncation_prob=1.0)
     seeds_before = env.seed_state()[0]
+    # Record each step's env rewards and the critic values of the cut states,
+    # as the trainer computed them during collection. The engine's first-turn
+    # rewards are zero here, so the env step adds a distinct mark per seat to
+    # make a dropped or swapped transition reward visible.
+    raw_rewards: list[torch.Tensor] = []
+    cut_values: list[torch.Tensor] = []
+    env_step = env.step
+    seat_marks = torch.tensor([[0.125, -0.5]])
+
+    def recording_step(actions: object) -> object:
+        obs, rewards, dones, metrics = env_step(actions)  # type: ignore[arg-type]
+        rewards = rewards + seat_marks
+        raw_rewards.append(rewards.clone())
+        return obs, rewards, dones, metrics
+
+    cut = ppo._cut_truncated_envs_
+
+    def recording_cut(
+        rewards: torch.Tensor,
+        dones: torch.Tensor,
+        *,
+        rows: torch.Tensor,
+        row_values: torch.Tensor,
+        keep_transition_reward: bool,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        assert torch.equal(rows, torch.tensor([0]))
+        cut_values.append(row_values.clone())
+        return cut(
+            rewards,
+            dones,
+            rows=rows,
+            row_values=row_values,
+            keep_transition_reward=keep_transition_reward,
+        )
+
+    monkeypatch.setattr(env, "step", recording_step)
+    monkeypatch.setattr(ppo, "_cut_truncated_envs_", recording_cut)
     metrics = trainer.train_iteration()
     assert all(math.isfinite(value) for value in metrics.values())
     rollout = trainer.rollout
@@ -150,7 +190,16 @@ def test_truncation_bootstraps_through_the_native_trainer() -> None:
     assert bool(rollout.truncated.all())
     assert torch.equal(rollout.dones, rollout.truncated)
     assert torch.isfinite(rollout.bootstrap_values).all()
-    assert bool((rollout.bootstrap_values != 0).all())
+    # Each seat bootstraps from its own critic value, in seat order.
+    assert len(cut_values) == 2
+    for step, values in enumerate(cut_values):
+        assert not torch.equal(values[0, 0], values[0, 1])
+        assert torch.equal(rollout.bootstrap_values[step], values)
+    # A Kaggriculture cut keeps the transition's economic reward.
+    assert len(raw_rewards) == 2
+    for step, rewards in enumerate(raw_rewards):
+        assert torch.equal(rollout.rewards[step], rewards)
+    assert bool(torch.stack(raw_rewards).ne(0).all())
     # Each truncation resets through the native seed stream.
     assert env.seed_state()[0] > seeds_before
 

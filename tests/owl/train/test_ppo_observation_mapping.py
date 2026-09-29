@@ -729,15 +729,28 @@ def test_copy_actions_time_step_rejects_an_unknown_action_bundle() -> None:
 
 
 def _hand_gae(
-    rewards: list[float], values: list[float], last_value: float, lam: float
+    rewards: list[float],
+    values: list[float],
+    last_value: float,
+    lam: float,
+    *,
+    cuts: dict[int, float],
 ) -> list[float]:
-    """Undiscounted (gamma 1) GAE for one seat, no terminals, written out."""
+    """Undiscounted (gamma 1) GAE for one seat, written out.
+
+    ``cuts`` maps a time-limit step to the critic value it bootstraps from: the
+    step is done, so it ignores the next step's value and restarts the trace.
+    """
     advantages = [0.0] * len(rewards)
     running = 0.0
     for t in reversed(range(len(rewards))):
-        next_value = last_value if t == len(rewards) - 1 else values[t + 1]
-        delta = rewards[t] + next_value - values[t]
-        running = delta + lam * running
+        if t in cuts:
+            delta = rewards[t] + cuts[t] - values[t]
+            running = delta
+        else:
+            next_value = last_value if t == len(rewards) - 1 else values[t + 1]
+            delta = rewards[t] + next_value - values[t]
+            running = delta + lam * running
         advantages[t] = running
     return advantages
 
@@ -760,7 +773,10 @@ def test_kaggriculture_rollout_keeps_each_seat_and_step_through_gae() -> None:
     rewards = [[0.1, 1.0], [0.2, 2.0], [0.3, 3.0]]
     values = [[0.01, 0.4], [0.02, 0.5], [0.03, 0.6]]
     last_values = [0.07, 0.9]
+    # Step 1 is a time-limit cut; each seat bootstraps from its own critic value.
+    cut_step, cut_values = 1, [0.25, -0.75]
     for step in range(horizon):
+        cut = step == cut_step
         rollout.write_step(
             step,
             obs=source,
@@ -768,12 +784,20 @@ def test_kaggriculture_rollout_keeps_each_seat_and_step_through_gae() -> None:
             logp=torch.zeros(1, 2),
             values=torch.tensor([values[step]]),
             rewards=torch.tensor([rewards[step]]),
-            dones=torch.zeros(1, 2, dtype=torch.bool),
+            dones=torch.full((1, 2), cut, dtype=torch.bool),
+            truncated=torch.full((1, 2), cut, dtype=torch.bool) if cut else None,
+            bootstrap_values=torch.tensor([cut_values]) if cut else None,
         )
     segments = rollout.segment_major()
     assert segments.rewards.shape == (1, horizon, 2)
     assert torch.equal(segments.rewards[0], torch.tensor(rewards))
     assert torch.equal(segments.values[0], torch.tensor(values))
+    assert torch.equal(segments.bootstrap_values[0, cut_step], torch.tensor(cut_values))
+    assert segments.truncated[0].tolist() == [
+        [False, False],
+        [True, True],
+        [False, False],
+    ]
     advantages, returns = compute_gae(
         rewards=segments.rewards,
         values=segments.values,
@@ -790,6 +814,7 @@ def test_kaggriculture_rollout_keeps_each_seat_and_step_through_gae() -> None:
             [row[seat] for row in values],
             last_values[seat],
             lam,
+            cuts={cut_step: cut_values[seat]},
         )
         assert advantages[0, :, seat].tolist() == pytest.approx(expected)
         assert returns[0, :, seat].tolist() == pytest.approx(

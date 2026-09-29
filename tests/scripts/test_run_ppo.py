@@ -3824,6 +3824,146 @@ def test_main_kaggriculture_resume_starts_a_disjoint_seed_stream(
     assert calls == []
 
 
+def _kaggriculture_resume_run(tmp_path: Path, *, env_steps: int) -> Path:
+    saved = FullConfig.from_file(_CONFIGS / "kaggriculture.yaml")
+    saved = saved.model_copy(update={"env": saved.env.model_copy(update={"seed": 17})})
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    saved.to_file(run_dir / "config.yaml")
+    _write_metadata_checkpoint(run_dir / "checkpoint_final.pt", env_steps=env_steps)
+    _write_metadata_checkpoint(run_dir / "checkpoint_last_best.pt", env_steps=0)
+    return run_dir
+
+
+def test_main_kaggriculture_resume_past_the_seed_budget_fails_before_allocation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cfg = FullConfig.from_file(_CONFIGS / "kaggriculture.yaml")
+    cfg = cfg.model_copy(update={"env": cfg.env.model_copy(update={"seed": 17})})
+    fresh = run_ppo._kaggriculture_step_limit(
+        cfg, DistributedContext.single_process_cpu(), max_env_steps=None
+    )
+    assert fresh is not None
+    # Admissible for a fresh launch, but a resume there has no budget left.
+    run_dir = _kaggriculture_resume_run(tmp_path, env_steps=fresh)
+    calls: list[str] = []
+    _patch_kaggriculture_startup(
+        monkeypatch, [str(run_dir)], calls, log_mode=LogMode.WANDB
+    )
+    with pytest.raises(ValueError, match=f"resumed at env step {fresh}"):
+        run_ppo.main()
+    assert calls == []
+
+
+def _make_run_dir(output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True)
+    return output_dir
+
+
+class _CheckpointRewritingTrainer:
+    """Rewrites the checkpoint with new env_steps before the trainer's own load."""
+
+    rewritten_env_steps = 2_000
+
+    def __init__(self, **_kwargs: object) -> None:
+        pass
+
+    def _reload(self, path: Path) -> Any:
+        _write_metadata_checkpoint(path, env_steps=self.rewritten_env_steps)
+        return run_ppo._checkpoint_metadata(
+            torch.load(path, weights_only=False), path=path
+        )
+
+    def load_checkpoint(self, path: Path) -> Any:
+        return self._reload(path)
+
+    def load_model_weights(self, path: Path, *, load_optimizer: bool) -> Any:
+        assert not load_optimizer
+        return self._reload(path)
+
+
+@pytest.mark.parametrize("launch", ["resume", "load_model_weights"])
+def test_main_kaggriculture_fails_when_the_checkpoint_changes_during_startup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, launch: str
+) -> None:
+    run_dir = _kaggriculture_resume_run(tmp_path, env_steps=1_000)
+    checkpoint = run_dir / "checkpoint_final.pt"
+    argv = (
+        [str(run_dir)]
+        if launch == "resume"
+        else [
+            str(run_dir / "config.yaml"),
+            str(tmp_path / "runs"),
+            "--load-model-weights",
+            str(checkpoint),
+        ]
+    )
+    calls: list[str] = []
+    _patch_kaggriculture_startup(monkeypatch, argv, calls, log_mode=LogMode.WANDB)
+    seen: list[dict[str, object]] = []
+
+    def factory(_config: object, **kwargs: object) -> object:
+        seen.append(kwargs)
+        return object()
+
+    monkeypatch.setattr(run_ppo, "_create_run_dir", _make_run_dir)
+    monkeypatch.setattr(run_ppo, "create_env", factory)
+    monkeypatch.setattr(
+        run_ppo,
+        "_create_training_model_for_config",
+        lambda *_a, **_k: (torch.nn.Linear(1, 1), None),
+    )
+    monkeypatch.setattr(run_ppo, "configure_model_compile", lambda *_a: 0)
+    monkeypatch.setattr(
+        run_ppo,
+        "create_optimizer",
+        lambda model, _cfg: torch.optim.SGD(model.parameters(), lr=0.1),
+    )
+    monkeypatch.setattr(run_ppo, "create_lr_scheduler", lambda *_a: None)
+    monkeypatch.setattr(run_ppo, "PPOTrainer", _CheckpointRewritingTrainer)
+    with pytest.raises(RuntimeError, match="changed during startup"):
+        run_ppo.main()
+    # The env was seeded from the step read first, before the rewrite.
+    assert seen[0]["base_seed"] == run_ppo._kaggriculture_rollout_base_seed(
+        17, start_env_steps=1_000
+    )
+    assert calls == []
+
+
+def test_main_kaggriculture_load_weights_continues_the_seed_stream(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = _kaggriculture_resume_run(tmp_path, env_steps=1_000)
+    calls: list[str] = []
+    _patch_kaggriculture_startup(
+        monkeypatch,
+        [
+            str(run_dir / "config.yaml"),
+            str(tmp_path / "runs"),
+            "--load-model-weights",
+            str(run_dir / "checkpoint_final.pt"),
+        ],
+        calls,
+        log_mode=LogMode.WANDB,
+    )
+    monkeypatch.setattr(run_ppo, "_create_run_dir", _make_run_dir)
+    seen: list[dict[str, object]] = []
+
+    def factory(_config: object, **kwargs: object) -> None:
+        seen.append(kwargs)
+        raise AssertionError("factory reached")
+
+    monkeypatch.setattr(run_ppo, "create_env", factory)
+    with pytest.raises(AssertionError, match="factory reached"):
+        run_ppo.main()
+    # The launch keeps the checkpoint's env_steps, so its rollout seeds start
+    # past every seed the loaded weights trained on, as a resume's do.
+    assert seen[0]["base_seed"] == run_ppo._kaggriculture_rollout_base_seed(
+        17, start_env_steps=1_000
+    )
+    assert calls == []
+
+
 def test_main_forwards_wandb_mode_and_the_default_step_limit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
