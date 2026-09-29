@@ -2,6 +2,7 @@
 
 ## Current rebuild
 
+- [[ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|PPO trainer seams and replay-drift alarm]] — Tasks 3.1/3.6 and Phase 4 prep: schema-generic observation mapping, a default-on 0.05-nat first-minibatch log-ratio alarm and a `TeacherTargets` protocol, proven on Orbit types with CPU TDD and 941 Python passes (the replay-alarm error lists action-mask shapes too); GPU noise, multi-rank and Kaggriculture use unverified.
 - [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope and Rust parity blocked by missing fixtures.
 
 ## Reference branch

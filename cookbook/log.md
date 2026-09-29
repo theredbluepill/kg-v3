@@ -1,5 +1,31 @@
 # Change log
 
+## 2026-09-29 — Report action-mask shapes in the replay-drift alarm and refresh its evidence
+
+Codex's stream C re-verification (approve with edits) found stale evidence and one diagnostic gap, now corrected in the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:
+- The references index still cited 924 passes, and the note called that Phase 4 prep `py-prepare` run "final". The index now carries the current count, and the note labels the older run.
+- The alarm's `RuntimeError` promised every observation tensor shape but omitted nested action-mask tensors. `_observation_tensor_shapes` now lists `action_mask.can_act` and `action_mask.max_launch` (7 red, then green, over all three Orbit mask types and a second schema). README says so.
+
+Python suite: 941 passed, 3 skipped. No GPU, training or Rust check ran.
+
+## 2026-09-29 — Narrow the trainer-seam claims after Codex's stream C review
+
+Codex's stream C verification (approve with edits) found three overstated claims, now corrected in the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:
+- `TeacherTargets.concat` docs promised rejection of any optional-target mismatch; they now state the inherited first-chunk asymmetry, and tests pin both chunk orders. Behavior is unchanged; Phase 4 decides.
+- The log-ratio alarm's units follow `ppo_clip_mode` (joint action under `per_player`, entity mean under `per_entity`), documented in `PPOConfig` and README with multi-entity and two-fake-rank tests. The 0.05 default awaits Phase 6 GPU noise measurement.
+- The observation oracle is an extracted successful-path copy, not a frozen one; the invalid-limit tests assert exact Pydantic errors (7 red with the field removed).
+
+Python suite: 934 passed, 3 skipped. No GPU, training or Rust check ran.
+
+## 2026-09-29 — Make the trainer seams schema-generic and alarm on replay drift
+
+Three game-neutral refactors of Isaiah's trainer, each test-first on Orbit types, are recorded in the new [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:
+- Task 3.1: one schema-generic `_map_observation` replaces the Orbit field lists, checked against a frozen copy of Isaiah's helpers.
+- Task 3.6: `rl.first_minibatch_logratio_limit` (0.05 nats, `None` disables) aborts before the first optimizer step when replay disagrees with the rollout. This is the alarm required by the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]].
+- Phase 4 prep: a `TeacherTargets` protocol replaces the free index/concat functions.
+
+The full Python suite and `py-prepare` pass (924 passed, 3 skipped). No GPU, training or Rust check ran. The threshold's GPU noise margin, multi-rank behavior and Kaggriculture batches remain unverified.
+
 ## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
 
 Owner decisions:

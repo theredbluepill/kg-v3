@@ -1,0 +1,424 @@
+F....FFFFFFFF                                                            [100%]
+=================================== FAILURES ===================================
+___________ test_ppo_config_defaults_first_minibatch_logratio_limit ____________
+
+    def test_ppo_config_defaults_first_minibatch_logratio_limit() -> None:
+>       assert ppo.PPOConfig().first_minibatch_logratio_limit == pytest.approx(0.05)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/owl/train/test_ppo.py:1983:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PPOConfig(horizon=64, checkpoint_freq=None, ppo_epochs=1, segments_per_minibatch=1, gradient_accumulation_steps=1, gam...e='trunk', model_compile_mode='max-autotune-no-cudagraphs', dtype='float32', truncation_step=None, truncation_prob=0.0)
+item = 'first_minibatch_logratio_limit'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'PPOConfig' object has no attribute 'first_minibatch_logratio_limit'
+
+.venv/lib/python3.12/site-packages/pydantic/main.py:1042: AttributeError
+___ test_first_minibatch_logratio_alarm_raises_before_optimizer_step[-0.2-1] ___
+
+shift = -0.2, gradient_accumulation_steps = 1
+
+    @pytest.mark.parametrize("gradient_accumulation_steps", [1, 2])
+    @pytest.mark.parametrize("shift", [-0.2, 0.2])
+    def test_first_minibatch_logratio_alarm_raises_before_optimizer_step(
+        shift: float,
+        gradient_accumulation_steps: int,
+    ) -> None:
+        model = ShiftedReplayModel(shift)
+>       trainer = _logratio_alarm_trainer(
+            model, gradient_accumulation_steps=gradient_accumulation_steps
+        )
+
+tests/owl/train/test_ppo.py:2007:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model = ShiftedReplayModel(
+  (input_proj): Linear(in_features=3, out_features=8, bias=True)
+  (hidden): Linear(in_features=8,...policy): Linear(in_features=8, out_features=4, bias=True)
+  (value): Linear(in_features=8, out_features=4, bias=True)
+)
+
+    def _logratio_alarm_trainer(
+        model: TinyOrbitModel,
+        *,
+        limit: float | None = 0.05,
+        gradient_accumulation_steps: int = 1,
+    ) -> ppo.PPOTrainer:
+        torch.manual_seed(12)
+        return ppo.PPOTrainer(
+            env=TinyOrbitEnv(n_envs=4, episode_length=3),
+            model=model,
+            optimizer=torch.optim.AdamW(model.parameters(), lr=0.05, eps=1e-5),
+>           config=ppo.PPOConfig(
+                horizon=2,
+                segments_per_minibatch=1,
+                gradient_accumulation_steps=gradient_accumulation_steps,
+                target_kl=None,
+                first_minibatch_logratio_limit=limit,
+            ),
+            device=torch.device("cpu"),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for PPOConfig
+E       first_minibatch_logratio_limit
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=0.05, input_type=float]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests/owl/train/test_ppo.py:1971: ValidationError
+___ test_first_minibatch_logratio_alarm_raises_before_optimizer_step[-0.2-2] ___
+
+shift = -0.2, gradient_accumulation_steps = 2
+
+    @pytest.mark.parametrize("gradient_accumulation_steps", [1, 2])
+    @pytest.mark.parametrize("shift", [-0.2, 0.2])
+    def test_first_minibatch_logratio_alarm_raises_before_optimizer_step(
+        shift: float,
+        gradient_accumulation_steps: int,
+    ) -> None:
+        model = ShiftedReplayModel(shift)
+>       trainer = _logratio_alarm_trainer(
+            model, gradient_accumulation_steps=gradient_accumulation_steps
+        )
+
+tests/owl/train/test_ppo.py:2007:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model = ShiftedReplayModel(
+  (input_proj): Linear(in_features=3, out_features=8, bias=True)
+  (hidden): Linear(in_features=8,...policy): Linear(in_features=8, out_features=4, bias=True)
+  (value): Linear(in_features=8, out_features=4, bias=True)
+)
+
+    def _logratio_alarm_trainer(
+        model: TinyOrbitModel,
+        *,
+        limit: float | None = 0.05,
+        gradient_accumulation_steps: int = 1,
+    ) -> ppo.PPOTrainer:
+        torch.manual_seed(12)
+        return ppo.PPOTrainer(
+            env=TinyOrbitEnv(n_envs=4, episode_length=3),
+            model=model,
+            optimizer=torch.optim.AdamW(model.parameters(), lr=0.05, eps=1e-5),
+>           config=ppo.PPOConfig(
+                horizon=2,
+                segments_per_minibatch=1,
+                gradient_accumulation_steps=gradient_accumulation_steps,
+                target_kl=None,
+                first_minibatch_logratio_limit=limit,
+            ),
+            device=torch.device("cpu"),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for PPOConfig
+E       first_minibatch_logratio_limit
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=0.05, input_type=float]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests/owl/train/test_ppo.py:1971: ValidationError
+___ test_first_minibatch_logratio_alarm_raises_before_optimizer_step[0.2-1] ____
+
+shift = 0.2, gradient_accumulation_steps = 1
+
+    @pytest.mark.parametrize("gradient_accumulation_steps", [1, 2])
+    @pytest.mark.parametrize("shift", [-0.2, 0.2])
+    def test_first_minibatch_logratio_alarm_raises_before_optimizer_step(
+        shift: float,
+        gradient_accumulation_steps: int,
+    ) -> None:
+        model = ShiftedReplayModel(shift)
+>       trainer = _logratio_alarm_trainer(
+            model, gradient_accumulation_steps=gradient_accumulation_steps
+        )
+
+tests/owl/train/test_ppo.py:2007:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model = ShiftedReplayModel(
+  (input_proj): Linear(in_features=3, out_features=8, bias=True)
+  (hidden): Linear(in_features=8,...policy): Linear(in_features=8, out_features=4, bias=True)
+  (value): Linear(in_features=8, out_features=4, bias=True)
+)
+
+    def _logratio_alarm_trainer(
+        model: TinyOrbitModel,
+        *,
+        limit: float | None = 0.05,
+        gradient_accumulation_steps: int = 1,
+    ) -> ppo.PPOTrainer:
+        torch.manual_seed(12)
+        return ppo.PPOTrainer(
+            env=TinyOrbitEnv(n_envs=4, episode_length=3),
+            model=model,
+            optimizer=torch.optim.AdamW(model.parameters(), lr=0.05, eps=1e-5),
+>           config=ppo.PPOConfig(
+                horizon=2,
+                segments_per_minibatch=1,
+                gradient_accumulation_steps=gradient_accumulation_steps,
+                target_kl=None,
+                first_minibatch_logratio_limit=limit,
+            ),
+            device=torch.device("cpu"),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for PPOConfig
+E       first_minibatch_logratio_limit
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=0.05, input_type=float]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests/owl/train/test_ppo.py:1971: ValidationError
+___ test_first_minibatch_logratio_alarm_raises_before_optimizer_step[0.2-2] ____
+
+shift = 0.2, gradient_accumulation_steps = 2
+
+    @pytest.mark.parametrize("gradient_accumulation_steps", [1, 2])
+    @pytest.mark.parametrize("shift", [-0.2, 0.2])
+    def test_first_minibatch_logratio_alarm_raises_before_optimizer_step(
+        shift: float,
+        gradient_accumulation_steps: int,
+    ) -> None:
+        model = ShiftedReplayModel(shift)
+>       trainer = _logratio_alarm_trainer(
+            model, gradient_accumulation_steps=gradient_accumulation_steps
+        )
+
+tests/owl/train/test_ppo.py:2007:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model = ShiftedReplayModel(
+  (input_proj): Linear(in_features=3, out_features=8, bias=True)
+  (hidden): Linear(in_features=8,...policy): Linear(in_features=8, out_features=4, bias=True)
+  (value): Linear(in_features=8, out_features=4, bias=True)
+)
+
+    def _logratio_alarm_trainer(
+        model: TinyOrbitModel,
+        *,
+        limit: float | None = 0.05,
+        gradient_accumulation_steps: int = 1,
+    ) -> ppo.PPOTrainer:
+        torch.manual_seed(12)
+        return ppo.PPOTrainer(
+            env=TinyOrbitEnv(n_envs=4, episode_length=3),
+            model=model,
+            optimizer=torch.optim.AdamW(model.parameters(), lr=0.05, eps=1e-5),
+>           config=ppo.PPOConfig(
+                horizon=2,
+                segments_per_minibatch=1,
+                gradient_accumulation_steps=gradient_accumulation_steps,
+                target_kl=None,
+                first_minibatch_logratio_limit=limit,
+            ),
+            device=torch.device("cpu"),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for PPOConfig
+E       first_minibatch_logratio_limit
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=0.05, input_type=float]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests/owl/train/test_ppo.py:1971: ValidationError
+__________ test_first_minibatch_logratio_alarm_passes_matching_replay __________
+
+    def test_first_minibatch_logratio_alarm_passes_matching_replay() -> None:
+        model = ShiftedReplayModel(0.0)
+>       trainer = _logratio_alarm_trainer(model)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/owl/train/test_ppo.py:2029:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model = ShiftedReplayModel(
+  (input_proj): Linear(in_features=3, out_features=8, bias=True)
+  (hidden): Linear(in_features=8,...policy): Linear(in_features=8, out_features=4, bias=True)
+  (value): Linear(in_features=8, out_features=4, bias=True)
+)
+
+    def _logratio_alarm_trainer(
+        model: TinyOrbitModel,
+        *,
+        limit: float | None = 0.05,
+        gradient_accumulation_steps: int = 1,
+    ) -> ppo.PPOTrainer:
+        torch.manual_seed(12)
+        return ppo.PPOTrainer(
+            env=TinyOrbitEnv(n_envs=4, episode_length=3),
+            model=model,
+            optimizer=torch.optim.AdamW(model.parameters(), lr=0.05, eps=1e-5),
+>           config=ppo.PPOConfig(
+                horizon=2,
+                segments_per_minibatch=1,
+                gradient_accumulation_steps=gradient_accumulation_steps,
+                target_kl=None,
+                first_minibatch_logratio_limit=limit,
+            ),
+            device=torch.device("cpu"),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for PPOConfig
+E       first_minibatch_logratio_limit
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=0.05, input_type=float]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests/owl/train/test_ppo.py:1971: ValidationError
+________ test_first_minibatch_logratio_alarm_ignores_later_minibatches _________
+
+    def test_first_minibatch_logratio_alarm_ignores_later_minibatches() -> None:
+        model = ShiftedReplayModel(0.2, shift_from_call=1)
+>       trainer = _logratio_alarm_trainer(model)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/owl/train/test_ppo.py:2039:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model = ShiftedReplayModel(
+  (input_proj): Linear(in_features=3, out_features=8, bias=True)
+  (hidden): Linear(in_features=8,...policy): Linear(in_features=8, out_features=4, bias=True)
+  (value): Linear(in_features=8, out_features=4, bias=True)
+)
+
+    def _logratio_alarm_trainer(
+        model: TinyOrbitModel,
+        *,
+        limit: float | None = 0.05,
+        gradient_accumulation_steps: int = 1,
+    ) -> ppo.PPOTrainer:
+        torch.manual_seed(12)
+        return ppo.PPOTrainer(
+            env=TinyOrbitEnv(n_envs=4, episode_length=3),
+            model=model,
+            optimizer=torch.optim.AdamW(model.parameters(), lr=0.05, eps=1e-5),
+>           config=ppo.PPOConfig(
+                horizon=2,
+                segments_per_minibatch=1,
+                gradient_accumulation_steps=gradient_accumulation_steps,
+                target_kl=None,
+                first_minibatch_logratio_limit=limit,
+            ),
+            device=torch.device("cpu"),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for PPOConfig
+E       first_minibatch_logratio_limit
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=0.05, input_type=float]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests/owl/train/test_ppo.py:1971: ValidationError
+___________ test_first_minibatch_logratio_alarm_checks_every_update ____________
+
+    def test_first_minibatch_logratio_alarm_checks_every_update() -> None:
+        model = ShiftedReplayModel(0.2, shift_from_call=4)
+>       trainer = _logratio_alarm_trainer(model)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/owl/train/test_ppo.py:2049:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model = ShiftedReplayModel(
+  (input_proj): Linear(in_features=3, out_features=8, bias=True)
+  (hidden): Linear(in_features=8,...policy): Linear(in_features=8, out_features=4, bias=True)
+  (value): Linear(in_features=8, out_features=4, bias=True)
+)
+
+    def _logratio_alarm_trainer(
+        model: TinyOrbitModel,
+        *,
+        limit: float | None = 0.05,
+        gradient_accumulation_steps: int = 1,
+    ) -> ppo.PPOTrainer:
+        torch.manual_seed(12)
+        return ppo.PPOTrainer(
+            env=TinyOrbitEnv(n_envs=4, episode_length=3),
+            model=model,
+            optimizer=torch.optim.AdamW(model.parameters(), lr=0.05, eps=1e-5),
+>           config=ppo.PPOConfig(
+                horizon=2,
+                segments_per_minibatch=1,
+                gradient_accumulation_steps=gradient_accumulation_steps,
+                target_kl=None,
+                first_minibatch_logratio_limit=limit,
+            ),
+            device=torch.device("cpu"),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for PPOConfig
+E       first_minibatch_logratio_limit
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=0.05, input_type=float]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests/owl/train/test_ppo.py:1971: ValidationError
+_____________ test_first_minibatch_logratio_alarm_can_be_disabled ______________
+
+    def test_first_minibatch_logratio_alarm_can_be_disabled() -> None:
+        model = ShiftedReplayModel(0.2)
+>       trainer = _logratio_alarm_trainer(model, limit=None)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/owl/train/test_ppo.py:2060:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model = ShiftedReplayModel(
+  (input_proj): Linear(in_features=3, out_features=8, bias=True)
+  (hidden): Linear(in_features=8,...policy): Linear(in_features=8, out_features=4, bias=True)
+  (value): Linear(in_features=8, out_features=4, bias=True)
+)
+
+    def _logratio_alarm_trainer(
+        model: TinyOrbitModel,
+        *,
+        limit: float | None = 0.05,
+        gradient_accumulation_steps: int = 1,
+    ) -> ppo.PPOTrainer:
+        torch.manual_seed(12)
+        return ppo.PPOTrainer(
+            env=TinyOrbitEnv(n_envs=4, episode_length=3),
+            model=model,
+            optimizer=torch.optim.AdamW(model.parameters(), lr=0.05, eps=1e-5),
+>           config=ppo.PPOConfig(
+                horizon=2,
+                segments_per_minibatch=1,
+                gradient_accumulation_steps=gradient_accumulation_steps,
+                target_kl=None,
+                first_minibatch_logratio_limit=limit,
+            ),
+            device=torch.device("cpu"),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for PPOConfig
+E       first_minibatch_logratio_limit
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests/owl/train/test_ppo.py:1971: ValidationError
+=========================== short test summary info ============================
+FAILED tests/owl/train/test_ppo.py::test_ppo_config_defaults_first_minibatch_logratio_limit
+FAILED tests/owl/train/test_ppo.py::test_first_minibatch_logratio_alarm_raises_before_optimizer_step[-0.2-1]
+FAILED tests/owl/train/test_ppo.py::test_first_minibatch_logratio_alarm_raises_before_optimizer_step[-0.2-2]
+FAILED tests/owl/train/test_ppo.py::test_first_minibatch_logratio_alarm_raises_before_optimizer_step[0.2-1]
+FAILED tests/owl/train/test_ppo.py::test_first_minibatch_logratio_alarm_raises_before_optimizer_step[0.2-2]
+FAILED tests/owl/train/test_ppo.py::test_first_minibatch_logratio_alarm_passes_matching_replay
+FAILED tests/owl/train/test_ppo.py::test_first_minibatch_logratio_alarm_ignores_later_minibatches
+FAILED tests/owl/train/test_ppo.py::test_first_minibatch_logratio_alarm_checks_every_update
+FAILED tests/owl/train/test_ppo.py::test_first_minibatch_logratio_alarm_can_be_disabled
+9 failed, 4 passed, 54 deselected in 1.21s

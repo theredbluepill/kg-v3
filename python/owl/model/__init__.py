@@ -36,9 +36,8 @@ from owl.model.stateless_transformer_v1 import (
     StatelessTransformerV1,
     StatelessTransformerV1Config,
     ValueMode,
-    concat_teacher_distillation_targets,
-    index_teacher_distillation_targets,
 )
+from owl.model.teacher_targets import TeacherTargets
 from owl.rl import (
     ActionBundle,
     DiscreteTargetActions,
@@ -74,12 +73,11 @@ __all__ = [
     "RecurrentTransformerV1Config",
     "StatelessTransformerV1",
     "StatelessTransformerV1Config",
+    "TeacherTargets",
     "ValueMode",
     "apply_lora_to_stateless_transformer",
-    "concat_teacher_distillation_targets",
     "create_model",
     "fold_lora_adapters",
-    "index_teacher_distillation_targets",
     "load_model_state_dict_allowing_lora",
     "lora_config_for_model",
     "lora_parameters",

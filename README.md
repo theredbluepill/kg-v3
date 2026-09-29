@@ -225,6 +225,18 @@ samples replay games from the same vectorized eval batch.
 joint action log-probability. Set it to `per_entity` to clip each controllable
 action entity independently before summing those clipped policy-loss terms back
 to the player-step.
+`rl.first_minibatch_logratio_limit` (default `0.05` nats) is a correctness
+alarm. Before the first optimizer step of each update, the policy-weighted mean
+log-ratio of the first minibatch (replayed versus rollout log-probs, reduced
+across ranks) must stay within the limit. Otherwise training raises a
+`RuntimeError` that reports the rollout batch shape and every observation
+tensor shape, action-mask tensors included, with parameters still unchanged. Set it to `null` to disable the check. The limit
+uses the same units as `rl.ppo_clip_mode`'s log-ratio: under `per_player` it
+bounds the joint action (entity log-probs are summed, so a coherent drift of
+`d` nats on each of `K` acting entities reads as `K * d`); under `per_entity`
+it bounds the mean per-entity log-ratio (the same drift reads as `d`). The
+`0.05` default has not yet been measured against GPU BF16/compile replay noise;
+the rebuild's Phase 6 GPU qualification measures that margin.
 PPO supports `pure`, `discrete_targets`, and `discrete_target_bins` action specs
 when the `StatelessTransformerV1` actor discriminator matches the environment
 action spec. The current discrete-target actor requires

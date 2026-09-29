@@ -1,0 +1,222 @@
+........................................................................ [ 46%]
+........................................................................ [ 92%]
+......FFFFFF                                                             [100%]
+=================================== FAILURES ===================================
+_________ test_other_schema_round_trips_through_mapping_helpers[False] _________
+
+with_market = False
+
+    @pytest.mark.parametrize("with_market", [False, True])
+    def test_other_schema_round_trips_through_mapping_helpers(with_market: bool) -> None:
+        batch = _other_batch(seed=3, prefix=(3, 2), with_market=with_market)
+        idx = torch.tensor([1, 1, 0])
+
+>       mapped = ppo._map_observation(batch, lambda tensor: tensor + 0)
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.train.ppo' has no attribute '_map_observation'
+
+tests/owl/train/test_ppo_observation_mapping.py:496: AttributeError
+_________ test_other_schema_round_trips_through_mapping_helpers[True] __________
+
+with_market = True
+
+    @pytest.mark.parametrize("with_market", [False, True])
+    def test_other_schema_round_trips_through_mapping_helpers(with_market: bool) -> None:
+        batch = _other_batch(seed=3, prefix=(3, 2), with_market=with_market)
+        idx = torch.tensor([1, 1, 0])
+
+>       mapped = ppo._map_observation(batch, lambda tensor: tensor + 0)
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'owl.train.ppo' has no attribute '_map_observation'
+
+tests/owl/train/test_ppo_observation_mapping.py:496: AttributeError
+_____________ test_other_schema_copies_through_copy_helpers[False] _____________
+
+with_market = False
+
+    @pytest.mark.parametrize("with_market", [False, True])
+    def test_other_schema_copies_through_copy_helpers(with_market: bool) -> None:
+        src = _other_batch(seed=4, prefix=(2,), with_market=with_market)
+        rollout = _other_batch(seed=5, prefix=(3, 2), with_market=with_market)
+        device_buffer = _other_batch(seed=6, prefix=(2,), with_market=with_market)
+
+>       ppo._copy_obs_time_step(rollout, 2, src)
+
+tests/owl/train/test_ppo_observation_mapping.py:523:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+python/owl/train/ppo.py:2108: in _copy_obs_time_step
+    dst_tensor = getattr(dst, field)
+                 ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = _OtherGameBatch(tiles=tensor([[[[ 1.8423,  0.5189, -1.7119],
+          [-1.7014,  2.0194, -0.2686],
+          [-0.1307...se]],
+
+         [[False, False, False, False, False, False],
+          [False,  True,  True,  True,  True, False]]]])))
+item = 'planets'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: '_OtherGameBatch' object has no attribute 'planets'
+
+.venv/lib/python3.12/site-packages/pydantic/main.py:1042: AttributeError
+_____________ test_other_schema_copies_through_copy_helpers[True] ______________
+
+with_market = True
+
+    @pytest.mark.parametrize("with_market", [False, True])
+    def test_other_schema_copies_through_copy_helpers(with_market: bool) -> None:
+        src = _other_batch(seed=4, prefix=(2,), with_market=with_market)
+        rollout = _other_batch(seed=5, prefix=(3, 2), with_market=with_market)
+        device_buffer = _other_batch(seed=6, prefix=(2,), with_market=with_market)
+
+>       ppo._copy_obs_time_step(rollout, 2, src)
+
+tests/owl/train/test_ppo_observation_mapping.py:523:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+python/owl/train/ppo.py:2108: in _copy_obs_time_step
+    dst_tensor = getattr(dst, field)
+                 ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = _OtherGameBatch(tiles=tensor([[[[ 1.8423,  0.5189, -1.7119],
+          [-1.7014,  2.0194, -0.2686],
+          [-0.1307...ue]],
+
+         [[False,  True,  True, False,  True,  True],
+          [ True, False,  True,  True, False,  True]]]])))
+item = 'planets'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: '_OtherGameBatch' object has no attribute 'planets'
+
+.venv/lib/python3.12/site-packages/pydantic/main.py:1042: AttributeError
+________________ test_copy_rejects_mismatched_observation_types ________________
+
+    def test_copy_rejects_mismatched_observation_types() -> None:
+        orbit = _random_obs(seed=0, prefix=(2,), with_optional=False, mask_kind="pure")
+        other = _other_batch(seed=0, prefix=(2,), with_market=False)
+
+        with pytest.raises(ValueError, match="observation type mismatch"):
+>           ppo._copy_obs_to_device_(other, orbit)
+
+tests/owl/train/test_ppo_observation_mapping.py:535:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+python/owl/train/ppo.py:2216: in _copy_obs_to_device_
+    dst_tensor = getattr(dst, field)
+                 ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = _OtherGameBatch(tiles=tensor([[[-1.1258, -1.1524, -0.2506],
+         [-0.4339,  0.8487,  0.6920],
+         [-0.3160, -... True]],
+
+        [[False,  True,  True, False,  True,  True],
+         [ True,  True, False, False,  True,  True]]])))
+item = 'planets'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: '_OtherGameBatch' object has no attribute 'planets'
+
+.venv/lib/python3.12/site-packages/pydantic/main.py:1042: AttributeError
+_____________ test_map_observation_rejects_unsupported_field_types _____________
+
+    def test_map_observation_rejects_unsupported_field_types() -> None:
+        batch = _UnsupportedFieldBatch(tiles=torch.zeros(2, 3), turn=4)
+
+        with pytest.raises(TypeError, match="'turn'.*int"):
+>           ppo._map_observation(batch, lambda tensor: tensor)
+            ^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'owl.train.ppo' has no attribute '_map_observation'
+
+tests/owl/train/test_ppo_observation_mapping.py:542: AttributeError
+=========================== short test summary info ============================
+FAILED tests/owl/train/test_ppo_observation_mapping.py::test_other_schema_round_trips_through_mapping_helpers[False]
+FAILED tests/owl/train/test_ppo_observation_mapping.py::test_other_schema_round_trips_through_mapping_helpers[True]
+FAILED tests/owl/train/test_ppo_observation_mapping.py::test_other_schema_copies_through_copy_helpers[False]
+FAILED tests/owl/train/test_ppo_observation_mapping.py::test_other_schema_copies_through_copy_helpers[True]
+FAILED tests/owl/train/test_ppo_observation_mapping.py::test_copy_rejects_mismatched_observation_types
+FAILED tests/owl/train/test_ppo_observation_mapping.py::test_map_observation_rejects_unsupported_field_types
+6 failed, 150 passed in 1.13s
