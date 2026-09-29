@@ -1,5 +1,17 @@
 # Change log
 
+## 2026-09-29 — Rebuild failure status and traceback ordering on the clean base
+
+Task 0.3 implements the reference plan's logging fix under the
+[[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]]. The new
+[[references/failed-training-reports-status-before-distributed-cleanup|failure-reporting Reference]]
+records keyword-only logger exit codes, failed W&B finalization and rank-tagged
+stderr before process-group destruction. TDD goes from 9 failures/2 passes to
+11 passes; the Python suite and final py-prepare each pass 722 with 3 skips.
+The 7 Rust failures were missing generated Orbit fixtures in the fresh worktree; with them copied in, Claude's rerun gives 155 passed, 2 ignored.
+The distributed test mocks clean-base CUDA/NCCL rather than importing the old
+CPU-DDP hook. No training, evaluation or network operation ran.
+
 ## 2026-09-29 — Trace the CUDA illegal memory access to a compiler GEMM overflow
 
 A blocking rerun of the reference PPO-from-BC setup on pod `w7ia3zvxqsvs3g` reproduced the fault after 3 iterations. It points both ranks at an Inductor max-autotune Triton GEMM template in the trunk MLP, whose 32-bit offsets wrap once rows × inner dim exceeds 2^31. A controlled probe matched eager at 2,088,960 rows and faulted at 2,105,344. The new [[references/compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]] records the mechanism, and why the reference's first-update log-ratio (−3.77) and BC→PPO deterioration came from silent corruption. It adds the rebuild requirements: a trunk-size guard and a first-minibatch log-ratio alarm. The BC, PPO and restart notes no longer call the fault unresolved.

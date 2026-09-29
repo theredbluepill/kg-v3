@@ -29,7 +29,7 @@ from owl.rl import (
 )
 from owl.train import FullConfig, PPOTrainer
 from owl.train.distributed import DistributedContext
-from owl.train.logging import LogMode
+from owl.train.logging import LogMode, MetricLogger
 from owl.train.optimizer import CompositeOptimizer
 
 _RUN_PPO_PATH = Path(__file__).parents[2] / "scripts" / "run_ppo.py"
@@ -428,6 +428,7 @@ def test_initial_last_best_model_wraps_lora_and_supports_refresh(
 class _FakeLogger:
     def __init__(self, *, run_id: str | None = "run-123") -> None:
         self.closed = False
+        self.close_exit_codes: list[int] = []
         self.logged: list[tuple[dict[str, float], int]] = []
         self.summary: dict[str, int | float] = {}
         self._run_id = run_id
@@ -442,8 +443,9 @@ class _FakeLogger:
     def set_summary(self, key: str, value: int | float) -> None:
         self.summary[key] = value
 
-    def close(self) -> None:
+    def close(self, *, exit_code: int = 0) -> None:
         self.closed = True
+        self.close_exit_codes.append(exit_code)
 
 
 class _FakeTrainer:
@@ -2115,6 +2117,30 @@ def test_run_training_loop_activates_last_best_teacher_after_replacement(
     assert active
 
 
+@pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt, SystemExit])
+def test_logger_session_marks_failed_runs(error_type: type[BaseException]) -> None:
+    closed: list[int] = []
+
+    class _Logger(MetricLogger):
+        def close(self, *, exit_code: int = 0) -> None:
+            closed.append(exit_code)
+
+    logger = _Logger()
+    error = error_type("boom")
+    with (
+        pytest.raises(error_type, match="boom") as exc_info,
+        run_ppo._logger_session(logger) as active_logger,
+    ):
+        raise error
+    assert active_logger is logger
+    assert exc_info.value is error
+    assert closed == [1]
+
+    with run_ppo._logger_session(logger) as active_logger:
+        assert active_logger is logger
+    assert closed == [1, 0]
+
+
 def test_run_training_session_sets_trainable_parameter_summary(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -2146,6 +2172,7 @@ def test_run_training_session_sets_trainable_parameter_summary(
         "trainable_parameters": 123,
     }
     assert logger.closed
+    assert logger.close_exit_codes == [0]
 
 
 def test_run_training_session_worker_skips_logger_and_final_checkpoint(
@@ -2211,6 +2238,7 @@ def test_run_training_session_closes_logger_and_skips_final_checkpoint_on_error(
         )
 
     assert logger.closed
+    assert logger.close_exit_codes == [1]
     assert trainer.checkpoints == []
 
 

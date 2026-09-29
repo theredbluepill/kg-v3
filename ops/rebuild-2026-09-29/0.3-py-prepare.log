@@ -1,0 +1,48 @@
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+79 files left unchanged
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+SIM117 [*] Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> tests/owl/train/test_distributed.py:315:5
+    |
+313 |       monkeypatch.setattr(distributed_module.dist, "destroy_process_group", destroy)
+314 |       error = error_type("boom")
+315 | /     with pytest.raises(error_type, match="boom") as exc_info:
+316 | |         with distributed_session():
+    | |___________________________________^
+317 |               raise error
+    |
+help: Combine `with` statements
+
+PT012 `pytest.raises()` block should contain a single simple statement
+    --> tests/scripts/test_run_ppo.py:2130:5
+     |
+2128 |       logger = _Logger()
+2129 |       error = error_type("boom")
+2130 | /     with pytest.raises(error_type, match="boom") as exc_info:
+2131 | |         with run_ppo._logger_session(logger) as active_logger:
+2132 | |             assert active_logger is logger
+2133 | |             raise error
+     | |_______________________^
+2134 |       assert exc_info.value is error
+2135 |       assert closed == [1]
+     |
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+    --> tests/scripts/test_run_ppo.py:2130:5
+     |
+2128 |       logger = _Logger()
+2129 |       error = error_type("boom")
+2130 | /     with pytest.raises(error_type, match="boom") as exc_info:
+2131 | |         with run_ppo._logger_session(logger) as active_logger:
+     | |______________________________________________________________^
+2132 |               assert active_logger is logger
+2133 |               raise error
+     |
+help: Combine `with` statements
+
+Found 3 errors.
+[*] 1 fixable with the `--fix` option.
+error: recipe `py-lint` failed on line 23 with exit code 1

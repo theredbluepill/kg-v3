@@ -5,7 +5,8 @@ import itertools
 import random
 import re
 import time
-from contextlib import closing
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -51,7 +52,7 @@ from owl.train.distributed import (
     unwrap_model,
     wrap_model_for_distributed,
 )
-from owl.train.logging import LogMode, create_logger
+from owl.train.logging import LogMode, MetricLogger, create_logger
 from owl.train.optimizer import (
     create_lr_scheduler,
     create_optimizer,
@@ -264,6 +265,17 @@ def main() -> None:
         )
 
 
+@contextmanager
+def _logger_session(logger: MetricLogger) -> Iterator[MetricLogger]:
+    """Close the metric run as failed when training raises."""
+    try:
+        yield logger
+    except BaseException:
+        logger.close(exit_code=1)
+        raise
+    logger.close()
+
+
 def _run_training_session(
     *,
     trainer: PPOTrainer,
@@ -295,7 +307,7 @@ def _run_training_session(
         )
         return
 
-    with closing(
+    with _logger_session(
         create_logger(log_mode, run_dir, cfg, resume_run_id=resume_run_id)
     ) as logger:
         if trainable_parameters is not None:

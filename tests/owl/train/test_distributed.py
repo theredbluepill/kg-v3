@@ -232,6 +232,7 @@ def test_distributed_context_reads_initialized_runtime(
 
 def test_distributed_session_initializes_and_destroys_process_group(
     monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     calls: list[tuple[str, object | None]] = []
 
@@ -279,6 +280,56 @@ def test_distributed_session_initializes_and_destroys_process_group(
         ("init_process_group", ("nccl", torch.device("cuda:1"))),
         ("destroy_process_group", None),
     ]
+    assert capsys.readouterr().err == ""
+
+
+@pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt, SystemExit])
+def test_failed_session_prints_rank_traceback_before_cleanup(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    error_type: type[BaseException],
+) -> None:
+    calls: list[tuple[str, object]] = []
+    monkeypatch.setenv("WORLD_SIZE", "2")
+    monkeypatch.setenv("LOCAL_RANK", "1")
+    monkeypatch.setenv("RANK", "5")
+    monkeypatch.setattr(distributed_module.torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(
+        distributed_module.torch.cuda,
+        "set_device",
+        lambda device: calls.append(("set_device", device)),
+    )
+    monkeypatch.setattr(distributed_module.dist, "is_available", lambda: True)
+    monkeypatch.setattr(distributed_module.dist, "is_initialized", lambda: False)
+    monkeypatch.setattr(
+        distributed_module.dist,
+        "init_process_group",
+        lambda backend, device_id: calls.append((backend, device_id)),
+    )
+
+    def destroy() -> None:
+        calls.append(("destroy", capsys.readouterr().err))
+
+    monkeypatch.setattr(distributed_module.dist, "destroy_process_group", destroy)
+    error = error_type("boom")
+    with (
+        pytest.raises(error_type, match="boom") as exc_info,
+        distributed_session(),
+    ):
+        raise error
+
+    assert exc_info.value is error
+    assert len(calls) == 3
+    assert calls[:2] == [
+        ("set_device", torch.device("cuda:1")),
+        ("nccl", torch.device("cuda:1")),
+    ]
+    assert calls[2][0] == "destroy"
+    stderr = calls[2][1]
+    assert isinstance(stderr, str)
+    assert stderr.startswith("[rank5] training failed:\n")
+    assert "Traceback (most recent call last):" in stderr
+    assert f"{error_type.__name__}: boom" in stderr
 
 
 def test_distributed_session_rejects_distributed_cpu_launch(
