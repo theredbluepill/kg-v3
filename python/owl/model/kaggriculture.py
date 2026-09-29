@@ -122,6 +122,7 @@ class KaggricultureEncoded:
     board_hidden: torch.Tensor
     actor_plan_hidden: torch.Tensor
     critic_value_hidden: torch.Tensor
+    critic_value_mask: torch.Tensor
 
 
 def sequence_length(config: KaggricultureTransformerConfig) -> int:
@@ -339,6 +340,7 @@ class KaggricultureTransformer(
             board_hidden=x[:, board_start:plan_start],
             actor_plan_hidden=x[:, plan_start:critic_start],
             critic_value_hidden=x[:, critic_start : critic_start + kt.PLAYERS],
+            critic_value_mask=token_mask[:, critic_start : critic_start + kt.PLAYERS],
         )
 
     def _assemble_tokens(
@@ -735,8 +737,19 @@ class KaggricultureTransformer(
         )
 
     def _winner_log_probabilities(self, encoded: KaggricultureEncoded) -> torch.Tensor:
+        """Isaiah's masked winner softmax over the critic-value tokens.
+
+        As ``StatelessTransformerV1._critic_distillation``: logits of masked
+        tokens are filled with the dtype minimum before ``log_softmax``, so
+        ``exp`` equals Isaiah's ``masked_softmax(logits, still_playing)``. The
+        mask is the critic tokens' own token mask (the row's ``still_playing``
+        on both tokens); an all-masked row gets Isaiah's uniform result.
+        """
         logits = self.critic_head(encoded.critic_value_hidden).float().squeeze(-1)
-        return logits.log_softmax(dim=-1)
+        masked_logits = logits.masked_fill(
+            ~encoded.critic_value_mask, torch.finfo(logits.dtype).min
+        )
+        return F.log_softmax(masked_logits, dim=-1)
 
 
 def _check_action_layout(
