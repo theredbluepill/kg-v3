@@ -1,5 +1,25 @@
 # Change log
 
+## 2026-09-29 — Refresh the Task 5.1 BC data brief against the merged encoder and grammar
+
+Stream D wrote `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` before Tasks 1.3
+and 1.4 existed. The refresh binds preparation to the APIs that now exist:
+per-turn explicit `TraceHeader`s go through the merged
+`owl.rs.encode_kaggriculture_headers_into` for both seats; recorded actions go
+through 1.4's approved `kaggriculture_encode` and `kaggriculture_decode`, which
+are absent from the partial `kg/rebuild-env`. Per-seat strict admission is
+counted and reported as a reference-comparable first rejection. The brief also
+defines shard schema `kaggriculture-bc-shard-v1`, a custody manifest,
+acceptance through a per-turn differential oracle against the reference
+receipt (158,772 admitted / 22,416 rejected), and placement on a data pod in
+EU-RO-1. Only the token half and the full-slice run wait on 1.4. Findings: the
+Rust `Config` defaults missing keys, the reference normalized absent `hands`
+and `market`, and the new grammar's check order can move rejection categories
+but not admission. A one-episode oracle probe outside the slice admitted 719
+of 719 turns. Brief only, no code. The
+[[references/rebuild-data-preparation-preserves-replay-identity|replay identity Reference]]
+records it.
+
 ## 2026-09-29 — Reconcile the teacher Reference's open dependencies after the merge
 
 Codex verification r1 of the Phase 4 merge (`a424d8c`, APPROVE WITH EDITS,

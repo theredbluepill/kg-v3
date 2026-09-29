@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Rebuild data preparation preserves replay identity"
-description: "The engine-independent selector reproduces the historical 252-episode split; source custody and replay/opponent briefs bound the remaining native preparation and evaluation work."
+description: "The engine-independent selector reproduces the historical 252-episode split; the refreshed BC data brief binds preparation to the merged encoder and grammar, with only the 1.4 codec binding blocking tokens; replay/opponent briefs bound the remaining evaluation work."
 tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex", "at": "2026-09-29"}
@@ -13,10 +13,14 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/briefs/7.3-replay-export.md"
   - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-source-audit.json"
   - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/checks/5.1-brief-refresh/ref-admission-probe.log"
+  - resource: "repository:src/kaggriculture/mod.rs"
+  - resource: "repository:src/kaggriculture/grammar.rs"
   - resource: "repository:docs/kaggriculture-contract.md"
   - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/select_replays.py"
   - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/prepare.py"
   - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/data-manifest.json"
+  - resource: "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/actor_codec.py"
   - resource: "external-repository:/Users/poonszesen/kaggriculture-v2/ops/kaggle-public-episodes-2026-09-28/manifest.json"
 ---
 
@@ -46,9 +50,20 @@ work; it does not promote the old model, admission run or evaluation results.
   or native engine. Future selection changes must retain the audited identity
   or explain the resulting dataset change.
 - `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` records source volume custody
-  and the v4 preparation boundary: native named tensors, ordered inventories,
-  exact integer channels, seat privacy, paired admission and versioned shards.
-  The old flat features/context arrays cannot be loaded as the new schema.
+  and the preparation data flow against the merged APIs (Claude refresh at
+  `2390c8e`). Explicit per-turn `TraceHeader`s are encoded for both seats
+  through the merged `owl.rs.encode_kaggriculture_headers_into`. Recorded
+  actions are admitted per seat through 1.4's planned `kaggriculture_encode`
+  and `kaggriculture_decode`, which are the only blocked step. The brief also
+  sets shard schema `kaggriculture-bc-shard-v1`, a custody manifest and
+  data-pod placement. Three findings bind future preparation. First, the Rust
+  `Config` is `serde(default)`, so the full configuration key set must be
+  checked before encoding. Second, the reference silently normalized absent
+  or null `hands`/`market` to `[]`, while the grammar requires the exact
+  keys, so that normalization is replicated and counted. Third, the new
+  grammar checks in a different order, which can move first-rejection
+  categories but not admission. The old flat features/context arrays cannot
+  be loaded as the new schema.
 - `ops/rebuild-2026-09-29/briefs/7.3-replay-export.md` distinguishes Kaggle
   episode JSON from native JSONL oracles. Export must retain the resolved seed,
   full config, action timing/order and completed state before auto-reset; seed
@@ -92,6 +107,12 @@ skips**, including **17 selector cases**; `prepare` also passes **155 Rust tests
 2 ignored**. The result receipt retains commands, logs and the initial Markdown
 failure. Rust checks concern the retained Orbit starter, not the absent
 Kaggriculture engine.
+The refreshed brief's per-turn differential oracle loads the stdlib-only
+reference `actor_codec.py` by path. Run on one local episode outside the slice
+(114406062), it admitted 719 of 719 paired turns in 0.2 s
+(`ops/rebuild-2026-09-29/checks/5.1-brief-refresh/ref-admission-probe.log`).
+That shows the oracle is cheap and runnable. It is not evidence about the
+slice.
 Preparation, native replay export, opponent import and full-payload admission
 remain deferred until their native seams exist. Reopen when the engine lands or
 custody changes; qualify these interfaces before BC or panel results can claim
