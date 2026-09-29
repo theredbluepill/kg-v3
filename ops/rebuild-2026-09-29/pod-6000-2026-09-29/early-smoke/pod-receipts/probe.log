@@ -1,0 +1,197 @@
+[kg-probe] {"kind": "start", "rank": 1, "t": 1790699110.1797345, "argv": ["/root/kg-v3/scripts/run_ppo.py", "ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/config.yaml", "/root/runs/kg-v3-prelanding-early-smoke-failprobe-20260930", "--log-mode", "wandb", "--wandb-mode", "online", "--max-env-steps", "16384"], "torch": "2.9.0+cu128", "wandb": "0.26.1"}
+[kg-probe] {"kind": "start", "rank": 0, "t": 1790699110.1920578, "argv": ["/root/kg-v3/scripts/run_ppo.py", "ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/config.yaml", "/root/runs/kg-v3-prelanding-early-smoke-failprobe-20260930", "--log-mode", "wandb", "--wandb-mode", "online", "--max-env-steps", "16384"], "torch": "2.9.0+cu128", "wandb": "0.26.1"}
+GEMM workload headroom rollout: 256 rows x 705 padded tokens; trunk 47594 rows/call at full padding (>= 185.9x headroom, <= 1 call(s)); heads 88768 rows/call (346.8x headroom, 1 call(s))
+GEMM workload headroom minibatch: 1024 rows x 705 padded tokens; trunk 47594 rows/call at full padding (>= 46.48x headroom, <= 1 call(s)); heads 88768 rows/call (86.69x headroom, 1 call(s))
+GEMM workload headroom evaluation: 256 rows x 705 padded tokens; trunk 47594 rows/call at full padding (>= 185.9x headroom, <= 1 call(s)); heads 88768 rows/call (346.8x headroom, 1 call(s))
+[kg-probe] {"kind": "env_construct", "rank": 0, "t": 1790699110.5648408, "n_envs": 128, "seed": 23000, "seed_stride": 2, "native_threads": 1, "pin_memory": true, "transfer_device": "cuda:0", "episode_steps": 33}
+[kg-probe] {"kind": "env_construct", "rank": 1, "t": 1790699110.5853307, "n_envs": 128, "seed": 23001, "seed_stride": 2, "native_threads": 1, "pin_memory": true, "transfer_device": "cuda:1", "episode_steps": 33}
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /root/.netrc.
+wandb: Currently logged in as: spoon to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run uf1lyaak
+wandb: Tracking run with wandb version 0.26.1
+wandb: Run data is saved locally in /root/runs/kg-v3-prelanding-early-smoke-failprobe-20260930/20260929-162510/wandb/run-20260929_162510-uf1lyaak
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run ppo-20260929-162510
+wandb: ⭐️ View project at https://wandb.ai/spoon/kg-v3
+wandb: 🚀 View run at https://wandb.ai/spoon/kg-v3/runs/uf1lyaak
+[kg-probe] {"kind": "wandb", "rank": 0, "t": 1790699112.0583875, "url": "https://wandb.ai/spoon/kg-v3/runs/uf1lyaak", "id": "uf1lyaak", "name": "ppo-20260929-162510", "project": "kg-v3"}
+0env steps [00:00, ?env steps/s][kg-probe] {"kind": "terminal_sample", "rank": 0, "t": 1790699113.48442, "step_call": 32, "metrics": {"total_games_played": [1.0, 1.0, 1.0, 1.0], "terminal_bank_0": [0.0, 0.0, 0.0, 0.0], "terminal_bank_1": [0.0, 0.0, 1.0, 1.0], "terminal_margin_0": [0.0, 0.0, -1.0, -1.0]}, "counts": {"total_games_played": 128, "terminal_bank_0": 128, "terminal_bank_1": 128, "terminal_margin_0": 128}, "dones_any": true}
+[kg-probe] {"kind": "terminal_sample", "rank": 1, "t": 1790699113.5802362, "step_call": 32, "metrics": {"total_games_played": [1.0, 1.0, 1.0, 1.0], "terminal_bank_0": [0.0, 11.0, 0.0, 0.0], "terminal_bank_1": [0.0, 0.0, 0.0, 0.0], "terminal_margin_0": [0.0, 11.0, 0.0, 0.0]}, "counts": {"total_games_played": 128, "terminal_bank_0": 128, "terminal_bank_1": 128, "terminal_margin_0": 128}, "dones_any": true}
+[kg-probe] {"kind": "terminal_sample", "rank": 0, "t": 1790699114.755568, "step_call": 64, "metrics": {"total_games_played": [1.0, 1.0, 1.0, 1.0], "terminal_bank_0": [0.0, 0.0, 0.0, 0.0], "terminal_bank_1": [0.0, 0.0, 0.0, 0.0], "terminal_margin_0": [0.0, 0.0, 0.0, 0.0]}, "counts": {"total_games_played": 128, "terminal_bank_0": 128, "terminal_bank_1": 128, "terminal_margin_0": 128}, "dones_any": true}
+[kg-probe] {"kind": "phase", "rank": 0, "t": 1790699114.7596037, "phase": "rollout", "iteration": 1, "seconds": 2.6990881849997095, "peak_allocated": 3181728256, "peak_reserved": 3418357760, "device_total": 101975851008, "reserved_fraction": 0.03352124768963027, "native_steps": 64, "native_step_seconds": 2.1126839959997596}
+[kg-probe] {"kind": "terminal_sample", "rank": 1, "t": 1790699114.8775434, "step_call": 64, "metrics": {"total_games_played": [1.0, 1.0, 1.0, 1.0], "terminal_bank_0": [0.0, 0.0, 0.0, 0.0], "terminal_bank_1": [0.0, 0.0, 0.0, 0.0], "terminal_margin_0": [0.0, 0.0, 0.0, 0.0]}, "counts": {"total_games_played": 128, "terminal_bank_0": 128, "terminal_bank_1": 128, "terminal_margin_0": 128}, "dones_any": true}
+[kg-probe] {"kind": "phase", "rank": 1, "t": 1790699114.8810823, "phase": "rollout", "iteration": 1, "seconds": 2.820231358999081, "peak_allocated": 3181728256, "peak_reserved": 3418357760, "device_total": 101975851008, "reserved_fraction": 0.03352124768963027, "native_steps": 64, "native_step_seconds": 2.1362955439981306}
+[kg-probe] {"kind": "probe_failure", "rank": 1, "t": 1790699114.8890786, "message": "intentional failure before the first update"}
+[rank1] training failed:
+[kg-probe] {"kind": "probe_failure", "rank": 0, "t": 1790699114.8891518, "message": "intentional failure before the first update"}
+0env steps [00:02, ?env steps/s]
+Traceback (most recent call last):
+  File "/root/kg-v3/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+    _run_training_session(
+  File "/root/kg-v3/scripts/run_ppo.py", line 379, in _run_training_session
+    _run_training_session_worker(
+  File "/root/kg-v3/scripts/run_ppo.py", line 448, in _run_training_session_worker
+    _run_training_loop(
+  File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+    metrics = trainer.train_iteration()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 125, in train_iteration
+    metrics = original_iteration(self)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+    metrics, sampled_segments = self._update(
+                                ^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 77, in wrapped
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 116, in update
+    raise RuntimeError("KG_PROBE_FAIL_BEFORE_UPDATE: intentional pre-update failure")
+RuntimeError: KG_PROBE_FAIL_BEFORE_UPDATE: intentional pre-update failure
+wandb: updating run metadata
+wandb: uploading output.log; uploading wandb-summary.json; uploading config.yaml; uploading wandb-metadata.json; uploading requirements.txt
+wandb: 
+wandb: Run summary:
+wandb: trainable_parameters 83807
+wandb: 
+wandb: 🚀 View run ppo-20260929-162510 at: https://wandb.ai/spoon/kg-v3/runs/uf1lyaak
+wandb: ⭐️ View project at: https://wandb.ai/spoon/kg-v3
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: /root/runs/kg-v3-prelanding-early-smoke-failprobe-20260930/20260929-162510/wandb/run-20260929_162510-uf1lyaak/logs
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/root/kg-v3/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+    _run_training_session(
+  File "/root/kg-v3/scripts/run_ppo.py", line 416, in _run_training_session
+    env_steps = _run_training_loop(
+                ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+    metrics = trainer.train_iteration()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 125, in train_iteration
+    metrics = original_iteration(self)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+    metrics, sampled_segments = self._update(
+                                ^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 77, in wrapped
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 116, in update
+    raise RuntimeError("KG_PROBE_FAIL_BEFORE_UPDATE: intentional pre-update failure")
+RuntimeError: KG_PROBE_FAIL_BEFORE_UPDATE: intentional pre-update failure
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 223, in <module>
+[rank1]:     main()
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 219, in main
+[rank1]:     module.main()
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+[rank1]:     _run_training_session(
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 379, in _run_training_session
+[rank1]:     _run_training_session_worker(
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 448, in _run_training_session_worker
+[rank1]:     _run_training_loop(
+[rank1]:   File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+[rank1]:     metrics = trainer.train_iteration()
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 125, in train_iteration
+[rank1]:     metrics = original_iteration(self)
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+[rank1]:     metrics, sampled_segments = self._update(
+[rank1]:                                 ^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 77, in wrapped
+[rank1]:     result = fn(*args, **kwargs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 116, in update
+[rank1]:     raise RuntimeError("KG_PROBE_FAIL_BEFORE_UPDATE: intentional pre-update failure")
+[rank1]: RuntimeError: KG_PROBE_FAIL_BEFORE_UPDATE: intentional pre-update failure
+[kg-probe] {"kind": "exit", "rank": 1, "t": 1790699115.7595391, "native_step_calls": 64, "native_step_seconds": 2.1362955439981306, "native_step_mean_ms": 33.37961787497079, "terminal_records": 256, "phase_peaks": {"rollout": {"allocated": 3181728256, "reserved": 3418357760}}, "inductor_max_autotune_gemm_backends": "ATEN,TRITON,CPP"}
+Traceback (most recent call last):
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 223, in <module>
+    main()
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 219, in main
+    module.main()
+  File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+    _run_training_session(
+  File "/root/kg-v3/scripts/run_ppo.py", line 416, in _run_training_session
+    env_steps = _run_training_loop(
+                ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+    metrics = trainer.train_iteration()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 125, in train_iteration
+    metrics = original_iteration(self)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+    metrics, sampled_segments = self._update(
+                                ^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 77, in wrapped
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 116, in update
+    raise RuntimeError("KG_PROBE_FAIL_BEFORE_UPDATE: intentional pre-update failure")
+RuntimeError: KG_PROBE_FAIL_BEFORE_UPDATE: intentional pre-update failure
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 223, in <module>
+[rank0]:     main()
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 219, in main
+[rank0]:     module.main()
+[rank0]:   File "/root/kg-v3/scripts/run_ppo.py", line 328, in main
+[rank0]:     _run_training_session(
+[rank0]:   File "/root/kg-v3/scripts/run_ppo.py", line 416, in _run_training_session
+[rank0]:     env_steps = _run_training_loop(
+[rank0]:                 ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/scripts/run_ppo.py", line 503, in _run_training_loop
+[rank0]:     metrics = trainer.train_iteration()
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 125, in train_iteration
+[rank0]:     metrics = original_iteration(self)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/python/owl/train/ppo.py", line 779, in train_iteration
+[rank0]:     metrics, sampled_segments = self._update(
+[rank0]:                                 ^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 77, in wrapped
+[rank0]:     result = fn(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/root/kg-v3/ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py", line 116, in update
+[rank0]:     raise RuntimeError("KG_PROBE_FAIL_BEFORE_UPDATE: intentional pre-update failure")
+[rank0]: RuntimeError: KG_PROBE_FAIL_BEFORE_UPDATE: intentional pre-update failure
+[kg-probe] {"kind": "exit", "rank": 0, "t": 1790699116.0768852, "native_step_calls": 64, "native_step_seconds": 2.1126839959997596, "native_step_mean_ms": 33.010687437496244, "terminal_records": 256, "phase_peaks": {"rollout": {"allocated": 3181728256, "reserved": 3418357760}}, "inductor_max_autotune_gemm_backends": "ATEN,TRITON,CPP"}
+W0929 16:25:16.305000 10892 torch/distributed/elastic/multiprocessing/api.py:908] Sending process 10895 closing signal SIGTERM
+E0929 16:25:16.470000 10892 torch/distributed/elastic/multiprocessing/api.py:882] failed (exitcode: 1) local_rank: 1 (pid: 10896) of binary: /root/kg-v3/.venv/bin/python
+Traceback (most recent call last):
+  File "/root/kg-v3/.venv/bin/torchrun", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 357, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 936, in main
+    run(args)
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 927, in run
+    elastic_launch(
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 156, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 293, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+ops/rebuild-2026-09-29/pod-6000-2026-09-29/early-smoke/launch_kg_run_ppo.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-09-29_16:25:16
+  host      : 9c9253a4b2ec
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 10896)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
