@@ -29,6 +29,7 @@ Grouped by rebuild phase. Task state per phase: `ops/rebuild-2026-09-29/phase-st
 ## Phase 5 and 7 — BC data and evaluation preparation
 
 - [[rebuild-data-preparation-preserves-replay-identity|Replay identity and data/evaluation preparation]] — Typed engine-independent selector preserves all 252 historical episode IDs and splits; offline source custody, v4 preparation, seed replay export and four compact opponent recommendations carry explicit native/runtime gaps.
+- [[kaggriculture-parity-summary-maps-tested-and-untested-layers|Kaggriculture parity summary]] — Task 7.5: a summary at the top of the Kaggriculture part of `docs/rules-parity-coverage.md` maps each tested layer at integration `bde3374` to its oracle, denominator, tests and receipts. It keeps the BC pairing diagnostic (5,743/5,752, private-only mismatches, no Rust engine) as local non-parity evidence and lists 14 untested areas, including unmerged 7.1/7.3/7.4 and Task 3.1. `just py-prepare` passes 2,319 with 10 skipped.
 
 ## Phase 6 — GPU evidence
 

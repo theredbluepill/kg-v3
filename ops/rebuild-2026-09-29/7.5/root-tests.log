@@ -1,0 +1,26 @@
+Command: cargo test --offline
+HEAD: bde337465a9fa7c07bedded88d5d696d7cefb7ef
+Date: 2026-09-29T15:28:41.752503+00:00
+   Compiling target-lexicon v0.13.5
+   Compiling autocfg v1.5.0
+   Compiling proc-macro2 v1.0.106
+   Compiling quote v1.0.45
+   Compiling unicode-ident v1.0.24
+   Compiling pyo3-build-config v0.28.3
+   Compiling num-traits v0.2.19
+error: failed to run custom build command for `pyo3-build-config v0.28.3`
+
+Caused by:
+  process didn't exit successfully: `/Users/poonszesen/kg-v3-t75/target/debug/build/pyo3-build-config-4229ca4ba4f58fc4/build-script-build` (exit status: 1)
+  --- stdout
+  cargo:rerun-if-env-changed=PYO3_CONFIG_FILE
+  cargo:rerun-if-env-changed=PYO3_BUILD_EXTENSION_MODULE
+  cargo:rerun-if-env-changed=PYO3_NO_PYTHON
+  cargo:rerun-if-env-changed=PYO3_ENVIRONMENT_SIGNATURE
+  cargo:rerun-if-env-changed=PYO3_PYTHON
+
+  --- stderr
+  error: failed to run the Python interpreter at /Users/poonszesen/kg-v3-t75/.venv/bin/python: No such file or directory (os error 2)
+warning: build failed, waiting for other jobs to finish...
+
+BOUND_RESULT {"command": "cargo test --offline", "head": "bde337465a9fa7c07bedded88d5d696d7cefb7ef", "date_utc": "2026-09-29T15:28:45.346123+00:00", "exit_status": 101, "elapsed_s": 3.594, "sampled_peak_process_tree_rss_kib": 283280, "stop_reason": null, "limits": {"wall_s": 120, "aggregate_rss_mib": 960}, "log": "ops/rebuild-2026-09-29/7.5/root-tests.log"}
