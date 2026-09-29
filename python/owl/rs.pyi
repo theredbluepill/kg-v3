@@ -1,3 +1,5 @@
+from typing import Literal, TypedDict
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -445,3 +447,178 @@ def encode_kaggriculture_headers_into(
     order_limits: NDArray[np.int64],
     can_act: NDArray[np.bool_],
 ) -> None: ...
+
+
+class KaggricultureRewardDict(TypedDict):
+    reward_mode: Literal["win_loss"]
+    econ_shaping: float
+    econ_starvation_weight: float
+    econ_drought_weight: float
+    econ_cap: float
+    econ_ineffective_weight: float
+    econ_ineffective_cap: float
+
+class KaggricultureTerminalMetrics(TypedDict):
+    bank_0: float
+    bank_1: float
+    margin_0: float
+    episode_steps: int
+    winner: Literal[-1, 0, 1]
+    econ_0: NDArray[np.int64]
+    econ_1: NDArray[np.int64]
+
+class KaggricultureEnv:
+    def __init__(self, n_envs: int, seed: int, seed_stride: int, config: str,
+                 reward_config: KaggricultureRewardDict, native_threads: int,
+                 *, hire_limit: int) -> None: ...
+    def observe(self, *,
+        tile_kind: NDArray[np.int64],
+        tile_crop: NDArray[np.int64],
+        tile_animal: NDArray[np.int64],
+        tile_cell: NDArray[np.int64],
+        tile_role: NDArray[np.int64],
+        tiles_int: NDArray[np.int64],
+        tiles_float: NDArray[np.float32],
+        actor_slot: NDArray[np.int64],
+        actor_cell: NDArray[np.int64],
+        actor_role: NDArray[np.int64],
+        actor_mask: NDArray[np.bool_],
+        actor_inventory: NDArray[np.int64],
+        actor_inventory_rank: NDArray[np.int64],
+        actors_float: NDArray[np.float32],
+        player_features: NDArray[np.float32],
+        storage_counts: NDArray[np.int64],
+        storage_rank: NDArray[np.int64],
+        banks: NDArray[np.float64],
+        shop_type: NDArray[np.int64],
+        shop_slot: NDArray[np.int64],
+        shop_mask: NDArray[np.bool_],
+        market_product: NDArray[np.int64],
+        market_float: NDArray[np.float32],
+        market_int: NDArray[np.int64],
+        global_features: NDArray[np.float32],
+        globals_int: NDArray[np.int64],
+        still_playing: NDArray[np.bool_],
+        order_limits: NDArray[np.int64],
+        can_act: NDArray[np.bool_],
+        rewards: NDArray[np.float32],
+        dones: NDArray[np.bool_],
+        transition_banks_before: NDArray[np.float64],
+        transition_banks_after: NDArray[np.float64],
+        transition_econ_before: NDArray[np.int64],
+        transition_econ_after: NDArray[np.int64],
+    ) -> None: ...
+    def reset(self, *,
+        tile_kind: NDArray[np.int64],
+        tile_crop: NDArray[np.int64],
+        tile_animal: NDArray[np.int64],
+        tile_cell: NDArray[np.int64],
+        tile_role: NDArray[np.int64],
+        tiles_int: NDArray[np.int64],
+        tiles_float: NDArray[np.float32],
+        actor_slot: NDArray[np.int64],
+        actor_cell: NDArray[np.int64],
+        actor_role: NDArray[np.int64],
+        actor_mask: NDArray[np.bool_],
+        actor_inventory: NDArray[np.int64],
+        actor_inventory_rank: NDArray[np.int64],
+        actors_float: NDArray[np.float32],
+        player_features: NDArray[np.float32],
+        storage_counts: NDArray[np.int64],
+        storage_rank: NDArray[np.int64],
+        banks: NDArray[np.float64],
+        shop_type: NDArray[np.int64],
+        shop_slot: NDArray[np.int64],
+        shop_mask: NDArray[np.bool_],
+        market_product: NDArray[np.int64],
+        market_float: NDArray[np.float32],
+        market_int: NDArray[np.int64],
+        global_features: NDArray[np.float32],
+        globals_int: NDArray[np.int64],
+        still_playing: NDArray[np.bool_],
+        order_limits: NDArray[np.int64],
+        can_act: NDArray[np.bool_],
+        rewards: NDArray[np.float32],
+        dones: NDArray[np.bool_],
+        transition_banks_before: NDArray[np.float64],
+        transition_banks_after: NDArray[np.float64],
+        transition_econ_before: NDArray[np.int64],
+        transition_econ_after: NDArray[np.int64],
+    ) -> None: ...
+    def step(self, tokens: NDArray[np.int64], lengths: NDArray[np.int64], *,
+        tile_kind: NDArray[np.int64],
+        tile_crop: NDArray[np.int64],
+        tile_animal: NDArray[np.int64],
+        tile_cell: NDArray[np.int64],
+        tile_role: NDArray[np.int64],
+        tiles_int: NDArray[np.int64],
+        tiles_float: NDArray[np.float32],
+        actor_slot: NDArray[np.int64],
+        actor_cell: NDArray[np.int64],
+        actor_role: NDArray[np.int64],
+        actor_mask: NDArray[np.bool_],
+        actor_inventory: NDArray[np.int64],
+        actor_inventory_rank: NDArray[np.int64],
+        actors_float: NDArray[np.float32],
+        player_features: NDArray[np.float32],
+        storage_counts: NDArray[np.int64],
+        storage_rank: NDArray[np.int64],
+        banks: NDArray[np.float64],
+        shop_type: NDArray[np.int64],
+        shop_slot: NDArray[np.int64],
+        shop_mask: NDArray[np.bool_],
+        market_product: NDArray[np.int64],
+        market_float: NDArray[np.float32],
+        market_int: NDArray[np.int64],
+        global_features: NDArray[np.float32],
+        globals_int: NDArray[np.int64],
+        still_playing: NDArray[np.bool_],
+        order_limits: NDArray[np.int64],
+        can_act: NDArray[np.bool_],
+        rewards: NDArray[np.float32],
+        dones: NDArray[np.bool_],
+        transition_banks_before: NDArray[np.float64],
+        transition_banks_after: NDArray[np.float64],
+        transition_econ_before: NDArray[np.int64],
+        transition_econ_after: NDArray[np.int64],
+    ) -> dict[str, list[float]]: ...
+    def truncate_envs(self, mask: NDArray[np.bool_], *,
+        tile_kind: NDArray[np.int64],
+        tile_crop: NDArray[np.int64],
+        tile_animal: NDArray[np.int64],
+        tile_cell: NDArray[np.int64],
+        tile_role: NDArray[np.int64],
+        tiles_int: NDArray[np.int64],
+        tiles_float: NDArray[np.float32],
+        actor_slot: NDArray[np.int64],
+        actor_cell: NDArray[np.int64],
+        actor_role: NDArray[np.int64],
+        actor_mask: NDArray[np.bool_],
+        actor_inventory: NDArray[np.int64],
+        actor_inventory_rank: NDArray[np.int64],
+        actors_float: NDArray[np.float32],
+        player_features: NDArray[np.float32],
+        storage_counts: NDArray[np.int64],
+        storage_rank: NDArray[np.int64],
+        banks: NDArray[np.float64],
+        shop_type: NDArray[np.int64],
+        shop_slot: NDArray[np.int64],
+        shop_mask: NDArray[np.bool_],
+        market_product: NDArray[np.int64],
+        market_float: NDArray[np.float32],
+        market_int: NDArray[np.int64],
+        global_features: NDArray[np.float32],
+        globals_int: NDArray[np.int64],
+        still_playing: NDArray[np.bool_],
+        order_limits: NDArray[np.int64],
+        can_act: NDArray[np.bool_],
+        rewards: NDArray[np.float32],
+        dones: NDArray[np.bool_],
+        transition_banks_before: NDArray[np.float64],
+        transition_banks_after: NDArray[np.float64],
+        transition_econ_before: NDArray[np.int64],
+        transition_econ_after: NDArray[np.int64],
+    ) -> None: ...
+    def terminal_metrics(self, env_index: int) -> KaggricultureTerminalMetrics | None: ...
+    def state_snapshot(self, env_index: int) -> str: ...
+    def seed_state(self) -> tuple[int, tuple[int, ...]]: ...

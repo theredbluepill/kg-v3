@@ -1,0 +1,16 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_reward_mode_wrong_type_is_admission_error ________________
+
+    def test_reward_mode_wrong_type_is_admission_error() -> None:
+        reward: dict[str, Any] = dict(REWARD)
+        reward["reward_mode"] = 12
+        with pytest.raises(ValueError, match="reward_mode"):
+>           rs.KaggricultureEnv(1, 0, 1, "{}", reward, 1, hire_limit=241)  # type: ignore[arg-type]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: 'int' object is not an instance of 'str'
+
+tests/kaggriculture/test_native_env.py:158: TypeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_reward_mode_wrong_type_is_admission_error
+1 failed, 304 deselected in 0.02s

@@ -352,6 +352,15 @@ pub fn encode_kaggriculture_headers_into(
     .map_err(python_error)
 }
 
+mod bindings;
+
 pub(super) fn add_to_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
-    module.add_function(wrap_pyfunction!(encode_kaggriculture_headers_into, module)?)
+    module.add_function(wrap_pyfunction!(encode_kaggriculture_headers_into, module)?)?;
+    module.add_class::<bindings::PyKaggricultureEnv>()
 }
+
+#[cfg(test)]
+mod env_tests;
+mod env;
+mod reward;
+mod admission;

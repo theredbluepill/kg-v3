@@ -1,0 +1,143 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env)
+warning: variant `Panic` is never constructed
+ --> src/kaggriculture/env.rs:6:54
+  |
+6 | pub enum EnvError { Value(String), Overflow(String), Panic(String) }
+  |          -------- variant in this enum               ^^^^^
+  |
+  = note: `EnvError` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `caught` is never used
+  --> src/kaggriculture/env.rs:44:15
+   |
+44 | pub(super) fn caught<T>(work: impl FnOnce() -> Result<T,EnvError>) -> Result<T,EnvError> {
+   |               ^^^^^^
+
+warning: struct `TerminalRecord` is never constructed
+  --> src/kaggriculture/env.rs:54:12
+   |
+54 | pub struct TerminalRecord {
+   |            ^^^^^^^^^^^^^^
+
+warning: struct `EnvSlot` is never constructed
+  --> src/kaggriculture/env.rs:58:8
+   |
+58 | struct EnvSlot {
+   |        ^^^^^^^
+
+warning: struct `TransitionCache` is never constructed
+  --> src/kaggriculture/env.rs:68:12
+   |
+68 | pub struct TransitionCache {
+   |            ^^^^^^^^^^^^^^^
+
+warning: struct `TransitionBuffersMut` is never constructed
+  --> src/kaggriculture/env.rs:73:12
+   |
+73 | pub struct TransitionBuffersMut<'a> {
+   |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `zeros` and `publish` are never used
+  --> src/kaggriculture/env.rs:79:8
+   |
+78 | impl TransitionCache {
+   | -------------------- associated items in this implementation
+79 |     fn zeros(n:usize)->Self {
+   |        ^^^^^
+...
+84 |     fn publish(&self, out:TransitionBuffersMut<'_>) {
+   |        ^^^^^^^
+
+warning: method `validate` is never used
+  --> src/kaggriculture/env.rs:94:8
+   |
+93 | impl TransitionBuffersMut<'_> {
+   | ----------------------------- method in this implementation
+94 |     fn validate(&self,n:usize)->Result<(),EnvError> {
+   |        ^^^^^^^^
+
+warning: struct `PendingBatch` is never constructed
+   --> src/kaggriculture/env.rs:107:12
+    |
+107 | pub struct PendingBatch {
+    |            ^^^^^^^^^^^^
+
+warning: method `metrics` is never used
+   --> src/kaggriculture/env.rs:116:12
+    |
+115 | impl PendingBatch {
+    | ----------------- method in this implementation
+116 |     pub fn metrics(&self)->&[(f64,f64,f64)] { &self.metrics }
+    |            ^^^^^^^
+
+warning: struct `NativeEnv` is never constructed
+   --> src/kaggriculture/env.rs:119:12
+    |
+119 | pub struct NativeEnv {
+    |            ^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> src/kaggriculture/env.rs:130:12
+    |
+129 | impl NativeEnv {
+    | -------------- associated items in this implementation
+130 |     pub fn new(n:usize, seed:i64, stride:i64, config:Config, reward:RewardConfig, threads:usize, hire_limit:i64)->Result<Self,EnvEr...
+    |            ^^^
+...
+158 |     pub fn n_envs(&self)->usize {self.slots.len()}
+    |            ^^^^^^
+159 |     pub fn seed_state(&self)->(i64,Vec<i64>) { (self.stream.next,self.slots.iter().map(|s|s.seed).collect()) }
+    |            ^^^^^^^^^^
+160 |     pub fn state_snapshot(&self,index:usize)->Result<String,EnvError> {
+    |            ^^^^^^^^^^^^^^
+...
+164 |     pub fn terminal_metrics(&self,index:usize)->Result<Option<&TerminalRecord>,EnvError> {
+    |            ^^^^^^^^^^^^^^^^
+...
+167 |     pub fn prepare_observe(&self)->Result<PendingBatch,EnvError> {
+    |            ^^^^^^^^^^^^^^^
+...
+174 |     pub fn publish_observe(&self, mut pending:PendingBatch,out:&mut ValidatedObsBuffersMut<'_>,transition:TransitionBuffersMut<'_>)...
+    |            ^^^^^^^^^^^^^^^
+...
+185 |     pub fn prepare_reset(&self, mask:&[bool], truncate:bool)->Result<PendingBatch,EnvError> {
+    |            ^^^^^^^^^^^^^
+...
+211 |     pub fn prepare_step(&self,_tokens:&[i64],_lengths:&[i64])->Result<PendingBatch,EnvError> {
+    |            ^^^^^^^^^^^^
+...
+214 |     pub fn commit(&mut self, mut pending:PendingBatch, out:&mut ValidatedObsBuffersMut<'_>, transition:TransitionBuffersMut<'_>)->R...
+    |            ^^^^^^
+
+warning: function `at_env` is never used
+   --> src/kaggriculture/env.rs:239:4
+    |
+239 | fn at_env(i:usize,error:EnvError)->EnvError {
+    |    ^^^^^^
+
+warning: function `commit_selected_rows` is never used
+   --> src/kaggriculture/env.rs:247:4
+    |
+247 | fn commit_selected_rows(staging:&mut ValidatedObsBuffersMut<'_>,out:&mut ValidatedObsBuffersMut<'_>,selected:&[bool]) {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `copy_row` is never used
+   --> src/kaggriculture/env.rs:252:4
+    |
+252 | fn copy_row(src:ObsRowMut<'_>,dst:ObsRowMut<'_>) {
+    |    ^^^^^^^^
+
+warning: `owl` (lib test) generated 15 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.57s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 5 tests
+test kaggriculture::env_tests::reward_admission_predicate_cases ... ok
+test kaggriculture::env_tests::reward_episode_telescopes_with_explicit_output_rounding_budget ... ok
+test kaggriculture::env_tests::reward_rejects_invalid_coefficients_and_handles_huge_counts ... ok
+test kaggriculture::env_tests::reward_uses_only_own_counters_and_raw_banks ... ok
+test kaggriculture::env_tests::seed_construction_reset_stride_and_overflow ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 258 filtered out; finished in 0.01s
+

@@ -1,0 +1,22 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env)
+error[E0432]: unresolved import `super::env`
+ --> src/kaggriculture/env_tests.rs:1:12
+  |
+1 | use super::env::SeedStream;
+  |            ^^^ could not find `env` in `super`
+
+error[E0432]: unresolved import `super::reward`
+ --> src/kaggriculture/env_tests.rs:2:12
+  |
+2 | use super::reward::{RewardConfig, RewardMode};
+  |            ^^^^^^ could not find `reward` in `super`
+
+error[E0689]: can't call method `abs` on ambiguous numeric type `{float}`
+   --> src/kaggriculture/env_tests.rs:104:30
+    |
+104 |             assert!(sum64[s].abs() <= 1.);
+    |                              ^^^
+
+Some errors have detailed explanations: E0432, E0689.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `owl` (lib test) due to 3 previous errors
