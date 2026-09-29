@@ -1,0 +1,27 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --locked --test grammar_kernel decoded_hire_masks_ignore_cash -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: 'Self::Hire => "HIRE",' -> 'Self::Hire => "BUY_LAND",'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test decoded_hire_masks_ignore_cash ... FAILED
+
+failures:
+
+---- decoded_hire_masks_ignore_cash stdout ----
+
+thread 'decoded_hire_masks_ignore_cash' (10230294) panicked at tests/grammar_kernel.rs:202:5:
+assertion `left == right` failed: canonical action: affordable HIRE
+  left: Object {"farmer": Array [String("PASS")], "hands": Array [], "market": Array [Array [String("BUY_LAND")], Array [], Array [String("BUY_LAND")]]}
+ right: Object {"farmer": Array [String("PASS")], "hands": Array [], "market": Array [Array [String("HIRE")], Array [], Array [String("HIRE")]]}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    decoded_hire_masks_ignore_cash
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.59s
+
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+     Running tests/grammar_kernel.rs (engine_rs/target/debug/deps/grammar_kernel-88e2fbe693fab574)
+error: test failed, to rerun pass `--test grammar_kernel`

@@ -1,0 +1,79 @@
+$ uv run --offline pytest tests/tools/test_record_grammar_reference.py -q -p no:cacheprovider
+# mutation ops/rebuild-2026-09-29/1.2/oracle/record_reference.py: '            and row["id"] not in ids,' -> '            and True,'
+# exit 1; restored sha256 14e805c1e797eabe8d7840988e76a158c705411094c64e118973bb39ffbab66f
+.....F............F......                                                [100%]
+=================================== FAILURES ===================================
+__________________ test_fixture_rejects_corruption[duplicate] __________________
+
+change = 'duplicate'
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "missing",
+            "extra",
+            "source",
+            "action",
+            "duplicate",
+            "dense",
+            "full",
+            "corrupt",
+            "size",
+        ],
+    )
+    def test_fixture_rejects_corruption(change: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        if change == "missing":
+            del records[1]["tokens"]
+        elif change == "extra":
+            records[1]["unexpected"] = True
+        elif change == "source":
+            manifest["source_sha256"]["engine_rs/src/myolie_sampler.rs"] = "0" * 64
+        elif change == "action":
+            records[1]["v4_expected"]["action"]["farmer"] = ["NORTH"]
+        elif change == "duplicate":
+            records[2]["id"] = records[1]["id"]
+        elif change == "dense":
+            records = [r for r in records if r.get("shape", {}).get("actors") != 241]
+        elif change == "full":
+            records = [r for r in records if r.get("selection_mode") != "full_market"]
+        elif change == "corrupt":
+            payload = bytes([payload[0] ^ 1]) + payload[1:]
+        else:
+            payload = b" " * (4 * 1024 * 1024 + 1)
+        if change not in {"source", "corrupt", "size"}:
+            payload = recorder.jsonl(records)
+            manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:158: Failed
+________ test_recorded_fixture_provenance_and_expected_action_mutation _________
+
+    def test_recorded_fixture_provenance_and_expected_action_mutation() -> None:
+        fixture = ROOT / "tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz"
+        manifest_path = fixture.with_name("grammar-v4-reference.manifest.json")
+        payload = gzip.decompress(fixture.read_bytes())
+        manifest = json.loads(manifest_path.read_text())
+>       recorder.validate_fixture(payload, manifest)
+
+tests/tools/test_record_grammar_reference.py:188: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:290: in validate_fixture
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, message = 'stale recorder hash'
+
+    def require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: stale recorder hash
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:132: ValueError
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[duplicate]
+FAILED tests/tools/test_record_grammar_reference.py::test_recorded_fixture_provenance_and_expected_action_mutation
+2 failed, 23 passed in 5.91s

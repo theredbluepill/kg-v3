@@ -190,9 +190,10 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 ### Task 1.2: Port the grammar kernel (C3)
 
-- [ ] `engine_rs/src/grammar.rs`, from `myolie_sampler.rs`: rename, type, drop what isn't needed; keep masks, transitions and canonical decoding.
-- [ ] Port the coupled-Gumbel HIRE enumeration (3 positions, 8 kinds, budgets 0/1/2/3/10) and the replay tests.
-- [ ] Oracle: decode ≥ 200 recorded reference programs, including dense 241-actor ones, identically.
+- [x] `src/kaggriculture/grammar.rs`, reviewed C3 port from `myolie_sampler.rs`: typed plan/cursor, direct factored tables, checked i64 canonical decode and strict encode. Drop the binary runtime graph. The authored standalone engine test temporarily includes this one source; retained kernel bytes remain pinned. See the reviewed `briefs/1.2.md`.
+- [ ] At the first production root → engine edge (1.3/1.4), move kernel acceptance/replay-state tests into a root integration test, delete `engine_rs/tests/grammar_kernel.rs` and its allowlist/manifest registration, and reopen L4 with the test-only float-fixture repair. Keep one integration route.
+- [x] Port the coupled-Gumbel HIRE enumeration (3 positions, 8 kinds, budgets 0/1/2/3/10) and the replay tests.
+- [x] Oracle: 320 recorded reference programs (256 synthetic, 64 real), including 64 dense 241-actor programs, agree exactly. Independent recording, strict codec, dense execution and replay-state evidence: `1.2/results.md`.
 
 ### Task 1.3: Structured observation encoder (C4)
 
@@ -254,6 +255,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 - [ ] L12: `_evaluation_seed(base_seed, env_steps)` (reproducible and different per evaluation; check the native seed type's range). Isaiah's default evaluation count. Promotion telemetry (`eval/promoted`, `eval/promotion_threshold`, `eval/games`). Orbit is unaffected.
 
 ### Task 3.4: Configs from Isaiah's recipe
+- [ ] (From the GEMM-limit audit) startup workload assertion: at config load, compute rows per forward for rollout (n_envs × 2), minibatch (spm × horizon × 2), teacher chunk (min(teacher_spm, n_envs) × horizon × 2), eval and BC batch, and assert each is bounded by the model's trunk and head chunking limits; record the headroom in the run log.
 
 - [ ] `configs/kaggriculture_2rank.yaml` (128 envs/rank, spm 8, accum 1), `configs/kaggriculture_4rank.yaml` (64/4/1), `target_kl: null`, and the `scaling_6m` optimizer, scheduler, PPO coefficients, compile settings and 20M checkpoint cadence. Economic shaping 0.2 is the owner's choice. `configs/model/kaggriculture_gpu.yaml` forces FlashAttention; a CPU preset and `configs/kaggriculture.yaml` cover local tests.
 - [ ] Workload test: global envs, optimizer steps per iteration, global segments per step and transitions per iteration all equal `scaling_6m`; the optimizer config is equal too. (The previous plan's Task 2.1 has the test code.)
@@ -284,6 +286,7 @@ The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cov
 
 ## Phase 6 — GPU verification (pod, RTX PRO 6000; Claude operates, Codex reviews receipts)
 
+- [ ] **6.0 FlashAttention on the pod (blocking for 6.1–6.4):** the GEMM-limit probe found that the pod venv has **no `flash-attn` package**, and the pod's run config had `force_flash_attn: false` (`results.md`, "GEMM limits at our shapes"). Install or build flash-attn 2.8.3 on the pod with `uv sync --extra flash-attn`, and set `force_flash_attn: true`. Verify that the real FlashAttention varlen path runs (import, kernel in use, compiled vs eager on the packed trunk) before any qualification or throughput claim.
 - [ ] **6.1 Memory smoke, 2 ranks:** one full iteration with the teacher on and a forced evaluation at dense BC positions. Record peak memory per phase against the ≤ 85% target, teacher cache bytes, native step time and the chosen `native_threads`, confirm the FlashAttention path ran, and record the spm/accum split decision (I1/I3; see "Resource fit").
 - [ ] **6.2 Complete-work run, 2 ranks, from the BC best:** 30 min bounded. Report game and learner-seat SPS over complete iterations, 16 optimizer steps per iteration, teacher telemetry, W&B status and whether the L6 fault is absent. Optionally an Nsight capture of one post-warmup iteration.
 - [ ] **6.3 Four ranks:** the same denominators for 15 min.

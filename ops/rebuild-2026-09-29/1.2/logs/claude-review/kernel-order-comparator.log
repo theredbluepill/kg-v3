@@ -1,0 +1,21 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --locked --test grammar_kernel kernel_comparator_rejects_nested_order_change -- --exact --test-threads=1
+# mutation engine_rs/tests/grammar_kernel.rs: '(Value::Object(a), Value::Object(e)) => {' -> '(Value::Object(a), Value::Object(e)) if a.is_empty() && e.is_empty() => {'
+# exit 101; restored sha256 416ed73aaa707bce0994bbdd46d97f9887a3990a5945304e365305051c5ba8c5
+
+running 1 test
+test kernel_comparator_rejects_nested_order_change - should panic ... FAILED
+
+failures:
+
+---- kernel_comparator_rejects_nested_order_change stdout ----
+note: test did not panic as expected at tests/grammar_kernel.rs:644:4
+
+failures:
+    kernel_comparator_rejects_nested_order_change
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running tests/grammar_kernel.rs (engine_rs/target/debug/deps/grammar_kernel-88e2fbe693fab574)
+error: test failed, to rerun pass `--test grammar_kernel`

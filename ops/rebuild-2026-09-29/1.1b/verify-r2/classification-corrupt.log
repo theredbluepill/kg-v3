@@ -1,0 +1,20 @@
+
+running 1 test
+test env_directory_traces ... FAILED
+
+failures:
+
+failures:
+    env_directory_traces
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running tests/replay_parity.rs (engine_rs/target/debug/deps/replay_parity-c38030bb30dd03b7)
+replayed 1 traces, 1 divergent
+
+thread 'env_directory_traces' (10027681) panicked at tests/replay_parity.rs:840:5:
+parity divergences:
+divergence-d1-unicode-digit-market-quantity.jsonl.gz: line 1 from_step Some(0): public state at public.day: expected 1 actual 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test replay_parity`

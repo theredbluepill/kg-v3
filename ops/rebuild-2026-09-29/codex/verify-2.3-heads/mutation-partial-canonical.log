@@ -1,0 +1,118 @@
+F...F....                                                                [100%]
+=================================== FAILURES ===================================
+_________ test_non_canonical_tokens_fail_the_canonical_group[0-1-0-0] __________
+
+seat = 0, frame = 1, slot = 0, value = 0
+
+    @pytest.mark.parametrize(
+        ("seat", "frame", "slot", "value"),
+        [
+            (0, 1, 0, 0),  # non-canonical actor ordinal
+            (0, 0, 2, 5),  # reserved unit_target
+            (0, 0, 7, 2),  # market field in a unit frame
+            (0, 2, 1, 1),  # unit field in a market frame
+            (0, 2, 0, 1),  # actor ordinal in a market frame
+            (0, 3, 11, 1),  # STOP bit on a non-STOP frame
+            (0, 4, 11, 0),  # missing STOP bit
+            (0, 10, 3, 1),  # padding after STOP
+            (1, 7, 7, EMPTY),  # a market order after the sentinel STOP
+        ],
+    )
+    def test_non_canonical_tokens_fail_the_canonical_group(
+        seat: int, frame: int, slot: int, value: int
+    ) -> None:
+        model = _tiny().eval()
+        obs, actions = _base_case()
+        actions.tokens[0, seat, frame, slot] = value
+>       assert _rejected(model, obs, actions) == ("canonical",)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_model_heads.py:560: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3, 1, 1, 4, 5, 0, 4, 4, 2, 5, 4, 5, 1, 3, 2, 0, 5, 0, 0, 0, 0,
+       ...se, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[0, 6, 0,  ..., 0, 0, 0],
+          [0, 1, 0,  ..., 0, 0, 0],
+          [0, 0, 0...,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0]]]]), lengths=tensor([[5, 7]]))
+
+    def _rejected(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> tuple[str, ...]:
+>       with pytest.raises(ka.GrammarReplayError) as error, torch.no_grad():
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'owl.model.kaggriculture_actor.GrammarReplayError'>
+
+tests/kaggriculture/test_model_heads.py:485: Failed
+_________ test_non_canonical_tokens_fail_the_canonical_group[0-2-0-1] __________
+
+seat = 0, frame = 2, slot = 0, value = 1
+
+    @pytest.mark.parametrize(
+        ("seat", "frame", "slot", "value"),
+        [
+            (0, 1, 0, 0),  # non-canonical actor ordinal
+            (0, 0, 2, 5),  # reserved unit_target
+            (0, 0, 7, 2),  # market field in a unit frame
+            (0, 2, 1, 1),  # unit field in a market frame
+            (0, 2, 0, 1),  # actor ordinal in a market frame
+            (0, 3, 11, 1),  # STOP bit on a non-STOP frame
+            (0, 4, 11, 0),  # missing STOP bit
+            (0, 10, 3, 1),  # padding after STOP
+            (1, 7, 7, EMPTY),  # a market order after the sentinel STOP
+        ],
+    )
+    def test_non_canonical_tokens_fail_the_canonical_group(
+        seat: int, frame: int, slot: int, value: int
+    ) -> None:
+        model = _tiny().eval()
+        obs, actions = _base_case()
+        actions.tokens[0, seat, frame, slot] = value
+>       assert _rejected(model, obs, actions) == ("canonical",)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_model_heads.py:560: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+obs = KaggricultureObsBatch(tile_kind=tensor([[[2, 1, 3, 1, 1, 4, 5, 0, 4, 4, 2, 5, 4, 5, 1, 3, 2, 0, 5, 0, 0, 0, 0,
+       ...se, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]])))
+actions = KaggricultureActions(tokens=tensor([[[[0, 6, 0,  ..., 0, 0, 0],
+          [1, 1, 0,  ..., 0, 0, 0],
+          [1, 0, 0...,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0],
+          [0, 0, 0,  ..., 0, 0, 0]]]]), lengths=tensor([[5, 7]]))
+
+    def _rejected(
+        model: Any, obs: kt.KaggricultureObsBatch, actions: kt.KaggricultureActions
+    ) -> tuple[str, ...]:
+>       with pytest.raises(ka.GrammarReplayError) as error, torch.no_grad():
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'owl.model.kaggriculture_actor.GrammarReplayError'>
+
+tests/kaggriculture/test_model_heads.py:485: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_model_heads.py::test_non_canonical_tokens_fail_the_canonical_group[0-1-0-0]
+FAILED tests/kaggriculture/test_model_heads.py::test_non_canonical_tokens_fail_the_canonical_group[0-2-0-1]
+2 failed, 7 passed, 56 deselected in 0.39s

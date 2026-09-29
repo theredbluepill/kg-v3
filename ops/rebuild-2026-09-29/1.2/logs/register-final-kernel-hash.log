@@ -1,0 +1,4 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true python3 -c 'from pathlib import Path; import hashlib,json; p=Path('"'"'engine_rs/TRIM_MANIFEST.json'"'"'); m=json.loads(p.read_text()); row=next(r for r in m['"'"'authored'"'"'] if r['"'"'path'"'"']=='"'"'engine_rs/tests/grammar_kernel.rs'"'"'); row['"'"'sha256'"'"']=hashlib.sha256(Path(row['"'"'path'"'"']).read_bytes()).hexdigest(); print(row); p.write_text(json.dumps(m,indent=2)+'"'"'\n'"'"')'
+{'path': 'engine_rs/tests/grammar_kernel.rs', 'sha256': '416ed73aaa707bce0994bbdd46d97f9887a3990a5945304e365305051c5ba8c5', 'reason': 'Task 1.2 authored shared-grammar integration tests; independent of retained kernel bytes'}
+
+EXIT_CODE=0

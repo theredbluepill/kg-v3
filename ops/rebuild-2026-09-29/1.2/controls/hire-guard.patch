@@ -1,0 +1,11 @@
+--- src/kaggriculture/grammar.rs
++++ src/kaggriculture/grammar.rs
+@@ -329,7 +329,7 @@
+             Slot::UnitQuantity => if self.quantity_present { !self.quantity_high_zero || token != 0 } else { token == 0 },
+             Slot::MarketKind => {
+                 if ready && self.unit == UnitPhase::None && self.orders < self.shape.orders {
+-                    token != 1 || self.shape.actors + u16::from(self.hires) < self.shape.hire_limit
++                    true
+                 } else { token == 0 }
+             },
+             Slot::MarketItem => match self.market {

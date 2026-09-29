@@ -1,0 +1,572 @@
+== lin_16_4096: 2 wrappers, 2 distinct template variants
+   wrapper inductor_cache/lin_16_4096/7w/c7wjrpijxdjfapxqlv6ta7jppn7vkkseh6dfwxtflvwfpkhkkwqq.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 16*idx_m, store 4096*idx_m
+   wrapper inductor_cache/lin_16_4096/s2/cs2raflcaujfiojvsiieiuixqqwlno52kc7ovgrg726jr3olpkqr.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i64 INDEX_DTYPE=int64 A-load 16*idx_m, store 4096*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 16*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 4096*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 16*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 4096*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [2 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 16*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 4096*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 16*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 4096*idx_m
+== lin_256_256: 2 wrappers, 2 distinct template variants
+   wrapper inductor_cache/lin_256_256/7v/c7vl2ehudho5i3rdc7pcdly3kgcipxmvj3veockxefxb7eqbtks6.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 256*idx_m
+   wrapper inductor_cache/lin_256_256/gt/cgt222afuj2qb3dpdz7wjff5pnjk3fvb2nn32ry7ephaqgbnflxv.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [2 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+== lin_256_512: 3 wrappers, 2 distinct template variants
+   wrapper inductor_cache/lin_256_512/5i/c5ilzhu47rp7cik4ldmoytyaelkmplcmrp5a3oyebfea6zliheik.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 512*idx_m
+   wrapper inductor_cache/lin_256_512/h7/ch7lwbsefd7lkxjgyzeqqkjrd4v77sdd7wepeev4zptgg4w22pon.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 512*idx_m
+   wrapper inductor_cache/lin_256_512/mj/cmjkw34p7mh57lxnwtlc5zrbmnhl25zrjn3drrcsxxkouqukaeje.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i64'}  [4 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [2 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+== lin_4096_16: 3 wrappers, 3 distinct template variants
+   wrapper inductor_cache/lin_4096_16/mp/cmpy25p2un6u6tj2upwuptesvc5gnt23ip5bj6x3rj2peuljxkwe.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int64 A-load 4096*idx_m, store 16*idx_m
+   wrapper inductor_cache/lin_4096_16/rv/crvxyqk2qgi55hn4ew3ijev5lepken34jrcbrrpiqx5fyhqjp6dd.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 4096*idx_m, store 16*idx_m
+   wrapper inductor_cache/lin_4096_16/vs/cvsppc4js6y447shflz4mjfz5j37aty633v5yvs6xrumc6tziawm.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=none (static M) INDEX_DTYPE=int32 A-load 4096*idx_m, store 16*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16'}  [2 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 4096*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 16*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 4096*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 16*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 4096*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 16*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 4096*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 16*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 4096*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 16*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 4096*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 16*idx_m
+== lin_512_256: 3 wrappers, 1 distinct template variants
+   wrapper inductor_cache/lin_512_256/hv/chvfhqb5vaswecbrscotxmzjymxf4jrfxtgfalc7jt3mijrq55km.py
+      extern GEMM calls: ['bias_addmm']
+   wrapper inductor_cache/lin_512_256/ke/ckeabf3uauhket4dovmchx2xyricmf6pfjm7eui5vwmwjrlkqkfs.py
+      extern GEMM calls: ['bias_addmm']
+   wrapper inductor_cache/lin_512_256/rz/crz4iekzrjxb3pccaryom7rmnqcmmbqatefx2dob7pwxn7esfiqu.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 512*idx_m, store 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [2 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+== lin_768_256: 4 wrappers, 1 distinct template variants
+   wrapper inductor_cache/lin_768_256/4y/c4y6dwxs5aqqq73ztnihr2rmd2k3ytaskhguog527id6dbqgcihp.py
+      extern GEMM calls: ['bias_addmm']
+   wrapper inductor_cache/lin_768_256/ea/cea3dddix2hyaxt66eeebr4rh2nmr2ghfddnmyqia3f3klo6ahun.py
+      extern GEMM calls: ['bias_addmm']
+   wrapper inductor_cache/lin_768_256/ej/cejlix3vil7etdkmbjewyml2hplnbsfzy342utnj4iwrpubmdi2o.py
+      extern GEMM calls: ['bias_addmm']
+   wrapper inductor_cache/lin_768_256/t6/ct6cirail3x22endgo2c53rirf5pht7wkr2uu6z733qfwowzoirk.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 768*idx_m, store 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [2 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 768*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 768*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+== mlp_256_512_256: 9 wrappers, 3 distinct template variants
+   wrapper inductor_cache/mlp_256_512_256/3u/c3uvteqfqbd4nf7yfekhm7ct23ysck3cpj3dapxgsjmx4mvd7i5m.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlp_256_512_256/56/c56qsqomrwwzrb44rkblztfnwqqzt4g6vbecbmw7kcxlqnv6sfbr.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_gelu_t_2: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 512*idx_m
+      template x1 triton_tem_fused__to_copy_addmm_gelu_t_4: ks0=i32 INDEX_DTYPE=int32 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/mlp_256_512_256/b2/cb2b4jlbenbbohcps5iihpngbmpnhsgorrnvbyxtmdhlcnn7nhq4.py
+      extern GEMM calls: ['bias_addmm']
+      template x1 triton_tem_fused__to_copy_addmm_t_2: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 512*idx_m
+   wrapper inductor_cache/mlp_256_512_256/cy/ccycoteu5yztkfevlvngu7nm2bv7ih5jo77kml7h457ztezodvvw.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlp_256_512_256/ey/ceyr267c4nxkhzeoceplfscycqqff4ojqbvtjmkdlvlbkbvxq6ks.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlp_256_512_256/fe/cfexb2uwo6iwna7da3olqz2b6hz3f44almf5cv3vu6hdj34ghq24.py
+      extern GEMM calls: ['bias_addmm']
+      template x1 triton_tem_fused__to_copy_addmm_t_2: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 512*idx_m
+   wrapper inductor_cache/mlp_256_512_256/ld/cldpwa7hdtxfhd6gyhvditsnmoebgrgmx4q5ukoyfinwjzj74wzy.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlp_256_512_256/mc/cmchkamo4zndhpo4cawcsvnixkosfk55gxylied5abjkajaykf7v.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlp_256_512_256/wr/cwr4cupmhsgprp3djpzctp6vuuzvwtdgnvddemg4irxxicrece3k.py
+      extern GEMM calls: none
+   variant triton_tem_fused__to_copy_addmm_gelu_t_2 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'in_ptr2': '*fp32', 'out_ptr1': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_4 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_2 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i64'}  [6 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+== mlpbwd_256_512_256: 20 wrappers, 7 distinct template variants
+   wrapper inductor_cache/mlpbwd_256_512_256/2j/c2j6wucrs25j7dlafjgcey5k6sctesstjvfvdbgx5vyuruigetqy.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/2w/c2wnyivfyxjgjfrxsbdl52isitw42zzzsq2sb4bje7qwj5x52tss.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_gelu_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 512*idx_m
+      template x1 triton_tem_fused__to_copy_addmm_t_5: ks0=i32 INDEX_DTYPE=int32 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/mlpbwd_256_512_256/a3/ca3t2x6bzmss5dedj74uuksv6whsifjaektmvei3wbfbnhcnpkuq.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/ba/cbalojteylaijnhmutla4hz6lwhvy3i6yebz4ullzmgawo5neals.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/bz/cbzkskbqbvne3rlr5h2zpneyzgqy63qwigsek4i5qjma4swn6nk4.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/d7/cd7n2o6buqlnjhb3fpcd5hdb23kihd2nveliizzu3z73xt6snheu.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/dr/cdrx3umyi2otzssapwwmafyed6wde6tilhsxakegmhztafem6g3y.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/j3/cj3iedfrueghejheq5y5u6qrb5tczrahlc7fnp5xzpob7lhcaclm.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_gelu_t_3: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 512*idx_m
+      template x1 triton_tem_fused__to_copy_addmm_t_5: ks0=i64 INDEX_DTYPE=int64 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/mlpbwd_256_512_256/k7/ck7adcq54rh73ebxe2d5queh5bbhq3xw2t7tnl5amdvaktknjma3.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/mr/cmrlclut5bvxjdpdj36uss5u4t3tf75n3eespqaytsokyxam62yo.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/oz/cozsypz53kxur4jjivx2zo2pp5tbmh5ddaoqlvuluzd52rq4y7fv.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/qk/cqkqozehkw7uttvyawtquzwvvmonbbe5ncrra3cnq7s4c2fxhtjx.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/u6/cu6jjjauyg6tadwwoc4gry2bxxr7yqtd5n2ngdclc326ysp4axqp.py
+      extern GEMM calls: ['bias_addmm']
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 512*idx_m
+   wrapper inductor_cache/mlpbwd_256_512_256/uv/cuvul32tfpdyln5pg6mbmjwvwbs3t4ovj2qzebjqi5ozwd7kjns3.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/uy/cuyxonukaopi5i7zznrb32zthnykuhumzjshwnpiyhdif7zrq3ah.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/vv/cvv7r37cc5nxlgooxznr4oakcynqku3xu7zjflsztls44ysns6yk.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/w4/cw4bh3q67aa277rkym2k5sfk2c6egwz4qaaegjqgf6jn5n2navxh.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/wl/cwlo7gzrscpzwfpwdfjvktv7dn5lmn6xdpy4yq2yl2el2adyhjjc.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/wq/cwq6vzsxez6ffuocgqwsobdk2zqpgjvlrq76yhrnsnxnkbvfzsu4.py
+      extern GEMM calls: none
+   wrapper inductor_cache/mlpbwd_256_512_256/zf/czfkiq54jtms3fwujlkzqj6gge5mg6en3ovxrsrgpwu3ksenoeuo.py
+      extern GEMM calls: ['mm', 'mm']
+      template x1 triton_tem_fused_gelu_gelu_backward_mm_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 512*idx_m
+      template x1 triton_tem_fused__to_copy_mm_5: ks0=i32 INDEX_DTYPE=int32 A-load 512*idx_m, store 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'out_ptr1': '*bf16', 'ks0': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'out_ptr1': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_5 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_5 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_mm_5 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr1': '*fp32', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + (xindex))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused_gelu_gelu_backward_mm_3 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'in_ptr2': '*bf16', 'out_ptr1': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + (xindex))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+== trunk_packed: 3 wrappers, 4 distinct template variants
+   wrapper inductor_cache/trunk_packed/rf/crffkjsd7bofbnwkcxuh7shpq5slkceskkfpulix6wrnyx743cwv.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_packed/ry/cryn2zx24fynrsv4zd4jozwsbkiwy3t7vvjdxfhbbqqjva4r326s.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_packed/tx/ctxbk7qafat7rbilgoapvkt6hdeszebw4pqkgd67exwdhugv7m62.py
+      extern GEMM calls: none
+      template x24 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_t_view_4: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_7: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 512*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_gelu_t_9: ks0=i32 INDEX_DTYPE=int32 A-load 512*idx_m, store 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_view_4 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_7 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_9 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+== trunk_packed_bypass: 9 wrappers, 10 distinct template variants
+   wrapper inductor_cache/trunk_packed_bypass/ar/cartxf2vbc2fmweb3msnymjavo3u3ywehxftzlqvoiqx3glkagob.py
+      extern GEMM calls: none
+      template x24 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_t_view_4: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_7: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 512*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_gelu_t_9: ks0=i32 INDEX_DTYPE=int64 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/trunk_packed_bypass/gl/cglbecbr4sa3kbysglm67hiyvnbhijzjhnx4vo7t6fnmiiur5n3t.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_packed_bypass/ha/cha5q57bscmfrhbtmlucnivat2ea353slx4c53waa4sh6l4twzd4.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_packed_bypass/jg/cjgbipofu4lzcj5bff6rlzh7lh7nhjhagtuqyd5nvgv5o5d67lys.py
+      extern GEMM calls: none
+      template x24 triton_tem_fused__to_copy_addmm_t_3: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_t_view_4: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_add_addmm_gelu_native_layer_norm_t_7: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 512*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_gelu_t_8: ks0=i64 INDEX_DTYPE=int64 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/trunk_packed_bypass/rf/crffkjsd7bofbnwkcxuh7shpq5slkceskkfpulix6wrnyx743cwv.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_packed_bypass/ry/cryn2zx24fynrsv4zd4jozwsbkiwy3t7vvjdxfhbbqqjva4r326s.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_packed_bypass/t5/ct5zloz6c3p4ti6bk6eepr5eawyjrtegkn5gloi5rizxdgbbiani.py
+      extern GEMM calls: none
+      template x24 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_t_view_4: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_7: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 512*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_gelu_t_9: ks0=i32 INDEX_DTYPE=int32 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/trunk_packed_bypass/tx/ctxsdnvz5v3gselclpfpawkwkxcponq2muxysyuyhjqcuo7epij7.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_packed_bypass/wo/cwobingxswk27jekcuunxpx7jslhxb7fn52xtvwrf46ex3difxob.py
+      extern GEMM calls: none
+   variant triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_7 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_add_addmm_gelu_native_layer_norm_t_7 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'in_ptr2': '*fp32', 'out_ptr1': '*bf16', 'ks0': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_9 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [6 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_view_4 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [6 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_7 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_9 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_view_4 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_8 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+== trunk_padded: 9 wrappers, 10 distinct template variants
+   wrapper inductor_cache/trunk_padded/5h/c5hnpp47m5fa3fle4cvqmtxavtl2fuevfklqznz6tpd2xinrioui.py
+      extern GEMM calls: ['mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm']
+      template x24 triton_tem_fused__to_copy_addmm_t_view_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_add_addmm_gelu_native_layer_norm_t_view_7: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 512*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_gelu_t_view_8: ks0=i32 INDEX_DTYPE=int32 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/trunk_padded/an/canzelz2hpvhocg5a76qu2qxwnaph2tdvg7yfmiv3b3ao3y6izxj.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_padded/cj/ccjjklkrykl2x6a4p6ctgalk56fubwjguv5zprto35zf7oj57q5g.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_padded/dq/cdqzb3n3y4w336xzesfcsyj6ssdj3gikhurtcfo655ambhrea5pa.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_padded/hq/chqol76ybkazncfj2wrns6uhlvi4lwminw6fahjku7ejhg5xp347.py
+      extern GEMM calls: none
+      template x24 triton_tem_fused__to_copy_addmm_t_view_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_t_transpose_view_5: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_view_8: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 512*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_gelu_t_view_10: ks0=i32 INDEX_DTYPE=int32 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/trunk_padded/ly/clyp672tas4ixkqwkeuty37hx427s23riigkt62mo3nqmzoarszo.py
+      extern GEMM calls: ['bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm']
+      template x8 triton_tem_fused__to_copy_addmm_t_transpose_view_4: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_view_7: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 512*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_gelu_t_view_9: ks0=i32 INDEX_DTYPE=int32 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/trunk_padded/pv/cpvls3iq3sziljsg67t2frv5w4r6fcuzpqcekpjgcj3i7cey27ky.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_padded/ro/crowck3ejqsfkijmdlsedeod75kdwuflxjo5gbve5v5nbop37qdt.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_padded/wt/cwtdhdeeh7fm6ty4nl3meszlz3a5epqfrxvcje26esku64jocjvw.py
+      extern GEMM calls: none
+   variant triton_tem_fused__to_copy_add_addmm_gelu_native_layer_norm_t_view_7 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'in_ptr2': '*fp32', 'out_ptr1': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_view_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_view_8 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_view_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_view_8 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_view_10 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_transpose_view_4 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_transpose_view_5 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_view_9 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_view_7 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+== trunk_padded_bypass: 6 wrappers, 6 distinct template variants
+   wrapper inductor_cache/trunk_padded_bypass/2b/c2bx2twdijpco2pv465sthfzf5uqd7ysm7mwrqqh5sgqt5tlqbzr.py
+      extern GEMM calls: none
+      template x24 triton_tem_fused__to_copy_addmm_t_view_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_t_transpose_view_5: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_add_addmm_gelu_native_layer_norm_t_view_8: ks0=i64 INDEX_DTYPE=int64 A-load 256*idx_m, store 512*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_gelu_t_view_9: ks0=i32 INDEX_DTYPE=int64 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/trunk_padded_bypass/2k/c2k7o2izl36dpk5bl6fzifwcbhr46tb2vdwpccfc56gm7mghic4a.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_padded_bypass/6y/c6yr54mhme7gwpxr6tl7uetelrdxeqcmd77x3sqkkqe34kypjcky.py
+      extern GEMM calls: none
+      template x24 triton_tem_fused__to_copy_addmm_t_view_3: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_t_transpose_view_5: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 256*idx_m
+      template x8 triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_view_8: ks0=i32 INDEX_DTYPE=int32 A-load 256*idx_m, store 512*idx_m
+      template x8 triton_tem_fused__to_copy_addmm_gelu_t_view_10: ks0=i32 INDEX_DTYPE=int32 A-load 512*idx_m, store 256*idx_m
+   wrapper inductor_cache/trunk_padded_bypass/pv/cpvls3iq3sziljsg67t2frv5w4r6fcuzpqcekpjgcj3i7cey27ky.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_padded_bypass/ro/crowck3ejqsfkijmdlsedeod75kdwuflxjo5gbve5v5nbop37qdt.py
+      extern GEMM calls: none
+   wrapper inductor_cache/trunk_padded_bypass/yb/cybxafwsd6zqxyagfgzonry6wb3maciz5cvp3buyxswuyeehi7bg.py
+      extern GEMM calls: none
+   variant triton_tem_fused__to_copy_addmm_t_view_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [6 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_t_transpose_view_5 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [6 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_add_addmm_gelu_native_layer_norm_t_view_8 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'in_ptr2': '*fp32', 'out_ptr1': '*bf16', 'ks0': 'i64', 'ks1': 'i64'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_view_9 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int64
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_addmm_gelu_t_view_10 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 512*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 512*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
+   variant triton_tem_fused__to_copy_add_addmm_native_layer_norm_t_view_8 sig={'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32', 'ks1': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 256*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 512*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 256*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 512*idx_m

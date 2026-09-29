@@ -1,0 +1,11 @@
+--- src/kaggriculture/grammar.rs
++++ src/kaggriculture/grammar.rs
+@@ -541,7 +541,7 @@
+ fn render_unit(frame: &[i64]) -> Result<serde_json::Value, String> {
+     use serde_json::Value;
+     let kind = UnitKind::try_from(frame[Slot::UnitKind as usize])?;
+-    let mut command = vec![Value::from(kind.as_str())];
++    let mut command = vec![Value::from(if kind == UnitKind::Plant { "PASS" } else { kind.as_str() })];
+     if matches!(kind, UnitKind::Pickup | UnitKind::Place | UnitKind::Plant) {
+         command.push(Value::from(ActionItem::try_from(frame[Slot::UnitItem as usize])?.as_str()));
+     }

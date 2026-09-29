@@ -1,0 +1,146 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uvx --offline ruff check --fix ops/rebuild-2026-09-29/1.2/oracle/record_reference.py tests/tools/test_record_grammar_reference.py
+E501 Line too long (99 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:204:89
+    |
+203 | def fixture_manifest(payload: bytes) -> dict[str, Any]:
+204 |     rows = [json.loads(line, object_pairs_hook=strict_object) for line in payload.splitlines()][1:]
+    |                                                                                         ^^^^^^^^^^^
+205 |     manifest = {
+206 |         "schema_version": 1,
+    |
+
+E501 Line too long (99 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:318:89
+    |
+316 |         require(manifest[key] == value, f"fixture {key} mismatch")
+317 |     try:
+318 |         rows = [json.loads(line, object_pairs_hook=strict_object) for line in payload.splitlines()]
+    |                                                                                         ^^^^^^^^^^^
+319 |     except (ValueError, UnicodeError) as error:
+320 |         raise ValueError("invalid JSONL") from error
+    |
+
+E501 Line too long (114 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:470:89
+    |
+468 |     require(isinstance(manifest["commands"], list), "manifest commands")
+469 |     for command in manifest["commands"]:
+470 |         require(isinstance(command, list) and all(isinstance(v, str) for v in command), "manifest command values")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+471 |     require(isinstance(manifest["tools"], dict) and all(isinstance(k, str) and isinstance(v, str) and v for k, v in manifest["tools"]…
+472 |     require(isinstance(manifest["replay_scan"], dict), "manifest replay scan")
+    |
+
+E501 Line too long (169 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:471:89
+    |
+469 | …
+470 | … str) for v in command), "manifest command values")
+471 | …nce(k, str) and isinstance(v, str) and v for k, v in manifest["tools"].items()), "manifest tool versions")
+    |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+472 | …t replay scan")
+473 | …
+    |
+
+E501 Line too long (113 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:475:89
+    |
+473 |     for episode, scan in manifest["replay_scan"].items():
+474 |         require(episode in {str(e) for e in EPISODES}, "manifest replay episode")
+475 |         exact(scan, {"candidates", "selected", "codec_rejections", "canonical_layout_exclusions"}, "replay scan")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+476 |         require(type(scan["candidates"]) is int and scan["candidates"] == 1438, "candidate denominator")
+477 |         exact(scan["selected"], {"0", "1", "2", "3"}, "replay selected strata")
+    |
+
+E501 Line too long (104 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:476:89
+    |
+474 |         require(episode in {str(e) for e in EPISODES}, "manifest replay episode")
+475 |         exact(scan, {"candidates", "selected", "codec_rejections", "canonical_layout_exclusions"}, "replay scan")
+476 |         require(type(scan["candidates"]) is int and scan["candidates"] == 1438, "candidate denominator")
+    |                                                                                         ^^^^^^^^^^^^^^^^
+477 |         exact(scan["selected"], {"0", "1", "2", "3"}, "replay selected strata")
+478 |         require(all(type(v) is int and v == 4 for v in scan["selected"].values()), "replay selected quota")
+    |
+
+E501 Line too long (107 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:478:89
+    |
+476 | …     require(type(scan["candidates"]) is int and scan["candidates"] == 1438, "candidate denominator")
+477 | …     exact(scan["selected"], {"0", "1", "2", "3"}, "replay selected strata")
+478 | …     require(all(type(v) is int and v == 4 for v in scan["selected"].values()), "replay selected quota")
+    |                                                                                       ^^^^^^^^^^^^^^^^^^^
+479 | …     for key in ("codec_rejections", "canonical_layout_exclusions"):
+480 | …         require(isinstance(scan[key], dict) and all(isinstance(k, str) and type(v) is int and v > 0 for k, v in scan[key].items()),…
+    |
+
+E501 Line too long (162 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:480:89
+    |
+478 | …["selected"].values()), "replay selected quota")
+479 | …xclusions"):
+480 | …nstance(k, str) and type(v) is int and v > 0 for k, v in scan[key].items()), "replay rejection counts")
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+481 | …anifest disagreements")
+482 | …
+    |
+
+E501 Line too long (120 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:483:89
+    |
+481 |     require(isinstance(manifest["disagreements"], list), "manifest disagreements")
+482 |     for difference in manifest["disagreements"]:
+483 |         exact(difference, {"id", "sampler", "training_decoder", "python_codec", "v4_expected"}, "manifest disagreement")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+484 |         require(difference["id"] in ids, "disagreement id")
+485 |         original = next(row for row in programs if row["id"] == difference["id"])
+    |
+
+E501 Line too long (110 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:486:89
+    |
+484 |         require(difference["id"] in ids, "disagreement id")
+485 |         original = next(row for row in programs if row["id"] == difference["id"])
+486 |         require(all(difference[key] == original[key] for key in difference), "disagreement evidence mismatch")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^
+487 |     expected_differences = {r["id"] for r in programs if r["source"] == "mutation" and verdicts_differ(r)}
+488 |     require({r["id"] for r in manifest["disagreements"]} == expected_differences, "disagreement inventory mismatch")
+    |
+
+E501 Line too long (106 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:487:89
+    |
+485 |         original = next(row for row in programs if row["id"] == difference["id"])
+486 |         require(all(difference[key] == original[key] for key in difference), "disagreement evidence mismatch")
+487 |     expected_differences = {r["id"] for r in programs if r["source"] == "mutation" and verdicts_differ(r)}
+    |                                                                                         ^^^^^^^^^^^^^^^^^^
+488 |     require({r["id"] for r in manifest["disagreements"]} == expected_differences, "disagreement inventory mismatch")
+489 |     require(manifest["missing_rejection_categories"] == [c for c in CATEGORIES if not any(r["source"] == "replay_rejected" and r["cat…
+    |
+
+E501 Line too long (116 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:488:89
+    |
+486 |         require(all(difference[key] == original[key] for key in difference), "disagreement evidence mismatch")
+487 |     expected_differences = {r["id"] for r in programs if r["source"] == "mutation" and verdicts_differ(r)}
+488 |     require({r["id"] for r in manifest["disagreements"]} == expected_differences, "disagreement inventory mismatch")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+489 |     require(manifest["missing_rejection_categories"] == [c for c in CATEGORIES if not any(r["source"] == "replay_rejected" and r["cat…
+490 |     actual = counts(programs)
+    |
+
+E501 Line too long (206 > 88)
+   --> ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:489:89
+    |
+487 | …" and verdicts_differ(r)}
+488 | … "disagreement inventory mismatch")
+489 | … not any(r["source"] == "replay_rejected" and r["category"] == c for r in programs)], "missing rejection category inventory")
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+490 | …
+491 | …
+    |
+
+Found 14 errors (1 fixed, 13 remaining).
+
+EXIT_CODE=1

@@ -1,0 +1,802 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/tools/test_check_engine_trim.py -q
+   Building owl @ file:///Users/poonszesen/kg-v3-grammar
+      Built owl @ file:///Users/poonszesen/kg-v3-grammar
+Uninstalled 1 package in 0.79ms
+Installed 1 package in 1ms
+.FFFFF...........................................FFFFF....FFFF           [100%]
+=================================== FAILURES ===================================
+_____________ test_task_authored_inventory_accepts_exact_two_tests _____________
+
+    def test_task_authored_inventory_accepts_exact_two_tests() -> None:
+        manifest, _, _ = fixture()
+>       checker.verify_task_authored(manifest["authored"])
+
+tests/tools/test_check_engine_trim.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+_ test_task_authored_inventory_requires_exact_two_tests[paths0-Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity] _
+
+paths = []
+message = 'Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+        with pytest.raises(ValueError, match=message):
+>           checker.verify_task_authored(authored)
+
+tests/tools/test_check_engine_trim.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=['engine_rs/tests/replay_parity.rs']; extra=[]"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=['engine_rs/tests/replay_parity.rs']; extra=[]
+
+scripts/check_engine_trim.py:92: ValueError
+
+During handling of the above exception, another exception occurred:
+
+paths = []
+message = 'Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity'
+E         Actual message: "Task 1.1 authored set: missing=['engine_rs/tests/replay_parity.rs']; extra=[]"
+
+tests/tools/test_check_engine_trim.py:101: AssertionError
+_ test_task_authored_inventory_requires_exact_two_tests[paths1-Task 1.2 authored set: missing=.*grammar_kernel] _
+
+paths = ['engine_rs/tests/replay_parity.rs']
+message = 'Task 1.2 authored set: missing=.*grammar_kernel'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:101: Failed
+_ test_task_authored_inventory_requires_exact_two_tests[paths2-Task 1.2 authored set: missing=.*replay_parity] _
+
+paths = ['engine_rs/tests/grammar_kernel.rs']
+message = 'Task 1.2 authored set: missing=.*replay_parity'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+        with pytest.raises(ValueError, match=message):
+>           checker.verify_task_authored(authored)
+
+tests/tools/test_check_engine_trim.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=['engine_rs/tests/replay_parity.rs']; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=['engine_rs/tests/replay_parity.rs']; extra=['engine_rs/tests/grammar_kernel.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+
+During handling of the above exception, another exception occurred:
+
+paths = ['engine_rs/tests/grammar_kernel.rs']
+message = 'Task 1.2 authored set: missing=.*replay_parity'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'Task 1.2 authored set: missing=.*replay_parity'
+E         Actual message: "Task 1.1 authored set: missing=['engine_rs/tests/replay_parity.rs']; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+tests/tools/test_check_engine_trim.py:101: AssertionError
+_ test_task_authored_inventory_requires_exact_two_tests[paths3-Task 1.2 authored set: .*extra=.*other.rs] _
+
+paths = ['engine_rs/tests/replay_parity.rs', 'engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/other.rs']
+message = 'Task 1.2 authored set: .*extra=.*other.rs'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+        with pytest.raises(ValueError, match=message):
+>           checker.verify_task_authored(authored)
+
+tests/tools/test_check_engine_trim.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/other.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/other.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+
+During handling of the above exception, another exception occurred:
+
+paths = ['engine_rs/tests/replay_parity.rs', 'engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/other.rs']
+message = 'Task 1.2 authored set: .*extra=.*other.rs'
+
+    @pytest.mark.parametrize(
+        ("paths", "message"),
+        [
+            ([], r"Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity"),
+            (
+                ["engine_rs/tests/replay_parity.rs"],
+                r"Task 1.2 authored set: missing=.*grammar_kernel",
+            ),
+            (
+                ["engine_rs/tests/grammar_kernel.rs"],
+                r"Task 1.2 authored set: missing=.*replay_parity",
+            ),
+            (
+                [
+                    "engine_rs/tests/replay_parity.rs",
+                    "engine_rs/tests/grammar_kernel.rs",
+                    "engine_rs/tests/other.rs",
+                ],
+                r"Task 1.2 authored set: .*extra=.*other.rs",
+            ),
+        ],
+    )
+    def test_task_authored_inventory_requires_exact_two_tests(
+        paths: list[str], message: str
+    ) -> None:
+        authored = [
+            {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+            for path in paths
+        ]
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'Task 1.2 authored set: .*extra=.*other.rs'
+E         Actual message: "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/other.rs']"
+
+tests/tools/test_check_engine_trim.py:101: AssertionError
+_____________________ test_committed_package_passes_check ______________________
+
+    def test_committed_package_passes_check() -> None:
+>       checker.check(_REPO)
+
+tests/tools/test_check_engine_trim.py:347: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:351: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:379: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+_______________ test_check_entry_point_passes_on_unmodified_copy _______________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_check_entry_point_passes_0')
+
+    def test_check_entry_point_passes_on_unmodified_copy(trimmed: Path) -> None:
+>       checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:351: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:351: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:379: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+__________ test_check_rejects_omitted_authored_test[replay_parity.rs] __________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_check_rejects_omitted_aut0')
+name = 'replay_parity.rs'
+
+    @pytest.mark.parametrize("name", ["replay_parity.rs", "grammar_kernel.rs"])
+    def test_check_rejects_omitted_authored_test(trimmed: Path, name: str) -> None:
+        """Deleting both the test and its declaration cannot weaken the inventory."""
+        path = f"engine_rs/tests/{name}"
+        (trimmed / path).unlink()
+        manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["authored"] = [
+            entry for entry in manifest["authored"] if entry["path"] != path
+        ]
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        with pytest.raises(ValueError, match=f"Task 1.2 authored set: missing=.*{name}"):
+>           checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:366: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:351: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:379: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=['engine_rs/tests/replay_parity.rs']; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=['engine_rs/tests/replay_parity.rs']; extra=['engine_rs/tests/grammar_kernel.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+
+During handling of the above exception, another exception occurred:
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_check_rejects_omitted_aut0')
+name = 'replay_parity.rs'
+
+    @pytest.mark.parametrize("name", ["replay_parity.rs", "grammar_kernel.rs"])
+    def test_check_rejects_omitted_authored_test(trimmed: Path, name: str) -> None:
+        """Deleting both the test and its declaration cannot weaken the inventory."""
+        path = f"engine_rs/tests/{name}"
+        (trimmed / path).unlink()
+        manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["authored"] = [
+            entry for entry in manifest["authored"] if entry["path"] != path
+        ]
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+>       with pytest.raises(ValueError, match=f"Task 1.2 authored set: missing=.*{name}"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'Task 1.2 authored set: missing=.*replay_parity.rs'
+E         Actual message: "Task 1.1 authored set: missing=['engine_rs/tests/replay_parity.rs']; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+tests/tools/test_check_engine_trim.py:365: AssertionError
+_________ test_check_rejects_omitted_authored_test[grammar_kernel.rs] __________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_check_rejects_omitted_aut1')
+name = 'grammar_kernel.rs'
+
+    @pytest.mark.parametrize("name", ["replay_parity.rs", "grammar_kernel.rs"])
+    def test_check_rejects_omitted_authored_test(trimmed: Path, name: str) -> None:
+        """Deleting both the test and its declaration cannot weaken the inventory."""
+        path = f"engine_rs/tests/{name}"
+        (trimmed / path).unlink()
+        manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["authored"] = [
+            entry for entry in manifest["authored"] if entry["path"] != path
+        ]
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+>       with pytest.raises(ValueError, match=f"Task 1.2 authored set: missing=.*{name}"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:365: Failed
+____________ test_check_rejects_self_declared_third_authored_source ____________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_check_rejects_self_declar0')
+
+    def test_check_rejects_self_declared_third_authored_source(trimmed: Path) -> None:
+        path = "engine_rs/tests/third.rs"
+        data = b"// Extra authored source is outside the fixed inventory.\n"
+        (trimmed / path).write_bytes(data)
+        manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["authored"].append(
+            {"path": path, "sha256": checker.sha(data), "reason": "self-declared third"}
+        )
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        with pytest.raises(ValueError, match=r"Task 1.2 authored set: .*extra=.*third.rs"):
+>           checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:380: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:351: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:379: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/third.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/third.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+
+During handling of the above exception, another exception occurred:
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_check_rejects_self_declar0')
+
+    def test_check_rejects_self_declared_third_authored_source(trimmed: Path) -> None:
+        path = "engine_rs/tests/third.rs"
+        data = b"// Extra authored source is outside the fixed inventory.\n"
+        (trimmed / path).write_bytes(data)
+        manifest_path = trimmed / "engine_rs/TRIM_MANIFEST.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["authored"].append(
+            {"path": path, "sha256": checker.sha(data), "reason": "self-declared third"}
+        )
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+>       with pytest.raises(ValueError, match=r"Task 1.2 authored set: .*extra=.*third.rs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'Task 1.2 authored set: .*extra=.*third.rs'
+E         Actual message: "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs', 'engine_rs/tests/third.rs']"
+
+tests/tools/test_check_engine_trim.py:379: AssertionError
+_____________ test_declared_removal_of_trim_provenance_is_rejected _____________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_declared_removal_of_trim_0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_removal_of_trim_provenance_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        original = reference[_VENDORED]
+        lines = len(original.decode("utf-8").splitlines())
+        _declare(trimmed, _VENDORED, original, [])
+        with pytest.raises(
+            ValueError, match=re.escape("VENDORED_FROM.md: Task 1.1 trim appendix")
+        ):
+>           checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:424: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:351: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:379: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+
+During handling of the above exception, another exception occurred:
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_declared_removal_of_trim_0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_removal_of_trim_provenance_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        original = reference[_VENDORED]
+        lines = len(original.decode("utf-8").splitlines())
+        _declare(trimmed, _VENDORED, original, [])
+>       with pytest.raises(
+            ValueError, match=re.escape("VENDORED_FROM.md: Task 1.1 trim appendix")
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'VENDORED_FROM\\.md:\\ Task\\ 1\\.1\\ trim\\ appendix'
+E         Actual message: "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+tests/tools/test_check_engine_trim.py:421: AssertionError
+___________________ test_later_provenance_append_is_accepted ___________________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_later_provenance_append_i0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_later_provenance_append_is_accepted(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        original = reference[_VENDORED]
+        current = (trimmed / _VENDORED).read_bytes()
+        appended = current + b"\n## Later task\n\nMore provenance.\n"
+        lines = len(original.decode("utf-8").splitlines())
+        _declare(
+            trimmed,
+            _VENDORED,
+            appended,
+            [
+                {
+                    "start_line": lines + 1,
+                    "delete_lines": 0,
+                    "insert": appended[len(original) :].decode("utf-8"),
+                    "reason": "append-only provenance",
+                }
+            ],
+        )
+>       checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:470: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:351: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:379: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+_______________ test_declared_extra_lockfile_change_is_rejected ________________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_declared_extra_lockfile_c0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_extra_lockfile_change_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        current = (trimmed / _LOCK).read_bytes()
+        changed = current.replace(b'version = "1.0.229"', b'version = "1.0.230"', 1)
+        assert changed != current
+        _declare(trimmed, _LOCK, changed, _whole_file_edit(reference[_LOCK], changed))
+        with pytest.raises(
+            ValueError, match=re.escape("Cargo.lock: Rayon closure removal only")
+        ):
+>           checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:483: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:351: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:379: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+
+During handling of the above exception, another exception occurred:
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_declared_extra_lockfile_c0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_extra_lockfile_change_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        current = (trimmed / _LOCK).read_bytes()
+        changed = current.replace(b'version = "1.0.229"', b'version = "1.0.230"', 1)
+        assert changed != current
+        _declare(trimmed, _LOCK, changed, _whole_file_edit(reference[_LOCK], changed))
+>       with pytest.raises(
+            ValueError, match=re.escape("Cargo.lock: Rayon closure removal only")
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'Cargo\\.lock:\\ Rayon\\ closure\\ removal\\ only'
+E         Actual message: "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+tests/tools/test_check_engine_trim.py:480: AssertionError
+_________________ test_declared_eighth_lib_removal_is_rejected _________________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_declared_eighth_lib_remov0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_eighth_lib_removal_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        path = "engine_rs/src/lib.rs"
+        original = reference[path]
+        lines = original.splitlines(keepends=True)
+        removed = {19, 21, 22, 23, 24, 25, 27, 20}
+        changed = b"".join(
+            line for number, line in enumerate(lines, 1) if number not in removed
+        )
+        _declare(trimmed, path, changed, _whole_file_edit(original, changed))
+        with pytest.raises(ValueError, match=re.escape("lib.rs: exact seven removals")):
+>           checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:498: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:351: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:379: in verify_task
+    verify_task_authored(manifest["authored"])
+scripts/check_engine_trim.py:235: in verify_task_authored
+    _same_inventory(
+scripts/check_engine_trim.py:231: in _same_inventory
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']
+
+scripts/check_engine_trim.py:92: ValueError
+
+During handling of the above exception, another exception occurred:
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-grammar/.codex-tmp/pytest-of-poonszesen/pytest-0/test_declared_eighth_lib_remov0')
+reference = {'engine_rs/Cargo.lock': b'# This file is automatically @generated by Cargo.\n# It is not intended for manual editing....emains centralized complete-matching/job value behind the\ndeterministic executor, not low-level farm control.\n", ...}
+
+    def test_declared_eighth_lib_removal_is_rejected(
+        trimmed: Path, reference: dict[str, bytes]
+    ) -> None:
+        path = "engine_rs/src/lib.rs"
+        original = reference[path]
+        lines = original.splitlines(keepends=True)
+        removed = {19, 21, 22, 23, 24, 25, 27, 20}
+        changed = b"".join(
+            line for number, line in enumerate(lines, 1) if number not in removed
+        )
+        _declare(trimmed, path, changed, _whole_file_edit(original, changed))
+>       with pytest.raises(ValueError, match=re.escape("lib.rs: exact seven removals")):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'lib\\.rs:\\ exact\\ seven\\ removals'
+E         Actual message: "Task 1.1 authored set: missing=[]; extra=['engine_rs/tests/grammar_kernel.rs']"
+
+tests/tools/test_check_engine_trim.py:497: AssertionError
+=========================== short test summary info ============================
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_accepts_exact_two_tests
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_two_tests[paths0-Task 1.2 authored set: missing=.*grammar_kernel.*replay_parity]
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_two_tests[paths1-Task 1.2 authored set: missing=.*grammar_kernel]
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_two_tests[paths2-Task 1.2 authored set: missing=.*replay_parity]
+FAILED tests/tools/test_check_engine_trim.py::test_task_authored_inventory_requires_exact_two_tests[paths3-Task 1.2 authored set: .*extra=.*other.rs]
+FAILED tests/tools/test_check_engine_trim.py::test_committed_package_passes_check
+FAILED tests/tools/test_check_engine_trim.py::test_check_entry_point_passes_on_unmodified_copy
+FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_omitted_authored_test[replay_parity.rs]
+FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_omitted_authored_test[grammar_kernel.rs]
+FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_self_declared_third_authored_source
+FAILED tests/tools/test_check_engine_trim.py::test_declared_removal_of_trim_provenance_is_rejected
+FAILED tests/tools/test_check_engine_trim.py::test_later_provenance_append_is_accepted
+FAILED tests/tools/test_check_engine_trim.py::test_declared_extra_lockfile_change_is_rejected
+FAILED tests/tools/test_check_engine_trim.py::test_declared_eighth_lib_removal_is_rejected
+14 failed, 48 passed in 2.12s
+
+EXIT_CODE=1

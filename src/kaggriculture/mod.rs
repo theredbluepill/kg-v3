@@ -4,6 +4,7 @@
 //! Real Python-schema and full-corpus qualification have separate dependencies.
 mod buffers;
 mod config;
+pub mod grammar;
 mod observe;
 
 pub use buffers::{ObsBuffersMut, ObsEnvMut, ObsRowMut, ObsStaging, ValidatedObsBuffersMut};

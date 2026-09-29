@@ -703,8 +703,18 @@
   "authored": [
     {
       "path": "engine_rs/tests/replay_parity.rs",
-      "sha256": "a581631ec0837869be81d1aff2479d00d813c739cd712188fa52ecba09ffb8da",
-      "reason": "New direct native-reset official-trace parity and comparator regressions"
+      "sha256": "eaefe5d2e4aadae3648a5a1a12210405a7b9feb9beb8f4b695b80431b6add7e7",
+      "reason": "Direct native-reset parity replay over official, committed generated and KAGG_PARITY_TRACES traces; comparator regressions; perturbation and expected-divergence checks (Task 1.1b)"
+    },
+    {
+      "path": "engine_rs/fixtures/generated/MANIFEST.json",
+      "sha256": "89a66bc1d3e2314e736e8196347ea1dd7888faa72c2f4f187ee7f5e8c6465c2f",
+      "reason": "Pins each Task 1.1b trace generated live from kaggle-environments 1.32.7 (SHA-256, size, policies, seeds, config, documented expected divergences)"
+    },
+    {
+      "path": "engine_rs/tests/grammar_kernel.rs",
+      "sha256": "416ed73aaa707bce0994bbdd46d97f9887a3990a5945304e365305051c5ba8c5",
+      "reason": "Task 1.2 authored shared-grammar integration tests; independent of retained kernel bytes"
     }
   ],
   "non_engine_changes": [
@@ -714,11 +724,11 @@
     },
     {
       "path": "scripts/check_engine_trim.py",
-      "reason": "Python provenance checker required by Claude review; replaces planned Node tool."
+      "reason": "Python provenance checker required by Claude review; replaces planned Node tool. Task 1.1b: also validates the generated-trace manifest, inventory, hashes, engine pin and 4 MB budget. Task 1.2: extends the fixed authored inventory to exactly the replay and grammar kernel tests plus the generated-trace manifest."
     },
     {
       "path": "tests/tools/test_check_engine_trim.py",
-      "reason": "Test-first pytest coverage for provenance and inventory drift."
+      "reason": "Test-first pytest coverage for provenance and inventory drift. Task 1.1b: generated-manifest drift cases. Task 1.2: exact authored-set inventory, omissions, third-file and authored-hash attacks."
     },
     {
       "path": "justfile",
@@ -726,7 +736,7 @@
     },
     {
       "path": "docs/rules-parity-coverage.md",
-      "reason": "Document current Kaggriculture replay and unit coverage without changing Orbit coverage."
+      "reason": "Document current Kaggriculture replay and unit coverage without changing Orbit coverage. Task 1.1b: live differential parity coverage, divergences and limits. Task 1.2: scope historical Task 1.1 counts and record independent grammar and kernel qualification boundaries."
     },
     {
       "path": "cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md",
@@ -738,11 +748,87 @@
     },
     {
       "path": "cookbook/log.md",
-      "reason": "Prepend material Task 1.1 adaptation record."
+      "reason": "Prepend material Task 1.1 adaptation record. Task 1.1b: prepend the live parity record. Task 1.2: prepend the native grammar record."
     },
     {
       "path": "ops/rebuild-2026-09-29/1.1",
       "reason": "Directory of source-bound command receipts, test-first failures, preserved dirty bytes and result inventory."
+    },
+    {
+      "path": "scripts/kaggriculture_parity/generate_traces.py",
+      "reason": "Task 1.1b hash-guarded live trace generator over Kaggle's Python engine"
+    },
+    {
+      "path": "scripts/kaggriculture_parity/sweep.py",
+      "reason": "Task 1.1b local differential sweep runner and JSON summary"
+    },
+    {
+      "path": "tests/scripts/test_kaggriculture_parity.py",
+      "reason": "Task 1.1b hash guard, trace-format round trip, coverage and optional live regeneration tests"
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/1.1b",
+      "reason": "Task 1.1b receipts: sweep summary, first failing traces and command logs"
+    },
+    {
+      "path": "cookbook/references/live-differential-parity-checks-the-rust-kernel.md",
+      "reason": "Task 1.1b Reference for the live differential parity check and findings"
+    },
+    {
+      "path": "cookbook/references/index.md",
+      "reason": "List the Task 1.1b parity Reference; keep the native semantics Reference description aligned with current rebuild scope (Task 1.2)."
+    },
+    {
+      "path": "Cargo.toml",
+      "reason": "Task 1.2 promotes the already-resolved serde_json dependency to normal use through Cargo; no engine dependency or new crate."
+    },
+    {
+      "path": "src/lib.rs",
+      "reason": "Compile the v3-owned Kaggriculture module alongside unchanged Orbit exports."
+    },
+    {
+      "path": "src/kaggriculture.rs",
+      "reason": "Register the compiled observation-local grammar module."
+    },
+    {
+      "path": "src/kaggriculture/grammar.rs",
+      "reason": "Typed checked grammar, eight direct tables, strict canonical encode/decode; no retained kernel edits."
+    },
+    {
+      "path": "src/kaggriculture/grammar_tests.rs",
+      "reason": "Shared test-first vocabulary, support graph, oracle, codec, coupled-HIRE and cursor replay tests under both packages."
+    },
+    {
+      "path": "tests/tools/test_record_grammar_reference.py",
+      "reason": "Test-first strict independent fixture validation and deterministic compression corruption/quotas/hash regressions."
+    },
+    {
+      "path": "tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz",
+      "reason": "Bounded independent pinned-reference oracle, including real/synthetic programs and distinct decoder verdicts."
+    },
+    {
+      "path": "tests/fixtures/kaggriculture/grammar-v4-reference.manifest.json",
+      "reason": "Source hashes, deterministic corpus schedule, rejection/disagreement inventory and output custody."
+    },
+    {
+      "path": "docs/kaggriculture-contract.md",
+      "reason": "Agreed v4.1 clarifications for five reviewed Task 1.2 questions; no semantic change."
+    },
+    {
+      "path": "docs/rl-api-specs.md",
+      "reason": "Native grammar API and table ABI, checked transport, future bindings and include retirement."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/plan.md",
+      "reason": "Correct Task 1.2 root source location and record first engine-edge include retirement with L4 reopening."
+    },
+    {
+      "path": "cookbook/references/native-game-semantics-use-v3-owned-buffers.md",
+      "reason": "Current native grammar adaptation inventory, actual checks and future limits separated from historical reference evidence."
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/1.2",
+      "reason": "Declared checks, actual command logs, explicit stubs and restored negative controls, reference recorder/harness custody and completion receipt."
     }
   ]
 }

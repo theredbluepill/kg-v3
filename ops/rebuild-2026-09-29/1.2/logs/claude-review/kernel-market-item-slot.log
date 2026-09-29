@@ -1,0 +1,27 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --locked --test grammar_kernel decoded_sampled_oracle_programs_execute -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: 'ActionItem::try_from(frame[Slot::MarketItem as usize])?.as_str(),' -> 'ActionItem::try_from(frame[Slot::UnitItem as usize])?.as_str(),'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test decoded_sampled_oracle_programs_execute ... FAILED
+
+failures:
+
+---- decoded_sampled_oracle_programs_execute stdout ----
+
+thread 'decoded_sampled_oracle_programs_execute' (10231036) panicked at tests/grammar_kernel.rs:202:5:
+assertion `left == right` failed: canonical action: sampled-0-1
+  left: Object {"farmer": Array [String("CARE")], "hands": Array [], "market": Array [Array [String("SELL"), String("NONE"), Number(598)]]}
+ right: Object {"farmer": Array [String("CARE")], "hands": Array [], "market": Array [Array [String("SELL"), String("CARROT"), Number(598)]]}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    decoded_sampled_oracle_programs_execute
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.76s
+
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+     Running tests/grammar_kernel.rs (engine_rs/target/debug/deps/grammar_kernel-88e2fbe693fab574)
+error: test failed, to rerun pass `--test grammar_kernel`

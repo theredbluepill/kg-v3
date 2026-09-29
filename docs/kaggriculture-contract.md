@@ -1,6 +1,6 @@
 # Kaggriculture observation, action and environment contract
 
-Status: **v4, accepted** (Codex re-review: accept with edits, all applied; rebuild plan Task 0.1). Both streams build against this file. Changing it needs both agents to agree, recorded under "Review and changes".
+Status: **v4.1, accepted** (Codex re-review: accept with edits, all applied; rebuild plan Task 0.1). Both streams build against this file. Changing it needs both agents to agree, recorded under "Review and changes".
 
 Scope: the tensors that cross the native ↔ Python ↔ model boundary. The design follows Isaiah's `ObsBatch` pattern (`docs/rl-api-specs.md`): named per-entity tensors, written by Rust into caller-owned buffers, with explicit masks. The reference branch's flat 8,176-float vector (`kg/reference-2026-09-29:engine_rs/src/myolie_features.rs`) is the semantic source and test oracle, not the layout.
 
@@ -189,7 +189,7 @@ Wiring: player tokens are `player_tokens + player_feature_proj(player_features)`
   - **one unit frame per observed own actor**, in actor order; every actor gets a command, possibly `PASS`
   - then up to `order_limits` market frames
   - then **one STOP frame**
-  - `lengths` counts every frame including the final STOP; frames after `lengths` are zero and ignored
+  - `lengths` counts every frame including the final STOP; native admission requires every frame after `lengths` to be zero, then ignores those frames for transitions and rendering
 - Slots and widths, in `SLOT_NAMES` order. The Rust grammar (plan C3) is the single source of truth:
 
 | Slot | `unit_actor` | `unit_kind` | `unit_target` | `unit_item` | `unit_quantity_present` | `unit_quantity_high` | `unit_quantity` | `market_kind` | `market_item` | `market_quantity_high` | `market_quantity` | `stop` |
@@ -210,7 +210,10 @@ Wiring: player tokens are `player_tokens + player_feature_proj(player_features)`
   - quantity-bearing market orders: 0–1023, and an explicit zero survives
 - `NONE` is structural in market and STOP frames. `EMPTY` market orders consume a queue position.
 - The HIRE budget is **actor capacity, not cash**: `plan(actors, order_limit, hire_limit)` with the v3 default `hire_limit = 241`. Prior submitted HIRE orders count against it even if they later fail to execute.
-- Grammar masks are **syntax and support masks** from native plans (C3 kernel, C7 device tables): `(node, slot) → allowed choices`. Affordability and successful execution are engine outcomes, not masks.
+- Grammar masks are **syntax and support masks** from typed native plans and observation-local cursors (C3), with eight directly exported boolean tables (C7). Binary DFA nodes are reference-oracle data only. Affordability and successful execution are engine outcomes, not masks.
+- Native per-seat decoding accepts exactly 3,024 `int64` tokens and a length in `[actors + 1, actors + order_limit + 1]`; length 0 is rejected. All-zero, length-0 synthetic inactive rows belong only to model/trainer masking.
+- Strict native `encode` requires exactly `farmer`, `hands`, `market`, every observed actor command, and canonical command syntax; it never inserts PASS or normalizes a replay. It validates using the same cursor as `decode` and leaves its output unchanged on error.
+- Actor order is shared across observation, grammar and engine: frame `i` = `unit_actor i` = own observation `actor_slot i` = engine unit `i` (farmer, then hands in stored order).
 
 ## Environment
 
@@ -284,3 +287,10 @@ The oracle test (plan Task 1.3) reconstructs every retained reference value from
   - the factory seed rule
   - the reward expansion
   - `docs/rl-api-specs.md` companion section added
+
+- v4.1 (Codex implementation clarification; Claude agreed in Task 1.2 brief review, Codex agrees): no semantic change. Open questions 1–5 in `ops/rebuild-2026-09-29/briefs/1.2.md` resolve as follows:
+  - Capacity admission follows the sampler rule `actors + prior submitted HIREs < hire_limit`, default 241; the historical training decoder bypass is recorded as disagreement.
+  - Padding is validated as zero before being ignored.
+  - Native decoding rejects length 0; synthetic inactive rows stay in model/trainer masking.
+  - Typed `GrammarPlan`/`State` plus eight direct boolean tables replace the binary plan runtime interface; table version 1 pins names, widths and shapes in `docs/rl-api-specs.md`.
+  - Production grammar compiles at `src/kaggriculture/grammar.rs`; the standalone engine test includes that same source temporarily. At the first production root → engine dependency (1.3/1.4), move kernel acceptance tests into root integration, delete the engine test and its authored registration, and reopen L4 feature unification.

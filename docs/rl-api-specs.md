@@ -865,6 +865,7 @@ The Kaggriculture game uses the same shared training path through its own observ
   - a `3D → D` actor input projection over [entity, player, plan]
   - Only input channel widths and the grammar action heads are game-specific. Seat rows are encoded independently.
 - **Actions** `KaggricultureActions`: `tokens [E,2,252,12]` and `lengths [E,2]` (one unit frame per own actor, then up to `order_limits` market frames, then STOP). The slot widths and action enums are pinned in the contract; the native grammar supplies syntax/support masks.
+- **Model outputs** (`KaggricultureTransformer`, Task 2.3): `forward` returns sampled `KaggricultureActions` with `log_probs.event` and `entropies.event` of shape `[E,2,252,12]` (per frame and slot; implicit slots 0/2/11 are zero), `per_player_entity = event.sum(-1)` `[E,2,252]`, zero `launch`, per-slot entropy `components`, `values [E,2]` and `winner_probabilities [E,2,2]`. `evaluate_actions` requires `int64` tokens/lengths of exactly these shapes, rejects non-canonical or out-of-support programs itself (`GrammarReplayError` naming the support, length or canonical group), and requires `hidden_state` and `dones` to be `None`.
 - **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks, and truncation keeps the transition's economic reward.
 
 ### Structured native observation buffers (Task 1.3)
@@ -956,3 +957,71 @@ No phase costs were obtained; the optimized command is handed off for the pod in
 the approved snapshot path. Complete corpus qualification is also pending:
 the unchanged R1 recipe produces zero >16-actor non-synthetic states against
 quota four. See the Task 1.3 receipt for actual checks and unresolved limits.
+
+### Native grammar boundary (Task 1.2)
+
+`src/kaggriculture/grammar.rs` is the single C3 implementation. It uses `std`
+and `serde_json` only. `plan(actors: i64, order_limit: i64, hire_limit: i64)`
+returns `Result<GrammarPlan, String>` after validating actors/hire limit in
+1–241 and order limit in 1–10. A hire limit below the actor count is valid and
+masks HIRE. The cursor retains its originating shape; cross-shape calls fail,
+and equal-shape plans are interchangeable. It is reset for every observation.
+
+`State::{allows, advance, write_mask}` expose checked prefix support;
+`advance` returns `None` only at final STOP. `write_can_act` overwrites exactly
+252 booleans with `frame < actors + order_limit + 1`, independent of early STOP.
+Caller slices of the wrong size fail before writing.
+
+`decode(&plan, &[i64], length: i64)` requires exactly 3,024 values. It validates
+signed length before conversion, scans all values against their named slot
+width (including tails), requires zero padding, then walks the active prefix
+and renders canonical JSON. It never narrows tokens, repairs them or retains
+input storage. Length 0 belongs only to synthetic inactive model rows; native
+seats are live after auto-reset. `encode(&plan, &Value, &mut [i64])` accepts
+exactly the three action keys and every actor in order, preserves omitted unit
+quantities, explicit market zero and EMPTY positions, writes zero padding and
+returns the active frame count. Encoding uses the same cursor and leaves the
+output untouched on every rejection. These functions return field/frame/slot
+errors; future PyO3 admission adds env/seat context.
+
+Actor order is an integration invariant: frame `i`, `unit_actor i`, own
+observation `actor_slot i` and engine unit `i` all mean farmer first, followed
+by hands in stored order. HIRE capacity counts submitted requests at frame
+completion, regardless of cash or later execution success.
+
+`grammar_tables() -> Result<GrammarTables, String>` derives eight arrays from
+admitted cursor prefixes, totaling 964 booleans:
+
+| Field | Shape |
+| --- | --- |
+| `unit_kind` | `[20]` |
+| `unit_item` | `[20,16]` |
+| `unit_quantity_present` | `[20,2]` |
+| `unit_quantity_high` | `[2,32]` |
+| `unit_quantity_low` | `[2,2,32]` |
+| `market_kind` | `[8]` |
+| `market_item` | `[8,16]` |
+| `market_quantity` | `[8,32]` |
+
+`unit_quantity_low[present][high_is_zero]` uses true = index 1. Invalid unit
+kind rows have singleton-zero placeholders; callers still apply `unit_kind`.
+`market_quantity` serves both digits; extraction fails in release builds if
+any admitted high digit yields a different low support. Runtime actor order,
+phase, queue availability, HIRE prefix and STOP overlays remain necessary.
+
+The Task 1.4 binding contract is `kaggriculture_grammar_tables()` returning
+exactly these keys as owned C-contiguous `numpy.bool_` arrays, copied once at
+initialization, plus `kaggriculture_grammar_constants()` returning
+`(GRAMMAR_TABLES_VERSION=1, SLOT_NAMES, SLOT_WIDTHS)`. Task 1.5 checks that
+metadata and maps same-name arrays to device `torch.bool` tensors once per
+model/device. Task 2.3 consumes these shapes directly. The bindings and actual
+model integration are later work; no Python grammar reconstruction or binary
+DFA runtime compatibility layer is introduced here.
+
+The engine integration test includes the same Rust source under edition 2024;
+the root builds it under edition 2021 with a separate Serde feature graph.
+At the first production root → engine dependency (1.3/1.4), move acceptance and
+replay-state tests into root integration, delete the temporary engine test
+and its authored registration, and reopen L4. CPU checked token admission
+addresses a separate indexing hazard; it does not qualify the L6 Inductor
+GEMM overflow fix, CUDA/BF16 replay, batching transactions or buffer lifetimes.

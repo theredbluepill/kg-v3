@@ -1,0 +1,27 @@
+$ cargo test --locked --lib kaggriculture::grammar::tests::grammar_replays_reference_program -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: 'if matches!(kind, UnitKind::Pickup | UnitKind::Place | UnitKind::Plant) {' -> 'if matches!(kind, UnitKind::Pickup | UnitKind::Place) {'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test kaggriculture::grammar::tests::grammar_replays_reference_program ... FAILED
+
+failures:
+
+---- kaggriculture::grammar::tests::grammar_replays_reference_program stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_replays_reference_program' (10229289) panicked at src/kaggriculture/grammar_tests.rs:1563:5:
+assertion `left == right` failed
+  left: Object {"farmer": Array [String("PLANT")], "hands": Array [Array [String("PASS")]], "market": Array [Array [String("HIRE")], Array [String("BUY_SEED"), String("WHEAT"), Number(33)]]}
+ right: Object {"farmer": Array [String("PLANT"), String("WHEAT")], "hands": Array [Array [String("PASS")]], "market": Array [Array [String("HIRE")], Array [String("BUY_SEED"), String("WHEAT"), Number(33)]]}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::grammar::tests::grammar_replays_reference_program
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 165 filtered out; finished in 0.00s
+
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-grammar)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.59s
+     Running unittests src/lib.rs (target/debug/deps/rs-70d11de31c3178d2)
+error: test failed, to rerun pass `--lib`

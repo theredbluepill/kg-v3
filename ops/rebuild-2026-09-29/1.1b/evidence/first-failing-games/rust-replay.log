@@ -1,0 +1,27 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running tests/replay_parity.rs (engine_rs/target/debug/deps/replay_parity-c38030bb30dd03b7)
+
+running 1 test
+test env_directory_traces ... FAILED
+
+failures:
+
+---- env_directory_traces stdout ----
+replayed 5 traces, 5 divergent
+
+thread 'env_directory_traces' (9850097) panicked at tests/replay_parity.rs:718:5:
+parity divergences:
+gen-edge-free-hire.jsonl.gz: line 14 from_step Some(13): public state at public.farms[0].money: expected 2159.0 actual 2460.0
+gen-edge-vs-edge.jsonl.gz: line 15 from_step Some(14): rust_accepted at step: expected error ("TypeError: unhashable type: 'list'") actual Ok
+gen-edge-vs-random-rich.jsonl.gz: line 16 from_step Some(15): rust_accepted at step: expected error ("TypeError: unhashable type: 'Struct'") actual Ok
+gen-pass-vs-edge-negative-seed.jsonl.gz: line 31 from_step Some(30): rust_accepted at step: expected error ("TypeError: unhashable type: 'Struct'") actual Ok
+gen-random-vs-edge.jsonl.gz: line 47 from_step Some(45): rust_accepted at step: expected error ("TypeError: unhashable type: 'list'") actual Ok
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    env_directory_traces
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.31s
+
+error: test failed, to rerun pass `--test replay_parity`

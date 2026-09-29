@@ -1,0 +1,811 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true python3 -c 'from pathlib import Path; import subprocess,sys; p=Path("ops/rebuild-2026-09-29/1.2/oracle/record_reference.py"); before=p.read_bytes(); s=before.decode(); marker="    exact(manifest, MANIFEST_KEYS, \"manifest\")"; assert marker in s; p.write_text(s.replace(marker,"    return\n"+marker,1)); result=None
+try:
+ result=subprocess.run(["uv","run","--offline","pytest","tests/tools/test_record_grammar_reference.py","-q"],check=False)
+finally:
+ p.write_bytes(before); print("validator source restored byte-exactly", flush=True)
+assert result is not None
+sys.exit(result.returncode)'
+   Building owl @ file:///Users/poonszesen/kg-v3-grammar
+      Built owl @ file:///Users/poonszesen/kg-v3-grammar
+Uninstalled 1 package in 0.96ms
+Installed 1 package in 1ms
+.FFFFFFFFFFFFFFFFFFFFFFFF                                                [100%]
+=================================== FAILURES ===================================
+___________________ test_fixture_rejects_corruption[missing] ___________________
+
+change = 'missing'
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "missing",
+            "extra",
+            "source",
+            "action",
+            "duplicate",
+            "dense",
+            "full",
+            "corrupt",
+            "size",
+        ],
+    )
+    def test_fixture_rejects_corruption(change: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        if change == "missing":
+            del records[1]["tokens"]
+        elif change == "extra":
+            records[1]["unexpected"] = True
+        elif change == "source":
+            manifest["source_sha256"]["engine_rs/src/myolie_sampler.rs"] = "0" * 64
+        elif change == "action":
+            records[1]["v4_expected"]["action"]["farmer"] = ["NORTH"]
+        elif change == "duplicate":
+            records[2]["id"] = records[1]["id"]
+        elif change == "dense":
+            records = [r for r in records if r.get("shape", {}).get("actors") != 241]
+        elif change == "full":
+            records = [r for r in records if r.get("selection_mode") != "full_market"]
+        elif change == "corrupt":
+            payload = bytes([payload[0] ^ 1]) + payload[1:]
+        else:
+            payload = b" " * (4 * 1024 * 1024 + 1)
+        if change not in {"source", "corrupt", "size"}:
+            payload = recorder.jsonl(records)
+            manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:158: Failed
+____________________ test_fixture_rejects_corruption[extra] ____________________
+
+change = 'extra'
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "missing",
+            "extra",
+            "source",
+            "action",
+            "duplicate",
+            "dense",
+            "full",
+            "corrupt",
+            "size",
+        ],
+    )
+    def test_fixture_rejects_corruption(change: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        if change == "missing":
+            del records[1]["tokens"]
+        elif change == "extra":
+            records[1]["unexpected"] = True
+        elif change == "source":
+            manifest["source_sha256"]["engine_rs/src/myolie_sampler.rs"] = "0" * 64
+        elif change == "action":
+            records[1]["v4_expected"]["action"]["farmer"] = ["NORTH"]
+        elif change == "duplicate":
+            records[2]["id"] = records[1]["id"]
+        elif change == "dense":
+            records = [r for r in records if r.get("shape", {}).get("actors") != 241]
+        elif change == "full":
+            records = [r for r in records if r.get("selection_mode") != "full_market"]
+        elif change == "corrupt":
+            payload = bytes([payload[0] ^ 1]) + payload[1:]
+        else:
+            payload = b" " * (4 * 1024 * 1024 + 1)
+        if change not in {"source", "corrupt", "size"}:
+            payload = recorder.jsonl(records)
+            manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:158: Failed
+___________________ test_fixture_rejects_corruption[source] ____________________
+
+change = 'source'
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "missing",
+            "extra",
+            "source",
+            "action",
+            "duplicate",
+            "dense",
+            "full",
+            "corrupt",
+            "size",
+        ],
+    )
+    def test_fixture_rejects_corruption(change: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        if change == "missing":
+            del records[1]["tokens"]
+        elif change == "extra":
+            records[1]["unexpected"] = True
+        elif change == "source":
+            manifest["source_sha256"]["engine_rs/src/myolie_sampler.rs"] = "0" * 64
+        elif change == "action":
+            records[1]["v4_expected"]["action"]["farmer"] = ["NORTH"]
+        elif change == "duplicate":
+            records[2]["id"] = records[1]["id"]
+        elif change == "dense":
+            records = [r for r in records if r.get("shape", {}).get("actors") != 241]
+        elif change == "full":
+            records = [r for r in records if r.get("selection_mode") != "full_market"]
+        elif change == "corrupt":
+            payload = bytes([payload[0] ^ 1]) + payload[1:]
+        else:
+            payload = b" " * (4 * 1024 * 1024 + 1)
+        if change not in {"source", "corrupt", "size"}:
+            payload = recorder.jsonl(records)
+            manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:158: Failed
+___________________ test_fixture_rejects_corruption[action] ____________________
+
+change = 'action'
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "missing",
+            "extra",
+            "source",
+            "action",
+            "duplicate",
+            "dense",
+            "full",
+            "corrupt",
+            "size",
+        ],
+    )
+    def test_fixture_rejects_corruption(change: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        if change == "missing":
+            del records[1]["tokens"]
+        elif change == "extra":
+            records[1]["unexpected"] = True
+        elif change == "source":
+            manifest["source_sha256"]["engine_rs/src/myolie_sampler.rs"] = "0" * 64
+        elif change == "action":
+            records[1]["v4_expected"]["action"]["farmer"] = ["NORTH"]
+        elif change == "duplicate":
+            records[2]["id"] = records[1]["id"]
+        elif change == "dense":
+            records = [r for r in records if r.get("shape", {}).get("actors") != 241]
+        elif change == "full":
+            records = [r for r in records if r.get("selection_mode") != "full_market"]
+        elif change == "corrupt":
+            payload = bytes([payload[0] ^ 1]) + payload[1:]
+        else:
+            payload = b" " * (4 * 1024 * 1024 + 1)
+        if change not in {"source", "corrupt", "size"}:
+            payload = recorder.jsonl(records)
+            manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:158: Failed
+__________________ test_fixture_rejects_corruption[duplicate] __________________
+
+change = 'duplicate'
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "missing",
+            "extra",
+            "source",
+            "action",
+            "duplicate",
+            "dense",
+            "full",
+            "corrupt",
+            "size",
+        ],
+    )
+    def test_fixture_rejects_corruption(change: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        if change == "missing":
+            del records[1]["tokens"]
+        elif change == "extra":
+            records[1]["unexpected"] = True
+        elif change == "source":
+            manifest["source_sha256"]["engine_rs/src/myolie_sampler.rs"] = "0" * 64
+        elif change == "action":
+            records[1]["v4_expected"]["action"]["farmer"] = ["NORTH"]
+        elif change == "duplicate":
+            records[2]["id"] = records[1]["id"]
+        elif change == "dense":
+            records = [r for r in records if r.get("shape", {}).get("actors") != 241]
+        elif change == "full":
+            records = [r for r in records if r.get("selection_mode") != "full_market"]
+        elif change == "corrupt":
+            payload = bytes([payload[0] ^ 1]) + payload[1:]
+        else:
+            payload = b" " * (4 * 1024 * 1024 + 1)
+        if change not in {"source", "corrupt", "size"}:
+            payload = recorder.jsonl(records)
+            manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:158: Failed
+____________________ test_fixture_rejects_corruption[dense] ____________________
+
+change = 'dense'
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "missing",
+            "extra",
+            "source",
+            "action",
+            "duplicate",
+            "dense",
+            "full",
+            "corrupt",
+            "size",
+        ],
+    )
+    def test_fixture_rejects_corruption(change: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        if change == "missing":
+            del records[1]["tokens"]
+        elif change == "extra":
+            records[1]["unexpected"] = True
+        elif change == "source":
+            manifest["source_sha256"]["engine_rs/src/myolie_sampler.rs"] = "0" * 64
+        elif change == "action":
+            records[1]["v4_expected"]["action"]["farmer"] = ["NORTH"]
+        elif change == "duplicate":
+            records[2]["id"] = records[1]["id"]
+        elif change == "dense":
+            records = [r for r in records if r.get("shape", {}).get("actors") != 241]
+        elif change == "full":
+            records = [r for r in records if r.get("selection_mode") != "full_market"]
+        elif change == "corrupt":
+            payload = bytes([payload[0] ^ 1]) + payload[1:]
+        else:
+            payload = b" " * (4 * 1024 * 1024 + 1)
+        if change not in {"source", "corrupt", "size"}:
+            payload = recorder.jsonl(records)
+            manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:158: Failed
+____________________ test_fixture_rejects_corruption[full] _____________________
+
+change = 'full'
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "missing",
+            "extra",
+            "source",
+            "action",
+            "duplicate",
+            "dense",
+            "full",
+            "corrupt",
+            "size",
+        ],
+    )
+    def test_fixture_rejects_corruption(change: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        if change == "missing":
+            del records[1]["tokens"]
+        elif change == "extra":
+            records[1]["unexpected"] = True
+        elif change == "source":
+            manifest["source_sha256"]["engine_rs/src/myolie_sampler.rs"] = "0" * 64
+        elif change == "action":
+            records[1]["v4_expected"]["action"]["farmer"] = ["NORTH"]
+        elif change == "duplicate":
+            records[2]["id"] = records[1]["id"]
+        elif change == "dense":
+            records = [r for r in records if r.get("shape", {}).get("actors") != 241]
+        elif change == "full":
+            records = [r for r in records if r.get("selection_mode") != "full_market"]
+        elif change == "corrupt":
+            payload = bytes([payload[0] ^ 1]) + payload[1:]
+        else:
+            payload = b" " * (4 * 1024 * 1024 + 1)
+        if change not in {"source", "corrupt", "size"}:
+            payload = recorder.jsonl(records)
+            manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:158: Failed
+___________________ test_fixture_rejects_corruption[corrupt] ___________________
+
+change = 'corrupt'
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "missing",
+            "extra",
+            "source",
+            "action",
+            "duplicate",
+            "dense",
+            "full",
+            "corrupt",
+            "size",
+        ],
+    )
+    def test_fixture_rejects_corruption(change: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        if change == "missing":
+            del records[1]["tokens"]
+        elif change == "extra":
+            records[1]["unexpected"] = True
+        elif change == "source":
+            manifest["source_sha256"]["engine_rs/src/myolie_sampler.rs"] = "0" * 64
+        elif change == "action":
+            records[1]["v4_expected"]["action"]["farmer"] = ["NORTH"]
+        elif change == "duplicate":
+            records[2]["id"] = records[1]["id"]
+        elif change == "dense":
+            records = [r for r in records if r.get("shape", {}).get("actors") != 241]
+        elif change == "full":
+            records = [r for r in records if r.get("selection_mode") != "full_market"]
+        elif change == "corrupt":
+            payload = bytes([payload[0] ^ 1]) + payload[1:]
+        else:
+            payload = b" " * (4 * 1024 * 1024 + 1)
+        if change not in {"source", "corrupt", "size"}:
+            payload = recorder.jsonl(records)
+            manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:158: Failed
+____________________ test_fixture_rejects_corruption[size] _____________________
+
+change = 'size'
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "missing",
+            "extra",
+            "source",
+            "action",
+            "duplicate",
+            "dense",
+            "full",
+            "corrupt",
+            "size",
+        ],
+    )
+    def test_fixture_rejects_corruption(change: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        if change == "missing":
+            del records[1]["tokens"]
+        elif change == "extra":
+            records[1]["unexpected"] = True
+        elif change == "source":
+            manifest["source_sha256"]["engine_rs/src/myolie_sampler.rs"] = "0" * 64
+        elif change == "action":
+            records[1]["v4_expected"]["action"]["farmer"] = ["NORTH"]
+        elif change == "duplicate":
+            records[2]["id"] = records[1]["id"]
+        elif change == "dense":
+            records = [r for r in records if r.get("shape", {}).get("actors") != 241]
+        elif change == "full":
+            records = [r for r in records if r.get("selection_mode") != "full_market"]
+        elif change == "corrupt":
+            payload = bytes([payload[0] ^ 1]) + payload[1:]
+        else:
+            payload = b" " * (4 * 1024 * 1024 + 1)
+        if change not in {"source", "corrupt", "size"}:
+            payload = recorder.jsonl(records)
+            manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:158: Failed
+_________________ test_nested_schema_is_strict[missing-header] _________________
+
+location = 'header', mode = 'missing'
+
+    @pytest.mark.parametrize("location", ["header", "shape", "tables", "oracle"])
+    @pytest.mark.parametrize("mode", ["missing", "extra"])
+    def test_nested_schema_is_strict(location: str, mode: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        target = {
+            "header": records[0],
+            "shape": records[1]["shape"],
+            "tables": records[0]["tables"],
+            "oracle": records[1]["sampler"],
+        }[location]
+        if mode == "missing":
+            del target[next(iter(target))]
+        else:
+            target["unexpected"] = 0
+        payload = recorder.jsonl(records)
+        manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:179: Failed
+_________________ test_nested_schema_is_strict[missing-shape] __________________
+
+location = 'shape', mode = 'missing'
+
+    @pytest.mark.parametrize("location", ["header", "shape", "tables", "oracle"])
+    @pytest.mark.parametrize("mode", ["missing", "extra"])
+    def test_nested_schema_is_strict(location: str, mode: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        target = {
+            "header": records[0],
+            "shape": records[1]["shape"],
+            "tables": records[0]["tables"],
+            "oracle": records[1]["sampler"],
+        }[location]
+        if mode == "missing":
+            del target[next(iter(target))]
+        else:
+            target["unexpected"] = 0
+        payload = recorder.jsonl(records)
+        manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:179: Failed
+_________________ test_nested_schema_is_strict[missing-tables] _________________
+
+location = 'tables', mode = 'missing'
+
+    @pytest.mark.parametrize("location", ["header", "shape", "tables", "oracle"])
+    @pytest.mark.parametrize("mode", ["missing", "extra"])
+    def test_nested_schema_is_strict(location: str, mode: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        target = {
+            "header": records[0],
+            "shape": records[1]["shape"],
+            "tables": records[0]["tables"],
+            "oracle": records[1]["sampler"],
+        }[location]
+        if mode == "missing":
+            del target[next(iter(target))]
+        else:
+            target["unexpected"] = 0
+        payload = recorder.jsonl(records)
+        manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:179: Failed
+_________________ test_nested_schema_is_strict[missing-oracle] _________________
+
+location = 'oracle', mode = 'missing'
+
+    @pytest.mark.parametrize("location", ["header", "shape", "tables", "oracle"])
+    @pytest.mark.parametrize("mode", ["missing", "extra"])
+    def test_nested_schema_is_strict(location: str, mode: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        target = {
+            "header": records[0],
+            "shape": records[1]["shape"],
+            "tables": records[0]["tables"],
+            "oracle": records[1]["sampler"],
+        }[location]
+        if mode == "missing":
+            del target[next(iter(target))]
+        else:
+            target["unexpected"] = 0
+        payload = recorder.jsonl(records)
+        manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:179: Failed
+__________________ test_nested_schema_is_strict[extra-header] __________________
+
+location = 'header', mode = 'extra'
+
+    @pytest.mark.parametrize("location", ["header", "shape", "tables", "oracle"])
+    @pytest.mark.parametrize("mode", ["missing", "extra"])
+    def test_nested_schema_is_strict(location: str, mode: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        target = {
+            "header": records[0],
+            "shape": records[1]["shape"],
+            "tables": records[0]["tables"],
+            "oracle": records[1]["sampler"],
+        }[location]
+        if mode == "missing":
+            del target[next(iter(target))]
+        else:
+            target["unexpected"] = 0
+        payload = recorder.jsonl(records)
+        manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:179: Failed
+__________________ test_nested_schema_is_strict[extra-shape] ___________________
+
+location = 'shape', mode = 'extra'
+
+    @pytest.mark.parametrize("location", ["header", "shape", "tables", "oracle"])
+    @pytest.mark.parametrize("mode", ["missing", "extra"])
+    def test_nested_schema_is_strict(location: str, mode: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        target = {
+            "header": records[0],
+            "shape": records[1]["shape"],
+            "tables": records[0]["tables"],
+            "oracle": records[1]["sampler"],
+        }[location]
+        if mode == "missing":
+            del target[next(iter(target))]
+        else:
+            target["unexpected"] = 0
+        payload = recorder.jsonl(records)
+        manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:179: Failed
+__________________ test_nested_schema_is_strict[extra-tables] __________________
+
+location = 'tables', mode = 'extra'
+
+    @pytest.mark.parametrize("location", ["header", "shape", "tables", "oracle"])
+    @pytest.mark.parametrize("mode", ["missing", "extra"])
+    def test_nested_schema_is_strict(location: str, mode: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        target = {
+            "header": records[0],
+            "shape": records[1]["shape"],
+            "tables": records[0]["tables"],
+            "oracle": records[1]["sampler"],
+        }[location]
+        if mode == "missing":
+            del target[next(iter(target))]
+        else:
+            target["unexpected"] = 0
+        payload = recorder.jsonl(records)
+        manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:179: Failed
+__________________ test_nested_schema_is_strict[extra-oracle] __________________
+
+location = 'oracle', mode = 'extra'
+
+    @pytest.mark.parametrize("location", ["header", "shape", "tables", "oracle"])
+    @pytest.mark.parametrize("mode", ["missing", "extra"])
+    def test_nested_schema_is_strict(location: str, mode: str) -> None:
+        payload, manifest = example()
+        records = [json.loads(line) for line in payload.splitlines()]
+        target = {
+            "header": records[0],
+            "shape": records[1]["shape"],
+            "tables": records[0]["tables"],
+            "oracle": records[1]["sampler"],
+        }[location]
+        if mode == "missing":
+            del target[next(iter(target))]
+        else:
+            target["unexpected"] = 0
+        payload = recorder.jsonl(records)
+        manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match=r".+"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:179: Failed
+________ test_recorded_fixture_provenance_and_expected_action_mutation _________
+
+    def test_recorded_fixture_provenance_and_expected_action_mutation() -> None:
+        fixture = ROOT / "tests/fixtures/kaggriculture/grammar-v4-reference.jsonl.gz"
+        manifest_path = fixture.with_name("grammar-v4-reference.manifest.json")
+        payload = gzip.decompress(fixture.read_bytes())
+        manifest = json.loads(manifest_path.read_text())
+        recorder.validate_fixture(payload, manifest)
+        records = [json.loads(line) for line in payload.splitlines()]
+        records[1]["v4_expected"]["action"]["farmer"] = ["FAULT_IN_EXPECTATION"]
+        changed = recorder.jsonl(records)
+        manifest.update(recorder.output_metadata(changed))
+>       with pytest.raises(ValueError, match="accepted expected JSON differs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:193: Failed
+______ test_recording_provenance_hashes_are_enforced[append_patch_sha256] ______
+
+field = 'append_patch_sha256'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "append_patch_sha256",
+            "harness_sha256",
+            "recorder_sha256",
+            "cargo_lock_sha256",
+            "toolchain_sha256",
+        ],
+    )
+    def test_recording_provenance_hashes_are_enforced(field: str) -> None:
+        payload, manifest = example()
+        manifest[field] = "0" * 64
+>       with pytest.raises(ValueError, match="stale"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:210: Failed
+________ test_recording_provenance_hashes_are_enforced[harness_sha256] _________
+
+field = 'harness_sha256'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "append_patch_sha256",
+            "harness_sha256",
+            "recorder_sha256",
+            "cargo_lock_sha256",
+            "toolchain_sha256",
+        ],
+    )
+    def test_recording_provenance_hashes_are_enforced(field: str) -> None:
+        payload, manifest = example()
+        manifest[field] = "0" * 64
+>       with pytest.raises(ValueError, match="stale"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:210: Failed
+________ test_recording_provenance_hashes_are_enforced[recorder_sha256] ________
+
+field = 'recorder_sha256'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "append_patch_sha256",
+            "harness_sha256",
+            "recorder_sha256",
+            "cargo_lock_sha256",
+            "toolchain_sha256",
+        ],
+    )
+    def test_recording_provenance_hashes_are_enforced(field: str) -> None:
+        payload, manifest = example()
+        manifest[field] = "0" * 64
+>       with pytest.raises(ValueError, match="stale"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:210: Failed
+_______ test_recording_provenance_hashes_are_enforced[cargo_lock_sha256] _______
+
+field = 'cargo_lock_sha256'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "append_patch_sha256",
+            "harness_sha256",
+            "recorder_sha256",
+            "cargo_lock_sha256",
+            "toolchain_sha256",
+        ],
+    )
+    def test_recording_provenance_hashes_are_enforced(field: str) -> None:
+        payload, manifest = example()
+        manifest[field] = "0" * 64
+>       with pytest.raises(ValueError, match="stale"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:210: Failed
+_______ test_recording_provenance_hashes_are_enforced[toolchain_sha256] ________
+
+field = 'toolchain_sha256'
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "append_patch_sha256",
+            "harness_sha256",
+            "recorder_sha256",
+            "cargo_lock_sha256",
+            "toolchain_sha256",
+        ],
+    )
+    def test_recording_provenance_hashes_are_enforced(field: str) -> None:
+        payload, manifest = example()
+        manifest[field] = "0" * 64
+>       with pytest.raises(ValueError, match="stale"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:210: Failed
+_______________________ test_duplicate_json_key_rejected _______________________
+
+    def test_duplicate_json_key_rejected() -> None:
+        payload, manifest = example()
+        payload = payload.replace(b'"type":"header"', b'"type":"header","type":"header"', 1)
+        manifest.update(recorder.output_metadata(payload))
+>       with pytest.raises(ValueError, match="invalid JSONL"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_record_grammar_reference.py:218: Failed
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[missing]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[extra]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[source]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[action]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[duplicate]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[dense]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[full]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[corrupt]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[size]
+FAILED tests/tools/test_record_grammar_reference.py::test_nested_schema_is_strict[missing-header]
+FAILED tests/tools/test_record_grammar_reference.py::test_nested_schema_is_strict[missing-shape]
+FAILED tests/tools/test_record_grammar_reference.py::test_nested_schema_is_strict[missing-tables]
+FAILED tests/tools/test_record_grammar_reference.py::test_nested_schema_is_strict[missing-oracle]
+FAILED tests/tools/test_record_grammar_reference.py::test_nested_schema_is_strict[extra-header]
+FAILED tests/tools/test_record_grammar_reference.py::test_nested_schema_is_strict[extra-shape]
+FAILED tests/tools/test_record_grammar_reference.py::test_nested_schema_is_strict[extra-tables]
+FAILED tests/tools/test_record_grammar_reference.py::test_nested_schema_is_strict[extra-oracle]
+FAILED tests/tools/test_record_grammar_reference.py::test_recorded_fixture_provenance_and_expected_action_mutation
+FAILED tests/tools/test_record_grammar_reference.py::test_recording_provenance_hashes_are_enforced[append_patch_sha256]
+FAILED tests/tools/test_record_grammar_reference.py::test_recording_provenance_hashes_are_enforced[harness_sha256]
+FAILED tests/tools/test_record_grammar_reference.py::test_recording_provenance_hashes_are_enforced[recorder_sha256]
+FAILED tests/tools/test_record_grammar_reference.py::test_recording_provenance_hashes_are_enforced[cargo_lock_sha256]
+FAILED tests/tools/test_record_grammar_reference.py::test_recording_provenance_hashes_are_enforced[toolchain_sha256]
+FAILED tests/tools/test_record_grammar_reference.py::test_duplicate_json_key_rejected
+24 failed, 1 passed in 4.47s
+validator source restored byte-exactly
+
+EXIT_CODE=1

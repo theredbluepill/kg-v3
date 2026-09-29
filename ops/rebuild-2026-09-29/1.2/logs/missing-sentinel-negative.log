@@ -1,0 +1,28 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true python3 ops/rebuild-2026-09-29/1.2/mutate_check.py final-sentinel src/kaggriculture/grammar.rs 'if state.is_some() { return Err("program lacks distinct final STOP".into()); }' '' -- cargo test --locked --lib grammar_rejects_malformed_i64 -- --test-threads=1
+before_sha256 3d3dc8396e6ee0777ad27ad0b80d8b242685af81094d32f9e0a2586bd0eaae47
+mutated_sha256 8ef1c5274c36be5d932cc74bbdbc2347819ae3dcd77bf4b5e875b67e095e3aa9
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-grammar)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.56s
+     Running unittests src/lib.rs (target/debug/deps/rs-70d11de31c3178d2)
+
+running 1 test
+test kaggriculture::grammar::tests::grammar_rejects_malformed_i64 ... FAILED
+
+failures:
+
+---- kaggriculture::grammar::tests::grammar_rejects_malformed_i64 stdout ----
+
+thread 'kaggriculture::grammar::tests::grammar_rejects_malformed_i64' (10060763) panicked at src/kaggriculture/grammar_tests.rs:541:49:
+called `Result::unwrap_err()` on an `Ok` value: Object {"farmer": Array [String("PASS")], "hands": Array [], "market": Array []}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::grammar::tests::grammar_rejects_malformed_i64
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 165 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`
+restored_sha256 3d3dc8396e6ee0777ad27ad0b80d8b242685af81094d32f9e0a2586bd0eaae47
+
+EXIT_CODE=101

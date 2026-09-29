@@ -1,0 +1,27 @@
+$ cargo test --manifest-path engine_rs/Cargo.toml --locked --test grammar_kernel decoded_replay_actions_preserve_selected_states -- --exact --test-threads=1
+# mutation src/kaggriculture/grammar.rs: 'QUANTITY_BASE * frame[Slot::MarketQuantityHigh as usize]\n                + frame[Slot::MarketQuantity as usize],' -> 'QUANTITY_BASE * frame[Slot::MarketQuantity as usize]\n                + frame[Slot::MarketQuantityHigh as usize],'
+# exit 101; restored sha256 5b660b560731b15b746795fec3875eed911943038b3cea3d45ca912032a0426d
+
+running 1 test
+test decoded_replay_actions_preserve_selected_states ... FAILED
+
+failures:
+
+---- decoded_replay_actions_preserve_selected_states stdout ----
+
+thread 'decoded_replay_actions_preserve_selected_states' (10231303) panicked at tests/grammar_kernel.rs:624:17:
+assertion `left == right` failed
+  left: Object {"farmer": Array [String("BUILD_PASTURE")], "hands": Array [], "market": Array [Array [String("BUY_SEED"), String("WHEAT"), Number(192)], Array [String("HIRE")], Array [String("HIRE")], Array [String("HIRE")], Array [String("HIRE")], Array [String("HIRE")], Array [String("BUY_PRODUCT"), String("WHEAT"), Number(128)], Array [String("BUY_SEED"), String("MELON"), Number(128)]]}
+ right: Object {"farmer": Array [String("BUILD_PASTURE")], "hands": Array [], "market": Array [Array [String("BUY_SEED"), String("WHEAT"), Number(6)], Array [String("HIRE")], Array [String("HIRE")], Array [String("HIRE")], Array [String("HIRE")], Array [String("HIRE")], Array [String("BUY_PRODUCT"), String("WHEAT"), Number(4)], Array [String("BUY_SEED"), String("MELON"), Number(4)]]}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    decoded_replay_actions_preserve_selected_states
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.74s
+
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-grammar/engine_rs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+     Running tests/grammar_kernel.rs (engine_rs/target/debug/deps/grammar_kernel-88e2fbe693fab574)
+error: test failed, to rerun pass `--test grammar_kernel`

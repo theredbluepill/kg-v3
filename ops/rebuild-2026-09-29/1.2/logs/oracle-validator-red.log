@@ -1,0 +1,224 @@
+$ CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true uv run --offline pytest tests/tools/test_record_grammar_reference.py -q
+FFFFFFFFFF                                                               [100%]
+=================================== FAILURES ===================================
+___________________ test_fixture_validation_and_compression ____________________
+
+    def test_fixture_validation_and_compression() -> None:
+>       payload, manifest = example()
+                            ^^^^^^^^^
+
+tests/tools/test_record_grammar_reference.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/tools/test_record_grammar_reference.py:23: in example
+    'tables': recorder.test_tables(),
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def test_tables():
+>       raise ValueError('oracle validator not implemented')
+E       ValueError: oracle validator not implemented
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:8: ValueError
+___________________ test_fixture_rejects_corruption[missing] ___________________
+
+change = 'missing'
+
+    @pytest.mark.parametrize('change', ['missing', 'extra', 'source', 'action', 'duplicate', 'dense', 'full', 'corrupt', 'size'])
+    def test_fixture_rejects_corruption(change: str) -> None:
+>       payload, manifest = example()
+                            ^^^^^^^^^
+
+tests/tools/test_record_grammar_reference.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/tools/test_record_grammar_reference.py:23: in example
+    'tables': recorder.test_tables(),
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def test_tables():
+>       raise ValueError('oracle validator not implemented')
+E       ValueError: oracle validator not implemented
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:8: ValueError
+____________________ test_fixture_rejects_corruption[extra] ____________________
+
+change = 'extra'
+
+    @pytest.mark.parametrize('change', ['missing', 'extra', 'source', 'action', 'duplicate', 'dense', 'full', 'corrupt', 'size'])
+    def test_fixture_rejects_corruption(change: str) -> None:
+>       payload, manifest = example()
+                            ^^^^^^^^^
+
+tests/tools/test_record_grammar_reference.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/tools/test_record_grammar_reference.py:23: in example
+    'tables': recorder.test_tables(),
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def test_tables():
+>       raise ValueError('oracle validator not implemented')
+E       ValueError: oracle validator not implemented
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:8: ValueError
+___________________ test_fixture_rejects_corruption[source] ____________________
+
+change = 'source'
+
+    @pytest.mark.parametrize('change', ['missing', 'extra', 'source', 'action', 'duplicate', 'dense', 'full', 'corrupt', 'size'])
+    def test_fixture_rejects_corruption(change: str) -> None:
+>       payload, manifest = example()
+                            ^^^^^^^^^
+
+tests/tools/test_record_grammar_reference.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/tools/test_record_grammar_reference.py:23: in example
+    'tables': recorder.test_tables(),
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def test_tables():
+>       raise ValueError('oracle validator not implemented')
+E       ValueError: oracle validator not implemented
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:8: ValueError
+___________________ test_fixture_rejects_corruption[action] ____________________
+
+change = 'action'
+
+    @pytest.mark.parametrize('change', ['missing', 'extra', 'source', 'action', 'duplicate', 'dense', 'full', 'corrupt', 'size'])
+    def test_fixture_rejects_corruption(change: str) -> None:
+>       payload, manifest = example()
+                            ^^^^^^^^^
+
+tests/tools/test_record_grammar_reference.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/tools/test_record_grammar_reference.py:23: in example
+    'tables': recorder.test_tables(),
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def test_tables():
+>       raise ValueError('oracle validator not implemented')
+E       ValueError: oracle validator not implemented
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:8: ValueError
+__________________ test_fixture_rejects_corruption[duplicate] __________________
+
+change = 'duplicate'
+
+    @pytest.mark.parametrize('change', ['missing', 'extra', 'source', 'action', 'duplicate', 'dense', 'full', 'corrupt', 'size'])
+    def test_fixture_rejects_corruption(change: str) -> None:
+>       payload, manifest = example()
+                            ^^^^^^^^^
+
+tests/tools/test_record_grammar_reference.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/tools/test_record_grammar_reference.py:23: in example
+    'tables': recorder.test_tables(),
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def test_tables():
+>       raise ValueError('oracle validator not implemented')
+E       ValueError: oracle validator not implemented
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:8: ValueError
+____________________ test_fixture_rejects_corruption[dense] ____________________
+
+change = 'dense'
+
+    @pytest.mark.parametrize('change', ['missing', 'extra', 'source', 'action', 'duplicate', 'dense', 'full', 'corrupt', 'size'])
+    def test_fixture_rejects_corruption(change: str) -> None:
+>       payload, manifest = example()
+                            ^^^^^^^^^
+
+tests/tools/test_record_grammar_reference.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/tools/test_record_grammar_reference.py:23: in example
+    'tables': recorder.test_tables(),
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def test_tables():
+>       raise ValueError('oracle validator not implemented')
+E       ValueError: oracle validator not implemented
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:8: ValueError
+____________________ test_fixture_rejects_corruption[full] _____________________
+
+change = 'full'
+
+    @pytest.mark.parametrize('change', ['missing', 'extra', 'source', 'action', 'duplicate', 'dense', 'full', 'corrupt', 'size'])
+    def test_fixture_rejects_corruption(change: str) -> None:
+>       payload, manifest = example()
+                            ^^^^^^^^^
+
+tests/tools/test_record_grammar_reference.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/tools/test_record_grammar_reference.py:23: in example
+    'tables': recorder.test_tables(),
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def test_tables():
+>       raise ValueError('oracle validator not implemented')
+E       ValueError: oracle validator not implemented
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:8: ValueError
+___________________ test_fixture_rejects_corruption[corrupt] ___________________
+
+change = 'corrupt'
+
+    @pytest.mark.parametrize('change', ['missing', 'extra', 'source', 'action', 'duplicate', 'dense', 'full', 'corrupt', 'size'])
+    def test_fixture_rejects_corruption(change: str) -> None:
+>       payload, manifest = example()
+                            ^^^^^^^^^
+
+tests/tools/test_record_grammar_reference.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/tools/test_record_grammar_reference.py:23: in example
+    'tables': recorder.test_tables(),
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def test_tables():
+>       raise ValueError('oracle validator not implemented')
+E       ValueError: oracle validator not implemented
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:8: ValueError
+____________________ test_fixture_rejects_corruption[size] _____________________
+
+change = 'size'
+
+    @pytest.mark.parametrize('change', ['missing', 'extra', 'source', 'action', 'duplicate', 'dense', 'full', 'corrupt', 'size'])
+    def test_fixture_rejects_corruption(change: str) -> None:
+>       payload, manifest = example()
+                            ^^^^^^^^^
+
+tests/tools/test_record_grammar_reference.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/tools/test_record_grammar_reference.py:23: in example
+    'tables': recorder.test_tables(),
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def test_tables():
+>       raise ValueError('oracle validator not implemented')
+E       ValueError: oracle validator not implemented
+
+ops/rebuild-2026-09-29/1.2/oracle/record_reference.py:8: ValueError
+=========================== short test summary info ============================
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_validation_and_compression
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[missing]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[extra]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[source]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[action]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[duplicate]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[dense]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[full]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[corrupt]
+FAILED tests/tools/test_record_grammar_reference.py::test_fixture_rejects_corruption[size]
+10 failed in 0.03s
+
+EXIT_CODE=1

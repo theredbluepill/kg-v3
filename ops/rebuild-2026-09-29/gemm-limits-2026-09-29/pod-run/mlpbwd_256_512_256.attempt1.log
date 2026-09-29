@@ -1,0 +1,477 @@
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/backends/__init__.py:46: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /pytorch/aten/src/ATen/Context.cpp:80.)
+  self.setter(val)
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/autograd/graph.py:841: UserWarning: Attempting to run cuBLAS, but there was no current CUDA context! Attempting to set the primary context... (Triggered internally at /pytorch/aten/src/ATen/cuda/CublasHandlePool.cpp:270.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] C++ shape guard function: 
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] #include <algorithm>
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] #include <cstdint>
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] #include <cmath>
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] #include <c10/util/generic_math.h>
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] 
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] #if defined(_MSC_VER)
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] #  define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] #else
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] #  define EXTERN_DLL_EXPORT extern "C"
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] #endif
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] 
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] EXTERN_DLL_EXPORT int8_t guard(int64_t *int_values, double *float_values) {
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards]   int64_t L_x_size_0_ = int_values[0];
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] 
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards]   return (512L*L_x_size_0_ <= 2147483647L) && (256L*L_x_size_0_ <= 2147483647L) && (8192L*(c10::div_floor_integer(static_cast<int64_t>(31L + L_x_size_0_), static_cast<int64_t>(32L))) <= 2147483647L) && (16384L*(c10::div_floor_integer(static_cast<int64_t>(31L + L_x_size_0_), static_cast<int64_t>(32L))) <= 2147483647L) && (2L <= L_x_size_0_);
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards] }
+V0929 05:31:09.605000 123302 torch/_dynamo/guards.py:2666] [0/0] [__guards]  ["512*L['x'].size()[0] <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)", "256*L['x'].size()[0] <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)", "8192*((31 + L['x'].size()[0]) // 32) <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)", "16384*((31 + L['x'].size()[0]) // 32) <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)", "2 <= L['x'].size()[0]  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward (user code shown is first use of this value--the guard itself is not due user code but due to 0/1 specialization in the framework; to avoid specialization try torch._dynamo.mark_unbacked(tensor, dim))"]
+V0929 05:31:12.841000 123302 torch/_dynamo/guards.py:3687] [0/0] [__guards] GUARDS:
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:1743] [0/0] [__guards] Python shape guard function:
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:1743] [0/0] [__guards] def ___make_guard_fn(___check_type_id, ___check_obj_id, ___odict_getitem, ___key_to_id, ___dict_version, ___dict_contains, ___tuple_iterator_len, ___normalize_range_iter, ___tuple_iterator_getitem, ___dataclass_fields, ___namedtuple_fields, ___get_torch_function_mode_stack_at, __math_isnan, __numpy_isnan, inf, __load_module, utils_device, device, ___from_numpy, ___as_tensor, torch, inspect):
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:1743] [0/0] [__guards]     def guard(L):
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:1743] [0/0] [__guards]         if not (G['F'] is G['__import_torch_dot_nn_dot_modules_dot_linear'].F):
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:1743] [0/0] [__guards]             return False
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:1743] [0/0] [__guards]         return True
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:1743] [0/0] [__guards]     return guard
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:1743] [0/0] [__guards] 
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] 
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] TREE_GUARD_MANAGER:
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] +- RootGuardManager
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- LAMBDA_GUARD: torch._functorch.aot_autograd.utils.top_saved_tensors_hooks ids == None  # _dynamo/output_graph.py:688 in init_ambient_guards
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- DEFAULT_DEVICE: utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:676 in init_ambient_guards
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- GLOBAL_STATE: ___check_global_state()
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- TORCH_FUNCTION_MODE_STACK: ___check_torch_function_mode_stack()
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- GuardManager: source=L['x'], accessed_by=FrameLocalsGuardAccessor(key='x', framelocals_idx=1), type=<class 'torch.Tensor'>, tag_safe=(False, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- TENSOR_MATCH: check_tensor(L['x'], Tensor, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[None, 256], stride=[256, 1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- NO_HASATTR: hasattr(L['x'], '_dynamo_dynamic_indices') == False           # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- GuardManager: source=L['x'].size()[0], accessed_by=TensorPropertyGuardAccessor<TensorProperty::SIZE>(0), type=<class 'int'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=(0, L['x'].size()[0]), accessed_by=IndexedGuardAccesor(0), type=<class 'tuple'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- SYMBOLIC_SHAPE_GUARD: 512*L['x'].size()[0] <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- SYMBOLIC_SHAPE_GUARD: 256*L['x'].size()[0] <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- SYMBOLIC_SHAPE_GUARD: 8192*((31 + L['x'].size()[0]) // 32) <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- SYMBOLIC_SHAPE_GUARD: 16384*((31 + L['x'].size()[0]) // 32) <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- SYMBOLIC_SHAPE_GUARD: 2 <= L['x'].size()[0]  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward (user code shown is first use of this value--the guard itself is not due user code but due to 0/1 specialization in the framework; to avoid specialization try torch._dynamo.mark_unbacked(tensor, dim))
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- GuardManager: source=G, accessed_by=GlobalsGuardAccessor, type=<class 'dict'>, tag_safe=(False, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- GuardManager: source=G['F'], accessed_by=DictGetItemGuardAccessor('F'), type=<class 'module'>, tag_safe=(False, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- ID_MATCH: ___check_obj_id(G['F'], 138294324475952)                      # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['F'].gelu, accessed_by=GetAttrGuardAccessor(gelu), type=<class 'builtin_function_or_method'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- ID_MATCH: ___check_obj_id(G['F'].gelu, 138298139719168)                 # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['F'].linear, accessed_by=GetAttrGuardAccessor(linear), type=<class 'builtin_function_or_method'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- ID_MATCH: ___check_obj_id(G['F'].linear, 138298139720288)               # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_linear'], accessed_by=DictGetItemGuardAccessor('__import_torch_dot_nn_dot_modules_dot_linear'), type=<class 'module'>, tag_safe=(False, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- ID_MATCH: ___check_obj_id(G['__import_torch_dot_nn_dot_modules_dot_linear'], 138294324476032)  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module'], accessed_by=DictGetItemGuardAccessor('__import_torch_dot_nn_dot_modules_dot_module'), type=<class 'module'>, tag_safe=(False, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- ID_MATCH: ___check_obj_id(G['__import_torch_dot_nn_dot_modules_dot_module'], 138294328277440)  # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_hooks, accessed_by=GetAttrGuardAccessor(_global_forward_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_hooks, 10741888)  # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_hooks, accessed_by=GetAttrGuardAccessor(_global_backward_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_hooks, 10741888)  # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_pre_hooks, accessed_by=GetAttrGuardAccessor(_global_forward_pre_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_pre_hooks, 10741888)  # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_pre_hooks, accessed_by=GetAttrGuardAccessor(_global_backward_pre_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_pre_hooks, 10741888)  # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- GuardManager: source=L['self'], accessed_by=FrameLocalsGuardAccessor(key='self', framelocals_idx=0), type=<class '__main__.Mlp'>, tag_safe=(True, True)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- TYPE_MATCH: ___check_type_id(L['self'], 705867824)                        # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- GuardManager: source=L['self'].__dict__, accessed_by=GetGenericDictGuardAccessor, type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=L['self']._modules, accessed_by=DictGetItemGuardAccessor('_modules'), type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(L['self']._modules, 10737728)                # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- GuardManager: source=L['self']._modules['up'], accessed_by=DictGetItemGuardAccessor('up'), type=<class 'torch.nn.modules.linear.Linear'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | +- TYPE_MATCH: ___check_type_id(L['self']._modules['up'], 795204128)         # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | +- GuardManager: source=L['self']._modules['up'].__dict__, accessed_by=GetGenericDictGuardAccessor, type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | +- DICT_CONTAINS: not ___dict_contains('forward', L['self']._modules['up'].__dict__)  # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | +- GuardManager: source=L['self']._modules['up']._parameters, accessed_by=DictGetItemGuardAccessor('_parameters'), type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | | +- TYPE_MATCH: ___check_type_id(L['self']._modules['up']._parameters, 10737728)  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | | +- GuardManager: source=L['self']._modules['up']._parameters['bias'], accessed_by=DictGetItemGuardAccessor('bias'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | | | +- TENSOR_MATCH: check_tensor(L['self']._modules['up']._parameters['bias'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[512], stride=[1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | | +- GuardManager: source=L['self']._modules['up']._parameters['weight'], accessed_by=DictGetItemGuardAccessor('weight'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | | | +- TENSOR_MATCH: check_tensor(L['self']._modules['up']._parameters['weight'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[512, 256], stride=[256, 1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- GuardManager: source=L['self']._modules['down'], accessed_by=DictGetItemGuardAccessor('down'), type=<class 'torch.nn.modules.linear.Linear'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | +- TYPE_MATCH: ___check_type_id(L['self']._modules['down'], 795204128)       # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | +- GuardManager: source=L['self']._modules['down'].__dict__, accessed_by=GetGenericDictGuardAccessor, type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | +- DICT_CONTAINS: not ___dict_contains('forward', L['self']._modules['down'].__dict__)  # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | +- GuardManager: source=L['self']._modules['down']._parameters, accessed_by=DictGetItemGuardAccessor('_parameters'), type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | | +- TYPE_MATCH: ___check_type_id(L['self']._modules['down']._parameters, 10737728)  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | | +- GuardManager: source=L['self']._modules['down']._parameters['bias'], accessed_by=DictGetItemGuardAccessor('bias'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | | | +- TENSOR_MATCH: check_tensor(L['self']._modules['down']._parameters['bias'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[256], stride=[1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | | +- GuardManager: source=L['self']._modules['down']._parameters['weight'], accessed_by=DictGetItemGuardAccessor('weight'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | | | | +- TENSOR_MATCH: check_tensor(L['self']._modules['down']._parameters['weight'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[256, 512], stride=[512, 1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=L['self']._parameters, accessed_by=DictGetItemGuardAccessor('_parameters'), type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(L['self']._parameters, 10737728)             # return self.down(F.gelu(self.up(x)))  # runs/gemm-limits-2026-09-29/probe_linear.py:33 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] +- LAMBDA_GUARD: G['F'] is G['__import_torch_dot_nn_dot_modules_dot_linear'].F  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:31:12.842000 123302 torch/_dynamo/guards.py:3404] [0/0] [__guards] 
+V0929 05:31:12.852000 123302 torch/_dynamo/guards.py:3436] [0/0] [__guards] Guard eval latency = 34.11 us
+V0929 05:31:14.711000 123302 torch/_dynamo/guards.py:4181] [0/1] [__recompiles] Recompiling function forward in /workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py:32
+V0929 05:31:14.711000 123302 torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V0929 05:31:14.711000 123302 torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     - 0/0: 512*x.size()[0] <= 2147483647  # (_functorch/_aot_autograd/autograd_cache.py:1295 in evaluate_guards)
+Autotune Choices Stats:
+{"num_choices": 17, "num_triton_choices": 15, "best_kernel": "triton_mm_7", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4", "best_time": 9.330656051635742, "best_triton_pos": 0}
+AUTOTUNE addmm(8388608x512, 8388608x256, 256x512)
+strides: [0, 1], [256, 1], [1, 256]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  triton_mm_7 9.3307 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_10 9.7126 ms 96.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_9 9.7771 ms 95.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_8 9.8058 ms 95.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_13 9.8887 ms 94.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_6 10.5574 ms 88.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_11 10.5912 ms 88.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  bias_addmm 11.4739 ms 81.3% 
+  triton_mm_5 11.6213 ms 80.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_14 11.6275 ms 80.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 2.0987 seconds and 0.3307 seconds precompiling for 17 choices
+Autotune Choices Stats:
+{"num_choices": 17, "num_triton_choices": 15, "best_kernel": "triton_mm_24", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4", "best_time": 8.638431549072266, "best_triton_pos": 0}
+AUTOTUNE addmm(8388608x256, 8388608x512, 512x256)
+strides: [0, 1], [512, 1], [1, 512]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  triton_mm_24 8.6384 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  bias_addmm 8.6569 ms 99.8% 
+  triton_mm_22 8.8064 ms 98.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_23 8.8064 ms 98.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_29 9.1259 ms 94.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_28 9.1546 ms 94.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_25 9.4187 ms 91.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_26 9.4838 ms 91.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_21 9.5535 ms 90.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_20 10.5656 ms 81.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 2.0416 seconds and 0.0004 seconds precompiling for 17 choices
+Autotune Choices Stats:
+{"num_choices": 16, "num_triton_choices": 15, "best_kernel": "triton_mm_37", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4", "best_time": 8.996831893920898, "best_triton_pos": 0}
+AUTOTUNE mm(8388608x256, 256x512)
+strides: [256, 1], [512, 1]
+dtypes: torch.bfloat16, torch.bfloat16
+  triton_mm_37 8.9968 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_43 9.1791 ms 98.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_39 9.4556 ms 95.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_38 9.5692 ms 94.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_40 9.5857 ms 93.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_41 9.9604 ms 90.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_42 10.1642 ms 88.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=8
+  triton_mm_36 10.2942 ms 87.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_44 11.1032 ms 81.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_35 11.3039 ms 79.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 1.7935 seconds and 0.0492 seconds precompiling for 16 choices
+Autotune Choices Stats:
+{"num_choices": 16, "num_triton_choices": 15, "best_kernel": "triton_mm_69", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4", "best_time": 8.667136192321777, "best_triton_pos": 0}
+AUTOTUNE mm(8388608x512, 512x256)
+strides: [512, 1], [256, 1]
+dtypes: torch.bfloat16, torch.bfloat16
+  triton_mm_69 8.6671 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  mm 8.7122 ms 99.5% 
+  triton_mm_68 8.7142 ms 99.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_74 8.9539 ms 96.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_67 8.9774 ms 96.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_73 9.1095 ms 95.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_66 9.4249 ms 92.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_71 9.4341 ms 91.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+  triton_mm_70 9.4505 ms 91.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_72 9.6092 ms 90.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 1.6809 seconds and 0.0002 seconds precompiling for 16 choices
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.595000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.596000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.597000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.598000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.599000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Either error in template or triton bug.
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] . 
+E0929 05:31:42.600000 123302 torch/_inductor/select_algorithm.py:2967] [0/1] Ignoring this choice.
+Autotune Choices Stats:
+{"num_choices": 16, "num_triton_choices": 15, "best_kernel": "mm", "best_time": 8.5032958984375, "best_triton_pos": 1, "best_triton_time": Infinity, "best_triton_kernel": "triton_mm_45", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=1, num_warps=2"}
+AUTOTUNE mm(256x8388608, 8388608x512)
+strides: [1, 256], [512, 1]
+dtypes: torch.bfloat16, torch.bfloat16
+  mm 8.5033 ms 100.0% 
+  triton_mm_45 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=1, num_warps=2
+  triton_mm_46 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_47 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_48 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+  triton_mm_49 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_50 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=4
+  triton_mm_51 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=8
+  triton_mm_52 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+  triton_mm_53 inf ms 0.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 7.0919 seconds and 0.0002 seconds precompiling for 16 choices
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1] failed to eagerly compile backwards for dynamic, suppressing in case backwards not needed
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1] Traceback (most recent call last):
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_compile.py", line 1774, in aot_stage2_autograd
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     compiled_bw_func = aot_config.bw_compiler(
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]                        ^^^^^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/schemas.py", line 1251, in __call__
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     return self.compiler_fn(gm, example_inputs)
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/backends/common.py", line 82, in _wrapped_bw_compiler
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     disable(
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1044, in _fn
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     return fn(*args, **kwargs)
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]            ^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_utils_internal.py", line 92, in wrapper_function
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     return function(*args, **kwargs)
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]            ^^^^^^^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py", line 2596, in bw_compiler
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     return compile_fx_backward(
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]            ^^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py", line 2321, in compile_fx_backward
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     return inner_compile(
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]            ^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/usr/lib/python3.12/contextlib.py", line 81, in inner
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     return func(*args, **kwds)
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]            ^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py", line 782, in compile_fx_inner
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     return wrap_compiler_debug(_compile_fx_inner, compiler_name="inductor")(
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/repro/after_aot.py", line 144, in debug_wrapper
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     inner_compiled_fn = compiler_fn(gm, example_inputs)
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py", line 990, in _compile_fx_inner
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     raise InductorError(e, currentframe()).with_traceback(
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py", line 974, in _compile_fx_inner
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     mb_compiled_graph = fx_codegen_and_compile(
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]                         ^^^^^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py", line 1695, in fx_codegen_and_compile
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     return scheme.codegen_and_compile(gm, example_inputs, inputs_to_check, graph_kwargs)
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py", line 1182, in codegen_and_compile
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     with (
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     self.gen.throw(value)
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 2227, in preserve_rng_state
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     torch.cuda.set_rng_state(cuda_rng_state)  # type: ignore[possibly-undefined]
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/cuda/random.py", line 79, in set_rng_state
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     _lazy_call(cb)
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/cuda/__init__.py", line 341, in _lazy_call
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     callable()
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]   File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/cuda/random.py", line 77, in cb
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1]     default_generator.set_state(new_state)
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1] torch._inductor.exc.InductorError: AcceleratorError: CUDA error: an illegal memory access was encountered
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+W0929 05:31:42.608000 123302 torch/_functorch/_aot_autograd/graph_compile.py:1794] [0/1] 
+Traceback (most recent call last):
+  File "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", line 172, in <module>
+    main()
+  File "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", line 165, in main
+    rec = run_point(model, fn, m, k, backward, args.seed)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/runs/gemm-limits-2026-09-29/probe_linear.py", line 115, in run_point
+    y = f(xg)
+        ^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 414, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 832, in compile_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1874, in __call__
+    result = self._torchdynamo_orig_backend(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1624, in __call__
+    result = self._inner_convert(
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 688, in __call__
+    result = _compile(
+             ^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1494, in _compile
+    raise InternalTorchDynamoError(
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1433, in _compile
+    guarded_code, tracer_output = compile_inner(code, one_graph, hooks)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_utils_internal.py", line 92, in wrapper_function
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1117, in compile_inner
+    return _compile_inner(code, one_graph, hooks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1151, in _compile_inner
+    dynamo_output = compile_frame(
+                    ^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1032, in compile_frame
+    bytecode, tracer_output = transform_code_object(code, transform)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/bytecode_transformation.py", line 1592, in transform_code_object
+    tracer_output = transformations(instructions, code_options)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1004, in transform
+    tracer_output = trace_frame(
+                    ^^^^^^^^^^^^
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 333, in _fn
+    torch.cuda.set_rng_state(cuda_rng_state)
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/cuda/random.py", line 79, in set_rng_state
+    _lazy_call(cb)
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/cuda/__init__.py", line 341, in _lazy_call
+    callable()
+  File "/workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/cuda/random.py", line 77, in cb
+    default_generator.set_state(new_state)
+torch._dynamo.exc.InternalTorchDynamoError: AcceleratorError: CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
