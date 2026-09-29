@@ -1,0 +1,59 @@
+{
+  "scope": "Original Python frozen trace coverage, not qualified native parity beyond compared prefix",
+  "definitions": {
+    "buy_quantity_above_inventory_index": "BUY_PRODUCT quantity > signed pre-step market inventory index; not physical-stock shortage",
+    "rejected_steps": "whole Python engine step raised",
+    "hires": "sum of positive consecutive hand-count deltas",
+    "final_day_sell_orders": "SELL orders submitted on day 29, not sale proceeds",
+    "weed_presence": "acting farm had at least one WEED before action",
+    "day_resets": "pre-action hour 0 after step 0",
+    "mid_episode_replay": "none generated"
+  },
+  "unmeasured": [
+    "actual market shortages",
+    "individual rejected market orders",
+    "mid-episode controller replay"
+  ],
+  "traces": [
+    {
+      "path": "oracle-00-starter-vs-r04.jsonl.gz",
+      "sha256": "39b8bc35c223594d2d6740fc35d0b8242e130351e0d69b2e4bc34594976cf97e",
+      "bytes": 178476,
+      "seed": 20260929,
+      "policies": [
+        "builtin:starter",
+        "sibling:r04"
+      ],
+      "policy_seed": 20260929,
+      "config_variant": "default",
+      "transitions": 719,
+      "rejected": 0,
+      "available_actions": [
+        719,
+        719
+      ],
+      "coverage": [
+        {
+          "openings": 1,
+          "day_resets": 29,
+          "weed_presence": 527,
+          "buy_quantity_above_inventory_index": 0,
+          "rejected_steps": 0,
+          "hires": 0,
+          "final_day_sell_orders": 0,
+          "mid_episode_replay": 0
+        },
+        {
+          "openings": 1,
+          "day_resets": 29,
+          "weed_presence": 201,
+          "buy_quantity_above_inventory_index": 0,
+          "rejected_steps": 0,
+          "hires": 285,
+          "final_day_sell_orders": 12,
+          "mid_episode_replay": 0
+        }
+      ]
+    }
+  ]
+}

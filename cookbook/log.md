@@ -1,13 +1,32 @@
 # Change log
 
+## 2026-09-29 — Import evaluation controllers through a v3-owned snapshot view
+
+Claude's revised Task 7.1 placement resolves the private-engine boundary with an
+opaque engine owner, current snapshot accessors and the one hire-cost value.
+Four controller files and E776 policy data stay byte-exact in `opponents_rs`;
+registry/lifecycle/default-config runner and custody checks are implemented.
+The first original-Python trace stops at R04 step 12: native `WEST`, Python
+`NORTH` for hand 2. Python 3.12 floating summation versus native sequential
+summation changes an anchor threshold; a 13-observation counterfactual isolates
+that cause. Final review also closes a derived-`Debug` engine-state leak with
+a snapshot/config-only formatter and a failing-then-passing regression; 19
+opponent tests pass and the original-Python comparison remains failing. The
+corpus is not widened. The
+[[references/snapshot-view-isolates-byte-exact-evaluation-opponents|current Reference]]
+replaces the stop-only note and corrects its unsupported owner attribution:
+the old STOP instruction came from Claude's placement prompt. Run-1 receipts
+at `21d0f45` are preserved; final outcomes are recorded in
+`ops/rebuild-2026-09-29/7.1/results.md` and separate `run2/` receipts.
+
 ## 2026-09-29 — Stop Task 7.1 at the frozen engine's external-crate boundary
 
 The requested standalone crate cannot compile the byte-exact controllers:
 `fib` and `Game.config` are private, and five required accessors lived in the
 excluded reference `policy_rows.rs`. The all-target compile probe fails before
-any bot can run, triggering the task's explicit STOP instruction. No production
+any bot can run, triggering Claude's placement prompt's explicit STOP instruction. No production
 crate or oracle traces are added. The
-[[references/frozen-engine-api-blocks-standalone-opponent-import|API-boundary Reference]]
+[[references/snapshot-view-isolates-byte-exact-evaluation-opponents|current opponent Reference, with run-1 history]]
 and coverage page record the exact blocker and unimplemented qualification;
 receipts are in `ops/rebuild-2026-09-29/7.1/`. The trim updater records only
 non-engine bookkeeping and preserves every retained/authored/excluded entry.

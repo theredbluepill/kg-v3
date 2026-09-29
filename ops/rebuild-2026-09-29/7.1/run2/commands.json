@@ -1,0 +1,123 @@
+[
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--manifest-path",
+      "opponents_rs/Cargo.toml"
+    ],
+    "exit_code": 101,
+    "seconds": 17.225,
+    "log": "opponents-test.log",
+    "prior_to_debug_boundary_repair": {
+      "exit_code": 101,
+      "seconds": 17.415
+    }
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--manifest-path",
+      "engine_rs/Cargo.toml"
+    ],
+    "exit_code": 0,
+    "seconds": 15.875,
+    "log": "engine-test.log"
+  },
+  {
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "scripts/check_engine_trim.py"
+    ],
+    "exit_code": 0,
+    "seconds": 1.118,
+    "log": "engine-trim.log"
+  },
+  {
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "python",
+      "scripts/check_opponent_import.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.311,
+    "log": "opponent-import.log",
+    "prior_to_debug_boundary_repair": {
+      "exit_code": 0,
+      "seconds": 0.32
+    }
+  },
+  {
+    "command": [
+      "uv",
+      "run",
+      "--offline",
+      "pytest",
+      "tests/tools/test_check_opponent_import.py",
+      "tests/tools/test_check_engine_trim.py",
+      "tests/scripts/test_kaggriculture_parity.py",
+      "tests/owl/kaggriculture/test_opponents.py",
+      "-q"
+    ],
+    "exit_code": 0,
+    "seconds": 6.04,
+    "log": "targeted-tests.log"
+  },
+  {
+    "command": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "prepare"
+    ],
+    "exit_code": 101,
+    "seconds": 61.066,
+    "log": "prepare.log",
+    "prior_to_debug_boundary_repair": {
+      "exit_code": 101,
+      "seconds": 61.472
+    }
+  },
+  {
+    "command": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "py-prepare"
+    ],
+    "exit_code": 0,
+    "seconds": 42.512,
+    "log": "py-prepare.log"
+  },
+  {
+    "command": [
+      "uvx",
+      "--offline",
+      "--from",
+      "rust-just",
+      "just",
+      "rs-prepare"
+    ],
+    "exit_code": 101,
+    "seconds": 57.415,
+    "log": "rs-prepare.log",
+    "prior_to_debug_boundary_repair": {
+      "exit_code": 101,
+      "seconds": 62.591
+    }
+  }
+]

@@ -1,0 +1,49 @@
+   Compiling autocfg v1.5.1
+   Compiling proc-macro2 v1.0.107
+   Compiling num-traits v0.2.19
+   Compiling version_check v0.9.5
+   Compiling unicode-ident v1.0.26
+   Compiling serde_core v1.0.229
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling zmij v1.0.23
+   Compiling typenum v1.20.1
+   Compiling syn v3.0.6
+   Compiling num-integer v0.1.47
+   Compiling hashbrown v0.17.1
+   Compiling serde_json v1.0.151
+   Compiling libc v0.2.189
+   Compiling serde v1.0.229
+   Compiling equivalent v1.0.2
+   Compiling indexmap v2.14.2
+   Compiling serde_derive v1.0.229
+   Compiling num-bigint v0.4.8
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling num-rational v0.4.2
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling cpufeatures v0.2.17
+   Compiling cfg-if v1.0.5
+   Compiling sha2 v0.10.9
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-t71/engine_rs)
+   Compiling kaggriculture-opponents v0.1.0 (/Users/poonszesen/kg-v3-t71/opponents_rs)
+error[E0432]: unresolved imports `kaggriculture_opponents::Config`, `kaggriculture_opponents::Game`, `kaggriculture_opponents::OpponentKind`, `kaggriculture_opponents::SeatController`, `kaggriculture_opponents::play_match`
+ --> tests/lifecycle.rs:1:31
+  |
+1 | use kaggriculture_opponents::{Config, Game, OpponentKind, SeatController, play_match};
+  |                               ^^^^^^  ^^^^  ^^^^^^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^^^ no `play_match` in the root
+  |                               |       |     |             |
+  |                               |       |     |             no `SeatController` in the root
+  |                               |       |     no `OpponentKind` in the root
+  |                               |       no `Game` in the root
+  |                               no `Config` in the root
+  |
+  = help: consider importing this struct instead:
+          kaggriculture_engine::Config
+  = help: consider importing this struct instead:
+          kaggriculture_engine::Game
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `kaggriculture-opponents` (test "lifecycle") due to 1 previous error

@@ -1,0 +1,33 @@
+   Compiling kaggriculture-opponents v0.1.0 (/Users/poonszesen/kg-v3-t71/opponents_rs)
+error[E0425]: cannot find function `difference` in this scope
+ --> tests/oracle_parity.rs:5:13
+  |
+5 |     assert!(difference(&json!(1), &json!(1.0), "action", false).is_some());
+  |             ^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `difference` in this scope
+ --> tests/oracle_parity.rs:6:13
+  |
+6 |     assert!(difference(&json!([1, 2]), &json!([2, 1]), "action", false).is_some());
+  |             ^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `difference` in this scope
+ --> tests/oracle_parity.rs:9:13
+  |
+9 |     assert!(difference(&a, &b, "action", false).is_none());
+  |             ^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `difference` in this scope
+  --> tests/oracle_parity.rs:10:13
+   |
+10 |     assert!(difference(&a, &b, "state", true).is_some());
+   |             ^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `difference` in this scope
+  --> tests/oracle_parity.rs:11:13
+   |
+11 |     assert!(difference(&json!({"a":1}), &json!({"a":1,"b":2}), "action", false).is_some());
+   |             ^^^^^^^^^^ not found in this scope
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `kaggriculture-opponents` (test "oracle_parity") due to 5 previous errors

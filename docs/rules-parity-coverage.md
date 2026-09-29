@@ -136,27 +136,123 @@ assertions.
 
 ## Kaggriculture Rules Kernel
 
-### Task 7.1 Opponent Import: Blocked Before Qualification
+### Task 7.1 Opponents: Snapshot View and Original-Submission Parity
 
-The requested standalone `opponents_rs` placement cannot compile the four
-byte-exact controllers against the frozen engine at integration `b8747b6e`.
-An offline all-target compile probe reports private `fib` (`E0603`), private
-`Game.config` (`E0616`) and absent `Game::{farms, privates, market, town,
-step_index}` methods (`E0599`). Those accessors lived in the excluded reference
-`policy_rows.rs`. Task 7.1 explicitly requires stopping on this boundary.
-Receipts: `ops/rebuild-2026-09-29/7.1/native-api-probe-red.log` and
-`ops/rebuild-2026-09-29/7.1/results.md`.
+`opponents_rs` is a standalone edition-2024 crate holding byte-exact Starter,
+R04, EcoBot and E776 controller sources plus E776 policy data from reference
+`65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`. Its authored `Game` owns the
+frozen engine behind an opaque sibling module, exposes current snapshot
+accessors, and derives only Starter's hire-cost multiplier through serde. An
+authored BigInt `fib` port supplies the imported helper. Full snapshots are
+cloned after construction and successful steps; this evaluation path has no
+Mac performance claim and is not the training hot path. `from_engine` requires
+the caller to supply that engine's original configuration.
 
-No production opponent import, registry, lifecycle/visibility test, match runner
-or original-Python action oracle is implemented. Starter, R04, EcoBot and E776
-each have zero new traces and zero actions compared in either seat. Openings,
-day resets, weeds, shortages/rejected orders, hires, final-day liquidation and
-mid-episode replay remain uncovered. No default-configuration opponent support
-is qualified; non-default support was outside the requested scope. Task 1.4
-binding-dependent tests remain pending. No opponent strength claim follows.
-EcoBot/E776's original software-license/notice gap is still unresolved; existing
-engine licensing does not resolve it. Existing kernel coverage below is separate
-from these unimplemented controller checks.
+The view includes both private states, public state, statuses and rewards.
+Rival-private perturbation checks therefore remain necessary. Engine RNG,
+seed and hidden counters cannot be reached or perturbed through the view.
+A test-first correction removed derived `Debug` from the opaque engine holder:
+`Game` now formats only snapshot/config, so formatting cannot reveal engine
+seed/counter fields. The regression failed before that correction and passes
+in the final 12-test unit suite (`run2/closure.log`).
+Tests clone controllers/views at seven steps for each bot and both seats,
+change rival-private state and require unchanged actions; own money/seeds/shed
+perturbations provide a positive control. The seat wrapper owns independent
+controller state, resets explicitly and rejects repeated/skipped steps,
+wrong-seat calls and use with another episode. Same-seed replay preserves
+complete action hashes and raw banks; a different seed changes the sequence.
+
+The match runner supports only default configuration and sends official
+`farmer`/`hands`/`market` JSON through the engine without grammar truncation.
+It records the applied action, joint engine acceptance per seat, controller
+errors, raw banks and winner. Acceptance is not proof that every individual
+order executed; engine market metrics are available only as joint aggregates.
+The final native crate test command reports **19 passed, 1 failed**, with no
+ignored tests: 12 unit tests (including Starter's five), five lifecycle/match
+integration tests and two successful comparator/mutation tests; original-Python
+parity is the failure described below. Tampering either seat's first recorded action produces an independent mismatch.
+The changed-seed oracle attempt only reproduced the known step-12 mismatch, so
+it provides no separate non-vacuity evidence. The unchanged engine reports
+**69 passed**, no failures/ignores. Required targeted Python checks report
+**164 passed, 10 skipped**: nine need the Task 1.4 binding, and one committed
+multi-game regeneration is skipped under the Mac's two-live-game bound.
+Both custody checkers pass. `py-prepare` passes with 1,692 tests and 17 skips. Full `prepare` and
+`rs-prepare` pass their earlier checks, root Rust 254 tests with four ignored,
+and engine 69 tests, then fail at the retained opponent parity comparison.
+Final command receipts are in `ops/rebuild-2026-09-29/7.1/run2/`; the aggregate
+result remains parity-blocked.
+
+The original-Python corpus currently contains one default-config trace:
+Starter seat 0 versus R04 seat 1, seed `20260929`, 719 Python transitions.
+It uses Kaggle 1.32.7 Starter and the original hash-pinned R04 submission at
+sibling commit `e8884aae82eddeb7a1aeae99ecceeca7c830d67e`, with fresh independent
+module/agent state per seat. The native comparator stops at step 12, seat 1,
+`action.hands[2][0]`: native `"WEST"`, Python `"NORTH"`. It compares 13
+Starter and 13 R04 actions, with 13 and 12 exact matches respectively; the first
+12 applied transitions match state and object order. Parity remains failing;
+no imported bytes are edited and the corpus is not widened after this finding.
+The cause is the original Python 3.12.13 floating `sum` versus the native
+sequential reduction in angular-sector anchors: 25 weights of 0.35 total `8.75`
+versus `8.749999999999996`, changing a sector threshold. Anchors first differ at
+step zero; assignment first changes the action at step 12. A diagnostic that
+changes only the original `compute_anchors` function's `sum` binding to sequential
+accumulation matches all 13 native anchors/actions; unchanged original code
+reproduces all 13 frozen Python actions. The native port differs from this
+original-source/runtime oracle; the original competition runtime remains
+unestablished. `run2/r04-mismatch.md` records the source lines and controls. The earlier reward `0` versus `0.0` comparator mismatch was a harness
+error: rewards are typed f64 as in the existing kernel comparator; actions and
+public/private state retain strict JSON number comparison.
+
+| Bot | Seat 0 compared / matched | Seat 1 compared / matched |
+| --- | --- | --- |
+| Starter | 13 / 13 | 0 / 0 |
+| R04 | 0 / 0 | 13 / 12 |
+| EcoBot | 0 / 0 | 0 / 0 |
+| E776 | 0 / 0 | 0 / 0 |
+
+Full 719-transition Python coverage (not the 12-transition native matched
+prefix):
+
+| Category | Starter seat 0 | R04 seat 1 |
+| --- | --- | --- |
+| Opening at step 0 | 1 | 1 |
+| Day reset (hour zero after step zero) | 29 | 29 |
+| Steps with own-farm weeds | 527 | 201 |
+| BUY_PRODUCT quantity above pre-step inventory index | 0 | 0 |
+| Whole Python-step rejection | 0 | 0 |
+| Added hands (positive hand-count changes) | 0 | 285 |
+| Submitted SELL orders on day 29 | 0 | 12 |
+| Mid-episode replay | 0 | 0 |
+
+`buy_quantity_above_inventory_index` compares attempted quantity to that index;
+the index is not bounded stock. It does not establish engine-confirmed shortages.
+`rejected_steps` counts whole Python-step rejection, not individual order
+failure; `final_day_sell_orders` counts submissions, not successful sales. Engine-confirmed shortage/individual-order rejection and mid-episode
+replay are uncovered. Starter hires and late liquidation are also uncovered.
+Both-seat original parity remains incomplete for all four bots; EcoBot/E776
+have no original-behavior comparison. Lifecycle and visibility checks do not
+close these parity gaps.
+
+The one compressed oracle uses **178,476 / 4,000,000 bytes**, SHA-256
+`39b8bc35c223594d2d6740fc35d0b8242e130351e0d69b2e4bc34594976cf97e`.
+Its manifest records 719 available actions per seat; actual compared/matched
+counts are the smaller table above. E776's separately pinned executable tape is
+policy data, not part of this new oracle budget.
+
+The dedicated opponent manifest/checker owns imported/authored file inventory,
+source hashes, Python source provenance and oracle trace hashes/size/budget.
+EcoBot/E776 explicitly declare no software license and must not be redistributed;
+engine licensing does not resolve that notice gap. No original Python submission
+source is copied. Learned-seat integration tests are explicitly skipped with
+`needs Task 1.4 binding`; no substitute binding is introduced. Default-config
+CPU qualification establishes neither custom-config support nor playing strength.
+
+Run 1 at `21d0f45` stopped on private `fib`, private `Game.config` and missing
+accessors under Claude's original placement prompt. Its compiler/source receipts
+remain unchanged. The revised view resolves that placement boundary without
+editing the frozen engine, restoring `policy_rows`, copying the reference
+all-controller dispatcher or adding a root-crate dependency. The trim updater
+accepts the committed run-1 manifest and preserves retained/authored entries.
 
 ### Kernel Inventory
 

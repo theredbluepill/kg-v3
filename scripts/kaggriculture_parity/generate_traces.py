@@ -27,14 +27,21 @@ import copy
 import gzip
 import hashlib
 import importlib.metadata
+import importlib.util
 import io
 import json
+import os
 import random
+import resource
+import signal
+import subprocess
 import sys
+import tempfile
 import time
 import tomllib
+import uuid
 from collections.abc import Callable, Iterator, Sequence
-from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -643,9 +650,195 @@ def _builtin(name: str, module: ModuleType) -> Policy:
     return policy
 
 
+SIBLING_REPO = Path("/Users/poonszesen/kaggriculture")
+SIBLING_COMMIT = "e8884aae82eddeb7a1aeae99ecceeca7c830d67e"
+SIBLING_ENTRY_SHA256 = {
+    "r04": "22d074391822206872448a6114a37ba2a4a39eda2ddbbcdc0bc8aa8cc6a64188",
+    "ecobot": "0dc02e03c94ef60c06b5093efc2e2fd0530aa6eea20df507a90b90d6651bd067",
+    "e776": "0cc2a88594f82b6c8d3cb15fcd4aa2df2bdd2a0a7fb0133d95a3204dd2d6ba38",
+}
+E776_MANIFEST_SHA256 = (
+    "55dcc45b4c56324599d7832dfbc53ce6f1ce86aa44524fcb5a59a3c694857d58"
+)
+ORACLE_BYTE_BUDGET = 4_000_000
+
+
+def _sibling_blob(path: str) -> bytes:
+    result = subprocess.run(
+        ["git", "-C", str(SIBLING_REPO), "show", f"{SIBLING_COMMIT}:{path}"],
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode:
+        raise ParityGeneratorError(
+            f"cannot read pinned sibling blob {path}: {result.stderr.decode()}"
+        )
+    return result.stdout
+
+
+def _verified_sibling_blob(path: str, expected: str) -> bytes:
+    blob = _sibling_blob(path)
+    actual = hashlib.sha256(blob).hexdigest()
+    if actual != expected:
+        raise ParityGeneratorError(f"{path}: SHA-256 {actual}, expected {expected}")
+    return blob
+
+
+def sibling_oracle_files(bot: str) -> dict[str, bytes]:
+    """Read verified original submission blobs; never consult the sibling worktree."""
+    if bot not in SIBLING_ENTRY_SHA256:
+        raise ParityGeneratorError(f"unknown sibling oracle {bot!r}")
+    prefix = f"agents/{bot}/"
+    files = {
+        prefix + "main.py": _verified_sibling_blob(
+            prefix + "main.py", SIBLING_ENTRY_SHA256[bot]
+        )
+    }
+    if bot == "e776":
+        manifest = _verified_sibling_blob(
+            prefix + "MANIFEST.sha256", E776_MANIFEST_SHA256
+        )
+        files[prefix + "MANIFEST.sha256"] = manifest
+        seen = set()
+        for line in manifest.decode().splitlines():
+            digest, name = line.split("  ", 1)
+            path = Path(name)
+            if (
+                path.is_absolute()
+                or any(part in {".", ".."} for part in name.split("/"))
+                or name in seen
+            ):
+                raise ParityGeneratorError(
+                    f"unsafe or duplicate E776 manifest path {name!r}"
+                )
+            seen.add(name)
+            files[prefix + name] = _verified_sibling_blob(prefix + name, digest)
+    return files
+
+
+def sibling_oracle_metadata(bot: str) -> dict[str, Any]:
+    files = sibling_oracle_files(bot)
+    return {
+        "bot": bot,
+        "source_repo": str(SIBLING_REPO),
+        "source_commit": SIBLING_COMMIT,
+        "files": [
+            {"path": path, "sha256": hashlib.sha256(blob).hexdigest()}
+            for path, blob in sorted(files.items())
+        ],
+        "provenance": (
+            "Read-only pinned original submission. EcoBot and E776 declare no "
+            "software license; local research oracle only, do not redistribute. "
+            "R04 has no agent PROVENANCE.md."
+        ),
+    }
+
+
+class SiblingPolicy:
+    """One isolated original Python submission per seat and episode.
+
+    E776 imports siblings by fixed names and resolves data relative to __file__.
+    Its verified closure therefore lives temporarily outside the repository. Each
+    invocation swaps only this closure's module names, then restores sys.path and
+    the KG_* environment variables used by R04. This synchronous generator never
+    invokes two policies concurrently. No Python submission is redistributed.
+    """
+
+    def __init__(self, bot: str):
+        self.bot = bot
+        files = sibling_oracle_files(bot)
+        self._directory = tempfile.TemporaryDirectory(
+            prefix="kagg-oracle-", dir="/private/tmp"
+        )
+        self.root = Path(self._directory.name)
+        self.name = "_kagg_oracle_" + uuid.uuid4().hex
+        self.modules: dict[str, ModuleType] = {}
+        self.module_names = {
+            self.name,
+            "e776_pkg",
+            "e776_pkg.entry",
+            "e776_packaged_policy",
+            "e749a_attributed_niklita_trace",
+            "e766a_kenjo_medoid_source",
+        }
+        prefix = f"agents/{bot}/"
+        try:
+            for path, blob in files.items():
+                relative = Path(path.removeprefix(prefix))
+                destination = self.root / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(blob)
+                if relative.parent == Path("agents") and relative.suffix == ".py":
+                    self.module_names.add(relative.stem)
+            with self._scope():
+                spec = importlib.util.spec_from_file_location(
+                    self.name, self.root / "main.py"
+                )
+                if spec is None or spec.loader is None:
+                    raise ParityGeneratorError(f"cannot load {bot} entry")
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[self.name] = module
+                spec.loader.exec_module(module)
+                self.agent = (
+                    module.kaggriculture_e776_agent if bot == "e776" else module.agent
+                )
+        except BaseException:
+            self.close()
+            raise
+
+    @contextmanager
+    def _scope(self) -> Iterator[None]:
+        previous = {
+            name: sys.modules[name] for name in self.module_names if name in sys.modules
+        }
+        previous_path = list(sys.path)
+        previous_kg = {
+            key: value for key, value in os.environ.items() if key.startswith("KG_")
+        }
+        previous_bytecode = sys.dont_write_bytecode
+        for name in self.module_names:
+            sys.modules.pop(name, None)
+        sys.modules.update(self.modules)
+        sys.path.insert(0, str(self.root))
+        sys.dont_write_bytecode = True
+        try:
+            yield
+        finally:
+            self.modules = {
+                name: sys.modules[name]
+                for name in self.module_names
+                if name in sys.modules
+            }
+            for name in self.module_names:
+                sys.modules.pop(name, None)
+            sys.modules.update(previous)
+            sys.path[:] = previous_path
+            for key in list(os.environ):
+                if key.startswith("KG_"):
+                    del os.environ[key]
+            os.environ.update(previous_kg)
+            sys.dont_write_bytecode = previous_bytecode
+
+    def __call__(
+        self, obs: dict[str, Any], config: dict[str, Any], rng: random.Random
+    ) -> Choice:
+        del rng
+        with self._scope():
+            action = (
+                self.agent(obs) if self.bot == "ecobot" else self.agent(obs, config)
+            )
+        return Choice(action)
+
+    def close(self) -> None:
+        self.modules.clear()
+        self._directory.cleanup()
+
+
 def resolve_policy(
     name: str, module: ModuleType, include_known_divergences: bool = False
 ) -> Policy:
+    if name.startswith("sibling:"):
+        return SiblingPolicy(name.removeprefix("sibling:"))
     if name == "random":
         return random_policy
     if name == "edge":
@@ -687,6 +880,7 @@ class GameResult:
     rejected: int
     seconds: float
     rejected_errors: list[str] = field(default_factory=list)
+    peak_rss_bytes: int = 0
 
 
 def _plain(value: Any) -> Json:
@@ -744,12 +938,25 @@ def play(
     engine_sha256: str,
     include_known_divergences: bool = False,
 ) -> GameResult:
-    """Run one seeded game in Kaggle's engine and record a parity trace."""
+    """Run one seeded game; original oracle modules never outlive the game."""
+    with ExitStack() as stack:
+        policies = []
+        for name in [] if spec.script else spec.policies:
+            policy = resolve_policy(name, module, include_known_divergences)
+            if isinstance(policy, SiblingPolicy):
+                stack.callback(policy.close)
+            policies.append(policy)
+        return _play(spec, kaggle, pin, engine_sha256, policies)
+
+
+def _play(
+    spec: GameSpec,
+    kaggle: ModuleType,
+    pin: EnginePin,
+    engine_sha256: str,
+    policies: list[Policy],
+) -> GameResult:
     started = time.perf_counter()
-    policies = [
-        resolve_policy(name, module, include_known_divergences)
-        for name in ([] if spec.script else spec.policies)
-    ]
     rngs = [random.Random(spec.policy_seed * 2 + seat) for seat in range(2)]
     with _silenced():
         env = kaggle.make("kaggriculture", configuration=spec.configuration)
@@ -763,6 +970,8 @@ def play(
     end_days: list[int] = []
     transitions = 0
     while not env.done:
+        if spec.name.startswith("oracle-") and peak_rss_bytes() >= 1_000_000_000:
+            raise ParityGeneratorError("opponent game reached 1 GB Mac memory bound")
         step = env.state[0].observation.step
         observations = _observations(env)
         if spec.script:
@@ -849,6 +1058,7 @@ def play(
         rejected=len(rejected_errors),
         seconds=time.perf_counter() - started,
         rejected_errors=rejected_errors,
+        peak_rss_bytes=peak_rss_bytes(),
     )
 
 
@@ -1064,7 +1274,9 @@ def known_divergence(name: str) -> dict[str, Any] | None:
     return None
 
 
-def write_manifest(out: Path, results: list[GameResult], pin: EnginePin) -> Path:
+def _manifest_data(
+    out: Path, results: list[GameResult], pin: EnginePin
+) -> dict[str, Any]:
     entries = []
     for result in results:
         path = out / f"{result.spec.name}.jsonl.gz"
@@ -1086,7 +1298,7 @@ def write_manifest(out: Path, results: list[GameResult], pin: EnginePin) -> Path
                 ),
             }
         )
-    manifest = {
+    return {
         "schema_version": 1,
         "format": TRACE_FORMAT,
         "generator": GENERATOR,
@@ -1094,18 +1306,175 @@ def write_manifest(out: Path, results: list[GameResult], pin: EnginePin) -> Path
         "python_engine_sha256": pin.sha256,
         "traces": entries,
     }
+
+
+def write_manifest(out: Path, results: list[GameResult], pin: EnginePin) -> Path:
+    manifest = _manifest_data(out, results, pin)
     path = out / "MANIFEST.json"
     path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     return path
+
+
+OPPONENT_PAIRS = (
+    ("builtin:starter", "sibling:r04"),
+    ("sibling:r04", "sibling:ecobot"),
+    ("sibling:ecobot", "sibling:e776"),
+    ("sibling:e776", "builtin:starter"),
+)
+
+
+def opponent_specs(start: int, games: int, base_seed: int) -> list[GameSpec]:
+    """A bounded slice; four consecutive indices cover every bot in both seats."""
+    if games not in (1, 2) or start < 0:
+        raise ParityGeneratorError(
+            "opponents requires one or two games and a nonnegative start"
+        )
+    return [
+        GameSpec(
+            name=f"oracle-{index:02d}-"
+            + "-vs-".join(p.split(":")[1] for p in OPPONENT_PAIRS[index % 4]),
+            seed=base_seed + index,
+            policies=OPPONENT_PAIRS[index % 4],
+            variant="default",
+            policy_seed=base_seed + index,
+        )
+        for index in range(start, start + games)
+    ]
+
+
+def opponent_coverage(records: list[dict[str, Any]]) -> list[dict[str, int]]:
+    """Count observable events; rejected_steps means whole Python-step rejection.
+
+    BUY_PRODUCT quantities above the signed inventory index are a diagnostic
+    proxy only: this index is not physical stock, so neither actual shortages
+    nor individual-order rejection is measured. Hires count positive changes
+    in hands. A day reset is an action at hour zero after step zero. Final-day
+    sell orders count intent, not proceeds. Mid-episode replay is not performed.
+    """
+    counts = [
+        dict.fromkeys(
+            (
+                "openings",
+                "day_resets",
+                "weed_presence",
+                "buy_quantity_above_inventory_index",
+                "rejected_steps",
+                "hires",
+                "final_day_sell_orders",
+                "mid_episode_replay",
+            ),
+            0,
+        )
+        for _ in range(2)
+    ]
+    public = records[0]["initial"]["public"]
+    for record in records[1:]:
+        for seat, action in enumerate(record["actions"]):
+            count = counts[seat]
+            farm = public["farms"][seat]
+            if record["type"] == "rejected":
+                count["rejected_steps"] += 1
+                continue
+            count["openings"] += int(record["from_step"] == 0)
+            count["day_resets"] += int(record["from_step"] > 0 and public["hour"] == 0)
+            count["weed_presence"] += int(
+                any(
+                    isinstance(tile, dict) and tile["kind"] == "WEED"
+                    for row in farm["tiles"]
+                    for tile in row
+                )
+            )
+            for order in action.get("market", []):
+                if order[0] == "BUY_PRODUCT" and int(order[2]) > public["market"][
+                    "inventory"
+                ].get(order[1], 0):
+                    count["buy_quantity_above_inventory_index"] += 1
+                count["final_day_sell_orders"] += int(
+                    public["day"] == 29 and order[0] == "SELL"
+                )
+            count["hires"] += max(
+                0, len(record["expected"]["farms"][seat]["hands"]) - len(farm["hands"])
+            )
+        if record["type"] == "transition":
+            public = record["expected"]
+    return counts
+
+
+def peak_rss_bytes() -> int:
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return int(rss if sys.platform == "darwin" else rss * 1024)
+
+
+class _OpponentDeadline(BaseException):
+    """Original agents may swallow Exception; the Mac bound must still interrupt."""
+
+
+@contextmanager
+def opponent_deadline(seconds: int = 120) -> Iterator[None]:
+    """Interrupt even a stuck original policy; this CLI runs on the main thread."""
+
+    def expired(signum: int, frame: Any) -> None:
+        del signum, frame
+        raise _OpponentDeadline
+
+    previous = signal.signal(signal.SIGALRM, expired)
+    signal.alarm(seconds)
+    try:
+        yield
+    except _OpponentDeadline as error:
+        raise ParityGeneratorError(
+            f"opponent game exceeded {seconds}s Mac bound"
+        ) from error
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, previous)
+
+
+def write_opponent_manifest(
+    out: Path, results: list[GameResult], pin: EnginePin
+) -> Path:
+    """Merge bounded batches while rechecking previous fixture custody."""
+    manifest_path = out / "MANIFEST.json"
+    previous = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
+    existing = (
+        {}
+        if previous is None
+        else {entry["path"]: entry for entry in previous["traces"]}
+    )
+    for entry in existing.values():
+        path = out / entry["path"]
+        if (
+            path.parent != out
+            or sha256_file(path) != entry["sha256"]
+            or path.stat().st_size != entry["bytes"]
+        ):
+            raise ParityGeneratorError(f"existing oracle custody mismatch: {path}")
+    # Build the existing trace schema, then add explicit availability and events.
+    manifest = _manifest_data(out, results, pin)
+    for entry, result in zip(manifest["traces"], results, strict=True):
+        entry["available_actions"] = [result.transitions, result.transitions]
+        entry["coverage"] = opponent_coverage(result.records)
+        existing[entry["path"]] = entry
+    manifest["traces"] = [existing[name] for name in sorted(existing)]
+    manifest["byte_budget"] = ORACLE_BYTE_BUDGET
+    if sum(entry["bytes"] for entry in existing.values()) > ORACLE_BYTE_BUDGET:
+        raise ParityGeneratorError("opponent trace byte budget exceeded")
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    return manifest_path
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument(
-        "--preset", choices=["committed", "sweep", "probes"], required=True
+        "--preset", choices=["committed", "sweep", "probes", "opponents"], required=True
     )
-    parser.add_argument("--games", type=int, default=40, help="sweep games")
+    parser.add_argument(
+        "--games", type=int, help="sweep games (40) or opponent games (1; maximum 2)"
+    )
+    parser.add_argument(
+        "--opponent-start", type=int, default=0, help="first opponent-pair index"
+    )
     parser.add_argument("--base-seed", type=int, default=20260929, help="sweep seed")
     parser.add_argument("--manifest", action="store_true", help="write MANIFEST.json")
     parser.add_argument("--summary", type=Path, help="per-game JSON summary")
@@ -1124,22 +1493,56 @@ def main(argv: list[str] | None = None) -> int:
     if args.preset == "committed":
         specs = committed_specs()
     elif args.preset == "sweep":
-        specs = sweep_specs(args.games, args.base_seed)
+        specs = sweep_specs(
+            args.games if args.games is not None else 40, args.base_seed
+        )
+    elif args.preset == "opponents":
+        try:
+            specs = opponent_specs(
+                args.opponent_start,
+                args.games if args.games is not None else 1,
+                args.base_seed,
+            )
+        except ParityGeneratorError as error:
+            print(f"refusing to generate: {error}", file=sys.stderr)
+            return 2
     else:
         specs = probe_specs()
     args.out.mkdir(parents=True, exist_ok=True)
     results = []
     for spec in specs:
-        result = play(spec, kaggle, module, pin, digest, args.include_known_divergences)
+        with ExitStack() as stack:
+            if args.preset == "opponents":
+                stack.enter_context(opponent_deadline())
+            result = play(
+                spec, kaggle, module, pin, digest, args.include_known_divergences
+            )
         path = args.out / f"{spec.name}.jsonl.gz"
-        path.write_bytes(encode_trace(result.records))
+        encoded = encode_trace(result.records)
+        if args.preset == "opponents":
+            total = sum(
+                p.stat().st_size for p in args.out.glob("*.jsonl.gz") if p != path
+            )
+            if total + len(encoded) > ORACLE_BYTE_BUDGET:
+                raise ParityGeneratorError(
+                    "opponent trace byte budget exceeded before writing"
+                )
+        if (
+            args.preset == "opponents"
+            and path.exists()
+            and path.read_bytes() != encoded
+        ):
+            raise ParityGeneratorError(f"refusing to overwrite frozen oracle {path}")
+        path.write_bytes(encoded)
         results.append(result)
         print(
             f"{path.name}: {result.transitions} transitions, {result.rejected} "
             f"rejected, {path.stat().st_size:,} B, {result.seconds:.1f}s",
             flush=True,
         )
-    if args.manifest:
+    if args.preset == "opponents":
+        write_opponent_manifest(args.out, results, pin)
+    elif args.manifest:
         write_manifest(args.out, results, pin)
     if args.summary:
         summary = [
@@ -1154,6 +1557,8 @@ def main(argv: list[str] | None = None) -> int:
                 "rejected": r.rejected,
                 "rejected_errors": sorted(set(r.rejected_errors)),
                 "seconds": round(r.seconds, 3),
+                "peak_rss_bytes": r.peak_rss_bytes,
+                "python_version": sys.version,
             }
             for r in results
         ]
