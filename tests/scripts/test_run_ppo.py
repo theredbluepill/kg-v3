@@ -16,6 +16,7 @@ from owl.checkpoint_quantization import (
     dequantize_model_state_dict,
     quantize_model_state_dict,
 )
+from owl.kaggriculture.types import KaggricultureObsConfig
 from owl.model import LoRALinear
 from owl.rl import (
     ACTION_ENTITY_SLOTS,
@@ -1230,7 +1231,7 @@ def test_evaluate_against_last_best_uses_eval_mode_no_grad_and_eval_prefix(
     last_best_model = torch.nn.Linear(1, 1)
     current_model.train()
     last_best_model.eval()
-    seen_eval_sizes: list[tuple[int, int, int]] = []
+    seen_eval_sizes: list[tuple[object, ...]] = []
     perf_times = iter([10.0, 14.0])
 
     def fake_evaluate_games(
@@ -1242,7 +1243,12 @@ def test_evaluate_against_last_best_uses_eval_mode_no_grad_and_eval_prefix(
         assert not last_best_model.training
         assert not torch.is_grad_enabled()
         seen_eval_sizes.append(
-            (kwargs["n_games"], kwargs["n_envs"], kwargs["replay_games"])
+            (
+                kwargs["n_games"],
+                kwargs["n_envs"],
+                kwargs["replay_games"],
+                kwargs["env_steps"],
+            )
         )
         stats = run_ppo._EvalStats.empty()
         stats.add_game_result(run_ppo.MODEL_CURRENT)
@@ -1278,6 +1284,7 @@ def test_evaluate_against_last_best_uses_eval_mode_no_grad_and_eval_prefix(
         last_best_model=last_best_model,
         cfg=cfg,
         device=torch.device("cpu"),
+        env_steps=40_000_000,
     )
 
     assert metrics["eval/win_rate_against_last_best"] == pytest.approx(0.5)
@@ -1289,7 +1296,9 @@ def test_evaluate_against_last_best_uses_eval_mode_no_grad_and_eval_prefix(
     assert "eval/_neutral_planets_captured_per_game" not in metrics
     assert metrics["time/eval_seconds"] == pytest.approx(4.0)
     assert metrics["perf/eval_sps"] == pytest.approx(1.5)
-    assert seen_eval_sizes == [(4, 4, 0)]
+    # Isaiah's default evaluation count: one game per env on the main process.
+    assert seen_eval_sizes == [(4, 4, 0, 40_000_000)]
+    assert metrics["eval/games"] == pytest.approx(2.0)
     assert current_model.training
     assert not last_best_model.training
 
@@ -1329,6 +1338,7 @@ def test_evaluate_against_last_best_records_weighted_eval_replay_outputs(
         last_best_model=torch.nn.Linear(1, 1),
         cfg=cfg,
         device=torch.device("cpu"),
+        env_steps=1000,
         replay_dir=tmp_path,
     )
 
@@ -1357,6 +1367,7 @@ def test_evaluate_against_last_best_omits_empty_player_count_metrics(
         last_best_model=torch.nn.Linear(1, 1),
         cfg=_config_with_envs(2),
         device=torch.device("cpu"),
+        env_steps=1000,
     )
 
     assert metrics["eval/win_rate_against_last_best_2p"] == pytest.approx(1.0)
@@ -1370,7 +1381,7 @@ def test_record_eval_terminal_result_counts_team_ties_as_half_win() -> None:
         stats,
         assignment=torch.tensor([0, 1, 1, 0]),
         start_mask=torch.tensor([True, True, True, True]),
-        returns=torch.tensor([1.0, 1.0, 1.0, 1.0]),
+        scores=torch.tensor([1.0, 1.0, 1.0, 1.0]),
     )
 
     assert stats.model_games == [1, 1]
@@ -1582,6 +1593,7 @@ def test_evaluate_games_carries_recurrent_hidden_state(
         n_games=2,
         n_envs=2,
         device=torch.device("cpu"),
+        env_steps=1000,
     )
 
     assert steps == 4
@@ -1964,7 +1976,11 @@ def test_run_training_loop_writes_periodic_checkpoints(
     assert [step for _metrics, step in logger.logged] == [800, 1600, 1600]
     assert logger.logged[0][0]["train/max_entities"] == pytest.approx(17.0)
     assert logger.logged[1][0]["train/max_entities"] == pytest.approx(17.0)
-    assert logger.logged[-1][0] == {"eval/win_rate_against_last_best": 0.25}
+    assert logger.logged[-1][0] == {
+        "eval/win_rate_against_last_best": 0.25,
+        "eval/promoted": 0.0,
+        "eval/promotion_threshold": 0.7,
+    }
     assert eval_calls == 1
     assert "model/trainable_parameters" not in logger.logged[0][0]
     assert "trainable_parameters" not in logger.logged[0][0]
@@ -2714,3 +2730,395 @@ def test_ppo_trainer_load_checkpoint_rejects_scheduler_mismatch(
 
     with pytest.raises(ValueError, match="missing lr_scheduler state"):
         trainer.load_checkpoint(path)
+
+
+# Rebuild Task 3.2 (L1): raw-bank evaluation outcome -----------------------------
+
+
+def _two_seat_obs(n_envs: int) -> ObsBatch:
+    return ObsBatch(
+        planets=torch.zeros((n_envs, 1, 1)),
+        orbiting_planets=torch.zeros((n_envs, 1), dtype=torch.bool),
+        fleets=torch.zeros((n_envs, 1, 1)),
+        comets=torch.zeros((n_envs, 1, 1)),
+        entity_mask=torch.zeros((n_envs, 1), dtype=torch.bool),
+        still_playing=torch.ones((n_envs, 2), dtype=torch.bool),
+        global_features=torch.zeros((n_envs, 1)),
+        action_mask=PureActionMask(
+            can_act=torch.zeros((n_envs, 2, ACTION_ENTITY_SLOTS), dtype=torch.bool),
+            max_launch=torch.zeros((n_envs, 2, ACTION_ENTITY_SLOTS), dtype=torch.int64),
+        ),
+    )
+
+
+class _ShapedReturnMisranksBanksEnv:
+    """Two-seat one-step fake game whose shaped return misranks the banks.
+
+    Env 0: the candidate's seat ends with more money, but its shaped return is
+    lower. Env 1: equal banks (a draw) with unequal shaped returns.
+    """
+
+    def __init__(self, n_envs: int) -> None:
+        assert n_envs == 2
+        self.n_envs = n_envs
+        self.candidate_seat = torch.full((n_envs,), -1, dtype=torch.int64)
+
+    def reset(self) -> ObsBatch:
+        return _two_seat_obs(self.n_envs)
+
+    def step(
+        self, actions: object
+    ) -> tuple[ObsBatch, torch.Tensor, torch.Tensor, dict[str, list[float]]]:
+        assert isinstance(actions, run_ppo.PureActions)
+        # The candidate launches and the incumbent does not, so its seat is visible.
+        launches = actions.launch[:, :, 0, 0]
+        assert launches.sum(dim=1).tolist() == [1, 1]
+        self.candidate_seat = launches.to(torch.int64).argmax(dim=1)
+        rewards = torch.zeros((self.n_envs, 2))
+        for env, shaped in enumerate((0.4, 0.1)):
+            rewards[env, self.candidate_seat[env]] = -shaped
+            rewards[env, 1 - self.candidate_seat[env]] = shaped
+        dones = torch.ones((self.n_envs, 2), dtype=torch.bool)
+        return _two_seat_obs(self.n_envs), rewards, dones, {}
+
+    def terminal_metrics(self, env_index: int) -> dict[str, float]:
+        seat = int(self.candidate_seat[env_index])
+        candidate_bank, incumbent_bank = ((3000.0, 2000.0), (2500.0, 2500.0))[env_index]
+        banks = [0.0, 0.0]
+        banks[seat], banks[1 - seat] = candidate_bank, incumbent_bank
+        winner = -1.0 if banks[0] == banks[1] else float(banks[1] > banks[0])
+        return {
+            "bank_0": banks[0],
+            "bank_1": banks[1],
+            "margin_0": banks[0] - banks[1],
+            "winner": winner,
+            "episode_steps": 1.0,
+        }
+
+
+class _LaunchPolicy:
+    def __init__(self, *, launch: bool) -> None:
+        self.launch = launch
+
+    def initial_hidden_state(
+        self,
+        batch_size: int,  # noqa: ARG002
+        *,
+        device: torch.device,  # noqa: ARG002
+    ) -> None:
+        return None
+
+    def reset_hidden_state(
+        self,
+        hidden_state: None,  # noqa: ARG002
+        dones: torch.Tensor,  # noqa: ARG002
+    ) -> None:
+        return None
+
+    def __call__(self, obs: ObsBatch, *, deterministic: bool) -> SimpleNamespace:
+        assert not deterministic
+        shape = (obs.global_features.shape[0], 2, ACTION_ENTITY_SLOTS, 1)
+        return SimpleNamespace(
+            actions=run_ppo.PureActions(
+                launch=torch.full(shape, self.launch, dtype=torch.bool),
+                angle=torch.zeros(shape),
+                ships=torch.ones(shape, dtype=torch.int64),
+            ),
+            next_hidden_state=None,
+        )
+
+
+def _kaggriculture_eval_config() -> FullConfig:
+    # Task 1.5 registers the Kaggriculture env config; until then an unvalidated
+    # copy carries the observation spec that selects the game semantics.
+    cfg = _config_with_envs(2)
+    return cfg.model_copy(
+        update={
+            "env": cfg.env.model_copy(update={"obs_spec": KaggricultureObsConfig()})
+        }
+    )
+
+
+def test_kaggriculture_evaluation_decides_winners_by_raw_banks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    built_for: list[int] = []
+
+    def fake_create_eval_env(
+        cfg: FullConfig, *, n_envs: int, device: torch.device, env_steps: int
+    ) -> _ShapedReturnMisranksBanksEnv:
+        assert device.type == "cpu"
+        assert isinstance(cfg.env.obs_spec, KaggricultureObsConfig)
+        built_for.append(env_steps)
+        return _ShapedReturnMisranksBanksEnv(n_envs)
+
+    monkeypatch.setattr(run_ppo, "_create_eval_env", fake_create_eval_env)
+
+    stats, stats_by_player_count, env_metrics, steps = run_ppo._evaluate_games(
+        current_model=_LaunchPolicy(launch=True),
+        last_best_model=_LaunchPolicy(launch=False),
+        cfg=_kaggriculture_eval_config(),
+        n_games=2,
+        n_envs=2,
+        device=torch.device("cpu"),
+        env_steps=20_000_000,
+    )
+
+    # Shaped returns would give the incumbent both games (win rate 0.0); the
+    # banks give the candidate one win and one draw.
+    assert built_for == [20_000_000]
+    assert steps == 2
+    assert stats.model_games == [2, 2]
+    assert stats.wins == [1.5, 0.5]
+    assert stats_by_player_count[2].wins == [1.5, 0.5]
+    assert env_metrics["candidate_bank"] == [3000.0, 2500.0]
+    assert env_metrics["last_best_bank"] == [2000.0, 2500.0]
+    assert env_metrics["candidate_bank_margin"] == [1000.0, 0.0]
+
+
+def test_orbit_evaluation_scores_stay_the_training_returns() -> None:
+    returns = torch.tensor([1.0, -1.0, 0.0, 0.0])
+
+    scores, metrics = run_ppo._evaluation_scores_and_metrics(
+        _config_with_envs(2),
+        {"game_length_mean": 12.0},
+        returns,
+        torch.tensor([0, 1, -1, -1]),
+    )
+
+    assert scores is returns
+    assert metrics == {}
+
+
+def test_candidate_bank_metrics_require_one_candidate_per_game() -> None:
+    with pytest.raises(ValueError, match="one candidate and one incumbent"):
+        run_ppo._candidate_bank_metrics(
+            torch.tensor([1.0, 2.0], dtype=torch.float64), torch.tensor([0, 0])
+        )
+
+
+# Rebuild Task 3.3 (L12): fresh reproducible seed per evaluation --------------------
+
+
+def test_evaluation_seed_is_reproducible_and_changes_per_evaluation() -> None:
+    first = run_ppo._evaluation_seed(base_seed=7, env_steps=20_000_000)
+
+    assert first == run_ppo._evaluation_seed(base_seed=7, env_steps=20_000_000)
+    assert first != run_ppo._evaluation_seed(base_seed=7, env_steps=40_000_000)
+    assert first != run_ppo._evaluation_seed(base_seed=8, env_steps=20_000_000)
+    checkpoints = [
+        run_ppo._evaluation_seed(base_seed=7, env_steps=step)
+        for step in range(0, 20_000_000 * 1_000, 20_000_000)
+    ]
+    assert len(set(checkpoints)) == len(checkpoints)
+    adjacent = [
+        run_ppo._evaluation_seed(base_seed=base, env_steps=steps)
+        for base in range(4)
+        for steps in range(1_000, 1_256)
+    ]
+    assert len(set(adjacent)) == len(adjacent)
+
+
+def test_evaluation_seed_fits_the_native_seed_with_headroom() -> None:
+    # engine_rs `Game::new` takes an i64 seed and contract v4 requires seed >= 0;
+    # one evaluation env consumes one seed per construction and per auto-reset.
+    native_limit = 2**63
+    band_floor = 2**62
+    extremes = [
+        run_ppo._evaluation_seed(base_seed=base, env_steps=steps)
+        for base in (0, 1, 2**61 - 1)
+        for steps in (0, 1, 20_000_000, 2**61 - 1)
+    ]
+    for seed in extremes:
+        assert band_floor <= seed < band_floor + 2**61
+        assert seed + 2**61 <= native_limit
+
+
+def test_evaluation_seed_distinguishes_one_input_at_a_time_not_pairs() -> None:
+    # Pins the documented limit: the mix is a bijection in each input while the
+    # other is fixed, not an injection over (base_seed, env_steps) pairs, and it
+    # does not keep consecutive seed ranges apart. Counterexamples from Codex's
+    # 3.2/3.3 verification (verify-3.2-3.3-r1).
+    same = run_ppo._evaluation_seed(base_seed=0, env_steps=0)
+    other_run = run_ppo._evaluation_seed(
+        base_seed=1, env_steps=2_131_737_497_183_550_101
+    )
+    same_run_later = run_ppo._evaluation_seed(
+        base_seed=0, env_steps=787_325_655_728_545_358
+    )
+
+    assert other_run == same
+    assert same_run_later == same + 1
+
+
+@pytest.mark.parametrize(
+    ("base_seed", "env_steps"),
+    [(-1, 0), (2**61, 0), (0, -1), (0, 2**61)],
+)
+def test_evaluation_seed_rejects_values_outside_the_seed_band(
+    base_seed: int, env_steps: int
+) -> None:
+    with pytest.raises(ValueError, match=r"must be in \[0, 2\*\*61\)"):
+        run_ppo._evaluation_seed(base_seed=base_seed, env_steps=env_steps)
+
+
+def test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    built: list[dict[str, object]] = []
+
+    def fake_vectorized_env(**kwargs: object) -> str:
+        built.append(kwargs)
+        return "orbit-env"
+
+    monkeypatch.setattr(run_ppo, "VectorizedEnv", fake_vectorized_env)
+    cfg = _config_with_envs(2)
+
+    env = run_ppo._create_eval_env(
+        cfg, n_envs=4, device=torch.device("cpu"), env_steps=1000
+    )
+
+    assert env == "orbit-env"
+    assert built == [
+        {
+            "n_envs": 4,
+            "obs_spec": cfg.env.obs_spec,
+            "action_spec": cfg.env.action_spec,
+            "two_player_weight": cfg.env.two_player_weight,
+            "reward_mode": cfg.env.reward_mode,
+            "pin_memory": False,
+        }
+    ]
+    with pytest.raises(NotImplementedError, match=r"Tasks 1\.4/1\.5"):
+        run_ppo._create_eval_env(
+            _kaggriculture_eval_config(),
+            n_envs=4,
+            device=torch.device("cpu"),
+            env_steps=1000,
+        )
+
+
+@pytest.mark.skip(
+    reason=(
+        "Needs the native Kaggriculture environment and its EnvConfig seed "
+        "(rebuild Tasks 1.4/1.5)."
+    )
+)
+def test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds() -> None:
+    pytest.fail(
+        "Unskip when owl.game.create_env builds KaggricultureEnv: two evaluations "
+        "at different env_steps must start different games, and repeating one "
+        "evaluation must reproduce its games and final banks exactly."
+    )
+
+
+# Rebuild Task 3.3: promotion telemetry ----------------------------------------------
+
+
+@pytest.mark.parametrize(("win_rate", "promoted"), [(0.7, 1.0), (0.69, 0.0)])
+def test_run_training_loop_logs_promotion_telemetry_and_evaluation_steps(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    win_rate: float,
+    promoted: float,
+) -> None:
+    cfg = _full_config(checkpoint_freq=1000)
+    trainer = _FakeTrainer()
+    logger = _FakeLogger()
+    _patch_eval_model_from_weights(monkeypatch)
+    evaluated_at: list[object] = []
+
+    def fake_evaluate_against_last_best(**kwargs: object) -> dict[str, float]:
+        evaluated_at.append(kwargs["env_steps"])
+        return {"eval/win_rate_against_last_best": win_rate, "eval/games": 2.0}
+
+    monkeypatch.setattr(
+        run_ppo, "_evaluate_against_last_best", fake_evaluate_against_last_best
+    )
+
+    run_ppo._run_training_loop(
+        trainer=trainer,
+        logger=logger,
+        run_dir=tmp_path,
+        cfg=cfg,
+        env_steps_per_iteration=1000,
+        max_env_steps=2000,
+        max_runtime_seconds=None,
+        dist_ctx=DistributedContext.single_process_cpu(),
+    )
+
+    assert evaluated_at == [1000, 2000]
+    eval_logs = [
+        (metrics, step) for metrics, step in logger.logged if "eval/games" in metrics
+    ]
+    assert [step for _metrics, step in eval_logs] == [1000, 2000]
+    for metrics, _step in eval_logs:
+        assert metrics["eval/promoted"] == promoted
+        assert metrics["eval/promotion_threshold"] == pytest.approx(0.7)
+        assert metrics["eval/win_rate_against_last_best"] == win_rate
+    promotions = [
+        checkpoint
+        for checkpoint in trainer.checkpoints
+        if checkpoint[0].name == "checkpoint_last_best.pt" and checkpoint[1] > 0
+    ]
+    assert len(promotions) == (2 if promoted else 0)
+
+
+class _FailingLastBestWriteTrainer(_FakeTrainer):
+    def write_checkpoint(
+        self,
+        path: Path,
+        *,
+        env_steps: int,
+        wandb_run_id: str | None = None,
+        model: torch.nn.Module | None = None,
+    ) -> None:
+        if path.name == run_ppo.CHECKPOINT_LAST_BEST and env_steps > 0:
+            raise OSError("injected promoted checkpoint write failure")
+        super().write_checkpoint(
+            path, env_steps=env_steps, wandb_run_id=wandb_run_id, model=model
+        )
+
+
+@pytest.mark.parametrize("failing_phase", ["refresh", "checkpoint"])
+def test_run_training_loop_reports_promotion_only_after_it_completes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failing_phase: str,
+) -> None:
+    cfg = _full_config(checkpoint_freq=1000)
+    trainer = (
+        _FailingLastBestWriteTrainer()
+        if failing_phase == "checkpoint"
+        else _FakeTrainer()
+    )
+    logger = _FakeLogger()
+    _patch_eval_model_from_weights(monkeypatch)
+    monkeypatch.setattr(
+        run_ppo,
+        "_evaluate_against_last_best",
+        lambda **_kwargs: {"eval/win_rate_against_last_best": 0.7, "eval/games": 2.0},
+    )
+    if failing_phase == "refresh":
+
+        def fail_refresh(*_args: object) -> None:
+            raise RuntimeError("injected incumbent refresh failure")
+
+        monkeypatch.setattr(run_ppo, "_refresh_eval_model_from_weights", fail_refresh)
+
+    with pytest.raises((RuntimeError, OSError), match="injected"):
+        run_ppo._run_training_loop(
+            trainer=trainer,
+            logger=logger,
+            run_dir=tmp_path,
+            cfg=cfg,
+            env_steps_per_iteration=1000,
+            max_env_steps=1000,
+            max_runtime_seconds=None,
+            dist_ctx=DistributedContext.single_process_cpu(),
+        )
+
+    # The iteration's training metrics were logged, but no evaluation record
+    # (and so no `eval/promoted`) exists for a promotion that never completed.
+    assert [step for _metrics, step in logger.logged] == [1000]
+    assert all("eval/promoted" not in metrics for metrics, _step in logger.logged)

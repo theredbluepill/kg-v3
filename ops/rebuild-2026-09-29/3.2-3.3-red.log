@@ -1,0 +1,46 @@
+==================================== ERRORS ====================================
+___________ ERROR collecting tests/kaggriculture/test_evaluation.py ____________
+ImportError while importing test module '/Users/poonszesen/kg-v3-semantics/tests/kaggriculture/test_evaluation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/kaggriculture/test_evaluation.py:9: in <module>
+    from owl.kaggriculture.evaluation import terminal_seat_banks
+E   ModuleNotFoundError: No module named 'owl.kaggriculture.evaluation'
+_______ ERROR collecting tests/kaggriculture/test_training_semantics.py ________
+ImportError while importing test module '/Users/poonszesen/kg-v3-semantics/tests/kaggriculture/test_training_semantics.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/kaggriculture/test_training_semantics.py:20: in <module>
+    from owl.train.config import _validate_kaggriculture_training
+E   ImportError: cannot import name '_validate_kaggriculture_training' from 'owl.train.config' (/Users/poonszesen/kg-v3-semantics/python/owl/train/config.py)
+=========================== short test summary info ============================
+ERROR tests/kaggriculture/test_evaluation.py
+ERROR tests/kaggriculture/test_training_semantics.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+2 errors in 3.59s
+
+== run_ppo and ppo suites (collected separately) ==
+FAILED tests/scripts/test_run_ppo.py::test_evaluate_against_last_best_uses_eval_mode_no_grad_and_eval_prefix
+FAILED tests/scripts/test_run_ppo.py::test_evaluate_against_last_best_records_weighted_eval_replay_outputs
+FAILED tests/scripts/test_run_ppo.py::test_evaluate_against_last_best_omits_empty_player_count_metrics
+FAILED tests/scripts/test_run_ppo.py::test_record_eval_terminal_result_counts_team_ties_as_half_win
+FAILED tests/scripts/test_run_ppo.py::test_evaluate_games_carries_recurrent_hidden_state
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_evaluation_decides_winners_by_raw_banks
+FAILED tests/scripts/test_run_ppo.py::test_orbit_evaluation_scores_stay_the_training_returns
+FAILED tests/scripts/test_run_ppo.py::test_candidate_bank_metrics_require_one_candidate_per_game
+FAILED tests/scripts/test_run_ppo.py::test_evaluation_seed_is_reproducible_and_changes_per_evaluation
+FAILED tests/scripts/test_run_ppo.py::test_evaluation_seed_fits_the_native_seed_with_headroom
+FAILED tests/scripts/test_run_ppo.py::test_evaluation_seed_rejects_values_outside_the_seed_band[-1-0]
+FAILED tests/scripts/test_run_ppo.py::test_evaluation_seed_rejects_values_outside_the_seed_band[2305843009213693952-0]
+FAILED tests/scripts/test_run_ppo.py::test_evaluation_seed_rejects_values_outside_the_seed_band[0--1]
+FAILED tests/scripts/test_run_ppo.py::test_evaluation_seed_rejects_values_outside_the_seed_band[0-2305843009213693952]
+FAILED tests/scripts/test_run_ppo.py::test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native
+FAILED tests/scripts/test_run_ppo.py::test_run_training_loop_logs_promotion_telemetry_and_evaluation_steps[0.7-1.0]
+FAILED tests/scripts/test_run_ppo.py::test_run_training_loop_logs_promotion_telemetry_and_evaluation_steps[0.69-0.0]
+17 failed, 147 passed, 1 skipped in 1.58s

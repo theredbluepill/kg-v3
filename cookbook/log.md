@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-09-29 — Merge Tasks 3.2/3.3 evaluation and truncation semantics onto Task 3.1
+
+Tasks 3.2/3.3 (Codex APPROVE at `530b8cc`) forked at `e1458d2`, before Task 1.2
+and Task 3.1 merged. `FullConfig` keeps both guards: Task 3.1's rejection of a
+Kaggriculture model under Orbit's `EnvConfig`, and Tasks 3.2/3.3's
+`_validate_kaggriculture_training` for a Kaggriculture observation spec.
+`docs/rl-api-specs.md` keeps the 3.2/3.3 Environment line (raw-bank winners,
+truncation bootstrap, evaluation seed band) followed by the Task 1.2 native
+grammar section. The references index lists both new References.
+
 ## 2026-09-29 — Merge Task 3.1 model registration onto the native grammar
 
 Task 3.1's model side (Codex APPROVE at `4cac1a1`) forked at `e1458d2`, before
@@ -71,6 +81,25 @@ Task 3.1 model side, on `kg/rebuild-trainer-model` (base `e1458d2`). The new [[r
 - **Critic:** the winner softmax uses Isaiah's masked form. The encoder and heads References now link here instead of listing these items as open.
 
 Checks: `just py-prepare` passes (1,324 passed, 4 skipped), and Isaiah's suites give 1,048 passed. Red runs are in `ops/rebuild-2026-09-29/trainer-model/`. Everything ran on CPU; real compile and CUDA are unverified.
+
+## 2026-09-29 — Report promotion only after it completes; narrow the evaluation-seed claims
+
+Codex verified Tasks 3.2/3.3 (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify-3.2-3.3-independent/review.md`). The [[references/evaluation-and-truncation-follow-the-kaggriculture-objective|evaluation and truncation Reference]] now records both repairs.
+- `scripts/run_ppo.py` logs the evaluation record, including `eval/promoted`, once, after the incumbent refresh, teacher update, promoted checkpoint and barrier (the reference's order). A new test injects a refresh failure and a promoted-checkpoint write failure; each failed before the change and now leaves no `eval/promoted`.
+- `_evaluation_seed` is documented as distinct per step for a fixed base seed and per base seed for a fixed step, not injective over pairs and not a separator of consecutive seed ranges. Training/evaluation seed separation holds only below a `2**62` training-seed bound that the native seam (Tasks 1.4/1.5) must enforce. The docstring, `README.md`, `docs/rl-api-specs.md` and a characterization test agree.
+
+`just py-prepare` passed (1,344 passed, 6 skipped). The native env and a real Kaggriculture evaluation remain pending.
+
+## 2026-09-29 — Decide Kaggriculture evaluations by raw banks and keep the truncation reward
+
+Rebuild Tasks 3.2 and 3.3 land on the trainer seam; the new [[references/evaluation-and-truncation-follow-the-kaggriculture-objective|evaluation and truncation Reference]] records the inventory.
+- Kaggriculture evaluation games are decided by raw final banks, with candidate bank metrics logged.
+- A Kaggriculture time-limit cut keeps the economic reward earned on that transition; Orbit still zeroes it.
+- `FullConfig` rejects Kaggriculture settings other than `win_loss`, gamma 1, MSE value loss and joint `per_player` clipping.
+- `_evaluation_seed` gives each evaluation a reproducible seed in `[2**62, 2**62 + 2**61)`.
+- Every evaluation logs `eval/games`, `eval/promoted` and `eval/promotion_threshold`.
+
+The checks were CPU TDD with a fake env, a mutation check and `just py-prepare` (1,341 passed, 6 skipped). The native env, config registration and the Kaggriculture evaluation env remain skipped placeholders for Tasks 1.4/1.5.
 
 ## 2026-09-29 — Reconcile overflow notes after merging the heads and GEMM evidence
 
