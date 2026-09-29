@@ -1,0 +1,124 @@
+........FF.........F.....                                                [100%]
+=================================== FAILURES ===================================
+________________ test_bc_loss_matches_a_hand_computed_objective ________________
+
+    def test_bc_loss_matches_a_hand_computed_objective() -> None:
+        """Oracle: per-frame probabilities in, the length-normalized NLL + CE out."""
+        frame_probs = torch.tensor(
+            [[[0.5, 0.25, 1.0], [0.8, 1.0, 1.0]], [[0.1, 1.0, 1.0], [0.5, 0.5, 0.5]]]
+        )
+        lengths = torch.tensor([[2, 1], [1, 3]])
+        # Seat rows: (self win, opponent win) probabilities.
+        winner = torch.tensor([[[0.6, 0.4], [0.3, 0.7]], [[0.2, 0.8], [0.5, 0.5]]])
+        evaluation = cast(
+            Any,
+            SimpleNamespace(
+                log_probs=SimpleNamespace(per_player_entity=frame_probs.log()),
+                winner_log_probabilities=winner.log(),
+            ),
+        )
+        batch = cast(
+            Any,
+            SimpleNamespace(
+                actions=SimpleNamespace(lengths=lengths),
+                # Row 0: seat 0 wins; row 1: a draw.
+                final_banks=torch.tensor([[9.0, 1.0], [4.0, 4.0]], dtype=torch.float64),
+            ),
+        )
+        turn_nll = [
+            [-math.log(0.5 * 0.25) / 2, -math.log(0.8) / 1],
+            [-math.log(0.1) / 1, -math.log(0.125) / 3],
+        ]
+        value_ce = [
+            [-math.log(0.6), -math.log(0.7)],
+            [-0.5 * (math.log(0.2) + math.log(0.8)), -math.log(0.5)],
+        ]
+        terms = bc_terms(evaluation, batch)
+        assert torch.allclose(terms.turn_nll, torch.tensor(turn_nll))
+        assert torch.allclose(terms.value_ce, torch.tensor(value_ce))
+        expected = float(np.mean(turn_nll)) + 0.25 * float(np.mean(value_ce))
+>       assert float(bc_loss(terms, value_coef=0.25)) == pytest.approx(expected)
+E       assert -1.219457745552063 == 1.219457803935706 ± 1.2e-06
+E         
+E         comparison failed
+E         Obtained: -1.219457745552063
+E         Expected: 1.219457803935706 ± 1.2e-06
+
+tests/kaggriculture/test_bc.py:384: AssertionError
+_______________ test_the_real_training_loop_lowers_the_objective _______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-109/test_the_real_training_loop_lo0')
+
+    def test_the_real_training_loop_lowers_the_objective(tmp_path: Path) -> None:
+        """train_bc's own update path moves every tensor and lowers the train loss."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(
+            optimizer=AdamWConfig(learning_rate=1e-2), max_steps=12, eval_interval_steps=12
+        )
+        initial = build_bc_model(_ppo_config(), device=_CONTEXT.device, seed=config.seed)
+        before = _train_objective(initial, data)
+        _, trained = _run(tmp_path / "run", data, config)
+        after = _train_objective(trained, data)
+>       assert 0.0 < after < 0.9 * before, (before, after)
+E       AssertionError: (-4.85713005065918, -13.304372787475586)
+E       assert 0.0 < -13.304372787475586
+
+tests/kaggriculture/test_bc.py:407: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.011425750039052218, 'time/elapsed_seconds': 0.052873709006235003}
+{'bc/step': 12.0, 'bc/validation_nll': 5.2435886065165205, 'bc/validation_frame_nll': 4.862055369785854, 'bc/validation_value_ce': 7.1849164962768555, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 48.0, 'bc/epoch': 2.4, 'time/eval_seconds': 0.011089625011663884, 'time/elapsed_seconds': 0.2772996670100838, 'bc/train_nll': 4.6659127076466875, 'bc/train_value_ce': 3.583649516105652, 'bc/grad_norm': 5.974749048550923, 'perf/learner_seat_rows_per_second': 230.3942873797653}
+_________ test_script_resume_records_a_new_attempt_with_its_own_source _________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-109/test_script_resume_records_a_n0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10edc23c0>
+
+    def test_script_resume_records_a_new_attempt_with_its_own_source(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2, eval_interval_steps=1).to_file(config_path)
+        out = tmp_path / "runs"
+        _script_argv(
+            monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+        )
+        train_bc_script.main()
+        (run_dir,) = out.iterdir()
+        saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+        saved.model_copy(update={"max_steps": 4}).to_file(run_dir / "bc_config.yaml")
+        parent_sha = bc_module.file_sha256(run_dir / BC_STATE)
+        monkeypatch.setattr(train_bc_script, "_git_head", lambda: "b")
+        _script_argv(monkeypatch, run_dir, data)
+        train_bc_script.main()
+    
+        attempts = [
+            json.loads(line)
+            for line in (run_dir / train_bc_script.ATTEMPTS).read_text().splitlines()
+        ]
+        assert [a["source_commit"] for a in attempts] == ["a", "b"]
+        assert [a["attempt"] for a in attempts] == [0, 1]
+        assert [a["start_step"] for a in attempts] == [0, 2]
+        assert [a["parent_state_sha256"] for a in attempts] == [None, parent_sha]
+        result = json.loads((run_dir / BC_RESULT).read_text())
+>       assert result["steps"] == 4
+E       assert 3 == 4
+
+tests/kaggriculture/test_bc.py:704: AssertionError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 0.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.01609533396549523, 'time/elapsed_seconds': 0.07021095900563523}
+{'bc/step': 1.0, 'bc/validation_nll': 4.271175543467204, 'bc/validation_frame_nll': 4.11522102355957, 'bc/validation_value_ce': 0.699781596660614, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.01611337496433407, 'time/elapsed_seconds': 0.11878258397337049, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 171.94963998082767}
+{'bc/step': 2.0, 'bc/validation_nll': 4.279744625091553, 'bc/validation_frame_nll': 4.120164326259068, 'bc/validation_value_ce': 1.034934163093567, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.015345083957072347, 'time/elapsed_seconds': 0.16183574998285621, 'bc/train_nll': 3.8956658840179443, 'bc/train_value_ce': 0.7940686345100403, 'bc/grad_norm': 3.082129716873169, 'perf/learner_seat_rows_per_second': 204.19492954159003}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-109/test_script_resume_records_a_n0/runs/bc-20260929-201121", "stop_reason": "max_steps", "steps": 2, "best_step": 0, "best_validation_nll": 4.266387462615967, "final_validation_nll": 4.279744625091553}
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 3.0, 'bc/validation_nll': 4.288819471995036, 'bc/validation_frame_nll': 4.126200267246792, 'bc/validation_value_ce': 1.4194642305374146, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 3.0, 'bc/learner_seat_rows': 12.0, 'bc/epoch': 0.6, 'time/eval_seconds': 0.014728791953530163, 'time/elapsed_seconds': 0.03475562500534579, 'bc/train_nll': 3.8304378986358643, 'bc/train_value_ce': 1.0839749574661255, 'bc/grad_norm': 5.737285614013672, 'perf/learner_seat_rows_per_second': 205.65376101980144}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-109/test_script_resume_records_a_n0/runs/bc-20260929-201121", "stop_reason": "no_held_out_improvement", "steps": 3, "best_step": 0, "best_validation_nll": 4.266387462615967, "final_validation_nll": 4.288819471995036}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_bc_loss_matches_a_hand_computed_objective
+FAILED tests/kaggriculture/test_bc.py::test_the_real_training_loop_lowers_the_objective
+FAILED tests/kaggriculture/test_bc.py::test_script_resume_records_a_new_attempt_with_its_own_source
+3 failed, 22 passed in 4.87s

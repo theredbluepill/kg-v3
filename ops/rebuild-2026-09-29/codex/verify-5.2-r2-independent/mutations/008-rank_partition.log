@@ -1,0 +1,60 @@
+.....F...................                                                [100%]
+=================================== FAILURES ===================================
+__________ test_two_fake_ranks_hold_disjoint_rows_covering_the_split ___________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-106/test_two_fake_ranks_hold_disjo0')
+
+    def test_two_fake_ranks_hold_disjoint_rows_covering_the_split(tmp_path: Path) -> None:
+        root = _dataset_root(tmp_path)
+>       ranks = [load_bc_dataset(root, rank=r, world_size=2) for r in range(2)]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:277: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-106/test_two_fake_ranks_hold_disjo0/bc-data')
+split = 'train'
+manifest = BCManifest(schema_id='kaggriculture-bc-shard-v1', observation_schema_version=3, contract_document_version=4, episodes=...rd_sha256='bedfac4791182713e065edab7321a5d6a0ee893da305ad3427c1e8735237a246', shard_bytes=15663)), run={'git': 'test'})
+
+    def _load_split(
+        root: Path,
+        split: Split,
+        manifest: BCManifest,
+        *,
+        rank: int,
+        world_size: int,
+    ) -> BCSplit:
+        records = [e for e in manifest.episodes if e.split == split and e.admitted > 0]
+        if not records:
+            raise ValueError(f"BC dataset has no admitted {split} rows")
+        rank_rows = tuple(
+            sum(len(range(r, e.admitted, world_size)) for e in records)
+            for r in range(world_size)
+        )
+        total = rank_rows[rank]
+        store: dict[str, torch.Tensor] = {}
+        episode = torch.empty(total, dtype=torch.int32)
+        turn = torch.empty(total, dtype=torch.int64)
+        offset = 0
+        mine = slice(0, None, world_size)
+        for index, record in enumerate(records):
+            arrays = _read_shard(root, record)
+            count = len(range(rank, record.admitted, world_size))
+            for name in ROW_FIELDS:
+                values = _compact(name, torch.from_numpy(arrays[name][mine]), record)
+                if name not in store:
+                    store[name] = torch.empty(
+                        (total, *values.shape[1:]), dtype=values.dtype
+                    )
+>               store[name][offset : offset + count] = values
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               RuntimeError: The expanded size of the tensor (1) must match the existing size (2) at non-singleton dimension 0.  Target sizes: [1, 2, 200].  Tensor sizes: [2, 2, 200]
+
+python/owl/kaggriculture/bc_data.py:306: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_two_fake_ranks_hold_disjoint_rows_covering_the_split
+1 failed, 24 passed in 4.69s

@@ -1,0 +1,165 @@
+............FFFF.........                                                [100%]
+=================================== FAILURES ===================================
+____ test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience _____
+
+    def test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience() -> None:
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+        assert selection.observe(3.0, step=0)
+        assert selection.observe(2.0, step=2)
+        # A new minimum inside min_delta is still the best checkpoint; it only fails
+        # to reset the patience count.
+        assert selection.observe(1.97, step=4)
+        assert (selection.best_nll, selection.best_step) == (1.97, 4)
+        assert selection.evals_since_improvement == 1
+        assert not selection.should_stop
+        assert not selection.observe(2.4, step=6)
+>       assert selection.should_stop
+E       assert False
+E        +  where False = HeldOutSelection(patience_evals=2, min_delta=0.05, best_nll=1.97, best_step=4, improvement_nll=2.0, evals_since_improvement=2, last_nll=2.4, last_step=6).should_stop
+
+tests/kaggriculture/test_bc.py:476: AssertionError
+___________ test_held_out_patience_ignores_a_trickle_below_min_delta ___________
+
+    def test_held_out_patience_ignores_a_trickle_below_min_delta() -> None:
+        """Sub-min_delta gains keep the best current but do not slide the reference."""
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+        assert selection.observe(2.0, step=0)
+        assert selection.observe(1.97, step=1)
+        assert selection.observe(1.94, step=2)  # 0.06 below 2.0, only 0.03 below 1.97
+        assert selection.evals_since_improvement == 0
+        assert selection.observe(1.91, step=3)
+        assert selection.observe(1.90, step=4)
+>       assert selection.should_stop
+E       assert False
+E        +  where False = HeldOutSelection(patience_evals=2, min_delta=0.05, best_nll=1.9, best_step=4, improvement_nll=1.94, evals_since_improvement=2, last_nll=1.9, last_step=4).should_stop
+
+tests/kaggriculture/test_bc.py:493: AssertionError
+__________ test_best_checkpoint_is_the_minimum_even_inside_min_delta ___________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-117/test_best_checkpoint_is_the_mi0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11292ce90>
+
+    def test_best_checkpoint_is_the_minimum_even_inside_min_delta(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The verifier's probe: NLLs 2.0, 1.97, 2.4 with min_delta 0.05 keep step 1."""
+        data = _dataset_root(tmp_path)
+        scripted = iter([2.0, 1.97, 2.4])
+        _script_validation(monkeypatch, scripted, snapshots={})
+        run_dir = tmp_path / "run"
+        config = _bc_config(
+            eval_interval_steps=1, patience_evals=2, min_delta=0.05, max_steps=50
+        )
+>       result, _ = _run(run_dir, data, config)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:508: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:173: in _run
+    result = train_bc(
+python/owl/train/bc.py:850: in train_bc
+    evaluate_and_record(interval)
+python/owl/train/bc.py:736: in evaluate_and_record
+    metrics = evaluate_rows(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+split = <owl.kaggriculture.bc_data.BCSplit object at 0x11203b980>
+rows = array([0, 1, 2])
+kwargs = {'context': DistributedContext(device=device(type='cpu'), rank=0, local_rank=0, world_size=1, initialized=False), 'ppo...'float32', truncation_step=None, truncation_prob=0.0), runtime=RuntimeConfig(n_runtime_gpus=1)), 'rows_per_forward': 2}
+metrics = RowMetrics(turn_nll=4.246249278386434, frame_nll=4.1109320776803155, value_ce=0.7385952472686768, seat_rows=6)
+
+    def scripted_eval(model: Any, split: Any, rows: Any, **kwargs: Any) -> RowMetrics:
+        metrics = real(model, split, rows, **kwargs)
+        if split.split == "train":
+            return metrics
+        snapshots[len(snapshots)] = copy.deepcopy(model.state_dict())
+        return RowMetrics(
+>           turn_nll=next(scripted),
+                     ^^^^^^^^^^^^^^
+            frame_nll=metrics.frame_nll,
+            value_ce=metrics.value_ce,
+            seat_rows=metrics.seat_rows,
+        )
+E       StopIteration
+
+tests/kaggriculture/test_bc.py:533: StopIteration
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/validation_nll': 2.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.011943541991058737, 'time/elapsed_seconds': 0.047805665992200375}
+{'bc/step': 1.0, 'bc/validation_nll': 1.97, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 1.97, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.01243820902891457, 'time/elapsed_seconds': 0.07969791599316522, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 256.87612470976273}
+{'bc/step': 2.0, 'bc/validation_nll': 2.4, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 1.97, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.012243082979694009, 'time/elapsed_seconds': 0.11973279097583145, 'bc/train_nll': 3.9168338775634766, 'bc/train_value_ce': 0.7537779808044434, 'bc/grad_norm': 2.7767531871795654, 'perf/learner_seat_rows_per_second': 243.98984382411433}
+_______ test_training_keeps_the_best_checkpoint_and_stops_on_degradation _______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-117/test_training_keeps_the_best_c0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11257f800>
+
+    def test_training_keeps_the_best_checkpoint_and_stops_on_degradation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        snapshots: dict[int, dict[str, torch.Tensor]] = {}
+        _script_validation(
+            monkeypatch, iter([3.0, 2.0, 2.5, 2.6, 2.7]), snapshots=snapshots
+        )
+        run_dir = tmp_path / "run"
+        config = _bc_config(eval_interval_steps=1, patience_evals=2, max_steps=50)
+>       result, _ = _run(run_dir, data, config)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:552: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:173: in _run
+    result = train_bc(
+python/owl/train/bc.py:850: in train_bc
+    evaluate_and_record(interval)
+python/owl/train/bc.py:736: in evaluate_and_record
+    metrics = evaluate_rows(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = KaggricultureTransformer(
+  (tile_proj): ObservationInputStem(
+    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)
+        (out): Linear(in_features=16, out_features=32, bias=True)
+      )
+    )
+  )
+)
+split = <owl.kaggriculture.bc_data.BCSplit object at 0x11255bec0>
+rows = array([0, 1, 2])
+kwargs = {'context': DistributedContext(device=device(type='cpu'), rank=0, local_rank=0, world_size=1, initialized=False), 'ppo...'float32', truncation_step=None, truncation_prob=0.0), runtime=RuntimeConfig(n_runtime_gpus=1)), 'rows_per_forward': 2}
+metrics = RowMetrics(turn_nll=4.243191401163737, frame_nll=4.110775947570801, value_ce=0.7090052366256714, seat_rows=6)
+
+    def scripted_eval(model: Any, split: Any, rows: Any, **kwargs: Any) -> RowMetrics:
+        metrics = real(model, split, rows, **kwargs)
+        if split.split == "train":
+            return metrics
+        snapshots[len(snapshots)] = copy.deepcopy(model.state_dict())
+        return RowMetrics(
+>           turn_nll=next(scripted),
+                     ^^^^^^^^^^^^^^
+            frame_nll=metrics.frame_nll,
+            value_ce=metrics.value_ce,
+            seat_rows=metrics.seat_rows,
+        )
+E       StopIteration
+
+tests/kaggriculture/test_bc.py:533: StopIteration
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.012007667042780668, 'time/elapsed_seconds': 0.0476188330212608}
+{'bc/step': 1.0, 'bc/validation_nll': 2.0, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.01350754196755588, 'time/elapsed_seconds': 0.081272000039462, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 245.51927391709276}
+{'bc/step': 2.0, 'bc/validation_nll': 2.5, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.012256250018253922, 'time/elapsed_seconds': 0.12194416701095179, 'bc/train_nll': 3.9168338775634766, 'bc/train_value_ce': 0.7537779808044434, 'bc/grad_norm': 2.7767531871795654, 'perf/learner_seat_rows_per_second': 234.69645689565075}
+{'bc/step': 3.0, 'bc/validation_nll': 2.6, 'bc/validation_frame_nll': 4.1109320776803155, 'bc/validation_value_ce': 0.7385952472686768, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 12.0, 'bc/epoch': 0.6, 'time/eval_seconds': 0.011689375038258731, 'time/elapsed_seconds': 0.1589177920250222, 'bc/train_nll': 3.828782320022583, 'bc/train_value_ce': 0.7821226119995117, 'bc/grad_norm': 2.3529200553894043, 'perf/learner_seat_rows_per_second': 209.04785198958672}
+{'bc/step': 4.0, 'bc/validation_nll': 2.7, 'bc/validation_frame_nll': 4.112016950334821, 'bc/validation_value_ce': 0.7213282585144043, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 3.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.0128658750327304, 'time/elapsed_seconds': 0.19557874999009073, 'bc/train_nll': 4.350026607513428, 'bc/train_value_ce': 0.7131994962692261, 'bc/grad_norm': 1.5998718738555908, 'perf/learner_seat_rows_per_second': 243.69255075385493}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience
+FAILED tests/kaggriculture/test_bc.py::test_held_out_patience_ignores_a_trickle_below_min_delta
+FAILED tests/kaggriculture/test_bc.py::test_best_checkpoint_is_the_minimum_even_inside_min_delta
+FAILED tests/kaggriculture/test_bc.py::test_training_keeps_the_best_checkpoint_and_stops_on_degradation
+4 failed, 21 passed in 4.89s

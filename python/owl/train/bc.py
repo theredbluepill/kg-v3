@@ -31,16 +31,22 @@ policy NLL on the fixed validation episodes (every strict new minimum) and stops
 after ``patience_evals`` evaluations without an improvement of more than
 ``min_delta`` over the last such improvement (lesson L9: held-out NLL reached its
 minimum and then degraded while training loss kept falling). ``min_delta`` only
-sets the patience count; it never discards a lower checkpoint.
+sets the patience count; it never discards a lower checkpoint. Patience counts
+scheduled evaluations only; the terminal evaluation of a budget or runtime stop
+between them can select a checkpoint but does not count.
 
 Data. Each rank holds rows ``[rank::world_size]`` of every episode
 (``load_bc_dataset``); training order is a pure function of ``(seed, step,
 micro, rank)`` over that partition (``TrainSharding``), so ranks never share a
-row and a restart from ``bc_state.pt`` replays exactly under the same source and
-settings. The state records every trajectory setting (``continuation_settings``:
-the BC config except ``max_steps``, and the whole PPO config); a resume must match
-them, so only the step budget can grow. Every evaluation covers all validation
-rows (each rank its partition, reduced across ranks).
+row. Under the same source and settings, a restart from ``bc_state.pt`` repeats
+the uninterrupted run's rows, updates, evaluation steps and stopping step (on a
+deterministic device); if it was stopped between evaluations, its kept checkpoint
+is the lowest over those evaluations plus that terminal one, so never higher in
+held-out NLL than the uninterrupted run's. The state records every trajectory
+setting (``continuation_settings``: the BC config except ``max_steps``, and the
+whole PPO config); a resume must match them, so only the step budget can grow.
+Every evaluation covers all validation rows (each rank its partition, reduced
+across ranks).
 """
 
 from __future__ import annotations
@@ -388,10 +394,15 @@ class HeldOutSelection:
 
     Selection and patience are separate. ``best_nll``/``best_step`` follow every
     strict new minimum, whose checkpoint is kept. ``improvement_nll`` is the NLL
-    of the last evaluation that beat the previous one by more than ``min_delta``;
-    ``evals_since_improvement`` counts evaluations since then, so gains smaller
-    than ``min_delta`` still update the best checkpoint but do not reset the
-    patience count.
+    of the last scheduled evaluation that beat the previous one by more than
+    ``min_delta``; ``evals_since_improvement`` counts scheduled evaluations since
+    then, so gains smaller than ``min_delta`` still update the best checkpoint but
+    do not reset the patience count.
+
+    An unscheduled evaluation (the terminal one when a budget or runtime stop
+    falls between ``eval_interval_steps``) takes part in selection only. Patience
+    stays on the scheduled cadence, so a run resumed from such a stop evaluates
+    and stops at the same steps as the uninterrupted run.
     """
 
     patience_evals: int
@@ -403,7 +414,7 @@ class HeldOutSelection:
     last_nll: float = math.nan
     last_step: int = -1
 
-    def observe(self, nll: float, *, step: int) -> bool:
+    def observe(self, nll: float, *, step: int, scheduled: bool = True) -> bool:
         """Record one evaluation; ``True`` when it is the new lowest NLL."""
         if not math.isfinite(nll):
             raise ValueError(f"held-out NLL must be finite, got {nll} at step {step}")
@@ -413,11 +424,12 @@ class HeldOutSelection:
             )
         self.last_nll = nll
         self.last_step = step
-        if nll < self.improvement_nll - self.min_delta:
-            self.improvement_nll = nll
-            self.evals_since_improvement = 0
-        else:
-            self.evals_since_improvement += 1
+        if scheduled:
+            if nll < self.improvement_nll - self.min_delta:
+                self.improvement_nll = nll
+                self.evals_since_improvement = 0
+            else:
+                self.evals_since_improvement += 1
         if nll < self.best_nll:
             self.best_nll = nll
             self.best_step = step
@@ -731,7 +743,7 @@ def train_bc(
             _truncate_history(history_path, last_step=step)
     wandb_run_id = logger.run_id
 
-    def evaluate_and_record(interval: _Interval | None) -> None:
+    def evaluate_and_record(interval: _Interval | None, *, scheduled: bool) -> None:
         eval_started = clock()
         metrics = evaluate_rows(
             model,
@@ -741,9 +753,10 @@ def train_bc(
             ppo_config=ppo_config,
             context=context,
         )
-        improved = selection.observe(metrics.turn_nll, step=step)
+        improved = selection.observe(metrics.turn_nll, step=step, scheduled=scheduled)
         record: dict[str, float] = {
             "bc/step": float(step),
+            "bc/scheduled_evaluation": float(scheduled),
             "bc/validation_nll": metrics.turn_nll,
             "bc/validation_frame_nll": metrics.frame_nll,
             "bc/validation_value_ce": metrics.value_ce,
@@ -813,7 +826,7 @@ def train_bc(
             )
             if context.is_main_process:
                 logger.set_summary("bc/initial_train_nll", initial_train.turn_nll)
-        evaluate_and_record(None)
+        evaluate_and_record(None, scheduled=True)
     interval = _new_interval(device)
     stop_reason: StopReason | None = (
         "no_held_out_improvement" if selection.should_stop else None
@@ -847,12 +860,14 @@ def train_bc(
         )
         interval.train_seconds += clock() - step_started
         if step % config.eval_interval_steps == 0:
-            evaluate_and_record(interval)
+            evaluate_and_record(interval, scheduled=True)
             interval = _new_interval(device)
             if selection.should_stop:
                 stop_reason = "no_held_out_improvement"
     if selection.last_step != step:
-        evaluate_and_record(interval)
+        # A budget/runtime stop between evaluations: select, but keep patience
+        # on the scheduled cadence so a resume repeats the uninterrupted run.
+        evaluate_and_record(interval, scheduled=False)
     result = BCResult(
         stop_reason=stop_reason,
         steps=step,

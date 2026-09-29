@@ -1,0 +1,66 @@
+..............FF.........                                                [100%]
+=================================== FAILURES ===================================
+__________ test_best_checkpoint_is_the_minimum_even_inside_min_delta ___________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-118/test_best_checkpoint_is_the_mi0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10efc56d0>
+
+    def test_best_checkpoint_is_the_minimum_even_inside_min_delta(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The verifier's probe: NLLs 2.0, 1.97, 2.4 with min_delta 0.05 keep step 1."""
+        data = _dataset_root(tmp_path)
+        scripted = iter([2.0, 1.97, 2.4])
+        _script_validation(monkeypatch, scripted, snapshots={})
+        run_dir = tmp_path / "run"
+        config = _bc_config(
+            eval_interval_steps=1, patience_evals=2, min_delta=0.05, max_steps=50
+        )
+        result, _ = _run(run_dir, data, config)
+        assert result.stop_reason == "no_held_out_improvement"
+        assert (result.steps, result.best_step, result.best_validation_nll) == (2, 1, 1.97)
+        record = json.loads((run_dir / CHECKPOINT_BC_BEST_RECORD).read_text())
+>       assert (record["bc_step"], record["validation_nll"]) == (1, 1.97)
+E       assert (2, 2.4) == (1, 1.97)
+E         
+E         At index 0 diff: 2 != 1
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:512: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/validation_nll': 2.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.012959207990206778, 'time/elapsed_seconds': 0.052504291001241654}
+{'bc/step': 1.0, 'bc/validation_nll': 1.97, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 1.97, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.013565291999839246, 'time/elapsed_seconds': 0.0882584999781102, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 229.03276625295143}
+{'bc/step': 2.0, 'bc/validation_nll': 2.4, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 1.97, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.014020000002346933, 'time/elapsed_seconds': 0.13417970796581358, 'bc/train_nll': 3.9168338775634766, 'bc/train_value_ce': 0.7537779808044434, 'bc/grad_norm': 2.7767531871795654, 'perf/learner_seat_rows_per_second': 226.78575659362085}
+_______ test_training_keeps_the_best_checkpoint_and_stops_on_degradation _______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-118/test_training_keeps_the_best_c0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10efc5670>
+
+    def test_training_keeps_the_best_checkpoint_and_stops_on_degradation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        snapshots: dict[int, dict[str, torch.Tensor]] = {}
+        _script_validation(
+            monkeypatch, iter([3.0, 2.0, 2.5, 2.6, 2.7]), snapshots=snapshots
+        )
+        run_dir = tmp_path / "run"
+        config = _bc_config(eval_interval_steps=1, patience_evals=2, max_steps=50)
+        result, _ = _run(run_dir, data, config)
+        assert result.stop_reason == "no_held_out_improvement"
+        assert (result.steps, result.best_step) == (3, 1)
+        assert (result.best_validation_nll, result.final_validation_nll) == (2.0, 2.6)
+        best = torch.load(run_dir / CHECKPOINT_BC_BEST, weights_only=False)
+>       assert best["optimizer_steps"] == 1
+E       assert 3 == 1
+
+tests/kaggriculture/test_bc.py:557: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.012332832964602858, 'time/elapsed_seconds': 0.0468465419835411}
+{'bc/step': 1.0, 'bc/validation_nll': 2.0, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.01241766702150926, 'time/elapsed_seconds': 0.08049062499776483, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 235.61404010206869}
+{'bc/step': 2.0, 'bc/validation_nll': 2.5, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.01438666699687019, 'time/elapsed_seconds': 0.12211616698186845, 'bc/train_nll': 3.9168338775634766, 'bc/train_value_ce': 0.7537779808044434, 'bc/grad_norm': 2.7767531871795654, 'perf/learner_seat_rows_per_second': 260.71652471362023}
+{'bc/step': 3.0, 'bc/validation_nll': 2.6, 'bc/validation_frame_nll': 4.1109320776803155, 'bc/validation_value_ce': 0.7385952472686768, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.0, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 12.0, 'bc/epoch': 0.6, 'time/eval_seconds': 0.013393917004577816, 'time/elapsed_seconds': 0.16261820797808468, 'bc/train_nll': 3.828782320022583, 'bc/train_value_ce': 0.7821226119995117, 'bc/grad_norm': 2.3529200553894043, 'perf/learner_seat_rows_per_second': 249.72167009179577}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_best_checkpoint_is_the_minimum_even_inside_min_delta
+FAILED tests/kaggriculture/test_bc.py::test_training_keeps_the_best_checkpoint_and_stops_on_degradation
+2 failed, 23 passed in 4.76s

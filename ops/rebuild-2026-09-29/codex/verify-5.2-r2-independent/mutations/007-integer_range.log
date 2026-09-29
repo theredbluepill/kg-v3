@@ -1,0 +1,18 @@
+....F....................                                                [100%]
+=================================== FAILURES ===================================
+_____________ test_loader_range_checks_its_compact_integer_storage _____________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-105/test_loader_range_checks_its_c0')
+
+    def test_loader_range_checks_its_compact_integer_storage(tmp_path: Path) -> None:
+        wide = _episode("ep-w", "train", 2, seed=1)
+        wide.obs.globals_int[0, 0, 0] = 2**40  # contract-valid, not int32
+        root = _write(tmp_path / "wide", [wide, _episode("ep-v", "validation", 2, seed=4)])
+>       with pytest.raises(ValueError, match="storage range"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:271: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_loader_range_checks_its_compact_integer_storage
+1 failed, 24 passed in 4.93s

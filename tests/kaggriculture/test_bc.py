@@ -459,6 +459,24 @@ def test_train_sharding_is_deterministic_per_rank_and_epoch() -> None:
         )
 
 
+def test_equal_rank_partitions_draw_different_permutations() -> None:
+    """The rank enters the permutation seed, not only the partition length."""
+    sharding = TrainSharding(
+        seed=5, rows_per_rank=4, gradient_accumulation_steps=1, rank_rows=(24, 24)
+    )
+    for step in (0, sharding.steps_per_epoch):
+        by_rank = [
+            np.concatenate(
+                [
+                    sharding.rows(step=step + s, micro=0, rank=rank)
+                    for s in range(sharding.steps_per_epoch)
+                ]
+            )
+            for rank in range(2)
+        ]
+        assert not np.array_equal(by_rank[0], by_rank[1]), step
+
+
 # --- selection and the stop rule ----------------------------------------------------
 
 
@@ -479,6 +497,27 @@ def test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience() -> N
         selection.observe(1.0, step=6)
     with pytest.raises(ValueError, match="finite"):
         selection.observe(float("nan"), step=8)
+
+
+def test_an_unscheduled_evaluation_selects_but_leaves_patience_alone() -> None:
+    """An off-cadence evaluation may keep a lower checkpoint but not add patience.
+
+    A budget or runtime stop evaluates between scheduled steps; a restart must
+    keep the scheduled cadence.
+    """
+    selection = HeldOutSelection(patience_evals=2, min_delta=0.0)
+    assert selection.observe(3.0, step=0)
+    assert not selection.observe(4.0, step=1, scheduled=False)
+    assert selection.evals_since_improvement == 0
+    assert selection.observe(2.5, step=3, scheduled=False)
+    assert (selection.best_nll, selection.best_step) == (2.5, 3)
+    assert (selection.improvement_nll, selection.evals_since_improvement) == (3.0, 0)
+    assert (selection.last_nll, selection.last_step) == (2.5, 3)
+    assert not selection.observe(2.8, step=4)
+    assert selection.evals_since_improvement == 0  # 2.8 beat the scheduled 3.0
+    assert (selection.best_nll, selection.best_step) == (2.5, 3)
+    with pytest.raises(ValueError, match="advance"):
+        selection.observe(1.0, step=4, scheduled=False)
 
 
 def test_held_out_patience_ignores_a_trickle_below_min_delta() -> None:
@@ -595,6 +634,52 @@ def test_restart_from_state_matches_an_uninterrupted_run(tmp_path: Path) -> None
     assert resumed.final_validation_nll == straight.final_validation_nll
     lines = (interrupted / BC_HISTORY).read_text().splitlines()
     assert [json.loads(line)["bc/step"] for line in lines] == [0.0, 2.0, 4.0]
+
+
+@pytest.mark.parametrize(
+    ("interrupted_nlls", "best_step"),
+    [
+        # The verifier's probe: the off-cadence NLL is no better.
+        ([3.0, 4.0, 4.0, 4.0], 0),
+        # A lower off-cadence NLL is kept, but patience still runs on cadence.
+        ([3.0, 2.5, 4.0, 4.0], 1),
+    ],
+)
+def test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    interrupted_nlls: list[float],
+    best_step: int,
+) -> None:
+    """A budget stop between evaluations must not shorten the resumed patience."""
+    data = _dataset_root(tmp_path)
+    config = _bc_config(eval_interval_steps=2, patience_evals=2, max_steps=8)
+    # Uninterrupted: evaluations at steps 0, 2, 4; then the interrupted run's.
+    nlls = iter([3.0, 4.0, 4.0, *interrupted_nlls])
+    _script_validation(monkeypatch, nlls, snapshots={})
+    straight, straight_model = _run(tmp_path / "straight", data, config)
+    assert (straight.stop_reason, straight.steps) == ("no_held_out_improvement", 4)
+
+    interrupted = tmp_path / "interrupted"
+    first, _ = _run(interrupted, data, config.model_copy(update={"max_steps": 1}))
+    assert (first.stop_reason, first.steps) == ("max_steps", 1)
+    resumed, resumed_model = _run(
+        interrupted, data, config, resume_from=interrupted / BC_STATE
+    )
+    assert next(nlls, None) is None
+    assert (resumed.stop_reason, resumed.steps) == ("no_held_out_improvement", 4)
+    assert resumed.best_step == best_step
+    assert resumed.best_validation_nll <= straight.best_validation_nll
+    for (name, a), (_, b) in zip(
+        straight_model.state_dict().items(),
+        resumed_model.state_dict().items(),
+        strict=True,
+    ):
+        assert torch.equal(a, b), name
+    lines = (interrupted / BC_HISTORY).read_text().splitlines()
+    assert [json.loads(line)["bc/step"] for line in lines] == [0.0, 1.0, 2.0, 4.0]
+    record = json.loads((interrupted / CHECKPOINT_BC_BEST_RECORD).read_text())
+    assert record["bc_step"] == best_step
 
 
 def test_resume_rejects_another_dataset_or_world_size(tmp_path: Path) -> None:
@@ -732,6 +817,44 @@ def test_script_resume_rejects_an_edited_seed(
     with pytest.raises(ValueError, match=r"bc\.seed"):
         train_bc_script.main()
     assert load_bc_state(run_dir / BC_STATE).step == 2
+
+
+def test_attempt_records_reject_malformed_lineage(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    path = run_dir / train_bc_script.ATTEMPTS
+    resume = cast(Any, SimpleNamespace(step=2))
+
+    def start(resume: Any) -> dict[str, object]:
+        return cast(
+            dict[str, object],
+            train_bc_script._start_attempt(
+                run_dir,
+                source_commit="b",
+                data=tmp_path,
+                dataset_manifest_sha256="0" * 64,
+                world_size=1,
+                resume=resume,
+            ),
+        )
+
+    with pytest.raises(FileNotFoundError, match="attempt records missing"):
+        start(resume)
+    path.write_text("")
+    with pytest.raises(ValueError, match="needs the run's attempt records"):
+        start(resume)
+    with pytest.raises(FileExistsError, match="already has attempts"):
+        start(None)
+    for lines, match in (
+        (['{"attempt": 1, "source_commit": "a"}'], "is not attempt 0"),
+        (['["attempt", 0]'], "is not attempt 0"),
+        (['{"attempt": 0, "source_commit": 7}'], "has no source_commit"),
+        (['{"attempt": 0}'], "has no source_commit"),
+    ):
+        path.write_text("\n".join(lines) + "\n")
+        with pytest.raises(ValueError, match=match):
+            start(resume)
+    assert path.read_text() == '{"attempt": 0}\n'
 
 
 # --- PPO handoff --------------------------------------------------------------------

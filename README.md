@@ -477,7 +477,8 @@ The loss is each seat's teacher-forced program NLL divided by its length
 plus `value_coef` times the winner cross-entropy against the episode's raw
 final banks. The critic is trained, not frozen. Each rank draws its training
 rows from a permutation seeded by `(seed, epoch, rank)`, so a restart from
-`bc_state.pt` repeats the uninterrupted run. Every `eval_interval_steps` all
+`bc_state.pt` repeats the uninterrupted run's rows, updates, evaluation steps and
+stopping step on a deterministic device. Every `eval_interval_steps` all
 validation rows are evaluated; the lowest held-out NLL is saved as
 `checkpoint_bc_best.pt` with exactly `run_ppo.py`'s checkpoint keys (`env_steps`
 0), beside the PPO `config.yaml`, so PPO can start from it with
@@ -487,7 +488,10 @@ the loaders accept the checkpoint today). Training stops after
 `patience_evals` evaluations without an improvement of more than `min_delta`
 over the last such improvement, at `max_steps` or at `--max-runtime-hours`;
 `min_delta` sets only that patience count, and every strict new minimum still
-replaces the best checkpoint. `bc_history.jsonl` holds the NLL curve,
+replaces the best checkpoint. A budget or runtime stop between scheduled
+evaluations evaluates once more; that evaluation can replace the best checkpoint
+but does not count toward patience, so a resumed run keeps the uninterrupted
+cadence and its best is never higher in NLL than the uninterrupted run's. `bc_history.jsonl` holds the NLL curve,
 `checkpoint_bc_best.json` the best checkpoint's SHA-256 and step, and
 `bc_result.json` the stopping reason. W&B runs go to project `kg-v3` with
 `job_type` `bc`.
