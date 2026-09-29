@@ -417,8 +417,69 @@ Setup:
 - Scope: one stack, synthetic observations and grammar tables, fresh weights. The small head gain understates a trained policy's logit noise, so the log-ratio and KL margins **do not qualify the 0.05 alarm for trained policies**.
 - Check 1 used 256-row batches only.
 - Check 2 ran at depth 1 only. Its control failed at compile, so it says nothing backward-specific.
-- The replay-vs-sampling value gap is unattributed. So is check 1's shared channel concentration (channel 229 at mid), which is left for a Phase 6 recheck.
+- The replay-vs-sampling value gap is unattributed here; the later "Value gap diagnostic" section below attributes it (H1). Check 1's shared channel concentration (channel 229 at mid) stays unattributed and is left for a Phase 6 recheck.
 - c3 and c4 executed the value term at 0.25·MSE rather than the declared 0.5·MSE (see the run statement's post-run addendum).
 - Check 4 excludes the engine, copies, all-reduce, GAE and logging. It is one run per shape, with no nsys (not installed) and no timeline.
 - The backend setting is process-global and applied by a wrapper, not by repo code.
 - No cookbook note was written. Promoting these findings is left to the owner's workflow.
+
+## Value gap diagnostic (2026-09-29, 10:47–11:07Z, pod `w7ia3zvxqsvs3g`, GPUs 0 and 1)
+
+**Diagnostic at `8fde43c`; no repo code changed; no timing.**
+- **Question** (from "GPU checks bundle (component)" check 3 on `kg/rebuild-gpu-checks`): grad-enabled replay values differ from no-grad sampling by 0.0154–0.0195 while log-probs differ by ≤ 4e-4. Is that inherent to BF16 + compile (H1), or does it come from something Kaggriculture-specific in the grad path (H2)?
+- Run statement `run-statements/value-gap-diagnostic.md`. Evidence, identities and attempts: `value-gap-2026-09-29/README.md`. Numbers: `value-gap-2026-09-29/summary.json`.
+- Setup:
+  - Preset Kaggriculture model and Isaiah's `stateless_transformer_6m` (`configs/scaling_6m.yaml`), both with fresh weights, `.train()` and fp32 params.
+  - Kaggriculture used `make_obs` at mid density. Isaiah's model saw real Orbit Wars states from his Rust `VectorizedEnv` after 24 steps: 2–4 players per row, 652 and 2,562 present players at 256 and 1,024 rows.
+  - S = `model(obs)` under no_grad; R = `evaluate_actions(obs, S.actions)` with grad enabled. Both paths use BF16 autocast (TF32 on) unless marked fp32.
+  - The trunk was compiled through the registered path (`max-autotune-no-cudagraphs`, dynamic).
+- **Attempts:**
+  - Attempt 1 stopped on an Inductor compile error in the **fp32** compiled training graph. Amendment 1 disabled `coalesce_tiling_analysis` for fp32 compiled stages only.
+  - Attempt 2 stopped on an fp32 eager OOM at 1,024 rows. Amendment 2 limited fp32 to 256 rows.
+  - Attempt 3 passed. Its compiled Isaiah stages hit Dynamo's recompile limit because of my `use_flash_attn` counting wrapper, which his attention calls inside the compiled trunk, so their 1,024-row cells ran eagerly. Amendment 3 removed the wrapper and reran those two stages on the same states.
+  - Aggregate driver wall 449 s. The pod was left running and idle.
+
+**Mechanism observed:**
+- Every compiled stage logged exactly one Dynamo recompile, `GLOBAL_STATE changed: grad_mode`. No-grad and grad-enabled calls therefore run **different compiled trunk graphs**. Isaiah's rerun processes each report Dynamo `unique_graphs: 2`.
+- Within one grad mode everything was bit-identical:
+  - `evaluate_actions` under no_grad = S exactly.
+  - `compute_value` under no_grad = S exactly; with grad it reproduces R's gap (same max).
+  - Repeated sample and replay: exactly equal.
+  - Trunk input (stems, eager): identical across grad modes.
+
+**Pre-declared predictions (all five support H1):**
+
+| # | observation (max \|Δ\| unless noted) | H1 bound | result |
+|---|---|---|---|
+| 0 | A, BF16 compiled: value gap V | [0.005, 0.05] | ATEN **0.0195 / 0.0195** (256 / 1,024 rows); default **0.0156 / 0.0233**. Reproduced. Mean \|Δ\| 0.0041–0.0044 |
+| 1 | B, eager BF16: V | ≤ 1e-3 and ≤ 0.1 × A | **0** at both row counts; hidden states bit-identical (exact-equal fraction 1.0) → H1 |
+| 2 | C, fp32 (autocast off, TF32 off; padded SDPA), 256 rows: V | compiled ≤ 1e-3, eager ≤ 1e-4 | compiled **8.3e-7** (ATEN) / **1.2e-6** (default); eager **0** → H1 |
+| 3 | D, actor `.out` gain 1.0: event log-prob gap L | ratio ≥ 10, ≥ 5e-3, eager ≤ 1e-3 | L 3.6e-4 → **0.032–0.037**, ratio **86–101×** (≈ the 100× gain ratio) under both backends; eager **0**; per-row joint log-ratio max 0.16–0.27 nats → H1 |
+| 4 | E, compiled BF16: trunk hidden at critic tokens | (i)–(iv) of the statement | See the list below → H1 at both backends and row counts |
+| 5 | F, Isaiah compiled (Amendment 3 rerun): head-swap value gap | ≥ 0.25 × Kaggriculture's; his eager ≤ 1e-3 | default **0.0145 / 0.0191**, ATEN **0.0117 / 0.0161**, vs Kaggriculture 0.0195 (0.60–0.98×); his eager **0** → H1 |
+
+Prediction 4, case E in detail:
+- Grad-vs-no-grad mean |Δ| is 0.0048 (ATEN) and 0.0051–0.0052 (default). The no-grad path's own error against an fp32 reference is 0.0054, and the grad path's is 0.0060, 1.1× that.
+- Critic-token relative mean equals the all-token value (0.0061 vs 0.0061), and the plan and own-actor tokens match it. The noise is not critic-specific.
+- Head swap: the same critic head on each path's hidden states reproduces the full gap (HS = V). With an fp32 head, HS is 0.0148–0.0168.
+- Against an fp32-reference value, the no-grad and grad values each err by 0.013–0.015 max and 0.0032–0.0041 mean. **Neither path is "the wrong one"**: the gap is the difference of two BF16 errors of the same size.
+- BF16 head rounding alone contributes 0.006–0.009 (fp32 vs BF16 head on the same hidden states).
+
+- **Isaiah's log-probs are not suppressed like Kaggriculture's.** His compiled per-entity log-prob gap is 0.044–0.057 nats, and his per-player joint log-ratio max is 0.053–0.075 (means −9e-4 to +1e-4). Kaggriculture's is 3.6e-4, even though both actors' `.out` gains are 0.01. H1's "actor heads suppress the noise ~100×" therefore holds for Kaggriculture's grammar heads, not for Isaiah's `discrete_targets` actor. The cause, for example his ship-size mixture density, was not investigated. This does not bear on the value-gap attribution.
+- **Attempt 3's invalid Isaiah cells.** Its 256-row compiled Isaiah cells, one fresh recompile per call, gave a similar value gap (0.0151–0.0156). They also showed nonzero same-mode differences (0.005–0.012) that vanished once recompiles were fixed.
+
+**Attribution: H1 is supported; H2 is not.**
+- The value gap comes from grad-mode-specific compiled graphs of the trunk rounding differently in BF16. It vanishes in eager BF16 and in fp32, compiled or not, and is the same size under ATEN-only and default GEMM backends.
+- It is carried to the value by the gain-1.0 critic head. Raising the actor gain to 1.0 raises Kaggriculture's log-prob gap by the gain ratio.
+- Isaiah's model on real Orbit Wars states shows the same value gap, 0.6–1.0× Kaggriculture's.
+- No Kaggriculture-specific grad-path cause was found: critic tokens are not special, the trunk input is identical, and the head and masking are bit-identical within a grad mode.
+
+**Limits:**
+- One stack and fresh weights. A trained critic's logit scale can grow or shrink the gap, so these magnitudes do not qualify value-clip or bootstrap margins for trained models.
+- Kaggriculture observations are synthetic and mid density only. Isaiah's states come from 24 steps of a fresh policy.
+- fp32 cases ran at 256 rows only, on padded SDPA rather than packed flash, and the fp32 compiled cases had Inductor's `coalesce_tiling_analysis` off.
+- D mutated the measured model in place.
+- The generated code of the two graphs was not read. Which fusions differ is unmeasured; caches are retained on the pod.
+- The fp32 compiled training-graph compile error (attempt 1) is a separate Inductor issue on a non-production path. It is not reproduced as a minimal case.
+- The process-group cleanup was tested locally only; no signal fired on the pod.
+- No cookbook note was written. Promotion is left to the owner's workflow.
