@@ -317,8 +317,9 @@ The default-backend controls in the same run reproduced the failure: the trunk h
   - Amendment 1 judged that one parameter against the query-bias scale instead. Attempt 2 then reran the whole bundle and every stage passed: driver 480 s, exit 0.
   - Aggregate driver wall was 535 s of the 60-min limit, about $0.6 at $4.18/h. The pod session was ~35 min, 08:55–09:30Z.
   - Idle gate: 0 MiB, 0 %, no processes on both GPUs before and after. The pod was left running and idle.
+  - **Outer-timeout cleanup (post-run fix).** Both recorded attempts ran a driver that started each stage in its own session with no signal handler, so launch.sh's outer `timeout` could not have terminated running stages. Neither attempt came near that timeout, and attempt 1's ordinary stop terminated its running stage. The driver and launcher were revised after the run: SIGTERM/SIGINT/SIGHUP and exit handlers terminate every stage group, and `timeout -s TERM` signals the driver first. A local dummy-stage test passed (`gpu-checks-2026-09-29/post-run/driver_cleanup_test_local.txt`). The fix has not run on the pod.
 
-**1. fp32 discriminating check (Phase 6.0 (b) open item): BF16 rounding common to all paths is supported; no path-specific error was found.**
+**1. fp32 discriminating check (Phase 6.0 (b) open item): BF16 rounding is supported; no path exceeded the pre-declared aggregate threshold. A shared per-channel concentration of outliers (channel 229 at mid) is unexplained.**
 
 Setup:
 - Same weights and the same BF16-rounded input for every path.
@@ -337,8 +338,11 @@ Setup:
 - **Outlier location.**
   - Outliers sit at small |ref|, where the absolute 0.02 term dominates the tolerance. Example: mid eager has 4,684 of 5,305 outliers at |ref| < 0.25, 504 in [0.25, 0.5), 114 in [0.5, 1), 3 in [1, 2) and 0 at |ref| ≥ 2.
   - The largest errors are 0.043–0.069 at |ref| 2.5–3.4, which is **2.8–4.4 BF16 ulps** of the reference.
-  - Across token groups, outliers follow the element share (for example, mid tile tokens hold 66 % of elements and 69 % of eager outliers). No row, group or channel cluster was seen.
-  - Outlier sets barely overlap between paths (Jaccard 0.004–0.048), which fits independent rounding noise rather than a shared deterministic defect.
+  - Across token groups, outliers follow the element share (for example, mid tile tokens hold 66 % of elements and 69 % of eager outliers).
+  - **Across channels they do not** (`summary.json` `c1_channels`, computed from every retained outlier coordinate in `c1_*.outliers.json`; no path reached the 50,000 cap). Each of the 256 channels holds **0.391 %** of elements. At mid, **channel 229 holds 700 / 5,305 = 13.2 %** of eager outliers, 663 / 5,248 = 12.6 % of padded, and 176 / 1,171 = 15.0 % (ATEN) and 138 / 910 = 15.2 % (default) of compiled. It is the top channel for every mid path.
+  - At mixed, channel 229 is again the top eager and padded channel (8.7 % and 8.1 %) and holds 10.4 % / 12.7 % of compiled outliers (ATEN / default). At dense it holds only 1.0–3.9 %. There the top channels are 236, 47 and 184 for eager and padded, and 135 and 189 for compiled, each at 8–17 %.
+  - Outlier sets barely overlap between paths element by element (Jaccard 0.004–0.048). Low Jaccard alone does not establish independent noise, because the paths' outliers share channels.
+  - **Unexplained, to recheck in Phase 6.** The largest errors are 2.8–4.4 BF16 ulps and the outliers are small-|ref| dominated, which supports BF16 rounding. The shared channel concentration, strongest at channel 229, is not explained by this check. Phase 6 should recheck it, for example with trained weights, before treating it as a property of fresh initialization.
 - **Reproduction of Phase 6.0.** The Phase 6.0 pairwise comparisons re-measure at 0.009–0.021 % (compiled vs eager 0.009–0.015 %, eager vs padded 0.012–0.021 %). The earlier 0.017–0.021 % is therefore the tail of this common error distribution under a tolerance tighter than 8-layer BF16 accumulation near zero.
 - Repeated compiled calls were bit-identical.
 
@@ -367,13 +371,15 @@ Compiled vs eager:
   - 256-row sampling was replayed by `evaluate_actions` (grad enabled) at 256 rows and at 1,024 tiled rows. The model's replay validation accepted its own samples every time.
   - **The log-ratio the first-minibatch alarm reads** (signed mean over rows of Σ replay − Σ sampled event log-probs) had |mean| ≤ **1.4e-4 nats** against the 0.05 limit.
   - Mid ATEN +5.2e-6 / +5.4e-6 (256 / 1,024); dense ATEN −1.37e-4 / −1.28e-4; mid default −1.8e-5; dense default −7.3e-5.
-  - Per-row |log-ratio| max was 1.8e-3 (mid) to 5.6e-3 (dense). Row joint log-probs are −165 (mid) and −908 (dense) nats.
+  - Per-row |log-ratio| max was ~2.0e-3 at mid (0.001983642578125, mid default; 1.85e-3 mid ATEN) and 5.6e-3 at dense. Row joint log-probs are −165 (mid) and −908 (dense) nats.
   - Per-slot event max |Δ| was ≤ 4.1e-4.
 - **Teacher KL (Phase 4).**
   - Self: per-row mean 1.4e-7–9.8e-7, max ≤ 8.3e-6, per-event min ≥ −4.0e-7.
   - Perturbed copy (+5 % std noise): per-row mean 7.1e-5 (mid) and 5.4e-4 (dense), all positive and finite.
   - Cached and combined paths are **bit-identical** (max |Δ| 0), both for self and perturbed.
-- **Values and loss.** Values are finite in [−1, 1], and `compute_value` equals the sampled values exactly. The PPO-shaped loss backward at 1,024 rows with the teacher terms gives finite loss and 210/210 finite gradients (norm 3.52 mid, 7.73 dense). `use_flash_attn` was true on all 14 calls per process.
+- **Values and loss.** Values are finite in [−1, 1], and `compute_value` equals the sampled values exactly. The PPO-shaped loss backward at 1,024 rows with the teacher terms gives finite loss and 210/210 finite gradients (norm 3.52 mid, 7.73 dense).
+  - As executed, the value term was **0.25·MSE**, not the declared 0.5·MSE: `c3_smoke.py` computes `v_loss = 0.5·mean((v − ret)²)` and then adds `0.5 · v_loss`. The recorded `v_loss` (0.165 mid, 0.171 dense) is that half-MSE. This does not affect the pass criteria (finiteness).
+- `use_flash_attn` was true on all 14 calls per process.
 - Peak allocated memory was 21.3 GiB (mid) and 40.6 GiB (dense).
 - **Unplanned observation, unattributed.** Values from grad-enabled replay differ from no-grad sampling by up to **0.0154–0.0195** on the [−1, 1] scale, in every process. That is 8–10 % of the 0.2 value-clip range, while log-probs differ by ≤ 4e-4. Whether this comes from the compiled training vs inference graphs or from BF16 in general was not tested.
 
@@ -383,6 +389,7 @@ Setup:
 - Isaiah split: the global config is 256 envs × 64 steps = 16,384 env steps per update.
 - Update wall = 64·t_A + t_C + 16·t_B + t_D, from medians of 20 CUDA-event iterations. Every p90 is within 1.4 % of its median.
 - B is the cached-teacher PPO step with a Muon step. C is `compute_teacher_distillation_targets` on the rank's rollout.
+- **Executed B loss:** clipped ratio + **0.25·MSE** value − 0.01·entropy + 0.005·teacher KL + 0.005·teacher value CE. The run statement declared 0.5·MSE, but `c4_timing.py` computes a half-MSE and multiplies it by 0.5 again. A scalar coefficient on one loss term does not change the kernels or shapes, so the component timings remain usable.
 
 | ranks (envs/rank, spm) | mid t_A / t_B / t_C / t_D | mid wall → global SPS (per rank) | dense t_A / t_B / t_C / t_D | dense wall → global SPS (per rank) |
 |---|---|---|---|---|
@@ -390,7 +397,11 @@ Setup:
 | 4 (64, 4): 128 / 512 / 8,192 / 128 | 7.33 / 97.8 / 505.7 / 5.45 | 2.545 s → **6,437** (1,609) | 14.12 / 172.9 / 868.4 / 12.30 | 4.551 s → **3,600** (900) |
 | 8 (32, 2): 64 / 256 / 4,096 / 64 | 4.97 / 51.3 / 246.5 / 2.93 | 1.389 s → **11,796** (1,475) | 7.05 / 93.1 / 426.5 / 5.96 | 2.372 s → **6,906** (863) |
 
-- **Scaling.** Relative to 2× the 2-rank rate, component scaling efficiency is 0.98 / 0.90 at 4 / 8 ranks for mid and 0.99 / 0.95 for dense. Smaller per-rank batches lose throughput mainly in the 64 small rollout forwards (A share 18–23 %). B is 59–63 % of the wall and C 18–20 %.
+- **Scaling.** Efficiency is global SPS divided by the ideal: **2×** the 2-rank rate at 4 ranks and **4×** at 8 ranks. It is 0.98 / 0.90 at 4 / 8 ranks for mid and 0.99 / 0.95 for dense.
+  - The extra wall is `f × wall(ranks) − wall(2 ranks)` with f = 2 or 4, split by component as `f × n·t(ranks) − n·t(2 ranks)` (n = 64 for A, 16 for B, 1 for C and D; `summary.json` `c4_scaling`).
+  - At 8 ranks, mid adds 0.569 s: **+0.295 s from A** (64 rollout forwards), **+0.300 s from B** (16 train steps), −0.026 s from C. Dense adds 0.472 s: **A improves by 0.063 s**, **B adds 0.572 s**, C −0.035 s.
+  - At 4 ranks the loss is B in both densities (+0.144 s mid, +0.149 s dense), while A improves (−0.038 s, −0.060 s).
+  - So the smaller train-step batch (B) is the common cost. The small rollout forwards (A) add as much again only at mid at 8 ranks. B is 59–63 % of the wall, A 18–23 % and C 18–20 %.
 - **Comparison with the e1458d2 ATEN A/B at the 2-rank shape.**
   - A and D are within 0.5 %.
   - B (now cached-teacher) is +0.2 % mid and +1.1 % dense.
@@ -404,7 +415,8 @@ Setup:
 - Scope: one stack, synthetic observations and grammar tables, fresh weights. The small head gain understates a trained policy's logit noise, so the log-ratio and KL margins **do not qualify the 0.05 alarm for trained policies**.
 - Check 1 used 256-row batches only.
 - Check 2 ran at depth 1 only. Its control failed at compile, so it says nothing backward-specific.
-- The replay-vs-sampling value gap is unattributed.
+- The replay-vs-sampling value gap is unattributed. So is check 1's shared channel concentration (channel 229 at mid), which is left for a Phase 6 recheck.
+- c3 and c4 executed the value term at 0.25·MSE rather than the declared 0.5·MSE (see the run statement's post-run addendum).
 - Check 4 excludes the engine, copies, all-reduce, GAE and logging. It is one run per shape, with no nsys (not installed) and no timeline.
 - The backend setting is process-global and applied by a wrapper, not by repo code.
 - No cookbook note was written. Promoting these findings is left to the owner's workflow.

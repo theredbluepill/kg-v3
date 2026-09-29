@@ -47,7 +47,12 @@ done
 snap prelaunch
 echo "=== idle gate passed after ${waited}s; driver start $(date -u +%FT%TZ)"
 
-timeout -k 20 3540 .venv/bin/python "$R/driver.py" > "$R/driver.out" 2>&1
+# -s TERM: on expiry the driver gets SIGTERM first. Its stages run in their own
+# sessions, outside the group that timeout signals, so the driver's handler
+# terminates each stage group itself (SIGTERM, bounded wait, SIGKILL; <= 12 s)
+# before timeout's SIGKILL at +20 s. (Post-run revision; the recorded attempts
+# ran `timeout -k 20 3540` with the earlier driver, which had no handler.)
+timeout -s TERM -k 20 3540 .venv/bin/python "$R/driver.py" > "$R/driver.out" 2>&1
 DRC=$?
 echo "=== driver exit $DRC $(date -u +%FT%TZ)"
 

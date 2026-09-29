@@ -7,6 +7,7 @@ stop record). Usage: python summarize.py  (from this directory).
 from __future__ import annotations
 
 import json
+from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -48,6 +49,62 @@ def c1() -> dict:
                 "verdict": r["verdict"]["result"],
                 "ratio_to_median": {m: r["verdict"][m]["ratio_to_median"]
                                     for m in ("mean_abs", "outside_tol_frac")},
+            }
+    return out
+
+
+def c1_channels() -> dict:
+    """Per-channel outlier concentration from the retained outlier coordinates.
+
+    Every path's outlier list is complete (all counts are below the 50,000 cap).
+    A channel holds 1/width of the present-token elements, so its expected
+    outlier share under no channel preference is 1/width.
+    """
+    out: dict = {}
+    for case in ("c1_aten", "c1_default"):
+        d = json.loads((A2 / f"{case}.outliers.json").read_text())
+        assert d["format"] == "[row, token, channel] per density/path", d["format"]
+        for key, coords in d.items():
+            if key == "format":
+                continue
+            cnt = Counter(c[2] for c in coords)
+            n = len(coords)
+            out[f"{case}/{key}"] = {
+                "outliers": n,
+                "channel_229": cnt[229],
+                "channel_229_share": cnt[229] / n,
+                "top5": [[ch, k, k / n] for ch, k in cnt.most_common(5)],
+                "channels_with_outliers": len(cnt),
+            }
+    out["width"] = 256
+    out["element_share_per_channel"] = 1 / 256
+    return out
+
+
+def c4_scaling() -> dict:
+    """Decompose the scaling loss by component.
+
+    With f = ranks / 2, global SPS at `ranks` equals f x the 2-rank rate
+    exactly when f x wall(ranks) == wall(2). So f x wall(ranks) - wall(2) is
+    the extra wall, and each component contributes
+    f x n_k x t_k(ranks) - n_k x t_k(2), with n = 64 (A), 16 (B), 1 (C), 1 (D).
+    Efficiency = global_sps(ranks) / (f x global_sps(2)).
+    """
+    n = {"A": 64, "B": 16, "C": 1, "D": 1}
+    out: dict = {}
+    for d in ("mid", "dense"):
+        r = json.loads((A2 / f"c4_{d}_aten.derived.json").read_text())["splits"]
+        base = r["2"]
+        for ranks in ("4", "8"):
+            f = int(ranks) // 2
+            x = r[ranks]
+            out[f"{d}/{ranks}"] = {
+                "baseline_multiple": f,
+                "efficiency": x["global_sps"] / (f * base["global_sps"]),
+                "extra_wall_s": f * x["update_wall_s_median"] - base["update_wall_s_median"],
+                "extra_wall_s_by_component": {
+                    k: (f * n[k] * x["median_ms"][k] - n[k] * base["median_ms"][k]) / 1000
+                    for k in n},
             }
     return out
 
@@ -141,6 +198,8 @@ def main() -> None:
         "driver": [{k: r.get(k) for k in ("utc", "stage", "gpu", "status", "rc")}
                    for r in drv],
         "c1": c1(), "c2": c2(), "c3": c3(), "c4": c4(),
+        # Added after Codex review verify-gpu-bundle-r1 (findings 1 and 2).
+        "c1_channels": c1_channels(), "c4_scaling": c4_scaling(),
     }
     (HERE / "summary.json").write_text(json.dumps(summary, indent=1) + "\n")
     print("wrote summary.json")

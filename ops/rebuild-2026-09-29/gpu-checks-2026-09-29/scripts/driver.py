@@ -13,11 +13,23 @@ timeout or a wrong backend record): the other stream's running subprocess is
 terminated and nothing further starts. Control stages never stop it.
 
 Exit codes: 0 every stage ran and every non-control stage passed; 3 a
-non-control stage failed; 4 the internal deadline ran out.
+non-control stage failed; 4 the internal deadline ran out; 128 + signum the
+driver received SIGTERM, SIGINT or SIGHUP (for example from launch.sh's outer
+`timeout`) and cleaned up.
+
+Stage cleanup (post-run revision, after Codex review verify-gpu-bundle-r1
+finding 3; the recorded attempts ran the earlier driver, which lacked it):
+every stage runs in its own session, so it is outside the process group that
+launch.sh's `timeout` signals. On SIGTERM/SIGINT/SIGHUP and at interpreter exit
+the driver therefore signals every started stage's process group itself:
+SIGTERM, a bounded wait of TERM_GRACE_S, then SIGKILL and a further bounded
+wait of KILL_GRACE_S. The total stays below launch.sh's `timeout -k 20` grace,
+after which `timeout` would SIGKILL the driver and cleanup could not run.
 """
 
 from __future__ import annotations
 
+import atexit
 import json
 import os
 import signal
@@ -40,6 +52,9 @@ MIN_START_S = 90
 CONTROL_CAP_S = 600
 REL_MAX = 0.05
 L512 = 2**31 // 512  # 4,194,304 packed tokens x 512 = 2**31
+TERM_GRACE_S = 8.0
+KILL_GRACE_S = 4.0
+CLEANUP_SIGNALS = (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)
 
 # name, role, backends, cache, script, args
 Stage = tuple[str, str, str, str, str, list[str]]
@@ -213,9 +228,12 @@ class Driver:
         self.t0 = time.monotonic()
         self.deadline = self.t0 + BUDGET_S
         self.stop = threading.Event()
-        self.lock = threading.Lock()
+        # Reentrant: the signal handler runs in the main thread and may
+        # interrupt it while it already holds the lock (in log or fail).
+        self.lock = threading.RLock()
         self.procs: dict[str, subprocess.Popen[bytes]] = {}
         self.failure: int | None = None
+        self.cleaned = False
         self.log_fh = open(RUN / "driver.jsonl", "a")
 
     def log(self, rec: dict[str, Any]) -> None:
@@ -236,6 +254,77 @@ class Driver:
                         os.killpg(p.pid, signal.SIGTERM)
                     except ProcessLookupError:
                         pass
+
+    @staticmethod
+    def _group_alive(p: subprocess.Popen[bytes]) -> bool:
+        # Reap the leader if it has exited (so it is not counted as a zombie
+        # member), then probe the whole group: grandchildren may outlive it.
+        p.poll()
+        try:
+            os.killpg(p.pid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        return True
+
+    @staticmethod
+    def _signal_group(p: subprocess.Popen[bytes], sig: int) -> None:
+        try:
+            os.killpg(p.pid, sig)
+        except ProcessLookupError:
+            pass
+
+    def cleanup(self, reason: str) -> list[dict[str, Any]]:
+        """Terminate every started stage's process group, bounded in time.
+
+        Signals each group whether or not its leader is still running, because
+        a stage's own children stay in its group after the leader exits.
+        Idempotent. Returns one record per group that was still alive.
+        """
+        with self.lock:
+            if self.cleaned:
+                return []
+            self.cleaned = True
+            self.stop.set()
+            procs = dict(self.procs)
+        live = {name: p for name, p in procs.items() if self._group_alive(p)}
+        report: list[dict[str, Any]] = []
+        if not live:
+            return report
+        for p in live.values():
+            self._signal_group(p, signal.SIGTERM)
+        end = time.monotonic() + TERM_GRACE_S
+        while time.monotonic() < end and any(self._group_alive(p) for p in live.values()):
+            time.sleep(0.1)
+        for name, p in live.items():
+            killed = self._group_alive(p)
+            if killed:
+                self._signal_group(p, signal.SIGKILL)
+            report.append({"stage": name, "pgid": p.pid, "sigkill": killed})
+        end = time.monotonic() + KILL_GRACE_S
+        while time.monotonic() < end and any(self._group_alive(p) for p in live.values()):
+            time.sleep(0.05)
+        for rec in report:
+            rec["survived"] = self._group_alive(live[rec["stage"]])
+        self.log({"status": "stage_cleanup", "reason": reason, "groups": report})
+        return report
+
+    def _on_signal(self, signum: int, _frame: object) -> None:
+        if self.cleaned:
+            return
+        name = signal.Signals(signum).name
+        with self.lock:
+            if self.failure is None:
+                self.failure = 128 + signum
+        self.log({"status": "signal", "signal": name})
+        self.cleanup(f"signal {name}")
+        raise SystemExit(128 + signum)
+
+    def install_cleanup(self) -> None:
+        atexit.register(self.cleanup, "atexit")
+        for sig in CLEANUP_SIGNALS:
+            signal.signal(sig, self._on_signal)
 
     def run_stage(self, stage: Stage, gpu: int) -> None:
         name, role, backends, cache, script, args = stage
@@ -268,6 +357,11 @@ class Driver:
                                  stderr=subprocess.STDOUT, start_new_session=True)
             with self.lock:
                 self.procs[name] = p
+                late = self.cleaned
+            if late:
+                # Cleanup already ran and missed this group; nothing in it
+                # has done work yet, so kill it outright.
+                self._signal_group(p, signal.SIGKILL)
             try:
                 rc = p.wait(timeout=timeout)
             except subprocess.TimeoutExpired:
@@ -314,6 +408,7 @@ class Driver:
             self.run_stage(stage, gpu)
 
     def main(self) -> int:
+        self.install_cleanup()
         self.log({"status": "driver_start", "budget_s": BUDGET_S})
         threads = [threading.Thread(target=self.stream, args=(GPU0_PHASE1, 0)),
                    threading.Thread(target=self.stream, args=(GPU1_PHASE1, 1))]
