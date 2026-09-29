@@ -252,7 +252,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 ### Task 3.1: Game seam in the trainer
 
-- [ ] Rollout storage and observation/action mapping for Kaggriculture batches. Refactor Isaiah's helpers into schema-generic ones (I11); don't wrap them in shims. Isaiah's suites must pass.
+- [x] Rollout storage and observation/action mapping for Kaggriculture batches. Refactor Isaiah's helpers into schema-generic ones (I11); don't wrap them in shims. Isaiah's suites must pass. (Remainder at `266c5e7` merged by `821b446` on `kg/merge-3-1-3-5-c`; reviews by Claude subagents substituting for Codex during its usage limit, owner-approved.)
 
 ### Task 3.2: Game semantics
 
@@ -274,13 +274,13 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 
 ### Task 3.5: Bounded local functional check
 
-- [ ] Tiny model, 2 envs, 2 updates, CPU: finite losses, a checkpoint written, and an evaluation plus promotion branch exercised through `test_last_best`-style tests. This is the only local "run".
+- [x] Tiny model, 2 envs, 2 updates, CPU: finite losses, a checkpoint written, and an evaluation plus promotion branch exercised through `test_last_best`-style tests. This is the only local "run". (At `266c5e7` merged by `821b446`; since the merge the check names a tiny `rl.teacher_init` teacher, as Task 4.4 requires.)
 
 ## Phase 4 — Teacher distillation (Claude)
 
 The previous plan's Tasks 3.2–3.5 carry over, adjusted to this model. They cover: per-slot policy distributions with `slot_kl` (KL(teacher ‖ student) over masked categoricals); the `TeacherTargets` protocol refactor of Isaiah's cached targets (`.index` / `.concat`); Kaggriculture teacher targets; cached path bit-for-bit equal to the combined path; value distillation on the per-seat winner distribution (mean over seats); last-best refresh and resume tests; and the `scaling_6m` teacher coefficients (0.005 / 0.005, `teacher_segments_per_minibatch` 128).
 
-- [ ] 4.1 distributions and KL, 4.2 targets and cache, 4.3 model methods and trainer wiring, 4.4 configs. (4.1–4.3 merged at 8fde43c by a424d8c; 4.4 at 4a662ad merged by kg/merge-4-4-c; the box stays unticked until T18/T19b run)
+- [x] 4.1 distributions and KL, 4.2 targets and cache, 4.3 model methods and trainer wiring, 4.4 configs. (4.1–4.3 merged at 8fde43c by a424d8c; 4.4 at 4a662ad merged by kg/merge-4-4-c; T18/T19b run on CPU since the 3.1/3.5 merge `821b446`; GPU teacher checks stay with Phase 6)
 
 ## Phase 5 — BC (required)
 
