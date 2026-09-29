@@ -1,0 +1,11 @@
+--- src/kaggriculture/bindings.rs
++++ src/kaggriculture/bindings.rs.mutant
+@@ -95,7 +95,7 @@
+     name: &'static str,
+     shape: &[usize],
+ ) -> PyResult<Region> {
+-    if array.shape() != shape {
++    if false && array.shape() != shape {
+         return Err(PyValueError::new_err(format!(
+             "{name}: expected shape {shape:?}, received {:?}",
+             array.shape()

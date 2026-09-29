@@ -356,10 +356,23 @@ pub fn encode_kaggriculture_headers_into(
     .map_err(python_error)
 }
 
+mod bindings;
+
 pub(super) fn add_to_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(encode_kaggriculture_headers_into, module)?)?;
     module.add_function(wrap_pyfunction!(export_kaggriculture_episode, module)?)?;
-    module.add_function(wrap_pyfunction!(verify_kaggriculture_episode, module)?)
+    module.add_function(wrap_pyfunction!(verify_kaggriculture_episode, module)?)?;
+    module.add_class::<bindings::PyKaggricultureEnv>()?;
+    module.add_function(wrap_pyfunction!(bindings::kaggriculture_encode, module)?)?;
+    module.add_function(wrap_pyfunction!(bindings::kaggriculture_decode, module)?)?;
+    module.add_function(wrap_pyfunction!(
+        bindings::kaggriculture_grammar_tables,
+        module
+    )?)?;
+    module.add_function(wrap_pyfunction!(
+        bindings::kaggriculture_grammar_constants,
+        module
+    )?)
 }
 
 #[pyfunction]
@@ -409,3 +422,12 @@ fn validate_replay_framework(py: Python<'_>, json: &str, episode: bool) -> PyRes
         .map(|_| ())
         .map_err(|error| PyValueError::new_err(error.to_string()))
 }
+
+mod admission;
+mod env;
+#[cfg(test)]
+mod env_tests;
+mod reward;
+
+#[cfg(test)]
+mod lifecycle_timing_tests;

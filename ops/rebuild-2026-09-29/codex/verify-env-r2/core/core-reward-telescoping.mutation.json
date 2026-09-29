@@ -1,0 +1,51 @@
+{
+  "name": "reward-telescoping",
+  "path": "src/kaggriculture/reward.rs",
+  "test": "reward_episode_telescopes_with_explicit_output_rounding_budget",
+  "reason": "Return zero rollout rewards; the independent endpoint budget must reject.",
+  "original_sha256": "87acb8ade72d0a5d60e7442bd2c4e80f45c793f9adb2f1523cfed39654e3a7f4",
+  "classification": "killed_assertion",
+  "mutant_sha256": "6dc4abd2d4ee4c62b2137e57859101bb7238bf8c59f402555ba1d31579b99d0e",
+  "diff": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-reward-telescoping.diff",
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/bounded.py",
+    "--seconds",
+    "115",
+    "--name",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-reward-telescoping",
+    "--",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--lib",
+    "reward_episode_telescopes_with_explicit_output_rounding_budget",
+    "--",
+    "--test-threads=1"
+  ],
+  "runner_exit_status": 101,
+  "bounded_receipt": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-reward-telescoping.json",
+  "bounded": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "reward_episode_telescopes_with_explicit_output_rounding_budget",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 2.265226416,
+    "sampled_process_group_peak_rss_bytes": 553992192,
+    "stop_reason": null,
+    "time_limit_seconds": 115.0,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "restored_sha256": "87acb8ade72d0a5d60e7442bd2c4e80f45c793f9adb2f1523cfed39654e3a7f4",
+  "restored_byte_exact": true,
+  "primary_unchanged": true
+}

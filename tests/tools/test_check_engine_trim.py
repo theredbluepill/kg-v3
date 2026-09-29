@@ -359,9 +359,14 @@ def test_committed_package_passes_check() -> None:
     checker.check(_REPO)
 
 
-def test_grammar_bridge_is_retired_to_root_integration() -> None:
+def test_no_authored_grammar_path_include_after_root_engine_edge() -> None:
     assert not (_REPO / "engine_rs/tests/grammar_kernel.rs").exists()
-    assert (_REPO / "src/kaggriculture/grammar_kernel_tests.rs").is_file()
+    root_test = (_REPO / "src/kaggriculture/grammar_kernel_tests.rs").read_text()
+    assert "use super::grammar::{" in root_test
+    assert "use kaggriculture_engine::{" in root_test
+    assert "#[path" not in root_test
+    manifest = json.loads((_REPO / "engine_rs/TRIM_MANIFEST.json").read_text())
+    assert all("grammar" not in entry["path"] for entry in manifest["authored"])
 
 
 def test_check_rejects_redeclared_grammar_bridge(trimmed: Path) -> None:

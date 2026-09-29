@@ -1,0 +1,24 @@
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-independent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.18s
+     Running unittests src/lib.rs (target/debug/deps/rs-7de3796adb200e16)
+
+running 1 test
+test kaggriculture::admission::tests::hire_cash_admits_safe_executed_sequences ... FAILED
+
+failures:
+
+---- kaggriculture::admission::tests::hire_cash_admits_safe_executed_sequences stdout ----
+
+thread 'kaggriculture::admission::tests::hire_cash_admits_safe_executed_sequences' (11707384) panicked at src/kaggriculture/admission.rs:68:9:
+assertion `left == right` failed
+  left: Err("seat 0: executed hire index 0 exceeds uint64 cash conversion range")
+ right: Ok(())
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    kaggriculture::admission::tests::hire_cash_admits_safe_executed_sequences
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 278 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`

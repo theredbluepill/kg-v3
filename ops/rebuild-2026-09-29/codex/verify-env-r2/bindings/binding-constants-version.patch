@@ -1,0 +1,11 @@
+--- src/kaggriculture/bindings.rs
++++ src/kaggriculture/bindings.rs.mutant
+@@ -1268,7 +1268,7 @@
+     PyTuple::new(
+         py,
+         [
+-            grammar::GRAMMAR_TABLES_VERSION
++            (grammar::GRAMMAR_TABLES_VERSION + 1)
+                 .into_pyobject(py)?
+                 .into_any(),
+             names.into_any(),

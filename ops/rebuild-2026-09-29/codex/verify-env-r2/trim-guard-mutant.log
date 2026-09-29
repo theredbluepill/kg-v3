@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_no_authored_grammar_path_include_after_root_engine_edge _________
+
+    def test_no_authored_grammar_path_include_after_root_engine_edge() -> None:
+        assert not (_REPO / "engine_rs/tests/grammar_kernel.rs").exists()
+        root_test = (_REPO / "src/kaggriculture/grammar_kernel_tests.rs").read_text()
+        assert "use super::grammar::{" in root_test
+        assert "use kaggriculture_engine::{" in root_test
+>       assert "#[path" not in root_test
+E       assert '#[path' not in '//! Kernel ...e_grammar;\n'
+E         
+E         '#[path' is contained here:
+E           rol");
+E           }
+E           
+E           #[path = "grammar.rs"]
+E         ? ++++++
+E           mod duplicate_grammar;
+
+tests/tools/test_check_engine_trim.py:367: AssertionError
+=========================== short test summary info ============================
+FAILED tests/tools/test_check_engine_trim.py::test_no_authored_grammar_path_include_after_root_engine_edge
+1 failed, 78 deselected in 0.03s

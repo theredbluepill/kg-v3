@@ -1,0 +1,10 @@
+--- original/src/kaggriculture/env.rs
++++ mutant/src/kaggriculture/env.rs
+@@ -355,6 +355,7 @@
+         mask: &[bool],
+         truncate: bool,
+     ) -> Result<PendingBatch, EnvError> {
++        self.stream.next += self.stream.stride; // MUTATION: early live write
+         caught(|| {
+             if mask.len() != self.n_envs() || (!truncate && mask.iter().any(|x| !x)) {
+                 return Err(EnvError::Value(

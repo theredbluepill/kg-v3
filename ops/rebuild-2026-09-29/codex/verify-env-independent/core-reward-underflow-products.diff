@@ -1,0 +1,11 @@
+--- original/src/kaggriculture/reward.rs
++++ mutant/src/kaggriculture/reward.rs
+@@ -31,7 +31,7 @@
+         {
+             return Err("reward coefficients must be finite and nonnegative".into());
+         }
+-        if *w > 0. && (*cap <= 0. || !(*w * *s > 0. || *w * *d > 0.)) {
++        if *w > 0. && (*cap <= 0. || !(*s > 0. || *d > 0.)) {
+             return Err(
+                 "econ_shaping requires a positive cap and a nonzero binary64 event product".into(),
+             );

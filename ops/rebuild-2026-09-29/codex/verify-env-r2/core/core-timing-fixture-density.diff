@@ -1,0 +1,11 @@
+--- original/src/kaggriculture/lifecycle_timing_tests.rs
++++ mutant/src/kaggriculture/lifecycle_timing_tests.rs
+@@ -5,7 +5,7 @@
+ use std::time::Instant;
+ 
+ fn fixture(dense: bool) -> (ObservationGame, Vec<Value>, String) {
+-    let header = super::oracle_corpus::timing_header(dense).unwrap();
++    let header = super::oracle_corpus::timing_header(false).unwrap();
+     let hash = super::oracle_corpus::hash_bytes(&serde_json::to_vec(&header).unwrap()).unwrap();
+     let actions = header.initial.public.farms.iter().map(|farm| {
+         json!({"farmer":["PASS"],"hands":vec![json!(["PASS"]);farm.hands.len()],"market":[]})

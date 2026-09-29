@@ -1,16 +1,284 @@
 ---
 type: "Reference"
 title: "Native game semantics use v3-owned buffers"
-description: "Task 1.2 rebuilds the observation-local grammar and strict native codec; historical adapter and GPU evidence remains scoped to the reference branch."
+description: "Task 1.4 adds transactional native lifecycle, checked seed streams, rewards and codec/table bindings over the rebuilt grammar/encoder; the 16-game TrainingBatch oracle matches bit for bit and the release overflow proof passes on the pod, and each recorder semantic inventory, size-budget and archive-hash guard has its own killing test, while the Task 1.5 adapter and its CUDA fence stay unqualified."
 tags: ["kaggriculture-v3", "adaptation"]
 status: "verified-scoped"
-generated: {"by": "openai/codex", "at": "2026-09-29"}
-sources: [{"resource": "repository:ops/rebuild-2026-09-29/briefs/1.2.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/claude_review_mutations.py"}, {"resource": "repository:ops/rebuild-2026-09-29/1.2/checks.json"}, {"resource": "repository:ops/rebuild-2026-09-29/merge-1.2/results.md"}, {"resource": "repository:python/owl/kaggriculture/gpu_grammar.py"}, {"resource": "repository:src/kaggriculture/grammar.rs"}, {"resource": "repository:src/kaggriculture/grammar_tests.rs"}, {"resource": "repository:src/kaggriculture/grammar_kernel_tests.rs"}, {"resource": "repository:engine_rs/TRIM_MANIFEST.json"}, {"resource": "repository:scripts/check_engine_trim.py"}, {"resource": "repository:tests/tools/test_check_engine_trim.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/training.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/README.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/benchmark.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_codec.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/v3-port-checks.md"}, {"resource": "user-directive:2026-09-28:record-every-adaptation"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/V3_IMPORT.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/VENDORED_FROM.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/Cargo.toml"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/ffi.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_features.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_sampler.rs"}, {"resource": "repository:Cargo.toml"}, {"resource": "repository:src/lib.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/src/kaggriculture.rs"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/types.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/native_bridge.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/env.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/actor_codec.py"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/gpu_sampling_grammar.py"}, {"resource": "repository:Cargo.lock"}, {"resource": "repository:python/owl/rs.pyi"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:src/rules_engine/generation.rs"}, {"resource": "repository:docs/rules-engine.md"}, {"resource": "repository:docs/rules-parity-coverage.md"}]
+generated: {"by": "openai/codex; revised by anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources:
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/1.2.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.2/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.2/claude_review_mutations.py"
+  - resource: "repository:ops/rebuild-2026-09-29/1.2/checks.json"
+  - resource: "repository:ops/rebuild-2026-09-29/merge-1.2/results.md"
+  - resource: "repository:python/owl/kaggriculture/gpu_grammar.py"
+  - resource: "repository:src/kaggriculture/grammar.rs"
+  - resource: "repository:src/kaggriculture/grammar_tests.rs"
+  - resource: "repository:src/kaggriculture/grammar_kernel_tests.rs"
+  - resource: "repository:engine_rs/TRIM_MANIFEST.json"
+  - resource: "repository:scripts/check_engine_trim.py"
+  - resource: "repository:tests/tools/test_check_engine_trim.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/engine_rs/src/training.rs"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/README.md"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/benchmark.json"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"
+  - resource: "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_codec.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/tests/kaggriculture/test_env.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/v3-port-checks.md"
+  - resource: "user-directive:2026-09-28:record-every-adaptation"
+  - resource: "reference-branch:kg/reference-2026-09-29/engine_rs/V3_IMPORT.json"
+  - resource: "reference-branch:kg/reference-2026-09-29/engine_rs/VENDORED_FROM.md"
+  - resource: "reference-branch:kg/reference-2026-09-29/engine_rs/Cargo.toml"
+  - resource: "reference-branch:kg/reference-2026-09-29/engine_rs/src/lib.rs"
+  - resource: "reference-branch:kg/reference-2026-09-29/engine_rs/src/ffi.rs"
+  - resource: "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_features.rs"
+  - resource: "reference-branch:kg/reference-2026-09-29/engine_rs/src/myolie_sampler.rs"
+  - resource: "repository:Cargo.toml"
+  - resource: "repository:src/lib.rs"
+  - resource: "reference-branch:kg/reference-2026-09-29/src/kaggriculture.rs"
+  - resource: "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/types.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/native_bridge.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/env.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/actor_codec.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/gpu_sampling_grammar.py"
+  - resource: "repository:Cargo.lock"
+  - resource: "repository:python/owl/rs.pyi"
+  - resource: "repository:docs/rl-api-specs.md"
+  - resource: "repository:src/rules_engine/generation.rs"
+  - resource: "repository:docs/rules-engine.md"
+  - resource: "repository:docs/rules-parity-coverage.md"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/1.4.md"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/1.5.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/progress.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/final-checks.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/cast-audit.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/d-release-attempt.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/timing.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/reference-recording-attempt.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/g-reference-recording.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/e-rust-restored-green.log"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/e-seed-mutation-custody.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/f-combined-final-green.log"
+  - resource: "repository:src/kaggriculture/mod.rs"
+  - resource: "repository:src/kaggriculture/env.rs"
+  - resource: "repository:src/kaggriculture/reward.rs"
+  - resource: "repository:src/kaggriculture/admission.rs"
+  - resource: "repository:src/kaggriculture/bindings.rs"
+  - resource: "repository:src/kaggriculture/env_tests.rs"
+  - resource: "repository:src/kaggriculture/lifecycle_timing_tests.rs"
+  - resource: "repository:scripts/record_kaggriculture_env_reference.py"
+  - resource: "repository:scripts/kaggriculture_env_reference_policy.py"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/reference_recorder.rs"
+  - resource: "repository:tests/kaggriculture/test_native_env.py"
+  - resource: "repository:tests/kaggriculture/test_native_grammar_bindings.py"
+  - resource: "repository:tests/kaggriculture/test_env_reference.py"
+  - resource: "repository:tests/tools/test_record_kaggriculture_env_reference.py"
+  - resource: "repository:tests/fixtures/kaggriculture_env_reference_v1.npz"
+  - resource: "repository:tests/fixtures/kaggriculture_env_reference_v1.json"
+  - resource: "repository:docs/kaggriculture-contract.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/run-statement-pod-oracle.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/record.log"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/replay-green.log"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/mutation-done.log"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/release-overflow.log"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/timing-enabled.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/pod-oracle/timing-disabled.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/claude-review/just-prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/verify-env-independent/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/verify-env-independent/oracle/semantic-guard-probes.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r1-fixes/guard-removal-mutations.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r1-fixes/guard_removal_mutations.py"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/verify-env-r2/review.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r2-fixes/size-hash-guard-mutations.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.4/verify-r2-fixes/size_hash_guard_mutations.py"
 ---
 
 # Native game semantics use v3-owned buffers
 
-## Task 1.2 — current rebuild
+## Native lifecycle and bindings — current rebuild
+
+Task 1.4 implements the reviewed native boundary over Tasks 1.2 and 1.3. This
+existing concept was selected after searching native buffers, rewards, seeds,
+statelessness and negative evidence, including the reward-reuse, structured
+observation and evaluation/truncation References. The approved brief, unchanged
+kernel, actual caller-buffer tests and independent recorded grammar corpus
+support the claim. The historical adapter and GPU results below remain scoped
+to `kg/reference-2026-09-29`; they do not qualify this implementation.
+
+`owl.rs.KaggricultureEnv` constructs seeded games, publishes cached observations
+without another reset, computes rewards in Rust and commits whole batches only
+after all preparation and return allocation succeed. Typed borrow guards stay
+alive while native work runs detached from Python. All 35 caller destinations
+retain their storage, and admission checks exact layout, types and overlapping
+byte regions. Truncation has a separate selected-row commit: unselected
+observation bytes and all six transition outputs survive exactly. A terminal
+step captures the completed game before publishing its newly seeded successor.
+There is no native lifecycle state-import API.
+
+The approved constructor takes JSON config, an exact-key reward dict and
+required `hire_limit`; Python pinning moves to the Task 1.5 adapter. Its single
+buffer set must fence current-stream CUDA readers before reuse when pinned.
+Task 1.4 does not implement that adapter or claim the GPU fence is qualified.
+Native seed admission is nonnegative i64 with checked successor reservation;
+there is no training-only `2**62` cap. Rank partition is `base+rank+k*world_size`.
+Any narrower training/evaluation band policy belongs to the factory. The Q1
+constructor refinement is recorded here, in the API and as contract v4.2 (a
+refinement both agents agreed in the 1.4 brief review, not a semantic change).
+
+Reward shaping uses only own starvation/drought/ineffective counters and raw
+terminal banks, with the reference's float64 → float32 economic rounding before
+terminal float64 addition and final float32 rounding. The explicit binary64
+per-component admission predicate prevents inert shaping even through product
+underflow; it intentionally strengthens the pinned reference. The cast audit
+finds two reachable unbounded HIRE cash casts and checks exact executed hire
+costs before commit. Root release policy enables dependency overflow checks;
+there are no additional invented game-envelope caps.
+
+Adaptation inventory and reasons:
+
+- `src/kaggriculture/mod.rs`, `bindings.rs`, `python/owl/rs.pyi`: extend the
+  existing module/extension with the class and four codec/table functions while
+  retaining the header encoder; exact keyword ABI and fallible NumPy admission.
+- `src/kaggriculture/env.rs`, `reward.rs`, `admission.rs`: transactional staged
+  lifecycle, ordered seeds/errors, terminal capture, reference reward arithmetic
+  and the two cast-audit guards. `Cargo.toml` changes only root engine-package
+  release overflow policy; vendored kernel bytes are unchanged.
+- `src/kaggriculture/env_tests.rs`, `tests/kaggriculture/test_native_env.py`:
+  independent reward bounds, injected real-core rollback/retry, terminal timing,
+  sentinel-preserving truncate, strict binding admission and sequential world-2
+  and world-8 seed partition. `tests/tools/test_check_engine_trim.py` strengthens
+  the already-satisfied grammar-bridge retirement regression. Existing
+  `grammar_kernel_tests.rs` remains the sole root kernel route.
+- `tests/kaggriculture/test_native_grammar_bindings.py`: checks all 964 table
+  bits, exact metadata, copied arrays, atomic codec writes and the frozen Task
+  1.2 corpus, including dense actors and all negative classes. The Python codec
+  and `native_grammar_tables(device)` remain Task 1.5.
+- `scripts/record_kaggriculture_env_reference.py`,
+  `scripts/kaggriculture_env_reference_policy.py`,
+  `ops/rebuild-2026-09-29/1.4/reference_recorder.rs`,
+  `tests/tools/test_record_kaggriculture_env_reference.py`,
+  `tests/kaggriculture/test_env_reference.py`: deterministic pinned
+  TrainingBatch recording, fixed observation-local actions, source/fixture
+  custody and strict full-trajectory comparison; incomplete recording may never
+  publish a partial fixture.
+  `tests/fixtures/kaggriculture_env_reference_v1.{npz,json}` is the recorded
+  16-game fixture (pod recording, Claude review).
+- `src/kaggriculture/lifecycle_timing_tests.rs` and
+  `ops/rebuild-2026-09-29/1.4/`: bounded phase harness, cast audit, planned run
+  conditions, actual command receipts, mutation custody and pod handoffs.
+  `docs/rl-api-specs.md`, `docs/rules-parity-coverage.md`, this Reference, its
+  index and the cookbook log record the exact ABI, evidence and remaining gaps.
+  `docs/kaggriculture-contract.md` records the agreed Q1 constructor refinement
+  as v4.2. `ops/rebuild-2026-09-29/1.4/claude-review/` holds the review, the pod
+  run statement and receipts, and the mutation logs.
+
+Actual scoped checks: the trim checker and nine root kernel tests confirm the
+bridge was already retired. The native lifecycle suite passes 12 tests and the
+cast helper suite passes six; Python native environment and grammar suites
+pass 387 (344 + 43) after Claude's review, including two-thread versus one-thread native-pool
+equivalence. The grammar corpus contributes 321 accepted round trips
+(320 scheduled, 64 dense, 22 full-length) and 43 rejection classes. World sizes
+2 and 8 each consume 67 seeds per rank, running rank batches sequentially with
+at most two live games. A controlled latch proves GIL release during real native
+observation work. These are CPU semantics checks, not a distributed or training
+run.
+
+Restored mutations discriminate premature live seed writes in step/reset,
+whole-batch publication during truncate, and the old finite rank-offset seed
+formula. The two seed-partition cases both report `rank 1 collides with rank 0`
+under that mutation. Review also replaced an actual-error-derived reward budget
+that wrongly admitted zero rewards; the corrected independent endpoint and ULP
+budget reject the mutation. Malformed initial tests and diagnostic-pattern
+repairs are retained in operational receipts, not counted as behavior reds.
+
+Codex's Mac attempts at the release overflow proof, the optimized timing build
+and the reference recording all stopped at the 960 MiB watchdog before their
+test bodies ran. `results.md`, `timing.json` and
+`reference-recording-attempt.json` keep those receipts. Claude then ran these
+checks on the pod (`w7ia3zvxqsvs3g`, CPU only, separate clone at `9dc2d02`,
+run statement `claude-review/run-statement-pod-oracle.md`):
+
+- **Trajectory oracle.** The recorder compiled the exported reference and
+  recorded all 16 games (seeds 17000–17015, 719 transitions each) in 32 s.
+  Every coverage counter was positive in every game. The fixture is 310,365
+  bytes compressed (npz sha256 `494bbf2c…c976`, manifest `aa6cc641…28b7`).
+  The native replay matches the reference TrainingBatch bit for bit on rewards,
+  dones, banks, counters, seeds and terminal records over all 11,504
+  transitions. The replay and custody suites pass 37 tests, on the pod and on
+  the Mac (14 s, 411 MB). One deviation was recorded: the reference lockfile's
+  crates were missing from the pod cache, so an explicit `cargo fetch --locked`
+  (lockfile-checksum verified) preceded the offline build.
+- **Oracle mutation.** Inverting native `dones` fails with
+  `first divergence game=0 seed=17000 step=0 seat=0 … field=dones`. After a
+  byte-exact restore, the replay passes again.
+- **Release overflow proof.** `release_dependency_overflow_is_caught` passes in
+  release with the root engine overflow-check override. With the override
+  disabled through `--config`, the same test fails, so the override is what
+  makes the release step fail safely.
+- **Release phase timing** (fat LTO, one live env, one thread, component only).
+  Dense 241-actor states take a 747.6 µs median for the composed clone, step,
+  prepare and write. The outer candidate clone is 159.5 µs of that, the kernel
+  step including its inner clone 270.3 µs and snapshot acquisition 171.7 µs.
+  Early states take 54.8 µs. Engine overflow checks cost no measurable time
+  (752.0 µs dense with them off). These numbers make no complete-update or
+  throughput claim.
+
+Claude's review added one oracle,
+`test_calls_overwrite_every_output_byte_of_the_same_buffer_set`. It is the
+native half of L6: observe, reset, step and terminal step rewrite all 35
+outputs of the one caller-owned buffer set in place, including padding. Two
+runs that start from different poison bytes produce identical outputs, and the
+buffer addresses do not change. Dropping the `transition_econ_after` copy makes
+it fail. Further restored native mutations fail their named oracles:
+
+- advancing seeds by 1 instead of `seed_stride` fails world sizes 2 and 8;
+- clearing selected terminal records before reset staging succeeds fails the
+  reset/truncate rollback test.
+
+Full `just prepare` on the Mac, without Codex's 960 MiB watchdog, exits 0:
+Python 2,042 passed with 7 skips (1.95 GB peak RSS). The skips include
+`test_native_tables_match_expected_tables`, which waits for Task 1.5's
+`native_grammar_tables(device)`.
+
+Codex's independent verification of `1e26760`
+(`ops/rebuild-2026-09-29/codex/verify-env-independent/review.md`) found no
+production defect. It showed that the recorder's nine inventory tests changed
+arrays without refreshing `manifest["arrays"]`, so every case stopped at the
+hash custody check: removing seven semantic guards (length range, offsets,
+transition indices, seed consumption, terminal steps, done schedule, terminal
+values) still passed. The hash-only test is now kept separately, and 17
+coherent probes refresh the array metadata before asserting the exact semantic
+error. They also cover the packed token count, terminal winner, bank/economic
+continuity, nonfinite rewards and decreasing counters. Replacing each of the 14
+`require` guards with a no-op fails at least one named test
+(`1.4/verify-r1-fixes/guard-removal-mutations.json`); the recorder bytes were
+restored (sha256 `156bee30…3499`). `docs/rl-api-specs.md` now states that
+contract v4.2 incorporates the approved Q1 constructor refinement.
+
+Codex's second verification of `ba9b59b`
+(`ops/rebuild-2026-09-29/codex/verify-env-r2/review.md`) confirmed both fixes
+and again found no production defect. It found that the size and archive-hash
+tests still stopped early: they made the declared size disagree with the file,
+so the size check fired first. The compressed-size cap and both archive hash
+checks could be removed and all tests still passed. The new tests keep every
+other field consistent and assert the exact error. A valid fixture fails
+against a cap lowered one byte below its size, for both the compressed and
+expanded budgets. A declared size one byte too large fails the size check
+while staying within budget. A same-length flipped byte and a wrong
+`fixture_sha256` both fail the archive hash. A wrong `expanded_sha256` fails
+the expanded hash. Every one of these checks runs before `np.load`. Replacing
+each of the six size/hash `require` guards with a no-op fails at least one of
+these tests (`1.4/verify-r2-fixes/size-hash-guard-mutations.json`). The
+recorder bytes were restored (sha256 `156bee30…3499`).
+
+Future consumers may rely on the checked native ABI and the recorded reference
+equivalence. Task 1.5 (the adapter, its pinned CUDA entry fence and the pod DMA
+test) is required before widening claims to trainer integration, pinned DMA
+safety or complete-update throughput.
+
+## Task 1.2 — grammar checkpoint
 
 The existing-concept search covered grammar, HIRE, action codec, strict padding,
 reference disagreement and L4. This note owns those native semantics; no
@@ -97,9 +365,9 @@ heads): engine 87/87 (19 replay-parity, 18 grammar/kernel), root Rust 164 with
 two ignored, Python 1,337 passed with four skips, and the trim checker pass. A
 merge-time scratch cross-check found the native `grammar_tables()` equal to the
 Python heads' `expected_grammar_tables` on all 964 bits and accepted by
-`grammar_tables_from_arrays`. No PyO3 binding exists yet, so
-`native_grammar_tables` still raises and the heads use the Python stand-in; the
-binding stays with Task 1.4. Receipts: `ops/rebuild-2026-09-29/merge-1.2/`. CPU checks do not qualify the
+`grammar_tables_from_arrays`. That checkpoint had no PyO3 binding; Task 1.4
+above now provides it. The Python device-table bridge and model wiring remain
+Task 1.5. Receipts: `ops/rebuild-2026-09-29/merge-1.2/`. Those CPU checks do not qualify the
 L6 GEMM fix, GPU sampling/replay, native batch transactions, buffer lifetime,
 model behavior or learning. No training, GPU, network or performance run occurred.
 
