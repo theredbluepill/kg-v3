@@ -6,6 +6,8 @@
 
 **Landing update, 2026-09-29 23:45 HKT.** Task 7.1 lands on staging branch `kg/merge-7-1`: merge `b6cd4f2` of `kg/rebuild-7-1` `908c73f` onto `faed717`, landing record `3895180`, Codex fix `cb7006b`, then a merge of the integration tip `5b43062` (the 1.4/1.5 landing). Only the Phase 7 summary row, the 7.1 row and the "Notes not yet on integration" table were updated for it.
 
+**Landing update, 2026-09-30 01:50 HKT.** Task 4.4 lands on staging branch `kg/merge-4-4-c`: a fresh `--no-ff` merge of `kg/rebuild-4-4` `4a662ad` onto the integration tip `994818b` (the 7.1 landing), with the landing record after it. The earlier staging branch `kg/merge-teacher-configs-4-4` never landed: Codex reached its usage limit before its verify-merge finished. With Codex at its limit, the owner approved Claude subagents as substitute reviewers ("please ask you subagents to review instead for now"), so the merge verification is `codex/claude-verify-merge-4-4.md`, an independent Claude pass, not a Codex verdict. Only the Phase 4 summary row and the 4.4 row were updated for it.
+
 This is a working artifact, not a durable cookbook claim. Update it at each landing: a merge, a Codex verdict, or a state change. When a row changes, re-check it against git and the cited report. Don't copy a row into a cookbook note without re-checking it. The cookbook stays organised by concept (`cookbook/references/`, `cookbook/decisions/`). This file is the one place that maps those notes and receipts onto the plan's phases (`ops/rebuild-2026-09-29/plan.md`).
 
 ## Path conventions
@@ -14,7 +16,7 @@ This is a working artifact, not a durable cookbook claim. Update it at each land
 - **`codex/…`** is `rebuild/codex/…`. The custody sweep committed the compact reports for merged work. The inventory and the manifest are described in `rebuild/evidence-custody.md` and `rebuild/evidence-custody.json`.
 - **`codex/…` (local)** means the report is not tracked on any branch. It exists only in the main worktree, `/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/`. This covers in-progress work, which lands with its own merge, and reports written after the 13:48Z inventory.
 - **`<branch>:<path>`** is a path tracked on that branch but not in this tree.
-- **"Merged"** means the commit is an ancestor of `666deec`, or of `faed717` for the custody rows, or of this branch for the 7.1 row. Each was checked with `git merge-base --is-ancestor` at 22:10 HKT. Branch heads were read at 22:12 HKT; in-progress branches may have moved since.
+- **"Merged"** means the commit is an ancestor of `666deec`, or of `faed717` for the custody rows, or of this branch for the 7.1 and 4.4 rows. Each was checked with `git merge-base --is-ancestor` at 22:10 HKT. Branch heads were read at 22:12 HKT; in-progress branches may have moved since.
 
 State values: **merged**, **merged (custody)**, **approved, not merged** (Codex APPROVE, not on integration), **in review**, **in progress**, **blocked**, **not started**.
 
@@ -28,7 +30,7 @@ The done count only includes plan checkboxes whose work is merged. Rows without 
 | 1 Engine and native env | 5 / 5 (plus 1.1b, merged) | merged (1.4 and 1.5 at `7f797a3`) | None. 1.5's pod DMA fence test and early two-rank smoke stay pending (Phase 6). |
 | 2 Model | 5 / 5 | merged | None. CUDA/BF16 is unqualified and waits on Phase 6. |
 | 3 Trainer | 4 / 6 | 1.4/1.5 merged; 3.1 not started | 3.1's Kaggriculture rollout/mask mapping, then 3.5 |
-| 4 Teacher | 3 / 4 | 4.1–4.3 merged | 4.4 configs (not started) |
+| 4 Teacher | 4 / 4 | 4.1–4.4 merged (4.4 by `kg/merge-4-4-c`); the phase stays open until T18/T19b run | T18 and T19b after 3.1 |
 | 5 BC | 0 / 2 | in progress | 5.2 trainer approved and 5.1 preparer approved at `356d19f`, both unmerged; two later preparer commits unreviewed |
 | 6 GPU verification | 1 / 6 | 6.0 merged; evidence merged | 6.1 after 3.5 and 5.2 (1.4/1.5 merged) |
 | 7 Evaluation and packaging | 1 / 5 | 7.1 merged (`kg/merge-7-1`); 7.3 in review; 7.4 brief awaiting re-review | 7.3 verification |
@@ -88,7 +90,7 @@ Live processes at 22:11 HKT (`ps`):
 | 4.1 Per-slot KL | merged | `e584a0d` (phase tip `8fde43c`), merged by `a424d8c`; follow-up `2390c8e` | Brief: `codex/brief-4-review.md` REVISE (v1; no v2 re-review found). Code: `codex/verify-4-teacher-r2.md` APPROVE (4.1–4.3). Merge: `codex/verify-merge-teacher-r1.md` APPROVE WITH EDITS, `codex/verify-merge-teacher-r2.md` APPROVE. | `rebuild/briefs/4-teacher.md`, `rebuild/trainer-model/4.1-*.log` | `cookbook/references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce.md` | GPU component evidence exists (GPU bundle C3/C4); cross-chunk/minibatch equality, multi-rank and trainer integration are open. |
 | 4.2 Targets and cache | merged | `a90b820`; as 4.1 | As 4.1 | `rebuild/trainer-model/4.2-*.log` | As 4.1 | Cache bytes are computed, not measured in a training run. |
 | 4.3 Model methods and wiring | merged | `b94b8dc` plus r1 fixes `8fde43c`; as 4.1 | `codex/verify-4-teacher-r1.md` APPROVE WITH EDITS; `codex/verify-4-teacher-r2.md` APPROVE | `rebuild/trainer-model/4.3-*.log`, `rebuild/merge-teacher/skip-probe.log` | As 4.1 | T18 and the launch/resume tests stay skipped until the 3.1 seam and the native env are wired. |
-| 4.4 Teacher configs | not started | None | Listed as outstanding in `codex/verify-4-teacher-r2.md` | None | None | Its configs prerequisite has merged. |
+| 4.4 Teacher configs | merged | `kg/rebuild-4-4` `4a662ad`, merged by staging branch `kg/merge-4-4-c` | `codex/verify-4.4-r1.md` APPROVE WITH EDITS (Codex; three P3 edits applied at `4a662ad`). Merge: `codex/claude-verify-merge-4-4.md` (reviewer: independent Claude subagent substituting for Codex during its usage limit, owner-approved; not a Codex verdict). | `rebuild/teacher-configs-4.4/py-prepare.log`, `rebuild/teacher-configs-4.4/mutations.log`, `rebuild/merge-4-4-c/prepare.log` | `cookbook/references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe.md`, `cookbook/references/ppo-runs-publish-kaggriculture-telemetry-to-the-v3-wandb-project.md` | Teacher fields pinned, cache bytes at startup, teacher checkpoint required at a fresh Kaggriculture launch; also sends Kaggriculture PPO runs to W&B `kg-v3`. No live W&B call; teacher memory unmeasured until 6.1; T18/T19b stay skipped until 3.1. The merge review is Claude's, not Codex's. |
 
 ## Phase 5 — BC
 

@@ -77,7 +77,13 @@ from owl.train.distributed import (
     unwrap_model,
     wrap_model_for_distributed,
 )
-from owl.train.logging import LogMode, MetricLogger, create_logger
+from owl.train.logging import (
+    WANDB_MODES,
+    LogMode,
+    MetricLogger,
+    WandbMode,
+    create_logger,
+)
 from owl.train.optimizer import (
     create_lr_scheduler,
     create_optimizer,
@@ -168,6 +174,7 @@ def main() -> None:
         )
         cfg = _resolve_teacher_init_path(cfg, launch.config_path)
         _validate_lora_launch_config(cfg, launch)
+        _require_kaggriculture_teacher_source(cfg, launch)
 
         if isinstance(launch, FreshLaunch):
             cfg = _with_runtime_gpus(cfg, distributed.world_size)
@@ -306,6 +313,7 @@ def main() -> None:
             run_dir=run_dir,
             cfg=cfg,
             log_mode=args.log_mode,
+            wandb_mode=args.wandb_mode,
             env_steps_per_iteration=env_steps_per_iteration,
             max_env_steps=args.max_env_steps,
             max_runtime_seconds=max_runtime_seconds,
@@ -341,6 +349,7 @@ def _run_training_session(
     max_env_steps: int | None,
     max_runtime_seconds: float | None,
     distributed: DistributedContext,
+    wandb_mode: WandbMode = "online",
     start_env_steps: int = 0,
     resume_run_id: str | None = None,
     last_best_model: BaseModelAPI | None = None,
@@ -363,8 +372,22 @@ def _run_training_session(
         )
         return
 
+    if log_mode == LogMode.WANDB and wandb_mode == "offline":
+        # A telemetry outage stays visible: nothing reaches the W&B server
+        # until the run directory's offline run is synced.
+        print(
+            f"W&B offline: telemetry stays under {run_dir / 'wandb'} until "
+            "`wandb sync`; W&B ignores resume offline and starts a local run "
+            "with the same id"
+        )
     with _logger_session(
-        create_logger(log_mode, run_dir, cfg, resume_run_id=resume_run_id)
+        create_logger(
+            log_mode,
+            run_dir,
+            cfg,
+            wandb_mode=wandb_mode,
+            resume_run_id=resume_run_id,
+        )
     ) as logger:
         if trainable_parameters is not None:
             logger.set_summary("trainable_parameters", trainable_parameters)
@@ -581,6 +604,15 @@ def _parse_args() -> argparse.Namespace:
         help="Metric logging backend",
     )
     parser.add_argument(
+        "--wandb-mode",
+        choices=WANDB_MODES,
+        default="online",
+        help=(
+            "W&B run mode with --log-mode wandb; offline keeps telemetry in the "
+            "run directory for a later `wandb sync` (e.g. a pod without a key)"
+        ),
+    )
+    parser.add_argument(
         "-o",
         "--overrides",
         nargs="+",
@@ -642,6 +674,8 @@ def _validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--load-model-weights-mode requires --load-model-weights")
     if args.output_dir is None and args.log_mode == LogMode.DEBUG:
         raise ValueError("resume launches require wandb logging")
+    if args.log_mode == LogMode.DEBUG and args.wandb_mode != "online":
+        raise ValueError("--wandb-mode requires --log-mode wandb")
 
 
 def _resolve_launch(args: argparse.Namespace) -> Launch:
@@ -918,6 +952,35 @@ def _validate_lora_launch_config(cfg: FullConfig, launch: Launch) -> None:
             "--load-model-weights-mode model_and_optimizer is not supported with "
             "model.lora; load base weights with model_only or resume a LoRA run"
         )
+
+
+def _require_kaggriculture_teacher_source(cfg: FullConfig, launch: Launch) -> None:
+    """A fresh Kaggriculture last-best launch must name its teacher checkpoint.
+
+    Isaiah's last-best teacher starts from ``--load-model-weights`` or
+    ``rl.teacher_init``; without either, a scratch launch trains with no teacher
+    until the first promotion. Kaggriculture PPO starts from a trained checkpoint
+    (the BC best) with the teacher on, so a missing source is a launch error, not
+    a silent teacher-off run. Resume launches restore the run's own last-best.
+    """
+    if not isinstance(cfg.model, KaggricultureTransformerConfig):
+        return
+    if not isinstance(launch, FreshLaunch) or cfg.rl.teacher_mode != "last_best":
+        return
+    teacher_init = cfg.rl.teacher_init
+    if teacher_init is not None:
+        if not teacher_init.is_file():
+            raise ValueError(f"teacher_init checkpoint does not exist: {teacher_init}")
+        return
+    if launch.load_model_weights_path is not None:
+        return
+    raise ValueError(
+        "Kaggriculture rl.teacher_mode='last_best' needs a teacher checkpoint at "
+        "launch; none is configured. Pass --load-model-weights CHECKPOINT (seeds "
+        "the student and the last-best teacher, e.g. the BC best) or "
+        "-o rl.teacher_init=CHECKPOINT (seeds only the last-best teacher); to "
+        "train without a teacher, pass -o rl.teacher_mode=null"
+    )
 
 
 def _resolve_teacher_init_path(cfg: FullConfig, config_path: Path) -> FullConfig:
