@@ -1,5 +1,13 @@
 # Change log
 
+## 2026-09-29 — Apply Codex's cookbook-refresh review and record the codex exec workflow
+
+Codex reviewed the refresh commits `bcd9627`, `5247daa`, `92e88e0` and `9bfa0a0` (APPROVE WITH EDITS; local `ops/rebuild-2026-09-29/codex/verify-cookbook-refresh-r1.md`). All seven edits are applied:
+- The [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling Reference]] no longer claims that comparing complete-work SPS with the ceiling attributes cost to the engine, host work or all-reduce. That needs matched trainer phase measurements. It also drops the "only if" explanation for a trainer above the ceiling. Its r2 manifest line now reads 21/21 checksums verified, with 20 non-README artifacts unchanged and the README's checksum changed.
+- The [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment Reference]], its description and its index line drop the "within BF16 spacing" claim, because the magnitude of the largest-error element was not retained. The measured maxima and tolerance results stay. The hard-link hazard is now scoped to two sampled cross-venv inode checks, with uv-cache causation inferred (the follow-up receipt is added as a source). "The heads did not exist" now reads "the actor heads did not exist (the critic head did)".
+- `ops/rebuild-2026-09-29/plan.md` now labels the parent-return cause of the two incomplete Codex reviews as operator-reported and inferred.
+- The new [[workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict|codex exec Workflow]] records the adaptation from `9bfa0a0`: stdin, foreground, verdict and resume rules, with the transcripts I checked and their limits.
+
 ## 2026-09-29 — Correct the Task 0.3 Rust status and the root index's References scope
 
 The [[references/failed-training-reports-status-before-distributed-cleanup|failure-reporting Reference]] and its index line still said Claude's cross-review was pending and Rust parity was blocked (148 passed, 7 failed). Both contradicted the Task 0.3 receipt (`ops/rebuild-2026-09-29/0.3-results.md`, "Claude review") and the earlier log entry: the review found no blocker, and with the git-ignored Orbit fixtures copied in, `cargo test` gave 155 passed, 2 ignored. The [[index|root index]] no longer says every Reference describes `kg/reference-2026-09-29`; the References index states each note's scope. Moving current-tree notes out of that index's "Reference branch" section is left until the in-flight lanes land.

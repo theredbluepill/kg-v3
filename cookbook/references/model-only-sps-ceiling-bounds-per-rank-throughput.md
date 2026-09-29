@@ -49,12 +49,12 @@ sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resour
 ## Consequences
 
 - The Task 1.4 and Phase 6 native engine has an explicit per-step budget: about 53–116 µs per env step to cost no more than 10 % of the model-only ceiling.
-- Complete-work SPS in 6.3 is compared against this ceiling to show what the engine, host work and all-reduce cost. Because B and C are surrogates, a trainer above the ceiling is possible only if its real loss or teacher path is cheaper than the surrogate, and that would need its own evidence.
+- Complete-work SPS in 6.3 can be set beside this ceiling, but the gap does not by itself attribute cost to the engine, host work or the all-reduce: B and C are surrogates and the densities are uniform. Attribution needs matched phase measurements inside the real trainer. A trainer that exceeds the ceiling likewise needs those measurements to explain it.
 - The 6.1 memory smoke must resolve the reserved-memory observation (allocator snapshot or phase-order control). The multi-GPU Decision's 85 % target is defined on allocated memory, so reserved memory near 90 % is a separate risk.
 
 ## Verification
 
-- Codex reviewed the receipts twice: `verify-sps-ceiling-r1` (APPROVE WITH EDITS, edits applied in `ddf1fb2`) and `verify-sps-ceiling-r2` (APPROVE, 21 of 21 manifest entries byte-identical). The reports are local working transcripts in `ops/rebuild-2026-09-29/codex/`, not committed.
+- Codex reviewed the receipts twice: `verify-sps-ceiling-r1` (APPROVE WITH EDITS, edits applied in `ddf1fb2`) and `verify-sps-ceiling-r2` (APPROVE; 21 of 21 checksums verified, and the 20 non-README artifacts unchanged across `cb4af49`, `ddf1fb2` and HEAD; the README and its checksum changed with the r1 edits). The reports are local working transcripts in `ops/rebuild-2026-09-29/codex/`, not committed.
 - On this checkout, `shasum -a 256 -c MANIFEST.sha256` in `model-sps-ceiling-2026-09-29/` reports 21 of 21 files OK (2026-09-29).
 - A second measurement episode reproduced the schedule: the default-backend arm of the ATEN-only GEMM A/B gave update walls of 4.667 s (mid) and 8.561 s (dense), against 4.662 s and 8.564 s here (`results.md`, "ATEN-only GEMM A/B").
 
