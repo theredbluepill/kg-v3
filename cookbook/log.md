@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Build the Task 5.2 BC trainer script
+
+`scripts/train_bc.py`, `python/owl/train/bc.py` and `python/owl/kaggriculture/bc_data.py` add the BC warm start on the rebuilt model. It reuses Isaiah's `create_model`, `create_optimizer`, `autocast_context`, `configure_model_compile` and DDP adapter, and it reads the refreshed 5.1 brief's `kaggriculture-bc-shard-v1` format (`bcefd02`). Changes from the reference trainer: the critic is trained with a raw-bank winner CE (Isaiah's equal policy/value distillation weights) instead of frozen; training order is deterministic per rank, so a restart reproduces the uninterrupted run; the best checkpoint by held-out NLL has exactly `run_ppo.py`'s keys; a patience rule stops the run (L9). `configs/bc/kaggriculture_2rank.yaml` carries unmeasured starting values. 18 CPU tests and 11 of 12 mutants killed; `just py-prepare`: 1,691 passed, 11 skipped. No GPU, real-data or W&B execution; the run waits for the 5.1 shards and the pod. See [[references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best|BC trainer Reference]].
+
 ## 2026-09-29 — Reconcile the teacher Reference's open dependencies after the merge
 
 Codex verification r1 of the Phase 4 merge (`a424d8c`, APPROVE WITH EDITS,

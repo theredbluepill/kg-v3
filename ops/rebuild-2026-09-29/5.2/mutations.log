@@ -1,0 +1,29 @@
+== no value term (python/owl/train/bc.py)
+1 failed, 17 deselected in 0.83s
+== one permutation for all ranks (python/owl/train/bc.py)
+1 passed, 17 deselected in 0.05s
+== save best on every eval (python/owl/train/bc.py)
+1 failed, 17 deselected in 0.50s
+== no patience stop (python/owl/train/bc.py)
+2 failed, 16 deselected in 0.75s
+== draw as loss (python/owl/train/bc.py)
+1 failed, 17 deselected in 0.05s
+== resume restarts at step 0 (python/owl/train/bc.py)
+1 failed, 17 deselected in 0.50s
+== rank partition ignores rank (python/owl/kaggriculture/bc_data.py)
+1 failed, 17 deselected in 0.15s
+== no hash check (python/owl/kaggriculture/bc_data.py)
+1 failed, 17 deselected in 0.14s
+== no schema check (python/owl/kaggriculture/bc_data.py)
+1 failed, 17 deselected in 0.14s
+== unchecked compaction (python/owl/kaggriculture/bc_data.py)
+18 deselected in 0.02s
+== tokens not restored to int64 (python/owl/kaggriculture/bc_data.py)
+1 failed, 17 deselected in 0.10s
+== unchecked compaction, rerun with the right selector (python/owl/kaggriculture/bc_data.py)
+1 failed, 17 deselected in 0.06s
+# Notes: "unchecked compaction" first used selector "storage_range", which matched
+# no test (18 deselected); the rerun above uses the test's name. "one permutation
+# for all ranks" survives: ranks hold disjoint row partitions, so sharing the
+# permutation seed only correlates order across ranks and changes no row set;
+# it is recorded as an equivalent-in-effect mutant, not a missed defect.
