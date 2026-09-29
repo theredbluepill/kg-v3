@@ -20,8 +20,11 @@ network volume.
 - Command: `run-bc-a100.sh` (nohup, plain python, world size 1,
   `--wandb-mode offline --max-runtime-hours 2`).
 - Pod run dir: `/workspace/kg-v3-bc-2026-09-29/run/bc-20260929-142216/`.
-- W&B: offline only (no key on the pod), run id `kvl4rfda`, project from
-  `BC_WANDB_PROJECT`; not synced. Sync command is in `train.log`.
+- W&B: launched with `--wandb-mode offline` (no key on the pod), then synced
+  to [spoon/kg-v3/kvl4rfda](https://wandb.ai/spoon/kg-v3/runs/kvl4rfda).
+  The pod's `wandb/offline-run-20260929_142222-kvl4rfda/run-kvl4rfda.wandb.synced`
+  marker has mtime `2026-09-29T15:01:13Z`; the orchestrator reports the final
+  sync at `2026-09-29T15:01:14Z`.
 
 ## Result
 
