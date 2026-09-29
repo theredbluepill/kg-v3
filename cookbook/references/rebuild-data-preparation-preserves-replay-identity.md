@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Rebuild data preparation preserves replay identity"
-description: "The engine-independent selector reproduces the historical 252-episode split; source custody and replay/opponent briefs bound the remaining native preparation and evaluation work."
+description: "The engine-independent selector reproduces the historical 252-episode split; the BC data brief binds preparation to the merged encoder and grammar, specifies an offline Rust transition check for the step+1 pairing (the executed evidence so far is a Python-engine measurement) that needs the recorded episode seed, and runs on the current GPU pod that holds the hash-matched selected ZIP; only the 1.4 codec binding blocks tokens; replay/opponent briefs bound the remaining evaluation work."
 tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
 status: "verified-scoped"
 generated: {"by": "openai/codex", "at": "2026-09-29"}
@@ -13,10 +13,18 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/briefs/7.3-replay-export.md"
   - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-source-audit.json"
   - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/checks/5.1-brief-refresh/ref-admission-probe.log"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/brief-5.1-rereview.md"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md"
+  - resource: "repository:engine_rs/src/lib.rs"
+  - resource: "repository:src/kaggriculture/mod.rs"
+  - resource: "repository:src/kaggriculture/grammar.rs"
   - resource: "repository:docs/kaggriculture-contract.md"
   - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/select_replays.py"
   - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/prepare.py"
   - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/data-manifest.json"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/source.json"
+  - resource: "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/actor_codec.py"
   - resource: "external-repository:/Users/poonszesen/kaggriculture-v2/ops/kaggle-public-episodes-2026-09-28/manifest.json"
 ---
 
@@ -46,9 +54,39 @@ work; it does not promote the old model, admission run or evaluation results.
   or native engine. Future selection changes must retain the audited identity
   or explain the resulting dataset change.
 - `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` records source volume custody
-  and the v4 preparation boundary: native named tensors, ordered inventories,
-  exact integer channels, seat privacy, paired admission and versioned shards.
-  The old flat features/context arrays cannot be loaded as the new schema.
+  and the preparation data flow against the merged APIs (Claude refresh at
+  `2390c8e`). Explicit per-turn `TraceHeader`s are encoded for both seats
+  through the merged `owl.rs.encode_kaggriculture_headers_into`. Recorded
+  actions are admitted per seat through 1.4's planned `kaggriculture_encode`
+  and `kaggriculture_decode`, which are the only blocked step. The brief also
+  sets shard schema `kaggriculture-bc-shard-v1` and a custody manifest, and
+  runs on the current GPU pod (owner direction, below). Three findings bind future preparation. First, the Rust
+  `Config` is `serde(default)`, so the full configuration key set must be
+  checked before encoding. Second, the reference's `raw.get(k) or []`
+  silently normalized every falsy `hands`/`market` value (absent, `null`,
+  `false`, zero, `""`, `{}`) to `[]`, while the grammar requires the exact
+  keys, so that rule is replicated and counted by kind; Codex's rereview
+  corrected the earlier absent-or-null-only claim with an in-memory probe of
+  the pinned reference codec. Third, the new grammar checks in a different
+  order, which can move first-rejection categories but not admission. The
+  old flat features/context arrays cannot be loaded as the new schema. After
+  that rereview, a run must come from a clean immutable checkout with
+  per-file source hashes rechecked before the manifest is published, and a
+  compact per-shard path/bytes/SHA-256 inventory is committed while NPZ bulk
+  stays external. A fourth finding binds any replay-based transition check:
+  the owner restated that the action answering `steps[t]` is recorded at
+  `steps[t+1]`, and a check that steps the engine from an explicit
+  `steps[t]` header must use the episode's **recorded** `info.seed`, because
+  Kaggle and the Rust engine seed daily weeds and shop unlocks from it
+  (`engine_rs/src/lib.rs:4448`). Codex's in-memory probe of the pinned Python
+  engine on local episode 114406062 matched 719/719 transitions with the
+  recorded seed, 704/719 with placeholder 0, and 0/719 with the shifted
+  `steps[t]` pairing (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md`).
+  Observation encoding keeps the placeholder seed; the recorded seed stays
+  out of model inputs and shards. The brief names an offline root-crate Rust
+  binary for the check, so 1.4's production API gains no load-state binding,
+  and requires a fresh copy-linked venv on the pod because the existing
+  venvs share hard-linked installed files.
 - `ops/rebuild-2026-09-29/briefs/7.3-replay-export.md` distinguishes Kaggle
   episode JSON from native JSONL oracles. Export must retain the resolved seed,
   full config, action timing/order and completed state before auto-reset; seed
@@ -73,13 +111,18 @@ lengths** through the ported selector: 224 train / 28 validation. No raw payload
 was opened or rehashed. The receipt's 158,772 admitted / 22,416 rejected
 paired turns are historical arithmetic, not new admission evidence.
 
-The source is network volume **4llk4uaf20, EU-RO-1**. A historical reader mounted
-it at `/data`, copied the selected ZIP to the GPU pod, then terminated. The
-original volume path was under `/workspace`; the prepared GPU arrays were at
-`/workspace/kg-v3/replays/bc-bootstrap/arrays`. Today's pod reachability and
-artifact retention remain unverified under the no-network task scope. These
-paths and the prior ZIP hash guide custody recovery, not an assumption of a live
-mount.
+The provenance source is network volume **4llk4uaf20, EU-RO-1**. A historical
+reader mounted it at `/data`, copied the selected ZIP to GPU pod
+`w7ia3zvxqsvs3g`, then terminated. The reference `source.json` records the
+archive hash (`data_archive_sha256 = 619ca7a8…81433c9dd0`). On 2026-09-29 the
+operator found the ZIP at `/workspace/kg-v3/replays/bc-bootstrap/selected.zip`
+(519,191,507 bytes, 253 entries, the same SHA-256); that read has no
+committed receipt, so the pod run re-hashes it before use. The owner directed
+that the current pod does the BC ("you can use current pod to do the BC"), so
+the pinned slice needs no volume access; the volume, via a data pod or S3,
+matters only for data beyond the slice. The old prepared arrays at
+`/workspace/kg-v3/replays/bc-bootstrap/arrays` are schema-incompatible and
+never loaded.
 
 Four pinned native fixtures were structurally inspected: **2,876 transitions**,
 with consecutive steps and matching final banks/statuses. Archived official
@@ -92,6 +135,12 @@ skips**, including **17 selector cases**; `prepare` also passes **155 Rust tests
 2 ignored**. The result receipt retains commands, logs and the initial Markdown
 failure. Rust checks concern the retained Orbit starter, not the absent
 Kaggriculture engine.
+The refreshed brief's per-turn differential oracle loads the stdlib-only
+reference `actor_codec.py` by path. Run on one local episode outside the slice
+(114406062), it admitted 719 of 719 paired turns in 0.2 s
+(`ops/rebuild-2026-09-29/checks/5.1-brief-refresh/ref-admission-probe.log`).
+That shows the oracle is cheap and runnable. It is not evidence about the
+slice.
 Preparation, native replay export, opponent import and full-payload admission
 remain deferred until their native seams exist. Reopen when the engine lands or
 custody changes; qualify these interfaces before BC or panel results can claim

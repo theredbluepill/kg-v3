@@ -85,6 +85,70 @@ Claude verification r2 of the BC handoff (`ops/rebuild-2026-09-29/codex/claude-v
 
 Claude verification r1 of the BC handoff (`ops/rebuild-2026-09-29/codex/claude-verify-bchandoff-r1.md`, REQUEST CHANGES) raised two P2s. No test reached `main`'s wiring of `--load-model-weights-mode`: passing `model_only` in place of the launch mode (M8) or loading optimizer state for `model_fresh_critic_head` (M9) passed the whole suite. And no run record named the warm-start checkpoint. The fake-trainer `main` test now runs once per mode and catches M8 and M9. A fresh launch with `--load-model-weights` writes `warm_start.json` (path, SHA-256, mode) and `warm_start/*` summary keys, and mutations of those are caught too (`ops/rebuild-2026-09-29/bc-handoff/mutations-r1fix.txt`). P3s: `launch-train.sbatch` accepts the new mode; `ppo.CHECKPOINT_KEYS`/`OPTIONAL_CHECKPOINT_KEYS` are the one allowed-key set for `run_ppo` and `PPOTrainer` loaders; a checkpoint missing run metadata now fails with a named error. The [[references/bc-best-starts-ppo-with-a-fresh-critic-head|handoff Reference]] narrows its loader scope to `run_ppo`/`PPOTrainer` and minimal checkpoints to `teacher_init`, labels the 30-row gradient sample and says eager/2-/8-rank (4-rank by equal model sections). `just py-prepare` passes (see `py-prepare-r1fix.log`). No separate reviewer has re-verified these fixes.
 
+## 2026-09-29 — Separate the 5.1 normalization probe and narrow the pairing claim
+
+Codex's confirmation (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r2.md`) asked for two edits:
+- The 5.1 brief's Q1 now specifies a separate normalization probe that compares raw and normalized snapshots directly.
+- The [[references/rebuild-data-preparation-preserves-replay-identity|data-preparation Reference]] now says the Rust transition check is specified, not yet executed. The executed evidence is Codex's Python-engine measurement. Its index line says the same.
+
+## 2026-09-29 — Apply Codex's review of the Task 5.1 owner-direction edits
+
+Codex reviewed the 5.1 BC data brief after the owner's two directions ("kaggle
+obs shd be step+1"; "you can use current pod to do the BC") and returned
+REVISE (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md`). All
+findings are applied to `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md`. The
+step+1 transition check now builds its header with the recorded `info.seed`:
+on local episode 114406062 the pinned Python engine matched 719/719
+transitions with it, 704/719 with placeholder 0 and 0/719 with the shifted
+pairing, so a placeholder would reject valid demonstrations. The seed stays
+out of encoding, model inputs and shards. The check is an offline root-crate
+Rust binary whose per-turn results go into the manifest, leaving 1.4's
+production API unchanged. The pod run uses a fresh copy-linked venv because
+the existing venvs share hard-linked files. Custody text now cites the
+reference `source.json` archive hash and the ZIP found on the current pod;
+no volume access is needed for the pinned slice. Brief only, no code; the
+Rust harness has not run. The
+[[references/rebuild-data-preparation-preserves-replay-identity|replay identity Reference]]
+records the seed finding and the custody correction.
+
+## 2026-09-29 — Apply Codex's rereview to the Task 5.1 BC data brief
+
+Codex reread `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` at `bcefd02`
+(APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/brief-5.1-rereview.md`).
+All findings are applied. The reference's `raw.get(k) or []` normalized every
+falsy `hands`/`market` value, not only absent or `null`; preparation now
+reproduces that rule so admission stays comparable, counts it by field and
+kind, and tests the eight `false`/`0`/`""`/`{}` combinations. A HEAD plus
+dirty flag could not identify modified preparation or oracle code, so runs
+now require a clean immutable checkout on both routes, record per-file source
+hashes, and recheck them before publishing the manifest. A compact per-shard
+path/bytes/SHA-256 inventory is committed while NPZ bulk stays external, as
+the custody Decision requires. The differential oracle evaluates both
+reference seats before deriving the first rejection. Brief only, no code;
+slice incidence of the normalized kinds remains unknown. The
+[[references/rebuild-data-preparation-preserves-replay-identity|replay identity Reference]]
+records the corrected claim.
+
+## 2026-09-29 — Refresh the Task 5.1 BC data brief against the merged encoder and grammar
+
+Stream D wrote `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` before Tasks 1.3
+and 1.4 existed. The refresh binds preparation to the APIs that now exist:
+per-turn explicit `TraceHeader`s go through the merged
+`owl.rs.encode_kaggriculture_headers_into` for both seats; recorded actions go
+through 1.4's approved `kaggriculture_encode` and `kaggriculture_decode`, which
+are absent from the partial `kg/rebuild-env`. Per-seat strict admission is
+counted and reported as a reference-comparable first rejection. The brief also
+defines shard schema `kaggriculture-bc-shard-v1`, a custody manifest,
+acceptance through a per-turn differential oracle against the reference
+receipt (158,772 admitted / 22,416 rejected), and placement on a data pod in
+EU-RO-1. Only the token half and the full-slice run wait on 1.4. Findings: the
+Rust `Config` defaults missing keys, the reference normalized absent `hands`
+and `market`, and the new grammar's check order can move rejection categories
+but not admission. A one-episode oracle probe outside the slice admitted 719
+of 719 turns. Brief only, no code. The
+[[references/rebuild-data-preparation-preserves-replay-identity|replay identity Reference]]
+records it.
+
 ## 2026-09-29 — Start PPO from the BC best with a fresh critic head
 
 Phase 6.2 needs the A100 BC best (`fd854587…`) to start PPO. On CPU it loads through `PPOTrainer.load_model_weights` into the eager, 2- and 8-rank models (the 4-rank model by equal model sections) with equal and finite outputs on a real validation shard. All 523 BC games were the imitated seat's wins, and its critic saturates: |value| > 1 − 2e-6 on 700 of 720 seat values of a held-out game, already at turn 20. Saturation starves the MSE value gradient. Isaiah had no imitation start, and his warm starts load the whole model. So `run_ppo.py` gains `--load-model-weights-mode model_fresh_critic_head`, which loads everything but `critic_head.*`. `ppo.reject_unknown_checkpoint_keys` now rejects unknown top-level keys such as `opponent_id` in every `run_ppo`/`PPOTrainer` loader. `PPOTrainer` loads and `run_ppo`'s `teacher_init` loader used to ignore them; the latter was Codex verification r1's P2 (`ops/rebuild-2026-09-29/codex/verify-bc-handoff.md`). `just py-prepare` passes. Codex round 2 did not run (usage limit), so the fix is not independently re-verified. See [[references/bc-best-starts-ppo-with-a-fresh-critic-head|handoff Reference]]; evidence in `ops/rebuild-2026-09-29/bc-handoff/`.
