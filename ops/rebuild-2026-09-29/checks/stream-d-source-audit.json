@@ -1,0 +1,171 @@
+{
+  "schema": "kaggriculture-v3-stream-d-source-audit-v1",
+  "date": "2026-09-29",
+  "scope": "Offline source-inventory comparison against the ported selector; no raw replay reads, network, engine, training or performance claim.",
+  "reference": {
+    "ref": "kg/reference-2026-09-29",
+    "commit": "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0",
+    "path": "ops/bc-bootstrap-2026-09-29/data-manifest.json",
+    "sha256": "084206daeb51c2f076ae2e2ea1c866c804d3168f46c9b7e354f4b01e7eb07fce"
+  },
+  "ported_selector": {
+    "path": "scripts/kaggriculture_bc/select_replays.py",
+    "sha256_at_check": "9b979beb74d4eec77dbb10fefc7932f0a73b046db5d46e8ee31f371110454d5b"
+  },
+  "source_inventory": {
+    "path": "/Users/poonszesen/kaggriculture-v2/ops/kaggle-public-episodes-2026-09-28/manifest.json",
+    "sha256": "762a4dbdefab477768752150b0bf2c478bddc358fc7ef34125811b754dd81be7",
+    "entry_schema": "datasets[]: date (YYYY-MM-DD), episode_files (object mapping flat <episode_id>.json to uncompressed byte count), archive_bytes, archive_sha256, archive_path",
+    "storage_root_recorded": "/workspace/kaggriculture-v2/public-episodes-2026-09-14-to-2026-09-27"
+  },
+  "method": [
+    "Load ported selector using importlib.util.spec_from_file_location/module_from_spec/exec_module; imports only standard library.",
+    "Read reference manifest with git show <reference.commit>:<reference.path>. Read synced source_inventory.path as JSON.",
+    "For each datasets[] entry whose final date component is in selector.DAYS, call selector.select_members(list(dataset[\"episode_files\"]), day).",
+    "Compare ordered returned names to reference.selection.episodes filtered by member day prefix; compare first VALIDATION_PER_DAY split assignments and all source inventory byte counts to record.bytes.",
+    "Call selector.validate_episode_identity on all 252 selected source members. Sum counts and prepared turn totals from the reference receipt only."
+  ],
+  "results": {
+    "days": 7,
+    "episodes": 252,
+    "unique_episode_basenames": 252,
+    "split_counts": {
+      "validation": 28,
+      "train": 224
+    },
+    "ordered_ids_splits_and_payload_lengths_match": true,
+    "selected_uncompressed_payload_bytes_recorded": 8940727054,
+    "daily": [
+      {
+        "date": "2026-09-21",
+        "inventory_episodes": 638,
+        "source_archive_bytes": 650944041,
+        "source_archive_sha256_recorded": "50fea5185f83b04211c888a4e8b0af65f867f70a66483b2644423358bc72511d",
+        "selected_episodes": 36,
+        "train_episodes": 32,
+        "validation_episodes": 4,
+        "ids_order_splits_payload_lengths_match_reference": true
+      },
+      {
+        "date": "2026-09-22",
+        "inventory_episodes": 620,
+        "source_archive_bytes": 698623955,
+        "source_archive_sha256_recorded": "ed65c9baf6a6edaaae89235bfc6c71f883ce12b19c76a15bd467fa0fb51fc3dc",
+        "selected_episodes": 36,
+        "train_episodes": 32,
+        "validation_episodes": 4,
+        "ids_order_splits_payload_lengths_match_reference": true
+      },
+      {
+        "date": "2026-09-23",
+        "inventory_episodes": 608,
+        "source_archive_bytes": 722836746,
+        "source_archive_sha256_recorded": "3466270d21ec1d35d9da5bcada0e1d665da56dbfc0e2eec549e89fcc5a2dbe96",
+        "selected_episodes": 36,
+        "train_episodes": 32,
+        "validation_episodes": 4,
+        "ids_order_splits_payload_lengths_match_reference": true
+      },
+      {
+        "date": "2026-09-24",
+        "inventory_episodes": 590,
+        "source_archive_bytes": 771654404,
+        "source_archive_sha256_recorded": "a6301ca92a419dffb7a20a7dff19b02fd978d77f3352090bf83ea572635a7068",
+        "selected_episodes": 36,
+        "train_episodes": 32,
+        "validation_episodes": 4,
+        "ids_order_splits_payload_lengths_match_reference": true
+      },
+      {
+        "date": "2026-09-25",
+        "inventory_episodes": 576,
+        "source_archive_bytes": 805138976,
+        "source_archive_sha256_recorded": "d5b3fe46d89ff07a4e001c873ebe77b0187491e07694818f1ea5eff9e75dd41e",
+        "selected_episodes": 36,
+        "train_episodes": 32,
+        "validation_episodes": 4,
+        "ids_order_splits_payload_lengths_match_reference": true
+      },
+      {
+        "date": "2026-09-26",
+        "inventory_episodes": 596,
+        "source_archive_bytes": 538684154,
+        "source_archive_sha256_recorded": "667f9cac310bcc1626bec219ccdf6d0eb2626ff52ce48d08874ab28351db4dec",
+        "selected_episodes": 36,
+        "train_episodes": 32,
+        "validation_episodes": 4,
+        "ids_order_splits_payload_lengths_match_reference": true
+      },
+      {
+        "date": "2026-09-27",
+        "inventory_episodes": 609,
+        "source_archive_bytes": 693556840,
+        "source_archive_sha256_recorded": "4326cb41fe6f5307c0784eb87ca59cb879bde6721eab92c641528b1e19723ba3",
+        "selected_episodes": 36,
+        "train_episodes": 32,
+        "validation_episodes": 4,
+        "ids_order_splits_payload_lengths_match_reference": true
+      }
+    ]
+  },
+  "reference_preparation_counts": {
+    "admitted_paired_turns_by_split": {
+      "train": 139835,
+      "validation": 18937
+    },
+    "admitted_paired_turns": 158772,
+    "candidate_paired_turns": 181188,
+    "rejected_paired_turns": 22416,
+    "qualification": "Receipt arithmetic only; current engine/grammar preparation not implemented or run."
+  },
+  "custody": {
+    "source_volume": {
+      "id": "4llk4uaf20",
+      "name": "kggriv2-shared-1tb",
+      "region_recorded": "EU-RO-1",
+      "mount_recorded": "/workspace",
+      "pod_recorded": "p0wdnd40cbmrej",
+      "evidence": "external-repository:/Users/poonszesen/kaggriculture-v2/ops/kaggle-public-episodes-2026-09-28/README.md:9-18"
+    },
+    "original_format": "Daily ZIPs at archives/kaggriculture-episodes-YYYY-MM-DD.zip, flat episode-ID .json members plus manifest.csv; September 26 ZIP reconstructed from per-file downloads (596 episode JSONs plus manifest.csv).",
+    "reader_source_root_recorded": "/data/kaggriculture-v2/public-episodes-2026-09-14-to-2026-09-27",
+    "reader_archive_recorded": "/tmp/kg-v3-bc-replays.zip",
+    "reader_selection_json_recorded": "/tmp/kg-v3-bc-selection.json",
+    "reader_id": "gitucgvpefat63",
+    "reader_disposition_recorded": "Terminated after successful SHA-256-verified transfer; receipt records HTTP 204.",
+    "selected_zip_sha256_recorded": "619ca7a89accc3063b1a803e5f892842acde3b28e1250514f4554c81433c9dd0",
+    "gpu_pod_recorded": "w7ia3zvxqsvs3g",
+    "gpu_region_recorded": "EUR-IS-1",
+    "gpu_prepared_arrays_path_recorded": "/workspace/kg-v3/replays/bc-bootstrap/arrays",
+    "gpu_raw_zip_path": null,
+    "transfer_protocol": null,
+    "reference_evidence": [
+      "ops/bc-bootstrap-2026-09-29/select_replays.py:4-6",
+      "ops/bc-bootstrap-2026-09-29/source.json:15-23",
+      "ops/bc-bootstrap-2026-09-29/results.md:5",
+      "ops/bc-bootstrap-2026-09-29/run.sh:3-12",
+      "ops/default4096-2026-09-29/host-replacement.json"
+    ]
+  },
+  "local_exists_checks": [
+    {
+      "path": "/Users/poonszesen/kg-v3-codex-data/replays/bc-bootstrap",
+      "exists": false
+    },
+    {
+      "path": "/Users/poonszesen/kg-v3/replays/bc-bootstrap",
+      "exists": false
+    },
+    {
+      "path": "/private/tmp/kg-v3-bc-replays.zip",
+      "exists": false
+    }
+  ],
+  "limits": [
+    "Source inventory and receipt are historical records, not a fresh hash check of raw archive or replay bytes.",
+    "The exact transferred ZIP destination and transfer protocol are not established by the reviewed tracked receipts.",
+    "Current volume existence, mount, current pod reachability, and retention of GPU ZIP/arrays are unverified: no network was used.",
+    "Negative existence checks cover only the listed local paths; do not claim absence from every Mac directory.",
+    "Reference admission counts require future explicit-state native/grammar preparation to reproduce or explain differences."
+  ]
+}
