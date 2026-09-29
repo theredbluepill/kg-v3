@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import itertools
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -106,7 +107,13 @@ def test_stems_tokens_and_trunk_use_isaiah_classes_and_widths() -> None:
     assert model.board_tokens.shape == (2, 16)
     assert model.actor_plan_tokens.shape == (1, 16)
     assert model.critic_value_tokens.shape == (2, 16)
-    assert not any(isinstance(m, nn.Embedding) for m in model.modules())
+    # Encoder categories are one-hot stem inputs; embeddings exist only in the
+    # game-specific action heads (Task 2.3).
+    embeddings = [
+        name for name, m in model.named_modules() if isinstance(m, nn.Embedding)
+    ]
+    assert embeddings
+    assert all(name.startswith("actor.") for name in embeddings)
 
 
 def test_preset_shares_isaiah_6m_trunk_except_depth() -> None:
@@ -164,7 +171,7 @@ def test_initialization_follows_isaiah_scheme() -> None:
     _assert_orthogonal_gain(model.critic_head.up, hidden, "critic_head.up")
     _assert_orthogonal_gain(model.critic_head.out, 1.0, "critic_head.out")
     norms = [m for m in model.modules() if isinstance(m, nn.LayerNorm)]
-    assert len(norms) == 2 * 2 + 1  # two per block plus final_norm
+    assert len(norms) == 2 * 2 + 1 + 1  # two per block, final_norm, actor source
     for norm in norms:
         torch.testing.assert_close(norm.weight, torch.ones_like(norm.weight))
         assert int(torch.count_nonzero(norm.bias)) == 0
@@ -346,7 +353,7 @@ def test_masked_actors_and_shops_do_not_affect_present_tokens() -> None:
     torch.testing.assert_close(a.hidden[present], b.hidden[present])
 
 
-def test_every_api_rejects_hidden_state_and_heads_are_deferred() -> None:
+def test_every_api_rejects_hidden_state() -> None:
     model = _tiny()
     obs = make_obs()
     actions = kt.KaggricultureActions(
@@ -362,14 +369,8 @@ def test_every_api_rejects_hidden_state_and_heads_are_deferred() -> None:
     ):
         with pytest.raises(ValueError, match="stateless"):
             call()
-    for call in (
-        lambda: model(obs),
-        lambda: model.evaluate_actions(obs, actions),
-        lambda: model.serve(obs),
-        lambda: model.serve(obs, deterministic=True),
-    ):
-        with pytest.raises(NotImplementedError, match=r"Task 2\.3"):
-            call()
+    with pytest.raises(ValueError, match="dones"):
+        model.evaluate_actions(obs, actions, dones=torch.zeros(1, 2))
 
 
 def test_unexpected_recurrent_checkpoint_keys_are_rejected() -> None:
@@ -408,18 +409,37 @@ def test_seat_rows_are_encoded_independently() -> None:
 
 
 def test_rows_per_chunk_boundary() -> None:
-    kmax = 512
+    width = 512
     tokens = 709
-    rows = km.rows_per_chunk(tokens=tokens, kmax=kmax)
-    assert rows * tokens * kmax < 2**31
-    assert (rows + 1) * tokens * kmax >= 2**31
-    assert km.rows_per_chunk(tokens=2**21, kmax=1024) == 0
+    rows = km.rows_per_chunk(tokens=tokens, width=width)
+    assert rows * tokens * width < 2**31
+    assert (rows + 1) * tokens * width >= 2**31
+    assert km.rows_per_chunk(tokens=2**21, width=1024) == 0
 
 
-def test_kmax_is_max_of_embed_and_mlp_hidden() -> None:
-    assert km.gemm_kmax(_tiny().config) == 32
-    assert km.gemm_kmax(_tiny(mlp_ratio=0.5).config) == 16
-    assert km.gemm_kmax(_preset()) == 512
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {},
+        {"mlp_ratio": 0.5},
+        {"mlp_ratio": 4.0},
+        {"activation": "silu"},
+        {"embed_dim": 24, "n_heads": 3, "mlp_ratio": 1.5},
+    ],
+)
+def test_trunk_gemm_width_matches_every_block_linear(
+    overrides: dict[str, Any],
+) -> None:
+    """Guard width = max(in, out) over every Linear in the compiled trunk."""
+    model = _tiny(**overrides)
+    linears = [m for m in model.blocks.modules() if isinstance(m, nn.Linear)]
+    assert linears
+    enumerated = max(max(m.in_features, m.out_features) for m in linears)
+    assert km.trunk_gemm_width(model.config) == enumerated
+
+
+def test_preset_trunk_gemm_width() -> None:
+    assert km.trunk_gemm_width(_preset()) == 512
 
 
 @pytest.mark.parametrize(("chunk", "sizes"), [(2, [2, 2, 2]), (4, [4, 2])])
@@ -435,22 +455,24 @@ def test_padded_chunks_dispatch_exact_row_slices_in_order(
         x_full, mask_full = model._assemble_tokens(obs)
         whole = model.encode_observations(obs).hidden
     assert len({tuple(row.tolist()) for row in mask_full}) == 6
-    tokens, kmax = x_full.shape[1], km.gemm_kmax(model.config)
-    monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", chunk * tokens * kmax + 1)
-    assert km.rows_per_chunk(tokens=tokens, kmax=kmax) == chunk
+    tokens, width = x_full.shape[1], km.trunk_gemm_width(model.config)
+    monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", chunk * tokens * width + 1)
+    assert km.rows_per_chunk(tokens=tokens, width=width) == chunk
     seen: list[tuple[torch.Tensor, torch.Tensor]] = []
     original = model._forward_transformer_trunk
 
     def spy(x: torch.Tensor, mask: torch.Tensor | None, packed: object) -> torch.Tensor:
         assert packed is None
         assert mask is not None
-        assert x.shape[0] * tokens * kmax < km._GEMM_ELEMENT_LIMIT  # strict bound
+        assert x.shape[0] * tokens * width < km._GEMM_ELEMENT_LIMIT  # strict bound
         seen.append((x.clone(), mask.clone()))
         return original(x, mask, None)
 
     monkeypatch.setattr(model, "_forward_transformer_trunk", spy)
     with torch.inference_mode():
         chunked = model.encode_observations(obs).hidden
+    # Only the trunk sees the lowered limit here; restore it before the heads.
+    monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", 2**31)
     assert [x.shape[0] for x, _ in seen] == sizes
     start = 0
     for x, mask in seen:
@@ -575,26 +597,84 @@ def test_packed_dispatch_packs_once_and_unpacks_once(
     assert torch.equal(enc.token_mask, mask_full)
 
 
-@pytest.mark.parametrize(("offset", "safe"), [(1, True), (0, False), (-1, False)])
-def test_packed_overflow_boundary_rejects_before_trunk(
-    monkeypatch: pytest.MonkeyPatch, offset: int, safe: bool
+@pytest.mark.parametrize(("offset", "packs"), [(1, 1), (0, 2), (-1, 2)])
+def test_packed_path_chunks_at_the_overflow_boundary(
+    monkeypatch: pytest.MonkeyPatch, offset: int, packs: int
 ) -> None:
+    """At or above the limit the packed path splits rows instead of raising."""
     model = _tiny().eval()
-    obs = make_obs()
+    obs = make_obs(envs=1, own_actors=3, rival_actors=1)
     with torch.inference_mode():
         _, mask_full = model._assemble_tokens(obs)
-    elements = int(mask_full.sum()) * km.gemm_kmax(model.config)
+    width = km.trunk_gemm_width(model.config)
+    row_tokens = [int(n) for n in mask_full.sum(dim=1)]
+    elements = sum(row_tokens) * width
     spy = _mock_flash(monkeypatch, model)
     monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", elements + offset)
     with torch.inference_mode():
-        if safe:
-            model.encode_observations(obs)
-        else:
-            with pytest.raises(ValueError, match="compiled-gemm-template-overflows"):
-                model.encode_observations(obs)
-    assert len(spy.pack_calls) == 1
-    assert len(spy.trunk_calls) == (1 if safe else 0)
-    assert spy.unpack_calls == (1 if safe else 0)
+        model.encode_observations(obs)
+    assert len(spy.pack_calls) == packs
+    assert len(spy.trunk_calls) == packs
+    assert spy.unpack_calls == packs
+    for _, packed_rows, _ in spy.pack_calls:
+        assert packed_rows * width < km._GEMM_ELEMENT_LIMIT  # strict bound
+    if packs == 2:
+        assert [rows for _, rows, _ in spy.pack_calls] == row_tokens
+
+
+def test_packed_chunks_are_distinct_ordered_and_match_unchunked(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model = _tiny().eval()
+    obs = make_obs(envs=3, own_actors=(1, 2, 3), rival_actors=(4, 5, 6))
+    with torch.inference_mode():
+        x_full, mask_full = model._assemble_tokens(obs)
+    spy = _mock_flash(monkeypatch, model)
+    seen: list[torch.Tensor] = []
+    trunk = model._forward_transformer_trunk
+
+    def record(
+        x: torch.Tensor, mask: torch.Tensor | None, packed: PackedSequence | None
+    ) -> torch.Tensor:
+        seen.append(x.clone())
+        return trunk(x, mask, packed)
+
+    monkeypatch.setattr(model, "_forward_transformer_trunk", record)
+    with torch.inference_mode():
+        whole = model.encode_observations(obs).hidden
+    assert len(seen) == 1
+    width = km.trunk_gemm_width(model.config)
+    row_tokens = [int(n) for n in mask_full.sum(dim=1)]
+    # Room for exactly two rows of the first pair: forces several chunks.
+    monkeypatch.setattr(
+        km, "_GEMM_ELEMENT_LIMIT", (row_tokens[0] + row_tokens[1]) * width + 1
+    )
+    seen.clear()
+    with torch.inference_mode():
+        chunked = model.encode_observations(obs).hidden
+    bounds = km.packed_row_chunks(row_tokens, width=width)
+    assert len(bounds) > 1
+    assert [x.shape[0] for x in seen] == [sum(row_tokens[a:b]) for a, b in bounds]
+    for (start, stop), x in zip(bounds, seen, strict=True):
+        expected = x_full[start:stop][mask_full[start:stop]]
+        torch.testing.assert_close(x, expected)
+        assert x.shape[0] * width < km._GEMM_ELEMENT_LIMIT
+    assert bounds[0][0] == 0
+    assert bounds[-1][1] == len(row_tokens)
+    assert all(a[1] == b[0] for a, b in itertools.pairwise(bounds))
+    torch.testing.assert_close(chunked, whole)
+    assert spy.unpack_calls == 1 + len(bounds)
+
+
+def test_packed_row_chunks_rejects_only_an_unfittable_row(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", 100)
+    assert km.packed_row_chunks([3, 3, 3, 3], width=10) == [(0, 3), (3, 4)]
+    assert km.packed_row_chunks([9, 9], width=10) == [(0, 1), (1, 2)]
+    assert km.packed_row_chunks([], width=10) == []
+    with pytest.raises(ValueError, match="compiled-gemm-template-overflows"):
+        km.packed_row_chunks([3, 10, 3], width=10)
 
 
 def test_compiled_trunk_serves_packed_dispatch(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -704,7 +784,8 @@ def test_critic_is_isaiah_output_projection_shared_across_players() -> None:
     model = _tiny()
     assert type(model.critic_head) is OutputProjectionMLP
     assert model.critic_head.out.out_features == 1
-    assert model.get_output_layers() == (model.critic_head.out,)
+    assert model.get_output_layers()[0] is model.critic_head.out
+    assert model.get_output_layers()[1:] == model.actor.get_output_layers()
 
 
 def test_values_are_two_p_self_minus_one_from_a_winner_softmax() -> None:

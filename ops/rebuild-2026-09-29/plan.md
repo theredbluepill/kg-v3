@@ -254,6 +254,7 @@ codex exec -C ../kg-v3-codex -s workspace-write \
 - [ ] L12: `_evaluation_seed(base_seed, env_steps)` (reproducible and different per evaluation; check the native seed type's range). Isaiah's default evaluation count. Promotion telemetry (`eval/promoted`, `eval/promotion_threshold`, `eval/games`). Orbit is unaffected.
 
 ### Task 3.4: Configs from Isaiah's recipe
+- [ ] (From the GEMM-limit audit) startup workload assertion: at config load, compute rows per forward for rollout (n_envs × 2), minibatch (spm × horizon × 2), teacher chunk (min(teacher_spm, n_envs) × horizon × 2), eval and BC batch, and assert each is bounded by the model's trunk and head chunking limits; record the headroom in the run log.
 
 - [ ] `configs/kaggriculture_2rank.yaml` (128 envs/rank, spm 8, accum 1), `configs/kaggriculture_4rank.yaml` (64/4/1), `target_kl: null`, and the `scaling_6m` optimizer, scheduler, PPO coefficients, compile settings and 20M checkpoint cadence. Economic shaping 0.2 is the owner's choice. `configs/model/kaggriculture_gpu.yaml` forces FlashAttention; a CPU preset and `configs/kaggriculture.yaml` cover local tests.
 - [ ] Workload test: global envs, optimizer steps per iteration, global segments per step and transitions per iteration all equal `scaling_6m`; the optimizer config is equal too. (The previous plan's Task 2.1 has the test code.)

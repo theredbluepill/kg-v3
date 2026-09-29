@@ -18,6 +18,13 @@ Reference: `StatelessTransformerV1` and upstream `docs/model-architecture.md` at
 | Initialization | `_init_module`, input gain 1, residual `1/sqrt(2·depth)`, token std `D^-0.5` | same |
 | Ladder | Width 256, 8 heads (head_dim 32), GELU, `mlp_ratio` 2.0; depth 8 for the owner's 6–10M budget | same ladder, deeper point |
 | Critic `OutputProjectionMLP` per critic-value token, winner softmax, value `2p − 1` | `critic_head` over (self, opponent) tokens from the seat's own view | same (game form: 2 players, both active) |
-| Actor `3D → D` input projection over [entity, player, plan]; action heads | — | → Task 2.3 (grammar heads are game-specific) |
+| Actor `3D → D` input projection over [entity, player, plan] | `actor_input_proj = nn.Linear(3D, D)`; unit frames use the own-actor hidden as the entity, market frames the plan hidden | same (game form: the market queue has no entity token) |
+| Actor normalizes its input before the heads | `actor.source_norm` over the projected input (plus `market_position` for queue positions) | same (game form: queue position plays the role of Isaiah's source role token) |
+| Action heads | `KaggricultureGrammarActor`: one `OutputProjectionMLP` per sampled grammar slot (9), within-frame prefix embeddings, `hidden_stage = base + prefix / sqrt(stage + 1)`; masks from `GrammarTables` plus unit-liveness, queue, HIRE-capacity and STOP overlays; exact coupled Gumbel-max sampling | game form: the Kaggriculture action is a grammar program, not Orbit launches |
+| `evaluate_actions` replays through the sampling path | Same core, teacher-forced; support, length and canonical-equality flags with safe indices and one host check outside the core | same (game form: grammar admission is part of replay) |
+| Log-prob / entropy layout | `event [E,2,252,12]`, `per_player_entity = event.sum(-1)`, `launch` zeros, entropy `components` per slot | game form of Isaiah's per-player-entity layout |
+| Actor output init gain 0.01; token std `D^-0.5` | Every head `.out` via `_init_linear(gain=0.01)`; position and slot embedding weights via `get_input_layers` | same |
+| Muon membership | `actor_input_proj` and head `.up` in Muon; head `.out`, embeddings, norms and biases in AdamW | same |
+| Heads outside the compiled region | Heads eager; `compile_transformer_trunk` compiles the trunk only; heads chunk rows below the GEMM-extent limit anyway | same, plus the head-extent guard |
 
-Encoder parameters: 5,312,768 (trunk 4,216,832). The full-model count, including heads, is checked against 6–10M in Task 2.3.
+Parameters at the preset: 6,252,223. That is the encoder (5,312,768, trunk 4,216,832), the critic (66,049), and the actor input projection and heads (873,406). It sits inside the owner's 6–10M budget at depth 8, so no depth change was needed.
