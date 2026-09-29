@@ -1,0 +1,105 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-bindings/python/owl/rs.abi3.so
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+____________ test_reward_bool_coefficient_is_rejected[econ_shaping] ____________
+
+key = 'econ_shaping'
+
+    @pytest.mark.parametrize("key", [key for key in REWARD if key != "reward_mode"])
+    def test_reward_bool_coefficient_is_rejected(key):
+        config = dict(REWARD)
+        config[key] = True
+>       with pytest.raises(ValueError, match="bool is not a coefficient"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_independent_binding_probe.py:22: Failed
+_______ test_reward_bool_coefficient_is_rejected[econ_starvation_weight] _______
+
+key = 'econ_starvation_weight'
+
+    @pytest.mark.parametrize("key", [key for key in REWARD if key != "reward_mode"])
+    def test_reward_bool_coefficient_is_rejected(key):
+        config = dict(REWARD)
+        config[key] = True
+>       with pytest.raises(ValueError, match="bool is not a coefficient"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_independent_binding_probe.py:22: Failed
+________ test_reward_bool_coefficient_is_rejected[econ_drought_weight] _________
+
+key = 'econ_drought_weight'
+
+    @pytest.mark.parametrize("key", [key for key in REWARD if key != "reward_mode"])
+    def test_reward_bool_coefficient_is_rejected(key):
+        config = dict(REWARD)
+        config[key] = True
+>       with pytest.raises(ValueError, match="bool is not a coefficient"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_independent_binding_probe.py:22: Failed
+______________ test_reward_bool_coefficient_is_rejected[econ_cap] ______________
+
+key = 'econ_cap'
+
+    @pytest.mark.parametrize("key", [key for key in REWARD if key != "reward_mode"])
+    def test_reward_bool_coefficient_is_rejected(key):
+        config = dict(REWARD)
+        config[key] = True
+        with pytest.raises(ValueError, match="bool is not a coefficient"):
+>           rs.KaggricultureEnv(1, 0, 1, "{}", config, 1, hire_limit=241)
+E           ValueError: active economic caps must sum below one
+
+tests/kaggriculture/test_independent_binding_probe.py:23: ValueError
+
+During handling of the above exception, another exception occurred:
+
+key = 'econ_cap'
+
+    @pytest.mark.parametrize("key", [key for key in REWARD if key != "reward_mode"])
+    def test_reward_bool_coefficient_is_rejected(key):
+        config = dict(REWARD)
+        config[key] = True
+>       with pytest.raises(ValueError, match="bool is not a coefficient"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'bool is not a coefficient'
+E         Actual message: 'active economic caps must sum below one'
+
+tests/kaggriculture/test_independent_binding_probe.py:22: AssertionError
+______ test_reward_bool_coefficient_is_rejected[econ_ineffective_weight] _______
+
+key = 'econ_ineffective_weight'
+
+    @pytest.mark.parametrize("key", [key for key in REWARD if key != "reward_mode"])
+    def test_reward_bool_coefficient_is_rejected(key):
+        config = dict(REWARD)
+        config[key] = True
+>       with pytest.raises(ValueError, match="bool is not a coefficient"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_independent_binding_probe.py:22: Failed
+________ test_reward_bool_coefficient_is_rejected[econ_ineffective_cap] ________
+
+key = 'econ_ineffective_cap'
+
+    @pytest.mark.parametrize("key", [key for key in REWARD if key != "reward_mode"])
+    def test_reward_bool_coefficient_is_rejected(key):
+        config = dict(REWARD)
+        config[key] = True
+>       with pytest.raises(ValueError, match="bool is not a coefficient"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_independent_binding_probe.py:22: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_shaping]
+FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_starvation_weight]
+FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_drought_weight]
+FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_cap]
+FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_ineffective_weight]
+FAILED tests/kaggriculture/test_independent_binding_probe.py::test_reward_bool_coefficient_is_rejected[econ_ineffective_cap]
+6 failed, 1 deselected in 0.04s

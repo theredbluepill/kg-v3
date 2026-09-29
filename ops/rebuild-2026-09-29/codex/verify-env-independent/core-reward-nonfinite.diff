@@ -1,0 +1,11 @@
+--- original/src/kaggriculture/reward.rs
++++ mutant/src/kaggriculture/reward.rs
+@@ -27,7 +27,7 @@
+         } = self;
+         if [w, s, d, cap, i, ic]
+             .iter()
+-            .any(|v| !v.is_finite() || **v < 0.)
++            .any(|v| **v < 0.)
+         {
+             return Err("reward coefficients must be finite and nonnegative".into());
+         }

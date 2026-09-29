@@ -1,0 +1,231 @@
+INDEPENDENT_NATIVE_EXTENSION=/Users/poonszesen/kg-v3-env/.codex-tmp/verify-env-r2-bindings/python/owl/rs.abi3.so
+FFFFFF.....                                                              [100%]
+=================================== FAILURES ===================================
+________________ test_strict_seed_admission[True-1-ValueError] _________________
+
+seed = True, stride = 1, error = <class 'ValueError'>
+
+    @pytest.mark.parametrize(
+        ("seed", "stride", "error"),
+        [
+            (True, 1, ValueError),
+            (1.0, 1, ValueError),
+            ("1", 1, ValueError),
+            (1, True, ValueError),
+            (1, 1.0, ValueError),
+            (1, "1", ValueError),
+            (-1, 1, ValueError),
+            (0, 0, ValueError),
+            (2**63, 1, OverflowError),
+            (0, 2**63, OverflowError),
+            (2**63 - 1, 1, OverflowError),
+        ],
+    )
+    def test_strict_seed_admission(seed: Any, stride: Any, error: type[Exception]) -> None:
+>       with pytest.raises(error):
+             ^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:153: Failed
+_________________ test_strict_seed_admission[1.0-1-ValueError] _________________
+
+seed = 1.0, stride = 1, error = <class 'ValueError'>
+
+    @pytest.mark.parametrize(
+        ("seed", "stride", "error"),
+        [
+            (True, 1, ValueError),
+            (1.0, 1, ValueError),
+            ("1", 1, ValueError),
+            (1, True, ValueError),
+            (1, 1.0, ValueError),
+            (1, "1", ValueError),
+            (-1, 1, ValueError),
+            (0, 0, ValueError),
+            (2**63, 1, OverflowError),
+            (0, 2**63, OverflowError),
+            (2**63 - 1, 1, OverflowError),
+        ],
+    )
+    def test_strict_seed_admission(seed: Any, stride: Any, error: type[Exception]) -> None:
+        with pytest.raises(error):
+>           make_env(seed=seed, stride=stride)
+
+tests/kaggriculture/test_native_env.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+n_envs = 1, seed = 1.0, stride = 1, config = '{}', threads = 1
+
+    def make_env(
+        n_envs: int = 1,
+        seed: int = 11,
+        stride: int = 2,
+        config: str = "{}",
+        threads: int = 1,
+    ) -> rs.KaggricultureEnv:
+>       return rs.KaggricultureEnv(
+            n_envs, seed, stride, config, REWARD, threads, hire_limit=241
+        )
+E       OverflowError: seed: TypeError: 'float' object cannot be interpreted as an integer
+
+tests/kaggriculture/test_native_env.py:56: OverflowError
+_________________ test_strict_seed_admission[1-1-ValueError0] __________________
+
+seed = '1', stride = 1, error = <class 'ValueError'>
+
+    @pytest.mark.parametrize(
+        ("seed", "stride", "error"),
+        [
+            (True, 1, ValueError),
+            (1.0, 1, ValueError),
+            ("1", 1, ValueError),
+            (1, True, ValueError),
+            (1, 1.0, ValueError),
+            (1, "1", ValueError),
+            (-1, 1, ValueError),
+            (0, 0, ValueError),
+            (2**63, 1, OverflowError),
+            (0, 2**63, OverflowError),
+            (2**63 - 1, 1, OverflowError),
+        ],
+    )
+    def test_strict_seed_admission(seed: Any, stride: Any, error: type[Exception]) -> None:
+        with pytest.raises(error):
+>           make_env(seed=seed, stride=stride)
+
+tests/kaggriculture/test_native_env.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+n_envs = 1, seed = '1', stride = 1, config = '{}', threads = 1
+
+    def make_env(
+        n_envs: int = 1,
+        seed: int = 11,
+        stride: int = 2,
+        config: str = "{}",
+        threads: int = 1,
+    ) -> rs.KaggricultureEnv:
+>       return rs.KaggricultureEnv(
+            n_envs, seed, stride, config, REWARD, threads, hire_limit=241
+        )
+E       OverflowError: seed: TypeError: 'str' object cannot be interpreted as an integer
+
+tests/kaggriculture/test_native_env.py:56: OverflowError
+________________ test_strict_seed_admission[1-True-ValueError] _________________
+
+seed = 1, stride = True, error = <class 'ValueError'>
+
+    @pytest.mark.parametrize(
+        ("seed", "stride", "error"),
+        [
+            (True, 1, ValueError),
+            (1.0, 1, ValueError),
+            ("1", 1, ValueError),
+            (1, True, ValueError),
+            (1, 1.0, ValueError),
+            (1, "1", ValueError),
+            (-1, 1, ValueError),
+            (0, 0, ValueError),
+            (2**63, 1, OverflowError),
+            (0, 2**63, OverflowError),
+            (2**63 - 1, 1, OverflowError),
+        ],
+    )
+    def test_strict_seed_admission(seed: Any, stride: Any, error: type[Exception]) -> None:
+>       with pytest.raises(error):
+             ^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_native_env.py:153: Failed
+_________________ test_strict_seed_admission[1-1.0-ValueError] _________________
+
+seed = 1, stride = 1.0, error = <class 'ValueError'>
+
+    @pytest.mark.parametrize(
+        ("seed", "stride", "error"),
+        [
+            (True, 1, ValueError),
+            (1.0, 1, ValueError),
+            ("1", 1, ValueError),
+            (1, True, ValueError),
+            (1, 1.0, ValueError),
+            (1, "1", ValueError),
+            (-1, 1, ValueError),
+            (0, 0, ValueError),
+            (2**63, 1, OverflowError),
+            (0, 2**63, OverflowError),
+            (2**63 - 1, 1, OverflowError),
+        ],
+    )
+    def test_strict_seed_admission(seed: Any, stride: Any, error: type[Exception]) -> None:
+        with pytest.raises(error):
+>           make_env(seed=seed, stride=stride)
+
+tests/kaggriculture/test_native_env.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+n_envs = 1, seed = 1, stride = 1.0, config = '{}', threads = 1
+
+    def make_env(
+        n_envs: int = 1,
+        seed: int = 11,
+        stride: int = 2,
+        config: str = "{}",
+        threads: int = 1,
+    ) -> rs.KaggricultureEnv:
+>       return rs.KaggricultureEnv(
+            n_envs, seed, stride, config, REWARD, threads, hire_limit=241
+        )
+E       OverflowError: seed_stride: TypeError: 'float' object cannot be interpreted as an integer
+
+tests/kaggriculture/test_native_env.py:56: OverflowError
+_________________ test_strict_seed_admission[1-1-ValueError1] __________________
+
+seed = 1, stride = '1', error = <class 'ValueError'>
+
+    @pytest.mark.parametrize(
+        ("seed", "stride", "error"),
+        [
+            (True, 1, ValueError),
+            (1.0, 1, ValueError),
+            ("1", 1, ValueError),
+            (1, True, ValueError),
+            (1, 1.0, ValueError),
+            (1, "1", ValueError),
+            (-1, 1, ValueError),
+            (0, 0, ValueError),
+            (2**63, 1, OverflowError),
+            (0, 2**63, OverflowError),
+            (2**63 - 1, 1, OverflowError),
+        ],
+    )
+    def test_strict_seed_admission(seed: Any, stride: Any, error: type[Exception]) -> None:
+        with pytest.raises(error):
+>           make_env(seed=seed, stride=stride)
+
+tests/kaggriculture/test_native_env.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+n_envs = 1, seed = 1, stride = '1', config = '{}', threads = 1
+
+    def make_env(
+        n_envs: int = 1,
+        seed: int = 11,
+        stride: int = 2,
+        config: str = "{}",
+        threads: int = 1,
+    ) -> rs.KaggricultureEnv:
+>       return rs.KaggricultureEnv(
+            n_envs, seed, stride, config, REWARD, threads, hire_limit=241
+        )
+E       OverflowError: seed_stride: TypeError: 'str' object cannot be interpreted as an integer
+
+tests/kaggriculture/test_native_env.py:56: OverflowError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[True-1-ValueError]
+FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[1.0-1-ValueError]
+FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[1-1-ValueError0]
+FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[1-True-ValueError]
+FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[1-1.0-ValueError]
+FAILED tests/kaggriculture/test_native_env.py::test_strict_seed_admission[1-1-ValueError1]
+6 failed, 5 passed, 333 deselected in 0.08s

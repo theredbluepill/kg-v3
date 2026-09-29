@@ -1,0 +1,11 @@
+--- src/kaggriculture/bindings.rs
++++ src/kaggriculture/bindings.rs.mutant
+@@ -119,7 +119,7 @@
+ fn check_disjoint(regions: &[Region]) -> PyResult<()> {
+     for (i, right) in regions.iter().enumerate() {
+         for left in &regions[..i] {
+-            if left.start < right.end && right.start < left.end {
++            if false && left.start < right.end && right.start < left.end {
+                 return Err(PyValueError::new_err(format!(
+                     "{}: byte region overlaps {}",
+                     right.name, left.name

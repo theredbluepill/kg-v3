@@ -1,0 +1,51 @@
+{
+  "name": "reset-live-seed",
+  "path": "src/kaggriculture/env.rs",
+  "test": "reset_and_truncate_failures_preserve_every_published_byte",
+  "reason": "Mutate the live seed counter before failing reset/truncate staging.",
+  "original_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "classification": "killed_assertion",
+  "mutant_sha256": "d6b08ef847dde61816cf719c87db25120dc73648cbfec90a9bf68ef14ae54b77",
+  "diff": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-reset-live-seed.diff",
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/bounded.py",
+    "--seconds",
+    "115",
+    "--name",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-reset-live-seed",
+    "--",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--lib",
+    "reset_and_truncate_failures_preserve_every_published_byte",
+    "--",
+    "--test-threads=1"
+  ],
+  "runner_exit_status": 101,
+  "bounded_receipt": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-reset-live-seed.json",
+  "bounded": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "reset_and_truncate_failures_preserve_every_published_byte",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 2.499962375,
+    "sampled_process_group_peak_rss_bytes": 583483392,
+    "stop_reason": null,
+    "time_limit_seconds": 115.0,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "restored_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "restored_byte_exact": true,
+  "primary_unchanged": true
+}

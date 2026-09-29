@@ -1,0 +1,13 @@
+--- src/kaggriculture/bindings.rs
++++ src/kaggriculture/bindings.rs.mutant
+@@ -1182,7 +1182,9 @@
+     let plan = grammar::plan(actors, order_limit, hire_limit).map_err(PyValueError::new_err)?;
+     let action = serde_json::from_str(action_json)
+         .map_err(|error| PyValueError::new_err(format!("action_json: {error}")))?;
+-    grammar::encode(&plan, &action, output_slice(&mut out, "out")?).map_err(PyValueError::new_err)
++    let length = grammar::encode(&plan, &action, output_slice(&mut out, "out")?).map_err(PyValueError::new_err)?;
++    output_slice(&mut out, "out")?[3023] = 1;
++    Ok(length)
+ }
+ 
+ #[pyfunction]

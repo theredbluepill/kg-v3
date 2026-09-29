@@ -1,0 +1,51 @@
+{
+  "name": "truncate-whole-publish",
+  "path": "src/kaggriculture/env.rs",
+  "test": "truncate_commits_only_selected_rows",
+  "reason": "Replace selected-row publication with a whole-batch observation copy.",
+  "original_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "classification": "killed_assertion",
+  "mutant_sha256": "3b4745087644a02d9a455d7707f9f7b5cf9a9679a03f8d9a72bad75df62f6e9a",
+  "diff": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-truncate-whole-publish.diff",
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/bounded.py",
+    "--seconds",
+    "115",
+    "--name",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-truncate-whole-publish",
+    "--",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--lib",
+    "truncate_commits_only_selected_rows",
+    "--",
+    "--test-threads=1"
+  ],
+  "runner_exit_status": 101,
+  "bounded_receipt": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-r2/core/core-truncate-whole-publish.json",
+  "bounded": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "truncate_commits_only_selected_rows",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 3.3024967089999997,
+    "sampled_process_group_peak_rss_bytes": 667320320,
+    "stop_reason": null,
+    "time_limit_seconds": 115.0,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "restored_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "restored_byte_exact": true,
+  "primary_unchanged": true
+}

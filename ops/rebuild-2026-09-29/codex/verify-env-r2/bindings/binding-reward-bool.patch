@@ -1,0 +1,11 @@
+--- src/kaggriculture/bindings.rs
++++ src/kaggriculture/bindings.rs.mutant
+@@ -365,7 +365,7 @@
+         let item = value
+             .get_item(name)?
+             .ok_or_else(|| PyValueError::new_err(format!("{name}: missing")))?;
+-        if item.is_instance_of::<PyBool>() {
++        if false && item.is_instance_of::<PyBool>() {
+             return Err(PyValueError::new_err(format!(
+                 "{name}: bool is not a coefficient"
+             )));

@@ -6,6 +6,7 @@ tags: ["kaggriculture-v3", "adaptation", "evaluation", "rewards"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
 sources:
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/1.4.md"
   - resource: "repository:ops/rebuild-2026-09-29/plan.md"
   - resource: "repository:docs/kaggriculture-contract.md"
   - resource: "repository:python/owl/kaggriculture/evaluation.py"
@@ -66,7 +67,7 @@ The native Kaggriculture environment (Tasks 1.4/1.5) doesn't exist yet. So each 
   - The result lies in `[2**62, 2**62 + 2**61)`. That band is non-negative (contract v4) and fits `engine_rs` `Game::new`'s `i64` seed, leaving `2**61` seeds of headroom for the consecutive seeds one evaluation env consumes.
   - Repeating an evaluation repeats its seed. For a fixed base seed, distinct evaluation steps get distinct seeds; for a fixed step, distinct base seeds do. That is what Task 3.3 requires.
   - It is not injective over `(base_seed, env_steps)` pairs, and it does not keep the consecutive seed ranges of different evaluations or runs apart: `(0, 0)` and `(1, 2131737497183550101)` collide, and `(0, 787325655728545358)` starts one seed later than `(0, 0)` (Codex verify-3.2-3.3-r1; pinned by a test).
-  - Training streams (`base_seed + rank + k·world_size`) stay below the band only while that value is below `2**62`. Contract v4 requires only non-negative seeds, and nothing enforces that bound yet; the native env seam (Tasks 1.4/1.5) must enforce it to keep training and evaluation seeds apart.
+  - Training streams (`base_seed + rank + k·world_size`) stay below the band only while that value is below `2**62`. Contract v4 requires only non-negative seeds. The Task 1.4 native ABI deliberately admits every nonnegative i64 seed with checked consumption (brief Q2), and it adds no training-only cap. If training and evaluation seeds must be kept apart, the Task 1.5 factory has to enforce the bound; nothing enforces it yet.
 - `_run_training_loop` passes `env_steps` to `_evaluate_against_last_best`, which passes it to `_evaluate_games` and the new `_create_eval_env`.
   - `_create_eval_env` builds Isaiah's unseeded Orbit `VectorizedEnv` with the same arguments as before.
   - For a Kaggriculture config it raises `NotImplementedError` naming Tasks 1.4/1.5 and the seed rule, so a run fails before touching a non-native env.

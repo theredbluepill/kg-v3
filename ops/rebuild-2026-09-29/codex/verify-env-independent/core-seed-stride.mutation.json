@@ -1,0 +1,53 @@
+{
+  "name": "seed-stride",
+  "path": "src/kaggriculture/env.rs",
+  "test": "seed_construction_reset_stride_and_overflow",
+  "reason": "Advance every stream by one regardless of the rank stride.",
+  "original_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "classification": "killed_assertion",
+  "mutant_sha256": "6a713b11a25167d65369980762a0b8f79af8218ed543c62e1c4b1d5f9ab4baec",
+  "diff": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/core-seed-stride.diff",
+  "command": [
+    "/Users/poonszesen/kg-v3-env/.venv/bin/python",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/bounded.py",
+    "--seconds",
+    "115",
+    "--name",
+    "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/core-seed-stride",
+    "--",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--lib",
+    "seed_construction_reset_stride_and_overflow",
+    "--",
+    "--test-threads=1"
+  ],
+  "runner_exit_status": 101,
+  "bounded_receipt": "/Users/poonszesen/kg-v3-env/ops/rebuild-2026-09-29/codex/verify-env-independent/core-seed-stride.json",
+  "bounded": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "seed_construction_reset_stride_and_overflow",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_status": 101,
+    "wall_seconds": 1.6770041250274517,
+    "sampled_process_group_peak_rss_bytes": 558694400,
+    "stop_reason": null,
+    "time_limit_seconds": 115.0,
+    "rss_limit_bytes": 1006632960,
+    "rss_sampling_seconds": 0.1
+  },
+  "restored_sha256": "671b53a396567825ff21a74b9a33ae42a0496edaec5b83e6d165301a36e55db8",
+  "restored_byte_exact": true,
+  "primary_unchanged": true,
+  "initial_classification": "compile_error",
+  "classification_correction": "Actual test result takes precedence over Cargo error: test failed trailer; no command rerun."
+}
