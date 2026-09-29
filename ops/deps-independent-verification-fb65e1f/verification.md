@@ -31,7 +31,7 @@ Parent lock is byte-identical to Isaiah 32b3ec900ad406eedd965f53a1a0f4490d31c589
 
 ## Exhaustive package delta
 
-Old: 176 records / 174 names. New: 181 records / 173 names. Top-level lock metadata is unchanged. Registry source remains PyPI for all changed third-party records other than kaggle-environments, which changes from git commit 6458c3191c2c4b37b6ad7530bd027df4b35369e4 to PyPI. New-version records include their generated artifact URLs/hashes/sizes/timestamps; exact before/after data is in lock-delta.json.
+Old: 176 records / 174 names. New: 181 records / 173 names. Top-level lock metadata is unchanged. Registry source remains PyPI for all changed third-party records other than kaggle-environments, which changes from git commit 6458c3191c2c4b37b6ad7530bd027df4b35369e4 to PyPI. New-version records include their generated artifact URLs/hashes/sizes/timestamps; a compact per-package version summary is in lock-delta-summary.json; exact before/after records are recoverable with `git diff fb65e1f^ fb65e1f -- uv.lock`.
 
 | Package | Before | After | Changed fields |
 |---|---|---|---|
