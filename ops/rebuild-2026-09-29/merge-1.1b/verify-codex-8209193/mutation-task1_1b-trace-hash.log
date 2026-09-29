@@ -1,0 +1,101 @@
+........................................................F............F.  [100%]
+=================================== FAILURES ===================================
+______ test_generated_manifest_drift_is_rejected[edited trace-trace hash] ______
+
+mutation = 'edited trace', message = 'trace hash'
+
+    @pytest.mark.parametrize(
+        ("mutation", "message"),
+        [
+            ("edited trace", "trace hash"),
+            ("wrong size", "trace size"),
+            ("unlisted trace", "generated trace inventory"),
+            ("missing trace", "is missing"),
+            ("other engine", "Cargo engine pin"),
+            ("over budget", "budget"),
+            ("no reason", "reason"),
+            ("probe without expectation", "go together"),
+            ("nested path", "plain"),
+            ("duplicate", "duplicate"),
+            ("extra key", "schema keys"),
+        ],
+    )
+    def test_generated_manifest_drift_is_rejected(mutation: str, message: str) -> None:
+        manifest, traces = generated_fixture()
+        first = manifest["traces"][0]
+        if mutation == "edited trace":
+            traces[first["path"]] = b"trace A"
+        elif mutation == "wrong size":
+            first["bytes"] += 1
+        elif mutation == "unlisted trace":
+            traces["gen-c.jsonl.gz"] = b"unlisted"
+        elif mutation == "missing trace":
+            del traces[first["path"]]
+        elif mutation == "other engine":
+            manifest["python_engine_sha256"] = "b" * 64
+        elif mutation == "over budget":
+            traces[first["path"]] = b"x" * (checker.GENERATED_BUDGET_BYTES + 1)
+            first["sha256"] = checker.sha(traces[first["path"]])
+            first["bytes"] = len(traces[first["path"]])
+        elif mutation == "no reason":
+            manifest["traces"][1]["expected_divergence"]["reason"] = " "
+        elif mutation == "probe without expectation":
+            del manifest["traces"][1]["expected_divergence"]
+        elif mutation == "nested path":
+            first["path"] = "sub/gen-a.jsonl.gz"
+        elif mutation == "duplicate":
+            manifest["traces"].append(dict(first))
+        else:
+            first["note"] = "unexpected"
+>       with pytest.raises(ValueError, match=message):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/tools/test_check_engine_trim.py:542: Failed
+__________________ test_check_rejects_edited_generated_trace ___________________
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-merge/.codex-tmp/pytest-of-poonszesen/pytest-3/test_check_rejects_edited_gene0')
+
+    def test_check_rejects_edited_generated_trace(trimmed: Path) -> None:
+        trace = sorted((trimmed / checker.GENERATED_DIR).glob("gen-*.jsonl.gz"))[0]
+        trace.write_bytes(trace.read_bytes() + b"\x00")
+        with pytest.raises(ValueError, match=re.escape(f"{trace.name}: trace hash")):
+>           checker.check(trimmed)
+
+tests/tools/test_check_engine_trim.py:572: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/check_engine_trim.py:473: in check
+    verify_task(value, reference_files(root), _current_files(root))
+scripts/check_engine_trim.py:484: in verify_task
+    generated_count = verify_generated(
+scripts/check_engine_trim.py:339: in verify_generated
+    _require(_integer(entry["bytes"], name) == len(data), f"{name}: trace size")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, message = 'gen-edge-free-hire.jsonl.gz: trace size'
+
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: gen-edge-free-hire.jsonl.gz: trace size
+
+scripts/check_engine_trim.py:114: ValueError
+
+During handling of the above exception, another exception occurred:
+
+trimmed = PosixPath('/Users/poonszesen/kg-v3-merge/.codex-tmp/pytest-of-poonszesen/pytest-3/test_check_rejects_edited_gene0')
+
+    def test_check_rejects_edited_generated_trace(trimmed: Path) -> None:
+        trace = sorted((trimmed / checker.GENERATED_DIR).glob("gen-*.jsonl.gz"))[0]
+        trace.write_bytes(trace.read_bytes() + b"\x00")
+>       with pytest.raises(ValueError, match=re.escape(f"{trace.name}: trace hash")):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'gen\\-edge\\-free\\-hire\\.jsonl\\.gz:\\ trace\\ hash'
+E         Actual message: 'gen-edge-free-hire.jsonl.gz: trace size'
+
+tests/tools/test_check_engine_trim.py:571: AssertionError
+=========================== short test summary info ============================
+FAILED tests/tools/test_check_engine_trim.py::test_generated_manifest_drift_is_rejected[edited trace-trace hash]
+FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_edited_generated_trace
+2 failed, 69 passed in 2.50s

@@ -4,10 +4,10 @@
 
 Task 1.1b (Codex APPROVE at `16e56b6`) and Task 1.1's verification hardening
 edited `scripts/check_engine_trim.py` independently. The merge keeps both
-contracts: `verify_task` separates generated traces, runs the generic and
-fixed Task 1.1 checks (`EDITABLE`, Rayon lockfile derivation, pinned appendix
-hash), then validates the generated manifest (engine pin, budget, at least six
-traces). Two new `check()`-level tests reject an edited or unlisted generated
+contracts: `verify_task` separates generated traces, runs the generic manifest
+checks, then validates the generated manifest (engine pin, budget, at least six
+traces), then applies the fixed Task 1.1 checks (`EDITABLE`, Rayon lockfile
+derivation, pinned appendix hash). Two new `check()`-level tests reject an edited or unlisted generated
 trace. The base's owner 1.32.7 project pin made one Task 1.1b test premise
 stale; it now asserts that the project environment passes the engine guard and
 that a mismatched pin exits before writing. The
