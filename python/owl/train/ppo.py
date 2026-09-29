@@ -5,10 +5,10 @@ from dataclasses import dataclass, replace
 from dataclasses import field as dataclass_field
 from pathlib import Path
 from time import perf_counter
-from typing import Annotated, Any, Literal, Self, TypeAlias, cast
+from typing import Annotated, Any, Literal, Self, TypeAlias, TypeVar, cast
 
 import torch
-from pydantic import Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from owl.config import BaseConfig
 from owl.model import (
@@ -113,22 +113,9 @@ TeacherScheduleConfig: TypeAlias = Annotated[
 ]
 
 
-_OBS_TENSOR_FIELDS = tuple(
-    field
-    for field in ObsBatch.model_fields
-    if field
-    not in {
-        "action_mask",
-        "player_features",
-        "fleet_target",
-        "target_incoming_features",
-    }
-)
-_OBS_OPTIONAL_TENSOR_FIELDS = (
-    "player_features",
-    "fleet_target",
-    "target_incoming_features",
-)
+# Any pydantic observation batch: Orbit's ``ObsBatch`` or a game-specific one.
+# The mapping helpers below iterate its declared fields instead of naming them.
+_ObservationT = TypeVar("_ObservationT", bound=BaseModel)
 
 
 class PPOConfig(BaseConfig):
@@ -1996,62 +1983,22 @@ def _per_entity_policy_loss_components(
     )
 
 
-def _copy_action_mask_time_step(dst: ActionMask, step: int, src: ActionMask) -> None:
-    if type(dst) is not type(src):
-        raise ValueError(
-            f"rollout action-mask type mismatch: expected {type(dst).__name__}, "
-            f"got {type(src).__name__}"
-        )
-    dst.can_act[step].copy_(src.can_act)
-    if isinstance(dst, PureActionMask | DiscreteTargetActionMask):
-        src_with_max_launch = cast(PureActionMask | DiscreteTargetActionMask, src)
-        dst.max_launch[step].copy_(src_with_max_launch.max_launch)
-
-
-def _action_mask_segment_major(action_mask: ActionMask) -> ActionMask:
-    return _map_action_mask(
-        action_mask,
-        lambda tensor: tensor.transpose(0, 1).contiguous(),
-    )
-
-
-def _action_mask_index(action_mask: ActionMask, idx: torch.Tensor) -> ActionMask:
-    return _map_action_mask(action_mask, lambda tensor: tensor[idx])
-
-
-def _action_mask_to_device(
-    action_mask: ActionMask,
-    device: torch.device,
-    *,
-    non_blocking: bool,
-    clone: bool,
-) -> ActionMask:
-    def move(tensor: torch.Tensor) -> torch.Tensor:
-        moved = tensor.to(device, non_blocking=non_blocking)
-        return moved.clone() if clone else moved
-
-    return _map_action_mask(action_mask, move)
-
-
-def _copy_action_mask_to_device_(
+def _copy_action_mask_(
     dst: ActionMask,
     src: ActionMask,
+    copy: Callable[[torch.Tensor, torch.Tensor], object],
     *,
-    non_blocking: bool,
+    context: str,
 ) -> None:
     if type(dst) is not type(src):
         raise ValueError(
-            f"obs action-mask type mismatch: expected {type(dst).__name__}, "
+            f"{context} action-mask type mismatch: expected {type(dst).__name__}, "
             f"got {type(src).__name__}"
         )
-    dst.can_act.copy_(src.can_act, non_blocking=non_blocking)
+    copy(dst.can_act, src.can_act)
     if isinstance(dst, PureActionMask | DiscreteTargetActionMask):
         src_with_max_launch = cast(PureActionMask | DiscreteTargetActionMask, src)
-        dst.max_launch.copy_(src_with_max_launch.max_launch, non_blocking=non_blocking)
-
-
-def _action_mask_flatten_time(action_mask: ActionMask) -> ActionMask:
-    return _map_action_mask(action_mask, _flatten_tensor_time)
+        copy(dst.max_launch, src_with_max_launch.max_launch)
 
 
 def _map_action_mask(
@@ -2093,32 +2040,91 @@ def _map_action_bundle(
     )
 
 
-def _map_optional_obs_tensors(
-    obs: ObsBatch,
+def _map_observation(
+    obs: _ObservationT,
     fn: Callable[[torch.Tensor], torch.Tensor],
-) -> dict[str, torch.Tensor | None]:
-    return {
-        field: None if (tensor := getattr(obs, field)) is None else fn(tensor)
-        for field in _OBS_OPTIONAL_TENSOR_FIELDS
-    }
+) -> _ObservationT:
+    """Apply ``fn`` to every tensor of an observation batch and rebuild its type.
+
+    Iterates the batch type's own declared fields, so any pydantic observation
+    batch maps without a field list here. Unset optional tensors stay ``None``;
+    action masks map through ``_map_action_mask``; any other field type fails.
+    """
+    return type(obs)(
+        **{
+            field: _map_observation_value(getattr(obs, field), fn, field=field)
+            for field in type(obs).model_fields
+        }
+    )
 
 
-def _copy_obs_time_step(dst: ObsBatch, step: int, src: ObsBatch) -> None:
-    for field in _OBS_TENSOR_FIELDS:
-        dst_tensor = getattr(dst, field)
-        src_tensor = getattr(src, field)
-        dst_tensor[step].copy_(src_tensor)
-    for field in _OBS_OPTIONAL_TENSOR_FIELDS:
-        dst_tensor = getattr(dst, field)
-        src_tensor = getattr(src, field)
-        if dst_tensor is None:
-            if src_tensor is not None:
-                raise ValueError(f"rollout obs has no {field} buffer")
-        elif src_tensor is None:
+def _map_observation_value(
+    value: object,
+    fn: Callable[[torch.Tensor], torch.Tensor],
+    *,
+    field: str,
+) -> object:
+    if value is None:
+        return None
+    if isinstance(value, torch.Tensor):
+        return fn(value)
+    if isinstance(
+        value,
+        PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+    ):
+        return _map_action_mask(value, fn)
+    raise TypeError(
+        f"observation field {field!r} has unsupported type {type(value).__name__}; "
+        "expected a tensor, an action mask or None"
+    )
+
+
+def _copy_observation_(
+    dst: BaseModel,
+    src: BaseModel,
+    copy: Callable[[torch.Tensor, torch.Tensor], object],
+    *,
+    context: str,
+) -> None:
+    """Copy every tensor of ``src`` into the matching preallocated ``dst`` tensor.
+
+    ``context`` names the destination in errors ("rollout", "destination").
+    """
+    if type(dst) is not type(src):
+        raise ValueError(
+            f"{context} observation type mismatch: expected {type(dst).__name__}, "
+            f"got {type(src).__name__}"
+        )
+    for field in type(dst).model_fields:
+        dst_value = getattr(dst, field)
+        src_value = getattr(src, field)
+        if dst_value is None:
+            if src_value is not None:
+                raise ValueError(f"{context} obs has no {field} buffer")
+        elif src_value is None:
             raise ValueError(f"source obs is missing {field}")
+        elif isinstance(dst_value, torch.Tensor):
+            copy(dst_value, src_value)
+        elif isinstance(
+            dst_value,
+            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+        ):
+            _copy_action_mask_(dst_value, src_value, copy, context=context)
         else:
-            dst_tensor[step].copy_(src_tensor)
-    _copy_action_mask_time_step(dst.action_mask, step, src.action_mask)
+            raise TypeError(
+                f"observation field {field!r} has unsupported type "
+                f"{type(dst_value).__name__}; expected a tensor, an action mask "
+                "or None"
+            )
+
+
+def _copy_obs_time_step(dst: BaseModel, step: int, src: BaseModel) -> None:
+    _copy_observation_(
+        dst,
+        src,
+        lambda dst_tensor, src_tensor: dst_tensor[step].copy_(src_tensor),
+        context="rollout",
+    )
 
 
 def _copy_actions_time_step(dst: ActionBundle, step: int, src: ActionBundle) -> None:
@@ -2131,33 +2137,20 @@ def _copy_actions_time_step(dst: ActionBundle, step: int, src: ActionBundle) -> 
         getattr(dst, field)[step].copy_(getattr(src, field))
 
 
-def _obs_segment_major(obs: ObsBatch) -> ObsBatch:
-    return ObsBatch(
-        **{
-            field: getattr(obs, field).transpose(0, 1).contiguous()
-            for field in _OBS_TENSOR_FIELDS
-        },
-        **_map_optional_obs_tensors(
-            obs,
-            lambda tensor: tensor.transpose(0, 1).contiguous(),
-        ),
-        action_mask=_action_mask_segment_major(obs.action_mask),
-    )
+def _segment_major_tensor(tensor: torch.Tensor) -> torch.Tensor:
+    return tensor.transpose(0, 1).contiguous()
+
+
+def _obs_segment_major(obs: _ObservationT) -> _ObservationT:
+    return _map_observation(obs, _segment_major_tensor)
 
 
 def _actions_segment_major(actions: ActionBundle) -> ActionBundle:
-    return _map_action_bundle(
-        actions,
-        lambda tensor: tensor.transpose(0, 1).contiguous(),
-    )
+    return _map_action_bundle(actions, _segment_major_tensor)
 
 
-def _obs_index(obs: ObsBatch, idx: torch.Tensor) -> ObsBatch:
-    return ObsBatch(
-        **{field: getattr(obs, field)[idx] for field in _OBS_TENSOR_FIELDS},
-        **_map_optional_obs_tensors(obs, lambda tensor: tensor[idx]),
-        action_mask=_action_mask_index(obs.action_mask, idx),
-    )
+def _obs_index(obs: _ObservationT, idx: torch.Tensor) -> _ObservationT:
+    return _map_observation(obs, lambda tensor: tensor[idx])
 
 
 def _actions_index(actions: ActionBundle, idx: torch.Tensor) -> ActionBundle:
@@ -2165,71 +2158,41 @@ def _actions_index(actions: ActionBundle, idx: torch.Tensor) -> ActionBundle:
 
 
 def _obs_to_device(
-    obs: ObsBatch,
+    obs: _ObservationT,
     device: torch.device,
     *,
     non_blocking: bool = False,
-) -> ObsBatch:
-    if device.type == "cpu":
-        return ObsBatch(
-            **{
-                field: getattr(obs, field).to(device, non_blocking=non_blocking).clone()
-                for field in _OBS_TENSOR_FIELDS
-            },
-            **_map_optional_obs_tensors(
-                obs,
-                lambda tensor: tensor.to(device, non_blocking=non_blocking).clone(),
-            ),
-            action_mask=_action_mask_to_device(
-                obs.action_mask,
-                device,
-                non_blocking=non_blocking,
-                clone=True,
-            ),
-        )
+) -> _ObservationT:
+    """Move an observation batch to ``device``.
 
-    return ObsBatch(
-        **{
-            field: getattr(obs, field).to(device, non_blocking=non_blocking)
-            for field in _OBS_TENSOR_FIELDS
-        },
-        **_map_optional_obs_tensors(
+    CPU targets are cloned because ``.to`` on the same device returns the input
+    tensor, which would alias the env's reusable output buffers. Accelerator
+    targets are not cloned.
+    """
+    if device.type == "cpu":
+        return _map_observation(
             obs,
-            lambda tensor: tensor.to(device, non_blocking=non_blocking),
-        ),
-        action_mask=_action_mask_to_device(
-            obs.action_mask,
-            device,
-            non_blocking=non_blocking,
-            clone=False,
-        ),
+            lambda tensor: tensor.to(device, non_blocking=non_blocking).clone(),
+        )
+    return _map_observation(
+        obs,
+        lambda tensor: tensor.to(device, non_blocking=non_blocking),
     )
 
 
 def _copy_obs_to_device_(
-    dst: ObsBatch,
-    src: ObsBatch,
+    dst: BaseModel,
+    src: BaseModel,
     *,
     non_blocking: bool = False,
 ) -> None:
-    for field in _OBS_TENSOR_FIELDS:
-        dst_tensor = getattr(dst, field)
-        src_tensor = getattr(src, field)
-        dst_tensor.copy_(src_tensor, non_blocking=non_blocking)
-    for field in _OBS_OPTIONAL_TENSOR_FIELDS:
-        dst_tensor = getattr(dst, field)
-        src_tensor = getattr(src, field)
-        if dst_tensor is None:
-            if src_tensor is not None:
-                raise ValueError(f"destination obs has no {field} buffer")
-        elif src_tensor is None:
-            raise ValueError(f"source obs is missing {field}")
-        else:
-            dst_tensor.copy_(src_tensor, non_blocking=non_blocking)
-    _copy_action_mask_to_device_(
-        dst.action_mask,
-        src.action_mask,
-        non_blocking=non_blocking,
+    _copy_observation_(
+        dst,
+        src,
+        lambda dst_tensor, src_tensor: dst_tensor.copy_(
+            src_tensor, non_blocking=non_blocking
+        ),
+        context="destination",
     )
 
 
@@ -2248,15 +2211,8 @@ def _flatten_tensor_time(tensor: torch.Tensor) -> torch.Tensor:
     return tensor.reshape(tensor.shape[0] * tensor.shape[1], *tensor.shape[2:])
 
 
-def _flatten_obs_time(obs: ObsBatch) -> ObsBatch:
-    return ObsBatch(
-        **{
-            field: _flatten_tensor_time(getattr(obs, field))
-            for field in _OBS_TENSOR_FIELDS
-        },
-        **_map_optional_obs_tensors(obs, _flatten_tensor_time),
-        action_mask=_action_mask_flatten_time(obs.action_mask),
-    )
+def _flatten_obs_time(obs: _ObservationT) -> _ObservationT:
+    return _map_observation(obs, _flatten_tensor_time)
 
 
 def _flatten_actions_time(actions: ActionBundle) -> ActionBundle:
