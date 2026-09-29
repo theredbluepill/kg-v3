@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 from typing import Any
 
@@ -57,17 +58,24 @@ def test_valid_full_inventory_passes() -> None:
     checker.verify(*fixture())
 
 
-def test_task_authored_inventory_accepts_replay_test() -> None:
-    manifest, _, _ = fixture()
-    checker.verify_task_authored(manifest["authored"])
+def test_task_authored_inventory_accepts_replay_test_and_generated_manifest() -> None:
+    authored = [
+        {"path": path, "sha256": checker.sha(b"x"), "reason": "authored"}
+        for path in ("engine_rs/tests/replay_parity.rs", checker.GENERATED_MANIFEST)
+    ]
+    checker.verify_task_authored(authored)
 
 
 @pytest.mark.parametrize(
     ("paths", "message"),
     [
-        ([], r"Task 1.1 authored set: missing=.*replay_parity"),
+        ([], r"Task 1.1 authored set: missing=.*MANIFEST.json.*replay_parity"),
         (
-            ["engine_rs/tests/replay_parity.rs", "engine_rs/tests/other.rs"],
+            [
+                "engine_rs/tests/replay_parity.rs",
+                checker.GENERATED_MANIFEST,
+                "engine_rs/tests/other.rs",
+            ],
             r"Task 1.1 authored set: .*extra=.*other.rs",
         ),
     ],
@@ -272,3 +280,117 @@ def test_binary_edits_are_rejected(path: str) -> None:
     }
     with pytest.raises(ValueError, match=r"UTF-8|binary fixtures"):
         checker.verify(manifest, {path: original}, {path: original})
+
+
+PIN_PAIR = ("1.32.7", "a" * 64)
+
+
+def generated_fixture() -> tuple[dict[str, Any], dict[str, bytes]]:
+    traces = {"gen-a.jsonl.gz": b"trace a", "divergence-b.jsonl.gz": b"trace b"}
+    entries: list[dict[str, Any]] = [
+        {
+            "path": name,
+            "sha256": checker.sha(data),
+            "bytes": len(data),
+            "seed": 1,
+            "policies": ["random", "edge"],
+            "policy_seed": 2,
+            "config_variant": "default",
+            "transitions": 719,
+            "rejected": 0,
+        }
+        for name, data in traces.items()
+    ]
+    entries[1]["probe"] = '{"farmer":["PLANT",["WHEAT"]]}'
+    entries[1]["expected_divergence"] = {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "reason": "D2: documented",
+    }
+    manifest = {
+        "schema_version": 1,
+        "format": checker.TRACE_FORMAT,
+        "generator": "scripts/kaggriculture_parity/generate_traces.py",
+        "kaggle_environments_version": PIN_PAIR[0],
+        "python_engine_sha256": PIN_PAIR[1],
+        "traces": entries,
+    }
+    return manifest, traces
+
+
+def _verify_generated(manifest: dict[str, Any], traces: dict[str, bytes]) -> int:
+    return int(
+        checker.verify_generated(json.dumps(manifest).encode(), traces, PIN_PAIR)
+    )
+
+
+def test_generated_manifest_pins_every_trace() -> None:
+    assert _verify_generated(*generated_fixture()) == 2
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("edited trace", "trace hash"),
+        ("wrong size", "trace size"),
+        ("unlisted trace", "generated trace inventory"),
+        ("missing trace", "is missing"),
+        ("other engine", "Cargo engine pin"),
+        ("over budget", "budget"),
+        ("no reason", "reason"),
+        ("probe without expectation", "go together"),
+        ("nested path", "plain"),
+        ("duplicate", "duplicate"),
+        ("extra key", "schema keys"),
+    ],
+)
+def test_generated_manifest_drift_is_rejected(mutation: str, message: str) -> None:
+    manifest, traces = generated_fixture()
+    first = manifest["traces"][0]
+    if mutation == "edited trace":
+        traces[first["path"]] = b"trace A"
+    elif mutation == "wrong size":
+        first["bytes"] += 1
+    elif mutation == "unlisted trace":
+        traces["gen-c.jsonl.gz"] = b"unlisted"
+    elif mutation == "missing trace":
+        del traces[first["path"]]
+    elif mutation == "other engine":
+        manifest["python_engine_sha256"] = "b" * 64
+    elif mutation == "over budget":
+        traces[first["path"]] = b"x" * (checker.GENERATED_BUDGET_BYTES + 1)
+        first["sha256"] = checker.sha(traces[first["path"]])
+        first["bytes"] = len(traces[first["path"]])
+    elif mutation == "no reason":
+        manifest["traces"][1]["expected_divergence"]["reason"] = " "
+    elif mutation == "probe without expectation":
+        del manifest["traces"][1]["expected_divergence"]
+    elif mutation == "nested path":
+        first["path"] = "sub/gen-a.jsonl.gz"
+    elif mutation == "duplicate":
+        manifest["traces"].append(dict(first))
+    else:
+        first["note"] = "unexpected"
+    with pytest.raises(ValueError, match=message):
+        _verify_generated(manifest, traces)
+
+
+def test_generated_traces_are_split_from_engine_inventory() -> None:
+    current = {
+        "engine_rs/src/lib.rs": b"lib",
+        checker.GENERATED_MANIFEST: b"{}",
+        f"{checker.GENERATED_DIR}/gen-a.jsonl.gz": b"trace",
+    }
+    engine, generated = checker.split_generated(current)
+    assert set(engine) == {"engine_rs/src/lib.rs", checker.GENERATED_MANIFEST}
+    assert generated == {"gen-a.jsonl.gz": b"trace"}
+
+
+def test_engine_pin_reads_cargo_metadata() -> None:
+    cargo = (Path(__file__).parents[2] / "engine_rs/Cargo.toml").read_bytes()
+    assert checker.engine_pin(cargo) == (
+        "1.32.7",
+        "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e",
+    )

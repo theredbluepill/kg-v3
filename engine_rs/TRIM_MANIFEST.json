@@ -703,8 +703,13 @@
   "authored": [
     {
       "path": "engine_rs/tests/replay_parity.rs",
-      "sha256": "a581631ec0837869be81d1aff2479d00d813c739cd712188fa52ecba09ffb8da",
-      "reason": "New direct native-reset official-trace parity and comparator regressions"
+      "sha256": "be54f5e36ed2cb470edb4e18b083437f5fc0f1c9ae275f3272d2956b18520d71",
+      "reason": "Direct native-reset parity replay over official, committed generated and KAGG_PARITY_TRACES traces; comparator regressions; perturbation and expected-divergence checks (Task 1.1b)"
+    },
+    {
+      "path": "engine_rs/fixtures/generated/MANIFEST.json",
+      "sha256": "307b935404a006d62c6c5f4d48a33a75a31a55942252859114dffdb86679900a",
+      "reason": "Pins each Task 1.1b trace generated live from kaggle-environments 1.32.7 (SHA-256, size, policies, seeds, config, documented expected divergences)"
     }
   ],
   "non_engine_changes": [
@@ -714,11 +719,11 @@
     },
     {
       "path": "scripts/check_engine_trim.py",
-      "reason": "Python provenance checker required by Claude review; replaces planned Node tool."
+      "reason": "Python provenance checker required by Claude review; replaces planned Node tool. Task 1.1b: also validates the generated-trace manifest, inventory, hashes, engine pin and 4 MB budget."
     },
     {
       "path": "tests/tools/test_check_engine_trim.py",
-      "reason": "Test-first pytest coverage for provenance and inventory drift."
+      "reason": "Test-first pytest coverage for provenance and inventory drift. Task 1.1b: generated-manifest drift cases."
     },
     {
       "path": "justfile",
@@ -726,7 +731,7 @@
     },
     {
       "path": "docs/rules-parity-coverage.md",
-      "reason": "Document current Kaggriculture replay and unit coverage without changing Orbit coverage."
+      "reason": "Document current Kaggriculture replay and unit coverage without changing Orbit coverage. Task 1.1b: live differential parity coverage, divergences and limits."
     },
     {
       "path": "cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md",
@@ -738,11 +743,35 @@
     },
     {
       "path": "cookbook/log.md",
-      "reason": "Prepend material Task 1.1 adaptation record."
+      "reason": "Prepend material Task 1.1 adaptation record. Task 1.1b: prepend the live parity record."
     },
     {
       "path": "ops/rebuild-2026-09-29/1.1",
       "reason": "Directory of source-bound command receipts, test-first failures, preserved dirty bytes and result inventory."
+    },
+    {
+      "path": "scripts/kaggriculture_parity/generate_traces.py",
+      "reason": "Task 1.1b hash-guarded live trace generator over Kaggle's Python engine"
+    },
+    {
+      "path": "scripts/kaggriculture_parity/sweep.py",
+      "reason": "Task 1.1b local differential sweep runner and JSON summary"
+    },
+    {
+      "path": "tests/scripts/test_kaggriculture_parity.py",
+      "reason": "Task 1.1b hash guard, trace-format round trip, coverage and optional live regeneration tests"
+    },
+    {
+      "path": "ops/rebuild-2026-09-29/1.1b",
+      "reason": "Task 1.1b receipts: sweep summary, first failing traces and command logs"
+    },
+    {
+      "path": "cookbook/references/live-differential-parity-checks-the-rust-kernel.md",
+      "reason": "Task 1.1b Reference for the live differential parity check and findings"
+    },
+    {
+      "path": "cookbook/references/index.md",
+      "reason": "List the Task 1.1b parity Reference"
     }
   ]
 }

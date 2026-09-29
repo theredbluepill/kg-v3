@@ -1,0 +1,275 @@
+{
+  "schema_version": 1,
+  "format": "kaggriculture-re-parity-v1",
+  "generator": "scripts/kaggriculture_parity/generate_traces.py",
+  "kaggle_environments_version": "1.32.7",
+  "python_engine_sha256": "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e",
+  "traces": [
+    {
+      "path": "gen-random-vs-random.jsonl.gz",
+      "sha256": "17801f0bffd7f73291334c3dd4beebe9265c60f724dd0c277143069b62407ad0",
+      "bytes": 105461,
+      "seed": 11,
+      "policies": [
+        "random",
+        "random"
+      ],
+      "policy_seed": 1,
+      "config_variant": "default",
+      "transitions": 719,
+      "rejected": 0
+    },
+    {
+      "path": "gen-edge-vs-edge.jsonl.gz",
+      "sha256": "c076f0b32c29aa3762d1b195687c161d337dfb53a131beb3e32f13b8c493e531",
+      "bytes": 117171,
+      "seed": 22,
+      "policies": [
+        "edge",
+        "edge"
+      ],
+      "policy_seed": 2,
+      "config_variant": "default",
+      "transitions": 719,
+      "rejected": 10
+    },
+    {
+      "path": "gen-starter-vs-random.jsonl.gz",
+      "sha256": "fb32a524ff413790369c38c0415aa82fc5e12f8b29c084fd809e3676f582129b",
+      "bytes": 85670,
+      "seed": 33,
+      "policies": [
+        "builtin:starter",
+        "builtin:random"
+      ],
+      "policy_seed": 3,
+      "config_variant": "default",
+      "transitions": 719,
+      "rejected": 0
+    },
+    {
+      "path": "gen-random-vs-edge.jsonl.gz",
+      "sha256": "74bc4b8a8b85b0798960cb0852189c0094c9f36cf78d64e3e2700c0bd25145d9",
+      "bytes": 111741,
+      "seed": 44,
+      "policies": [
+        "random",
+        "edge"
+      ],
+      "policy_seed": 4,
+      "config_variant": "default",
+      "transitions": 719,
+      "rejected": 5
+    },
+    {
+      "path": "gen-edge-free-hire.jsonl.gz",
+      "sha256": "e6e35fc9fd937952651b83883934118d078a7789bc9760031c97deae87e0019f",
+      "bytes": 49255,
+      "seed": 55,
+      "policies": [
+        "edge",
+        "edge"
+      ],
+      "policy_seed": 5,
+      "config_variant": "free-hire",
+      "transitions": 71,
+      "rejected": 0
+    },
+    {
+      "path": "gen-edge-vs-random-rich.jsonl.gz",
+      "sha256": "07372772067545588ae1436f830b94f962527f61fb1bce4c25165f435b1c87a5",
+      "bytes": 21607,
+      "seed": 66,
+      "policies": [
+        "edge",
+        "random"
+      ],
+      "policy_seed": 6,
+      "config_variant": "rich",
+      "transitions": 95,
+      "rejected": 1
+    },
+    {
+      "path": "gen-random-vs-starter-custom.jsonl.gz",
+      "sha256": "796767f33efb70f6d591434bcc6ef5c831d9f03f5930a23ca2e426dd76581d89",
+      "bytes": 70921,
+      "seed": 18446744073709551623,
+      "policies": [
+        "random",
+        "builtin:starter"
+      ],
+      "policy_seed": 7,
+      "config_variant": "custom",
+      "transitions": 199,
+      "rejected": 0
+    },
+    {
+      "path": "gen-pass-vs-edge-negative-seed.jsonl.gz",
+      "sha256": "2017030c00cefe0fd3e069026645f64149cf4e201aa36844fdbd3d1f1f58801d",
+      "bytes": 95654,
+      "seed": -123456,
+      "policies": [
+        "builtin:pass",
+        "edge"
+      ],
+      "policy_seed": 8,
+      "config_variant": "default",
+      "transitions": 719,
+      "rejected": 9
+    },
+    {
+      "path": "divergence-d1-unicode-digit-unit-count.jsonl.gz",
+      "sha256": "27b4767f34d518131099b959f8b47e8de1eabf59bed9b615baad2b30e8dad19e",
+      "bytes": 1337,
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "policy_seed": 0,
+      "config_variant": "probe",
+      "transitions": 5,
+      "rejected": 0,
+      "probe": "{\"farmer\":[\"PICKUP\",\"WHEAT\",\"\\u0663\"],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "expected_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_error",
+        "field": "step",
+        "reason": "D1: Python int() parses non-ASCII Unicode decimal digit strings (e.g. U+0663, U+FF13); the Rust kernel rejects them. Unit counts: Rust errors where Python acts; market quantities: Rust drops the order where Python executes it. The vendored kernel bytes are pinned, so this is recorded, not repaired."
+      }
+    },
+    {
+      "path": "divergence-d1-unicode-digit-market-quantity.jsonl.gz",
+      "sha256": "da31413691ce16cfe054075c8105735504284f01637029a4c4261aa1bf0e4cff",
+      "bytes": 1345,
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "policy_seed": 0,
+      "config_variant": "probe",
+      "transitions": 5,
+      "rejected": 0,
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_PRODUCT\",\"FERTILIZER\",\"\\uff13\"]]}",
+      "expected_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "public state",
+        "field": "public.farms[0].money",
+        "reason": "D1: Python int() parses non-ASCII Unicode decimal digit strings (e.g. U+0663, U+FF13); the Rust kernel rejects them. Unit counts: Rust errors where Python acts; market quantities: Rust drops the order where Python executes it. The vendored kernel bytes are pinned, so this is recorded, not repaired."
+      }
+    },
+    {
+      "path": "divergence-d2-unhashable-plant-crop.jsonl.gz",
+      "sha256": "1e28180c2801d460ab088a5ebbe7e7c0c339831168e6c7eb687d3d9290d0ea7d",
+      "bytes": 1378,
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "policy_seed": 0,
+      "config_variant": "probe",
+      "transitions": 5,
+      "rejected": 1,
+      "probe": "{\"farmer\":[\"PLANT\",[\"WHEAT\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "expected_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "reason": "D2: Python raises TypeError when an unhashable JSON array/object reaches a dict lookup (unit verb, PLANT crop incl. missing hands, PICKUP/PLACE item, BUY_SEED/BUY_ANIMAL item), so Kaggle's env.step fails and keeps its state; the Rust kernel treats the command as a no-op and accepts the step. The vendored kernel bytes are pinned, so this is recorded, not repaired."
+      }
+    },
+    {
+      "path": "divergence-d2-unhashable-unit-verb.jsonl.gz",
+      "sha256": "99b0e2e3f167b89dcdc6750a827cfb42748f6543f669b47d32faf39ccc5046a2",
+      "bytes": 1369,
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "policy_seed": 0,
+      "config_variant": "probe",
+      "transitions": 5,
+      "rejected": 1,
+      "probe": "{\"farmer\":[[\"NORTH\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "expected_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "reason": "D2: Python raises TypeError when an unhashable JSON array/object reaches a dict lookup (unit verb, PLANT crop incl. missing hands, PICKUP/PLACE item, BUY_SEED/BUY_ANIMAL item), so Kaggle's env.step fails and keeps its state; the Rust kernel treats the command as a no-op and accepts the step. The vendored kernel bytes are pinned, so this is recorded, not repaired."
+      }
+    },
+    {
+      "path": "divergence-d2-unhashable-shed-item.jsonl.gz",
+      "sha256": "2d2606a7f89cc223bdb1bc311880f164ba6a319c1db05939982545835370072c",
+      "bytes": 1388,
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "policy_seed": 0,
+      "config_variant": "probe",
+      "transitions": 5,
+      "rejected": 1,
+      "probe": "{\"farmer\":[\"PICKUP\",{\"crop\":\"WHEAT\"}],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "expected_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "reason": "D2: Python raises TypeError when an unhashable JSON array/object reaches a dict lookup (unit verb, PLANT crop incl. missing hands, PICKUP/PLACE item, BUY_SEED/BUY_ANIMAL item), so Kaggle's env.step fails and keeps its state; the Rust kernel treats the command as a no-op and accepts the step. The vendored kernel bytes are pinned, so this is recorded, not repaired."
+      }
+    },
+    {
+      "path": "divergence-d2-unhashable-plant-in-missing-hand.jsonl.gz",
+      "sha256": "9b4468cc37ae3b2cf7d70ce065c50fe3c12fd7a01054845baf92f4613f0d74ff",
+      "bytes": 1387,
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "policy_seed": 0,
+      "config_variant": "probe",
+      "transitions": 5,
+      "rejected": 1,
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[[\"PASS\"],[\"PLANT\",[\"WHEAT\"]]],\"market\":[]}",
+      "expected_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "reason": "D2: Python raises TypeError when an unhashable JSON array/object reaches a dict lookup (unit verb, PLANT crop incl. missing hands, PICKUP/PLACE item, BUY_SEED/BUY_ANIMAL item), so Kaggle's env.step fails and keeps its state; the Rust kernel treats the command as a no-op and accepts the step. The vendored kernel bytes are pinned, so this is recorded, not repaired."
+      }
+    },
+    {
+      "path": "divergence-d2-unhashable-market-item.jsonl.gz",
+      "sha256": "b80f7674e77222db2089492e18fac5c34df65c95cb4eac681326d956908e949c",
+      "bytes": 1375,
+      "seed": 7,
+      "policies": [
+        "script",
+        "builtin:pass"
+      ],
+      "policy_seed": 0,
+      "config_variant": "probe",
+      "transitions": 5,
+      "rejected": 1,
+      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_SEED\",[\"WHEAT\"],1]]}",
+      "expected_divergence": {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "reason": "D2: Python raises TypeError when an unhashable JSON array/object reaches a dict lookup (unit verb, PLANT crop incl. missing hands, PICKUP/PLACE item, BUY_SEED/BUY_ANIMAL item), so Kaggle's env.step fails and keeps its state; the Rust kernel treats the command as a no-op and accepts the step. The vendored kernel bytes are pinned, so this is recorded, not repaired."
+      }
+    }
+  ]
+}
