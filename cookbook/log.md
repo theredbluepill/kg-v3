@@ -9,6 +9,7 @@
 - F4-F6: tests for the reverse logger mismatch, `-dirty`, `started_at` (now a timezone-aware ISO time) and the netrc login placeholder; `--source-commit` is accepted only without git metadata and rejected when it disagrees with git; `WandbLogger` rejects a run W&B started in another mode.
 - F3: the [[references/v3-launchers-fail-fast-without-wandb-credentials|W&B Reference]], the [[workflows/install-the-wandb-credential-before-any-pod-launch|pod credential Workflow]], the audit and both indexes now say "all v3 launchers on integration" (`run_ppo` only) and name `train_bc`'s adoption as the step right after the BC landing in this workflow.
 - Claude's own 16 mutations (`ops/rebuild-2026-09-29/wandb-2026-09-29/claude-verify-r1-fix-mutations.log`) were all killed; not an independent check. No independent APPROVE yet.
+- `just prepare` on `0e608e2` exited 0: Python 2,480 passed, 21 skipped; Rust 274 passed, 5 ignored (`ops/rebuild-2026-09-29/wandb-2026-09-29/prepare-claude-r1-fix.log`).
 
 ## 2026-09-29 — Merge Task 7.1's native opponents onto the integration
 
