@@ -26,6 +26,13 @@ from owl.model import (
     lora_config_for_model,
     roundtrip_lora_base_quantization,
 )
+from owl.model.kaggriculture import KaggricultureTransformerConfig
+from owl.model.kaggriculture_workload import (
+    WorkloadHeadroom,
+    check_workload_headroom,
+    headroom_log_lines,
+    ppo_forward_workloads,
+)
 from owl.replay import ReplayRecorder
 from owl.rl import (
     ActionBundle,
@@ -43,7 +50,7 @@ from owl.rl import (
     VectorizedEnv,
 )
 from owl.rs import assert_release_build
-from owl.train import FullConfig, PPOTrainer, configure_torch
+from owl.train import FullConfig, PPOConfig, PPOTrainer, configure_torch
 from owl.train.distributed import (
     DistributedContext,
     all_reduce_any,
@@ -136,6 +143,14 @@ def main() -> None:
 
         if isinstance(launch, FreshLaunch):
             cfg = _with_runtime_gpus(cfg, distributed.world_size)
+        else:
+            cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+        # Before any run dir, env or model: the per-rank shapes are final here.
+        _check_model_workload(
+            cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+        )
+
+        if isinstance(launch, FreshLaunch):
             run_dir = (
                 _create_run_dir(launch.output_dir)
                 if distributed.is_main_process
@@ -147,7 +162,6 @@ def main() -> None:
                 cfg.to_file(run_dir / "config.yaml")
             run_dir = broadcast_object(run_dir, distributed)
         else:
-            cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
             run_dir = launch.run_dir
 
         device = distributed.device
@@ -708,6 +722,38 @@ def _log_cli_overrides(
 
     overrides_flat = list(itertools.chain.from_iterable(raw_overrides))
     print(f"Launched with the following raw manual overrides: '{overrides_flat}'")
+
+
+def _check_model_workload(
+    model_config: ModelConfig | KaggricultureTransformerConfig,
+    *,
+    n_envs: int,
+    rl: PPOConfig,
+    distributed: DistributedContext,
+) -> tuple[WorkloadHeadroom, ...]:
+    """Fail fast when a forward exceeds the model's GEMM chunking; print headroom.
+
+    Only the Kaggriculture model chunks its trunk and heads below the 2**31 GEMM
+    extent; Isaiah's Orbit models issue unchunked forwards and have no limit to
+    check. The BC trainer adds its batch as a ``ForwardWorkload`` when it exists.
+    """
+    if not isinstance(model_config, KaggricultureTransformerConfig):
+        return ()
+    reports = check_workload_headroom(
+        model_config,
+        ppo_forward_workloads(
+            n_envs=n_envs,
+            horizon=rl.horizon,
+            segments_per_minibatch=rl.segments_per_minibatch,
+            teacher_segments_per_minibatch=(
+                None if rl.teacher_mode is None else rl.teacher_segments_per_minibatch
+            ),
+        ),
+    )
+    if distributed.is_main_process:
+        for line in headroom_log_lines(reports):
+            print(line)
+    return reports
 
 
 def _create_run_dir(output_dir: Path) -> Path:

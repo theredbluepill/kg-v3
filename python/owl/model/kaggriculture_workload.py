@@ -6,17 +6,18 @@ chunks its compiled trunk (``rows_per_chunk``) and its heads
 (cookbook reference compiled-gemm-template-overflows-above-2-21-rows). This
 module computes, from config shapes alone, the rows each training forward
 issues and how the model's own limits divide them, so a workload the model
-cannot service fails at config load instead of mid-run, and the headroom is
-logged before any GPU work.
+cannot service fails at startup (``scripts/run_ppo.py``) before any model is
+allocated, and the headroom is printed in the run log.
 
-The trunk limit assumes every row at the full padded sequence length, which is
-the padded path's exact chunk size and a conservative bound for the packed path
-(packed tokens never exceed padded tokens).
+Trunk figures assume every row at the full padded sequence length. That is the
+padded path's exact chunk size; the packed path plans chunks from actual token
+counts (``packed_row_chunks``), which never exceed padded tokens, so the reported
+trunk calls are an upper bound and the trunk headroom a lower bound. Head
+chunking depends only on rows, so head figures are exact.
 """
 
 from __future__ import annotations
 
-import logging
 import math
 from dataclasses import dataclass
 
@@ -47,17 +48,21 @@ class WorkloadHeadroom:
     head_rows_per_call: int
 
     @property
-    def trunk_headroom(self) -> float:
-        """Single-call trunk limit over rows; below 1 the trunk chunks."""
+    def min_trunk_headroom(self) -> float:
+        """Full-padding trunk rows per call over rows; a lower bound.
+
+        Below 1 the trunk chunks when rows are fully padded.
+        """
         return self.trunk_rows_per_call / self.rows
 
     @property
     def head_headroom(self) -> float:
-        """Single-call head limit over rows; below 1 the heads chunk."""
+        """Head rows per call over rows; below 1 the heads chunk."""
         return self.head_rows_per_call / self.rows
 
     @property
-    def trunk_calls(self) -> int:
+    def max_trunk_calls(self) -> int:
+        """Trunk calls at full padding; packed batches may need fewer."""
         return math.ceil(self.rows / self.trunk_rows_per_call)
 
     @property
@@ -66,10 +71,12 @@ class WorkloadHeadroom:
 
     def log_line(self) -> str:
         return (
-            f"{self.name}: {self.rows} rows x {self.tokens_per_row} tokens; "
-            f"trunk {self.trunk_rows_per_call} rows/call "
-            f"({self.trunk_headroom:.4g}x headroom, {self.trunk_calls} call(s)); "
-            f"heads {self.head_rows_per_call} rows/call "
+            f"GEMM workload headroom {self.name}: {self.rows} rows x "
+            f"{self.tokens_per_row} padded tokens; trunk "
+            f"{self.trunk_rows_per_call} rows/call at full padding "
+            f"(>= {self.min_trunk_headroom:.4g}x headroom, "
+            f"<= {self.max_trunk_calls} call(s)); heads "
+            f"{self.head_rows_per_call} rows/call "
             f"({self.head_headroom:.4g}x headroom, {self.head_calls} call(s))"
         )
 
@@ -123,8 +130,9 @@ def check_workload_headroom(
 ) -> tuple[WorkloadHeadroom, ...]:
     """Assert each workload is serviceable within the model's chunking limits.
 
-    Uses the model's own ``rows_per_chunk`` and ``head_rows_per_chunk``, so the
-    reported calls are the calls the model will issue. Raises ``ValueError``
+    Uses the model's own ``rows_per_chunk`` (at the full padded sequence length)
+    and ``head_rows_per_chunk``: head calls are the calls the model issues, trunk
+    calls are their full-padding upper bound. Raises ``ValueError``
     when a single row cannot fit the trunk or head limit (the model would raise
     at the first forward) or a workload is empty.
     """
@@ -157,8 +165,6 @@ def check_workload_headroom(
     return tuple(reports)
 
 
-def log_workload_headroom(
-    reports: tuple[WorkloadHeadroom, ...], logger: logging.Logger
-) -> None:
-    for report in reports:
-        logger.info("GEMM workload headroom %s", report.log_line())
+def headroom_log_lines(reports: tuple[WorkloadHeadroom, ...]) -> tuple[str, ...]:
+    """One run-log line per workload, labelling the padded trunk bounds."""
+    return tuple(report.log_line() for report in reports)

@@ -1,8 +1,18 @@
 # Change log
 
+## 2026-09-29 — Wire the Kaggriculture workload check into run_ppo startup
+
+Codex rejected Task 3.4 (`ops/rebuild-2026-09-29/codex/verify-3.4-r1.md`). The fix:
+- `scripts/run_ppo.py` now calls `_check_model_workload` once the per-rank shapes are final and before the run directory, env or model exist. Kaggriculture workloads the model cannot service fail there, and the main process prints the headroom. Orbit models are skipped.
+- Head calls are exact. Trunk calls are now labelled an upper bound and trunk headroom a lower bound, because they assume full padding.
+- The schema-coverage claim is narrowed to the observation, action, model, optimizer and PPO sections.
+- `tests/scripts/test_run_ppo.py` drives `main` through a patched loader, because the configs load through `FullConfig` only after Task 3.1.
+
+`py-prepare`: 1,331 passed and 10 skipped; ruff, format, mypy (59 files) and docs-fresh passed, with `DOCS_CURRENT=1` after README was reviewed and still current. See the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]].
+
 ## 2026-09-29 — Add Kaggriculture configs that follow Isaiah's scaling_6m recipe
 
-Rebuild Task 3.4 adds `configs/kaggriculture_2rank.yaml` (128 envs/rank, spm 8) and `configs/kaggriculture_4rank.yaml` (64/4), deliberately aligned to Isaiah per the [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|recipe Decision]] (its Limits now link them). They use his multi-GPU rule, so the global workload equals `scaling_6m`; the optimizer, PPO, teacher and compile settings are his. A local CPU config and a tiny CPU model preset are added for Task 3.5. The startup workload check (`python/owl/model/kaggriculture_workload.py`) sizes rollout, minibatch, teacher-chunk and evaluation rows against the model's trunk and head chunking and logs the headroom; at 2 ranks the 16,384-row teacher chunk runs in 3 trunk calls. Tests validate each config section against its schema; FullConfig loading and model construction are skipped until Task 3.1. `py-prepare`: 1,324 passed, 10 skipped. No GPU or training run. See the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]].
+Rebuild Task 3.4 adds `configs/kaggriculture_2rank.yaml` (128 envs/rank, spm 8) and `configs/kaggriculture_4rank.yaml` (64/4), deliberately aligned to Isaiah per the [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|recipe Decision]] (its Limits now link them). They use his multi-GPU rule, so the global workload equals `scaling_6m`; the optimizer, PPO, teacher and compile settings are his. A local CPU config and a tiny CPU model preset are added for Task 3.5. The startup workload check (`python/owl/model/kaggriculture_workload.py`) sizes rollout, minibatch, teacher-chunk and evaluation rows against the model's trunk and head chunking and logs the headroom; at 2 ranks the 16,384-row teacher chunk runs in at most 3 trunk calls (full padding). Tests validate the observation, action, model, optimizer and PPO sections against their schemas; env keys and reward-shaping values get exact key and value assertions only. FullConfig loading and model construction are skipped until Task 3.1. `py-prepare`: 1,324 passed, 10 skipped. No GPU or training run. See the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]].
 
 ## 2026-09-29 — Reconcile overflow notes after merging the heads and GEMM evidence
 

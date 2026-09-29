@@ -3,13 +3,14 @@
 The ranked configs apply Isaiah's multi-GPU rule (``winner_ce_6m_4x5090.yaml``):
 per-rank ``n_envs`` and ``segments_per_minibatch`` are divided by the world
 size, everything else is scaling_6m's. Until Task 3.1 registers the
-Kaggriculture env and model in ``FullConfig``, each section is validated against
-its own schema here.
+Kaggriculture env and model in ``FullConfig``, the observation, action, model,
+optimizer and PPO sections are validated against their own schemas here; the
+env keys and reward-shaping values have no schema yet and receive only exact
+key and value assertions.
 """
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -23,7 +24,7 @@ from owl.model import kaggriculture as km
 from owl.model.kaggriculture_workload import (
     ForwardWorkload,
     check_workload_headroom,
-    log_workload_headroom,
+    headroom_log_lines,
     ppo_forward_workloads,
 )
 from owl.train import FullConfig, OptimizerConfig, PPOConfig
@@ -198,11 +199,12 @@ def _headroom(name: str) -> dict[str, tuple[int, int, int]]:
         assert report.tokens_per_row == 709
         assert report.trunk_rows_per_call == 5_915
         assert report.head_rows_per_call == 11_096
-    return {r.name: (r.rows, r.trunk_calls, r.head_calls) for r in reports}
+    return {r.name: (r.rows, r.max_trunk_calls, r.head_calls) for r in reports}
 
 
 def test_two_rank_workloads_fit_the_model_chunking() -> None:
-    # teacher_chunk = min(128, 128) x 64 x 2 rows: three trunk and two head calls.
+    # teacher_chunk = min(128, 128) x 64 x 2 rows: at most three trunk calls
+    # (exactly three when every row is fully padded) and two head calls.
     assert _headroom("kaggriculture_2rank.yaml") == {
         "rollout": (256, 1, 1),
         "minibatch": (1_024, 1, 1),
@@ -221,22 +223,33 @@ def test_four_rank_workloads_fit_the_model_chunking() -> None:
     }
 
 
-def test_headroom_is_logged(caplog: pytest.LogCaptureFixture) -> None:
+def test_headroom_lines_label_the_padded_trunk_bounds() -> None:
     ours = _sections("kaggriculture_2rank.yaml")
     reports = check_workload_headroom(
-        ours.model, (ForwardWorkload("rollout", 256), ForwardWorkload("bc", 4_096))
+        ours.model, (ForwardWorkload("rollout", 256), ForwardWorkload("bc", 16_384))
     )
-    logger = logging.getLogger("test_kaggriculture_workload")
-    with caplog.at_level(logging.INFO, logger=logger.name):
-        log_workload_headroom(reports, logger)
-    assert [r.getMessage() for r in caplog.records] == [
-        "GEMM workload headroom rollout: 256 rows x 709 tokens; trunk 5915 "
-        "rows/call (23.11x headroom, 1 call(s)); heads 11096 rows/call "
-        "(43.34x headroom, 1 call(s))",
-        "GEMM workload headroom bc: 4096 rows x 709 tokens; trunk 5915 "
-        "rows/call (1.444x headroom, 1 call(s)); heads 11096 rows/call "
-        "(2.709x headroom, 1 call(s))",
-    ]
+    assert headroom_log_lines(reports) == (
+        "GEMM workload headroom rollout: 256 rows x 709 padded tokens; trunk 5915 "
+        "rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads "
+        "11096 rows/call (43.34x headroom, 1 call(s))",
+        "GEMM workload headroom bc: 16384 rows x 709 padded tokens; trunk 5915 "
+        "rows/call at full padding (>= 0.361x headroom, <= 3 call(s)); heads "
+        "11096 rows/call (0.6772x headroom, 2 call(s))",
+    )
+
+
+def test_packed_trunk_calls_never_exceed_the_padded_bound() -> None:
+    # Codex's counterexample: 16,384 rows of 300 packed tokens need 2 packed
+    # chunks where full padding plans 3, so padded trunk calls are an upper
+    # bound and the padded headroom a lower bound.
+    config = km.KaggricultureTransformerConfig()
+    (report,) = check_workload_headroom(config, (ForwardWorkload("teacher", 16_384),))
+    width = km.trunk_gemm_width(config)
+    for tokens in (1, 300, report.tokens_per_row):
+        packed = km.packed_row_chunks([tokens] * report.rows, width=width)
+        assert len(packed) <= report.max_trunk_calls
+    assert len(km.packed_row_chunks([300] * report.rows, width=width)) == 2
+    assert report.max_trunk_calls == 3
 
 
 def test_no_teacher_omits_the_teacher_workload() -> None:
