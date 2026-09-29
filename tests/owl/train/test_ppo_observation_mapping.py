@@ -17,12 +17,19 @@ from typing import Any, Literal
 
 import pytest
 import torch
+from owl.kaggriculture import types as kt
+from owl.kaggriculture.env import allocate_observation_buffers
 from owl.rl import (
     ACTION_ENTITY_SLOTS,
     OUTER_PLAYER_SLOTS,
+    ActionDiscreteTargetBinsConfig,
+    ActionDiscreteTargetsConfig,
     ActionMask,
+    ActionPureConfig,
     DiscreteTargetActionMask,
     DiscreteTargetBinActionMask,
+    EntityBasedConfig,
+    EntityBasedCrossAttnV1Config,
     ObsBatch,
     PureActionMask,
 )
@@ -222,7 +229,10 @@ def _obs_tensors(obs: BaseModel) -> dict[str, torch.Tensor | None]:
         value = getattr(obs, field)
         if isinstance(
             value,
-            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+            PureActionMask
+            | DiscreteTargetActionMask
+            | DiscreteTargetBinActionMask
+            | kt.KaggricultureActionMask,
         ):
             tensors[f"{field}.can_act"] = value.can_act
             if isinstance(value, PureActionMask | DiscreteTargetActionMask):
@@ -596,3 +606,191 @@ def test_observation_tensor_shapes_follow_other_schema_field_names() -> None:
         "tiles=(3, 2, 5, 3), market_prices=(3, 2, 4), seat_alive=(3, 2, 2), "
         "legal_moves.can_act=(3, 2, 2, 6)"
     )
+
+
+# --- Task 3.1 native Kaggriculture schema and base-commit Orbit custody ---------
+
+
+def test_kaggriculture_storage_and_every_mapping_preserve_schema() -> None:
+    source = allocate_observation_buffers(2, pin_memory=False)
+    generator = torch.Generator().manual_seed(917)
+    for tensor in _obs_tensors(source).values():
+        assert tensor is not None
+        tensor.copy_(_random_tensor(tuple(tensor.shape), tensor.dtype, generator))
+    rollout = ppo._PPORolloutBuffer(
+        horizon=3,
+        n_envs=2,
+        obs_spec=kt.KaggricultureObsConfig(),
+        action_spec=kt.KaggricultureActionConfig(),
+        device=torch.device("cpu"),
+    )
+    assert isinstance(rollout.obs, kt.KaggricultureObsBatch)
+    assert isinstance(rollout.obs.action_mask, kt.KaggricultureActionMask)
+    assert isinstance(rollout.actions, kt.KaggricultureActions)
+    assert rollout.obs.action_mask.can_act.shape == (3, 2, 2, 252)
+    assert rollout.obs.action_mask.can_act.dtype == torch.bool
+    assert rollout.actions.tokens.shape == (3, 2, 2, 252, 12)
+    assert rollout.actions.tokens.dtype == torch.int64
+    assert rollout.actions.lengths.shape == (3, 2, 2)
+    assert rollout.actions.lengths.dtype == torch.int64
+    assert rollout.logp.shape == (3, 2, 2)
+    assert rollout.entity_logp.shape == (3, 2, 2, 252)
+    actions = kt.KaggricultureActions(
+        tokens=torch.randint(0, 8, (2, 2, 252, 12), generator=generator),
+        lengths=torch.tensor([[2, 3], [4, 5]]),
+    )
+    for step in range(3):
+        rollout.write_step(
+            step,
+            obs=source,
+            actions=actions,
+            logp=torch.ones(2, 2),
+            entity_logp=torch.ones(2, 2, 252),
+            values=torch.zeros(2, 2),
+            rewards=torch.zeros(2, 2),
+            dones=torch.zeros(2, 2, dtype=torch.bool),
+        )
+    _assert_identical(ppo._obs_index(rollout.obs, torch.tensor(1)), source)
+    mapped = ppo._obs_to_device(source, torch.device("cpu"))
+    _assert_identical(mapped, source)
+    assert set(_data_ptrs(mapped).values()).isdisjoint(_data_ptrs(source).values())
+    ppo._copy_obs_to_device_(mapped, source)
+    _assert_identical(mapped, source)
+    segment = rollout.segment_major()
+    restored = ppo._obs_segment_major(segment.obs)
+    _assert_identical(restored, rollout.obs)
+    flat = ppo._flatten_obs_time(segment.obs)
+    assert isinstance(flat, kt.KaggricultureObsBatch)
+    assert flat.still_playing.shape == (6, 2)
+    indexed = ppo._actions_index(segment.actions, torch.tensor([1, 0]))
+    assert isinstance(indexed, kt.KaggricultureActions)
+    flat_actions = ppo._flatten_actions_time(indexed)
+    assert isinstance(flat_actions, kt.KaggricultureActions)
+    assert flat_actions.tokens.shape == (6, 2, 252, 12)
+    assert torch.equal(
+        flat_actions.tokens.reshape(2, 3, 2, 252, 12)[0, 1], actions.tokens[1]
+    )
+    assert ppo._observation_tensor_shapes(source) == _expected_shapes(source)
+
+
+def test_kaggriculture_actions_to_cpu_materializes_contiguous_int64() -> None:
+    # Same-device .to() alone preserves these noncontiguous strides.
+    tokens = torch.arange(2 * 2 * 252 * 24).reshape(2, 2, 252, 24)[..., ::2]
+    lengths = torch.tensor([[2, 0, 3, 0], [4, 0, 5, 0]])[:, ::2]
+    assert not tokens.is_contiguous()
+    assert not lengths.is_contiguous()
+    result = ppo._actions_to_cpu(
+        kt.KaggricultureActions(tokens=tokens, lengths=lengths)
+    )
+    assert isinstance(result, kt.KaggricultureActions)
+    for actual, original in ((result.tokens, tokens), (result.lengths, lengths)):
+        assert actual.dtype == torch.int64
+        assert actual.device.type == "cpu"
+        assert actual.is_contiguous()
+        assert torch.equal(actual, original)
+
+
+@pytest.fixture(scope="module")
+def base_ppo() -> Any:
+    """Read-only reference: execute exactly the requested base commit's module."""
+    import subprocess
+    import sys
+    import types
+
+    source = subprocess.check_output(
+        ["git", "show", "49a4835:python/owl/train/ppo.py"],
+        text=True,
+    )
+    module = types.ModuleType("_ppo_base_49a4835")
+    sys.modules[module.__name__] = module
+    exec(compile(source, "49a4835:python/owl/train/ppo.py", "exec"), module.__dict__)
+    return module
+
+
+def _assert_actions_identical(actual: Any, expected: Any) -> None:
+    assert type(actual) is type(expected)
+    for field in actual.__dataclass_fields__:
+        left, right = getattr(actual, field), getattr(expected, field)
+        assert left.dtype == right.dtype
+        assert left.shape == right.shape
+        assert left.stride() == right.stride()
+        assert torch.equal(left, right)
+
+
+@pytest.mark.parametrize("seed", _SEEDS)
+@pytest.mark.parametrize("cross_attention", [False, True])
+@pytest.mark.parametrize(
+    "action_spec",
+    [
+        ActionPureConfig(),
+        ActionDiscreteTargetsConfig(),
+        ActionDiscreteTargetBinsConfig(n_bins=3),
+    ],
+)
+def test_orbit_storage_and_actions_equal_base_49a4835(
+    base_ppo: Any,
+    seed: int,
+    cross_attention: bool,
+    action_spec: Any,
+) -> None:
+    obs_spec = (
+        EntityBasedCrossAttnV1Config() if cross_attention else EntityBasedConfig()
+    )
+    kwargs = dict(
+        horizon=3,
+        n_envs=2,
+        obs_spec=obs_spec,
+        action_spec=action_spec,
+        device=torch.device("cpu"),
+    )
+    actual, expected = (
+        ppo._PPORolloutBuffer(**kwargs),
+        base_ppo._PPORolloutBuffer(**kwargs),
+    )
+    _assert_identical(actual.obs, expected.obs)
+    _assert_actions_identical(actual.actions, expected.actions)
+    for field in (
+        "logp",
+        "entity_logp",
+        "values",
+        "rewards",
+        "dones",
+        "truncated",
+        "bootstrap_values",
+    ):
+        left, right = getattr(actual, field), getattr(expected, field)
+        assert left.shape == right.shape
+        assert left.dtype == right.dtype
+        assert torch.equal(left, right)
+    generator = torch.Generator().manual_seed(seed)
+    for tensor in _obs_tensors(actual.obs).values():
+        if tensor is not None:
+            tensor.copy_(_random_tensor(tuple(tensor.shape), tensor.dtype, generator))
+    for field in actual.actions.__dataclass_fields__:
+        tensor = getattr(actual.actions, field)
+        tensor.copy_(_random_tensor(tuple(tensor.shape), tensor.dtype, generator))
+    source_obs = base_ppo._obs_index(actual.obs, torch.tensor(1))
+    source_actions = base_ppo._actions_index(actual.actions, torch.tensor(1))
+    for step in range(3):
+        ppo._copy_obs_time_step(actual.obs, step, source_obs)
+        base_ppo._copy_obs_time_step(expected.obs, step, source_obs)
+        ppo._copy_actions_time_step(actual.actions, step, source_actions)
+        base_ppo._copy_actions_time_step(expected.actions, step, source_actions)
+    _assert_identical(actual.obs, expected.obs)
+    _assert_actions_identical(actual.actions, expected.actions)
+    for name, args in (
+        ("_obs_segment_major", (actual.obs,)),
+        ("_obs_index", (actual.obs, torch.tensor([2, 0]))),
+        ("_flatten_obs_time", (actual.obs,)),
+        ("_obs_to_device", (actual.obs, torch.device("cpu"))),
+    ):
+        _assert_identical(getattr(ppo, name)(*args), getattr(base_ppo, name)(*args))
+    for name, args in (
+        ("_actions_segment_major", (actual.actions,)),
+        ("_actions_index", (actual.actions, torch.tensor([2, 0]))),
+        ("_flatten_actions_time", (actual.actions,)),
+        ("_actions_to_cpu", (actual.actions,)),
+    ):
+        _assert_actions_identical(
+            getattr(ppo, name)(*args), getattr(base_ppo, name)(*args)
+        )

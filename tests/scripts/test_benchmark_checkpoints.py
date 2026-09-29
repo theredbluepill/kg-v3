@@ -34,6 +34,7 @@ from owl.rl import (
     ObsConfig,
     PureActionMask,
 )
+from owl.train import FullConfig
 
 _BENCHMARK_PATH = Path(__file__).parents[2] / "scripts" / "benchmark_checkpoints.py"
 _BENCHMARK_SPEC = importlib.util.spec_from_file_location(
@@ -66,6 +67,42 @@ def _loaded_checkpoint(
         model=model,
         env_steps=0,
     )
+
+
+def test_loaded_checkpoint_env_rejects_kaggriculture() -> None:
+    cfg = FullConfig.from_file(
+        _BENCHMARK_PATH.parent.parent / "configs/kaggriculture.yaml"
+    )
+    checkpoint = benchmark_checkpoints.LoadedCheckpoint(
+        path=Path("checkpoint.pt"), config=cfg, model=object(), env_steps=0
+    )
+
+    with pytest.raises(
+        RuntimeError, match="benchmark_checkpoints supports only Orbit checkpoints"
+    ):
+        _ = checkpoint.env
+
+
+def test_load_checkpoint_rejects_kaggriculture_before_model_creation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cfg = FullConfig.from_file(
+        _BENCHMARK_PATH.parent.parent / "configs/kaggriculture.yaml"
+    )
+    cfg.to_file(tmp_path / "config.yaml")
+    checkpoint_path = tmp_path / "checkpoint.pt"
+    torch.save({}, checkpoint_path)
+
+    def forbidden_model(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("the Orbit benchmark must reject Kaggriculture before allocation")
+
+    monkeypatch.setattr(benchmark_checkpoints, "create_model", forbidden_model)
+    with pytest.raises(
+        RuntimeError, match="benchmark_checkpoints supports only Orbit checkpoints"
+    ):
+        benchmark_checkpoints._load_checkpoint(
+            checkpoint_path, device=torch.device("cpu")
+        )
 
 
 def test_assignment_pattern_assigns_one_model_per_two_player_game() -> None:

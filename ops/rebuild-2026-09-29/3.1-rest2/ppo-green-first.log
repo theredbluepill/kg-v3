@@ -1,0 +1,182 @@
+........................................................................ [ 37%]
+........................................................................ [ 75%]
+...............................................F                         [100%]
+=================================== FAILURES ===================================
+_________________________ test_no_teacher_two_updates __________________________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-801/test_no_teacher_two_updates0')
+
+    def test_no_teacher_two_updates(tmp_path: Path) -> None:
+        torch.manual_seed(307)
+        device = torch.device("cpu")
+        obs_spec, action_spec = KaggricultureObsConfig(), KaggricultureActionConfig()
+        env = KaggricultureVectorizedEnv(
+            n_envs=1, seed=307, seed_stride=1,
+            config=KaggricultureGameConfig(episodeSteps=3),
+            reward_config=KaggricultureRewardConfig(
+                econ_shaping=0.2, econ_starvation_weight=4.0,
+                econ_drought_weight=1.0, econ_cap=0.25,
+                econ_ineffective_weight=0.0, econ_ineffective_cap=0.10,
+            ),
+            reward_mode="win_loss", native_threads=1, pin_memory=False,
+            transfer_device=device, obs_spec=obs_spec, action_spec=action_spec,
+        )
+        model = KaggricultureTransformer(
+            KaggricultureTransformerConfig(embed_dim=16, depth=1, n_heads=1,
+                mlp_ratio=1, n_scratch_tokens=0),
+            obs_spec=obs_spec, action_spec=action_spec,
+        )
+        trainer = PPOTrainer(
+            config=PPOConfig(horizon=2, ppo_epochs=1, segments_per_minibatch=1,
+                gradient_accumulation_steps=1, dtype="float32", model_compile="none",
+                compile_mode=None, teacher_mode=None),
+            env=env, model=model, optimizer=torch.optim.Adam(model.parameters(), lr=1e-4),
+            device=device,
+        )
+        initial = {name: value.clone() for name, value in model.state_dict().items()}
+>       results = [trainer.train_iteration() for _ in range(2)]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_training_smoke.py:44: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:750: in train_iteration
+    metrics, sampled_segments = self._update(
+python/owl/train/ppo.py:1149: in _update
+    update = self._update_minibatch(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <owl.train.ppo.PPOTrainer object at 0x113045700>
+segments = _PPORolloutSegments(obs=KaggricultureObsBatch(tile_kind=tensor([[[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, ...  0.0000],
+          [ -4.4965,  -2.0902,   0.0000,  ...,   0.0000,   0.0000,   0.0000]]]]), initial_hidden_state=None)
+advantages = tensor([[[-0.7009,  0.7263],
+         [-0.7596,  0.6964]]])
+returns = tensor([[[-0.7120,  0.7152],
+         [-0.7500,  0.7500]]])
+policy_mask = tensor([[[True, True],
+         [True, True]]])
+value_mask = tensor([[[True, True],
+         [True, True]]])
+indices = tensor([0])
+
+    def _update_minibatch(
+        self,
+        segments: _PPORolloutSegments,
+        advantages: torch.Tensor,
+        returns: torch.Tensor,
+        policy_mask: torch.Tensor,
+        value_mask: torch.Tensor,
+        indices: torch.Tensor,
+        *,
+        teacher_targets: TeacherTargets | None = None,
+        winner_targets: torch.Tensor | None = None,
+        value_clip_anchor: torch.Tensor,
+        loss_scale: float = 1.0,
+        step_optimizer: bool = True,
+    ) -> _PPOUpdateResult:
+        idx = indices
+        batch_segment_actions = _actions_index(segments.actions, idx)
+        batch_segment_obs = _obs_index(segments.obs, idx)
+        batch_hidden_state = self.model.index_hidden_state(
+            segments.initial_hidden_state,
+            idx,
+        )
+        teacher_model = self.teacher_model if self.teacher_active else None
+        if batch_hidden_state is None:
+            batch_actions = _flatten_actions_time(batch_segment_actions)
+            batch_obs = _flatten_obs_time(batch_segment_obs)
+        else:
+            batch_actions = batch_segment_actions
+            batch_obs = batch_segment_obs
+        batch_old_logp = _old_policy_logp_for_clip_mode(
+            segments,
+            idx,
+            self.config.ppo_clip_mode,
+        )
+        batch_old_values = value_clip_anchor[idx]
+        batch_returns = returns[idx]
+        batch_policy_mask = policy_mask[idx]
+        batch_value_mask = value_mask[idx]
+        batch_entity_policy_mask = (
+            _policy_entity_mask(batch_segment_obs)
+            if self.config.ppo_clip_mode == "per_entity"
+            else None
+        )
+        batch_advantages = advantages[idx]
+        if self.config.normalize_advantages:
+            batch_advantages = _normalize_masked_advantages(
+                batch_advantages,
+                batch_policy_mask,
+                context=(
+                    self.distributed_context
+                    if self.distributed_context.initialized
+                    else None
+                ),
+            )
+        batch_policy_weight = batch_policy_mask.to(dtype=batch_advantages.dtype)
+        batch_value_weight = batch_value_mask.to(dtype=batch_advantages.dtype)
+        batch_entity_policy_weight = (
+            None
+            if batch_entity_policy_mask is None
+            else batch_entity_policy_mask.to(dtype=batch_advantages.dtype)
+        )
+        teacher_kl_coef, teacher_value_coef = _scheduled_teacher_coefficients(
+            self.optimizer_steps,
+            self.config.teacher_schedule,
+            self.config,
+        )
+        compute_teacher_action_kl = teacher_model is not None and teacher_kl_coef > 0.0
+        compute_teacher_value = teacher_model is not None and teacher_value_coef > 0.0
+    
+        with _autocast_context(self.config, self.device):
+            if teacher_targets is None:
+                output = _model_evaluate_actions(
+                    self.model,
+                    batch_obs,
+                    batch_actions,
+                    hidden_state=batch_hidden_state,
+                    dones=segments.dones[idx],
+                )
+                teacher_action_kl = None
+                teacher_winner_probabilities = None
+                student_winner_log_probabilities = None
+            else:
+                teacher_evaluation = _model_evaluate_actions_with_cached_teacher(
+                    self.model,
+                    batch_segment_obs,
+                    batch_segment_actions,
+                    teacher_targets.index(idx),
+                    hidden_state=batch_hidden_state,
+                    dones=segments.dones[idx],
+                    compute_teacher_action_kl=compute_teacher_action_kl,
+                    compute_teacher_value=compute_teacher_value,
+                )
+                output = teacher_evaluation.student
+                teacher_action_kl = teacher_evaluation.action_kl
+                teacher_winner_probabilities = (
+                    teacher_evaluation.teacher_winner_probabilities
+                )
+                student_winner_log_probabilities = (
+                    teacher_evaluation.student_winner_log_probabilities
+                )
+        new_logp = _output_logp_for_clip_mode(
+            output,
+            self.config.ppo_clip_mode,
+        ).view_as(batch_old_logp)
+        entropy = _output_entropy_for_clip_mode(
+            output,
+            batch_old_logp,
+            self.config.ppo_clip_mode,
+        )
+        entropy_components = _output_entropy_components(output, segments.logp[idx])
+        new_values = _output_values(output).view_as(batch_old_values)
+        winner_log_probabilities = output.winner_log_probabilities
+        if winner_log_probabilities is not None:
+>           winner_log_probabilities = winner_log_probabilities.view_as(
+                batch_old_values
+            )
+E           RuntimeError: shape '[1, 2, 2]' is invalid for input of size 8
+
+python/owl/train/ppo.py:1351: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_training_smoke.py::test_no_teacher_two_updates
+1 failed, 191 passed in 0.35s

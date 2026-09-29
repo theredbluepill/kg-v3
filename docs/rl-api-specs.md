@@ -3,9 +3,10 @@
 This document describes the currently available RL observation and action specs.
 The Python config API uses pydantic discriminator fields so future specs can add
 different options without changing the outer `VectorizedEnv` constructor shape.
-`EnvConfig.n_envs` defaults to `2` and must be even so built-in checkpoint
+Orbit's `EnvConfig.n_envs` defaults to `2` and must be even so built-in checkpoint
 evaluation can split evaluation games across 2-player and 4-player batches.
-All tensor shapes in this document are local to one `VectorizedEnv` instance.
+Kaggriculture accepts one or more environments and has exactly two seats.
+All tensor shapes in this document are local to one vectorized environment instance.
 Distributed PPO creates one vectorized environment per rank, so global rollout
 width is a training-layer concern rather than an RL API shape change.
 
@@ -867,7 +868,7 @@ The Kaggriculture game uses the same shared training path through its own observ
 - **Actions** `KaggricultureActions`: `tokens [E,2,252,12]` and `lengths [E,2]` (one unit frame per own actor, then up to `order_limits` market frames, then STOP). The slot widths and action enums are pinned in the contract; the native grammar supplies syntax/support masks.
 - **Model outputs** (`KaggricultureTransformer`, Task 2.3): `forward` returns sampled `KaggricultureActions` with `log_probs.event` and `entropies.event` of shape `[E,2,252,12]` (per frame and slot; implicit slots 0/2/11 are zero), `per_player_entity = event.sum(-1)` `[E,2,252]`, zero `launch`, per-slot entropy `components`, `values [E,2]` and `winner_probabilities [E,2,2]`. `evaluate_actions` requires `int64` tokens/lengths of exactly these shapes, rejects non-canonical or out-of-support programs itself (`GrammarReplayError` naming the support, length or canonical group), and requires `hidden_state` and `dones` to be `None`.
 - **Teacher targets** (`KaggricultureTeacherTargets`, Phase 4): in the observation lead layout (segment-major `[N,T,2]` in PPO), `slot_logits[k]` is `[*lead, 241, W_k]` for unit slots 1/3/4/5/6 and `[*lead, 11, W_k]` for market slots 7–10 (FP32, `finfo.min` outside the replay-conditioned mask), `winner_probabilities` is FP32 `[*lead, 2]`, and `grammar` is the teacher's `GrammarSignature`. `evaluate_actions_with_cached_teacher` returns `action_kl.event [*lead,252,12]`, `per_player_entity [*lead,252]`, zero `launch`, per-slot `components` and `target=None`; `teacher_value_cross_entropy` reduces `[*lead, 2]` distributions to `[*lead[:-1]]` per state. 102,208 B per seat row.
-- **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks (equal banks draw), and truncation keeps the transition's economic reward and bootstraps from the critic. Each evaluation seeds its games with `_evaluation_seed(base_seed, env_steps)` (`scripts/run_ppo.py`), a reproducible mix placed in `[2**62, 2**62 + 2**61)` that is distinct per evaluation step for a fixed base seed (and per base seed for a fixed step) and leaves int64 headroom for the seeds one evaluation consumes. It is not injective over `(base_seed, env_steps)` pairs, and consecutive seeds consumed by different evaluations or runs may overlap. Training seeds stay below the band only while `base_seed + rank + k * world_size < 2**62`. Enforcing any training-only band separation belongs to the training factory; it is not a native admission cap. The approved Task 1.4 native ABI accepts nonnegative i64 seeds for both training and evaluation, with checked consumption as specified below.
+- **Environment**: seeds are `base_seed + rank` with stride `world_size`. Auto-reset is synchronous: on a terminal step, the observation belongs to the new game while rewards, dones and transition banks belong to the completed one. Evaluation decides winners from raw final banks (equal banks draw), and truncation keeps the transition's economic reward and bootstraps from the critic. Each evaluation seeds its games with `_evaluation_seed(base_seed, env_steps)` (`scripts/run_ppo.py`), a reproducible mix placed in `[2**62, 2**62 + 2**61)` that is distinct per evaluation step for a fixed base seed (and per base seed for a fixed step) and leaves int64 headroom for the seeds one evaluation consumes. It is not injective over `(base_seed, env_steps)` pairs, and consecutive seeds consumed by different evaluations or runs may overlap. The trainer admits a rollout seed budget at startup so `base_seed + rank + k * world_size < 2**62` throughout the launch (see the trainer seam below); this is not a native admission cap. The approved Task 1.4 native ABI accepts nonnegative i64 seeds for both training and evaluation, with checked consumption as specified below.
 
 ### Python adapter, factory and reward configuration (Task 1.5 Stage 2)
 
@@ -878,10 +879,11 @@ stable buffer identities, rollback of all 35 outputs, live seat isolation,
 reference codec replay, reward admission/oracle agreement and rank seed streams.
 Exact-signature fake tests retain fault injection and fence-order coverage.
 The model now loads native grammar tables with strict metadata/array validation.
-`run_ppo._create_eval_env` uses the game factory with reproducible evaluation
-seeds and independent native environments; short fixed-action games test final
-banks. Training still stops explicitly on Task 3.1 rollout storage and action mapping;
-policy evaluation likewise awaits Task 3.1 observation/action mapping.
+`run_ppo` uses the game factory for Kaggriculture rollouts and independent
+evaluation environments. Both use the canonical typed observation/action mapping;
+evaluation seeds are reproducible and winners follow raw terminal banks.
+Kaggriculture replay export remains Task 7.3: `rl.eval_replay_games > 0` fails
+at startup before any run directory, environment or model is created.
 The pod DMA fence test and early 2-rank smoke remain pending; CPU tests do not
 qualify either. No training or GPU run is part of Stage 2.
 
@@ -983,6 +985,45 @@ seat's first 241 mask entries, order limits from its observation and hire limit
 from the action spec. Batch encoding publishes a newly allocated result only
 when every row succeeds. Table constants/provenance are the Task 1.2 grammar
 and Task 1.4 exports, with no Python grammar fallback.
+
+### Shared PPO trainer and policy evaluation (Task 3.1)
+
+`PPOTrainer` keeps one collector and one PPO update loop. Observation helpers
+iterate `type(obs).model_fields`, rebuild the same batch type and preserve
+optional `None` fields; nested masks and action bundles dispatch through typed
+unions and `isinstance` narrowing. Both `ObsBatch` and `KaggricultureObsBatch`
+use those helpers for device transfer, indexing, time flattening, segment-major
+batches and in-place rollout copies. Unsupported field types or incompatible
+batch/mask types fail explicitly.
+
+Kaggriculture storage preserves `KaggricultureActionMask.can_act` as bool
+`[H,E,2,252]`, action tokens as int64 `[H,E,2,252,12]` and lengths as int64
+`[H,E,2]`, where `H` is the rollout horizon. Observation tensors retain their
+native dtypes and per-step shapes. The trainer materializes C-contiguous CPU
+int64 action tensors before `env.step`; the adapter performs no implicit cast,
+layout repair or device transfer. Orbit storage and action-family layouts retain
+Isaiah's shapes and dtypes.
+
+Kaggriculture rollouts call `owl.game.create_env` with `base_seed=cfg.env.seed`,
+the distributed rank and world size, and `transfer_device=distributed.device`.
+Orbit retains its original `VectorizedEnv` constructor call. The trainer accepts
+Kaggriculture base seeds only in `[0, 2**61)` and computes a conservative step
+budget before allocating a run: construction plus the trainer reset, up to two
+new seeds per global environment step (auto-reset and truncation), and a full
+update of stopping-point overshoot must keep all rollout seeds below `2**62`.
+The admitted environment-step counter also remains below `2**61` for evaluation
+seed hashing. An explicit step limit beyond the safe budget fails at startup;
+a launch without one uses the computed ceiling. Native/factory seed admission
+remains the wider nonnegative i64 contract.
+
+`run_ppo._evaluate_games` maps both games through those same helpers and mixes
+the candidate and last-best actions by seat. Its Kaggriculture branch drives
+`_create_eval_env` with `_evaluation_seed(cfg.env.seed, env_steps)`, rank 0,
+world size 1 and the evaluation transfer device. The adapter's entry fence
+therefore covers evaluation copies too. Raw final banks determine wins and
+draws; the returned reset observation's banks never score the completed game.
+Last-best teacher load/refresh uses the shared model and checkpoint path, and
+teacher caches remain outside checkpoints. Replay export is Task 7.3.
 
 ### Structured native observation buffers (Task 1.3)
 

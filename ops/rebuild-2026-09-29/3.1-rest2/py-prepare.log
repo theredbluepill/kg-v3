@@ -1,0 +1,21 @@
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+137 files left unchanged
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uv run mypy python/ scripts/
+Success: no issues found in 70 source files
+uv run pytest tests/ -m "not slow"
+Bounded pytest: ['/Users/poonszesen/kg-v3-t31/.venv/bin/pytest', 'tests/', '-m', 'not slow']
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/poonszesen/kg-v3-t31
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 2374 items
+
+tests/kaggriculture/test_base_generics_typing.py 
+BOUNDED CHECK STOP: rss=944816128 bytes, elapsed=6.662s; limits=943718400 bytes/115s; rerun in smaller batches
+error: recipe `py-test` failed on line 29 with exit code 86

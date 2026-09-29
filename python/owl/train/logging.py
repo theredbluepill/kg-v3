@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from enum import StrEnum, auto
 from pathlib import Path
-from typing import Any, assert_never
+from typing import Any, Literal, TypeAlias, assert_never
 
+from owl.kaggriculture.config import KaggricultureEnvConfig
 from owl.train import FullConfig
+
+WandbMode: TypeAlias = Literal["online", "offline"]
 
 
 class LogMode(StrEnum):
@@ -53,18 +56,38 @@ class WandbLogger(MetricLogger):
         cfg: FullConfig,
         *,
         resume_run_id: str | None = None,
+        wandb_mode: WandbMode = "online",
     ) -> None:
+        if wandb_mode == "offline" and resume_run_id is not None:
+            raise ValueError(
+                "W&B offline mode cannot resume an existing run; use online "
+                "mode to preserve its telemetry history"
+            )
+
         import wandb
 
         self._wandb = wandb
         init_kwargs: dict[str, Any] = {}
+        project = "orbit-wars"
+        name = run_dir.name
+        if isinstance(cfg.env, KaggricultureEnvConfig):
+            project = "kg-v3"
+            name = f"ppo-{run_dir.name}"
+            init_kwargs.update(
+                job_type="ppo",
+                group="ppo",
+                tags=["kaggriculture-v3", "ppo"],
+                mode=wandb_mode,
+            )
+        elif wandb_mode == "offline":
+            init_kwargs["mode"] = wandb_mode
         if resume_run_id is not None:
             init_kwargs["id"] = resume_run_id
             init_kwargs["resume"] = "must"
         self._run = wandb.init(
-            project="orbit-wars",
+            project=project,
             dir=run_dir,
-            name=run_dir.name,
+            name=name,
             config=cfg.model_dump(mode="json"),
             **init_kwargs,
         )
@@ -92,11 +115,14 @@ def create_logger(
     cfg: FullConfig,
     *,
     resume_run_id: str | None = None,
+    wandb_mode: WandbMode = "online",
 ) -> MetricLogger:
     match log_mode:
         case LogMode.DEBUG:
             return DebugLogger()
         case LogMode.WANDB:
-            return WandbLogger(run_dir, cfg, resume_run_id=resume_run_id)
+            return WandbLogger(
+                run_dir, cfg, resume_run_id=resume_run_id, wandb_mode=wandb_mode
+            )
         case _:
             assert_never(log_mode)

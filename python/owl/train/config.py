@@ -43,25 +43,6 @@ GameEnvConfig: TypeAlias = Annotated[
 ]
 
 
-def require_orbit_env(
-    env: EnvConfig | KaggricultureEnvConfig, *, context: str
-) -> EnvConfig:
-    """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
-
-    Kaggriculture configs load, validate and pass run_ppo's workload check, but
-    ``context`` builds Orbit environments only: there is no Kaggriculture
-    environment until the native env binding (plan Task 1.4) and the trainer
-    game seam (Task 3.1) land.
-    """
-    if isinstance(env, KaggricultureEnvConfig):
-        raise RuntimeError(
-            f"{context} cannot run Kaggriculture yet: its config loads, but there "
-            "is no Kaggriculture environment until the native env binding (plan "
-            "Task 1.4) and the trainer game seam (Task 3.1) land"
-        )
-    return env
-
-
 def _validate_kaggriculture_training(*, reward_mode: RewardMode, rl: PPOConfig) -> None:
     """Reject settings that change the Kaggriculture objective or critic meaning.
 

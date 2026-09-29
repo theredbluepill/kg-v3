@@ -1,0 +1,1703 @@
+=== ppo-red.log ===
+........................................................................ [ 37%]
+........................................................................ [ 75%]
+...........................FF..................F                         [100%]
+=================================== FAILURES ===================================
+_________ test_kaggriculture_storage_and_every_mapping_preserve_schema _________
+
+    def test_kaggriculture_storage_and_every_mapping_preserve_schema() -> None:
+        source = allocate_observation_buffers(2, pin_memory=False)
+        generator = torch.Generator().manual_seed(917)
+        for tensor in _obs_tensors(source).values():
+            assert tensor is not None
+            tensor.copy_(_random_tensor(tuple(tensor.shape), tensor.dtype, generator))
+>       rollout = ppo._PPORolloutBuffer(
+            horizon=3, n_envs=2, obs_spec=kt.KaggricultureObsConfig(),
+            action_spec=kt.KaggricultureActionConfig(), device=torch.device("cpu"),
+        )
+
+tests/owl/train/test_ppo_observation_mapping.py:617: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:287: in __init__
+    action_spec.n_bins,
+    ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = KaggricultureActionConfig(action_spec='kaggriculture', hire_limit=241)
+item = 'n_bins'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'KaggricultureActionConfig' object has no attribute 'n_bins'
+
+.venv/lib/python3.12/site-packages/pydantic/main.py:1042: AttributeError
+_______ test_kaggriculture_actions_to_cpu_materializes_contiguous_int64 ________
+
+    def test_kaggriculture_actions_to_cpu_materializes_contiguous_int64() -> None:
+        # Same-device .to() alone preserves these noncontiguous strides.
+        tokens = torch.arange(2 * 2 * 252 * 24).reshape(2, 2, 252, 24)[..., ::2]
+        lengths = torch.tensor([[2, 0, 3, 0], [4, 0, 5, 0]])[:, ::2]
+        assert not tokens.is_contiguous() and not lengths.is_contiguous()
+>       result = ppo._actions_to_cpu(kt.KaggricultureActions(tokens=tokens, lengths=lengths))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/owl/train/test_ppo_observation_mapping.py:668: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:2289: in _actions_to_cpu
+    return _map_action_bundle(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+actions = KaggricultureActions(tokens=tensor([[[[    0,     2,     4,  ...,    18,    20,    22],
+          [   24,    26,    28...4164, 24166],
+          [24168, 24170, 24172,  ..., 24186, 24188, 24190]]]]), lengths=tensor([[2, 3],
+        [4, 5]]))
+fn = <function _actions_to_cpu.<locals>.<lambda> at 0x10f79b4c0>
+
+    def _map_action_bundle(
+        actions: ActionBundle,
+        fn: Callable[[torch.Tensor], torch.Tensor],
+    ) -> ActionBundle:
+        if isinstance(actions, PureActions):
+            return PureActions(
+                launch=fn(actions.launch),
+                angle=fn(actions.angle),
+                ships=fn(actions.ships),
+            )
+        if isinstance(actions, DiscreteTargetActions):
+            return DiscreteTargetActions(
+                launch=fn(actions.launch),
+                target=fn(actions.target),
+                ships=fn(actions.ships),
+            )
+        return DiscreteTargetBinActions(
+>           target=fn(actions.target),
+                      ^^^^^^^^^^^^^^
+            fleet_bin=fn(actions.fleet_bin),
+        )
+E       AttributeError: 'KaggricultureActions' object has no attribute 'target'
+
+python/owl/train/ppo.py:2102: AttributeError
+_________________________ test_no_teacher_two_updates __________________________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-790/test_no_teacher_two_updates0')
+
+    def test_no_teacher_two_updates(tmp_path: Path) -> None:
+        torch.manual_seed(307)
+        device = torch.device("cpu")
+        obs_spec, action_spec = KaggricultureObsConfig(), KaggricultureActionConfig()
+        env = KaggricultureVectorizedEnv(
+            n_envs=1, seed=307, seed_stride=1,
+            config=KaggricultureGameConfig(episodeSteps=3),
+            reward_config=KaggricultureRewardConfig(
+                econ_shaping=0.2, econ_starvation_weight=4.0,
+                econ_drought_weight=1.0, econ_cap=0.25,
+                econ_ineffective_weight=0.0, econ_ineffective_cap=0.10,
+            ),
+            reward_mode="win_loss", native_threads=1, pin_memory=False,
+            transfer_device=device, obs_spec=obs_spec, action_spec=action_spec,
+        )
+        model = KaggricultureTransformer(
+            KaggricultureTransformerConfig(embed_dim=16, depth=1, n_heads=1,
+                mlp_ratio=1, n_scratch_tokens=0),
+            obs_spec=obs_spec, action_spec=action_spec,
+        )
+>       trainer = PPOTrainer(
+            config=PPOConfig(horizon=2, ppo_epochs=1, segments_per_minibatch=1,
+                gradient_accumulation_steps=1, dtype="float32", model_compile="none",
+                compile_mode=None, teacher_mode=None),
+            env=env, model=model, optimizer=torch.optim.Adam(model.parameters(), lr=1e-4),
+            device=device,
+        )
+
+tests/kaggriculture/test_training_smoke.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:565: in __init__
+    self._obs = _obs_to_device(
+python/owl/train/ppo.py:2258: in _obs_to_device
+    return _map_observation(
+python/owl/train/ppo.py:2119: in _map_observation
+    field: _map_observation_value(getattr(obs, field), fn, field=field)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = KaggricultureActionMask(can_act=tensor([[[ True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+      ...lse, False,
+          False, False, False, False, False, False, False, False, False, False,
+          False, False]]]))
+fn = <function _obs_to_device.<locals>.<lambda> at 0x10f7128e0>
+
+    def _map_observation_value(
+        value: object,
+        fn: Callable[[torch.Tensor], torch.Tensor],
+        *,
+        field: str,
+    ) -> object:
+        if value is None:
+            return None
+        if isinstance(value, torch.Tensor):
+            return fn(value)
+        if isinstance(
+            value,
+            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+        ):
+            return _map_action_mask(value, fn)
+>       raise TypeError(
+            f"observation field {field!r} has unsupported type {type(value).__name__}; "
+            "expected a tensor, an action mask or None"
+        )
+E       TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+
+python/owl/train/ppo.py:2140: TypeError
+=========================== short test summary info ============================
+FAILED tests/owl/train/test_ppo_observation_mapping.py::test_kaggriculture_storage_and_every_mapping_preserve_schema
+FAILED tests/owl/train/test_ppo_observation_mapping.py::test_kaggriculture_actions_to_cpu_materializes_contiguous_int64
+FAILED tests/kaggriculture/test_training_smoke.py::test_no_teacher_two_updates
+3 failed, 189 passed in 0.35s
+
+
+=== teacher-red.log ===
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+____________ test_trainer_precomputes_once_and_logs_teacher_metrics ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ee45d00>
+
+    def test_trainer_precomputes_once_and_logs_teacher_metrics(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        student, teacher = _tiny(), _tiny(seed=6)
+        horizon = 4
+>       trainer = ppo.PPOTrainer(
+            env=_FakeKaggricultureEnv(),
+            model=student,
+            optimizer=torch.optim.AdamW(student.parameters(), lr=0.0),
+            config=ppo.PPOConfig(
+                horizon=horizon,
+                segments_per_minibatch=1,
+                teacher_mode="last_best",
+                teacher_kl_coef=0.005,
+                teacher_value_coef=0.005,
+                teacher_segments_per_minibatch=1,
+            ),
+            device=torch.device("cpu"),
+            teacher_model=teacher,
+            teacher_active=True,
+        )
+
+tests/kaggriculture/test_teacher.py:1350: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:565: in __init__
+    self._obs = _obs_to_device(
+python/owl/train/ppo.py:2258: in _obs_to_device
+    return _map_observation(
+python/owl/train/ppo.py:2119: in _map_observation
+    field: _map_observation_value(getattr(obs, field), fn, field=field)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = KaggricultureActionMask(can_act=tensor([[[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  Tr...       [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]]))
+fn = <function _obs_to_device.<locals>.<lambda> at 0x1100336a0>
+
+    def _map_observation_value(
+        value: object,
+        fn: Callable[[torch.Tensor], torch.Tensor],
+        *,
+        field: str,
+    ) -> object:
+        if value is None:
+            return None
+        if isinstance(value, torch.Tensor):
+            return fn(value)
+        if isinstance(
+            value,
+            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+        ):
+            return _map_action_mask(value, fn)
+>       raise TypeError(
+            f"observation field {field!r} has unsupported type {type(value).__name__}; "
+            "expected a tensor, an action mask or None"
+        )
+E       TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+
+python/owl/train/ppo.py:2140: TypeError
+______ test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best ______
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-783/test_run_ppo_resume_restores_t0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f47d910>
+
+    def test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T19b resume: the teacher is ``checkpoint_last_best.pt``, not the student."""
+        cfg = _kaggriculture_run_config()
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        cfg.to_file(run_dir / "config.yaml")
+        student, last_best = _tiny(), _tiny(seed=6)
+        _write_run_checkpoint(
+            run_dir / "checkpoint_final.pt", student, env_steps=128, run_id="run-123"
+        )
+        _write_run_checkpoint(
+            run_dir / "checkpoint_last_best.pt", last_best, env_steps=64, run_id="run-123"
+        )
+        for name in ("checkpoint_final.pt", "checkpoint_last_best.pt"):
+            saved = torch.load(run_dir / name, weights_only=False)
+            assert set(saved) == CHECKPOINT_KEYS
+            _assert_no_teacher_state(saved["model"])
+    
+>       trainer, session = _run_ppo_main(monkeypatch, [str(run_dir), "--log-mode", "wandb"])
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_teacher.py:1634: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:1586: in _run_ppo_main
+    run_ppo.main()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom minibatch: 8 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 1.188e+04x headroom, <= 1 call(s)); heads 177536 rows/call (2.219e+04x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 5941x headroom, <= 1 call(s)); heads 177536 rows/call (1.11e+04x headroom, 1 call(s))
+GEMM workload headroom evaluation: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+____ test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher ____
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-783/test_run_ppo_fresh_launch_from0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f91c830>
+
+    def test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T19b fresh launch: the loaded weights become the active last-best teacher."""
+        cfg = _kaggriculture_run_config()
+        config_path = tmp_path / "config.yaml"
+        cfg.to_file(config_path)
+        source = _tiny(seed=6)
+        weights = tmp_path / "weights.pt"
+        _write_run_checkpoint(weights, source, env_steps=64, run_id="run-123")
+    
+>       trainer, session = _run_ppo_main(
+            monkeypatch,
+            [
+                str(config_path),
+                str(tmp_path / "runs"),
+                "--load-model-weights",
+                str(weights),
+                "--log-mode",
+                "debug",
+            ],
+        )
+
+tests/kaggriculture/test_teacher.py:1653: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_teacher.py:1586: in _run_ppo_main
+    run_ppo.main()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom minibatch: 8 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 1.188e+04x headroom, <= 1 call(s)); heads 177536 rows/call (2.219e+04x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 5941x headroom, <= 1 call(s)); heads 177536 rows/call (1.11e+04x headroom, 1 call(s))
+GEMM workload headroom evaluation: 4 rows x 706 padded tokens; trunk 95055 rows/call at full padding (>= 2.376e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+___ test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache ___
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-783/test_trainer_checkpoint_after_0')
+
+    def test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache(
+        tmp_path: Path,
+    ) -> None:
+        """T19b: after an iteration fills the teacher cache, checkpoints omit it."""
+        import scripts.run_ppo as run_ppo
+    
+        student, teacher = _tiny(), _tiny(seed=6)
+>       trainer = ppo.PPOTrainer(
+            env=_FakeKaggricultureEnv(),
+            model=student,
+            optimizer=torch.optim.AdamW(student.parameters(), lr=0.0),
+            config=ppo.PPOConfig(
+                horizon=4,
+                segments_per_minibatch=1,
+                teacher_mode="last_best",
+                teacher_segments_per_minibatch=1,
+            ),
+            device=torch.device("cpu"),
+            teacher_model=teacher,
+            teacher_active=True,
+        )
+
+tests/kaggriculture/test_teacher.py:1684: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/train/ppo.py:565: in __init__
+    self._obs = _obs_to_device(
+python/owl/train/ppo.py:2258: in _obs_to_device
+    return _map_observation(
+python/owl/train/ppo.py:2119: in _map_observation
+    field: _map_observation_value(getattr(obs, field), fn, field=field)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = KaggricultureActionMask(can_act=tensor([[[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  Tr...       [[ True,  True,  True,  ..., False, False, False],
+         [ True,  True,  True,  ..., False, False, False]]]))
+fn = <function _obs_to_device.<locals>.<lambda> at 0x1101b36a0>
+
+    def _map_observation_value(
+        value: object,
+        fn: Callable[[torch.Tensor], torch.Tensor],
+        *,
+        field: str,
+    ) -> object:
+        if value is None:
+            return None
+        if isinstance(value, torch.Tensor):
+            return fn(value)
+        if isinstance(
+            value,
+            PureActionMask | DiscreteTargetActionMask | DiscreteTargetBinActionMask,
+        ):
+            return _map_action_mask(value, fn)
+>       raise TypeError(
+            f"observation field {field!r} has unsupported type {type(value).__name__}; "
+            "expected a tensor, an action mask or None"
+        )
+E       TypeError: observation field 'action_mask' has unsupported type KaggricultureActionMask; expected a tensor, an action mask or None
+
+python/owl/train/ppo.py:2140: TypeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_trainer_precomputes_once_and_logs_teacher_metrics
+FAILED tests/kaggriculture/test_teacher.py::test_run_ppo_resume_restores_the_teacher_from_checkpoint_last_best
+FAILED tests/kaggriculture/test_teacher.py::test_run_ppo_fresh_launch_from_weights_activates_the_last_best_teacher
+FAILED tests/kaggriculture/test_teacher.py::test_trainer_checkpoint_after_a_teacher_iteration_holds_no_teacher_cache
+4 failed, 48 deselected in 0.40s
+
+
+=== runner-red.log ===
+FFFFFFFFFFFFFFFF                                                         [100%]
+=================================== FAILURES ===================================
+____________ test_kaggriculture_policy_evaluation_runs_native_games ____________
+
+    def test_kaggriculture_policy_evaluation_runs_native_games() -> None:
+        cfg = FullConfig.from_file(
+            _CONFIGS / "kaggriculture.yaml",
+            overrides={
+                "env.n_envs": 2, "env.native_threads": 1,
+                "env.pin_memory": False, "env.config.episodeSteps": 3,
+                "model.embed_dim": 16, "model.depth": 1, "model.n_heads": 1,
+                "model.mlp_ratio": 1, "model.n_scratch_tokens": 0,
+                "rl.dtype": "float32", "rl.model_compile": "none",
+                "rl.segments_per_minibatch": 1, "rl.gradient_accumulation_steps": 1,
+                "rl.eval_replay_games": 0,
+            },
+        )
+        torch.manual_seed(31)
+>       current, _ = run_ppo._create_training_model_for_config(
+            cfg, device=torch.device("cpu"), reset_parameters=True
+        )
+
+tests/scripts/test_run_ppo.py:3190: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:877: in _create_training_model_for_config
+    env = require_orbit_env(cfg.env, context=_TRAINER)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=2, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=3, starting_money..._weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=False, native_threads=1)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: run_ppo cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+------------------------------ Captured log call -------------------------------
+WARNING  owl.config:config.py:84 Override 'env.n_envs' has the same value (2) as the existing config
+WARNING  owl.config:config.py:84 Override 'env.native_threads' has the same value (1) as the existing config
+WARNING  owl.config:config.py:84 Override 'env.pin_memory' has the same value (False) as the existing config
+WARNING  owl.config:config.py:84 Override 'model.embed_dim' has the same value (16) as the existing config
+WARNING  owl.config:config.py:84 Override 'model.depth' has the same value (1) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.dtype' has the same value (float32) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.model_compile' has the same value (none) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.segments_per_minibatch' has the same value (1) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.gradient_accumulation_steps' has the same value (1) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.eval_replay_games' has the same value (0) as the existing config
+_ test_main_rejects_kaggriculture_seed_before_allocation[2305843009213693952] __
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-798/test_main_rejects_kaggricultur0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ec7c260>
+seed = 2305843009213693952
+
+    @pytest.mark.parametrize("seed", [2**61, 2**62, 2**63 - 1])
+    def test_main_rejects_kaggriculture_seed_before_allocation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, seed: int
+    ) -> None:
+        calls: list[str] = []
+        _patch_kaggriculture_startup(monkeypatch, [
+            str(_CONFIGS / "kaggriculture.yaml"), str(tmp_path / "runs"),
+            "-o", f"env.seed={seed}", "rl.eval_replay_games=0",
+        ], calls)
+        with pytest.raises(ValueError, match="env.seed must be in"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3470: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Launched with the following raw manual overrides: '['env.seed=2305843009213693952', 'rl.eval_replay_games=0']'
+GEMM workload headroom rollout: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom minibatch: 128 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 739.5x headroom, <= 1 call(s)); heads 177536 rows/call (1387x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 256 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 369.7x headroom, <= 1 call(s)); heads 177536 rows/call (693.5x headroom, 1 call(s))
+GEMM workload headroom evaluation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+------------------------------ Captured log call -------------------------------
+WARNING  owl.config:config.py:84 Override 'rl.eval_replay_games' has the same value (0) as the existing config
+_ test_main_rejects_kaggriculture_seed_before_allocation[4611686018427387904] __
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-798/test_main_rejects_kaggricultur1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f1238c0>
+seed = 4611686018427387904
+
+    @pytest.mark.parametrize("seed", [2**61, 2**62, 2**63 - 1])
+    def test_main_rejects_kaggriculture_seed_before_allocation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, seed: int
+    ) -> None:
+        calls: list[str] = []
+        _patch_kaggriculture_startup(monkeypatch, [
+            str(_CONFIGS / "kaggriculture.yaml"), str(tmp_path / "runs"),
+            "-o", f"env.seed={seed}", "rl.eval_replay_games=0",
+        ], calls)
+        with pytest.raises(ValueError, match="env.seed must be in"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3470: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Launched with the following raw manual overrides: '['env.seed=4611686018427387904', 'rl.eval_replay_games=0']'
+GEMM workload headroom rollout: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom minibatch: 128 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 739.5x headroom, <= 1 call(s)); heads 177536 rows/call (1387x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 256 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 369.7x headroom, <= 1 call(s)); heads 177536 rows/call (693.5x headroom, 1 call(s))
+GEMM workload headroom evaluation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+------------------------------ Captured log call -------------------------------
+WARNING  owl.config:config.py:84 Override 'rl.eval_replay_games' has the same value (0) as the existing config
+_ test_main_rejects_kaggriculture_seed_before_allocation[9223372036854775807] __
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-798/test_main_rejects_kaggricultur2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f129070>
+seed = 9223372036854775807
+
+    @pytest.mark.parametrize("seed", [2**61, 2**62, 2**63 - 1])
+    def test_main_rejects_kaggriculture_seed_before_allocation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, seed: int
+    ) -> None:
+        calls: list[str] = []
+        _patch_kaggriculture_startup(monkeypatch, [
+            str(_CONFIGS / "kaggriculture.yaml"), str(tmp_path / "runs"),
+            "-o", f"env.seed={seed}", "rl.eval_replay_games=0",
+        ], calls)
+        with pytest.raises(ValueError, match="env.seed must be in"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3470: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Launched with the following raw manual overrides: '['env.seed=9223372036854775807', 'rl.eval_replay_games=0']'
+GEMM workload headroom rollout: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom minibatch: 128 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 739.5x headroom, <= 1 call(s)); heads 177536 rows/call (1387x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 256 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 369.7x headroom, <= 1 call(s)); heads 177536 rows/call (693.5x headroom, 1 call(s))
+GEMM workload headroom evaluation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+------------------------------ Captured log call -------------------------------
+WARNING  owl.config:config.py:84 Override 'rl.eval_replay_games' has the same value (0) as the existing config
+___________ test_main_rejects_kaggriculture_replay_before_allocation ___________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-798/test_main_rejects_kaggricultur3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f129760>
+
+    def test_main_rejects_kaggriculture_replay_before_allocation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        calls: list[str] = []
+        _patch_kaggriculture_startup(monkeypatch, [
+            str(_CONFIGS / "kaggriculture.yaml"), str(tmp_path / "runs"),
+            "-o", "rl.eval_replay_games=1",
+        ], calls)
+        with pytest.raises(ValueError, match=r"Task 7\.3"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3483: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Launched with the following raw manual overrides: '['rl.eval_replay_games=1']'
+GEMM workload headroom rollout: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom minibatch: 128 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 739.5x headroom, <= 1 call(s)); heads 177536 rows/call (1387x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 256 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 369.7x headroom, <= 1 call(s)); heads 177536 rows/call (693.5x headroom, 1 call(s))
+GEMM workload headroom evaluation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+________________________ test_parse_wandb_mode[online] _________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f12a870>
+mode = 'online'
+
+    @pytest.mark.parametrize("mode", ["online", "offline"])
+    def test_parse_wandb_mode(monkeypatch: pytest.MonkeyPatch, mode: str) -> None:
+        monkeypatch.setattr(sys, "argv", [
+            "run_ppo.py", "config.yaml", "runs", "--wandb-mode", mode,
+        ])
+>       assert run_ppo._parse_args().wandb_mode == mode
+               ^^^^^^^^^^^^^^^^^^^^^
+
+tests/scripts/test_run_ppo.py:3492: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:625: in _parse_args
+    args = parser.parse_args()
+           ^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/argparse.py:1908: in parse_args
+    self.error(msg)
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/argparse.py:2650: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ArgumentParser(prog='run_ppo.py', usage=None, description='Run PPO training for Orbit Wars.', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = 'run_ppo.py: error: unrecognized arguments: --wandb-mode online\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/argparse.py:2637: SystemExit
+----------------------------- Captured stderr call -----------------------------
+usage: run_ppo.py [-h] [--log-mode {debug,wandb}]
+                  [-o field.path=value [field.path=value ...]]
+                  [--load-model-weights CHECKPOINT]
+                  [--load-model-weights-mode {model_only,model_and_optimizer}]
+                  [--max-env-steps MAX_ENV_STEPS]
+                  [--max-runtime-hours MAX_RUNTIME_HOURS]
+                  target [output_dir]
+run_ppo.py: error: unrecognized arguments: --wandb-mode online
+________________________ test_parse_wandb_mode[offline] ________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f12ba40>
+mode = 'offline'
+
+    @pytest.mark.parametrize("mode", ["online", "offline"])
+    def test_parse_wandb_mode(monkeypatch: pytest.MonkeyPatch, mode: str) -> None:
+        monkeypatch.setattr(sys, "argv", [
+            "run_ppo.py", "config.yaml", "runs", "--wandb-mode", mode,
+        ])
+>       assert run_ppo._parse_args().wandb_mode == mode
+               ^^^^^^^^^^^^^^^^^^^^^
+
+tests/scripts/test_run_ppo.py:3492: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:625: in _parse_args
+    args = parser.parse_args()
+           ^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/argparse.py:1908: in parse_args
+    self.error(msg)
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/argparse.py:2650: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ArgumentParser(prog='run_ppo.py', usage=None, description='Run PPO training for Orbit Wars.', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = 'run_ppo.py: error: unrecognized arguments: --wandb-mode offline\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/argparse.py:2637: SystemExit
+----------------------------- Captured stderr call -----------------------------
+usage: run_ppo.py [-h] [--log-mode {debug,wandb}]
+                  [-o field.path=value [field.path=value ...]]
+                  [--load-model-weights CHECKPOINT]
+                  [--load-model-weights-mode {model_only,model_and_optimizer}]
+                  [--max-env-steps MAX_ENV_STEPS]
+                  [--max-runtime-hours MAX_RUNTIME_HOURS]
+                  target [output_dir]
+run_ppo.py: error: unrecognized arguments: --wandb-mode offline
+____________________ test_parse_wandb_mode_defaults_online _____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f121d90>
+
+    def test_parse_wandb_mode_defaults_online(monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(sys, "argv", ["run_ppo.py", "config.yaml", "runs"])
+>       assert run_ppo._parse_args().wandb_mode == "online"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Namespace' object has no attribute 'wandb_mode'
+
+tests/scripts/test_run_ppo.py:3497: AttributeError
+_____________ test_resume_offline_fails_before_reading_checkpoint ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f12aba0>
+
+    def test_resume_offline_fails_before_reading_checkpoint(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(sys, "argv", [
+            "run_ppo.py", "nonexistent-run", "--wandb-mode", "offline",
+        ])
+        with pytest.raises(ValueError, match="resume.*offline"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3507: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run_ppo.py:159: in main
+    args = _parse_args()
+           ^^^^^^^^^^^^^
+scripts/run_ppo.py:625: in _parse_args
+    args = parser.parse_args()
+           ^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/argparse.py:1908: in parse_args
+    self.error(msg)
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/argparse.py:2650: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ArgumentParser(prog='run_ppo.py', usage=None, description='Run PPO training for Orbit Wars.', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = 'run_ppo.py: error: unrecognized arguments: --wandb-mode\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+../.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/argparse.py:2637: SystemExit
+----------------------------- Captured stderr call -----------------------------
+usage: run_ppo.py [-h] [--log-mode {debug,wandb}]
+                  [-o field.path=value [field.path=value ...]]
+                  [--load-model-weights CHECKPOINT]
+                  [--load-model-weights-mode {model_only,model_and_optimizer}]
+                  [--max-env-steps MAX_ENV_STEPS]
+                  [--max-runtime-hours MAX_RUNTIME_HOURS]
+                  target [output_dir]
+run_ppo.py: error: unrecognized arguments: --wandb-mode
+_ test_kaggriculture_seed_budget_covers_resets_truncation_and_update_overshoot _
+
+    def test_kaggriculture_seed_budget_covers_resets_truncation_and_update_overshoot() -> None:
+        cfg = _kaggriculture_eval_config()
+        cfg = cfg.model_copy(update={"env": cfg.env.model_copy(update={"seed": 2**61 - 1})})
+        ctx = DistributedContext(
+            device=torch.device("cpu"), rank=2, local_rank=2, world_size=3,
+            initialized=False,
+        )
+>       limit = run_ppo._kaggriculture_step_limit(cfg, ctx, max_env_steps=None)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_ppo' has no attribute '_kaggriculture_step_limit'
+
+tests/scripts/test_run_ppo.py:3517: AttributeError
+_ test_main_kaggriculture_rollout_factory_uses_rank_seed_and_transfer_device[cpu] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-798/test_main_kaggriculture_rollou0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f1287a0>
+device_type = 'cpu'
+
+    @pytest.mark.parametrize("device_type", ["cpu", "cuda"])
+    def test_main_kaggriculture_rollout_factory_uses_rank_seed_and_transfer_device(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, device_type: str
+    ) -> None:
+        calls: list[str] = []
+        _patch_kaggriculture_startup(monkeypatch, [
+            str(_CONFIGS / "kaggriculture.yaml"), str(tmp_path / "runs"),
+            "-o", "env.seed=17", "env.pin_memory=false", "rl.eval_replay_games=0",
+        ], calls)
+        ctx = DistributedContext(
+            device=torch.device(device_type), rank=1, local_rank=1, world_size=2,
+            initialized=False,
+        )
+        monkeypatch.setattr(run_ppo, "distributed_session", lambda: nullcontext(ctx))
+        monkeypatch.setattr(run_ppo, "broadcast_object", lambda _obj, _ctx: tmp_path)
+        seen: list[tuple[object, dict[str, object]]] = []
+        def factory(config: object, **kwargs: object) -> None:
+            seen.append((config, kwargs))
+            raise AssertionError("factory reached")
+        monkeypatch.setattr(run_ppo, "create_env", factory)
+        with pytest.raises(AssertionError, match="factory reached"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3551: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+------------------------------ Captured log call -------------------------------
+WARNING  owl.config:config.py:84 Override 'env.pin_memory' has the same value (False) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.eval_replay_games' has the same value (0) as the existing config
+_ test_main_kaggriculture_rollout_factory_uses_rank_seed_and_transfer_device[cuda] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-798/test_main_kaggriculture_rollou1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f129490>
+device_type = 'cuda'
+
+    @pytest.mark.parametrize("device_type", ["cpu", "cuda"])
+    def test_main_kaggriculture_rollout_factory_uses_rank_seed_and_transfer_device(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, device_type: str
+    ) -> None:
+        calls: list[str] = []
+        _patch_kaggriculture_startup(monkeypatch, [
+            str(_CONFIGS / "kaggriculture.yaml"), str(tmp_path / "runs"),
+            "-o", "env.seed=17", "env.pin_memory=false", "rl.eval_replay_games=0",
+        ], calls)
+        ctx = DistributedContext(
+            device=torch.device(device_type), rank=1, local_rank=1, world_size=2,
+            initialized=False,
+        )
+        monkeypatch.setattr(run_ppo, "distributed_session", lambda: nullcontext(ctx))
+        monkeypatch.setattr(run_ppo, "broadcast_object", lambda _obj, _ctx: tmp_path)
+        seen: list[tuple[object, dict[str, object]]] = []
+        def factory(config: object, **kwargs: object) -> None:
+            seen.append((config, kwargs))
+            raise AssertionError("factory reached")
+        monkeypatch.setattr(run_ppo, "create_env", factory)
+        with pytest.raises(AssertionError, match="factory reached"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3551: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+------------------------------ Captured log call -------------------------------
+WARNING  owl.config:config.py:84 Override 'env.pin_memory' has the same value (False) as the existing config
+WARNING  owl.config:config.py:84 Override 'rl.eval_replay_games' has the same value (0) as the existing config
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-798/test_main_loads_kaggriculture_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f128530>
+capsys = <_pytest.capture.CaptureFixture object at 0x10f1289e0>
+name = 'kaggriculture_2rank.yaml', rollout_rows = 256, teacher_rows = 16384
+teacher_calls = 3
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+            ("kaggriculture_8rank.yaml", 64, 4_096, 1),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs"), "-o", "rl.eval_replay_games=0"]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(AssertionError, match="_create_run_dir ran"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3607: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Launched with the following raw manual overrides: '['rl.eval_replay_games=0']'
+GEMM workload headroom rollout: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+GEMM workload headroom minibatch: 1024 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 5.776x headroom, <= 1 call(s)); heads 11096 rows/call (10.84x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16384 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 0.361x headroom, <= 3 call(s)); heads 11096 rows/call (0.6772x headroom, 2 call(s))
+GEMM workload headroom evaluation: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-798/test_main_loads_kaggriculture_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f12bad0>
+capsys = <_pytest.capture.CaptureFixture object at 0x10f12aea0>
+name = 'kaggriculture_4rank.yaml', rollout_rows = 128, teacher_rows = 8192
+teacher_calls = 2
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+            ("kaggriculture_8rank.yaml", 64, 4_096, 1),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs"), "-o", "rl.eval_replay_games=0"]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(AssertionError, match="_create_run_dir ran"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3607: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Launched with the following raw manual overrides: '['rl.eval_replay_games=0']'
+GEMM workload headroom rollout: 128 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 46.21x headroom, <= 1 call(s)); heads 11096 rows/call (86.69x headroom, 1 call(s))
+GEMM workload headroom minibatch: 512 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 11.55x headroom, <= 1 call(s)); heads 11096 rows/call (21.67x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 8192 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 0.722x headroom, <= 2 call(s)); heads 11096 rows/call (1.354x headroom, 1 call(s))
+GEMM workload headroom evaluation: 128 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 46.21x headroom, <= 1 call(s)); heads 11096 rows/call (86.69x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+_ test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1] _
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-798/test_main_loads_kaggriculture_2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f12bc50>
+capsys = <_pytest.capture.CaptureFixture object at 0x10f12a090>
+name = 'kaggriculture_8rank.yaml', rollout_rows = 64, teacher_rows = 4096
+teacher_calls = 1
+
+    @pytest.mark.parametrize(
+        ("name", "rollout_rows", "teacher_rows", "teacher_calls"),
+        [
+            ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+            ("kaggriculture_4rank.yaml", 128, 8_192, 2),
+            ("kaggriculture_8rank.yaml", 64, 4_096, 1),
+        ],
+    )
+    def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        name: str,
+        rollout_rows: int,
+        teacher_rows: int,
+        teacher_calls: int,
+    ) -> None:
+        calls: list[str] = []
+        argv = [str(_CONFIGS / name), str(tmp_path / "runs"), "-o", "rl.eval_replay_games=0"]
+        _patch_kaggriculture_startup(monkeypatch, argv, calls)
+    
+        with pytest.raises(AssertionError, match="_create_run_dir ran"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3607: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Launched with the following raw manual overrides: '['rl.eval_replay_games=0']'
+GEMM workload headroom rollout: 64 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 92.42x headroom, <= 1 call(s)); heads 11096 rows/call (173.4x headroom, 1 call(s))
+GEMM workload headroom minibatch: 256 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 23.11x headroom, <= 1 call(s)); heads 11096 rows/call (43.34x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 4096 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 1.444x headroom, <= 1 call(s)); heads 11096 rows/call (2.709x headroom, 1 call(s))
+GEMM workload headroom evaluation: 64 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 92.42x headroom, <= 1 call(s)); heads 11096 rows/call (173.4x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+___________ test_resume_startup_checks_the_runtime_adapted_workload ____________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-798/test_resume_startup_checks_the0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f139d90>
+capsys = <_pytest.capture.CaptureFixture object at 0x10f138fb0>
+
+    def test_resume_startup_checks_the_runtime_adapted_workload(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        # A run saved at 2 ranks resumes on 1: resume adaptation doubles the
+        # per-rank envs to 256, so the checked rollout is 512 rows, not the file's 256.
+        saved = FullConfig.from_file(_CONFIGS / "kaggriculture_2rank.yaml")
+        saved = saved.model_copy(
+            update={
+                "runtime": saved.runtime.model_copy(update={"n_runtime_gpus": 2}),
+                "rl": saved.rl.model_copy(update={"eval_replay_games": 0}),
+            }
+        )
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        saved.to_file(run_dir / "config.yaml")
+        for checkpoint in ("checkpoint_final.pt", "checkpoint_last_best.pt"):
+            (run_dir / checkpoint).write_bytes(b"")
+        calls: list[str] = []
+        # Resume requires W&B logging; the check runs before any logger exists.
+        _patch_kaggriculture_startup(
+            monkeypatch,
+            [str(run_dir / "checkpoint_final.pt")],
+            calls,
+            log_mode=LogMode.WANDB,
+        )
+    
+        with pytest.raises(AssertionError, match="create_env ran"):
+>           run_ppo.main()
+
+tests/scripts/test_run_ppo.py:3657: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def main() -> None:
+        args = _parse_args()
+        assert_release_build()
+        configure_torch()
+        launch = _resolve_launch(args)
+        with distributed_session() as distributed:
+            _log_cli_overrides(args.overrides, distributed)
+            cfg = FullConfig.from_file(
+                launch.config_path,
+                overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+            )
+            cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+            _validate_lora_launch_config(cfg, launch)
+    
+            if isinstance(launch, FreshLaunch):
+                cfg = _with_runtime_gpus(cfg, distributed.world_size)
+            else:
+                cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+            # Before any run dir, env or model: the per-rank shapes are final here.
+            _check_model_workload(
+                cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+            )
+            _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+            # The native adapter exists; Task 3.1 must add its rollout storage and
+            # action mapping before the canonical trainer can consume its batches.
+            if isinstance(cfg.env, KaggricultureEnvConfig):
+>               raise RuntimeError(
+                    "run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage "
+                    "and action mapping are not implemented"
+                )
+E               RuntimeError: run_ppo cannot run Kaggriculture yet: Task 3.1 rollout storage and action mapping are not implemented
+
+scripts/run_ppo.py:184: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom rollout: 512 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 11.55x headroom, <= 1 call(s)); heads 11096 rows/call (21.67x headroom, 1 call(s))
+GEMM workload headroom minibatch: 1024 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 5.776x headroom, <= 1 call(s)); heads 11096 rows/call (10.84x headroom, 1 call(s))
+GEMM workload headroom teacher_chunk: 16384 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 0.361x headroom, <= 3 call(s)); heads 11096 rows/call (0.6772x headroom, 2 call(s))
+GEMM workload headroom evaluation: 512 rows x 709 padded tokens; trunk 5915 rows/call at full padding (>= 11.55x headroom, <= 1 call(s)); heads 11096 rows/call (21.67x headroom, 1 call(s))
+Compile stack check: torch 2.9.0+cu128; triton 3.5.0; NVIDIA driver 595.91.07
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_policy_evaluation_runs_native_games
+FAILED tests/scripts/test_run_ppo.py::test_main_rejects_kaggriculture_seed_before_allocation[2305843009213693952]
+FAILED tests/scripts/test_run_ppo.py::test_main_rejects_kaggriculture_seed_before_allocation[4611686018427387904]
+FAILED tests/scripts/test_run_ppo.py::test_main_rejects_kaggriculture_seed_before_allocation[9223372036854775807]
+FAILED tests/scripts/test_run_ppo.py::test_main_rejects_kaggriculture_replay_before_allocation
+FAILED tests/scripts/test_run_ppo.py::test_parse_wandb_mode[online] - SystemE...
+FAILED tests/scripts/test_run_ppo.py::test_parse_wandb_mode[offline] - System...
+FAILED tests/scripts/test_run_ppo.py::test_parse_wandb_mode_defaults_online
+FAILED tests/scripts/test_run_ppo.py::test_resume_offline_fails_before_reading_checkpoint
+FAILED tests/scripts/test_run_ppo.py::test_kaggriculture_seed_budget_covers_resets_truncation_and_update_overshoot
+FAILED tests/scripts/test_run_ppo.py::test_main_kaggriculture_rollout_factory_uses_rank_seed_and_transfer_device[cpu]
+FAILED tests/scripts/test_run_ppo.py::test_main_kaggriculture_rollout_factory_uses_rank_seed_and_transfer_device[cuda]
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_2rank.yaml-256-16384-3]
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_4rank.yaml-128-8192-2]
+FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]
+FAILED tests/scripts/test_run_ppo.py::test_resume_startup_checks_the_runtime_adapted_workload
+16 failed, 103 deselected in 0.66s
+
+
+=== wandb-red.log ===
+..FFFFFF..                                                               [100%]
+=================================== FAILURES ===================================
+_______ test_kaggriculture_wandb_init_uses_v3_identity_and_mode[online] ________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-786/test_kaggriculture_wandb_init_0')
+fake_wandb = namespace(init=<function fake_wandb.<locals>.init at 0x11110c400>, log=<function fake_wandb.<locals>.<lambda> at 0x111...st-run-id', summary={}, finish=<function fake_wandb.<locals>.<lambda> at 0x11110d080>), inits=[], logs=[], finishes=[])
+wandb_mode = 'online'
+
+    @pytest.mark.parametrize("wandb_mode", ["online", "offline"])
+    def test_kaggriculture_wandb_init_uses_v3_identity_and_mode(
+        tmp_path: Path, fake_wandb: SimpleNamespace, wandb_mode: str
+    ) -> None:
+        cfg = FullConfig.from_file(_REPO_ROOT / "configs/kaggriculture.yaml")
+    
+>       logger = create_logger(LogMode.WANDB, tmp_path, cfg, wandb_mode=wandb_mode)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: create_logger() got an unexpected keyword argument 'wandb_mode'
+
+tests/owl/train/test_logging.py:65: TypeError
+_______ test_kaggriculture_wandb_init_uses_v3_identity_and_mode[offline] _______
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-786/test_kaggriculture_wandb_init_1')
+fake_wandb = namespace(init=<function fake_wandb.<locals>.init at 0x11110e480>, log=<function fake_wandb.<locals>.<lambda> at 0x111...st-run-id', summary={}, finish=<function fake_wandb.<locals>.<lambda> at 0x11110e200>), inits=[], logs=[], finishes=[])
+wandb_mode = 'offline'
+
+    @pytest.mark.parametrize("wandb_mode", ["online", "offline"])
+    def test_kaggriculture_wandb_init_uses_v3_identity_and_mode(
+        tmp_path: Path, fake_wandb: SimpleNamespace, wandb_mode: str
+    ) -> None:
+        cfg = FullConfig.from_file(_REPO_ROOT / "configs/kaggriculture.yaml")
+    
+>       logger = create_logger(LogMode.WANDB, tmp_path, cfg, wandb_mode=wandb_mode)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: create_logger() got an unexpected keyword argument 'wandb_mode'
+
+tests/owl/train/test_logging.py:65: TypeError
+___________ test_orbit_offline_wandb_keeps_run_artifacts_in_run_dir ____________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-786/test_orbit_offline_wandb_keeps0')
+fake_wandb = namespace(init=<function fake_wandb.<locals>.init at 0x11110c400>, log=<function fake_wandb.<locals>.<lambda> at 0x111...st-run-id', summary={}, finish=<function fake_wandb.<locals>.<lambda> at 0x11110d3a0>), inits=[], logs=[], finishes=[])
+
+    def test_orbit_offline_wandb_keeps_run_artifacts_in_run_dir(
+        tmp_path: Path, fake_wandb: SimpleNamespace
+    ) -> None:
+        cfg = FullConfig.from_file(_REPO_ROOT / "configs/scaling_6m.yaml")
+    
+>       WandbLogger(tmp_path, cfg, wandb_mode="offline")
+E       TypeError: WandbLogger.__init__() got an unexpected keyword argument 'wandb_mode'
+
+tests/owl/train/test_logging.py:94: TypeError
+_______________ test_kaggriculture_online_wandb_resumes_same_run _______________
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-786/test_kaggriculture_online_wand0')
+fake_wandb = namespace(init=<function fake_wandb.<locals>.init at 0x11110e660>, log=<function fake_wandb.<locals>.<lambda> at 0x111...tion_prob': 0.0}, 'runtime': {'n_runtime_gpus': 1}}, 'id': 'existing-v3-run', 'resume': 'must'}], logs=[], finishes=[])
+
+    def test_kaggriculture_online_wandb_resumes_same_run(
+        tmp_path: Path, fake_wandb: SimpleNamespace
+    ) -> None:
+        cfg = FullConfig.from_file(_REPO_ROOT / "configs/kaggriculture.yaml")
+    
+        WandbLogger(tmp_path, cfg, resume_run_id="existing-v3-run")
+    
+        assert fake_wandb.inits[0]["id"] == "existing-v3-run"
+        assert fake_wandb.inits[0]["resume"] == "must"
+>       assert fake_wandb.inits[0]["project"] == "kg-v3"
+E       AssertionError: assert 'orbit-wars' == 'kg-v3'
+E         
+E         - kg-v3
+E         + orbit-wars
+
+tests/owl/train/test_logging.py:116: AssertionError
+_____ test_offline_wandb_rejects_resume_before_initialization[scaling_6m] ______
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-786/test_offline_wandb_rejects_res0')
+fake_wandb = namespace(init=<function fake_wandb.<locals>.init at 0x11110e980>, log=<function fake_wandb.<locals>.<lambda> at 0x111...st-run-id', summary={}, finish=<function fake_wandb.<locals>.<lambda> at 0x11110e3e0>), inits=[], logs=[], finishes=[])
+config = 'scaling_6m'
+
+    @pytest.mark.parametrize("config", ["scaling_6m", "kaggriculture"])
+    def test_offline_wandb_rejects_resume_before_initialization(
+        tmp_path: Path, fake_wandb: SimpleNamespace, config: str
+    ) -> None:
+        cfg = FullConfig.from_file(_REPO_ROOT / f"configs/{config}.yaml")
+    
+        with pytest.raises(ValueError, match="offline.*resume|resume.*offline"):
+>           WandbLogger(
+                tmp_path, cfg, resume_run_id="existing-run", wandb_mode="offline"
+            )
+E           TypeError: WandbLogger.__init__() got an unexpected keyword argument 'wandb_mode'
+
+tests/owl/train/test_logging.py:126: TypeError
+____ test_offline_wandb_rejects_resume_before_initialization[kaggriculture] ____
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-786/test_offline_wandb_rejects_res1')
+fake_wandb = namespace(init=<function fake_wandb.<locals>.init at 0x11110eca0>, log=<function fake_wandb.<locals>.<lambda> at 0x111...st-run-id', summary={}, finish=<function fake_wandb.<locals>.<lambda> at 0x11110eac0>), inits=[], logs=[], finishes=[])
+config = 'kaggriculture'
+
+    @pytest.mark.parametrize("config", ["scaling_6m", "kaggriculture"])
+    def test_offline_wandb_rejects_resume_before_initialization(
+        tmp_path: Path, fake_wandb: SimpleNamespace, config: str
+    ) -> None:
+        cfg = FullConfig.from_file(_REPO_ROOT / f"configs/{config}.yaml")
+    
+        with pytest.raises(ValueError, match="offline.*resume|resume.*offline"):
+>           WandbLogger(
+                tmp_path, cfg, resume_run_id="existing-run", wandb_mode="offline"
+            )
+E           TypeError: WandbLogger.__init__() got an unexpected keyword argument 'wandb_mode'
+
+tests/owl/train/test_logging.py:126: TypeError
+=========================== short test summary info ============================
+FAILED tests/owl/train/test_logging.py::test_kaggriculture_wandb_init_uses_v3_identity_and_mode[online]
+FAILED tests/owl/train/test_logging.py::test_kaggriculture_wandb_init_uses_v3_identity_and_mode[offline]
+FAILED tests/owl/train/test_logging.py::test_orbit_offline_wandb_keeps_run_artifacts_in_run_dir
+FAILED tests/owl/train/test_logging.py::test_kaggriculture_online_wandb_resumes_same_run
+FAILED tests/owl/train/test_logging.py::test_offline_wandb_rejects_resume_before_initialization[scaling_6m]
+FAILED tests/owl/train/test_logging.py::test_offline_wandb_rejects_resume_before_initialization[kaggriculture]
+6 failed, 4 passed in 0.08s
+
+
+=== benchmark-red.log ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______________ test_loaded_checkpoint_env_rejects_kaggriculture _______________
+
+    def test_loaded_checkpoint_env_rejects_kaggriculture() -> None:
+        cfg = FullConfig.from_file(
+            _BENCHMARK_PATH.parent.parent / "configs/kaggriculture.yaml"
+        )
+        checkpoint = benchmark_checkpoints.LoadedCheckpoint(
+            path=Path("checkpoint.pt"), config=cfg, model=object(), env_steps=0
+        )
+    
+        with pytest.raises(
+            RuntimeError, match="benchmark_checkpoints supports only Orbit checkpoints"
+        ):
+>           _ = checkpoint.env
+                ^^^^^^^^^^^^^^
+
+tests/scripts/test_benchmark_checkpoints.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/benchmark_checkpoints.py:63: in env
+    return require_orbit_env(self.config.env, context=_BENCHMARK)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=2, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=720, starting_mon..._weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=False, native_threads=1)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: benchmark_checkpoints cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+    def test_loaded_checkpoint_env_rejects_kaggriculture() -> None:
+        cfg = FullConfig.from_file(
+            _BENCHMARK_PATH.parent.parent / "configs/kaggriculture.yaml"
+        )
+        checkpoint = benchmark_checkpoints.LoadedCheckpoint(
+            path=Path("checkpoint.pt"), config=cfg, model=object(), env_steps=0
+        )
+    
+>       with pytest.raises(
+            RuntimeError, match="benchmark_checkpoints supports only Orbit checkpoints"
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'benchmark_checkpoints supports only Orbit checkpoints'
+E         Actual message: 'benchmark_checkpoints cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land'
+
+tests/scripts/test_benchmark_checkpoints.py:80: AssertionError
+_______ test_load_checkpoint_rejects_kaggriculture_before_model_creation _______
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-804/test_load_checkpoint_rejects_k0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111153ec0>
+
+    def test_load_checkpoint_rejects_kaggriculture_before_model_creation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cfg = FullConfig.from_file(
+            _BENCHMARK_PATH.parent.parent / "configs/kaggriculture.yaml"
+        )
+        cfg.to_file(tmp_path / "config.yaml")
+        checkpoint_path = tmp_path / "checkpoint.pt"
+        torch.save({}, checkpoint_path)
+    
+        def forbidden_model(*args: object, **kwargs: object) -> None:
+            pytest.fail("the Orbit benchmark must reject Kaggriculture before allocation")
+    
+        monkeypatch.setattr(benchmark_checkpoints, "create_model", forbidden_model)
+        with pytest.raises(
+            RuntimeError, match="benchmark_checkpoints supports only Orbit checkpoints"
+        ):
+>           benchmark_checkpoints._load_checkpoint(
+                checkpoint_path, device=torch.device("cpu")
+            )
+
+tests/scripts/test_benchmark_checkpoints.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/benchmark_checkpoints.py:358: in _load_checkpoint
+    env = require_orbit_env(config.env, context=_BENCHMARK)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+env = KaggricultureEnvConfig(n_envs=2, seed=0, config=KaggricultureGameConfig(board_size=10, episode_steps=720, starting_mon..._weight=1.0, econ_cap=0.25, econ_ineffective_weight=0.0, econ_ineffective_cap=0.1), pin_memory=False, native_threads=1)
+
+    def require_orbit_env(
+        env: EnvConfig | KaggricultureEnvConfig, *, context: str
+    ) -> EnvConfig:
+        """Narrow ``env`` to Isaiah's Orbit ``EnvConfig``; fail fast for Kaggriculture.
+    
+        Kaggriculture configs load, validate and pass run_ppo's workload check, but
+        ``context`` builds Orbit environments only: there is no Kaggriculture
+        environment until the native env binding (plan Task 1.4) and the trainer
+        game seam (Task 3.1) land.
+        """
+        if isinstance(env, KaggricultureEnvConfig):
+>           raise RuntimeError(
+                f"{context} cannot run Kaggriculture yet: its config loads, but there "
+                "is no Kaggriculture environment until the native env binding (plan "
+                "Task 1.4) and the trainer game seam (Task 3.1) land"
+            )
+E           RuntimeError: benchmark_checkpoints cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land
+
+python/owl/train/config.py:57: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/private/var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/pytest-of-poonszesen/pytest-804/test_load_checkpoint_rejects_k0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111153ec0>
+
+    def test_load_checkpoint_rejects_kaggriculture_before_model_creation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cfg = FullConfig.from_file(
+            _BENCHMARK_PATH.parent.parent / "configs/kaggriculture.yaml"
+        )
+        cfg.to_file(tmp_path / "config.yaml")
+        checkpoint_path = tmp_path / "checkpoint.pt"
+        torch.save({}, checkpoint_path)
+    
+        def forbidden_model(*args: object, **kwargs: object) -> None:
+            pytest.fail("the Orbit benchmark must reject Kaggriculture before allocation")
+    
+        monkeypatch.setattr(benchmark_checkpoints, "create_model", forbidden_model)
+>       with pytest.raises(
+            RuntimeError, match="benchmark_checkpoints supports only Orbit checkpoints"
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'benchmark_checkpoints supports only Orbit checkpoints'
+E         Actual message: 'benchmark_checkpoints cannot run Kaggriculture yet: its config loads, but there is no Kaggriculture environment until the native env binding (plan Task 1.4) and the trainer game seam (Task 3.1) land'
+
+tests/scripts/test_benchmark_checkpoints.py:100: AssertionError
+=========================== short test summary info ============================
+FAILED tests/scripts/test_benchmark_checkpoints.py::test_loaded_checkpoint_env_rejects_kaggriculture
+FAILED tests/scripts/test_benchmark_checkpoints.py::test_load_checkpoint_rejects_kaggriculture_before_model_creation
+2 failed, 37 deselected in 0.10s
+
+
+=== transfer-red.log ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_evaluation_mapper_keeps_cuda_nonblocking_copy ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110efc6b0>
+
+    def test_evaluation_mapper_keeps_cuda_nonblocking_copy(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        calls: list[bool] = []
+        def mapper(obs: object, device: torch.device, *, non_blocking: bool = False) -> object:
+            assert device.type == "cuda"
+            calls.append(non_blocking)
+            return obs
+        def stop(*_args: object, **_kwargs: object) -> None:
+            raise RuntimeError("after transfer")
+        monkeypatch.setattr(run_ppo, "_obs_to_device", mapper)
+        monkeypatch.setattr(run_ppo, "_model_output_for_eval", stop)
+        with pytest.raises(RuntimeError, match="after transfer"):
+            run_ppo._eval_actions_for_assignments_and_hidden(
+                _two_seat_obs(1), torch.zeros((1, 2), dtype=torch.int64),
+                current_model=_LaunchPolicy(launch=True),
+                last_best_model=_LaunchPolicy(launch=False),
+                hidden_current=None, hidden_last_best=None,
+                config=_full_config().rl, device=torch.device("cuda"),
+            )
+>       assert calls == [True]
+E       assert [False] == [True]
+E         
+E         At index 0 diff: False != True
+E         Use -v to get more diff
+
+tests/scripts/test_run_ppo.py:3600: AssertionError
+=========================== short test summary info ============================
+FAILED tests/scripts/test_run_ppo.py::test_evaluation_mapper_keeps_cuda_nonblocking_copy
+1 failed, 119 deselected in 0.25s
