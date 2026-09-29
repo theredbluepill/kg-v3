@@ -256,7 +256,8 @@ The format adds one record type. When Python's interpreter raises on an input,
 Kaggle's `env.step` fails and keeps its state; the generator records a
 `rejected` record (actions and Python exception) and then steps the policy's
 fallback actions. Rust must return an error for the same actions without
-changing any public or private state. Actions are recorded as submitted (after a
+changing any state: public and private trees (values and map key order),
+statuses, rewards and completion are compared before and after. Actions are recorded as submitted (after a
 JSON round trip); Kaggle's action-schema defaulting only adds missing top-level
 `farmer`/`hands`/`market` keys, which the interpreter defaults identically.
 
@@ -271,14 +272,19 @@ oversubscribed PLANT, malformed whole actions, and uncaught-`int()` probes);
 Kaggle's built-in `pass`, `random` (seeded through the policy RNG) and `starter`
 agents; and mixed seats. Configuration variants cover the defaults, free hires
 with 12 orders per turn (up to 249 hands, 250 actors), 10,000,000 starting money
-whose million-unit orders reach Python's 100,000-iteration market-loop escape,
+for the edge policy's 10^12-unit seed orders, which reach Python's
+100,000-iteration market-loop escape,
 and a custom set (7 turns per day, capacity 30, weed chance 0.2, shop and
 town-centre intervals, hire multiplier 3, 4 orders and sparse `marketParams`
 overrides, including `hinge` and `log10` curves). Seeds include negative and
-above-`u64` integers. The 303 minimal probes step a two-turn preamble (buy
+above-`u64` integers. The 303 one-command probes step a two-turn preamble (buy
 wheat, a goose and carrots, hire, pick up), then one probe command: every
-malformed unit and order, 33 quantity spellings for PICKUP, PLACE and each market
-verb, unhashable verbs and items, missing-hand commands and malformed actions.
+malformed unit and order, 33 quantity spellings for PICKUP, PLACE and the four
+quantity-taking market verbs (BUY_SEED, SELL, BUY_PRODUCT, BUY_ANIMAL),
+unhashable verbs and items, missing-hand commands and malformed whole actions,
+including `null`. Scripted actions are submitted exactly; before the Task 1.1b
+verification fix the `null` whole-action probe (probe 296) was replaced by PASS,
+so the sweep recorded at `8ca378b` did not probe it (full-game policies did).
 
 `engine_rs/tests/replay_parity.rs` uses one comparator for three sources and
 reports the first divergence as line, step, kind and field path with expected
@@ -288,7 +294,7 @@ and actual values. Rust starts from configuration and seed only.
 | --- | --- | --- | --- |
 | Official recorded episodes | 4 | 2,876 | agree |
 | Committed generated games | 8 | 3,960 (25 Python rejections) | agree |
-| Committed divergence repros | 7 | 35 (5 Python rejections) | expected failures, asserted exactly |
+| Committed divergence repros | 7 | 7 (5 Python rejections) | expected failures, asserted exactly |
 | Local sweep, 40 games | 40 | 21,824 (155 Python rejections) | agree |
 | Local sweep, 303 probes | 303 | 1,515 | 266 agree, 37 diverge (D1 12, D2 25) |
 
@@ -298,7 +304,7 @@ The committed games are `random` vs `random`, `edge` vs `edge`, built-in
 `edge` with seed −123,456; seeds are 11, 22, 33, 44, 55, 66, 2^64+7 and −123,456.
 `engine_rs/fixtures/generated/MANIFEST.json` pins each trace's SHA-256, size,
 policies, policy seed, configuration, counts and any expected divergence. The
-15 files total 667,059 bytes (budget 4,000,000). `scripts/check_engine_trim.py` validates
+15 files total 665,021 bytes (budget 4,000,000). `scripts/check_engine_trim.py` validates
 that manifest, its exact file inventory, the Cargo engine pin and the budget;
 `TRIM_MANIFEST.json` pins the manifest bytes. Rust tests also fail when a
 committed state value, private key order, action or rejection claim is
@@ -317,11 +323,21 @@ replay a larger directory with the same comparator.
 #### Known Divergences
 
 Both classes concern malformed input only. The vendored kernel bytes are pinned,
-so they are recorded, not repaired; seven minimized repros are expected-failure
-fixtures with these reasons, and the test fails if any stops diverging exactly.
-Full-game policies exclude these inputs by default so a game can test the rest
-of the episode; `--include-known-divergences` restores them (12 such games: 8
-diverge, all classified D1 or D2).
+so they are recorded, not repaired. Seven minimal repros are expected-failure
+fixtures with these reasons: one-step games (`episodeSteps` 2) whose first
+seat-0 action carries only the divergent field, so each diverges at line 1,
+step 0; the test fails if any stops diverging exactly there. Full-game policies
+exclude these inputs by default so a game can test the rest of the episode;
+`--include-known-divergences` restores them.
+
+The sweep classifies a divergence from the observed mismatch, not from the
+input alone. D2 requires a `rejected` record whose Python error is
+`TypeError: unhashable type`, an unhashable input on that line and a Rust
+`rust_accepted` result. D1 requires a Python-accepted transition with Unicode
+digit input on the divergent line, and a Rust recheck of the same trace with
+only that line's digits spelled in ASCII (what Python's `int()` read) must pass
+that line. Anything else is reported as a new divergence and the sweep exits 1;
+a trace corrupted at `public.day` on a D1 line stays unclassified.
 
 - **D1, Unicode decimal digits.** Python `int()` accepts non-ASCII decimal digit
   strings such as `"\u0663"` (Arabic-Indic three) and `"\uff13"` (full-width

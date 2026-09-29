@@ -161,14 +161,37 @@ def test_known_divergences_are_recorded_expected_failures() -> None:
     for name, action, kind, field, reason in generator.KNOWN_DIVERGENCES:
         entry = by_name[f"{name}.jsonl.gz"]
         assert json.loads(entry["probe"]) == action
+        # Minimal repros: the divergent action is the first step of a one-step game.
         assert entry["expected_divergence"] == {
-            "line": 3,
-            "from_step": 2,
+            "line": 1,
+            "from_step": 0,
             "kind": kind,
             "field": field,
             "reason": reason,
         }
-        assert sweep.classify([action, generator.PASS_ACTION]) is not None
+        assert entry["transitions"] == 1
+        records = _records(GENERATED / entry["path"])
+        assert records[1]["from_step"] == 0
+        assert records[1]["actions"] == [action, generator.PASS_ACTION]
+        assert sweep.input_classes([action, generator.PASS_ACTION])
+
+
+def test_known_divergence_actions_carry_no_unused_fields() -> None:
+    for name, action, *_ in generator.KNOWN_DIVERGENCES:
+        assert len(action) == 1, name
+        assert "PASS" not in json.dumps(action), name
+
+
+def test_scripted_null_action_is_submitted_not_replaced() -> None:
+    """A probe of a null whole action must submit null, not PASS."""
+    spec = generator._probe_spec("probe-null", None)
+    choices = generator.scripted_choices(spec, len(generator.PROBE_PREAMBLE))
+    assert [choice.action for choice in choices] == [None, generator.PASS_ACTION]
+    assert all(choice.fallback == generator.PASS_ACTION for choice in choices)
+    after = generator.scripted_choices(spec, len(generator.PROBE_PREAMBLE) + 1)
+    assert [choice.action for choice in after] == [generator.PASS_ACTION] * 2
+    labels = dict(generator.probe_cases())
+    assert any(action is None for kind, action in generator.probe_cases()), labels
 
 
 def test_edge_policy_excludes_known_divergent_inputs_by_default() -> None:
@@ -183,43 +206,130 @@ def test_edge_policy_excludes_known_divergent_inputs_by_default() -> None:
         policy = generator.make_edge_policy(include)
         rng = random.Random(3)
         classes = {
-            sweep.classify([policy(observation, config, rng).action])
+            cls
             for _ in range(3000)
+            for cls in sweep.input_classes([policy(observation, config, rng).action])
         }
-        assert classes - {None} == ({"D1", "D2"} if include else set())
+        assert classes == ({"D1", "D2"} if include else set())
 
 
-def test_sweep_summary_reports_first_divergence(tmp_path: Path) -> None:
+def _summary_case(
+    tmp_path: Path,
+    record: dict[str, Any],
+    divergence: dict[str, Any],
+    recheck: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     trace = tmp_path / "probe-000-unit.jsonl.gz"
-    action = {"farmer": ["PLANT", ["WHEAT"]], "hands": [], "market": []}
-    trace.write_bytes(
-        generator.encode_trace(
-            [
-                {"type": "header"},
-                {"type": "rejected", "from_step": 0, "actions": [action, {}]},
-            ]
-        )
-    )
+    trace.write_bytes(generator.encode_trace([{"type": "header"}, record]))
     generated = [
         {
             "path": trace.name,
             "seed": 7,
             "policies": ["script", "builtin:pass"],
             "config_variant": "probe",
-            "probe": json.dumps(action),
+            "probe": json.dumps(record["actions"][0]),
             "transitions": 5,
             "rejected": 1,
         }
     ]
-    divergence = {"line": 1, "from_step": 0, "kind": "rust_accepted", "field": "step"}
     report = [{"file": trace.name, "ok": False, "divergence": divergence}]
-    summary = sweep.summarize(generated, report, tmp_path)
+    return dict(sweep.summarize(generated, report, tmp_path, recheck))
+
+
+D2_ACTION = {"farmer": ["PLANT", ["WHEAT"]], "hands": [], "market": []}
+D2_REJECTED = {
+    "type": "rejected",
+    "from_step": 0,
+    "actions": [D2_ACTION, {}],
+    "python_error": "TypeError: unhashable type: 'list'",
+}
+D1_ACTION = {"farmer": ["PASS"], "hands": [], "market": [["SELL", "WHEAT", "٣"]]}
+D1_TRANSITION = {"type": "transition", "from_step": 0, "actions": [D1_ACTION, {}]}
+
+
+def _divergence(kind: str, field: str, line: int = 1) -> dict[str, Any]:
+    return {"line": line, "from_step": 0, "kind": kind, "field": field}
+
+
+def test_sweep_summary_reports_first_divergence(tmp_path: Path) -> None:
+    divergence = _divergence("rust_accepted", "step")
+    summary = _summary_case(tmp_path, D2_REJECTED, divergence)
     assert summary["traces_diverging"] == 1
     assert summary["divergences"][0]["first_divergence"] == divergence
     assert summary["divergences_by_class"] == {"D2": 1}
     assert summary["new_divergences"] == 0
-    assert sweep.classify([{"market": [["SELL", "WHEAT", "٣"]]}]) == "D1"
-    assert sweep.classify([{"market": [["SELL", "WHEAT", "3"]]}]) is None
+    assert sweep.input_classes([{"market": [["SELL", "WHEAT", "٣"]]}]) == ["D1"]
+    assert sweep.input_classes([{"market": [["SELL", "WHEAT", "3"]]}]) == []
+
+
+def test_d2_class_requires_its_observed_signature(tmp_path: Path) -> None:
+    """Recognizing a D2 input is not enough: the mismatch must be D2's."""
+    cases = [
+        # Python accepted the step and the states differ: not D2.
+        ({**D2_REJECTED, "type": "transition"}, _divergence("public state", "x")),
+        # Python raised something other than an unhashable-type TypeError.
+        ({**D2_REJECTED, "python_error": "ValueError: x"}, None),
+        # Rust rejected too but then changed its state.
+        (D2_REJECTED, _divergence("rust_mutated public state", "public.day")),
+    ]
+    for index, (record, divergence) in enumerate(cases):
+        case = tmp_path / str(index)
+        case.mkdir()
+        divergence = divergence or _divergence("rust_accepted", "step")
+        summary = _summary_case(case, record, divergence)
+        assert summary["divergences_by_class"] == {"unclassified": 1}, record
+        assert summary["new_divergences"] == 1
+
+
+def test_d1_class_requires_the_ascii_recheck_to_pass_the_line(tmp_path: Path) -> None:
+    """A D1 input on a line whose state was corrupted must stay unclassified."""
+    divergence = _divergence("public state", "public.day")
+    unconfirmed = [
+        None,
+        [{"file": "probe-000-unit.jsonl.gz", "ok": False, "divergence": divergence}],
+    ]
+    for index, recheck in enumerate(unconfirmed):
+        case = tmp_path / f"unconfirmed-{index}"
+        case.mkdir()
+        summary = _summary_case(case, D1_TRANSITION, divergence, recheck)
+        assert summary["divergences_by_class"] == {"unclassified": 1}
+        assert summary["new_divergences"] == 1
+    later = _divergence("public state", "public.day", line=2)
+    for index, recheck in enumerate(
+        [
+            [{"file": "probe-000-unit.jsonl.gz", "ok": True}],
+            [{"file": "probe-000-unit.jsonl.gz", "ok": False, "divergence": later}],
+        ]
+    ):
+        case = tmp_path / f"confirmed-{index}"
+        case.mkdir()
+        summary = _summary_case(case, D1_TRANSITION, divergence, recheck)
+        assert summary["divergences_by_class"] == {"D1": 1}
+        assert summary["new_divergences"] == 0
+
+
+def test_d1_recheck_rewrites_only_the_divergent_line(tmp_path: Path) -> None:
+    records = [
+        {"type": "header"},
+        {**D1_TRANSITION, "from_step": 0},
+        {**D1_TRANSITION, "from_step": 1},
+    ]
+    traces = tmp_path / "traces"
+    traces.mkdir()
+    (traces / "t.jsonl.gz").write_bytes(generator.encode_trace(records))
+    report = [
+        {
+            "file": "t.jsonl.gz",
+            "ok": False,
+            "divergence": _divergence("rust_error", "step"),
+        }
+    ]
+    recheck = tmp_path / "recheck"
+    assert sweep.write_d1_rechecks(report, traces, recheck) == ["t.jsonl.gz"]
+    rewritten = _records(recheck / "t.jsonl.gz")
+    assert rewritten[1]["actions"][0]["market"] == [["SELL", "WHEAT", "3"]]
+    assert rewritten[2] == records[2]
+    assert rewritten[0] == records[0]
 
 
 # ------------------------------------------------- optional live regeneration

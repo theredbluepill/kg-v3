@@ -32,7 +32,7 @@ import random
 import sys
 import time
 import tomllib
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -168,11 +168,13 @@ CONFIG_VARIANTS: dict[str, dict[str, Any]] = {
         "farmHandCostMult": 0,
         "maxMarketOrdersPerTurn": 12,
     },
-    # Enough money for 1,000,000-unit seed orders, which hit Python's
-    # 100,000-iteration market-loop escape.
+    # Enough money (at least 1,000,000) for the edge policy's 10**12-unit seed
+    # orders, which hit Python's 100,000-iteration market-loop escape.
     "rich": {"episodeSteps": 96, "startingMoney": 10_000_000},
     # Minimal probes: a two-step preamble, one probe step, then passes.
     "probe": {"episodeSteps": 6},
+    # Known-divergence repros: one transition, the divergent action.
+    "divergence": {"episodeSteps": 2},
     # Non-default intervals, capacity, weeds and sparse market-curve overrides.
     "custom": {
         "episodeSteps": 200,
@@ -466,55 +468,54 @@ D2_REASON = (
     "the Rust kernel treats the command as a no-op and accepts the step. The "
     "vendored kernel bytes are pinned, so this is recorded, not repaired."
 )
-_UNIT = {"hands": [["PASS"]], "market": []}
-_MARKET = {"farmer": ["PASS"], "hands": []}
-# (name, probe action at step 2, Rust divergence kind, field, reason)
+# (name, the first action of a one-step game, Rust divergence kind, field, reason).
+# Minimal repros: no preamble, no trailing turns and only the divergent field.
 KNOWN_DIVERGENCES: list[tuple[str, Any, str, str, str]] = [
     (
         "divergence-d1-unicode-digit-unit-count",
-        {"farmer": ["PICKUP", "WHEAT", "\u0663"], **_UNIT},
+        {"farmer": ["PICKUP", "WHEAT", "\u0663"]},
         "rust_error",
         "step",
         D1_REASON,
     ),
     (
         "divergence-d1-unicode-digit-market-quantity",
-        {**_MARKET, "market": [["BUY_PRODUCT", "FERTILIZER", "\uff13"]]},
+        {"market": [["BUY_PRODUCT", "FERTILIZER", "\uff13"]]},
         "public state",
         "public.farms[0].money",
         D1_REASON,
     ),
     (
         "divergence-d2-unhashable-plant-crop",
-        {"farmer": ["PLANT", ["WHEAT"]], **_UNIT},
+        {"farmer": ["PLANT", ["WHEAT"]]},
         "rust_accepted",
         "step",
         D2_REASON,
     ),
     (
         "divergence-d2-unhashable-unit-verb",
-        {"farmer": [["NORTH"]], **_UNIT},
+        {"farmer": [["NORTH"]]},
         "rust_accepted",
         "step",
         D2_REASON,
     ),
     (
         "divergence-d2-unhashable-shed-item",
-        {"farmer": ["PICKUP", {"crop": "WHEAT"}], **_UNIT},
+        {"farmer": ["PICKUP", {"crop": "WHEAT"}]},
         "rust_accepted",
         "step",
         D2_REASON,
     ),
     (
         "divergence-d2-unhashable-plant-in-missing-hand",
-        {"farmer": ["PASS"], "hands": [["PASS"], ["PLANT", ["WHEAT"]]], "market": []},
+        {"hands": [["PLANT", ["WHEAT"]]]},
         "rust_accepted",
         "step",
         D2_REASON,
     ),
     (
         "divergence-d2-unhashable-market-item",
-        {**_MARKET, "market": [["BUY_SEED", ["WHEAT"], 1]]},
+        {"market": [["BUY_SEED", ["WHEAT"], 1]]},
         "rust_accepted",
         "step",
         D2_REASON,
@@ -579,7 +580,7 @@ def _edge_choice(
     if rng.random() < 0.15:
         market.insert(rng.randrange(len(market) + 1), [])
     if float(farm["money"]) >= 1_000_000 and rng.random() < 0.1:
-        # One-million-unit orders exhaust Python's 100,000-iteration market loop.
+        # 10**12-unit orders exhaust Python's 100,000-iteration market loop.
         market.insert(0, ["BUY_SEED", rng.choice(CROPS), 10**12])
     if rng.random() < 0.2 and market:
         # Duplicates and reversed (out-of-order) queues.
@@ -725,6 +726,15 @@ def _observations(env: Any) -> list[dict[str, Any]]:
     ]
 
 
+def scripted_choices(spec: GameSpec, step: int) -> list[Choice]:
+    """A scripted game's submitted pair at ``step``; both seats pass afterwards.
+
+    Scripted actions are submitted exactly, including a null whole action.
+    """
+    pair = spec.script[step] if step < len(spec.script) else (PASS_ACTION,) * 2
+    return [Choice(action, fallback=PASS_ACTION) for action in pair]
+
+
 def play(
     spec: GameSpec,
     kaggle: ModuleType,
@@ -755,11 +765,7 @@ def play(
         step = env.state[0].observation.step
         observations = _observations(env)
         if spec.script:
-            pair = spec.script[step] if step < len(spec.script) else (None, None)
-            choices = [
-                Choice(PASS_ACTION if act is None else act, fallback=PASS_ACTION)
-                for act in pair
-            ]
+            choices = scripted_choices(spec, step)
         else:
             choices = [
                 policy(obs, config, rng)
@@ -903,17 +909,31 @@ def committed_specs() -> list[GameSpec]:
         )
         for index, (name, seed, policies, variant) in enumerate(COMMITTED)
     ]
-    return games + [_probe_spec(name, action) for name, action, *_ in KNOWN_DIVERGENCES]
+    return games + [
+        _probe_spec(name, action, preamble=(), variant="divergence")
+        for name, action, *_ in KNOWN_DIVERGENCES
+    ]
 
 
-def _probe_spec(name: str, action: Any, seed: int = 7) -> GameSpec:
+def _probe_spec(
+    name: str,
+    action: Any,
+    seed: int = 7,
+    preamble: Sequence[Any] | None = None,
+    variant: str = "probe",
+) -> GameSpec:
+    """Seat 0 plays ``preamble`` (default PROBE_PREAMBLE), then ``action``.
+
+    Seat 1 passes throughout.
+    """
+    steps = [*(PROBE_PREAMBLE if preamble is None else preamble), action]
     return GameSpec(
         name=name,
         seed=seed,
         policies=("script", "builtin:pass"),
-        variant="probe",
+        variant=variant,
         policy_seed=0,
-        script=tuple((act, None) for act in [*PROBE_PREAMBLE, action]),
+        script=tuple((act, PASS_ACTION) for act in steps),
         probe=json.dumps(action, separators=(",", ":")),
     )
 
@@ -1032,10 +1052,10 @@ def probe_specs() -> list[GameSpec]:
 def known_divergence(name: str) -> dict[str, Any] | None:
     for known, _, kind, field_path, reason in KNOWN_DIVERGENCES:
         if known == name:
-            # Probe line 3 is step 2 (header, two preamble transitions, probe).
+            # Line 1 is step 0: the repro's divergent action is its first step.
             return {
-                "line": 3,
-                "from_step": 2,
+                "line": 1,
+                "from_step": 0,
                 "kind": kind,
                 "field": field_path,
                 "reason": reason,

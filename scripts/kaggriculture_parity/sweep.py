@@ -73,29 +73,28 @@ def _unhashable(value: Any) -> bool:
     return isinstance(value, list | dict)
 
 
-def classify(actions: list[Any]) -> str | None:
-    """Name the documented divergence class that a step's inputs belong to.
+def _is_unicode_digits(text: str) -> bool:
+    return any(not c.isascii() for c in text) and text.strip().isdecimal()
 
-    D1: a non-ASCII Unicode decimal digit string (Python int() accepts it).
-    D2: an unhashable verb or item that reaches one of Python's dict lookups:
-    a unit verb, a PLANT/PICKUP/PLACE item, or a BUY_SEED/BUY_ANIMAL item.
-    """
-    for text in _strings(actions):
-        if any(not c.isascii() for c in text) and text.strip().isdecimal():
-            return "D1"
+
+def _has_d1(actions: list[Any]) -> bool:
+    return any(_is_unicode_digits(text) for text in _strings(actions))
+
+
+def _has_d2(actions: list[Any]) -> bool:
     for action in actions:
         units, orders = _commands(action)
         for command in units:
             if not isinstance(command, list) or not command:
                 continue
             if _unhashable(command[0]):
-                return "D2"
+                return True
             if (
                 command[0] in ("PLANT", "PICKUP", "PLACE")
                 and len(command) >= 2
                 and _unhashable(command[1])
             ):
-                return "D2"
+                return True
         for order in orders:
             if (
                 isinstance(order, list)
@@ -103,8 +102,107 @@ def classify(actions: list[Any]) -> str | None:
                 and order[0] in ("BUY_SEED", "BUY_ANIMAL")
                 and _unhashable(order[1])
             ):
-                return "D2"
+                return True
+    return False
+
+
+def input_classes(actions: list[Any]) -> list[str]:
+    """Documented divergence classes whose inputs occur in a step's actions.
+
+    D1: a non-ASCII Unicode decimal digit string (Python int() accepts it).
+    D2: an unhashable verb or item that reaches one of Python's dict lookups:
+    a unit verb, a PLANT/PICKUP/PLACE item, or a BUY_SEED/BUY_ANIMAL item.
+
+    An input match alone never classifies a divergence; see ``confirmed_class``.
+    """
+    return [
+        name
+        for name, present in (("D1", _has_d1(actions)), ("D2", _has_d2(actions)))
+        if present
+    ]
+
+
+def ascii_digits(value: Any) -> Any:
+    """Replace each Unicode digit string with the ASCII digits Python int() reads."""
+    if isinstance(value, str):
+        return str(int(value)) if _is_unicode_digits(value) else value
+    if isinstance(value, list):
+        return [ascii_digits(item) for item in value]
+    if isinstance(value, dict):
+        return {key: ascii_digits(item) for key, item in value.items()}
+    return value
+
+
+def _d2_observed(record: dict[str, Any], divergence: dict[str, Any]) -> bool:
+    """D2's mismatch: Python raised an unhashable TypeError; Rust accepted."""
+    return (
+        record.get("type") == "rejected"
+        and str(record.get("python_error", "")).startswith("TypeError: unhashable type")
+        and divergence["kind"] == "rust_accepted"
+        and divergence["field"] == "step"
+    )
+
+
+def _d1_observed(
+    record: dict[str, Any],
+    divergence: dict[str, Any],
+    recheck: dict[str, Any] | None,
+) -> bool:
+    """D1's mismatch: Python acted on the step, and an ASCII recheck passes it.
+
+    The recheck is the same trace with only that line's Unicode digits spelled
+    in ASCII; it must get Rust past the divergent line.
+    """
+    if record.get("type") != "transition" or recheck is None:
+        return False
+    return bool(recheck["ok"]) or recheck["divergence"]["line"] > divergence["line"]
+
+
+def confirmed_class(
+    record: dict[str, Any],
+    divergence: dict[str, Any],
+    recheck: dict[str, Any] | None,
+) -> str | None:
+    """The documented class that explains the observed first divergence, if any."""
+    actions = record.get("actions")
+    classes = input_classes(actions if isinstance(actions, list) else [])
+    if "D2" in classes and _d2_observed(record, divergence):
+        return "D2"
+    if "D1" in classes and _d1_observed(record, divergence, recheck):
+        return "D1"
     return None
+
+
+def write_d1_rechecks(
+    report: list[dict[str, Any]], traces_dir: Path, recheck_dir: Path
+) -> list[str]:
+    """Write ASCII rechecks of traces whose divergent line has D1 inputs.
+
+    Each copy in ``recheck_dir`` rewrites only that line's Unicode digits in
+    ASCII. Returns the rewritten trace names.
+    """
+    names = []
+    for result in report:
+        if result["ok"]:
+            continue
+        line = result["divergence"]["line"]
+        with gzip.open(traces_dir / result["file"], "rt", encoding="utf-8") as handle:
+            records = [json.loads(text) for text in handle]
+        if line == 0 or line >= len(records):
+            continue
+        actions = records[line].get("actions")
+        if not isinstance(actions, list) or "D1" not in input_classes(actions):
+            continue
+        records[line] = {**records[line], "actions": ascii_digits(actions)}
+        recheck_dir.mkdir(parents=True, exist_ok=True)
+        text = "".join(
+            json.dumps(record, separators=(",", ":"), allow_nan=False) + "\n"
+            for record in records
+        )
+        with gzip.GzipFile(recheck_dir / result["file"], "wb", mtime=0) as handle:
+            handle.write(text.encode("utf-8"))
+        names.append(result["file"])
+    return names
 
 
 def _record(path: Path, line: int) -> dict[str, Any]:
@@ -119,9 +217,11 @@ def summarize(
     generated: list[dict[str, Any]],
     report: list[dict[str, Any]],
     traces_dir: Path,
+    recheck_report: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     by_file = {entry["path"]: entry for entry in generated}
     replayed = {entry["file"]: entry for entry in report}
+    rechecked = {entry["file"]: entry for entry in recheck_report or []}
     missing = sorted(set(by_file) - set(replayed))
     if missing:
         raise RuntimeError(f"Rust did not replay: {missing}")
@@ -146,7 +246,6 @@ def summarize(
             continue
         divergence = result["divergence"]
         record = _record(traces_dir / name, divergence["line"])
-        actions = record.get("actions", [])
         divergences.append(
             {
                 "file": name,
@@ -156,7 +255,7 @@ def summarize(
                 "config_variant": entry["config_variant"],
                 **({"probe": entry["probe"]} if "probe" in entry else {}),
                 "first_divergence": divergence,
-                "known_class": classify(actions if isinstance(actions, list) else []),
+                "known_class": confirmed_class(record, divergence, rechecked.get(name)),
             }
         )
     games = [e for e in generated if "probe" not in e]
@@ -180,6 +279,39 @@ def summarize(
         "seeds": sorted({e["seed"] for e in games}),
         "divergences": divergences,
     }
+
+
+def rust_replay(traces: Path, env: dict[str, str]) -> tuple[int, list[dict[str, Any]]]:
+    """Replay every trace in ``traces`` in Rust; return (exit code, report)."""
+    report_path = traces / "rust-report.json"
+    rust_env = {
+        **env,
+        "KAGG_PARITY_TRACES": str(traces),
+        "KAGG_PARITY_REPORT": str(report_path),
+        "CARGO_BUILD_JOBS": env.get("CARGO_BUILD_JOBS", "3"),
+    }
+    rust = [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "engine_rs/Cargo.toml",
+        "--locked",
+        "--offline",
+        "--test",
+        "replay_parity",
+        "env_directory_traces",
+        "--",
+        "--exact",
+        "--test-threads=1",
+    ]
+    print("+", " ".join(rust), flush=True)
+    status = subprocess.run(rust, cwd=REPO_ROOT, env=rust_env, check=False)
+    if not report_path.is_file():
+        raise SystemExit(
+            f"Rust replay wrote no report (exit {status.returncode}); "
+            "see the cargo output above"
+        )
+    return status.returncode, list(json.loads(report_path.read_text(encoding="utf-8")))
 
 
 def _git(*args: str) -> str:
@@ -242,37 +374,17 @@ def main(argv: list[str] | None = None) -> int:
             env,
         )
         generated += json.loads(probes_summary.read_text(encoding="utf-8"))
-    report_path = args.traces / "rust-report.json"
-    rust_env = {
-        **env,
-        "KAGG_PARITY_TRACES": str(args.traces),
-        "KAGG_PARITY_REPORT": str(report_path),
-        "CARGO_BUILD_JOBS": env.get("CARGO_BUILD_JOBS", "3"),
-    }
-    rust = [
-        "cargo",
-        "test",
-        "--manifest-path",
-        "engine_rs/Cargo.toml",
-        "--locked",
-        "--offline",
-        "--test",
-        "replay_parity",
-        "env_directory_traces",
-        "--",
-        "--exact",
-        "--test-threads=1",
-    ]
     started_rust = time.perf_counter()
-    print("+", " ".join(rust), flush=True)
-    rust_status = subprocess.run(rust, cwd=REPO_ROOT, env=rust_env, check=False)
+    rust_exit, report = rust_replay(args.traces, env)
     timings["rust_replay_s"] = time.perf_counter() - started_rust
-    if not report_path.is_file():
-        raise SystemExit(
-            f"Rust replay wrote no report (exit {rust_status.returncode}); "
-            "see the cargo output above"
-        )
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    # A D1 input on the divergent line classifies it only if spelling those
+    # digits in ASCII (what Python's int() read) gets Rust past that line.
+    recheck_dir = args.traces / "d1-recheck"
+    recheck_report = None
+    if write_d1_rechecks(report, args.traces, recheck_dir):
+        started_recheck = time.perf_counter()
+        _, recheck_report = rust_replay(recheck_dir, env)
+        timings["rust_d1_recheck_s"] = time.perf_counter() - started_recheck
     summary = {
         "sweep": "kaggriculture-live-differential-parity",
         "started": started,
@@ -287,9 +399,9 @@ def main(argv: list[str] | None = None) -> int:
             "include_known_divergences": args.include_known_divergences,
             "traces_dir": str(args.traces),
         },
-        "rust_test_exit_code": rust_status.returncode,
+        "rust_test_exit_code": rust_exit,
         "timings": {key: round(value, 2) for key, value in timings.items()},
-        **summarize(generated, report, args.traces),
+        **summarize(generated, report, args.traces, recheck_report),
     }
     output = args.out / "sweep-summary.json"
     output.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

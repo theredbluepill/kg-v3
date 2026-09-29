@@ -265,6 +265,67 @@ fn comparator_names_first_differing_field() {
     );
 }
 
+fn view(public: &str, statuses: [&str; 2], rewards: [f64; 2], done: bool) -> StateView {
+    StateView {
+        public: serde_json::from_str(public).unwrap(),
+        privates: json!([{"seeds": {"WHEAT": 1, "CORN": 2}}, {}]),
+        statuses: statuses.map(str::to_string).to_vec(),
+        rewards: rewards.to_vec(),
+        done,
+    }
+}
+
+#[test]
+fn rollback_check_accepts_an_untouched_state() {
+    let before = view(r#"{"a":1,"b":2}"#, ["ACTIVE", "ACTIVE"], [0.0, 0.0], false);
+    assert!(rollback_difference(&before, &before.clone(), 4, Some(3)).is_ok());
+}
+
+#[test]
+fn rollback_check_rejects_a_key_order_only_mutation() {
+    let before = view(r#"{"a":1,"b":2}"#, ["ACTIVE", "ACTIVE"], [0.0, 0.0], false);
+    let after = view(r#"{"b":2,"a":1}"#, ["ACTIVE", "ACTIVE"], [0.0, 0.0], false);
+    // serde_json's Value equality ignores key order; the rollback check must not.
+    assert_eq!(before.public, after.public);
+    let divergence = rollback_difference(&before, &after, 4, Some(3)).unwrap_err();
+    assert_eq!(divergence.kind, "rust_mutated public map key order");
+    assert_eq!((divergence.line, divergence.from_step), (4, Some(3)));
+    let mut private = before.clone();
+    let seeds = private.privates[0]["seeds"].as_object_mut().unwrap();
+    let wheat = seeds.shift_remove("WHEAT").unwrap();
+    seeds.insert("WHEAT".to_string(), wheat);
+    let divergence = rollback_difference(&before, &private, 4, Some(3)).unwrap_err();
+    assert_eq!(divergence.kind, "rust_mutated private map key order");
+    assert_eq!(divergence.field, "private[0].seeds");
+}
+
+#[test]
+fn rollback_check_rejects_status_reward_and_done_mutations() {
+    let before = view(r#"{"a":1}"#, ["ACTIVE", "ACTIVE"], [0.0, 0.0], false);
+    for (after, field) in [
+        (
+            view(r#"{"a":1}"#, ["DONE", "ACTIVE"], [0.0, 0.0], false),
+            "statuses",
+        ),
+        (
+            view(r#"{"a":1}"#, ["ACTIVE", "ACTIVE"], [1.0, 0.0], false),
+            "rewards",
+        ),
+        (
+            view(r#"{"a":1}"#, ["ACTIVE", "ACTIVE"], [0.0, 0.0], true),
+            "done",
+        ),
+        (
+            view(r#"{"a":2}"#, ["ACTIVE", "ACTIVE"], [0.0, 0.0], false),
+            "public.a",
+        ),
+    ] {
+        let divergence = rollback_difference(&before, &after, 4, Some(3)).unwrap_err();
+        assert!(divergence.kind.starts_with("rust_mutated"), "{divergence}");
+        assert_eq!(divergence.field, field);
+    }
+}
+
 #[test]
 fn kernel_public_api() {
     let config = Config {
@@ -321,11 +382,74 @@ fn parse_line(line: &str, index: usize) -> Result<Value, Divergence> {
 }
 
 fn snapshot_values(game: &Game) -> (Value, Value) {
+    let view = state_view(game);
+    (view.public, view.privates)
+}
+
+/// Everything a Python-rejected step must leave untouched in the Rust game.
+#[derive(Clone, Debug, PartialEq)]
+struct StateView {
+    public: Value,
+    privates: Value,
+    statuses: Vec<String>,
+    rewards: Vec<f64>,
+    done: bool,
+}
+
+fn state_view(game: &Game) -> StateView {
     let snapshot = game.snapshot();
-    (
-        serde_json::to_value(&snapshot.public).unwrap(),
-        serde_json::to_value(&snapshot.privates).unwrap(),
+    StateView {
+        public: serde_json::to_value(&snapshot.public).unwrap(),
+        privates: serde_json::to_value(&snapshot.privates).unwrap(),
+        statuses: snapshot.statuses,
+        rewards: snapshot.rewards,
+        done: snapshot.done,
+    }
+}
+
+/// A rejected step must leave the complete state untouched: public and private
+/// trees (values and map key order, which `Value` equality ignores), statuses,
+/// rewards and completion.
+fn rollback_difference(
+    before: &StateView,
+    after: &StateView,
+    line: usize,
+    from_step: Option<usize>,
+) -> Result<(), Divergence> {
+    let mutated = |divergence: Divergence| Divergence {
+        kind: format!("rust_mutated {}", divergence.kind),
+        ..divergence
+    };
+    compare_tree(&after.public, &before.public, "public", line, from_step).map_err(mutated)?;
+    compare_tree(
+        &after.privates,
+        &before.privates,
+        "private",
+        line,
+        from_step,
     )
+    .map_err(mutated)?;
+    let scalar = |field: &str, expected: String, actual: String| {
+        Err(Divergence::new(line, from_step, "rust_mutated", field).values(expected, actual))
+    };
+    if after.statuses != before.statuses {
+        return scalar(
+            "statuses",
+            format!("{:?}", before.statuses),
+            format!("{:?}", after.statuses),
+        );
+    }
+    if after.rewards != before.rewards {
+        return scalar(
+            "rewards",
+            format!("{:?}", before.rewards),
+            format!("{:?}", after.rewards),
+        );
+    }
+    if after.done != before.done {
+        return scalar("done", before.done.to_string(), after.done.to_string());
+    }
+    Ok(())
 }
 
 /// Replay one trace from its configuration and seed, stopping at the first
@@ -390,15 +514,12 @@ fn replay_text(text: &str) -> Result<ReplayStats, Divergence> {
         };
         match row["type"].as_str() {
             Some("rejected") => {
-                let before = snapshot_values(&game);
+                let before = state_view(&game);
                 if game.step(actions).is_ok() {
                     return Err(Divergence::new(index, from_step, "rust_accepted", "step")
                         .values(format!("error ({})", row["python_error"]), "Ok"));
                 }
-                if snapshot_values(&game) != before {
-                    return Err(Divergence::new(index, from_step, "rust_mutated", "state")
-                        .values("unchanged after rejected step", "changed"));
-                }
+                rollback_difference(&before, &state_view(&game), index, from_step)?;
                 stats.rejected += 1;
             },
             Some("transition") => {
@@ -508,10 +629,11 @@ fn generated_trace(name: &str) -> String {
 /// Traces generated live from Kaggle's engine with seeded random, edge-case,
 /// built-in and mixed-seat policies (see the manifest for each game's inputs).
 ///
-/// Entries with `expected_divergence` are minimized repros of documented
-/// divergences (D1, D2 in docs/rules-parity-coverage.md). The vendored kernel is
-/// byte-pinned, so they are expected failures: each must still diverge at exactly
-/// the recorded line, step, kind and field, or this test fails.
+/// Entries with `expected_divergence` are minimal repros of documented
+/// divergences (D1, D2 in docs/rules-parity-coverage.md): one-step games whose
+/// first action is the divergent input, carrying only the divergent field. The
+/// vendored kernel is byte-pinned, so they are expected failures: each must still
+/// diverge at exactly the recorded line, step, kind and field, or this test fails.
 #[test]
 fn generated_fixtures_replay() {
     let traces = generated_manifest();

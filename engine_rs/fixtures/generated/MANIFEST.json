@@ -119,21 +119,21 @@
     },
     {
       "path": "divergence-d1-unicode-digit-unit-count.jsonl.gz",
-      "sha256": "27b4767f34d518131099b959f8b47e8de1eabf59bed9b615baad2b30e8dad19e",
-      "bytes": 1337,
+      "sha256": "a0b6b635d48c62bc58d2c26e1d379ac378f8a1bb13e97130b230f198158f8521",
+      "bytes": 1043,
       "seed": 7,
       "policies": [
         "script",
         "builtin:pass"
       ],
       "policy_seed": 0,
-      "config_variant": "probe",
-      "transitions": 5,
+      "config_variant": "divergence",
+      "transitions": 1,
       "rejected": 0,
-      "probe": "{\"farmer\":[\"PICKUP\",\"WHEAT\",\"\\u0663\"],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "probe": "{\"farmer\":[\"PICKUP\",\"WHEAT\",\"\\u0663\"]}",
       "expected_divergence": {
-        "line": 3,
-        "from_step": 2,
+        "line": 1,
+        "from_step": 0,
         "kind": "rust_error",
         "field": "step",
         "reason": "D1: Python int() parses non-ASCII Unicode decimal digit strings (e.g. U+0663, U+FF13); the Rust kernel rejects them. Unit counts: Rust errors where Python acts; market quantities: Rust drops the order where Python executes it. The vendored kernel bytes are pinned, so this is recorded, not repaired."
@@ -141,21 +141,21 @@
     },
     {
       "path": "divergence-d1-unicode-digit-market-quantity.jsonl.gz",
-      "sha256": "da31413691ce16cfe054075c8105735504284f01637029a4c4261aa1bf0e4cff",
-      "bytes": 1345,
+      "sha256": "75d67b00b6e9ce0edb40fdacec82e27163f9cf81019da0f5e67626859f401818",
+      "bytes": 1077,
       "seed": 7,
       "policies": [
         "script",
         "builtin:pass"
       ],
       "policy_seed": 0,
-      "config_variant": "probe",
-      "transitions": 5,
+      "config_variant": "divergence",
+      "transitions": 1,
       "rejected": 0,
-      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_PRODUCT\",\"FERTILIZER\",\"\\uff13\"]]}",
+      "probe": "{\"market\":[[\"BUY_PRODUCT\",\"FERTILIZER\",\"\\uff13\"]]}",
       "expected_divergence": {
-        "line": 3,
-        "from_step": 2,
+        "line": 1,
+        "from_step": 0,
         "kind": "public state",
         "field": "public.farms[0].money",
         "reason": "D1: Python int() parses non-ASCII Unicode decimal digit strings (e.g. U+0663, U+FF13); the Rust kernel rejects them. Unit counts: Rust errors where Python acts; market quantities: Rust drops the order where Python executes it. The vendored kernel bytes are pinned, so this is recorded, not repaired."
@@ -163,21 +163,21 @@
     },
     {
       "path": "divergence-d2-unhashable-plant-crop.jsonl.gz",
-      "sha256": "1e28180c2801d460ab088a5ebbe7e7c0c339831168e6c7eb687d3d9290d0ea7d",
-      "bytes": 1378,
+      "sha256": "cad7e2e9e87d5a7a71019dc40361d248abcfec8a512a25397832fd5672693e28",
+      "bytes": 1079,
       "seed": 7,
       "policies": [
         "script",
         "builtin:pass"
       ],
       "policy_seed": 0,
-      "config_variant": "probe",
-      "transitions": 5,
+      "config_variant": "divergence",
+      "transitions": 1,
       "rejected": 1,
-      "probe": "{\"farmer\":[\"PLANT\",[\"WHEAT\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "probe": "{\"farmer\":[\"PLANT\",[\"WHEAT\"]]}",
       "expected_divergence": {
-        "line": 3,
-        "from_step": 2,
+        "line": 1,
+        "from_step": 0,
         "kind": "rust_accepted",
         "field": "step",
         "reason": "D2: Python raises TypeError when an unhashable JSON array/object reaches a dict lookup (unit verb, PLANT crop incl. missing hands, PICKUP/PLACE item, BUY_SEED/BUY_ANIMAL item), so Kaggle's env.step fails and keeps its state; the Rust kernel treats the command as a no-op and accepts the step. The vendored kernel bytes are pinned, so this is recorded, not repaired."
@@ -185,21 +185,21 @@
     },
     {
       "path": "divergence-d2-unhashable-unit-verb.jsonl.gz",
-      "sha256": "99b0e2e3f167b89dcdc6750a827cfb42748f6543f669b47d32faf39ccc5046a2",
-      "bytes": 1369,
+      "sha256": "ea0999d8f8adc164bd459cceb81c6649c50874de5fef93cd0cb78252af7054d9",
+      "bytes": 1071,
       "seed": 7,
       "policies": [
         "script",
         "builtin:pass"
       ],
       "policy_seed": 0,
-      "config_variant": "probe",
-      "transitions": 5,
+      "config_variant": "divergence",
+      "transitions": 1,
       "rejected": 1,
-      "probe": "{\"farmer\":[[\"NORTH\"]],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "probe": "{\"farmer\":[[\"NORTH\"]]}",
       "expected_divergence": {
-        "line": 3,
-        "from_step": 2,
+        "line": 1,
+        "from_step": 0,
         "kind": "rust_accepted",
         "field": "step",
         "reason": "D2: Python raises TypeError when an unhashable JSON array/object reaches a dict lookup (unit verb, PLANT crop incl. missing hands, PICKUP/PLACE item, BUY_SEED/BUY_ANIMAL item), so Kaggle's env.step fails and keeps its state; the Rust kernel treats the command as a no-op and accepts the step. The vendored kernel bytes are pinned, so this is recorded, not repaired."
@@ -207,21 +207,21 @@
     },
     {
       "path": "divergence-d2-unhashable-shed-item.jsonl.gz",
-      "sha256": "2d2606a7f89cc223bdb1bc311880f164ba6a319c1db05939982545835370072c",
-      "bytes": 1388,
+      "sha256": "0f59257725685585ab058c010e61b56439f740e1365e6ef7b52bba3f9fb2a210",
+      "bytes": 1090,
       "seed": 7,
       "policies": [
         "script",
         "builtin:pass"
       ],
       "policy_seed": 0,
-      "config_variant": "probe",
-      "transitions": 5,
+      "config_variant": "divergence",
+      "transitions": 1,
       "rejected": 1,
-      "probe": "{\"farmer\":[\"PICKUP\",{\"crop\":\"WHEAT\"}],\"hands\":[[\"PASS\"]],\"market\":[]}",
+      "probe": "{\"farmer\":[\"PICKUP\",{\"crop\":\"WHEAT\"}]}",
       "expected_divergence": {
-        "line": 3,
-        "from_step": 2,
+        "line": 1,
+        "from_step": 0,
         "kind": "rust_accepted",
         "field": "step",
         "reason": "D2: Python raises TypeError when an unhashable JSON array/object reaches a dict lookup (unit verb, PLANT crop incl. missing hands, PICKUP/PLACE item, BUY_SEED/BUY_ANIMAL item), so Kaggle's env.step fails and keeps its state; the Rust kernel treats the command as a no-op and accepts the step. The vendored kernel bytes are pinned, so this is recorded, not repaired."
@@ -229,21 +229,21 @@
     },
     {
       "path": "divergence-d2-unhashable-plant-in-missing-hand.jsonl.gz",
-      "sha256": "9b4468cc37ae3b2cf7d70ce065c50fe3c12fd7a01054845baf92f4613f0d74ff",
-      "bytes": 1387,
+      "sha256": "71922602df763513a6a14b6c281fd3385289d8e73986ab7bc36e187995008e87",
+      "bytes": 1092,
       "seed": 7,
       "policies": [
         "script",
         "builtin:pass"
       ],
       "policy_seed": 0,
-      "config_variant": "probe",
-      "transitions": 5,
+      "config_variant": "divergence",
+      "transitions": 1,
       "rejected": 1,
-      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[[\"PASS\"],[\"PLANT\",[\"WHEAT\"]]],\"market\":[]}",
+      "probe": "{\"hands\":[[\"PLANT\",[\"WHEAT\"]]]}",
       "expected_divergence": {
-        "line": 3,
-        "from_step": 2,
+        "line": 1,
+        "from_step": 0,
         "kind": "rust_accepted",
         "field": "step",
         "reason": "D2: Python raises TypeError when an unhashable JSON array/object reaches a dict lookup (unit verb, PLANT crop incl. missing hands, PICKUP/PLACE item, BUY_SEED/BUY_ANIMAL item), so Kaggle's env.step fails and keeps its state; the Rust kernel treats the command as a no-op and accepts the step. The vendored kernel bytes are pinned, so this is recorded, not repaired."
@@ -251,21 +251,21 @@
     },
     {
       "path": "divergence-d2-unhashable-market-item.jsonl.gz",
-      "sha256": "b80f7674e77222db2089492e18fac5c34df65c95cb4eac681326d956908e949c",
-      "bytes": 1375,
+      "sha256": "dce0b21469a2f4e4c334ea4794bde542c1af944685204b0f706ce390bfe0e8fb",
+      "bytes": 1089,
       "seed": 7,
       "policies": [
         "script",
         "builtin:pass"
       ],
       "policy_seed": 0,
-      "config_variant": "probe",
-      "transitions": 5,
+      "config_variant": "divergence",
+      "transitions": 1,
       "rejected": 1,
-      "probe": "{\"farmer\":[\"PASS\"],\"hands\":[],\"market\":[[\"BUY_SEED\",[\"WHEAT\"],1]]}",
+      "probe": "{\"market\":[[\"BUY_SEED\",[\"WHEAT\"],1]]}",
       "expected_divergence": {
-        "line": 3,
-        "from_step": 2,
+        "line": 1,
+        "from_step": 0,
         "kind": "rust_accepted",
         "field": "step",
         "reason": "D2: Python raises TypeError when an unhashable JSON array/object reaches a dict lookup (unit verb, PLANT crop incl. missing hands, PICKUP/PLACE item, BUY_SEED/BUY_ANIMAL item), so Kaggle's env.step fails and keeps its state; the Rust kernel treats the command as a no-op and accepts the step. The vendored kernel bytes are pinned, so this is recorded, not repaired."
