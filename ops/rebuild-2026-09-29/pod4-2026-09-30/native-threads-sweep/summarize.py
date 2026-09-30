@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from statistics import mean
 
-ROWS = ["nt2", "nt4", "nt8", "nt16", "nt8-numa", "nt8-cpubind", "nt4-r2", "nt8-r2", "nt2-r2"]
+ROWS = ["nt2", "nt4", "nt8", "nt16", "nt8-numa", "nt8-cpubind", "nt4-r2", "nt8-r2", "nt2-r2", "nt4-cpubind"]
 FIRST, LAST = 3, 10
 STEPS_PER_ITER = 16_384
 
