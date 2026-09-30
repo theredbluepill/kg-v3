@@ -1,0 +1,89 @@
+.FF..F                                                                   [100%]
+=================================== FAILURES ===================================
+__________ test_values_are_two_p_self_minus_one_from_a_winner_softmax __________
+
+    def test_values_are_two_p_self_minus_one_from_a_winner_softmax() -> None:
+        model = _tiny().eval()
+        obs = make_obs(envs=3)
+        with torch.inference_mode():
+            values = model.compute_value(obs)
+            log_probs = model.winner_log_probabilities(obs)
+        assert values.shape == (3, 2)
+        assert log_probs.shape == (3, 2, 2)
+        torch.testing.assert_close(log_probs.exp().sum(-1), torch.ones(3, 2))
+        torch.testing.assert_close(values, 2 * log_probs[..., 0].exp() - 1)
+        assert bool(((values > -1) & (values < 1)).all())
+        # A constant critic (e.g. zero logits) would give p = 0.5 and value 0 everywhere.
+>       assert float(values.abs().max()) > 1e-3
+E       assert 0.0 > 0.001
+E        +  where 0.0 = float(tensor(0.))
+E        +    where tensor(0.) = <built-in method max of Tensor object at 0x10f0ef340>()
+E        +      where <built-in method max of Tensor object at 0x10f0ef340> = tensor([[0., 0.],\n        [0., 0.],\n        [0., 0.]]).max
+E        +        where tensor([[0., 0.],\n        [0., 0.],\n        [0., 0.]]) = <built-in method abs of Tensor object at 0x10efcf3e0>()
+E        +          where <built-in method abs of Tensor object at 0x10efcf3e0> = tensor([[0., 0.],\n        [0., 0.],\n        [0., 0.]]).abs
+
+tests/kaggriculture/test_model_encoder.py:722: AssertionError
+____________ test_winner_probabilities_match_a_hand_computed_critic ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f118650>
+
+    def test_winner_probabilities_match_a_hand_computed_critic(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from dataclasses import replace
+    
+        model = _tiny().eval()
+        obs = make_obs(envs=2)
+        width = model.config.embed_dim
+        head = model.critic_head
+        with torch.no_grad():
+            head.up.weight.copy_(torch.eye(width))
+            head.up.bias.zero_()
+            head.out.weight.zero_()
+            head.out.weight[0, 0] = 1.0
+            head.out.bias.fill_(0.25)
+        # Controlled critic tokens: channel 0 carries a distinct score per
+        # (env, seat, player); every other channel is noise the head must ignore.
+        scores = torch.tensor([[[2.0, 0.5], [-1.0, 1.5]], [[0.0, 3.0], [1.0, -2.0]]])
+        hidden = torch.randn(2, kt.PLAYERS, kt.PLAYERS, width)
+        hidden[..., 0] = scores
+        with torch.inference_mode():
+            enc = replace(model.encode_observations(obs), critic_value_hidden=hidden)
+            monkeypatch.setattr(model, "encode_observations", lambda _obs: enc)
+            log_probs = model.winner_log_probabilities(obs)
+            values = model.compute_value(obs)
+        logits = torch.nn.functional.gelu(scores) + 0.25
+        expected = logits.softmax(-1)
+>       torch.testing.assert_close(log_probs.exp(), expected)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 8 / 8 (100.0%)
+E       Greatest absolute difference: 0.4523908495903015 at index (1, 0, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: 9.502180099487305 at index (1, 0, 0) (up to 1.3e-06 allowed)
+
+tests/kaggriculture/test_model_encoder.py:753: AssertionError
+_______________________ test_values_are_seat_independent _______________________
+
+    def test_values_are_seat_independent() -> None:
+        model = _tiny().eval()
+        obs = make_obs()
+        changed = make_obs()
+        changed.global_features[:, 1] += 2.0
+        with torch.inference_mode():
+            a, b = model.compute_value(obs), model.compute_value(changed)
+        torch.testing.assert_close(a[:, 0], b[:, 0])
+        # The changed seat must respond, or a constant critic would pass.
+>       assert float((a[:, 1] - b[:, 1]).abs().max()) > 1e-4
+E       assert 0.0 > 0.0001
+E        +  where 0.0 = float(tensor(0.))
+E        +    where tensor(0.) = <built-in method max of Tensor object at 0x10f1ea6c0>()
+E        +      where <built-in method max of Tensor object at 0x10f1ea6c0> = tensor([0.]).max
+E        +        where tensor([0.]) = <built-in method abs of Tensor object at 0x10f1e9c20>()
+E        +          where <built-in method abs of Tensor object at 0x10f1e9c20> = (tensor([0.]) - tensor([0.])).abs
+
+tests/kaggriculture/test_model_encoder.py:806: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_model_encoder.py::test_values_are_two_p_self_minus_one_from_a_winner_softmax
+FAILED tests/kaggriculture/test_model_encoder.py::test_winner_probabilities_match_a_hand_computed_critic
+FAILED tests/kaggriculture/test_model_encoder.py::test_values_are_seat_independent
+3 failed, 3 passed, 28 deselected in 0.54s
