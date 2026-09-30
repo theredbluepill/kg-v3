@@ -1,0 +1,18 @@
+# configs/model/kaggriculture.yaml plus the per-seat critic offset head
+# (model.critic_offset; owner, 2026-09-30: "per-player critic might be the way
+# out?"). V_seat = 2 p(self) - 1 + o_seat, where o_seat is an
+# OutputProjectionMLP on the seat's own critic-value token whose output layer
+# starts at zero, so a checkpoint without the head (BC best, J/2) loads with
+# identical values at step 0. The trunk receives the head's value gradient
+# (critic_offset_detach_trunk: false). See
+# cookbook/decisions/add-a-per-seat-critic-offset-for-the-own-bank-reward.md.
+model_arch: kaggriculture_transformer
+embed_dim: 256
+depth: 8
+n_heads: 8
+mlp_ratio: 2.0
+activation: gelu
+n_scratch_tokens: 4
+force_flash_attn: true
+critic_offset: true
+critic_offset_detach_trunk: false

@@ -18,6 +18,7 @@ from typing import Any
 import owl.train.logging as train_logging
 import pytest
 import torch
+import yaml
 from owl.checkpoint_quantization import (
     NF4_G128_LSQ,
     dequantize_model_state_dict,
@@ -4665,6 +4666,84 @@ def test_cha22_anchor_two_update_run_through_main(
     assert checkpoints
     for path in checkpoints:
         assert b"cha22" not in path.read_bytes(), path.name
+
+
+def test_critic_offset_with_the_own_bank_reward_two_update_run_through_main(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """model.critic_offset with the owner's bank + margin + sign reward.
+
+    The launch-time teacher checkpoint has no offset head, so the last-best
+    teacher (built from the student config) loads it by the loader rule: only
+    critic_offset_head.* may be missing, and the offset starts at zero.
+    """
+    torch.manual_seed(367)
+    session, initial, logger = _run_functional_check(
+        tmp_path,
+        monkeypatch,
+        threshold=0.0,
+        extra_overrides=(
+            "model.critic_offset=true",
+            "env.reward_shaping.econ_shaping=0.0",
+            "env.reward_shaping.econ_bank_weight=0.25",
+            "env.reward_shaping.econ_bank_scale=150000.0",
+            "env.reward_shaping.econ_bank_cap=0.25",
+            "env.reward_shaping.econ_margin_weight=0.25",
+            "env.reward_shaping.econ_margin_scale=100000.0",
+            "env.reward_shaping.econ_margin_cap=0.25",
+        ),
+    )
+    cfg = session["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert isinstance(cfg.model, KaggricultureTransformerConfig)
+    assert cfg.model.critic_offset
+    assert not cfg.model.critic_offset_detach_trunk
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert cfg.env.reward_shaping.terminal_scale == 0.5
+    trainer = session["trainer"]
+    assert isinstance(trainer, PPOTrainer)
+    model = run_ppo.unwrap_model(trainer.model)
+    assert isinstance(model, KaggricultureTransformer)
+    assert model.critic_offset_head is not None
+    # The fresh launch starts from a zero offset output.
+    assert initial["critic_offset_head.out.weight"].eq(0).all()
+    training_logs = [metrics for metrics, _step in logger.logged[0::2]]
+    assert len(training_logs) == _FUNCTIONAL_UPDATES
+    for metrics in training_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        assert "train/value_offset_mean" in metrics
+        assert "train/value_offset_abs_mean" in metrics
+        assert "train/ev_common" in metrics
+        # Term A is on (the bank moves either way; spending lowers it).
+        assert metrics["train/reward_bank_mean"] != 0.0
+    # The value loss trains the head.
+    assert not model.critic_offset_head.out.weight.eq(0).all()
+    # The last-best teacher has the student's architecture, head included, and
+    # started from the headless teacher checkpoint with a zero offset output.
+    teacher = trainer.teacher_model
+    assert isinstance(teacher, KaggricultureTransformer)
+    assert teacher.critic_offset_head is not None
+    _teacher_checkpoint, teacher_state = _checkpoint_state(
+        tmp_path / "teacher" / "bc_best.pt"
+    )
+    assert not any(key.startswith("critic_offset_head.") for key in teacher_state)
+    run_dir = session["run_dir"]
+    assert isinstance(run_dir, Path)
+    # config.yaml records the flag; every checkpoint carries the head and
+    # reloads strictly into a model built from that config.
+    # (FullConfig.from_file is patched above, so the model section is read here.)
+    saved = yaml.safe_load((run_dir / "config.yaml").read_text())
+    saved_model = KaggricultureTransformerConfig.model_validate(saved["model"])
+    assert saved_model == cfg.model
+    for path in run_dir.glob("*.pt"):
+        _checkpoint, state = _checkpoint_state(path)
+        assert "critic_offset_head.out.weight" in state, path.name
+        rebuilt = KaggricultureTransformer(
+            saved_model,
+            obs_spec=cfg.env.obs_spec,
+            action_spec=cfg.env.action_spec,
+        )
+        rebuilt.load_state_dict(state, strict=True)
 
 
 def test_last_best_evaluation_env_never_hosts_the_training_opponent() -> None:

@@ -1,0 +1,10 @@
+C1 head reads the trunk without detach: KILLED (1 failed, 1 passed in 0.11s) E           assert not True
+C2 output layer not zero-initialised: KILLED (1 failed in 0.03s) E       assert tensor(False)
+C3 loader does not reset the missing head: KILLED (1 failed in 0.03s) E       assert tensor(False)
+C4 loader accepts a partial head: KILLED (1 failed in 0.03s) E       Failed: DID NOT RAISE <class 'RuntimeError'>
+C5 head reads the opponent critic token: KILLED (1 failed in 0.04s) E       assert False
+C6 non-live rows keep the head's output: KILLED (1 failed in 0.05s) E       assert tensor(-2.5913) == 0
+C7 the offset is not added to the value: KILLED (1 failed in 0.06s) E       AssertionError: Tensor-likes are not equal!
+C8 default config dumps the new fields: KILLED (1 failed in 0.02s) E       AssertionError: assert 'critic_offset' not in {'activation': 'gelu', 'critic_offset': False, 'critic_offset_detach_trunk': False, 'depth': 8, ...}
+C9 learner rows drop their offsets: KILLED (1 failed in 0.06s) E       AssertionError: Tensor-likes are not close!
+C10 ev_common scored by the returns' own mean (no offset): KILLED (1 failed in 0.04s) E       assert 0.0 == 1.0 ± 1.0e-06

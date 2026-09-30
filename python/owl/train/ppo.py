@@ -43,6 +43,7 @@ from owl.model import (
     TeacherTargets,
     load_model_state_dict_allowing_lora,
 )
+from owl.model.kaggriculture import KaggricultureTransformer
 from owl.rl import (
     ACTION_ENTITY_SLOTS,
     OUTER_PLAYER_SLOTS,
@@ -257,6 +258,9 @@ class _PPORolloutSegments:
     initial_hidden_state: ModelHiddenState | None = None
     # Fixed-opponent collection only: [N, T, players] seats the learner played.
     learner: torch.Tensor | None = None
+    # Critic-offset models only (model.critic_offset): [N, T, players] offsets
+    # already included in ``values``.
+    value_offsets: torch.Tensor | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -280,6 +284,7 @@ class _PPORolloutBuffer:
         action_spec: ActionConfig | KaggricultureActionConfig,
         device: torch.device,
         learner_mask: bool = False,
+        value_offsets: bool = False,
     ) -> None:
         if horizon <= 0:
             raise ValueError("horizon must be positive")
@@ -548,6 +553,16 @@ class _PPORolloutBuffer:
             if learner_mask
             else None
         )
+        # Allocated only for a critic-offset model (telemetry, not training).
+        self.value_offsets: torch.Tensor | None = (
+            torch.zeros(
+                (horizon, n_envs, player_slots),
+                dtype=torch.float32,
+                device=device,
+            )
+            if value_offsets
+            else None
+        )
 
     def write_step(
         self,
@@ -563,6 +578,7 @@ class _PPORolloutBuffer:
         truncated: torch.Tensor | None = None,
         bootstrap_values: torch.Tensor | None = None,
         learner: torch.Tensor | None = None,
+        value_offsets: torch.Tensor | None = None,
     ) -> None:
         if not 0 <= step < self.horizon:
             raise ValueError(f"step must be in 0..{self.horizon - 1}, got {step}")
@@ -590,6 +606,12 @@ class _PPORolloutBuffer:
             )
         if self.learner is not None and learner is not None:
             self.learner[step].copy_(learner)
+        if (self.value_offsets is None) != (value_offsets is None):
+            raise ValueError(
+                "value offsets are written exactly when the buffer holds them"
+            )
+        if self.value_offsets is not None and value_offsets is not None:
+            self.value_offsets[step].copy_(value_offsets)
 
     def segment_major(self) -> _PPORolloutSegments:
         """Return contiguous segment-major/time-second rollout tensors [N, T, ...]."""
@@ -604,6 +626,11 @@ class _PPORolloutBuffer:
             truncated=self.truncated.transpose(0, 1).contiguous(),
             bootstrap_values=self.bootstrap_values.transpose(0, 1).contiguous(),
             initial_hidden_state=self.initial_hidden_state,
+            value_offsets=(
+                None
+                if self.value_offsets is None
+                else self.value_offsets.transpose(0, 1).contiguous()
+            ),
             learner=(
                 None
                 if self.learner is None
@@ -710,6 +737,13 @@ class PPOTrainer:
             self._is_truncation_game = torch.zeros(0, dtype=torch.bool)
         self.teacher_model: BaseModelAPI[Any, Any, Any] | None = None
         self.teacher_active = False
+        # model.critic_offset: the rollout also stores each value's offset for
+        # the train/value_offset_* and train/ev_common telemetry.
+        unwrapped = unwrap_model(model)
+        self._critic_offset = (
+            isinstance(unwrapped, KaggricultureTransformer)
+            and unwrapped.critic_offset_head is not None
+        )
         self.rollout = _PPORolloutBuffer(
             horizon=config.horizon,
             n_envs=env.n_envs,
@@ -717,6 +751,7 @@ class PPOTrainer:
             action_spec=env.action_spec,
             device=device,
             learner_mask=self._learner is not None,
+            value_offsets=self._critic_offset,
         )
         self._last_env_metrics: dict[str, list[float]] = {}
         self.set_teacher_model(teacher_model, active=teacher_active)
@@ -871,6 +906,10 @@ class PPOTrainer:
                 valid_mask=value_mask,
             ).item()
         )
+        if segments.value_offsets is not None:
+            metrics.update(
+                self._value_offset_metrics(segments.value_offsets, returns, value_mask)
+            )
         advantage_mean, advantage_std = self._masked_mean_std(advantages, policy_mask)
         metrics["train/advantage_mean"] = float(advantage_mean.item())
         metrics["train/advantage_std"] = float(advantage_std.item())
@@ -1093,6 +1132,7 @@ class PPOTrainer:
                     logp = _output_logp(output)
                     entity_logp = _output_entity_logp(output)
                     values = _output_values(output)
+                    value_offsets = output.value_offsets
                 else:
                     # Scripted seats cost no forward pass: only learner rows run.
                     with _autocast_context(self.config, self.device):
@@ -1103,6 +1143,7 @@ class PPOTrainer:
                     logp = learner_output.logp
                     entity_logp = learner_output.entity_logp
                     values = learner_output.values
+                    value_offsets = learner_output.value_offsets
                 next_obs, rewards, dones, step_env_metrics = _step_env(
                     self.env, actions
                 )
@@ -1133,6 +1174,7 @@ class PPOTrainer:
                     truncated=truncated,
                     bootstrap_values=bootstrap_values,
                     learner=self._learner,
+                    value_offsets=value_offsets,
                 )
                 if self._learner_host is not None and self._learner is not None:
                     # After any auto-reset or truncation: the next obs's seats.
@@ -1705,6 +1747,38 @@ class PPOTrainer:
         if self.distributed_context.initialized:
             return all_reduce_max(value, self.distributed_context)
         return value
+
+    def _value_offset_metrics(
+        self,
+        value_offsets: torch.Tensor,
+        returns: torch.Tensor,
+        value_mask: torch.Tensor,
+    ) -> dict[str, float]:
+        """Critic-offset telemetry over the rollout's trained seat-steps.
+
+        ``train/ev_common`` is the explained variance of the common-mode return
+        (the mean of both seats' GAE returns) by the mean of both seats'
+        offsets, over steps where both seats are trained. It is omitted when no
+        such step exists (fixed-opponent collection at fraction 1.0).
+        """
+        metrics = {
+            "train/value_offset_mean": float(
+                self._masked_mean(value_offsets, value_mask).item()
+            ),
+            "train/value_offset_abs_mean": float(
+                self._masked_mean(value_offsets.abs(), value_mask).item()
+            ),
+        }
+        both_seats = value_mask.all(dim=-1)
+        if self._sum_int(both_seats.sum()) > 0:
+            metrics["train/ev_common"] = float(
+                self._explained_variance(
+                    value_offsets.mean(dim=-1),
+                    returns.mean(dim=-1),
+                    valid_mask=both_seats,
+                ).item()
+            )
+        return metrics
 
     def _explained_variance(
         self,
@@ -3344,6 +3418,9 @@ class LearnerRowsOutput:
     logp: torch.Tensor
     entity_logp: torch.Tensor
     values: torch.Tensor
+    # The learner rows' critic offsets (zero on scripted rows); None without
+    # the offset head.
+    value_offsets: torch.Tensor | None = None
 
 
 def forward_learner_rows(
@@ -3395,6 +3472,11 @@ def forward_learner_rows(
     row_values = _output_values(output).reshape(-1)
     values = row_values.new_zeros((flat,))
     values[rows] = row_values
+    value_offsets: torch.Tensor | None = None
+    if output.value_offsets is not None:
+        value_offsets = row_values.new_zeros((flat,))
+        value_offsets[rows] = output.value_offsets.reshape(-1)
+        value_offsets = value_offsets.reshape(n_envs, players)
     entity_logp = entity_logp.reshape(n_envs, players, MAX_FRAMES)
     return LearnerRowsOutput(
         actions=KaggricultureActions(
@@ -3404,6 +3486,7 @@ def forward_learner_rows(
         logp=entity_logp.sum(dim=-1),
         entity_logp=entity_logp,
         values=values.reshape(n_envs, players),
+        value_offsets=value_offsets,
     )
 
 

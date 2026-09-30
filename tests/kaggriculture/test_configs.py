@@ -74,14 +74,28 @@ _VS_CHA22 = {
     "kaggriculture_4rank_vs_cha22.yaml": 4,
     "kaggriculture_2rank_vs_cha22.yaml": 2,
 }
+# Owner reward bank + margin + sign with the per-seat critic offset
+# (2026-09-30): the margin preset apart from the reward and the model flag.
+_BANK_CRITIC = {
+    "kaggriculture_4rank_bank_critic.yaml": "kaggriculture_4rank_margin.yaml"
+}
 _RANKED_AND_FINETUNE = {
     **_RANKED,
     **{name: _RANKED[base] for name, base in _FINETUNE.items()},
     **{name: _RANKED[_FINETUNE[base]] for name, base in _BANK.items()},
     **{name: _RANKED[base] for name, base in _MARGIN.items()},
+    **{name: 4 for name in _BANK_CRITIC},
     **_VS_CHA22,
 }
-_ALL = (*_RANKED, *_FINETUNE, *_BANK, *_MARGIN, *_VS_CHA22, "kaggriculture.yaml")
+_ALL = (
+    *_RANKED,
+    *_FINETUNE,
+    *_BANK,
+    *_MARGIN,
+    *_BANK_CRITIC,
+    *_VS_CHA22,
+    "kaggriculture.yaml",
+)
 _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_shaping=0.2,
     econ_starvation_weight=4.0,
@@ -105,6 +119,17 @@ _MARGIN_SHAPING = _REWARD_SHAPING.model_copy(
         "econ_margin_weight": 0.5,
         "econ_margin_scale": 50_000.0,
         "econ_margin_cap": 0.5,
+    }
+)
+# The owner's bank + margin + sign reward (agent-proposed numbers, owner OK).
+_BANK_CRITIC_SHAPING = _MARGIN_SHAPING.model_copy(
+    update={
+        "econ_bank_weight": 0.25,
+        "econ_bank_scale": 150_000.0,
+        "econ_bank_cap": 0.25,
+        "econ_margin_weight": 0.25,
+        "econ_margin_scale": 100_000.0,
+        "econ_margin_cap": 0.25,
     }
 )
 
@@ -464,6 +489,37 @@ def test_margin_preset_is_j2_apart_from_the_reward(name: str, base: str) -> None
     assert torch.equal(returns[:, 0], -returns[:, 1])
 
 
+@pytest.mark.parametrize(("name", "base"), _BANK_CRITIC.items())
+def test_bank_critic_preset_is_the_margin_preset_with_the_owner_reward(
+    name: str, base: str
+) -> None:
+    ours = FullConfig.from_file(ROOT / "configs" / name)
+    margin = FullConfig.from_file(ROOT / "configs" / base)
+    assert isinstance(ours.env, KaggricultureEnvConfig)
+    assert isinstance(ours.model, km.KaggricultureTransformerConfig)
+    assert isinstance(margin.model, km.KaggricultureTransformerConfig)
+    shaping = ours.env.reward_shaping
+    assert shaping == _BANK_CRITIC_SHAPING
+    assert shaping.terminal_scale == 0.5
+    assert (ours.model.critic_offset, ours.model.critic_offset_detach_trunk) == (
+        True,
+        False,
+    )
+    restored = ours.model_copy(
+        update={
+            "env": ours.env.model_copy(
+                update={"reward_shaping": margin.env.reward_shaping}
+            ),
+            "model": ours.model.model_copy(update={"critic_offset": False}),
+        }
+    )
+    assert restored == margin
+    # A 150k bank saturates term A; a 100k margin saturates term M.
+    banks = torch.tensor([[150_000.0, 50_000.0]], dtype=torch.float64)
+    assert bank_score(banks, shaping).tolist() == [[0.25, 0.25 / 3]]
+    assert margin_score(banks - banks.flip(-1), shaping).tolist() == [[0.25, -0.25]]
+
+
 def test_vs_cha22_presets_are_the_margin_preset_against_cha22() -> None:
     # The 4-rank anchor preset is the margin preset (term M, J/2's LRs,
     # checkpoint_freq and native_threads) plus the fixed-bot mix; its 2-rank
@@ -572,6 +628,9 @@ def test_config_env_and_cross_section_rules(name: str) -> None:
         assert ours.env.reward_shaping.terminal_scale == 0.5
     elif name in _MARGIN or name in _VS_CHA22:
         assert ours.env.reward_shaping == _MARGIN_SHAPING
+        assert ours.env.reward_shaping.terminal_scale == 0.5
+    elif name in _BANK_CRITIC:
+        assert ours.env.reward_shaping == _BANK_CRITIC_SHAPING
         assert ours.env.reward_shaping.terminal_scale == 0.5
     else:
         assert ours.env.reward_shaping == _REWARD_SHAPING

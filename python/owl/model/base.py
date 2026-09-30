@@ -57,6 +57,9 @@ class ModelOutput(Generic[ActT]):
     values: torch.Tensor
     winner_probabilities: torch.Tensor
     next_hidden_state: ModelHiddenState | None = None
+    # The additive per-seat critic offset already inside ``values`` (Kaggriculture
+    # ``model.critic_offset``); None when the model has no offset head.
+    value_offsets: torch.Tensor | None = None
 
 
 @dataclass
@@ -283,6 +286,18 @@ class BaseModelAPI(nn.Module, ABC, Generic[ObsT, ActT, ActSpecT]):
 
     @abstractmethod
     def get_output_layers(self) -> tuple[nn.Module, ...]: ...
+
+    def optional_state_keys(self) -> frozenset[str]:
+        """State keys a checkpoint may omit as a group (default: none).
+
+        ``load_model_state_dict_allowing_lora`` accepts a checkpoint that omits
+        all of them, and then calls ``reset_optional_state``; omitting only some
+        still fails.
+        """
+        return frozenset()
+
+    def reset_optional_state(self) -> None:
+        """Restore the ``optional_state_keys`` state to its neutral init."""
 
     def initial_hidden_state(
         self,

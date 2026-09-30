@@ -127,6 +127,8 @@ def load_model_state_dict_allowing_lora(
         raise RuntimeError(f"unexpected model state_dict keys: {unexpected}")
 
     missing_keys = set(result.missing_keys)
+    if isinstance(model, BaseModelAPI):
+        missing_keys = _admit_missing_optional_state(model, missing_keys)
     lora_keys = _lora_state_keys(model)
     # A source that supplies any adapter tensor is treated as a LoRA checkpoint
     # and must supply all of them; a source with no adapter tensors is a base
@@ -141,6 +143,28 @@ def load_model_state_dict_allowing_lora(
     if invalid_missing:
         missing = ", ".join(sorted(invalid_missing))
         raise RuntimeError(f"missing non-LoRA model state_dict keys: {missing}")
+
+
+def _admit_missing_optional_state(
+    model: BaseModelAPI, missing_keys: set[str]
+) -> set[str]:
+    """Accept a checkpoint that omits all of the model's optional state.
+
+    The omitted state is then reset (the Kaggriculture critic offset head's
+    output layer is zeroed). A checkpoint that supplies some optional keys but
+    not all fails here; every other missing key is left for the caller.
+    """
+    optional = model.optional_state_keys()
+    missing_optional = optional & missing_keys
+    if not missing_optional:
+        return missing_keys
+    if missing_optional != optional:
+        missing = ", ".join(sorted(missing_optional))
+        raise RuntimeError(
+            f"checkpoint supplies part of the optional model state; missing: {missing}"
+        )
+    model.reset_optional_state()
+    return missing_keys - optional
 
 
 def _lora_state_keys(model: nn.Module) -> set[str]:

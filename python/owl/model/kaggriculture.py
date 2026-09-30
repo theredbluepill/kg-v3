@@ -14,11 +14,16 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal, TypeVar
+from typing import Any, Literal, Self, TypeVar
 
 import torch
 import torch.nn.functional as F
-from pydantic import Field
+from pydantic import (
+    Field,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+    model_validator,
+)
 from torch import nn
 
 from owl.config import BaseConfig
@@ -118,6 +123,34 @@ class KaggricultureTransformerConfig(BaseConfig):
     activation: Literal["gelu", "silu"] = "gelu"
     n_scratch_tokens: int = Field(default=4, ge=0)
     force_flash_attn: bool = False
+    # Per-seat critic offset (owner, 2026-09-30: "per-player critic might be
+    # the way out?"): V = 2 p(self) - 1 + o(own critic token), with o's output
+    # layer zero-initialised. Off (the default) builds no head and dumps as
+    # before the fields existed.
+    critic_offset: bool = False
+    # The offset head reads the critic token detached, so its value-loss
+    # gradient never reaches the trunk. Requires critic_offset.
+    critic_offset_detach_trunk: bool = False
+
+    @model_validator(mode="after")
+    def _validate_critic_offset(self) -> Self:
+        if self.critic_offset_detach_trunk and not self.critic_offset:
+            raise ValueError(
+                "model.critic_offset_detach_trunk requires model.critic_offset"
+            )
+        return self
+
+    @model_serializer(mode="wrap")
+    def _omit_absent_critic_offset(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        # Configs without the head dump exactly as before the fields existed,
+        # so their config.yaml and v3/config_sha256 identity are unchanged.
+        data: dict[str, Any] = handler(self)
+        if not self.critic_offset:
+            del data["critic_offset"]
+            del data["critic_offset_detach_trunk"]
+        return data
 
     def trunk_config(self) -> StatelessTransformerV1Config:
         """Isaiah's typed trunk config built from the shared fields."""
@@ -289,6 +322,13 @@ class KaggricultureTransformer(
         # every later trunk call re-checks the GEMM backends, because Inductor
         # compiles lazily and recompiles on new dynamic shapes.
         self.compiled_regions_require_gemm_backends = False
+        # Per-seat critic offset head (model.critic_offset), registered last.
+        # It reads only each row's own (self) critic-value token, so it sees the
+        # row's current observation and nothing else; its output layer starts
+        # at zero, so the value equals the winner critic's until it trains.
+        self.critic_offset_head: OutputProjectionMLP | None = (
+            OutputProjectionMLP(trunk, 1) if config.critic_offset else None
+        )
         self.reset_parameters()
 
     # --- Isaiah's parameter conventions ---------------------------------------
@@ -304,12 +344,46 @@ class KaggricultureTransformer(
             _init_linear(module.mlp.down, gain=residual_gain)
         for layer in self.get_output_layers():
             assert isinstance(layer, nn.Linear)
+            if (
+                self.critic_offset_head is not None
+                and layer is self.critic_offset_head.out
+            ):
+                continue
             gain = (
                 _CRITIC_HEAD_INIT_GAIN
                 if layer is self.critic_head.out
                 else _ACTOR_HEAD_INIT_GAIN
             )
             _init_linear(layer, gain=gain)
+        self.zero_critic_offset_output()
+
+    def zero_critic_offset_output(self) -> None:
+        """Zero the offset head's output layer, so every offset is exactly 0.
+
+        The hidden layer keeps its initialization, so the head can train (an
+        all-zero head would have no gradient). No-op without the head.
+        """
+        head = self.critic_offset_head
+        if head is None:
+            return
+        with torch.no_grad():
+            head.out.weight.zero_()
+            _require(head.out.bias).zero_()
+
+    def optional_state_keys(self) -> frozenset[str]:
+        """The ``critic_offset_head.*`` keys, which a checkpoint may omit.
+
+        A checkpoint from before the head (BC best, a flag-off run) loads into
+        a model with the head only if it omits all of them; the loader then
+        calls ``reset_optional_state``, so the offset starts at exactly 0.
+        """
+        head = self.critic_offset_head
+        if head is None:
+            return frozenset()
+        return frozenset(f"critic_offset_head.{key}" for key in head.state_dict())
+
+    def reset_optional_state(self) -> None:
+        self.zero_critic_offset_output()
 
     def get_input_layers(self) -> tuple[InputLayer, ...]:
         return (
@@ -327,7 +401,12 @@ class KaggricultureTransformer(
         )
 
     def get_output_layers(self) -> tuple[nn.Module, ...]:
-        return (self.critic_head.out, *self.actor.get_output_layers())
+        layers = (self.critic_head.out, *self.actor.get_output_layers())
+        if self.critic_offset_head is None:
+            return layers
+        # Excluded from Muon and int8 like every head output; reset_parameters
+        # zeroes it instead of applying a gain.
+        return (*layers, self.critic_offset_head.out)
 
     # --- encoder ---------------------------------------------------------------
 
@@ -575,13 +654,14 @@ class KaggricultureTransformer(
             encoded, self._grammar_context(obs), None, deterministic=deterministic
         )
         actions, log_probs, entropies = self._policy_outputs(result, obs)
-        values, winner_log_probs = self._values(encoded, obs)
+        values, winner_log_probs, value_offsets = self._value_parts(encoded, obs)
         return ModelOutput[kt.KaggricultureActions](
             actions=actions,
             log_probs=log_probs,
             entropies=entropies,
             values=values,
             winner_probabilities=winner_log_probs.exp(),
+            value_offsets=value_offsets,
         )
 
     def _require_stateless_replay(
@@ -693,7 +773,9 @@ class KaggricultureTransformer(
         return True
 
     def supports_cached_value_distillation(self) -> bool:
-        # The critic is always the masked winner softmax.
+        # Value distillation always targets the masked winner softmax; the
+        # optional critic offset is outside it and is trained by the value
+        # loss alone.
         return True
 
     def evaluate_actions_with_cached_teacher(
@@ -1077,11 +1159,46 @@ class KaggricultureTransformer(
     def _values(
         self, encoded: KaggricultureEncoded, obs: kt.KaggricultureObsBatch
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """``(2 p(self) - 1 [env, seat], winner log-probs [env, seat, 2])``."""
+        """``(value [env, seat], winner log-probs [env, seat, 2])``.
+
+        The value is ``2 p(self) - 1``, plus the seat's critic offset when the
+        model has the head.
+        """
+        values, winner_log_probs, _ = self._value_parts(encoded, obs)
+        return values, winner_log_probs
+
+    def _value_parts(
+        self, encoded: KaggricultureEncoded, obs: kt.KaggricultureObsBatch
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
+        """``(value, winner log-probs, offset [env, seat] or None)``."""
         winner_log_probs = self._winner_log_probabilities(encoded).reshape(
             *obs.still_playing.shape, kt.PLAYERS
         )
-        return 2.0 * winner_log_probs[..., 0].exp() - 1.0, winner_log_probs
+        values = 2.0 * winner_log_probs[..., 0].exp() - 1.0
+        offsets = self._critic_offsets(encoded)
+        if offsets is None:
+            return values, winner_log_probs, None
+        offsets = offsets.reshape(values.shape)
+        return values + offsets, winner_log_probs, offsets
+
+    def _critic_offsets(self, encoded: KaggricultureEncoded) -> torch.Tensor | None:
+        """Per-row offset from the row's own critic-value token, FP32 ``[rows]``.
+
+        The head's Linear layers run in the autocast dtype; the output is cast.
+
+        Only token 0 (self) is read: no opponent token and no other row. A
+        non-live row gets exactly 0, so its value stays the winner critic's.
+        With ``critic_offset_detach_trunk`` the token is detached, so the value
+        loss reaches the trunk only through the winner head.
+        """
+        head = self.critic_offset_head
+        if head is None:
+            return None
+        own = encoded.critic_value_hidden[:, 0]
+        if self.config.critic_offset_detach_trunk:
+            own = own.detach()
+        offsets = head(own).float().squeeze(-1)
+        return offsets.masked_fill(~encoded.critic_value_mask[:, 0], 0.0)
 
     def compute_value(
         self,
@@ -1089,7 +1206,7 @@ class KaggricultureTransformer(
         *,
         hidden_state: ModelHiddenState | None = None,
     ) -> torch.Tensor:
-        """``win_loss`` value ``2 * p(self) - 1`` per seat, shape ``[env, seat]``."""
+        """Value per seat, ``[env, seat]``: ``2 p(self) - 1`` plus any offset."""
         self._require_stateless(hidden_state)
         values, _ = self._values(self.encode_observations(obs), obs)
         return values
