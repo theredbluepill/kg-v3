@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-09-30 — Land the staggered game phases and the credit-window presets onto the integration
+
+`kg/rebuild-stagger-credit` `ced1d2c` merges onto `kg/isaiah-gap-closure` `78dfd1f`, after the critic-offset landing, as the regular merge commit `a807752` (`--no-ff`). It carries the [[decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger Decision]] (owner: "- Lockstep game phases and the short credit window for long-payback investments. for sure."), `rl.initial_stagger` (default off, byte-identical) and `configs/kaggriculture_{4,2}rank_bank_critic_credit.yaml`.
+- **Conflicts.** `docs/rl-api-specs.md`, `tests/scripts/test_run_ppo.py`, the log and the decisions index conflicted. Both sides were kept.
+- **Follow-up.** `3fd93ed` switches the credit presets to the offset critic, with tests (review P2-1).
+- **Checks.** Full `just prepare` on `3fd93ed` exits 0: Rust 407 passed with 5 ignored, Python 2,999 passed with 9 skipped, plus ruff, mypy, markdown lint and docs-fresh (`ops/stagger-credit/prepare-landing.log`). Default-off digests equal `78dfd1f` (`ops/stagger-credit/landing-digests.md`).
+- **Review.** Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. Report: `ops/stagger-credit/review-r1.md` (APPROVE on `ba2c089`). The follow-ups were not re-reviewed.
+
+The Decision gains a landing section, and the decisions index and `ops/rebuild-2026-09-29/phase-status.md` are updated. Nothing was trained by the landing.
+
 ## 2026-09-30 — Switch the credit presets to the per-seat critic offset (stagger review P2-1)
 
 With `kg/rebuild-critic-offset` landed (`9cb115f`) and `kg/rebuild-stagger-credit` merged on top (`a807752`), `configs/kaggriculture_{4,2}rank_bank_critic_credit.yaml` now use `model: kaggriculture_critic_offset`. At λ = 1 the critic enters the advantage only through the segment-end and cut bootstraps, where the zero-sum winner critic cannot carry the own-bank remainder. This resolves review P2-1 of the [[decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger Decision]]; the decisions index, `docs/rl-api-specs.md` and `README.md` say so.
