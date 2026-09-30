@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Kaggle packaging ships the BC agent as a native, validated tarball"
-description: "Task 7.4 ship build on kg/rebuild-7-4-ship: a 24.7 MB submission.tar.gz with main.py, owl, a pod-built CPython 3.11 abi3 x86-64 rs.abi3.so (GLIBC_2.35 max) and the slim BC best (fd854587...6f51). It encodes one seat with the training write_seat, runs a greedy CPU fp32 forward at 1 thread, decodes natively, and returns PASS on a caught fault. Strict local episodes qualified with 719 calls per seat and zero faults, once in a fresh Kaggle-image container under emulation and twice on the pod. Three more episodes in Kaggle mode (non-strict, fallback live) in a fresh pod venv also passed with zero faults and zero fallbacks: BC against starter in each seat, and self-play through the kaggle-environments CLI. Not submitted. Deviates from the brief: no in-image Docker build, no replay-parity or latency-benchmark receipts, no W&B. Branch kg/submit-08bc merges the ship path onto main 07c8fc99 so PPO run configs with the bank/margin reward-shaping keys load; the manifest now records only the checkpoint file name; a strict 5-turn Mac load of PPO checkpoint 08bc19ae passed."
+description: "Task 7.4 ship build on kg/rebuild-7-4-ship: a 24.7 MB submission.tar.gz with main.py, owl, a pod-built CPython 3.11 abi3 x86-64 rs.abi3.so (GLIBC_2.35 max) and the slim BC best (fd854587...6f51). It encodes one seat with the training write_seat, runs a greedy CPU fp32 forward at 1 thread, decodes natively, and returns PASS on a caught fault. Strict local episodes qualified with 719 calls per seat and zero faults, once in a fresh Kaggle-image container under emulation and twice on the pod. Three more episodes in Kaggle mode (non-strict, fallback live) in a fresh pod venv also passed with zero faults and zero fallbacks: BC against starter in each seat, and self-play through the kaggle-environments CLI. Not submitted. Deviates from the brief: no in-image Docker build, no replay-parity or latency-benchmark receipts, no W&B. Branch kg/submit-08bc merges the ship path onto main 07c8fc99 so PPO run configs with the bank/margin reward-shaping keys load; the manifest now records only the checkpoint file name; a strict 5-turn Mac load of PPO checkpoint 08bc19ae passed. scripts/package_checkpoint.sh now packages a checkpoint from the Mac in about 28 s: it reuses the cached 08bc Linux module only while native sources equal its source commit 9a743fad, verifies hashes and every model tensor, and runs a 40-turn strict Kaggle-image episode. The cached module has the fixed-opponent controllers compiled in (default cargo features), so the script refuses it without --allow-fixed-opponents."
 tags: ["kaggriculture-v3", "adaptation", "packaging", "kaggle-runtime"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
@@ -36,6 +36,9 @@ sources:
   - resource: "repository:tests/kaggriculture/kaggle_fixtures.py"
   - resource: "repository:ops/submit-08bc-2026-09-30/mac_load5.py"
   - resource: "repository:ops/submit-08bc-2026-09-30/mac_load5.out"
+  - resource: "repository:scripts/package_checkpoint.sh"
+  - resource: "repository:native-cache/manifest.json"
+  - resource: "repository:README.md"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/agent.py"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/core.py"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/envs/kaggriculture/kaggriculture.json"
@@ -218,6 +221,74 @@ of 0.03 s. The slim hash from this venv (`5937ffa0…9dbd`) differs from the
 earlier torch 2.6.0 local package's; the shipped slim hash is whatever the
 build host's manifest records. This is a load check, not a Linux build, a
 Kaggle-image episode or a strength measurement.
+
+## One-command checkpoint packaging (`scripts/package_checkpoint.sh`)
+
+Owner, verbatim (2026-09-30): "the packaging is now more efficient or?" Before
+this, each package was assembled by hand from the 08bc steps: a pod native
+build, a scratch builder venv, the builder, and a hand-run Docker episode.
+
+Changed paths and reasons:
+
+- `scripts/package_checkpoint.sh CHECKPOINT CONFIG OUT_DIR [--full-episode]`:
+  - It makes a builder venv once with uv (CPython 3.11, torch 2.6.0 and
+    numpy 2.4.6, matching the 08bc builder and the image's torch).
+  - It refuses a dirty tree. It also refuses when any native source differs
+    from the cached module's source commit, and says the `.so` must be rebuilt.
+    The native sources are `src`, `engine_rs`, `opponents_rs`, `Cargo.toml`,
+    `Cargo.lock`, `build.rs`, `rust-toolchain.toml`, `.cargo` and
+    `pyproject.toml [tool.maturin]`.
+  - It seeds and checks the cached module against the committed manifest. It
+    requires the local image id to equal the runtime receipt's.
+  - It runs the builder with both receipts and the checkpoint's SHA-256.
+  - It extracts the archive fresh, re-hashes every file and compares every
+    model tensor with `checkpoint["model"]`.
+  - It plays a strict self-play episode in the Kaggle image (amd64 emulated,
+    `--network none --cpus=1.6 --memory=6.5g`): 40 turns by default, 720 with
+    `--full-episode`.
+  - It writes `OUT_DIR/PACKAGE.md` with per-stage wall times.
+- `native-cache/manifest.json`: custody of the cached module `2bbdd2f0…8e4`
+  (14,309,312 bytes). It records source commit `9a743fad`, glibc symbol max
+  2.35, the seed path `artifacts/08bc/rs.abi3.so` and the full pod build
+  receipt. The `.so` itself is gitignored (`/native-cache/*.so*`).
+- `README.md`: a section on usage, the rebuild rule and the opponent flag.
+
+**Finding: the 08bc module carries the fixed-opponent controllers.** The 08bc
+pod build ran `maturin build --release --compatibility linux` with default
+cargo features. `Cargo.toml` defaults to `fixed-opponents`, and says the Kaggle
+build passes `--no-default-features` because EcoBot and E776 carry no
+redistribution license. The module's strings contain 1,013 lines matching
+`kaggriculture_opponents`, the `opponents_rs/src/native_agents/e776.rs` path
+and EcoBot messages. This explains the 14.3 MB size, against 3.5 MB for the BC
+module, which predates the feature. The 08bc submission (ref 56711278) shipped
+this module. The packager refuses such a module unless
+`--allow-fixed-opponents` is passed, and records the flag in `PACKAGE.md`.
+Whether to rebuild without them before another submission is the owner's call.
+
+Checks on commit `be79f135` (Mac, owner's Docker):
+
+- The 50M checkpoint `checkpoint_00_050_031_104.pt` (`0cc80065…a7c2`, config
+  `62e0b5c1…75f7`) was packaged with `--allow-fixed-opponents` into
+  `artifacts/c50/` (gitignored). The archive is 27,166,101 bytes, SHA-256
+  `dd0243663f65bb1a64b7e9d67e4b39c69d0a33b1f751920117617eb3f1b6e142`; its inner
+  `manifest.json` is `2e7ed159…b935`. `artifacts/c50/PACKAGE.md` is the receipt.
+- Stage wall times: venv 0.8 s, preflight 0.5 s, build 2.4 s, verify 0.6 s and
+  image episode 23.5 s, 27.9 s in total.
+- All 65 files re-hashed clean. All 210 of 210 model tensors (6,252,223
+  parameters) equal the checkpoint's, with max abs diff 0. An independent
+  re-extract and compare agreed.
+- The 40-turn strict self-play episode, seed 7, qualified: 39 calls per seat,
+  0 bad statuses, 0 exceptions, 0 invalid raw actions and 0 default passes.
+  `owl.rs` loaded from `/kaggle_simulations/agent`.
+- Refusals exercised in a throwaway worktree: a dirty tree, a probe edit to
+  `src/lib.rs` ("native sources differ … must be rebuilt"), the opponent guard,
+  and a missing seed.
+
+Limits: the archive hash changes on every build, because the manifest records
+`built_utc`. The short episode covers 40 of 720 turns; `--full-episode` was not
+run on c50 here. The module was not rebuilt, and `--no-default-features` builds
+have no cached module yet. There is no shellcheck in this environment. Nothing
+was uploaded or submitted.
 
 ## Deviations from the approved brief
 

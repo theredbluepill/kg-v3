@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-30 — Add a one-command Kaggle checkpoint packager and find opponents in the 08bc module
+
+Owner, verbatim: "the packaging is now more efficient or?" `be79f135` adds `scripts/package_checkpoint.sh`, the committed `native-cache/manifest.json` (custody of the cached 08bc module `2bbdd2f0…8e4`, source `9a743fad`; the `.so` is gitignored) and a README section. The script refuses a dirty tree or changed native sources ("must be rebuilt"), builds with both receipts and the checkpoint hash, re-hashes the archive, compares every model tensor, and runs a 40-turn strict Kaggle-image episode (`--full-episode` for 720). The 50M checkpoint (`0cc80065…a7c2`) packaged in 27.9 s: archive `dd024366…e142`, 65 files clean, 210/210 tensors equal, episode qualified. Finding: the 08bc module was built with default cargo features, so the fixed-opponent controllers (EcoBot, E776, Cha22) that `Cargo.toml` says the Kaggle build drops are compiled in; this explains its 14.3 MB. The script refuses it without `--allow-fixed-opponents`. Nothing was submitted. See [[kaggle-packaging-reuses-the-starter-submission-path|the packaging Reference]].
+
 ## 2026-09-30 — Merge the Kaggle ship path onto main for the 08bc probe submission
 
 Owner, verbatim: "can you package the 08bc and submit to kaggle for probing? Note we have 4 submissions left, only use 1 of it." Branch `kg/submit-08bc` merges `kg/rebuild-7-4-ship` (`619349f`) into `origin/main` `07c8fc99`, because only main's config schema validates the PPO run's `reward_shaping` keys. The `observe.rs` conflict keeps both impl blocks. The builder manifest now records only the checkpoint file name (review E1). The agent test fixture carries main's full shaping keys. A strict 5-turn Mac load of 08bc (`08bc19ae…4600`) passed with 0 caught errors. The Linux build, the Kaggle-mode check and the single submission are later steps. See [[kaggle-packaging-reuses-the-starter-submission-path|the packaging Reference]].
