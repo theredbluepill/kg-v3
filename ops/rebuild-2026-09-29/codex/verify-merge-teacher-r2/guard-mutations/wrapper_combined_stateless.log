@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_ppo_teacher_wrappers_dispatch_statelessly ________________
+tests/kaggriculture/test_teacher.py:1186: in test_ppo_teacher_wrappers_dispatch_statelessly
+    combined = ppo._model_evaluate_actions_with_teacher(
+python/owl/train/ppo.py:2802: in _model_evaluate_actions_with_teacher
+    return model.evaluate_actions_with_teacher(
+python/owl/model/kaggriculture.py:806: in evaluate_actions_with_teacher
+    self._require_stateless_replay(hidden_state, dones)
+python/owl/model/kaggriculture.py:592: in _require_stateless_replay
+    raise ValueError(
+E   ValueError: KaggricultureTransformer is stateless; dones must be None
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_ppo_teacher_wrappers_dispatch_statelessly
+1 failed in 0.24s

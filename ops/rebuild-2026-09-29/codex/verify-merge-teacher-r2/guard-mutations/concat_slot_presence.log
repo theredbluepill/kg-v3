@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_concat_validates_every_chunk_symmetrically ________________
+tests/kaggriculture/test_teacher.py:717: in test_concat_validates_every_chunk_symmetrically
+    concat([first, second])
+python/owl/model/kaggriculture_teacher.py:142: in concat
+    slot: torch.cat([_present(c.slot_logits)[slot] for c in chunks])
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/model/kaggriculture_teacher.py:168: in _present
+    raise ValueError("a validated teacher target chunk is missing a field")
+E   ValueError: a validated teacher target chunk is missing a field
+
+During handling of the above exception, another exception occurred:
+tests/kaggriculture/test_teacher.py:716: in test_concat_validates_every_chunk_symmetrically
+    with pytest.raises(ValueError, match=field):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'slot_logits'
+E     Actual message: 'a validated teacher target chunk is missing a field'
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_concat_validates_every_chunk_symmetrically
+1 failed in 0.21s

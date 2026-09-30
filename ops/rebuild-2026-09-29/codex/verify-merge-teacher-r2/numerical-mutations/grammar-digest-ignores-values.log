@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_grammar_signature_tracks_tables_and_hire_limit ______________
+
+    def test_grammar_signature_tracks_tables_and_hire_limit() -> None:
+        base = _tiny()
+        assert _tiny(seed=6).grammar_signature() == base.grammar_signature()
+        assert _tiny(hire_limit=5).grammar_signature() != base.grammar_signature()
+        flipped = gg.expected_grammar_tables()
+        flipped.market_kind[HIRE] = False
+        no_hire = km.KaggricultureTransformer(
+            base.config,
+            obs_spec=kt.KaggricultureObsConfig(),
+            action_spec=kt.KaggricultureActionConfig(hire_limit=241),
+            grammar_tables=flipped,
+        )
+        signature = no_hire.grammar_signature()
+        assert signature.hire_limit == base.grammar_signature().hire_limit
+>       assert signature.tables_sha256 != base.grammar_signature().tables_sha256
+E       AssertionError: assert 'f84df64f8c866681970af148195c3069c62686911574076846812139ec59a944' != 'f84df64f8c866681970af148195c3069c62686911574076846812139ec59a944'
+E        +  where 'f84df64f8c866681970af148195c3069c62686911574076846812139ec59a944' = GrammarSignature(tables_sha256='f84df64f8c866681970af148195c3069c62686911574076846812139ec59a944', hire_limit=241).tables_sha256
+E        +  and   'f84df64f8c866681970af148195c3069c62686911574076846812139ec59a944' = GrammarSignature(tables_sha256='f84df64f8c866681970af148195c3069c62686911574076846812139ec59a944', hire_limit=241).tables_sha256
+E        +    where GrammarSignature(tables_sha256='f84df64f8c866681970af148195c3069c62686911574076846812139ec59a944', hire_limit=241) = grammar_signature()
+E        +      where grammar_signature = KaggricultureTransformer(\n  (tile_proj): ObservationInputStem(\n    (input): Linear(in_features=133, out_features=32, b...s=16, out_features=16, bias=True)\n        (out): Linear(in_features=16, out_features=32, bias=True)\n      )\n    )\n  )\n).grammar_signature
+
+tests/kaggriculture/test_teacher.py:749: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_grammar_signature_tracks_tables_and_hire_limit
+1 failed in 0.13s

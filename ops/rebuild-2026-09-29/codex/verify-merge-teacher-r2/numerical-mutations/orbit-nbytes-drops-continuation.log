@@ -1,0 +1,49 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_nbytes_counts_every_cached_tensor ____________________
+
+    def test_nbytes_counts_every_cached_tensor() -> None:
+        model = _tiny().eval()
+        obs, actions = _segment_major(model)
+        targets = model.compute_teacher_distillation_targets(obs, actions)
+        tensors = [t for t in _target_tensors(targets).values() if t is not None]
+        assert targets.nbytes() == sum(t.nbytes for t in tensors)
+        rows = SEGMENTS * HORIZON * 2
+        assert targets.nbytes() == rows * kt_teacher.TEACHER_TARGET_BYTES_PER_ROW
+        value_only = model.compute_teacher_distillation_targets(
+            obs, actions, compute_action_kl=False
+        )
+        assert value_only.nbytes() == rows * 2 * 4
+        isaiah = CachedTeacherDistillationTargets(
+            action_params=DiscreteTargetPolicyParams(
+                target_logits=torch.zeros(2, 3, 4, 7, 7),
+                size_mix_logits=torch.zeros(2, 3, 4, 7, 7, 2),
+                size_mu=torch.zeros(2, 3, 4, 7, 7, 2),
+                size_scale=torch.zeros(2, 3, 4, 7, 7, 2),
+                continue_logits=torch.zeros(2, 3, 4, 7),
+            ),
+            winner_probabilities=torch.zeros(2, 3, 4),
+        )
+        params = isaiah.action_params
+        assert params is not None
+        assert params.continue_logits is not None
+>       assert isaiah.nbytes() == sum(
+            t.nbytes
+            for t in (
+                params.target_logits,
+                params.size_mix_logits,
+                params.size_mu,
+                params.size_scale,
+                params.continue_logits,
+                torch.zeros(2, 3, 4),
+            )
+        )
+E       assert 33024 == 33696
+E        +  where 33024 = nbytes()
+E        +    where nbytes = CachedTeacherDistillationTargets(action_params=DiscreteTargetPolicyParams(target_logits=tensor([[[[[0., 0., 0.,  ..., ..., 0.],\n         [0., 0., 0., 0.]],\n\n        [[0., 0., 0., 0.],\n         [0., 0., 0., 0.],\n         [0., 0., 0., 0.]]])).nbytes
+E        +  and   33696 = sum(<generator object test_nbytes_counts_every_cached_tensor.<locals>.<genexpr> at 0x10e773dc0>)
+
+tests/kaggriculture/test_teacher.py:777: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_nbytes_counts_every_cached_tensor
+1 failed in 0.20s

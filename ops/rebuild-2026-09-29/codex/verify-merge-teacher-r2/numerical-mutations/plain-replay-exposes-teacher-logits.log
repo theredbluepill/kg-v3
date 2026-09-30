@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_forward_and_evaluate_actions_leave_the_teacher_fields_unset _______
+
+    def test_forward_and_evaluate_actions_leave_the_teacher_fields_unset() -> None:
+        model = _tiny().eval()
+        obs, actions = _base_case()
+        with torch.no_grad():
+            encoded = model.encode_observations(obs)
+            plain = model._policy(
+                encoded, model._grammar_context(obs), actions, deterministic=False
+            )
+>       assert plain.slot_logits is None
+E       assert {} is None
+E        +  where {} = GrammarPolicyResult(tokens=tensor([[[0, 6, 0,  ..., 0, 0, 0],\n         [1, 1, 0,  ..., 0, 0, 0],\n         [0, 0, 0,  ....., 0.0000, 0.0000, 0.0000]]]), valid=tensor([[True, True, True],\n        [True, True, True]]), slot_logits={}, kl=None).slot_logits
+
+tests/kaggriculture/test_teacher.py:231: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_forward_and_evaluate_actions_leave_the_teacher_fields_unset
+1 failed in 0.11s

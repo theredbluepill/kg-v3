@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_cached_admission_rejects_bad_targets_before_any_kernel __________
+tests/kaggriculture/test_teacher.py:1027: in test_cached_admission_rejects_bad_targets_before_any_kernel
+    evaluate(obs, actions, isaiah_targets)
+python/owl/model/kaggriculture.py:727: in evaluate_actions_with_cached_teacher
+    self._admit_cached_slot_logits(teacher_targets, lead)
+python/owl/model/kaggriculture.py:750: in _admit_cached_slot_logits
+    slot_logits = targets.slot_logits
+                  ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'CachedTeacherDistillationTargets' object has no attribute 'slot_logits'
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_cached_admission_rejects_bad_targets_before_any_kernel
+1 failed in 0.20s

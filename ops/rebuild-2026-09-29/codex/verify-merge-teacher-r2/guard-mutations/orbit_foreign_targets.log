@@ -1,0 +1,12 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel _____
+tests/kaggriculture/test_teacher.py:864: in test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel
+    student.evaluate_actions_with_cached_teacher(obs, actions, foreign)
+python/owl/model/stateless_transformer_v1.py:1345: in evaluate_actions_with_cached_teacher
+    if teacher_targets.action_params is None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'KaggricultureTeacherTargets' object has no attribute 'action_params'
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_teacher.py::test_isaiah_cached_teacher_rejects_foreign_targets_before_any_kernel
+1 failed in 0.29s

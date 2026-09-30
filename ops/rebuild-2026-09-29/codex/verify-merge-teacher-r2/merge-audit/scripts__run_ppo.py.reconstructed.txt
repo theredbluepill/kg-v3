@@ -1,0 +1,1998 @@
+from __future__ import annotations
+
+import argparse
+import itertools
+import random
+import re
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Literal
+
+import torch
+import yaml
+<<<<<<< ops/rebuild-2026-09-29/codex/verify-merge-teacher-r2/merge-audit/scripts__run_ppo.py.integration.txt
+from owl.kaggriculture.evaluation import terminal_seat_banks
+=======
+>>>>>>> ops/rebuild-2026-09-29/codex/verify-merge-teacher-r2/merge-audit/scripts__run_ppo.py.teacher.txt
+from owl.kaggriculture.types import KaggricultureObsConfig
+from owl.model import (
+    BaseModelAPI,
+    LoRAApplication,
+    ModelConfig,
+    ModelHiddenState,
+    ModelOutput,
+    apply_lora_to_stateless_transformer,
+    create_model,
+    load_model_state_dict_allowing_lora,
+    lora_config_for_model,
+    roundtrip_lora_base_quantization,
+)
+from owl.model.compile_gemm import (
+    CompileStackReport,
+    GemmBackendClaim,
+    check_compile_stack,
+    gemm_backend_claim,
+    installed_compile_stack,
+)
+from owl.model.kaggriculture import KaggricultureTransformerConfig
+from owl.model.kaggriculture_workload import (
+    WorkloadHeadroom,
+    check_workload_headroom,
+    headroom_log_lines,
+    ppo_forward_workloads,
+)
+from owl.replay import ReplayRecorder
+from owl.rl import (
+    ActionBundle,
+    ActionConfig,
+    ActionMask,
+    DiscreteTargetActionMask,
+    DiscreteTargetActions,
+    DiscreteTargetBinActionMask,
+    DiscreteTargetBinActions,
+    EntityBasedBaseConfig,
+    ObsBatch,
+    ObsConfig,
+    PureActionMask,
+    PureActions,
+    VectorizedEnv,
+)
+from owl.rs import assert_release_build
+from owl.train import (
+    FullConfig,
+    PPOConfig,
+    PPOTrainer,
+    configure_torch,
+    require_orbit_env,
+)
+from owl.train.distributed import (
+    DistributedContext,
+    all_reduce_any,
+    broadcast_object,
+    distributed_session,
+    unwrap_model,
+    wrap_model_for_distributed,
+)
+from owl.train.logging import LogMode, MetricLogger, create_logger
+from owl.train.optimizer import (
+    create_lr_scheduler,
+    create_optimizer,
+)
+from owl.train.ppo import PPOCheckpointMetadata, _mean_env_metrics
+from owl.train.utils import (
+    DTypeConfig,
+    autocast_context,
+    configure_model_compile,
+)
+from tqdm import tqdm
+
+MODEL_CURRENT = 0
+MODEL_LAST_BEST = 1
+PLAYER_COUNTS = (2, 4)
+LAST_BEST_WIN_RATE_THRESHOLD = 0.7
+# Native Kaggriculture games take a non-negative int64 seed (engine_rs
+# `Game::new(config, seed: i64, ..)`; contract v4 requires seed >= 0). Evaluation
+# seeds start in the band [2**62, 2**62 + 2**61), leaving 2**61 seeds of headroom
+# below the int64 limit for the games one evaluation env consumes. Training
+# streams draw `base_seed + rank + k * world_size`; they stay below this band only
+# while that value is below 2**62, a bound nothing here enforces yet (the native
+# env seam, rebuild Tasks 1.4/1.5, must enforce it to keep the two apart).
+_EVAL_SEED_BITS = 61
+_EVAL_SEED_FLOOR = 1 << 62
+CHECKPOINT_FINAL = "checkpoint_final.pt"
+CHECKPOINT_LAST_BEST = "checkpoint_last_best.pt"
+_TRAINER = "run_ppo"
+_NUMBERED_CHECKPOINT_RE = re.compile(
+    r"^checkpoint_(\d{2})_(\d{3})_(\d{3})_(\d{3})\.pt$"
+)
+LoadModelWeightsMode = Literal["model_only", "model_and_optimizer"]
+LOAD_MODEL_WEIGHTS_MODES: tuple[LoadModelWeightsMode, ...] = (
+    "model_only",
+    "model_and_optimizer",
+)
+
+
+@dataclass(frozen=True)
+class FreshLaunch:
+    config_path: Path
+    output_dir: Path
+    overrides: dict[str, Any]
+    load_model_weights_path: Path | None = None
+    load_model_weights_mode: LoadModelWeightsMode = "model_only"
+
+
+@dataclass(frozen=True)
+class ResumeLaunch:
+    config_path: Path
+    run_dir: Path
+    checkpoint_path: Path
+    last_best_checkpoint_path: Path
+
+
+Launch = FreshLaunch | ResumeLaunch
+
+
+class _NoopLogger:
+    @property
+    def run_id(self) -> None:
+        return None
+
+    def log(self, metrics: dict[str, float], *, step: int) -> None:  # noqa: ARG002
+        return None
+
+    def set_summary(
+        self,
+        key: str,  # noqa: ARG002
+        value: int | float | str,  # noqa: ARG002
+    ) -> None:
+        return None
+
+    def close(self) -> None:
+        return None
+
+
+def main() -> None:
+    args = _parse_args()
+    assert_release_build()
+    configure_torch()
+    launch = _resolve_launch(args)
+    with distributed_session() as distributed:
+        _log_cli_overrides(args.overrides, distributed)
+        cfg = FullConfig.from_file(
+            launch.config_path,
+            overrides=launch.overrides if isinstance(launch, FreshLaunch) else None,
+        )
+        cfg = _resolve_teacher_init_path(cfg, launch.config_path)
+        _validate_lora_launch_config(cfg, launch)
+
+        if isinstance(launch, FreshLaunch):
+            cfg = _with_runtime_gpus(cfg, distributed.world_size)
+        else:
+            cfg = _adapt_resume_config_for_runtime_gpus(cfg, distributed)
+        # Before any run dir, env or model: the per-rank shapes are final here.
+        _check_model_workload(
+            cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed
+        )
+        _check_compile_stack(cfg.model, rl=cfg.rl, distributed=distributed)
+        # Fails before the run dir for Kaggriculture, which has no env yet.
+        env_config = require_orbit_env(cfg.env, context=_TRAINER)
+
+        if isinstance(launch, FreshLaunch):
+            run_dir = (
+                _create_run_dir(launch.output_dir)
+                if distributed.is_main_process
+                else None
+            )
+            if distributed.is_main_process:
+                if run_dir is None:
+                    raise RuntimeError("main process failed to create run dir")
+                cfg.to_file(run_dir / "config.yaml")
+            run_dir = broadcast_object(run_dir, distributed)
+        else:
+            run_dir = launch.run_dir
+
+        device = distributed.device
+        env = VectorizedEnv(
+            n_envs=env_config.n_envs,
+            obs_spec=env_config.obs_spec,
+            action_spec=env_config.action_spec,
+            two_player_weight=env_config.two_player_weight,
+            reward_mode=env_config.reward_mode,
+            pin_memory=env_config.pin_memory,
+        )
+        model, lora_application = _create_training_model_for_config(
+            cfg,
+            device=device,
+            reset_parameters=isinstance(launch, FreshLaunch),
+            roundtrip_lora_base=(
+                isinstance(launch, FreshLaunch)
+                and launch.load_model_weights_path is None
+            ),
+        )
+        compiled_model_modules = configure_model_compile(model, cfg.rl)
+        compile_claim = gemm_backend_claim()
+        if compile_claim is not None and distributed.is_main_process:
+            print(_compile_claim_log_line(compile_claim))
+        teacher_init_model = (
+            _load_teacher_init_model(
+                cfg.rl.teacher_init,
+                student_cfg=cfg,
+                device=device,
+            )
+            if cfg.rl.teacher_init is not None and cfg.rl.teacher_mode == "fixed"
+            else None
+        )
+        fixed_teacher_model = teacher_init_model
+        last_best_model = _initial_last_best_model(cfg, device=device)
+
+        trainable_parameters = _trainable_parameter_count(model)
+        optimizer = create_optimizer(model, cfg.optimizer)
+        lr_scheduler = create_lr_scheduler(optimizer, cfg.optimizer.lr_schedule)
+        model = wrap_model_for_distributed(model, distributed)
+        trainer = PPOTrainer(
+            config=cfg.rl,
+            env=env,
+            model=model,
+            optimizer=optimizer,
+            lr_scheduler=lr_scheduler,
+            device=device,
+            teacher_model=fixed_teacher_model,
+            teacher_active=fixed_teacher_model is not None,
+            distributed_context=distributed,
+        )
+        start_env_steps = 0
+        resume_run_id: str | None = None
+        if isinstance(launch, ResumeLaunch):
+            checkpoint_metadata = trainer.load_checkpoint(launch.checkpoint_path)
+            resume_run_id = _resume_wandb_run_id(checkpoint_metadata, args.log_mode)
+            start_env_steps = checkpoint_metadata.env_steps
+            last_best_model = _create_eval_model_for_config(
+                cfg,
+                device=device,
+                roundtrip_lora_base=False,
+            )
+            last_best_metadata = _load_model_from_checkpoint(
+                last_best_model,
+                path=launch.last_best_checkpoint_path,
+                device=device,
+            )
+            _compile_eval_model(last_best_model, cfg)
+            _validate_last_best_run_id(
+                last_best_metadata,
+                resume_run_id=resume_run_id,
+                checkpoint_path=launch.last_best_checkpoint_path,
+            )
+            if cfg.rl.teacher_mode == "last_best":
+                trainer.set_teacher_model(last_best_model, active=True)
+        elif launch.load_model_weights_path is not None:
+            checkpoint_metadata = trainer.load_model_weights(
+                launch.load_model_weights_path,
+                load_optimizer=(
+                    launch.load_model_weights_mode == "model_and_optimizer"
+                ),
+            )
+            _roundtrip_lora_base_quantization_for_config(
+                unwrap_model(model),
+                cfg.model,
+            )
+            start_env_steps = checkpoint_metadata.env_steps
+            if cfg.rl.teacher_mode == "last_best":
+                last_best_model = _create_eval_model_from_weights(
+                    unwrap_model(model),
+                    cfg,
+                    device=device,
+                )
+        if (
+            isinstance(launch, FreshLaunch)
+            and cfg.rl.teacher_mode == "last_best"
+            and last_best_model is not None
+        ):
+            trainer.set_teacher_model(last_best_model, active=True)
+
+        env_steps_per_iteration = cfg.rl.horizon * env.n_envs * distributed.world_size
+        max_runtime_seconds = _max_runtime_seconds(args.max_runtime_hours)
+        _run_training_session(
+            trainer=trainer,
+            run_dir=run_dir,
+            cfg=cfg,
+            log_mode=args.log_mode,
+            env_steps_per_iteration=env_steps_per_iteration,
+            max_env_steps=args.max_env_steps,
+            max_runtime_seconds=max_runtime_seconds,
+            distributed=distributed,
+            start_env_steps=start_env_steps,
+            resume_run_id=resume_run_id,
+            last_best_model=last_best_model,
+            trainable_parameters=trainable_parameters,
+            compiled_model_modules=compiled_model_modules,
+            compile_claim=compile_claim,
+            lora_application=lora_application,
+        )
+
+
+@contextmanager
+def _logger_session(logger: MetricLogger) -> Iterator[MetricLogger]:
+    """Close the metric run as failed when training raises."""
+    try:
+        yield logger
+    except BaseException:
+        logger.close(exit_code=1)
+        raise
+    logger.close()
+
+
+def _run_training_session(
+    *,
+    trainer: PPOTrainer,
+    run_dir: Path,
+    cfg: FullConfig,
+    log_mode: LogMode,
+    env_steps_per_iteration: int,
+    max_env_steps: int | None,
+    max_runtime_seconds: float | None,
+    distributed: DistributedContext,
+    start_env_steps: int = 0,
+    resume_run_id: str | None = None,
+    last_best_model: BaseModelAPI | None = None,
+    trainable_parameters: int | None = None,
+    compiled_model_modules: int = 0,
+    compile_claim: GemmBackendClaim | None = None,
+    lora_application: LoRAApplication | None = None,
+) -> None:
+    if not distributed.is_main_process:
+        _run_training_session_worker(
+            trainer=trainer,
+            run_dir=run_dir,
+            cfg=cfg,
+            env_steps_per_iteration=env_steps_per_iteration,
+            max_env_steps=max_env_steps,
+            max_runtime_seconds=max_runtime_seconds,
+            distributed=distributed,
+            start_env_steps=start_env_steps,
+            last_best_model=last_best_model,
+        )
+        return
+
+    with _logger_session(
+        create_logger(log_mode, run_dir, cfg, resume_run_id=resume_run_id)
+    ) as logger:
+        if trainable_parameters is not None:
+            logger.set_summary("trainable_parameters", trainable_parameters)
+        if compiled_model_modules > 0:
+            logger.set_summary("compiled_model_modules", compiled_model_modules)
+        if compile_claim is not None:
+            for key, value in compile_claim.summary().items():
+                logger.set_summary(key, value)
+        if lora_application is not None:
+            logger.set_summary("lora_modules", lora_application.module_count)
+            logger.set_summary(
+                "lora_trainable_parameters",
+                lora_application.trainable_parameters,
+            )
+        env_steps = _run_training_loop(
+            trainer=trainer,
+            logger=logger,
+            run_dir=run_dir,
+            cfg=cfg,
+            env_steps_per_iteration=env_steps_per_iteration,
+            max_env_steps=max_env_steps,
+            max_runtime_seconds=max_runtime_seconds,
+            dist_ctx=distributed,
+            start_env_steps=start_env_steps,
+            wandb_run_id=logger.run_id,
+            last_best_model=last_best_model,
+        )
+        trainer.write_checkpoint(
+            run_dir / CHECKPOINT_FINAL,
+            env_steps=env_steps,
+            wandb_run_id=logger.run_id,
+        )
+
+
+def _run_training_session_worker(
+    *,
+    trainer: PPOTrainer,
+    run_dir: Path,
+    cfg: FullConfig,
+    env_steps_per_iteration: int,
+    max_env_steps: int | None,
+    max_runtime_seconds: float | None,
+    distributed: DistributedContext,
+    start_env_steps: int = 0,
+    last_best_model: BaseModelAPI | None = None,
+) -> None:
+    _run_training_loop(
+        trainer=trainer,
+        logger=_NoopLogger(),
+        run_dir=run_dir,
+        cfg=cfg,
+        env_steps_per_iteration=env_steps_per_iteration,
+        max_env_steps=max_env_steps,
+        max_runtime_seconds=max_runtime_seconds,
+        dist_ctx=distributed,
+        start_env_steps=start_env_steps,
+        last_best_model=last_best_model,
+    )
+
+
+def _run_training_loop(
+    *,
+    trainer: PPOTrainer,
+    logger: Any,
+    run_dir: Path,
+    cfg: FullConfig,
+    env_steps_per_iteration: int,
+    max_env_steps: int | None,
+    max_runtime_seconds: float | None,
+    dist_ctx: DistributedContext,
+    start_env_steps: int = 0,
+    wandb_run_id: str | None = None,
+    last_best_model: BaseModelAPI | None = None,
+) -> int:
+    env_steps = start_env_steps
+    started_at = time.monotonic()
+    next_checkpoint_env_steps = _next_periodic_checkpoint_step(
+        checkpoint_freq=cfg.rl.checkpoint_freq,
+        env_steps=env_steps,
+    )
+    if next_checkpoint_env_steps is not None and last_best_model is None:
+        last_best_model = _create_eval_model_from_weights(
+            unwrap_model(trainer.model),
+            cfg,
+            device=trainer.device,
+        )
+    if _should_stop_training(
+        env_steps=env_steps,
+        started_at=started_at,
+        max_env_steps=max_env_steps,
+        max_runtime_seconds=max_runtime_seconds,
+        distributed=dist_ctx,
+    ):
+        return env_steps
+    with tqdm(
+        unit="env steps",
+        dynamic_ncols=True,
+        initial=env_steps,
+        disable=not dist_ctx.is_main_process,
+    ) as progress:
+        while True:
+            metrics = trainer.train_iteration()
+            env_steps += env_steps_per_iteration
+            progress.update(env_steps_per_iteration)
+            logger.log({**metrics, "train/env_steps": float(env_steps)}, step=env_steps)
+            if (
+                next_checkpoint_env_steps is not None
+                and env_steps >= next_checkpoint_env_steps
+            ):
+                checkpoint_path = (
+                    run_dir / f"checkpoint_{_format_checkpoint_step(env_steps)}.pt"
+                )
+                if dist_ctx.is_main_process:
+                    trainer.write_checkpoint(
+                        checkpoint_path,
+                        env_steps=env_steps,
+                        wandb_run_id=wandb_run_id,
+                    )
+                if last_best_model is None:
+                    raise RuntimeError("last_best_model must exist for checkpoints")
+                last_best_checkpoint_path = run_dir / CHECKPOINT_LAST_BEST
+                if dist_ctx.is_main_process and not last_best_checkpoint_path.is_file():
+                    trainer.write_checkpoint(
+                        last_best_checkpoint_path,
+                        env_steps=start_env_steps,
+                        wandb_run_id=wandb_run_id,
+                        model=last_best_model,
+                    )
+                dist_ctx.barrier()
+                eval_metrics: dict[str, float] | None = None
+                if dist_ctx.is_main_process:
+                    eval_metrics = _evaluate_against_last_best(
+                        current_model=unwrap_model(trainer.model),
+                        last_best_model=last_best_model,
+                        cfg=cfg,
+                        device=trainer.device,
+                        env_steps=env_steps,
+                        replay_dir=(
+                            run_dir / "eval_replays" / checkpoint_path.stem
+                            if cfg.rl.eval_replay_games > 0
+                            else None
+                        ),
+                    )
+                eval_metrics = broadcast_object(eval_metrics, dist_ctx)
+                if eval_metrics is None:
+                    raise RuntimeError("missing broadcast eval metrics")
+                replace_last_best = (
+                    eval_metrics["eval/win_rate_against_last_best"]
+                    >= LAST_BEST_WIN_RATE_THRESHOLD
+                )
+                if replace_last_best:
+                    _refresh_eval_model_from_weights(
+                        last_best_model,
+                        unwrap_model(trainer.model),
+                    )
+                    if cfg.rl.teacher_mode == "last_best":
+                        trainer.set_teacher_model(
+                            last_best_model,
+                            active=True,
+                        )
+                    if dist_ctx.is_main_process:
+                        trainer.write_checkpoint(
+                            last_best_checkpoint_path,
+                            env_steps=env_steps,
+                            wandb_run_id=wandb_run_id,
+                        )
+                dist_ctx.barrier()
+                # Logged only after refresh, teacher update, promoted checkpoint
+                # and barrier complete, so a failed promotion leaves no record
+                # of `eval/promoted` (as the reference branch orders it).
+                logger.log(
+                    {
+                        **eval_metrics,
+                        "eval/promoted": float(replace_last_best),
+                        "eval/promotion_threshold": LAST_BEST_WIN_RATE_THRESHOLD,
+                    },
+                    step=env_steps,
+                )
+                next_checkpoint_env_steps = _next_periodic_checkpoint_step(
+                    checkpoint_freq=cfg.rl.checkpoint_freq,
+                    env_steps=env_steps,
+                )
+            if _should_stop_training(
+                env_steps=env_steps,
+                started_at=started_at,
+                max_env_steps=max_env_steps,
+                max_runtime_seconds=max_runtime_seconds,
+                distributed=dist_ctx,
+            ):
+                break
+    return env_steps
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run PPO training for Orbit Wars.")
+    parser.add_argument(
+        "target",
+        type=Path,
+        help=(
+            "Config YAML for a fresh run, or a run directory/checkpoint file to resume"
+        ),
+    )
+    parser.add_argument(
+        "output_dir",
+        nargs="?",
+        type=Path,
+        help="Directory for fresh run artifacts",
+    )
+    parser.add_argument(
+        "--log-mode",
+        type=LogMode,
+        choices=list(LogMode),
+        default=LogMode.WANDB,
+        help="Metric logging backend",
+    )
+    parser.add_argument(
+        "-o",
+        "--overrides",
+        nargs="+",
+        action="append",
+        default=None,
+        metavar="field.path=value",
+        help="Optional overrides in the format field.path=value",
+    )
+    parser.add_argument(
+        "--load-model-weights",
+        type=Path,
+        default=None,
+        metavar="CHECKPOINT",
+        help=(
+            "For fresh launches, initialize model weights from a checkpoint while "
+            "keeping only env_steps, player_step_total, total_games_played, "
+            "and total_active_entities"
+        ),
+    )
+    parser.add_argument(
+        "--load-model-weights-mode",
+        choices=LOAD_MODEL_WEIGHTS_MODES,
+        default="model_only",
+        help=(
+            "State to load with --load-model-weights. model_and_optimizer also "
+            "loads optimizer moment/momentum state while keeping the fresh "
+            "scheduler and fresh optimizer hyperparameters."
+        ),
+    )
+    parser.add_argument(
+        "--max-env-steps",
+        type=int,
+        default=None,
+        help="Stop after at least this many environment steps",
+    )
+    parser.add_argument(
+        "--max-runtime-hours",
+        type=float,
+        default=None,
+        help="Stop after at least this many wall-clock hours",
+    )
+    args = parser.parse_args()
+    _validate_args(args)
+    return args
+
+
+def _validate_args(args: argparse.Namespace) -> None:
+    if args.max_env_steps is not None and args.max_env_steps <= 0:
+        raise ValueError("--max-env-steps must be positive")
+    if args.max_runtime_hours is not None and args.max_runtime_hours <= 0.0:
+        raise ValueError("--max-runtime-hours must be positive")
+    if args.output_dir is None and args.overrides is not None:
+        raise ValueError("resume launches cannot use config overrides")
+    if args.output_dir is None and args.load_model_weights is not None:
+        raise ValueError("resume launches cannot use --load-model-weights")
+    if args.output_dir is None and args.load_model_weights_mode != "model_only":
+        raise ValueError("resume launches cannot use --load-model-weights-mode")
+    if args.load_model_weights is None and args.load_model_weights_mode != "model_only":
+        raise ValueError("--load-model-weights-mode requires --load-model-weights")
+    if args.output_dir is None and args.log_mode == LogMode.DEBUG:
+        raise ValueError("resume launches require wandb logging")
+
+
+def _resolve_launch(args: argparse.Namespace) -> Launch:
+    if args.output_dir is not None:
+        if not args.target.is_file():
+            raise ValueError(f"fresh run config does not exist: {args.target}")
+        if (
+            args.load_model_weights is not None
+            and not args.load_model_weights.is_file()
+        ):
+            raise ValueError(
+                f"model-weights checkpoint does not exist: {args.load_model_weights}"
+            )
+        return FreshLaunch(
+            config_path=args.target,
+            output_dir=args.output_dir,
+            overrides=_parse_cli_overrides(args.overrides),
+            load_model_weights_path=args.load_model_weights,
+            load_model_weights_mode=args.load_model_weights_mode,
+        )
+    return _resolve_resume_launch(args.target)
+
+
+def _resolve_resume_launch(target: Path) -> ResumeLaunch:
+    if target.is_dir():
+        run_dir = target
+        checkpoint_path = _latest_resume_checkpoint(run_dir)
+    elif target.is_file():
+        if target.name == CHECKPOINT_LAST_BEST:
+            raise ValueError(
+                "checkpoint_last_best.pt cannot be used as a resume target"
+            )
+        run_dir = target.parent
+        checkpoint_path = target
+    else:
+        raise ValueError(f"resume target does not exist: {target}")
+
+    config_path = run_dir / "config.yaml"
+    if not config_path.is_file():
+        raise ValueError(f"expected resume config at {config_path}")
+    last_best_checkpoint_path = run_dir / CHECKPOINT_LAST_BEST
+    if not last_best_checkpoint_path.is_file():
+        raise ValueError(
+            f"expected last-best checkpoint at {last_best_checkpoint_path}"
+        )
+    return ResumeLaunch(
+        config_path=config_path,
+        run_dir=run_dir,
+        checkpoint_path=checkpoint_path,
+        last_best_checkpoint_path=last_best_checkpoint_path,
+    )
+
+
+def _latest_resume_checkpoint(run_dir: Path) -> Path:
+    final_checkpoint = run_dir / CHECKPOINT_FINAL
+    latest_numbered_checkpoint = _latest_numbered_resume_checkpoint(run_dir)
+    if not final_checkpoint.is_file():
+        if latest_numbered_checkpoint is None:
+            raise ValueError(f"no resume checkpoint found in {run_dir}")
+        return latest_numbered_checkpoint
+    if latest_numbered_checkpoint is None:
+        return final_checkpoint
+
+    final_env_steps = _checkpoint_env_steps(final_checkpoint)
+    numbered_env_steps = _checkpoint_env_steps(latest_numbered_checkpoint)
+    if final_env_steps >= numbered_env_steps:
+        return final_checkpoint
+    return latest_numbered_checkpoint
+
+
+def _latest_numbered_resume_checkpoint(run_dir: Path) -> Path | None:
+    numbered_checkpoints: list[tuple[int, Path]] = []
+    for checkpoint_path in run_dir.glob("checkpoint_*.pt"):
+        step = _parse_numbered_checkpoint_step(checkpoint_path.name)
+        if step is not None:
+            numbered_checkpoints.append((step, checkpoint_path))
+    if not numbered_checkpoints:
+        return None
+    return max(numbered_checkpoints, key=lambda item: item[0])[1]
+
+
+def _parse_numbered_checkpoint_step(name: str) -> int | None:
+    match = _NUMBERED_CHECKPOINT_RE.fullmatch(name)
+    if match is None:
+        return None
+    return int("".join(match.groups()))
+
+
+def _checkpoint_env_steps(path: Path) -> int:
+    checkpoint = torch.load(path, map_location="cpu", weights_only=False)
+    return _checkpoint_metadata(checkpoint, path=path).env_steps
+
+
+def _parse_cli_overrides(raw_overrides: list[list[str]] | None) -> dict[str, Any]:
+    if raw_overrides is None:
+        return {}
+
+    parsed_overrides: dict[str, Any] = {}
+    for override in itertools.chain.from_iterable(raw_overrides):
+        field_path, separator, raw_value = override.partition("=")
+        if not separator:
+            raise ValueError(
+                f"Invalid override '{override}'. Expected format 'field.path=value'"
+            )
+
+        parts = field_path.split(".")
+        if not field_path or any(not part for part in parts):
+            raise ValueError(
+                f"Invalid override field path '{field_path}'. "
+                "Expected dot-separated field names"
+            )
+
+        if field_path in parsed_overrides:
+            raise ValueError(f"Duplicate override field '{field_path}'")
+
+        try:
+            value = yaml.safe_load(raw_value)
+        except yaml.YAMLError as exc:
+            raise ValueError(
+                f"Invalid YAML value for override '{field_path}': {raw_value}"
+            ) from exc
+
+        parsed_overrides[field_path] = value
+
+    return parsed_overrides
+
+
+def _log_cli_overrides(
+    raw_overrides: list[list[str]] | None,
+    distributed: DistributedContext,
+) -> None:
+    if not raw_overrides or not distributed.is_main_process:
+        return
+
+    overrides_flat = list(itertools.chain.from_iterable(raw_overrides))
+    print(f"Launched with the following raw manual overrides: '{overrides_flat}'")
+
+
+def _check_model_workload(
+    model_config: ModelConfig | KaggricultureTransformerConfig,
+    *,
+    n_envs: int,
+    rl: PPOConfig,
+    distributed: DistributedContext,
+) -> tuple[WorkloadHeadroom, ...]:
+    """Fail fast when a forward exceeds the model's GEMM chunking; print headroom.
+
+    Only the Kaggriculture model chunks its trunk and heads below the 2**31 GEMM
+    extent; Isaiah's Orbit models issue unchunked forwards and have no limit to
+    check. The BC trainer adds its batch as a ``ForwardWorkload`` when it exists.
+    """
+    if not isinstance(model_config, KaggricultureTransformerConfig):
+        return ()
+    reports = check_workload_headroom(
+        model_config,
+        ppo_forward_workloads(
+            n_envs=n_envs,
+            horizon=rl.horizon,
+            segments_per_minibatch=rl.segments_per_minibatch,
+            teacher_segments_per_minibatch=(
+                None if rl.teacher_mode is None else rl.teacher_segments_per_minibatch
+            ),
+        ),
+    )
+    if distributed.is_main_process:
+        for line in headroom_log_lines(reports):
+            print(line)
+    return reports
+
+
+def _check_compile_stack(
+    model_config: ModelConfig | KaggricultureTransformerConfig,
+    *,
+    rl: PPOConfig,
+    distributed: DistributedContext,
+) -> CompileStackReport | None:
+    """Reject an unprobed torch/triton/driver stack before any run dir or model.
+
+    Only compiled Kaggriculture regions carry the cuBLAS-only GEMM setting and
+    its probed stack; the compile claim repeats the check where it applies the
+    setting. An installed triton is always checked. Without CUDA the driver
+    check is skipped, and so is the triton check when triton is not installed,
+    each with the reason printed.
+    """
+    if not isinstance(model_config, KaggricultureTransformerConfig):
+        return None
+    if rl.model_compile == "none":
+        return None
+    report = check_compile_stack(installed_compile_stack())
+    if distributed.is_main_process:
+        print(
+            f"Compile stack check: torch {report.torch}; triton {report.triton}; "
+            f"NVIDIA driver {report.nvidia_driver}"
+        )
+    return report
+
+
+def _compile_claim_log_line(claim: GemmBackendClaim) -> str:
+    fields = ", ".join(f"{key}={value}" for key, value in claim.summary().items())
+    return f"Compiled GEMM backends: {fields}"
+
+
+def _create_run_dir(output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    while True:
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        run_dir = output_dir / timestamp
+        try:
+            run_dir.mkdir(parents=True, exist_ok=False)
+            break
+        except FileExistsError:
+            time.sleep(1.0)
+
+    return run_dir
+
+
+def _create_model(
+    config: ModelConfig,
+    *,
+    obs_spec: ObsConfig,
+    action_spec: ActionConfig,
+) -> BaseModelAPI:
+    return create_model(config, obs_spec=obs_spec, action_spec=action_spec)
+
+
+def _create_training_model_for_config(
+    cfg: FullConfig,
+    *,
+    device: torch.device,
+    reset_parameters: bool = False,
+    roundtrip_lora_base: bool = True,
+) -> tuple[BaseModelAPI, LoRAApplication | None]:
+    env = require_orbit_env(cfg.env, context=_TRAINER)
+    model = _create_model(
+        cfg.model,
+        obs_spec=env.obs_spec,
+        action_spec=env.action_spec,
+    ).to(device)
+    if reset_parameters:
+        model.reset_parameters()
+    lora_application = _apply_lora_for_config(model, cfg.model)
+    if roundtrip_lora_base:
+        _roundtrip_lora_base_quantization_for_config(model, cfg.model)
+    return model, lora_application
+
+
+def _apply_lora_for_config(
+    model: BaseModelAPI,
+    config: ModelConfig,
+) -> LoRAApplication | None:
+    lora_config = lora_config_for_model(config)
+    if lora_config is None:
+        return None
+    return apply_lora_to_stateless_transformer(model, lora_config)
+
+
+def _roundtrip_lora_base_quantization_for_config(
+    model: BaseModelAPI,
+    config: ModelConfig,
+) -> None:
+    lora_config = lora_config_for_model(config)
+    if lora_config is None:
+        return
+    roundtrip_lora_base_quantization(model, lora_config)
+
+
+def _validate_lora_launch_config(cfg: FullConfig, launch: Launch) -> None:
+    if not isinstance(launch, FreshLaunch):
+        return
+    if lora_config_for_model(cfg.model) is None:
+        return
+    if launch.load_model_weights_mode == "model_and_optimizer":
+        raise ValueError(
+            "--load-model-weights-mode model_and_optimizer is not supported with "
+            "model.lora; load base weights with model_only or resume a LoRA run"
+        )
+
+
+def _resolve_teacher_init_path(cfg: FullConfig, config_path: Path) -> FullConfig:
+    teacher_init = cfg.rl.teacher_init
+    if teacher_init is None or teacher_init.is_absolute():
+        return cfg
+    return cfg.model_copy(
+        update={
+            "rl": cfg.rl.model_copy(
+                update={"teacher_init": (config_path.parent / teacher_init).resolve()},
+            ),
+        },
+    )
+
+
+def _load_teacher_init_model(
+    checkpoint_path: Path,
+    *,
+    student_cfg: FullConfig,
+    device: torch.device,
+) -> BaseModelAPI:
+    checkpoint_path = checkpoint_path.resolve()
+    if not checkpoint_path.is_file():
+        raise ValueError(f"teacher_init checkpoint does not exist: {checkpoint_path}")
+    teacher_cfg = FullConfig.from_file(_checkpoint_config_path(checkpoint_path))
+    teacher_env = require_orbit_env(teacher_cfg.env, context=_TRAINER)
+    teacher_obs_spec = _teacher_obs_spec_for_student(
+        teacher_env.obs_spec,
+        student_obs_spec=require_orbit_env(student_cfg.env, context=_TRAINER).obs_spec,
+        checkpoint_path=checkpoint_path,
+    )
+    _validate_teacher_specs(
+        teacher_cfg,
+        student_cfg=student_cfg,
+        checkpoint_path=checkpoint_path,
+    )
+    teacher_model, _ = _create_training_model_for_config(
+        teacher_cfg.model_copy(
+            update={
+                "env": teacher_env.model_copy(update={"obs_spec": teacher_obs_spec})
+            }
+        ),
+        device=device,
+        roundtrip_lora_base=False,
+    )
+    _load_model_weights(teacher_model, path=checkpoint_path, device=device)
+    _compile_eval_model(teacher_model, student_cfg)
+    teacher_model.eval()
+    return teacher_model
+
+
+def _initial_last_best_model(
+    cfg: FullConfig,
+    *,
+    device: torch.device,
+) -> BaseModelAPI | None:
+    if cfg.rl.teacher_mode != "last_best" or cfg.rl.teacher_init is None:
+        return None
+    # last_best is refreshed in place with the student's weights whenever the
+    # student wins, so it must share the student's architecture -- including any
+    # LoRA adapters. Build it from the student config and seed only its base
+    # weights from the teacher_init checkpoint; the adapters keep their
+    # config-initialized no-op values, so last_best initially matches the base
+    # checkpoint exactly. (The fixed-teacher path keeps using the teacher's own
+    # architecture via _load_teacher_init_model, since it is never refreshed.)
+    teacher_init = cfg.rl.teacher_init.resolve()
+    if not teacher_init.is_file():
+        raise ValueError(f"teacher_init checkpoint does not exist: {teacher_init}")
+    # Fail fast with a clear spec error before loading, matching the fixed-teacher
+    # path. Building from the student config still tolerates a non-LoRA base
+    # checkpoint (its adapters initialize from config).
+    teacher_cfg = FullConfig.from_file(_checkpoint_config_path(teacher_init))
+    _validate_teacher_specs(teacher_cfg, student_cfg=cfg, checkpoint_path=teacher_init)
+    model = _create_eval_model_for_config(
+        cfg,
+        device=device,
+        roundtrip_lora_base=False,
+    )
+    _load_model_weights(model, path=teacher_init, device=device)
+    _roundtrip_lora_base_quantization_for_config(model, cfg.model)
+    _compile_eval_model(model, cfg)
+    return model
+
+
+def _checkpoint_config_path(checkpoint_path: Path) -> Path:
+    config_path = checkpoint_path.parent / "config.yaml"
+    if not config_path.is_file():
+        raise ValueError(f"expected checkpoint config at {config_path}")
+    return config_path
+
+
+def _validate_teacher_specs(
+    teacher_cfg: FullConfig,
+    *,
+    student_cfg: FullConfig,
+    checkpoint_path: Path,
+) -> None:
+    teacher_env = require_orbit_env(teacher_cfg.env, context=_TRAINER)
+    student_env = require_orbit_env(student_cfg.env, context=_TRAINER)
+    _teacher_obs_spec_for_student(
+        teacher_env.obs_spec,
+        student_obs_spec=student_env.obs_spec,
+        checkpoint_path=checkpoint_path,
+    )
+    if teacher_env.action_spec != student_env.action_spec:
+        raise ValueError(f"teacher action_spec must match student: {checkpoint_path}")
+
+
+def _teacher_obs_spec_for_student(
+    teacher_obs_spec: ObsConfig | KaggricultureObsConfig,
+    *,
+    student_obs_spec: ObsConfig | KaggricultureObsConfig,
+    checkpoint_path: Path,
+) -> ObsConfig | KaggricultureObsConfig:
+    """The teacher's obs spec as the student will feed it.
+
+    Orbit entity-based specs must match except ``max_entities`` (the teacher
+    takes the student's); Kaggriculture specs must match exactly. Mixing games
+    raises ``TypeError``.
+    """
+    if isinstance(teacher_obs_spec, KaggricultureObsConfig) and isinstance(
+        student_obs_spec, KaggricultureObsConfig
+    ):
+        if teacher_obs_spec != student_obs_spec:
+            raise ValueError(
+                f"teacher obs_spec must match student exactly: {checkpoint_path}"
+            )
+        return teacher_obs_spec
+    if not isinstance(teacher_obs_spec, EntityBasedBaseConfig) or not isinstance(
+        student_obs_spec, EntityBasedBaseConfig
+    ):
+        raise TypeError(
+            "teacher and student obs_spec must both be entity-based or both "
+            f"KaggricultureObsConfig, got {type(teacher_obs_spec).__name__} and "
+            f"{type(student_obs_spec).__name__}"
+        )
+
+    adjusted_teacher_obs_spec = type(teacher_obs_spec).model_validate(
+        {
+            **teacher_obs_spec.model_dump(mode="python"),
+            "max_entities": student_obs_spec.max_entities,
+        }
+    )
+    if adjusted_teacher_obs_spec != student_obs_spec:
+        raise ValueError(
+            "teacher obs_spec must match student except max_entities: "
+            f"{checkpoint_path}"
+        )
+    return adjusted_teacher_obs_spec
+
+
+def _load_model_weights(
+    model: BaseModelAPI,
+    *,
+    path: Path,
+    device: torch.device,
+) -> None:
+    checkpoint = torch.load(path, map_location=device, weights_only=False)
+    if not isinstance(checkpoint, dict):
+        raise ValueError(f"checkpoint must be a dictionary: {path}")
+    if "model" not in checkpoint:
+        raise ValueError(f"checkpoint is missing model weights: {path}")
+    # Tolerate loading a non-LoRA base checkpoint into a LoRA-wrapped model: base
+    # tensors are loaded and the adapters keep their config-initialized values.
+    load_model_state_dict_allowing_lora(model, checkpoint["model"])
+    model.eval()
+
+
+def _with_runtime_gpus(cfg: FullConfig, world_size: int) -> FullConfig:
+    return cfg.model_copy(
+        update={
+            "runtime": cfg.runtime.model_copy(
+                update={"n_runtime_gpus": world_size},
+            ),
+        },
+    )
+
+
+def _adapt_resume_config_for_runtime_gpus(
+    cfg: FullConfig,
+    distributed: DistributedContext,
+) -> FullConfig:
+    saved_gpus = cfg.runtime.n_runtime_gpus
+    current_gpus = distributed.world_size
+    if saved_gpus == current_gpus:
+        return cfg
+
+    n_envs = _scale_resume_value_for_runtime_gpus(
+        cfg.env.n_envs,
+        saved_gpus=saved_gpus,
+        current_gpus=current_gpus,
+        name="env.n_envs",
+    )
+    train_segments = _scale_resume_value_for_runtime_gpus(
+        cfg.rl.segments_per_minibatch * cfg.rl.gradient_accumulation_steps,
+        saved_gpus=saved_gpus,
+        current_gpus=current_gpus,
+        name=("rl.segments_per_minibatch * rl.gradient_accumulation_steps"),
+    )
+    segments_per_minibatch, gradient_accumulation_steps = (
+        _derive_resume_minibatch_shape(
+            train_segments=train_segments,
+            segments_per_minibatch=cfg.rl.segments_per_minibatch,
+        )
+    )
+
+    updated = cfg.model_copy(
+        update={
+            "env": cfg.env.model_copy(update={"n_envs": n_envs}),
+            "rl": cfg.rl.model_copy(
+                update={
+                    "segments_per_minibatch": segments_per_minibatch,
+                    "gradient_accumulation_steps": gradient_accumulation_steps,
+                },
+            ),
+            "runtime": cfg.runtime.model_copy(
+                update={"n_runtime_gpus": current_gpus},
+            ),
+        },
+    )
+    adapted = FullConfig.model_validate(updated.model_dump(mode="python"))
+    if adapted.rl.eval_replay_games > adapted.env.n_envs:
+        raise ValueError(
+            "cannot derive resume config for runtime GPU count change: "
+            "rl.eval_replay_games must be <= env.n_envs"
+        )
+    return adapted
+
+
+def _scale_resume_value_for_runtime_gpus(
+    value: int,
+    *,
+    saved_gpus: int,
+    current_gpus: int,
+    name: str,
+) -> int:
+    numerator = value * saved_gpus
+    if numerator % current_gpus != 0:
+        raise ValueError(
+            "cannot derive resume config for runtime GPU count change: "
+            f"{name}={value} from runtime.n_runtime_gpus={saved_gpus} "
+            f"does not scale evenly to {current_gpus} GPUs"
+        )
+    return numerator // current_gpus
+
+
+def _derive_resume_minibatch_shape(
+    *,
+    train_segments: int,
+    segments_per_minibatch: int,
+) -> tuple[int, int]:
+    if train_segments % segments_per_minibatch == 0:
+        return segments_per_minibatch, train_segments // segments_per_minibatch
+
+    for candidate_segments in range(
+        min(train_segments, segments_per_minibatch),
+        0,
+        -1,
+    ):
+        if train_segments % candidate_segments == 0:
+            return candidate_segments, train_segments // candidate_segments
+
+    raise RuntimeError("positive integers should always have a divisor")
+
+
+def _trainable_parameter_count(model: torch.nn.Module) -> int:
+    return sum(param.numel() for param in model.parameters() if param.requires_grad)
+
+
+def _create_eval_model_for_config(
+    cfg: FullConfig,
+    *,
+    device: torch.device,
+    roundtrip_lora_base: bool = True,
+) -> BaseModelAPI:
+    model, _ = _create_training_model_for_config(
+        cfg,
+        device=device,
+        roundtrip_lora_base=roundtrip_lora_base,
+    )
+    model.eval()
+    return model
+
+
+def _create_eval_model_from_weights(
+    source_model: BaseModelAPI,
+    cfg: FullConfig,
+    *,
+    device: torch.device,
+) -> BaseModelAPI:
+    model = _create_eval_model_for_config(
+        cfg,
+        device=device,
+        roundtrip_lora_base=False,
+    )
+    model.load_state_dict(source_model.state_dict())
+    _compile_eval_model(model, cfg)
+    model.eval()
+    return model
+
+
+def _refresh_eval_model_from_weights(
+    target_model: BaseModelAPI,
+    source_model: BaseModelAPI,
+) -> None:
+    target_model.load_state_dict(source_model.state_dict())
+    target_model.eval()
+
+
+def _compile_eval_model(model: BaseModelAPI, cfg: FullConfig) -> None:
+    configure_model_compile(model, cfg.rl)
+    model.eval()
+
+
+def _resume_wandb_run_id(
+    metadata: PPOCheckpointMetadata,
+    log_mode: LogMode,
+) -> str:
+    if log_mode == LogMode.DEBUG:
+        raise ValueError("resume launches require wandb logging")
+    if metadata.wandb_run_id is None:
+        raise ValueError("resume checkpoint is missing wandb_run_id")
+    return metadata.wandb_run_id
+
+
+def _load_model_from_checkpoint(
+    model: BaseModelAPI,
+    *,
+    path: Path,
+    device: torch.device,
+) -> PPOCheckpointMetadata:
+    checkpoint = torch.load(path, map_location=device, weights_only=False)
+    if not isinstance(checkpoint, dict):
+        raise ValueError(f"checkpoint must be a dictionary: {path}")
+    metadata = _checkpoint_metadata(checkpoint, path=path)
+    load_model_state_dict_allowing_lora(model, checkpoint["model"])
+    model.eval()
+    return metadata
+
+
+def _checkpoint_metadata(
+    checkpoint: object,
+    *,
+    path: Path,
+) -> PPOCheckpointMetadata:
+    if not isinstance(checkpoint, dict):
+        raise ValueError(f"checkpoint must be a dictionary: {path}")
+    required_keys = {
+        "model",
+        "optimizer",
+        "lr_scheduler",
+        "env_steps",
+        "optimizer_steps",
+        "player_step_total",
+        "total_games_played",
+        "target_kl_exceeded_total",
+        "wandb_run_id",
+    }
+    optional_keys = {"total_active_entities"}
+    checkpoint_keys = set(checkpoint)
+    missing_keys = required_keys - checkpoint_keys
+    unexpected_keys = checkpoint_keys - required_keys - optional_keys
+    if missing_keys or unexpected_keys:
+        raise ValueError(
+            f"checkpoint keys must include {sorted(required_keys)} and only "
+            f"optional keys {sorted(optional_keys)}, "
+            f"got {sorted(checkpoint)}: {path}"
+        )
+    total_active_entities = checkpoint.get("total_active_entities", 0)
+    return PPOCheckpointMetadata(
+        env_steps=_checkpoint_nonnegative_int(
+            checkpoint["env_steps"],
+            name="env_steps",
+            path=path,
+        ),
+        player_step_total=_checkpoint_nonnegative_int(
+            checkpoint["player_step_total"],
+            name="player_step_total",
+            path=path,
+        ),
+        total_games_played=_checkpoint_nonnegative_int(
+            checkpoint["total_games_played"],
+            name="total_games_played",
+            path=path,
+        ),
+        total_active_entities=_checkpoint_nonnegative_int(
+            total_active_entities,
+            name="total_active_entities",
+            path=path,
+        ),
+        wandb_run_id=_checkpoint_optional_str(
+            checkpoint["wandb_run_id"],
+            name="wandb_run_id",
+            path=path,
+        ),
+    )
+
+
+def _checkpoint_nonnegative_int(value: object, *, name: str, path: Path) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"checkpoint {name} must be an integer: {path}")
+    if value < 0:
+        raise ValueError(f"checkpoint {name} must be non-negative: {path}")
+    return value
+
+
+def _checkpoint_optional_str(value: object, *, name: str, path: Path) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value:
+        raise ValueError(
+            f"checkpoint {name} must be a non-empty string or None: {path}"
+        )
+    return value
+
+
+def _validate_last_best_run_id(
+    metadata: PPOCheckpointMetadata,
+    *,
+    resume_run_id: str,
+    checkpoint_path: Path,
+) -> None:
+    if metadata.wandb_run_id is None:
+        raise ValueError(
+            f"last-best checkpoint is missing wandb_run_id: {checkpoint_path}"
+        )
+    if metadata.wandb_run_id != resume_run_id:
+        raise ValueError(
+            f"last-best checkpoint wandb_run_id does not match resume checkpoint: "
+            f"{checkpoint_path}"
+        )
+
+
+def _next_periodic_checkpoint_step(
+    *, checkpoint_freq: int | None, env_steps: int = 0
+) -> int | None:
+    if checkpoint_freq is None:
+        return None
+    return (env_steps // checkpoint_freq + 1) * checkpoint_freq
+
+
+def _format_checkpoint_step(env_steps: int) -> str:
+    if env_steps < 0:
+        raise ValueError("env_steps must be non-negative")
+    digits = f"{env_steps:011d}"
+    return f"{digits[:2]}_{digits[2:5]}_{digits[5:8]}_{digits[8:11]}"
+
+
+def _evaluate_against_last_best(
+    *,
+    current_model: BaseModelAPI,
+    last_best_model: BaseModelAPI,
+    cfg: FullConfig,
+    device: torch.device,
+    env_steps: int,
+    replay_dir: Path | None = None,
+) -> dict[str, float]:
+    started_at = time.perf_counter()
+    eval_steps = 0
+    current_was_training = current_model.training
+    last_best_was_training = last_best_model.training
+    current_model.eval()
+    last_best_model.eval()
+    stats = _EvalStats.empty()
+    stats_by_player_count: dict[int, _EvalStats] = {}
+    env_metrics: dict[str, list[float]] = {}
+    try:
+        with torch.no_grad():
+            if cfg.rl.eval_replay_games > cfg.env.n_envs:
+                raise ValueError("rl.eval_replay_games must be <= env.n_envs")
+            player_stats, player_stats_by_count, player_env_metrics, player_steps = (
+                _evaluate_games(
+                    current_model=current_model,
+                    last_best_model=last_best_model,
+                    cfg=cfg,
+                    n_games=cfg.env.n_envs,
+                    n_envs=cfg.env.n_envs,
+                    device=device,
+                    env_steps=env_steps,
+                    replay_games=cfg.rl.eval_replay_games,
+                    replay_output_path=(
+                        replay_dir / "eval.jsonl" if replay_dir is not None else None
+                    ),
+                )
+            )
+            stats_by_player_count.update(player_stats_by_count)
+            stats.merge(player_stats)
+            _extend_env_metrics(env_metrics, player_env_metrics)
+            eval_steps += player_steps
+    finally:
+        current_model.train(current_was_training)
+        last_best_model.train(last_best_was_training)
+
+    elapsed = max(time.perf_counter() - started_at, 1e-12)
+    metrics = _eval_env_metrics(env_metrics)
+    metrics["eval/win_rate_against_last_best"] = stats.win_rate(MODEL_CURRENT)
+    metrics["eval/games"] = float(stats.model_games[MODEL_CURRENT])
+    for player_count, player_stats in stats_by_player_count.items():
+        if player_stats.model_games[MODEL_CURRENT] == 0:
+            continue
+        metrics[f"eval/win_rate_against_last_best_{player_count}p"] = (
+            player_stats.win_rate(MODEL_CURRENT)
+        )
+    metrics["time/eval_seconds"] = float(elapsed)
+    metrics["perf/eval_sps"] = float(eval_steps / elapsed)
+    return metrics
+
+
+def _evaluate_games(
+    *,
+    current_model: BaseModelAPI,
+    last_best_model: BaseModelAPI,
+    cfg: FullConfig,
+    n_games: int,
+    n_envs: int,
+    device: torch.device,
+    env_steps: int,
+    replay_games: int = 0,
+    replay_output_path: Path | None = None,
+) -> tuple[_EvalStats, dict[int, _EvalStats], dict[str, list[float]], int]:
+    env = _create_eval_env(cfg, n_envs=n_envs, device=device, env_steps=env_steps)
+    obs = env.reset()
+    # One slot per player seat the game exposes (4 Orbit slots, 2 Kaggriculture).
+    assignments = torch.full(obs.still_playing.shape, -1, dtype=torch.int64)
+    start_masks = obs.still_playing.clone()
+    returns = torch.zeros(obs.still_playing.shape, dtype=torch.float32)
+    recorder = (
+        ReplayRecorder(
+            output_path=replay_output_path,
+            source="run_ppo_eval",
+            player_count=None,
+            total_games=n_games,
+            sample_games=replay_games,
+            metadata={
+                "eval_opponent": "last_best",
+            },
+            rng=random.Random(),
+            split_files=True,
+        )
+        if replay_output_path is not None and replay_games > 0
+        else None
+    )
+    current_game_ordinals: list[int | None] = [None] * n_envs
+    started_games = 0
+    for env_index in range(n_envs):
+        _assign_eval_models(
+            assignments,
+            env_index,
+            active_slots=start_masks[env_index],
+            player_count=_player_count_for_eval(start_masks[env_index], env_index),
+        )
+        if started_games < n_games:
+            current_game_ordinals[env_index] = started_games
+            if recorder is not None:
+                recorder.start_episode(
+                    env,
+                    env_index,
+                    game_ordinal=started_games,
+                    assignments=assignments[env_index],
+                    start_mask=start_masks[env_index],
+                )
+            started_games += 1
+
+    games = 0
+    steps = 0
+    stats = _EvalStats.empty()
+    stats_by_player_count = {
+        player_count: _EvalStats.empty() for player_count in PLAYER_COUNTS
+    }
+    env_metrics: dict[str, list[float]] = {}
+    hidden_current = current_model.initial_hidden_state(n_envs, device=device)
+    hidden_last_best = last_best_model.initial_hidden_state(n_envs, device=device)
+    while games < n_games:
+        actions, hidden_current, hidden_last_best = (
+            _eval_actions_for_assignments_and_hidden(
+                obs,
+                assignments,
+                current_model=current_model,
+                last_best_model=last_best_model,
+                hidden_current=hidden_current,
+                hidden_last_best=hidden_last_best,
+                config=cfg.rl,
+                device=device,
+            )
+        )
+        obs, rewards, dones, _step_env_metrics = env.step(actions)
+        hidden_current = current_model.reset_hidden_state(hidden_current, dones)
+        hidden_last_best = last_best_model.reset_hidden_state(hidden_last_best, dones)
+        steps += n_envs
+        terminal_envs = torch.nonzero(dones.all(dim=1), as_tuple=False).flatten()
+        terminal_env_set = {int(env_index.item()) for env_index in terminal_envs}
+        if recorder is not None:
+            recorder.record_step(
+                env,
+                terminal_envs=terminal_env_set,
+                rewards=rewards,
+                dones=dones,
+            )
+        returns += rewards
+        for env_index_tensor in terminal_envs:
+            if games >= n_games:
+                break
+            env_index = int(env_index_tensor.item())
+            if current_game_ordinals[env_index] is not None:
+                player_count = _player_count_for_eval(start_masks[env_index], env_index)
+                terminal_metrics = env.terminal_metrics(env_index)
+                if terminal_metrics is None:
+                    raise RuntimeError(f"missing terminal metrics for env {env_index}")
+                _extend_single_env_metrics(env_metrics, terminal_metrics)
+                scores, outcome_metrics = _evaluation_scores_and_metrics(
+                    cfg,
+                    terminal_metrics,
+                    returns[env_index],
+                    assignments[env_index],
+                )
+                _extend_single_env_metrics(env_metrics, outcome_metrics)
+                _record_eval_terminal_result(
+                    stats,
+                    assignments[env_index],
+                    start_masks[env_index],
+                    scores,
+                )
+                _record_eval_terminal_result(
+                    stats_by_player_count[player_count],
+                    assignments[env_index],
+                    start_masks[env_index],
+                    scores,
+                )
+                games += 1
+
+            returns[env_index].zero_()
+            start_masks[env_index].copy_(obs.still_playing[env_index])
+            _assign_eval_models(
+                assignments,
+                env_index,
+                active_slots=start_masks[env_index],
+                player_count=_player_count_for_eval(start_masks[env_index], env_index),
+            )
+            if started_games < n_games:
+                current_game_ordinals[env_index] = started_games
+                if recorder is not None:
+                    recorder.start_episode(
+                        env,
+                        env_index,
+                        game_ordinal=started_games,
+                        assignments=assignments[env_index],
+                        start_mask=start_masks[env_index],
+                    )
+                started_games += 1
+            else:
+                current_game_ordinals[env_index] = None
+    return stats, stats_by_player_count, env_metrics, steps
+
+
+def _evaluation_seed(*, base_seed: int, env_steps: int) -> int:
+    """Fresh, reproducible starting worlds for the evaluation at ``env_steps``.
+
+    A 61-bit mix of ``(base_seed, env_steps)`` placed in the evaluation seed band
+    ``[2**62, 2**62 + 2**61)``. Guarantees: repeating an evaluation repeats its
+    seed; for a fixed base seed distinct evaluation steps get distinct seeds, and
+    for a fixed step distinct base seeds do (the mix is a bijection in each input
+    while the other is fixed). It is not injective over input pairs, and the
+    consecutive seeds that different evaluations or runs consume may overlap.
+    """
+    limit = 1 << _EVAL_SEED_BITS
+    for name, value in (("base_seed", base_seed), ("env_steps", env_steps)):
+        if not 0 <= value < limit:
+            raise ValueError(
+                f"{name} must be in [0, 2**{_EVAL_SEED_BITS}), got {value}"
+            )
+    return _EVAL_SEED_FLOOR + _mix_eval_seed_bits(
+        _mix_eval_seed_bits(base_seed) ^ env_steps
+    )
+
+
+def _mix_eval_seed_bits(value: int) -> int:
+    """Bijection on ``[0, 2**61)``: xor-shifts and odd multiplies mod ``2**61``."""
+    mask = (1 << _EVAL_SEED_BITS) - 1
+    value ^= value >> 31
+    value = (value * 0x7FB5D329728EA185) & mask
+    value ^= value >> 27
+    value = (value * 0x81DADEF4BC2DD44D) & mask
+    value ^= value >> 33
+    return value
+
+
+def _create_eval_env(
+    cfg: FullConfig,
+    *,
+    n_envs: int,
+    device: torch.device,
+    env_steps: int,
+) -> VectorizedEnv:
+    """Build the evaluation env for the evaluation at ``env_steps``."""
+    if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+        raise NotImplementedError(
+            "Kaggriculture evaluation needs the native environment (rebuild Tasks "
+            "1.4/1.5), seeded with _evaluation_seed(base_seed=<env seed>, "
+            f"env_steps={env_steps})"
+        )
+    # Isaiah's Orbit env samples its own games; it takes no seed.
+    env_config = require_orbit_env(cfg.env, context=_TRAINER)
+    return VectorizedEnv(
+        n_envs=n_envs,
+        obs_spec=env_config.obs_spec,
+        action_spec=env_config.action_spec,
+        two_player_weight=env_config.two_player_weight,
+        reward_mode=env_config.reward_mode,
+        pin_memory=device.type == "cuda",
+    )
+
+
+def _evaluation_scores_and_metrics(
+    cfg: FullConfig,
+    terminal_metrics: dict[str, float],
+    returns: torch.Tensor,
+    assignment: torch.Tensor,
+) -> tuple[torch.Tensor, dict[str, float]]:
+    """Per-seat scores that decide one evaluation game, plus outcome metrics.
+
+    Kaggriculture games are decided by raw final banks (lesson L1), never by the
+    shaped training return; see ``owl.kaggriculture.evaluation``. Orbit keeps
+    Isaiah's accumulated returns.
+    """
+    if isinstance(cfg.env.obs_spec, KaggricultureObsConfig):
+        banks = terminal_seat_banks(terminal_metrics)
+        return banks, _candidate_bank_metrics(banks, assignment)
+    return returns, {}
+
+
+def _candidate_bank_metrics(
+    banks: torch.Tensor, assignment: torch.Tensor
+) -> dict[str, float]:
+    """Raw final banks seen from the candidate's seat."""
+    seats = [int(model_index) for model_index in assignment.tolist()]
+    if sorted(seats) != [MODEL_CURRENT, MODEL_LAST_BEST]:
+        raise ValueError(
+            "bank metrics need one candidate and one incumbent seat, "
+            f"got assignment {seats}"
+        )
+    candidate = float(banks[seats.index(MODEL_CURRENT)])
+    incumbent = float(banks[seats.index(MODEL_LAST_BEST)])
+    return {
+        "candidate_bank": candidate,
+        "last_best_bank": incumbent,
+        "candidate_bank_margin": candidate - incumbent,
+    }
+
+
+def _player_count_for_eval(active_slots: torch.Tensor, env_index: int) -> int:
+    player_count = int(active_slots.sum().item())
+    if player_count not in PLAYER_COUNTS:
+        raise ValueError(
+            f"expected 2 or 4 active players, got {player_count} for env {env_index}"
+        )
+    return player_count
+
+
+def _extend_single_env_metrics(
+    totals: dict[str, list[float]],
+    step_metrics: dict[str, float],
+) -> None:
+    for key, value in step_metrics.items():
+        totals.setdefault(key, []).append(value)
+
+
+class _EvalStats:
+    def __init__(self, *, model_games: list[int], wins: list[float]) -> None:
+        self.model_games = model_games
+        self.wins = wins
+
+    @classmethod
+    def empty(cls) -> _EvalStats:
+        return cls(model_games=[0, 0], wins=[0.0, 0.0])
+
+    def add_game_result(self, winner: int | None) -> None:
+        for model_index in range(2):
+            self.model_games[model_index] += 1
+        if winner is None:
+            for model_index in range(2):
+                self.wins[model_index] += 0.5
+        else:
+            self.wins[winner] += 1.0
+
+    def merge(self, other: _EvalStats) -> None:
+        for model_index in range(2):
+            self.model_games[model_index] += other.model_games[model_index]
+            self.wins[model_index] += other.wins[model_index]
+
+    def win_rate(self, model_index: int) -> float:
+        games = self.model_games[model_index]
+        if games == 0:
+            return 0.0
+        return self.wins[model_index] / games
+
+
+def _assign_eval_models(
+    assignments: torch.Tensor,
+    env_index: int,
+    *,
+    active_slots: torch.Tensor,
+    player_count: int,
+) -> None:
+    active = torch.nonzero(active_slots, as_tuple=False).flatten().tolist()
+    if len(active) != player_count:
+        raise ValueError(
+            f"expected {player_count} active players, got {len(active)} "
+            f"for env {env_index}"
+        )
+
+    pattern = torch.tensor(_eval_assignment_pattern(player_count), dtype=torch.int64)
+    pattern = pattern[torch.randperm(pattern.numel())]
+    assignments[env_index].fill_(-1)
+    for slot, model_index in zip(active, pattern, strict=True):
+        assignments[env_index, slot] = int(model_index.item())
+
+
+def _eval_assignment_pattern(player_count: int) -> tuple[int, ...]:
+    if player_count == 2:
+        return (MODEL_CURRENT, MODEL_LAST_BEST)
+    if player_count == 4:
+        return (MODEL_CURRENT, MODEL_LAST_BEST, MODEL_LAST_BEST, MODEL_CURRENT)
+    raise ValueError(f"player_count must be 2 or 4, got {player_count}")
+
+
+def _record_eval_terminal_result(
+    stats: _EvalStats,
+    assignment: torch.Tensor,
+    start_mask: torch.Tensor,
+    scores: torch.Tensor,
+) -> None:
+    """Credit the model whose seats' summed ``scores`` is higher; ties halve."""
+    active_scores = scores[start_mask]
+    if active_scores.numel() == 0:
+        raise ValueError("cannot record a terminal result without starting players")
+    model_returns = [0.0, 0.0]
+    for player in torch.nonzero(start_mask, as_tuple=False).flatten().tolist():
+        model_index = int(assignment[player].item())
+        if model_index not in (MODEL_CURRENT, MODEL_LAST_BEST):
+            raise ValueError(f"missing model assignment for player slot {player}")
+        model_returns[model_index] += float(scores[player].item())
+    if model_returns[MODEL_CURRENT] > model_returns[MODEL_LAST_BEST]:
+        stats.add_game_result(MODEL_CURRENT)
+    elif model_returns[MODEL_LAST_BEST] > model_returns[MODEL_CURRENT]:
+        stats.add_game_result(MODEL_LAST_BEST)
+    else:
+        stats.add_game_result(None)
+
+
+def _eval_actions_for_assignments(
+    obs: ObsBatch,
+    assignments: torch.Tensor,
+    *,
+    current_model: BaseModelAPI,
+    last_best_model: BaseModelAPI,
+    config: DTypeConfig,
+    device: torch.device,
+) -> ActionBundle:
+    actions, _hidden_current, _hidden_last_best = (
+        _eval_actions_for_assignments_and_hidden(
+            obs,
+            assignments,
+            current_model=current_model,
+            last_best_model=last_best_model,
+            hidden_current=None,
+            hidden_last_best=None,
+            config=config,
+            device=device,
+        )
+    )
+    return actions
+
+
+def _eval_actions_for_assignments_and_hidden(
+    obs: ObsBatch,
+    assignments: torch.Tensor,
+    *,
+    current_model: BaseModelAPI,
+    last_best_model: BaseModelAPI,
+    hidden_current: ModelHiddenState | None,
+    hidden_last_best: ModelHiddenState | None,
+    config: DTypeConfig,
+    device: torch.device,
+) -> tuple[ActionBundle, ModelHiddenState | None, ModelHiddenState | None]:
+    device_obs = _obs_to_device(obs, device)
+    with autocast_context(config, device):
+        current_output = _model_output_for_eval(
+            current_model,
+            device_obs,
+            deterministic=False,
+            hidden_state=hidden_current,
+        )
+        last_best_output = _model_output_for_eval(
+            last_best_model,
+            device_obs,
+            deterministic=False,
+            hidden_state=hidden_last_best,
+        )
+    use_current = assignments.to(device=device).eq(MODEL_CURRENT)
+    return (
+        _select_actions(current_output.actions, last_best_output.actions, use_current),
+        current_output.next_hidden_state,
+        last_best_output.next_hidden_state,
+    )
+
+
+def _model_output_for_eval(
+    model: BaseModelAPI,
+    obs: ObsBatch,
+    *,
+    deterministic: bool,
+    hidden_state: ModelHiddenState | None,
+) -> ModelOutput:
+    if hidden_state is None:
+        return model(obs, deterministic=deterministic)
+    return model(obs, deterministic=deterministic, hidden_state=hidden_state)
+
+
+def _obs_to_device(obs: ObsBatch, device: torch.device) -> ObsBatch:
+    return ObsBatch(
+        **{
+            field: getattr(obs, field).to(
+                device=device,
+                non_blocking=device.type == "cuda",
+            )
+            for field in ObsBatch.model_fields
+            if field
+            not in {
+                "action_mask",
+                "player_features",
+                "fleet_target",
+                "target_incoming_features",
+            }
+        },
+        action_mask=_action_mask_to_device(obs, device),
+        player_features=(
+            None
+            if obs.player_features is None
+            else obs.player_features.to(
+                device=device,
+                non_blocking=device.type == "cuda",
+            )
+        ),
+        fleet_target=(
+            None
+            if obs.fleet_target is None
+            else obs.fleet_target.to(
+                device=device,
+                non_blocking=device.type == "cuda",
+            )
+        ),
+        target_incoming_features=(
+            None
+            if obs.target_incoming_features is None
+            else obs.target_incoming_features.to(
+                device=device,
+                non_blocking=device.type == "cuda",
+            )
+        ),
+    )
+
+
+def _action_mask_to_device(obs: ObsBatch, device: torch.device) -> ActionMask:
+    if isinstance(obs.action_mask, PureActionMask):
+        return PureActionMask(
+            can_act=obs.action_mask.can_act.to(
+                device=device,
+                non_blocking=device.type == "cuda",
+            ),
+            max_launch=obs.action_mask.max_launch.to(
+                device=device,
+                non_blocking=device.type == "cuda",
+            ),
+        )
+    if isinstance(obs.action_mask, DiscreteTargetActionMask):
+        return DiscreteTargetActionMask(
+            can_act=obs.action_mask.can_act.to(
+                device=device,
+                non_blocking=device.type == "cuda",
+            ),
+            max_launch=obs.action_mask.max_launch.to(
+                device=device,
+                non_blocking=device.type == "cuda",
+            ),
+        )
+    return DiscreteTargetBinActionMask(
+        can_act=obs.action_mask.can_act.to(
+            device=device,
+            non_blocking=device.type == "cuda",
+        )
+    )
+
+
+def _select_actions(
+    actions_a: ActionBundle,
+    actions_b: ActionBundle,
+    use_a: torch.Tensor,
+) -> ActionBundle:
+    if type(actions_a) is not type(actions_b):
+        raise ValueError("checkpoint action bundles must have matching kinds")
+    if isinstance(actions_a, PureActions) and isinstance(actions_b, PureActions):
+        action_mask = use_a[:, :, None, None]
+        return PureActions(
+            launch=_select_action(actions_a.launch, actions_b.launch, action_mask),
+            angle=_select_action(actions_a.angle, actions_b.angle, action_mask),
+            ships=_select_action(actions_a.ships, actions_b.ships, action_mask),
+        )
+    if isinstance(actions_a, DiscreteTargetActions) and isinstance(
+        actions_b,
+        DiscreteTargetActions,
+    ):
+        action_mask = use_a[:, :, None, None]
+        return DiscreteTargetActions(
+            launch=_select_action(actions_a.launch, actions_b.launch, action_mask),
+            target=_select_action(actions_a.target, actions_b.target, action_mask),
+            ships=_select_action(actions_a.ships, actions_b.ships, action_mask),
+        )
+    if isinstance(actions_a, DiscreteTargetBinActions) and isinstance(
+        actions_b,
+        DiscreteTargetBinActions,
+    ):
+        action_mask = use_a[:, :, None]
+        return DiscreteTargetBinActions(
+            target=_select_action(actions_a.target, actions_b.target, action_mask),
+            fleet_bin=_select_action(
+                actions_a.fleet_bin,
+                actions_b.fleet_bin,
+                action_mask,
+            ),
+        )
+    raise ValueError("unsupported checkpoint action bundle kind")
+
+
+def _select_action(
+    tensor_a: torch.Tensor,
+    tensor_b: torch.Tensor,
+    mask: torch.Tensor,
+) -> torch.Tensor:
+    while mask.ndim < tensor_a.ndim:
+        mask = mask.unsqueeze(-1)
+    return torch.where(mask, tensor_a, tensor_b).cpu()
+
+
+def _extend_env_metrics(
+    totals: dict[str, list[float]],
+    step_metrics: dict[str, list[float]],
+) -> None:
+    for key, values in step_metrics.items():
+        totals.setdefault(key, []).extend(values)
+
+
+def _eval_env_metrics(metrics: dict[str, list[float]]) -> dict[str, float]:
+    return {
+        f"eval/{key.removeprefix('train/')}": value
+        for key, value in _mean_env_metrics(metrics).items()
+    }
+
+
+def _max_runtime_seconds(max_runtime_hours: float | None) -> float | None:
+    if max_runtime_hours is None:
+        return None
+    return max_runtime_hours * 60.0 * 60.0
+
+
+def _should_stop_training(
+    *,
+    env_steps: int,
+    started_at: float,
+    max_env_steps: int | None,
+    max_runtime_seconds: float | None,
+    distributed: DistributedContext | None = None,
+) -> bool:
+    should_stop = max_env_steps is not None and env_steps >= max_env_steps
+    should_stop = should_stop or (
+        max_runtime_seconds is not None
+        and time.monotonic() - started_at >= max_runtime_seconds
+    )
+    if distributed is not None and distributed.initialized:
+        return all_reduce_any(should_stop, distributed)
+    return should_stop
+
+
+if __name__ == "__main__":
+    main()
