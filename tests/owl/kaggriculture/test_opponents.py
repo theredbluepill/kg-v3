@@ -44,7 +44,7 @@ def _learner_actions(env: rs.KaggricultureEnv, n_envs: int) -> tuple[object, obj
     return tokens, lengths
 
 
-@pytest.mark.parametrize("opponent", ["starter", "r04", "ecobot", "e776"])
+@pytest.mark.parametrize("opponent", ["starter", "r04", "ecobot", "e776", "cha22"])
 @pytest.mark.parametrize("learned_seat", [0, 1])
 def test_learned_seat_plays_opponent_and_preserves_observation_boundary(
     opponent: str, learned_seat: int

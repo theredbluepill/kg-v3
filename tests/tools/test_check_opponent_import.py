@@ -25,9 +25,14 @@ _SPEC.loader.exec_module(checker)
 def original_fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, bytes]]:
     originals = checker.reference_files(ROOT)
     current = {
-        path.replace("engine_rs/", "opponents_rs/", 1): data
+        path.replace("engine_rs/", "opponents_rs/", 1): (
+            checker.view_adapted(data, path) if path in checker.ADAPTED_HASHES else data
+        )
         for path, data in originals.items()
     }
+    committed = json.loads((ROOT / checker.MANIFEST).read_bytes())
+    for notice in checker.NOTICES:
+        current[notice] = (ROOT / notice).read_bytes()
     current["opponents_rs/src/lib.rs"] = b"// authored registry\n"
     with gzip.open(
         ROOT / "engine_rs/fixtures/generated/gen-starter-vs-random.jsonl.gz", "rt"
@@ -85,15 +90,26 @@ def original_fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, byte
                 "sha256": checker.sha(data),
             }
             for path, data in originals.items()
+            if path in checker.IMPORT_HASHES
         ],
+        "adapted": [
+            {
+                "path": path.replace("engine_rs/", "opponents_rs/", 1),
+                "reference_path": path,
+                "reference_sha256": checker.sha(data),
+                "sha256": checker.sha(checker.view_adapted(data, path)),
+                "adaptation": checker.VIEW_ADAPTATION,
+            }
+            for path, data in originals.items()
+            if path in checker.ADAPTED_HASHES
+        ],
+        "notices": committed["notices"],
         "authored": [
             {"path": path, "sha256": checker.sha(current[path]), "reason": "test"}
             for path in ["opponents_rs/src/lib.rs", checker.ORACLE_MANIFEST]
         ],
         # Committed receipts: the default check must not need the sibling repo.
-        "python_oracles": json.loads((ROOT / checker.MANIFEST).read_bytes())[
-            "python_oracles"
-        ],
+        "python_oracles": committed["python_oracles"],
         "oracle_traces": [trace],
         "trace_budget_bytes": checker.TRACE_BUDGET,
     }
@@ -411,4 +427,137 @@ def test_structural_check_pins_entry_sources() -> None:
     main = next(f for f in ecobot["files"] if f["path"].endswith("main.py"))
     main["sha256"] = "1" * 64
     with pytest.raises(ValueError, match="Python source hash"):
+        checker.verify(manifest, originals, current)
+
+
+def adapted_entry(manifest: dict[str, Any], suffix: str) -> dict[str, Any]:
+    return next(e for e in manifest["adapted"] if e["path"].endswith(suffix))
+
+
+def test_cha22_adapted_files_differ_only_in_view_accessor_lines() -> None:
+    _, originals, _ = fixture()
+    for reference in checker.ADAPTED_HASHES:
+        before = originals[reference].splitlines()
+        after = checker.view_adapted(originals[reference], reference).splitlines()
+        changed = [
+            i for i, (a, b) in enumerate(zip(before, after, strict=True)) if a != b
+        ]
+        assert len(changed) == 3, reference
+
+
+@pytest.mark.parametrize(
+    ("attack", "message"),
+    [
+        ("decision_edit", "only the Game-view accessor lines"),
+        ("reference_drift", "reference hash"),
+        ("wrong_adaptation", "adaptation"),
+        ("missing_entry", "adapted inventory"),
+        ("moved_to_imported", "import inventory"),
+        ("unknown_key", "schema keys"),
+    ],
+)
+def test_cha22_adapted_mutations_fail(attack: str, message: str) -> None:
+    manifest, originals, current = fixture()
+    entry = adapted_entry(manifest, "cha22/mod.rs")
+    if attack == "decision_edit":
+        # Rehashed, so only the re-derivation from the pinned blob can see it.
+        current[entry["path"]] = current[entry["path"]].replace(
+            b"self.market.dawn(", b"self.market.midday(", 1
+        )
+        entry["sha256"] = checker.sha(current[entry["path"]])
+    elif attack == "reference_drift":
+        originals[entry["reference_path"]] += b"edited"
+    elif attack == "wrong_adaptation":
+        entry["adaptation"] = "anything"
+    elif attack == "missing_entry":
+        manifest["adapted"].remove(entry)
+        manifest["authored"].append(
+            {"path": entry["path"], "sha256": entry["sha256"], "reason": "x"}
+        )
+    elif attack == "moved_to_imported":
+        manifest["adapted"].remove(entry)
+        manifest["imported"].append(
+            {key: entry[key] for key in entry if key != "adaptation"}
+        )
+    elif attack == "unknown_key":
+        entry["unknown"] = True
+    with pytest.raises(ValueError, match=message):
+        checker.verify(manifest, originals, current)
+
+
+def test_view_adaptation_requires_each_accessor_exactly_once() -> None:
+    with pytest.raises(ValueError, match="view adaptation expects one"):
+        checker.view_adapted(b"fn action() {}\n", "x.rs")
+
+
+@pytest.mark.parametrize(
+    ("attack", "message"),
+    [
+        ("edited_notice", "notice hash"),
+        ("rehashed_notice", "notice hash"),
+        ("wrong_source", "notice source"),
+        ("missing_notice", "notice inventory"),
+    ],
+)
+def test_cha22_notice_mutations_fail(attack: str, message: str) -> None:
+    manifest, originals, current = fixture()
+    entry = manifest["notices"][0]
+    if attack == "edited_notice":
+        current[entry["path"]] += b"edited"
+    elif attack == "rehashed_notice":
+        current[entry["path"]] += b"edited"
+        entry["sha256"] = checker.sha(current[entry["path"]])
+    elif attack == "wrong_source":
+        entry["source_commit"] = "0" * 40
+    elif attack == "missing_notice":
+        manifest["notices"].remove(entry)
+        manifest["authored"].append(
+            {"path": entry["path"], "sha256": entry["sha256"], "reason": "x"}
+        )
+    with pytest.raises(ValueError, match=message):
+        checker.verify(manifest, originals, current)
+
+
+def test_comment_line_notice_is_every_comment_line_in_order() -> None:
+    source = b"# Apache-2.0\nx = 1  # inline\n#: attribution\n  # indented\n"
+    assert checker.comment_lines(source) == b"# Apache-2.0\n#: attribution\n"
+
+
+def test_cha22_python_source_hash_is_pinned_structurally() -> None:
+    manifest, originals, current = fixture()
+    cha22 = next(e for e in manifest["python_oracles"] if e["bot"] == "cha22")
+    assert cha22["files"] == [
+        {"path": "main.py", "sha256": checker.CHA22_SOURCE_SHA256}
+    ]
+    cha22["files"][0]["sha256"] = "1" * 64
+    with pytest.raises(ValueError, match="Python source hash"):
+        checker.verify(manifest, originals, current)
+
+
+def test_committed_manifest_registers_the_cha22_corpus_and_closure() -> None:
+    """The repository check itself; `just prepare` runs the same entry point."""
+    checker.check(ROOT)
+    manifest = json.loads((ROOT / checker.MANIFEST).read_bytes())
+    corpus = [
+        e
+        for e in manifest["oracle_traces"]
+        if e["path"].startswith(checker.CHA22_ORACLE_DIR)
+    ]
+    assert len(corpus) == 3
+    assert all("upstream:cha22" in e["policies"] for e in corpus)
+    assert {e["policies"].index("upstream:cha22") for e in corpus} == {0, 1}
+    assert all(e["compared_actions"] == [719, 719] for e in corpus)
+    assert len(manifest["adapted"]) == len(checker.ADAPTED_HASHES) == 8
+    assert sum(e["bytes"] for e in manifest["oracle_traces"]) <= checker.TRACE_BUDGET
+
+
+def test_cha22_manifest_must_be_authored_beside_its_traces() -> None:
+    manifest, originals, current = fixture()
+    committed = json.loads((ROOT / checker.MANIFEST).read_bytes())
+    trace = next(
+        e for e in committed["oracle_traces"] if checker.CHA22_ORACLE_DIR in e["path"]
+    )
+    current[trace["path"]] = (ROOT / trace["path"]).read_bytes()
+    manifest["oracle_traces"].append(trace)
+    with pytest.raises(ValueError, match="oracle MANIFEST must be authored"):
         checker.verify(manifest, originals, current)

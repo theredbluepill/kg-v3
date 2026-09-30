@@ -17,7 +17,10 @@ from typing import Any
 import pytest
 import torch
 from owl.kaggriculture import types as kt
-from owl.kaggriculture.config import KaggricultureEnvConfig
+from owl.kaggriculture.config import (
+    KaggricultureEnvConfig,
+    KaggricultureOpponentMixConfig,
+)
 from owl.kaggriculture.rewards import (
     KaggricultureRewardConfig,
     bank_score,
@@ -65,13 +68,20 @@ _BANK = {
 # Owner term M (2026-09-30): J/2's effective config (the ranked config plus its
 # launch overrides) with the margin reward.
 _MARGIN = {"kaggriculture_4rank_margin.yaml": "kaggriculture_4rank.yaml"}
+# The cha22 anchor (2026-09-30): the margin preset against the fixed bot Cha22,
+# with each preset's world size.
+_VS_CHA22 = {
+    "kaggriculture_4rank_vs_cha22.yaml": 4,
+    "kaggriculture_2rank_vs_cha22.yaml": 2,
+}
 _RANKED_AND_FINETUNE = {
     **_RANKED,
     **{name: _RANKED[base] for name, base in _FINETUNE.items()},
     **{name: _RANKED[_FINETUNE[base]] for name, base in _BANK.items()},
     **{name: _RANKED[base] for name, base in _MARGIN.items()},
+    **_VS_CHA22,
 }
-_ALL = (*_RANKED, *_FINETUNE, *_BANK, *_MARGIN, "kaggriculture.yaml")
+_ALL = (*_RANKED, *_FINETUNE, *_BANK, *_MARGIN, *_VS_CHA22, "kaggriculture.yaml")
 _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_shaping=0.2,
     econ_starvation_weight=4.0,
@@ -454,6 +464,54 @@ def test_margin_preset_is_j2_apart_from_the_reward(name: str, base: str) -> None
     assert torch.equal(returns[:, 0], -returns[:, 1])
 
 
+def test_vs_cha22_presets_are_the_margin_preset_against_cha22() -> None:
+    # The 4-rank anchor preset is the margin preset (term M, J/2's LRs,
+    # checkpoint_freq and native_threads) plus the fixed-bot mix; its 2-rank
+    # twin differs only in Isaiah's world-size division.
+    four = FullConfig.from_file(ROOT / "configs" / "kaggriculture_4rank_vs_cha22.yaml")
+    two = FullConfig.from_file(ROOT / "configs" / "kaggriculture_2rank_vs_cha22.yaml")
+    margin = FullConfig.from_file(ROOT / "configs" / "kaggriculture_4rank_margin.yaml")
+    for cfg in (four, two):
+        assert isinstance(cfg.env, KaggricultureEnvConfig)
+        assert cfg.env.opponent_mix == KaggricultureOpponentMixConfig(
+            bot="cha22", fraction=1.0
+        )
+        # Every env of every rank hosts the bot.
+        assert cfg.env.opponent_mix.bot_envs(cfg.env.n_envs) == cfg.env.n_envs
+        assert cfg.env.reward_shaping == _MARGIN_SHAPING
+        assert cfg.env.reward_shaping.terminal_scale == 0.5
+        assert isinstance(cfg.optimizer, MuonConfig)
+        assert (cfg.optimizer.muon_lr, cfg.optimizer.adamw_lr) == (1e-4, 5e-6)
+        assert cfg.rl.checkpoint_freq == 10_000_000
+        assert cfg.env.native_threads == 4
+    assert isinstance(four.env, KaggricultureEnvConfig)
+    assert isinstance(two.env, KaggricultureEnvConfig)
+    assert (four.env.n_envs, four.rl.segments_per_minibatch) == (64, 4)
+    assert (two.env.n_envs, two.rl.segments_per_minibatch) == (128, 8)
+    assert (
+        four.model_copy(
+            update={"env": four.env.model_copy(update={"opponent_mix": None})}
+        )
+        == margin
+    )
+    assert (
+        two.model_copy(
+            update={
+                "env": two.env.model_copy(update={"n_envs": four.env.n_envs}),
+                "rl": two.rl.model_copy(
+                    update={"segments_per_minibatch": four.rl.segments_per_minibatch}
+                ),
+            }
+        )
+        == four
+    )
+    # The mix is dumped (config.yaml, v3/config_sha256), unlike self-play's None.
+    assert four.model_dump(mode="json")["env"]["opponent_mix"] == {
+        "bot": "cha22",
+        "fraction": 1.0,
+    }
+
+
 # --- teacher settings (plan Task 4.4) -------------------------------------------
 
 _TEACHER_FIELDS = (
@@ -512,7 +570,7 @@ def test_config_env_and_cross_section_rules(name: str) -> None:
     if name in _BANK:
         assert ours.env.reward_shaping == _BANK_SHAPING
         assert ours.env.reward_shaping.terminal_scale == 0.5
-    elif name in _MARGIN:
+    elif name in _MARGIN or name in _VS_CHA22:
         assert ours.env.reward_shaping == _MARGIN_SHAPING
         assert ours.env.reward_shaping.terminal_scale == 0.5
     else:

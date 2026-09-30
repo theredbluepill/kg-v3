@@ -95,6 +95,7 @@ fn policy_kinds(header: &Value) -> Result<Vec<OpponentKind>, String> {
             let key = v.as_str().ok_or("policy must be a string")?;
             key.strip_prefix("builtin:")
                 .or_else(|| key.strip_prefix("sibling:"))
+                .or_else(|| key.strip_prefix("upstream:"))
                 .ok_or("unknown policy namespace")?
                 .parse()
         })
@@ -215,9 +216,19 @@ fn directory() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/oracle")
 }
 
+/// Cha22's three-game corpus lives apart from the 7.1 corpus, whose replay
+/// fixture covers exactly the frozen four-bot traces.
+fn cha22_directory() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/oracle-cha22")
+}
+
 fn entries() -> Vec<Value> {
+    entries_in(&directory())
+}
+
+fn entries_in(directory: &Path) -> Vec<Value> {
     let manifest: Value = serde_json::from_slice(
-        &std::fs::read(directory().join("MANIFEST.json"))
+        &std::fs::read(directory.join("MANIFEST.json"))
             .expect("generate the original-Python opponent oracle first"),
     )
     .unwrap();
@@ -227,7 +238,11 @@ fn entries() -> Vec<Value> {
 }
 
 fn read_rows(entry: &Value) -> Vec<Value> {
-    let path = directory().join(entry["path"].as_str().unwrap());
+    read_rows_in(&directory(), entry)
+}
+
+fn read_rows_in(directory: &Path, entry: &Value) -> Vec<Value> {
+    let path = directory.join(entry["path"].as_str().unwrap());
     let output = Command::new("gzip")
         .args(["-dc"])
         .arg(&path)
@@ -243,9 +258,52 @@ fn read_rows(entry: &Value) -> Vec<Value> {
 
 #[test]
 fn original_python_oracles_match_native_actions_and_states() {
+    compare_corpus(&directory(), "OPPONENT_PARITY_REPORT");
+}
+
+#[test]
+fn original_cha22_oracles_match_native_actions_and_states() {
+    let entries = entries_in(&cha22_directory());
+    assert_eq!(entries.len(), 3, "Cha22 corpus is three games");
+    for seat in 0..2 {
+        assert!(
+            entries
+                .iter()
+                .any(|entry| entry["policies"][seat] == "upstream:cha22"),
+            "Cha22 must play seat {seat}"
+        );
+    }
+    compare_corpus(&cha22_directory(), "CHA22_PARITY_REPORT");
+}
+
+#[test]
+fn cha22_oracles_reject_tampered_actions_for_both_seats() {
+    let directory = cha22_directory();
+    for entry in entries_in(&directory) {
+        let rows = read_rows_in(&directory, &entry);
+        let seat = entry["policies"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|policy| policy == "upstream:cha22")
+            .unwrap();
+        let mut altered = rows.clone();
+        altered[400]["actions"][seat]["market"] = json!([["TASK_CHA22_MUTATION"]]);
+        let mismatch = replay(&altered)
+            .mismatch
+            .expect("tampered action must fail");
+        assert!(
+            mismatch.contains(&format!("step 399 seat {seat} cha22 action.market")),
+            "{}: {mismatch}",
+            entry["path"]
+        );
+    }
+}
+
+fn compare_corpus(directory: &Path, report_env: &str) {
     let mut results = Vec::new();
     let mut failures = Vec::new();
-    for entry in entries() {
+    for entry in entries_in(directory) {
         // Kaggle's simulation image runs CPython 3.11; 3.12's compensated float
         // sum() changes R04's decisions, so only 3.11 traces are oracles.
         let runtime = entry["python_runtime"].as_str().unwrap_or_default();
@@ -254,7 +312,7 @@ fn original_python_oracles_match_native_actions_and_states() {
             "{}: oracle runtime {runtime:?} is not CPython 3.11",
             entry["path"]
         );
-        let report = replay(&read_rows(&entry));
+        let report = replay(&read_rows_in(directory, &entry));
         eprintln!("{}: {report:?}", entry["path"]);
         if let Some(mismatch) = &report.mismatch {
             failures.push(format!("{}: {mismatch}", entry["path"]));
@@ -265,7 +323,7 @@ fn original_python_oracles_match_native_actions_and_states() {
             "transitions":report.transitions, "mismatch":report.mismatch}),
         );
     }
-    if let Some(path) = std::env::var_os("OPPONENT_PARITY_REPORT") {
+    if let Some(path) = std::env::var_os(report_env) {
         std::fs::write(path, serde_json::to_string_pretty(&results).unwrap() + "\n").unwrap();
     }
     assert!(

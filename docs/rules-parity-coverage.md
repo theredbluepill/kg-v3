@@ -184,6 +184,7 @@ Each oracle qualifies its own layer; their game and case counts are not additive
 | Native environment, Task 1.4 | Synthetic lifecycle expectations and untouched controls; recorded reference Rust `TrainingBatch`; independent Python reward formula | 35 destination buffers; reset/step/truncate rollback and seed admission; 16 games, seeds 17000–17015, 719 transitions each = 11,504 | `src/kaggriculture/env_tests.rs`, `admission.rs`; `tests/kaggriculture/test_native_env.py`; `test_env_reference.py::test_native_matches_training_batch_16_complete_games` | `R/1.4/claude-review/pod-oracle/`; `R/1.4/p3-rerecord/reference-recording-attempt.json` | [Lifecycle](#kaggriculture-native-lifecycle-coverage-task-14) |
 | Python adapter / codec / table bridge, Task 1.5 | Real native binding plus lifecycle expectations, frozen grammar corpus, independent expected tables and reward arithmetic | Stable 35-buffer lifecycle; 321 accepted / 43 rejected codec records; 964 table bits; recorded reward trajectories plus 3 extreme-coefficient games of 96 transitions each | `tests/kaggriculture/test_env.py`, `test_codec.py`, `test_native_tables.py`, `test_game.py`, `test_rewards.py` | `R/stage2-adapter/native/results.md`; `R/stage2-adapter/tables/results.md` | [Native boundary](#kaggriculture-native-lifecycle-coverage-task-14) |
 | Evaluation opponents, Task 7.1 | Original Starter, R04, EcoBot and E776 Python submissions on Kaggle 1.32.7's engine under CPython 3.11.15 | 8 default-config games, seeds 20260929–20260936, each bot in both seats twice: 4 bots × 2 seats × 1,438 = 11,504 compared actions and 5,752 transitions of state; 24 mid-episode reconstructions with 1,152 resumed actions | `opponents_rs/tests/oracle_parity.rs`; `opponents_rs/tests/lifecycle.rs`; `tests/scripts/test_kaggriculture_parity.py` | `R/7.1/review/results.md`; `R/7.1/verify-r1/parity-replay.json`; `R/codex/verify-7.1-r2.md`; `R/merge-7.1/prepare-on-5b43062.log` | [Opponents](#task-71-opponents-snapshot-view-and-original-submission-parity) |
+| Cha22 opponent import (2026-09-30) | Original Cha22 submission (SHA-256 `127ed3e6…`, `ig_agent`) on Kaggle 1.32.7's engine under CPython 3.11.15 | 3 default-config games vs Starter, seeds 20260937–20260939, Cha22 in seat 0 twice and seat 1 once: 4,314 compared actions (2,157 Cha22) and 2,157 transitions of state | `opponents_rs/tests/oracle_parity.rs`; `opponents_rs/tests/lifecycle.rs`; `tests/tools/test_check_opponent_import.py`; `tests/scripts/test_kaggriculture_parity.py` | `ops/cha22-opponent-import-2026-09-30/` | [Cha22](#cha22-opponent-import-light-original-submission-parity) |
 
 The replay comparator checks public/private values and recursive object key
 order, statuses, typed rewards, step/done and terminal banks. Rejected actions
@@ -254,8 +255,14 @@ No Rust engine participates. This is not engine parity or proof of label correct
   environment hosts an `opponents_rs` seat (`HostedSeat`) against the learned
   policy. Its nine learned-seat tests now run, and native replays against an
   independent kernel + controller reference check every bot's actions
-  (`src/kaggriculture/opponent_env_tests.rs`, `opponents_rs/tests/hosted.rs`).
+  (`src/kaggriculture/opponent_env_tests.rs`, `opponents_rs/tests/hosted.rs`),
+  Cha22 included since the cha22 anchor merge.
   Custom configurations remain unqualified there too.
+- Cha22 beyond its three-game light corpus: mid-episode Python replay, Python
+  hash seeds whose equal-price ADV ordering differs from tape order, the
+  inactive PIPE opening alternatives, custom configurations (including the
+  short-episode test configurations the native hosted tests use) and playing
+  strength (v2's fuller checks are cited, not rerun).
 - Task 7.3 replay export / Kaggle-episode round trip in this integration;
   it is unmerged, with no approving verdict in this tip's phase tracker.
 - Task 7.4 Kaggriculture packaging; this tip records a brief under review, not implementation.
@@ -441,6 +448,33 @@ remain unchanged. The revised view resolves that placement boundary without
 editing the frozen engine, restoring `policy_rows`, copying the reference
 all-controller dispatcher or adding a root-crate dependency. The trim updater
 accepts the committed run-1 manifest and preserves retained/authored entries.
+
+### Cha22 Opponent Import: Light Original-Submission Parity
+
+`opponents_rs` registers `cha22`, the full `ig_agent` port with its dependency
+closure (V43, V47, V48, Farm2945, Metav4, Pipe16), taken from the same pinned
+commit `65f0eac5…` as Task 7.1. 27 Rust files and the three embedded fixtures
+are byte-exact; 8 files differ only in three Game-view accessor lines, which
+`scripts/check_opponent_import.py` re-derives from the pinned blobs (its
+`adapted` section). `Game::configuration()` supplies the serialized
+configuration those controllers read. Upstream Apache-2.0 notices are under
+`opponents_rs/notices/cha22/`.
+
+Parity is deliberately light at the owner's request to accelerate the setup.
+Three default-config games against Starter were generated from the original
+submission on Kaggle 1.32.7 under CPython 3.11.15 (`--preset cha22`), with Cha22
+in seat 0 twice and seat 1 once. Native controllers match **4,314 / 4,314**
+recorded actions (2,157 Cha22, 2,157 Starter); all 2,157 transitions agree on
+public/private state, statuses, rewards and terminal banks. Tampering Cha22's
+step-399 market in each trace fails at that step and seat. Regenerating under
+`PYTHONHASHSEED` 0, 12345 and random reproduced the committed bytes, so these
+games never reached an equal-price ADV tie whose order depends on the hash seed.
+The three traces use 564,323 bytes; with the 7.1 corpus the budget use is
+2,343,510 / 4,000,000. A full native Cha22–Starter match (seed 17, both seats)
+is deterministic and Cha22 wins it. v2's fuller import checks (5,752 actions,
+237 direct cases, 64 clones) are cited from kaggriculture-v2
+`ops/cha22-opponent-import-2026-09-24/`, not rerun. Details and limits are in
+`ops/cha22-opponent-import-2026-09-30/results.md`.
 
 ### Kernel Inventory
 

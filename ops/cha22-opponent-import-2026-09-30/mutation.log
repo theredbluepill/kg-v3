@@ -1,0 +1,15 @@
+# Scratch mutation (restored): cha22/mod.rs 'let dawn = self.market.dawn(obs, flow.clone(), core);' -> 'let dawn = flow.clone();' (skips the DAWN market layer)
+ opponents_rs/src/native_agents/cha22/mod.rs | 35 +++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
+test original_cha22_oracles_match_native_actions_and_states ... FAILED
+"oracle-cha22-00-cha22-vs-starter.jsonl.gz": ReplayReport { compared_actions: [435, 434], matched_actions: [434, 434], transitions: 434, mismatch: Some("step 434 seat 0 cha22 action.market: length native=0 python=1") }
+"oracle-cha22-01-starter-vs-cha22.jsonl.gz": ReplayReport { compared_actions: [719, 719], matched_actions: [719, 719], transitions: 719, mismatch: None }
+"oracle-cha22-02-cha22-vs-starter.jsonl.gz": ReplayReport { compared_actions: [719, 719], matched_actions: [719, 719], transitions: 719, mismatch: None }
+thread 'original_cha22_oracles_match_native_actions_and_states' (14881523) panicked at tests/oracle_parity.rs:329:5:
+"oracle-cha22-00-cha22-vs-starter.jsonl.gz": step 434 seat 0 cha22 action.market: length native=0 python=1
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 12.83s
+exit=
+## restored
+ opponents_rs/src/native_agents/cha22/mod.rs | 33 ++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
+opponent import check passed (entry pins; custody only; parity is checked separately)

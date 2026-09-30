@@ -1,5 +1,18 @@
 # Change log
 
+## 2026-09-30 — Merge the Cha22 import into the fixed-opponent collection and add the cha22 anchor presets
+
+Owner, verbatim: "OK, for fixed bot, we can use cha22 (check ~/kaggriculture-v2).", "can we acceleerate this setup?", "implement the new rewrad first before we revisit the cha22 anchor setup." and "is anchor thing ready?". The orchestrating agent read the last as a build request; that is interpretation, not owner adoption.
+
+`kg/rebuild-opponent-mix` merges `kg/rebuild-cha22-opponent` `ab09708` with `--no-ff`. The resolution:
+- **Controller view.** `Game` keeps the configuration Cha22 reads and the engine-less hosted view, so `HostedSeat` hosts Cha22.
+- **Registry and hosted test.** The registry has five keys. `opponents_rs/tests/hosted.rs` now requires every key in each seat: swapped pairs plus a Cha22 mirror game.
+- **Custody and docs.** The manifest is rehashed, and the READMEs, parity doc and both sides' log entries are combined.
+
+`configs/kaggriculture_4rank_vs_cha22.yaml` is the margin preset (term M exactly, J/2's halved LRs, `checkpoint_freq` 10M, `native_threads` 4) with `env.opponent_mix: {bot: cha22, fraction: 1.0}`. `configs/kaggriculture_2rank_vs_cha22.yaml` is its world-size twin. The documented warm start is the BC best with `model_only`, an implementer choice. New tests: preset equality, and a two-update CPU run of Cha22 through `run_ppo.main()` that asserts measured `train/*_vs_bot` and both-seat `eval/*_vs_bot`.
+
+Revised the [[decisions/train-ppo-against-a-fixed-opponent-with-a-learner-mask|fixed-opponent Decision]] (a new anchor section, its gaps and description) and the [[references/cha22-opponent-imports-a-view-adapted-closure-with-light-parity|Cha22 Reference]], plus both indexes. The run statement and launch command are in `ops/cha22-anchor-2026-09-30/run-statement.md`. Full `just prepare` results are in `ops/cha22-anchor-2026-09-30/prepare.log`. Nothing was trained, and no pod was touched. The live M-margin run holds the pod's GPUs.
+
 ## 2026-09-30 — Add fixed-opponent PPO collection (env.opponent_mix) with a learner mask: Track A of the cha22 anchor setup
 
 Owner, verbatim: "OK, for fixed bot, we can use cha22 (check ~/kaggriculture-v2).", "can we acceleerate this setup?", "implement the new rewrad first before we revisit the cha22 anchor setup." and "is anchor thing ready?". On `kg/rebuild-opponent-mix`, cut from `kg/rebuild-reward-margin` `25412a7` so term M is available, `b2997df` and `011eb05` add the bot-agnostic mechanism. The new [[decisions/train-ppo-against-a-fixed-opponent-with-a-learner-mask|fixed-opponent Decision]] records it and labels its readings as interpretation.
@@ -24,6 +37,16 @@ The optional |R| > 1 telemetry was not added. Full `just prepare` exits 0: Rust 
 ## 2026-09-30 — Add the cash-difference reward (owner term M) and the 4-rank margin preset for the J/2 relaunch
 
 Owner, verbatim: "can we relaunch (before anchor) run, fix the reward, 0.5 Cash Diff (add this in) + 0.5 (Terminal loss 1/-1/0)?", then "implement the new rewrad first before we revisit the cha22 anchor setup." and "can we accelerrate?". On `kg/rebuild-reward-margin`, the core commit `87beaf0` was launched first, and the docs and cookbook follow it before landing. The core adds the zero-sum margin term `M(d) = clamp(w_m × d / S_m, −c_m, c_m)`, paid per step as each seat's change of `M(bank_self − bank_opp)`. It is off (byte-identical) in every existing config. `configs/kaggriculture_4rank_margin.yaml` reproduces J/2's effective config with starvation/drought shaping and term A off and term M at .5 / 50,000 / .5, so `terminal_scale` is .5. The follow-up documents term M beside term A in `docs/rl-api-specs.md`, `docs/kaggriculture-contract.md` and `README.md`, including the config migration. The new [[decisions/replace-the-reward-with-half-cash-difference-and-half-terminal-sign|term M Decision]] states the main agent's readings ("(before anchor) run" = J/2 `nw3klj2s`; the shaping is off) as interpretation, not owner adoption, and the 50,000 scale as agent-proposed. It also updates the decisions index. Full `just prepare` exits 0: Rust 291 passed with 5 ignored plus the other crates, Python 2,852 passed with 18 skipped, plus mypy, docs-lint and docs-fresh (`ops/rebuild-2026-09-29/reward-margin/prepare.log`). No independent verification has run, and nothing was trained by this follow-up.
+
+## 2026-09-30 — Complete the Cha22 opponent import (Track B) with light original-submission parity
+
+Owner, verbatim: "OK, for fixed bot, we can use cha22 (check ~/kaggriculture-v2)." and "can we acceleerate this setup?". On `kg/rebuild-cha22-opponent`, after the stopped agent's unreviewed WIP `6653148` (history kept; new commits only), Claude reviewed and finished the import:
+- **Pin corrected.** The WIP copied kaggriculture-v2 `30a3ac47`. The closure now comes from this repository's pin `65f0eac5`, like Task 7.1: 27 byte-exact files, 8 changed only at three Game-view accessor lines, 3 byte-exact fixtures. The pinned closure adds v2's inert execution-recovery layer, and parity is identical with both closures.
+- **Custody completed.** `OPPONENT_MANIFEST.json` and `scripts/check_opponent_import.py` gain `adapted` (each file re-derived from its pinned blob), `notices`, the Cha22 Python pin and a second oracle MANIFEST. `engine_rs/TRIM_MANIFEST.json` points at the copies. The WIP's stale manifest had failed `just prepare`.
+- **Notices added.** `opponents_rs/notices/cha22/` keeps v2's notice files byte-exact and every comment line of the original main.py (Apache-2.0).
+- **Parity rerun independently.** A fresh CPython 3.11.15 venv with kaggle-environments 1.32.7 regenerated the three Cha22-vs-Starter oracles byte-identically under three hash seeds. They match 4,314/4,314 actions (2,157 Cha22) and 2,157 transitions. The full opponents suite passes (35 tests), and Cha22 beats Starter natively in both seats.
+
+New [[references/cha22-opponent-imports-a-view-adapted-closure-with-light-parity|Cha22 Reference]] and its index entry; receipts in `ops/cha22-opponent-import-2026-09-30/`. Gaps: only light parity (v2's fuller checks are cited, not rerun); hash-seed ADV ties and the inactive PIPE alternatives are untested; no trainer seat hosts `opponents_rs` yet, so the anchor run is not ready. Nothing was trained, and no pod was touched.
 
 ## 2026-09-30 — Land the own-bank reward shaping (owner term A, halved recipe-J LRs) onto the integration
 

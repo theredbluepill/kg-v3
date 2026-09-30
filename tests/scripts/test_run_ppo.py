@@ -4355,6 +4355,7 @@ def _run_functional_check(
     *,
     threshold: float,
     extra_overrides: tuple[str, ...] = (),
+    episode_steps: int = _FUNCTIONAL_EPISODE_STEPS,
 ) -> tuple[dict[str, Any], dict[str, torch.Tensor], _FakeLogger]:
     n_envs = 2
     update_steps = _FUNCTIONAL_HORIZON * n_envs
@@ -4367,7 +4368,7 @@ def _run_functional_check(
         str(_FUNCTIONAL_UPDATES * update_steps),
         "-o",
         f"rl.horizon={_FUNCTIONAL_HORIZON}",
-        f"env.config.episodeSteps={_FUNCTIONAL_EPISODE_STEPS}",
+        f"env.config.episodeSteps={episode_steps}",
         f"rl.teacher_init={teacher}",
         *extra_overrides,
     ]
@@ -4582,6 +4583,83 @@ def test_kaggriculture_fixed_opponent_two_update_run_through_main(
     assert isinstance(run_dir, Path)
     for path in run_dir.glob("*.pt"):
         assert b"starter" not in path.read_bytes(), path.name
+
+
+def test_cha22_anchor_two_update_run_through_main(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The cha22 anchor setup: Cha22 hosted at fraction 1.0 under term M.
+
+    A tiny CPU run of two updates through the canonical trainer. Three-step
+    games (two transitions) complete one training game per env per update, so
+    the per-update vs-bot telemetry is measured, not only present.
+    """
+    torch.manual_seed(367)
+    session, initial, logger = _run_functional_check(
+        tmp_path,
+        monkeypatch,
+        threshold=0.0,
+        episode_steps=3,
+        extra_overrides=(
+            "env.opponent_mix.bot=cha22",
+            "env.opponent_mix.fraction=1.0",
+            # Term M exactly as configs/kaggriculture_4rank_vs_cha22.yaml.
+            "env.reward_shaping.econ_shaping=0.0",
+            "env.reward_shaping.econ_bank_weight=0.0",
+            "env.reward_shaping.econ_bank_cap=0.0",
+            "env.reward_shaping.econ_margin_weight=0.5",
+            "env.reward_shaping.econ_margin_scale=50000.0",
+            "env.reward_shaping.econ_margin_cap=0.5",
+        ),
+    )
+    cfg = session["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert cfg.env.opponent_mix == KaggricultureOpponentMixConfig(
+        bot="cha22", fraction=1.0
+    )
+    assert cfg.env.reward_shaping.terminal_scale == 0.5
+    trainer = session["trainer"]
+    assert isinstance(trainer, PPOTrainer)
+    assert trainer.rollout.learner is not None
+    assert logger.summary["opponent_mix/bot"] == "cha22"
+    assert logger.summary["opponent_mix/fraction"] == 1.0
+    training_logs = [metrics for metrics, _step in logger.logged[0::2]]
+    eval_logs = [metrics for metrics, _step in logger.logged[1::2]]
+    assert len(training_logs) == len(eval_logs) == _FUNCTIONAL_UPDATES
+    for metrics in training_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        assert metrics["train/policy_active_ratio"] == pytest.approx(0.5)
+        # Every game is against Cha22: one per env per update, none self-play.
+        assert metrics["train/bank_games_vs_bot"] == float(cfg.env.n_envs)
+        assert metrics["train/bank_games"] == 0.0
+        assert 0.0 <= metrics["train/win_rate_vs_bot"] <= 1.0
+        assert metrics["train/opponent_bank_mean_vs_bot"] > 0.0
+        # Term M pays per step against the bot.
+        assert metrics["train/reward_margin_abs_mean"] > 0.0
+        assert metrics["train/margin_mean_vs_bot"] == pytest.approx(
+            metrics["train/own_bank_mean_vs_bot"]
+            - metrics["train/opponent_bank_mean_vs_bot"]
+        )
+    for metrics in eval_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        assert metrics["eval/games"] == float(cfg.env.n_envs)
+        assert metrics["eval/bank_games_vs_bot"] == float(cfg.env.n_envs)
+        assert metrics["eval/bank_games_vs_bot_seat_0"] == 1.0
+        assert metrics["eval/bank_games_vs_bot_seat_1"] == 1.0
+        for seat in (0, 1):
+            assert 0.0 <= metrics[f"eval/win_rate_vs_bot_seat_{seat}"] <= 1.0
+        assert metrics["eval/margin_mean_vs_bot"] == pytest.approx(
+            metrics["eval/own_bank_mean_vs_bot"]
+            - metrics["eval/opponent_bank_mean_vs_bot"]
+        )
+    assert not _states_equal(initial, run_ppo.unwrap_model(trainer.model).state_dict())
+    run_dir = session["run_dir"]
+    assert isinstance(run_dir, Path)
+    checkpoints = list(run_dir.glob("*.pt"))
+    assert checkpoints
+    for path in checkpoints:
+        assert b"cha22" not in path.read_bytes(), path.name
 
 
 def test_last_best_evaluation_env_never_hosts_the_training_opponent() -> None:

@@ -671,3 +671,51 @@ def test_replay_preset_refuses_other_runtimes_before_playing(
     assert status == 2
     assert "CPython 3.11" in capsys.readouterr().err
     assert not out.exists()
+
+
+def test_cha22_specs_play_both_seats_against_starter_on_default_config() -> None:
+    specs = generator.cha22_specs()
+    assert [spec.seed for spec in specs] == [20260937, 20260938, 20260939]
+    for seat in range(2):
+        assert any(spec.policies[seat] == "upstream:cha22" for spec in specs)
+    assert all(
+        set(spec.policies) == {"upstream:cha22", "builtin:starter"} for spec in specs
+    )
+    assert all(spec.variant == "default" for spec in specs)
+
+
+def test_cha22_source_is_refused_unless_it_is_the_pinned_submission(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv(generator.CHA22_SOURCE_ENV, raising=False)
+    with pytest.raises(
+        generator.ParityGeneratorError, match=generator.CHA22_SOURCE_ENV
+    ):
+        generator.cha22_source()
+    altered = tmp_path / "main.py"
+    altered.write_bytes(b"def ig_agent(observation, configuration=None): return {}\n")
+    monkeypatch.setenv(generator.CHA22_SOURCE_ENV, str(altered))
+    with pytest.raises(generator.ParityGeneratorError, match="expected"):
+        generator.cha22_source()
+
+
+def test_cha22_modules_are_independent_per_seat(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The original keeps per-player state in module globals."""
+    source = (
+        b"count = 0\ndef ig_agent(observation, configuration=None):\n"
+        b" global count\n count += 1\n return {'count': count}\n"
+    )
+    monkeypatch.setattr(generator, "cha22_source", lambda: source)
+    first, second = generator.UpstreamPolicy("cha22"), generator.UpstreamPolicy("cha22")
+    try:
+        rng = random.Random(0)
+        assert first({}, {}, rng).action == {"count": 1}
+        assert first({}, {}, rng).action == {"count": 2}
+        assert second({}, {}, rng).action == {"count": 1}
+    finally:
+        first.close()
+        second.close()
+    with pytest.raises(generator.ParityGeneratorError, match="unknown upstream"):
+        generator.UpstreamPolicy("r04")

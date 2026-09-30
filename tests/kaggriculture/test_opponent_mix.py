@@ -141,7 +141,13 @@ def _env_config(**mix: Any) -> KaggricultureEnvConfig:
 
 
 def test_registry_keys_come_from_the_native_opponent_registry() -> None:
-    assert rs.kaggriculture_opponent_bots() == ("starter", "r04", "ecobot", "e776")
+    assert rs.kaggriculture_opponent_bots() == (
+        "starter",
+        "r04",
+        "ecobot",
+        "e776",
+        "cha22",
+    )
     with pytest.raises(ValueError, match="unknown opponent bot 'cha99'"):
         KaggricultureOpponentMixConfig(bot="cha99", fraction=1.0)
 

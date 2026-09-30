@@ -1,12 +1,12 @@
 ---
 type: "Decision"
 title: "Train PPO against a fixed opponent with a learner mask"
-description: "Owner decision (2026-09-30): the anchor setup trains PPO against a fixed scripted bot (cha22) instead of mirror self-play, after the new reward. Track A adds the bot-agnostic mechanism on kg/rebuild-opponent-mix. env.opponent_mix = {bot, fraction} hosts an opponents_rs controller natively in the first fraction x n_envs envs of each rank, with the learned seat alternating by env index and episode. The rollout forward runs on learner rows only. A learner mask removes the bot's seat from every loss term, advantage normalization and denominator. Per-update *_vs_bot telemetry and a fixed-bot evaluation in both seats at each checkpoint_freq are added; promotion stays vs last_best. Absent, the pipeline is byte-identical to the pre-mix tree (golden digest). A default Cargo feature keeps the controllers out of the Kaggle build. Cha22 itself is not in the registry yet (Track B), and nothing has been trained. Mechanism details are implementer choices. CPU checks only."
+description: "Owner decision (2026-09-30): the anchor setup trains PPO against a fixed scripted bot (cha22) instead of mirror self-play, after the new reward. Track A adds the bot-agnostic mechanism on kg/rebuild-opponent-mix. env.opponent_mix = {bot, fraction} hosts an opponents_rs controller natively in the first fraction x n_envs envs of each rank, with the learned seat alternating by env index and episode. The rollout forward runs on learner rows only. A learner mask removes the bot's seat from every loss term, advantage normalization and denominator. Per-update *_vs_bot telemetry and a fixed-bot evaluation in both seats at each checkpoint_freq are added; promotion stays vs last_best. Absent, the pipeline is byte-identical to the pre-mix tree (golden digest). A default Cargo feature keeps the controllers out of the Kaggle build. Merged with the Track B import (kg/rebuild-cha22-opponent ab09708), cha22 is a registry key, and the anchor presets configs/kaggriculture_{4,2}rank_vs_cha22.yaml host it in every env under term M with J/2's halved LRs, warm-started from the BC best. Nothing has been trained. Mechanism details and the preset's warm start are implementer choices. CPU checks only."
 tags: ["kaggriculture-v3", "training", "opponents", "decisions", "adaptation"]
 status: "adopted"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
 decider: "Owner, 2026-09-30: \"OK, for fixed bot, we can use cha22 (check ~/kaggriculture-v2).\""
-sources: [{"resource": "user-directive:2026-09-30:fixed-bot-use-cha22"}, {"resource": "user-directive:2026-09-30:can-we-accelerate-this-setup"}, {"resource": "user-directive:2026-09-30:implement-the-new-reward-first"}, {"resource": "user-directive:2026-09-30:is-anchor-thing-ready"}, {"resource": "repository:opponents_rs/src/hosted.rs"}, {"resource": "repository:opponents_rs/src/lib.rs"}, {"resource": "repository:opponents_rs/src/registry.rs"}, {"resource": "repository:opponents_rs/tests/hosted.rs"}, {"resource": "repository:opponents_rs/OPPONENT_MANIFEST.json"}, {"resource": "repository:opponents_rs/README.md"}, {"resource": "repository:src/kaggriculture/env.rs"}, {"resource": "repository:src/kaggriculture/opponents.rs"}, {"resource": "repository:src/kaggriculture/bindings.rs"}, {"resource": "repository:src/kaggriculture/observe.rs"}, {"resource": "repository:src/kaggriculture/mod.rs"}, {"resource": "repository:src/kaggriculture/opponent_env_tests.rs"}, {"resource": "repository:src/kaggriculture/env_tests.rs"}, {"resource": "repository:Cargo.toml"}, {"resource": "repository:Cargo.lock"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:justfile"}, {"resource": "repository:Dockerfile.kaggle"}, {"resource": "repository:scripts/build_kaggle_submission.sh"}, {"resource": "repository:python/owl/rs.pyi"}, {"resource": "repository:python/owl/game.py"}, {"resource": "repository:python/owl/kaggriculture/config.py"}, {"resource": "repository:python/owl/kaggriculture/env.py"}, {"resource": "repository:python/owl/kaggriculture/telemetry.py"}, {"resource": "repository:python/owl/train/ppo.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/kaggriculture/test_opponent_mix.py"}, {"resource": "repository:tests/owl/kaggriculture/test_opponents.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:tests/kaggriculture/test_env.py"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:docs/rules-parity-coverage.md"}, {"resource": "repository:docs/containerization.md"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/opponent-mix-2026-09-30/baseline_digest.py"}, {"resource": "repository:ops/opponent-mix-2026-09-30/baseline-digest-25412a7.json"}, {"resource": "repository:ops/opponent-mix-2026-09-30/mutations.py"}, {"resource": "repository:ops/opponent-mix-2026-09-30/mutations.log"}, {"resource": "repository:ops/opponent-mix-2026-09-30/prepare.log"}, {"resource": "repository:ops/opponent-mix-2026-09-30/post-digest.json"}, {"resource": "repository:cookbook/references/snapshot-view-isolates-byte-exact-evaluation-opponents.md"}, {"resource": "repository:cookbook/references/kaggriculture-parity-summary-maps-tested-and-untested-layers.md"}]
+sources: [{"resource": "user-directive:2026-09-30:fixed-bot-use-cha22"}, {"resource": "user-directive:2026-09-30:can-we-accelerate-this-setup"}, {"resource": "user-directive:2026-09-30:implement-the-new-reward-first"}, {"resource": "user-directive:2026-09-30:is-anchor-thing-ready"}, {"resource": "repository:opponents_rs/src/hosted.rs"}, {"resource": "repository:opponents_rs/src/lib.rs"}, {"resource": "repository:opponents_rs/src/registry.rs"}, {"resource": "repository:opponents_rs/tests/hosted.rs"}, {"resource": "repository:opponents_rs/OPPONENT_MANIFEST.json"}, {"resource": "repository:opponents_rs/README.md"}, {"resource": "repository:src/kaggriculture/env.rs"}, {"resource": "repository:src/kaggriculture/opponents.rs"}, {"resource": "repository:src/kaggriculture/bindings.rs"}, {"resource": "repository:src/kaggriculture/observe.rs"}, {"resource": "repository:src/kaggriculture/mod.rs"}, {"resource": "repository:src/kaggriculture/opponent_env_tests.rs"}, {"resource": "repository:src/kaggriculture/env_tests.rs"}, {"resource": "repository:Cargo.toml"}, {"resource": "repository:Cargo.lock"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:justfile"}, {"resource": "repository:Dockerfile.kaggle"}, {"resource": "repository:scripts/build_kaggle_submission.sh"}, {"resource": "repository:python/owl/rs.pyi"}, {"resource": "repository:python/owl/game.py"}, {"resource": "repository:python/owl/kaggriculture/config.py"}, {"resource": "repository:python/owl/kaggriculture/env.py"}, {"resource": "repository:python/owl/kaggriculture/telemetry.py"}, {"resource": "repository:python/owl/train/ppo.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/kaggriculture/test_opponent_mix.py"}, {"resource": "repository:tests/owl/kaggriculture/test_opponents.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:tests/kaggriculture/test_env.py"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:docs/rules-parity-coverage.md"}, {"resource": "repository:docs/containerization.md"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/opponent-mix-2026-09-30/baseline_digest.py"}, {"resource": "repository:ops/opponent-mix-2026-09-30/baseline-digest-25412a7.json"}, {"resource": "repository:ops/opponent-mix-2026-09-30/mutations.py"}, {"resource": "repository:ops/opponent-mix-2026-09-30/mutations.log"}, {"resource": "repository:ops/opponent-mix-2026-09-30/prepare.log"}, {"resource": "repository:ops/opponent-mix-2026-09-30/post-digest.json"}, {"resource": "repository:cookbook/references/snapshot-view-isolates-byte-exact-evaluation-opponents.md"}, {"resource": "repository:cookbook/references/kaggriculture-parity-summary-maps-tested-and-untested-layers.md"}, {"resource": "repository:configs/kaggriculture_4rank_vs_cha22.yaml"}, {"resource": "repository:configs/kaggriculture_2rank_vs_cha22.yaml"}, {"resource": "repository:configs/kaggriculture_4rank_margin.yaml"}, {"resource": "repository:tests/kaggriculture/test_configs.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:ops/cha22-anchor-2026-09-30/run-statement.md"}, {"resource": "repository:ops/cha22-anchor-2026-09-30/prepare.log"}, {"resource": "repository:cookbook/references/cha22-opponent-imports-a-view-adapted-closure-with-light-parity.md"}]
 ---
 
 # Train PPO against a fixed opponent with a learner mask
@@ -42,7 +42,8 @@ as follows; the owner has not confirmed these readings:
 
 - **Config.** `env.opponent_mix = {bot: <registry key>, fraction: f}`, with
   `0 < f <= 1`. The keys come from the native registry
-  (`owl.rs.kaggriculture_opponent_bots()`: `starter`, `r04`, `ecobot`, `e776`).
+  (`owl.rs.kaggriculture_opponent_bots()`: `starter`, `r04`, `ecobot`, `e776`,
+  and `cha22` since the anchor merge below).
   `f × n_envs` must be a whole number of at least one; the mix never rounds
   silently. The first that many envs of each rank host the bot, and the rest
   stay self-play. When `opponent_mix` is None (the default) it is omitted from
@@ -151,11 +152,60 @@ as follows; the owner has not confirmed these readings:
   Its peak RSS is 3.3 GB, as on earlier landings. Two earlier attempts failed
   on a clippy and four ruff findings in the new tests, and both were fixed.
 
+## The cha22 anchor presets (merge of Track B, `kg/rebuild-opponent-mix`)
+
+The orchestrating agent relayed the owner's "is anchor thing ready?" as a build
+request. `kg/rebuild-cha22-opponent` (`ab09708`, the reviewed Cha22 import with
+its WIP `6653148` in history,
+[[../references/cha22-opponent-imports-a-view-adapted-closure-with-light-parity|Cha22 Reference]])
+is merged here with `--no-ff`. The semantic resolution:
+
+- `Game` keeps both sides' fields. The hosted view also carries the
+  `configuration` that Cha22's closure reads, so `HostedSeat` can host Cha22.
+- The registry has five keys. `opponents_rs/tests/hosted.rs` now requires every
+  key to be hosted in each seat. It adds swapped Starter/R04 and E776/EcoBot
+  games and a Cha22 mirror game; before, the test hosted each bot in one seat
+  only, despite its name.
+- The custody manifest is rehashed, and the READMEs, parity doc and cookbook
+  entries of both sides are combined.
+
+Presets (implementer choices where the owner gave no value):
+
+- `configs/kaggriculture_4rank_vs_cha22.yaml` is
+  `configs/kaggriculture_4rank_margin.yaml` plus
+  `env.opponent_mix: {bot: cha22, fraction: 1.0}`. That is term M exactly
+  (`econ_shaping` 0, `econ_bank_weight` 0, `econ_margin_weight` .5,
+  `econ_margin_scale` 50,000, `econ_margin_cap` .5, `terminal_scale` .5),
+  `muon_lr` 1e-4, `adamw_lr` 5e-6, `checkpoint_freq` 10M and `native_threads` 4.
+- `configs/kaggriculture_2rank_vs_cha22.yaml` differs only by Isaiah's
+  world-size division (`n_envs` 128, `segments_per_minibatch` 8).
+- The documented warm start is the BC best
+  (`/root/bc-best/checkpoint_bc_best.pt`, sha256 `fd854587…6f51`) with
+  `--load-model-weights-mode model_only`. The fresh optimizer, LR warm-up and
+  last_best teacher start at BC. This choice is not owner-given. It follows
+  the question "can RL improve on BC", and the margin run's J/2 warm start
+  would instead measure a policy that already had RL.
+
+Checks: `test_vs_cha22_presets_are_the_margin_preset_against_cha22` asserts both
+presets equal the margin preset apart from the mix (and the world-size
+division). `test_cha22_anchor_two_update_run_through_main` runs Cha22 at
+fraction 1.0 under term M through `run_ppo.main()` for two CPU updates of
+three-step games. Every update logs 2 `train/bank_games_vs_bot`, 0 self-play
+games, a win rate in [0, 1], a margin equal to own minus opponent bank and a
+nonzero `train/reward_margin_abs_mean`. Each checkpoint's fixed-bot evaluation
+covers both seats. No checkpoint contains the bytes `cha22`. Cha22 is
+parity-qualified at the default configuration only; these three-step games are
+a mechanics check, not a behavioural one. Full `just prepare` on the merge
+tree: `ops/cha22-anchor-2026-09-30/prepare.log`. The run statement and launch
+command are in `ops/cha22-anchor-2026-09-30/run-statement.md`.
+
 ## Gaps and reopening conditions
 
-- **Cha22 is not a registry key.** The anchor run needs Track B's import
-  (parity-checked, reviewed) plus a registry entry; after that, only
-  `env.opponent_mix.bot: cha22` changes.
+- **Cha22 throughput and the pod slot.** Cha22 is the largest bot (its 4.9 MB
+  route tape is parsed once per process; its controller state is cloned per
+  step), and its stepping cost at 64 envs per rank is unmeasured. The pod's four GPUs held the live run
+  `M-margin-J2-4rank-20260930` at merge time. When to launch is the owner's
+  call.
 - **Nothing has been trained with a mix.** Whether PPO improves on BC against
   a fixed bot is the open question this mechanism exists to answer. No GPU
   run and no `nsys` profile has been made. The throughput of bot stepping,

@@ -212,6 +212,16 @@ Training presets live in `configs/`:
   `train/reward_margin_abs_mean`. A pre-change `config.yaml` must add
   `econ_margin_weight: 0.0`, `econ_margin_scale: 50000.0` and
   `econ_margin_cap: 0.0`.
+- `kaggriculture_4rank_vs_cha22.yaml` and its 2-rank twin
+  `kaggriculture_2rank_vs_cha22.yaml` (the cha22 anchor setup; owner
+  2026-09-30, "OK, for fixed bot, we can use cha22" and "implement the new
+  rewrad first before we revisit the cha22 anchor setup."): the margin preset
+  (term M, J/2's halved LRs, `checkpoint_freq` 10M, `native_threads` 4) with
+  `env.opponent_mix: {bot: cha22, fraction: 1.0}`, so every env trains against
+  the fixed bot Cha22. The 2-rank twin divides `n_envs` and
+  `segments_per_minibatch` by the world size only. Launch from the BC best
+  with `--load-model-weights <checkpoint_bc_best.pt> --load-model-weights-mode
+  model_only`. No run has used them.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.
@@ -579,8 +589,9 @@ evaluation in both seats, `eval/*_vs_bot`. Promotion still reads the last-best
 win rate only, and the bot's name is only the W&B summary label
 `opponent_mix/bot`. Absent (the default) is pure self-play, byte-identical to
 before; details in `docs/rl-api-specs.md`, "Fixed-opponent collection". For
-example, `-o env.opponent_mix.bot=r04 env.opponent_mix.fraction=1.0`. Cha22 is
-not a registry key until its import lands.
+example, `-o env.opponent_mix.bot=r04 env.opponent_mix.fraction=1.0`. The
+registry keys are `starter`, `r04`, `ecobot`, `e776` and `cha22`; the
+`*_vs_cha22.yaml` presets above host Cha22 in every env.
 For Orbit, set `rl.eval_replay_games` to a positive count to save random eval replay
 samples from the weighted eval game set under
 `eval_replays/<checkpoint-name>/` in the run directory. The sampled game

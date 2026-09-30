@@ -1117,7 +1117,10 @@ Owner, 2026-09-30: "OK, for fixed bot, we can use cha22 (check
 the cha22 anchor setup." PPO can train against a fixed scripted bot instead of
 mirror self-play. The feature is bot-agnostic: any key of the `opponents_rs`
 registry (`owl.rs.kaggriculture_opponent_bots()`, today `starter`, `r04`,
-`ecobot`, `e776`) is accepted.
+`ecobot`, `e776`, `cha22`) is accepted. The cha22 anchor presets
+`configs/kaggriculture_4rank_vs_cha22.yaml` and
+`configs/kaggriculture_2rank_vs_cha22.yaml` set `{bot: cha22, fraction: 1.0}`
+on the term M margin preset.
 
 ```yaml
 env:
@@ -1194,8 +1197,10 @@ env:
 - **Limits.** Bot behaviour is qualified against the original Python
   submissions at the default game configuration only; shorter test
   configurations run the same controllers unqualified. Nothing has been
-  trained with a mix yet. Cha22 is not in the registry until its import (Track
-  B) lands.
+  trained with a mix yet. Cha22 is a registry key since the Track B import
+  merged; it is parity-qualified by a light three-game corpus against Starter
+  (`docs/rules-parity-coverage.md`), and its stepping throughput in training
+  is unmeasured.
 
 ### Structured native observation buffers (Task 1.3)
 
@@ -1579,7 +1584,9 @@ to break the bound; the effect is unmeasured (independent review r1,
 `econ_margin_weight = 0` nothing is added, so rewards are bit-identical to the
 reward without it. In the economic sum it follows the bank term (relative,
 then bank, then margin, in float64) before the single f32 rounding. Only
-`configs/kaggriculture_4rank_margin.yaml` enables it: weight .5, scale 50,000
+`configs/kaggriculture_4rank_margin.yaml` and the cha22 anchor presets
+(`configs/kaggriculture_{4,2}rank_vs_cha22.yaml`, the same reward against the
+fixed bot) enable it: weight .5, scale 50,000
 and cap .5 with `econ_shaping` 0 and term A off, so `terminal_scale` is .5 and
 `M = .5 · clamp(margin / 50,000, −1, 1)`, linear up to a 50k margin. The owner
 gave the .5/.5 split; the 50,000 scale was proposed by the agent from the live

@@ -30,10 +30,24 @@ fn hosted_actions(seed: i64, kinds: [OpponentKind; 2]) -> (Vec<[serde_json::Valu
 
 #[test]
 fn hosted_seats_reproduce_play_match_for_every_bot_in_both_seats() {
-    for (seed, kinds) in [
+    let pairs = [
         (20260941, [OpponentKind::Starter, OpponentKind::R04]),
         (20260942, [OpponentKind::E776, OpponentKind::Ecobot]),
-    ] {
+        (20260944, [OpponentKind::R04, OpponentKind::Starter]),
+        (20260945, [OpponentKind::Ecobot, OpponentKind::E776]),
+        // One mirror game hosts Cha22 (the anchor bot) in both seats.
+        (20260943, [OpponentKind::Cha22, OpponentKind::Cha22]),
+    ];
+    // Every registered bot is hosted in each seat by some game.
+    for kind in OpponentKind::ALL {
+        for seat in 0..2 {
+            assert!(
+                pairs.iter().any(|(_, kinds)| kinds[seat] == kind),
+                "{kind:?} is not hosted in seat {seat}"
+            );
+        }
+    }
+    for (seed, kinds) in pairs {
         let reference = play_match(Config::default(), seed, kinds).unwrap();
         assert!(reference.completed);
         let (actions, banks) = hosted_actions(seed, kinds);
