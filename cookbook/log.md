@@ -1,5 +1,16 @@
 # Change log
 
+## 2026-09-30 — Open the v3 board and record the credit-window finding and the earn-money run inventory
+
+Owner, verbatim: "let's switch back to self play no matter what, and think about how do we get the agent to earn moneny for real?"; "OK go ahead." (reward); "ok go with 720 and relaunch the run"; "let eval complete, I pretty much sure it will promote, but let's run 2e-3 /1e-4 on the new run"; "Sure please do" (1e-4 relaunch).
+
+- **Evidence landed.** `kg/rebuild-pod4-evidence` `0dc61f5` merges onto `kg/isaiah-gap-closure` as `dc2a89d` (`--no-ff`, receipts only, no conflicts). `a8c047b` commits the `ops/earn-money-2026-09-30/` plan, X1 and anchor-game summaries and scripts. Packages, replays, agent logs, `x1a-data/` and the third-party anchor sources stay out.
+- **New f610 aggregate.** `aggregate.py` misparses `best-f610-…` labels. `aggregate_f610.py` re-derives the anchor and writes `games-best-f610.jsonl` and `tables-best-f610.md`: 32 qualified games, margin -21.1k vs smaller_market_shock and -28.8k vs cha22, above fc6b in 23/32 paired games and above BC in 32/32.
+- **Added** the [[references/a-long-credit-window-turned-bc-start-self-play-from-sliding-to-improving|credit-window Reference]] (provisional, one seed per arm, attribution open), the [[references/earn-money-pod-runs-use-run-local-launch-copy-off-and-switch-scripts|run-inventory Reference]] (the switch-script detection flaw; 16 envs/rank at 720 used 90.96 of 96 GB) and the first [[decisions/the-kaggriculture-v3-board|v3 board]]. The board has two ranked results (fc6b and f610 over BC on the same anchor games).
+- **Indexes.** The references and decisions indexes and the root index are updated.
+- **Checks.** W&B was read through `run.summary` and `run.history` with keys: h3lpxy6q's 10M evaluation (16 games, win rate 1, own 117.6k vs 90.4k); no evaluation keys for cmwjclbe or pcy5knet; bank trajectories. The earn wrappers' hashes and code identity were compared with the Mac receipts. The cookbook lint passed on the three notes.
+- **Not verified.** cmwjclbe's promotion win rate (never logged), the cha22 binary's pin, and anything at Kaggle latency.
+
 ## 2026-09-30 — Land the staggered game phases and the credit-window presets onto the integration
 
 `kg/rebuild-stagger-credit` `ced1d2c` merges onto `kg/isaiah-gap-closure` `78dfd1f`, after the critic-offset landing, as the regular merge commit `a807752` (`--no-ff`). It carries the [[decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger Decision]] (owner: "- Lockstep game phases and the short credit window for long-payback investments. for sure."), `rl.initial_stagger` (default off, byte-identical) and `configs/kaggriculture_{4,2}rank_bank_critic_credit.yaml`.

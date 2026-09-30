@@ -1,0 +1,119 @@
+---
+type: "Reference"
+title: "A long credit window turned BC-start self-play from sliding to improving"
+description: "Finding, one seed per arm, 2026-09-30: with gae_lambda 1.0 and a 256-step or full 720-step window, plus the owner-approved reward (.25 own bank /150k + .25 cash difference /100k + .5 terminal sign), BC-start mirror self-play PPO at Muon 1e-4 improved instead of sliding. h3lpxy6q (256) beat BC 16/16 at its 10M evaluation (own 117.6k vs 90.4k) and promoted fc6b123c; cmwjclbe (720, 12 envs/rank) promoted f61006d9 at 20M. On identical Kaggle-harness seeds 93001-93008, both seats, the margin moved BC -67.2k -> fc6b -41.2k -> f610 -21.1k vs smaller_market_shock and -60.6k -> -36.0k -> -28.8k vs cha22; every anchor game was still lost. Every earlier 64-step lambda-0.9 run slid. Attribution is unresolved: the reward and the per-optimizer-step batch structure changed with the window."
+tags: ["kaggriculture-v3", "training", "credit-assignment", "evaluation", "finding"]
+status: "provisional"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
+sources:
+  - resource: "user-directive:2026-09-30:switch-back-to-self-play-and-earn-money-for-real"
+  - resource: "user-directive:2026-09-30:ok-go-ahead-bank-margin-sign-reward"
+  - resource: "user-directive:2026-09-30:ok-go-with-720-and-relaunch-the-run"
+  - resource: "repository:ops/earn-money-2026-09-30/plan.md"
+  - resource: "repository:ops/earn-money-2026-09-30/evidence-runs.md"
+  - resource: "repository:ops/earn-money-2026-09-30/x1/summary.md"
+  - resource: "repository:ops/earn-money-2026-09-30/anchor-games/results.md"
+  - resource: "repository:ops/earn-money-2026-09-30/anchor-games/games-bc.jsonl"
+  - resource: "repository:ops/earn-money-2026-09-30/anchor-games/games-candidate.jsonl"
+  - resource: "repository:ops/earn-money-2026-09-30/anchor-games/games-best-f610.jsonl"
+  - resource: "repository:ops/earn-money-2026-09-30/anchor-games/aggregate_f610.py"
+  - resource: "repository:ops/earn-money-2026-09-30/anchor-games/tables-best-f610.md"
+  - resource: "repository:ops/earn-money-2026-09-30/anchor-games/manifests/best-f610.json"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earn-bank-credit-4rank/launch.md"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earn512/launch.md"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earn720/launch.md"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earn720-12env/launch.md"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earnlr/launch.md"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earnB/launch.md"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/control-J2-4rank/result.md"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/A-bank-lr2-4rank/launch.md"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/J2-resume-r0208/stop.md"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/M-margin-J2-4rank/stop.md"
+  - resource: "repository:configs/kaggriculture_4rank_margin.yaml"
+  - resource: "wandb-run:spoon/kg-v3/h3lpxy6q"
+  - resource: "wandb-run:spoon/kg-v3/cmwjclbe"
+  - resource: "wandb-run:spoon/kg-v3/pcy5knet"
+  - resource: "wandb-run:spoon/kg-v3/nw3klj2s"
+  - resource: "wandb-run:spoon/kg-v3/04cy2m6s"
+  - resource: "wandb-run:spoon/kg-v3/hz4bpjnq"
+  - resource: "wandb-run:spoon/kg-v3/r350xr3w"
+---
+
+# A long credit window turned BC-start self-play from sliding to improving
+
+## Claim
+
+With `gae_lambda` 1.0 and a credit window of 256 steps or a full 720-step game, together with the owner's own-bank plus cash-difference reward, mirror self-play PPO started from BC improved instead of sliding. It is one seed per arm. Two things changed together with the window, so the window alone is not attributed (see Unresolved attribution).
+
+This is a finding recorded as a Reference, not an owner decision. The owner decided the direction and the reward. The reading of the runs is the agent's.
+
+## Owner direction (verbatim)
+
+- "let's switch back to self play no matter what, and think about how do we get the agent to earn moneny for real?"
+- On the agent-proposed reward (.25 own bank /150k + .25 cash difference /100k + .5 terminal sign): "OK go ahead."
+- On the window: "ok go with 720 and relaunch the run"
+
+## Mechanism the runs tested
+
+Plan `ops/earn-money-2026-09-30/plan.md`, section 1.1:
+- **M3 (a), credit inversion.** λ 0.9 over a 64-step horizon credits about 10 turns, while plant, animal and land investments pay back over 100-300 turns. X1d found that strawberry investment breaks first in the short-window slide (`x1/summary.md`).
+- **M2, lockstep phases.** Every 64-step rollout trains one game phase. A 720-step segment is exactly one whole game, so every update spans every phase and the return is pure Monte Carlo.
+- **M4, no reward for a shared rise.** Term M (margin only) pays nothing when both seats earn more. The .25 own-bank term does.
+
+The [[../decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger Decision]] built the 256-step, λ 1 presets with the stagger and the per-seat critic offset. None of the runs below used those presets: they ran at `0f70773` with `configs/kaggriculture_4rank_margin.yaml` plus command-line overrides, with no stagger and no critic offset.
+
+## Evidence
+
+**Before: every short-window run slid** (horizon 64, λ 0.9, BC or J/2 start, Muon 1e-4). Values are rank-0 `train/own_bank_mean` at game-end windows (W&B):
+
+| Run (W&B) | Reward | Own bank |
+| --- | --- | --- |
+| J/2 (`nw3klj2s`) | recipe J shaping | peak 81.6k at iteration 45, 46.7k by 90, plateau 47-53k |
+| A2 (`04cy2m6s`) | + own bank term A | 74.5k -> 60.9k over 6 windows |
+| J/2 resume (`hz4bpjnq`) | J shaping .2, terminal .8 | 62.6k -> 30.4k over 87 windows |
+| M (`r350xr3w`) | term M .5 margin + .5 sign | about 64k -> 38.1k; lost both evaluations to its start (14.1%, 10.9%) |
+
+**After: the long-window runs** (same reward, Muon 1e-4 / AdamW 5e-6, λ 1.0):
+
+| Run (W&B) | Start | Window, envs/rank | Outcome |
+| --- | --- | --- | --- |
+| `h3lpxy6q` | BC (`fd854587…`) | 256, 16 | Own bank first window 73.9k. Means over sixths of its 357 logged windows: 78.5k, 82.6k, 91.2k, 92.8k, 88.5k, 86.2k. 10M evaluation vs BC: 16/16 won, own 117.6k vs 90.4k, margin +27.1k; promoted `fc6b123c…`. Stopped at iteration 1,007 (about 16.5M steps) for the 512 window. |
+| `ssoc84zg` | fc6b | 512, 8 | Stopped at iteration 41 for the 720 window; own bank about 95k. |
+| `pw6qjsz3` | fc6b | 720, 6 | Stopped at iteration 90 to raise envs per rank; own bank about 96-101k. |
+| `cmwjclbe` | fc6b | 720, 12 | Promoted at its 20M checkpoint: `f61006d9…`, weights bit-identical to `checkpoint_00_020_033_024`. The evaluation metrics were never logged because the run was stopped about 40 s after the checkpoint; promotion requires ≥ 70% of 12 games. Self-play own bank drifted from about 97k to 93k over its windows. |
+| `pcy5knet` | f610 | 720, 12 | Running at 26.3M steps (W&B `_step`); window means 90-96k, no evaluation yet. |
+
+**Independent check: local Kaggle-harness games.** Packaged agents, greedy, CPU, strict mode. Seeds 93001-93008, each in both seats: 16 games per policy per anchor. All games qualified, with 0 errors, invalid actions or PASS fallbacks (`anchor-games/results.md`, `tables-best-f610.md`).
+
+| Policy | vs smaller_market_shock: own / margin | vs cha22: own / margin | Wins vs cha22, smaller_market_shock, v43 |
+| --- | --- | --- | --- |
+| BC `fd854587` | 77.1k / -67.2k | 86.9k / -60.6k | 0 / 48 |
+| fc6b (256 window) | 92.3k / -41.2k | 88.7k / -36.0k | 0 / 48 |
+| f610 (720 window) | 113.1k / -21.1k | 96.9k / -28.8k | 0 / 32 (v43 not played) |
+
+Paired on the same games, f610's margin beat BC's in 32/32 games and fc6b's in 23/32 (+13.7k mean). fc6b beat BC in 58/64 games across all four anchors.
+
+**Reference levels, not targets.** X1a: the BC teacher (leaderboard #1) banked about 102.8k per ladder game. X1b: cha22 against itself banked about 95.4k per seat. Both are from different opponents and worlds, so they do not compare directly with the anchor games.
+
+## Limits
+
+- **One seed per arm.** There is no variance estimate across training seeds.
+- **Self-play bank is a weak signal after the switch.** Under the 720 window, self-play own bank stayed flat or eased (cmwjclbe 97k -> 93k). The improvement shows in the promotion and the anchor games, not in the self-play curve. h3lpxy6q peaked in its middle third and eased afterwards.
+- **Anchor games are a local strength check, not qualification.** 16 games per anchor cannot separate a win rate between 0 and about 0.19. Every policy still loses to every real anchor. The cha22 binary is not freshly pinned (`results.md`, Limits). The runs were not evaluated at Kaggle latency.
+- **Starts are chained.** The 720 runs began from fc6b with a fresh optimizer and a re-warmed LR, so the 720 gain over fc6b is also more training.
+
+## Unresolved attribution
+
+- **Reward changed with the window.** No short-window run used the .25 bank + .25 cash difference + .5 sign reward from BC. So window versus reward is not separated. The own-bank term A under the short window (A2) still slid, which weakly counts against reward alone.
+- **Batch structure changed.** At 256 each optimizer step used 1 segment of 256 steps per rank (4 envs globally) instead of 4 segments of 64 (16 envs). At 720 each step used one whole game per rank. Correlation within a minibatch is higher.
+- **Information, decision, execution or architecture.** Which class the window repaired is not measured. The plan's X5 paired investment forks (M3 a against c) were not run.
+
+## Reopening conditions
+
+- A 64-step λ 0.9 run with this reward from BC that does not slide would reopen the attribution to the window.
+- A second seed of the 256 or 720 run that slides would demote this finding.
+- A promoted checkpoint whose paired anchor margin on seeds 93001-93008 falls below the previous promotion's would show that promotion against the last best no longer tracks strength.
+
+## Promotion basis
+
+Independent check: the Kaggle-harness games are separate from the training telemetry and the in-trainer evaluation. Existing concepts searched: the stagger Decision (the mechanism, untested there) and the [[../decisions/replace-the-reward-with-half-cash-difference-and-half-terminal-sign|term M Decision]] (the reward that slid). Consequence: the [[../decisions/the-kaggriculture-v3-board|v3 board]] ranks the 720 continuation first. A Lesson needs a second supporting episode.
