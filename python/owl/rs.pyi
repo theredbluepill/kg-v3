@@ -459,6 +459,9 @@ class KaggricultureRewardDict(TypedDict):
     econ_bank_weight: float
     econ_bank_scale: float
     econ_bank_cap: float
+    econ_margin_weight: float
+    econ_margin_scale: float
+    econ_margin_cap: float
 
 class KaggricultureTerminalMetrics(TypedDict):
     bank_0: float

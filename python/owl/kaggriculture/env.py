@@ -2,10 +2,12 @@
 
 Native code owns transitions and rewards. Returned tensors alias one retained
 buffer set; copy before the next mutating call when retaining a CPU value.
-The adapter adds one telemetry value per step, ``reward_bank_mean``: the mean
-own-bank shaping component over every seat, recomputed in float64 from the
-transition banks by the reward oracle (zero with the bank term off). It is
-metric-logger telemetry only and never reaches the model or the rewards.
+The adapter adds two telemetry values per step: ``reward_bank_mean``, the mean
+own-bank shaping component over every seat, and ``reward_margin_abs_mean``, the
+mean absolute margin (cash-difference) component over every seat (its signed
+mean is zero: the term is zero-sum). Both are recomputed in float64 from the
+transition banks by the reward oracle and are zero with their term off. They
+are metric-logger telemetry only and never reach the model or the rewards.
 """
 
 from __future__ import annotations
@@ -19,7 +21,11 @@ import torch
 from numpy.typing import NDArray
 
 from owl import rs
-from owl.kaggriculture.rewards import KaggricultureRewardConfig, bank_rewards
+from owl.kaggriculture.rewards import (
+    KaggricultureRewardConfig,
+    bank_rewards,
+    margin_rewards,
+)
 from owl.kaggriculture.types import (
     JsonValue,
     KaggricultureActionConfig,
@@ -449,6 +455,20 @@ class KaggricultureVectorizedEnv:
             else 0.0
         )
         metrics["reward_bank_mean"] = [bank_mean]
+        margin_abs_mean = (
+            float(
+                margin_rewards(
+                    self._transition_banks_before,
+                    self._transition_banks_after,
+                    self._reward_config,
+                )
+                .abs()
+                .mean()
+            )
+            if self._reward_config.econ_margin_weight > 0
+            else 0.0
+        )
+        metrics["reward_margin_abs_mean"] = [margin_abs_mean]
         return self.observations, self.rewards, self.dones, metrics
 
     def truncate_envs(self, mask: torch.Tensor) -> KaggricultureObsBatch:

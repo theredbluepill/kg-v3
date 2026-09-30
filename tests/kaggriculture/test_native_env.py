@@ -23,6 +23,9 @@ REWARD: rs.KaggricultureRewardDict = {
     "econ_bank_weight": 0.0,
     "econ_bank_scale": 100000.0,
     "econ_bank_cap": 0.0,
+    "econ_margin_weight": 0.0,
+    "econ_margin_scale": 50000.0,
+    "econ_margin_cap": 0.0,
 }
 _BANK_OFF = (0.0, 100000.0, 0.0)
 TRANSITIONS = (
@@ -411,6 +414,9 @@ def test_reward_admission_shared_binary64_predicate(
         "econ_bank_weight": bank_weight,
         "econ_bank_scale": bank_scale,
         "econ_bank_cap": bank_cap,
+        "econ_margin_weight": 0.0,
+        "econ_margin_scale": 50000.0,
+        "econ_margin_cap": 0.0,
     }
     if accepted:
         env = rs.KaggricultureEnv(1, 0, 1, "{}", reward, 1, hire_limit=241)

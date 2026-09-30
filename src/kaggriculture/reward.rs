@@ -1,5 +1,6 @@
-//! Native cumulative economic penalties, absolute own-bank shaping and the
-//! reference's two f32 roundings.
+//! Native cumulative economic penalties, absolute own-bank shaping, the
+//! zero-sum cash-difference (margin) potential and the reference's two f32
+//! roundings.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RewardMode {
     WinLoss,
@@ -20,6 +21,13 @@ pub struct RewardConfig {
     pub econ_bank_scale: f64,
     /// Bank cap `cap_b`: the score saturates here and it joins the cap budget.
     pub econ_bank_cap: f64,
+    /// Cash-difference (margin) weight `w_m` (owner decision 2026-09-30, term M).
+    pub econ_margin_weight: f64,
+    /// Margin scale `S_m`: `w_m * (bank_self - bank_opp) / S_m` before the clamp.
+    pub econ_margin_scale: f64,
+    /// Margin cap `c_m`: the score is clamped to `[-c_m, c_m]`; it joins the cap
+    /// budget and reduces the terminal scale.
+    pub econ_margin_cap: f64,
 }
 impl RewardConfig {
     pub fn validate(&self) -> Result<(), String> {
@@ -34,8 +42,11 @@ impl RewardConfig {
             econ_bank_weight: wb,
             econ_bank_scale: bs,
             econ_bank_cap: bc,
+            econ_margin_weight: wm,
+            econ_margin_scale: ms,
+            econ_margin_cap: mc,
         } = self;
-        if [w, s, d, cap, i, ic, wb, bs, bc]
+        if [w, s, d, cap, i, ic, wb, bs, bc, wm, ms, mc]
             .iter()
             .any(|v| !v.is_finite() || **v < 0.)
         {
@@ -54,9 +65,16 @@ impl RewardConfig {
                 "econ_bank_weight requires a positive econ_bank_scale and econ_bank_cap".into(),
             );
         }
+        if *wm > 0. && (*ms <= 0. || *mc <= 0.) {
+            return Err(
+                "econ_margin_weight requires a positive econ_margin_scale and econ_margin_cap"
+                    .into(),
+            );
+        }
         let active = if *w > 0. { *cap } else { 0. }
             + if *i > 0. { *ic } else { 0. }
-            + if *wb > 0. { *bc } else { 0. };
+            + if *wb > 0. { *bc } else { 0. }
+            + if *wm > 0. { *mc } else { 0. };
         if active >= 1. {
             return Err("active economic caps must sum below one".into());
         }
@@ -73,6 +91,10 @@ impl RewardConfig {
             0.
         } - if self.econ_bank_weight > 0. {
             self.econ_bank_cap
+        } else {
+            0.
+        } - if self.econ_margin_weight > 0. {
+            self.econ_margin_cap
         } else {
             0.
         }
@@ -105,10 +127,27 @@ impl RewardConfig {
             0.
         }
     }
+    /// Margin score `clamp((w_m * margin) / S_m, -c_m, c_m)` in binary64, in that
+    /// operation order (product, quotient, then the clamp); zero when the term is
+    /// disabled. An overflowing product or quotient is +-inf and saturates at
+    /// +-`c_m` (never NaN: `S_m > 0`). Odd in `margin` bit for bit, since IEEE
+    /// negation, multiplication and division round sign-symmetrically.
+    pub fn margin_score(&self, margin: f64) -> f64 {
+        if self.econ_margin_weight > 0. {
+            (self.econ_margin_weight * margin / self.econ_margin_scale)
+                .max(-self.econ_margin_cap)
+                .min(self.econ_margin_cap)
+        } else {
+            0.
+        }
+    }
     /// One transition's rewards. `banks_before` are the banks of the state the
     /// action was taken in (the reset bank on a game's first transition) and
     /// `banks_after` those of the completed transition, before any auto-reset,
-    /// so the own-bank term never spans two games.
+    /// so the own-bank and margin terms never span two games. The margin term
+    /// pays seat `s` the score of its after-margin (`after[s] - after[1-s]`)
+    /// minus that of its before-margin: zero-sum, and with equal reset banks it
+    /// telescopes to the final margin's score.
     pub fn transition(
         &self,
         before: &[[i64; 32]; 2],
@@ -137,14 +176,18 @@ impl RewardConfig {
             std::array::from_fn(|s| self.penalty(&after[s]) - self.penalty(&before[s]));
         let r: [f32; 2] = std::array::from_fn(|s| {
             let relative = delta[1 - s] - delta[s];
-            // Disabled bank shaping adds nothing, so rewards stay byte-identical
-            // to the relative-only reward; enabled, it joins before f32 rounding.
-            let economic = if self.econ_bank_weight > 0. {
-                (relative + (self.bank_score(banks_after[s]) - self.bank_score(banks_before[s])))
-                    as f32
-            } else {
-                relative as f32
-            };
+            // Disabled bank and margin shaping add nothing, so rewards stay
+            // byte-identical to the relative-only reward; enabled, each joins in
+            // f64 (relative, then bank, then margin) before the one f32 rounding.
+            let mut economic = relative;
+            if self.econ_bank_weight > 0. {
+                economic += self.bank_score(banks_after[s]) - self.bank_score(banks_before[s]);
+            }
+            if self.econ_margin_weight > 0. {
+                economic += self.margin_score(banks_after[s] - banks_after[1 - s])
+                    - self.margin_score(banks_before[s] - banks_before[1 - s]);
+            }
+            let economic = economic as f32;
             if done {
                 let sign = if banks_after[s] > banks_after[1 - s] {
                     1.

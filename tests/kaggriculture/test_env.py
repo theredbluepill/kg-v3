@@ -15,7 +15,11 @@ from owl.kaggriculture.env import (
     KaggricultureVectorizedEnv,
     allocate_observation_buffers,
 )
-from owl.kaggriculture.rewards import KaggricultureRewardConfig, bank_rewards
+from owl.kaggriculture.rewards import (
+    KaggricultureRewardConfig,
+    bank_rewards,
+    margin_rewards,
+)
 from owl.kaggriculture.types import (
     KaggricultureActionConfig,
     KaggricultureActionMask,
@@ -79,6 +83,9 @@ def reward_config():
         econ_bank_weight=0.0,
         econ_bank_scale=100_000.0,
         econ_bank_cap=0.0,
+        econ_margin_weight=0.0,
+        econ_margin_scale=50_000.0,
+        econ_margin_cap=0.0,
     )
 
 
@@ -144,7 +151,11 @@ def test_every_batch_checks_contract(fake):
     assert result is obs
     assert rewards is env.rewards
     assert dones is env.dones
-    assert metrics == {"fake_metric": [1.0], "reward_bank_mean": [0.0]}
+    assert metrics == {
+        "fake_metric": [1.0],
+        "reward_bank_mean": [0.0],
+        "reward_margin_abs_mean": [0.0],
+    }
     obs.check_contract()
     transition_before = {
         k: v.clone() for k, v in tensors.items() if k not in _tensors(obs)
@@ -532,8 +543,9 @@ def test_real_binding_terminal_step_keeps_completed_transition_and_new_observati
     assert rewards is env.rewards
     assert dones is env.dones
     assert not dones.any()
-    # The adapter's own telemetry value is zero with the bank term off.
+    # The adapter's own telemetry values are zero with the bank/margin terms off.
     assert metrics.pop("reward_bank_mean") == [0.0]
+    assert metrics.pop("reward_margin_abs_mean") == [0.0]
     assert all(value == [] for value in metrics.values())
     assert all(env.terminal_metrics(i) is None for i in range(2))
     final_banks = env.transition_banks_after.clone()
@@ -564,6 +576,7 @@ def test_real_binding_terminal_step_keeps_completed_transition_and_new_observati
         "terminal_bank_1": final_banks[:, 1].tolist(),
         "terminal_margin_0": (final_banks[:, 0] - final_banks[:, 1]).tolist(),
         "reward_bank_mean": [0.0],
+        "reward_margin_abs_mean": [0.0],
     }
     assert env.reset() is obs
     obs.check_contract()
@@ -681,3 +694,27 @@ def test_real_binding_reports_the_own_bank_reward_mean_per_step():
             ).mean()
         )
     ]
+
+
+def test_real_binding_reports_the_margin_reward_abs_mean_per_step() -> None:
+    # Owner term M on: the adapter's telemetry value is the oracle's mean
+    # absolute margin increment over every seat (the signed mean is zero).
+    reward = reward_config().model_copy(
+        update={
+            "econ_shaping": 0.0,
+            "econ_margin_weight": 0.5,
+            "econ_margin_cap": 0.5,
+        }
+    )
+    assert reward.terminal_scale == 0.5
+    env = make_env(config=KaggricultureGameConfig(episode_steps=3), reward=reward)
+    _, rewards, _, metrics = env.step(
+        native_actions(env, market=[["BUY_PRODUCT", "WHEAT", 1]])
+    )
+    increments = margin_rewards(
+        env.transition_banks_before, env.transition_banks_after, reward
+    )
+    assert increments.any(), "seat 0's purchase must move the margin"
+    assert torch.equal(increments[..., 0], -increments[..., 1])
+    assert torch.equal(rewards, increments.float())
+    assert metrics["reward_margin_abs_mean"] == [float(increments.abs().mean())]

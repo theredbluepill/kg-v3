@@ -1,5 +1,31 @@
-# Recipe J halved with absolute own-bank shaping (owner term A), 2 ranks.
-# Identical to configs/kaggriculture_2rank_bc_finetune.yaml except:
+# Owner term M: J/2's recipe with the reward 0.5 x cash difference + 0.5 x
+# terminal sign (+1/-1/0), 4 ranks.
+# Owner, 2026-09-30, verbatim: "can we relaunch (before anchor) run, fix the
+# reward, 0.5 Cash Diff (add this in) + 0.5 (Terminal loss 1/-1/0)?" and
+# "implement the new rewrad first before we revisit the cha22 anchor setup."
+# Reproduces the effective config of J/2 (control-J2-4rank-20260930, W&B
+# spoon/kg-v3 nw3klj2s, run dir 20260930-010131: kaggriculture_4rank.yaml with
+# -o optimizer.muon_lr=0.0001 optimizer.adamw_lr=0.000005
+# rl.checkpoint_freq=10000000 env.native_threads=4) except the reward:
+# - env.reward_shaping.econ_shaping 0.2 -> 0 (death/drought shaping off);
+# - econ_bank_weight/econ_bank_cap stay 0 (own-bank term A off);
+# - econ_margin_weight 0.5, econ_margin_scale 50000.0, econ_margin_cap 0.5, so
+#   terminal_scale is 1 - .5 = 0.5.
+# Per step each seat gets m(after) - m(before) with
+# m = clamp(.5 * (bank_self - bank_opp) / 50000, -.5, .5); zero-sum. A game's
+# return is m(final margin) + .5 * sign(final margin), within [-1, 1].
+# Scale: agent-proposed from the live run hz4bpjnq (self-play |margin| mean
+# 10-18k, p50 8-13k): typical games stay linear and saturate only at
+# |margin| >= 50k. Not owner-given or measured optimal.
+# Launch as J2-resume-r0208 did: a warm start from J/2's checkpoint_final.pt
+# with --load-model-weights-mode model_and_optimizer.
+# Limits: one seed; untrained at commit time.
+#
+# The J/2-era halved recipe-J preset (kaggriculture_4rank_bc_finetune_bank.yaml)
+# supplied the body below; its header follows for provenance.
+#
+# Recipe J halved with absolute own-bank shaping (owner term A), 4 ranks.
+# Identical to configs/kaggriculture_4rank_bc_finetune.yaml except:
 # - optimizer.muon_lr 0.0002 -> 0.0001 and optimizer.adamw_lr 1e-5 -> 5e-6
 #   (recipe J halved; same warm-up and cosine schedule);
 # - env.reward_shaping.econ_bank_weight 0 -> 0.25 and econ_bank_cap 0 -> 0.25
@@ -32,46 +58,40 @@
 # cookbook/decisions/add-absolute-own-bank-shaping-and-halve-the-recipe-j-learning-rates.md.
 #
 # The base preset's header follows.
-# Recipe J: the BC fine-tune preset for 2 ranks. Identical to
-# configs/kaggriculture_2rank.yaml except both learning rates / 10
+# Recipe J: the BC fine-tune preset for 4 ranks. Identical to
+# configs/kaggriculture_4rank.yaml except both learning rates / 10
 # (optimizer.muon_lr 0.002 -> 0.0002, optimizer.adamw_lr 1e-4 -> 1e-5; the same
-# warm-up and cosine schedule). Launch it from the BC best with the BC critic
-# head kept:
+# warm-up and cosine schedule), like the 2- and 8-rank presets. Launch it from
+# the BC best with the BC critic head kept:
 #   --load-model-weights <checkpoint_bc_best.pt> --load-model-weights-mode model_only
 #
-# Evidence (2-rank PPO-collapse ablation from the BC best, one seed per arm
-# except D/J, pre-landing, not Codex-verified; kg/pod-ppo-prelanding ddcbf84, ops/rebuild-2026-09-29/pod-6000-2026-09-29/ablation/
-# comparison.md, attribution.md, final-report.md, ablate-D-lr10-bccritic/ and
-# ablate-J-combined/):
-# - LR / 10 prevented the collapse in every matched pair (control -> B,
-#   H -> D, I -> G: game-4 banks from about 0.1k to 62-84k); every full-LR arm
-#   but the anchored one fell below 1k by game 4.
-# - The BC critic head (model_only) raised the critic's mean explained variance
-#   to 0.84 against <= 0.29 for every fresh-head arm at LR / 10, at two env
-#   seeds (D: 0, J: 1,000,000).
-# Limits: banks rising above the BC level is NOT established (game 4 - game 1:
-# D +11.6k, J -4.8k); every arm ran 46 iterations inside the 1,000-step LR
-# warm-up, so the recipe is untested at its 2e-4 peak; self-play banks are not
-# strength (no held-out evaluation ran). This departs from Isaiah's scaling_6m
-# LRs for a case Isaiah never had (PPO from imitation), for the measured reason
-# above; see cookbook/references/bc-fine-tune-presets-divide-both-learning-rates-by-ten.md.
+# Added 2026-09-30 as the base of configs/kaggriculture_4rank_bc_finetune_bank.yaml.
+# Evidence and limits as in the 2-rank preset (2-rank ablation, kg/pod-ppo-prelanding
+# ddcbf84; see cookbook/references/bc-fine-tune-presets-divide-both-learning-rates-by-ten.md).
+# The 4-rank main run J (W&B spoon/kg-v3 gq94cyyp; kg/rebuild-pod4-evidence c0b551f,
+# ops/rebuild-2026-09-29/pod4-2026-09-30/main-J-4rank/launch.md) ran exactly this
+# recipe as kaggriculture_4rank.yaml plus the two LR overrides (and
+# env.native_threads=4): rank 0's own_bank_mean fell from about 72-74k (iterations
+# 12-34) to 17.9k at iteration 68 and 5.7k at iteration 79, just after the LR
+# peak at iteration 63, and the watchdog stopped it. One seed; the cause (LR,
+# objective or teacher weight) is not attributed.
 #
 # The base config's header follows.
-# Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 2 ranks
-# (2x RTX PRO 6000). Isaiah's 6M multi-GPU division
+# Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 4 ranks
+# (4x RTX PRO 6000). Isaiah's 6M multi-GPU division
 # (winner_ce_6m_4x5090.yaml): n_envs and segments_per_minibatch are divided by
 # the world size, so the GLOBAL batch
 # (256 envs), optimizer steps/iter (16), global segments per optimizer step (16)
 # and env steps/iter (16,384) equal scaling_6m; the optimizer, LR schedule, PPO
 # coefficients, compile settings and teacher are unchanged; only checkpoint_freq
 # differs (halved to 10M by the owner, below).
-# seg_per_minibatch * grad_accum stays 8 per rank; the split is set from the
-# pre-launch memory smoke (plan Task 6.1: spm 4 / accum 2 if spm 8 does not fit).
+# seg_per_minibatch * grad_accum stays 4 per rank; the split is set from the
+# pre-launch memory smoke (plan Task 6.1; Task 6.3 runs four ranks).
 # See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
 # Loads through FullConfig; run_ppo checks its GEMM workload, then builds the
 # native env and trains through the shared PPO path (Task 3.1).
 env:
-  n_envs: 128
+  n_envs: 64
   obs_spec:
     obs_spec: kaggriculture
     schema_version: 3
@@ -79,25 +99,28 @@ env:
     action_spec: kaggriculture
     hire_limit: 241
   reward_mode: win_loss
-  # Economic shaping 0.2 is the owner's choice; the other coefficients are the
-  # reference branch's audited reward defaults (plan C8).
+  # Owner term M (2026-09-30): 0.5 x cash difference + 0.5 x terminal sign.
+  # Death/drought shaping (econ_shaping) and own-bank term A are off; their
+  # remaining coefficients are inert.
   reward_shaping:
-    econ_shaping: 0.2
+    econ_shaping: 0.0
     econ_starvation_weight: 4.0
     econ_drought_weight: 1.0
     econ_cap: 0.25
     econ_ineffective_weight: 0.0
     econ_ineffective_cap: 0.1
-    # Owner term A (2026-09-30): absolute own-bank shaping, on.
-    econ_bank_weight: 0.25
+    econ_bank_weight: 0.0
     econ_bank_scale: 100000.0
-    econ_bank_cap: 0.25
-    econ_margin_weight: 0.0
+    econ_bank_cap: 0.0
+    # Term M on: clamp(.5 * (bank_self - bank_opp) / 50000, -.5, .5), paid as a
+    # per-step potential difference (zero-sum), telescoping to the final
+    # margin's score from equal reset banks.
+    econ_margin_weight: 0.5
     econ_margin_scale: 50000.0
-    econ_margin_cap: 0.0
+    econ_margin_cap: 0.5
   pin_memory: true
-  # Provisional: Task 6.1 measures the native step time and verifies or resets it.
-  native_threads: 2
+  # J/2's launch override (env.native_threads=4), made explicit here.
+  native_threads: 4
 
 model: kaggriculture
 
@@ -124,7 +147,7 @@ rl:
   # cookbook/decisions/halve-the-kaggriculture-checkpoint-interval-to-10m-steps.md.
   checkpoint_freq: 10_000_000
   ppo_epochs: 1
-  segments_per_minibatch: 8
+  segments_per_minibatch: 4
   gradient_accumulation_steps: 1
   # gamma=1.0 keeps the critic softmax well-defined
   gamma: 1.0
@@ -144,7 +167,7 @@ rl:
   # last-best model, refreshed in place when the student wins >= 0.7 of the
   # evaluation at each checkpoint_freq (10M global env steps). Its targets are
   # precomputed once per update and cached for the whole rollout
-  # (1,674,575,872 B per rank, FP32; run_ppo prints it with the headroom).
+  # (837,287,936 B per rank, FP32; run_ppo prints it with the headroom).
   # The teacher checkpoint is a required launch-time input, never a config
   # value: --load-model-weights CHECKPOINT (the BC best) or
   # -o rl.teacher_init=CHECKPOINT; run_ppo rejects a fresh launch without one.
@@ -154,7 +177,7 @@ rl:
   # A chunk size of the teacher precompute, not a batch: kept at scaling_6m's
   # 128, not divided by the world size, as in Isaiah's per-rank configs
   # (scaling_3m, scaling_1p5m, winner_ce_6m_4x5090). Per rank the chunk is
-  # min(128, 128) = 128 envs: the whole rollout, 16,384 rows, in one precompute call.
+  # min(128, 64) = 64 envs: the whole rollout, 8,192 rows, in one precompute call.
   teacher_segments_per_minibatch: 128
   compile_mode: default
   dtype: bfloat16

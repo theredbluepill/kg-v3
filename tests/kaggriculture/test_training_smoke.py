@@ -42,6 +42,9 @@ def _native_env(
             econ_bank_weight=bank_weight,
             econ_bank_scale=100_000.0,
             econ_bank_cap=0.25 if bank_weight > 0 else 0.0,
+            econ_margin_weight=0.0,
+            econ_margin_scale=50_000.0,
+            econ_margin_cap=0.0,
         ),
         reward_mode="win_loss",
         native_threads=1,
@@ -253,6 +256,8 @@ def test_bank_and_common_mode_return_telemetry(bank_weight: float) -> None:
         assert metrics["train/reward_bank_mean"] == pytest.approx(
             sum(per_step) / len(per_step), abs=1e-12
         )
+        # Term M off here: its per-step telemetry is logged and exactly zero.
+        assert metrics["train/reward_margin_abs_mean"] == 0.0
         seat_returns = trainer.rollout.rewards.sum(dim=0)
         common = seat_returns.mean(dim=-1).mean()
         assert metrics["train/return_common_mean"] == pytest.approx(

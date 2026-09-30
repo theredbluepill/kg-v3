@@ -13,6 +13,9 @@ fn reward_config() -> RewardConfig {
         econ_bank_weight: 0.,
         econ_bank_scale: 100_000.,
         econ_bank_cap: 0.,
+        econ_margin_weight: 0.,
+        econ_margin_scale: 50_000.,
+        econ_margin_cap: 0.,
     }
 }
 /// Owner term A at unit weight (w_b 1, S 100,000, cap_b .25), so a score reads
@@ -132,6 +135,9 @@ fn reward_admission_predicate_cases() {
             econ_bank_weight: wb,
             econ_bank_scale: bs,
             econ_bank_cap: bc,
+            econ_margin_weight: 0.,
+            econ_margin_scale: 50_000.,
+            econ_margin_cap: 0.,
         };
         assert_eq!(c.validate().is_ok(), accept, "{c:?}");
     }
@@ -588,6 +594,329 @@ fn autoreset_never_spans_two_games_in_the_bank_term() {
         }
     }
     assert!(spent);
+    assert!(after_terminal.is_some_and(|t| t <= 6));
+}
+
+// --- Owner term M: cash-difference (margin) potential (2026-09-30) ---------
+
+/// The margin preset's reward: term M (w_m .5, S_m 50,000, c_m .5) plus the
+/// terminal sign at scale .5; death, ineffective and own-bank shaping off.
+fn margin_config() -> RewardConfig {
+    RewardConfig {
+        econ_shaping: 0.,
+        econ_ineffective_weight: 0.,
+        econ_margin_weight: 0.5,
+        econ_margin_scale: 50_000.,
+        econ_margin_cap: 0.5,
+        ..reward_config()
+    }
+}
+
+#[test]
+fn margin_validation_budget_and_terminal_scale() {
+    let cfg = margin_config();
+    cfg.validate().unwrap();
+    assert_eq!(cfg.terminal_scale(), 0.5);
+    for bad in [f64::NAN, f64::INFINITY, -1.] {
+        for field in 0..3 {
+            let mut c = margin_config();
+            *[
+                &mut c.econ_margin_weight,
+                &mut c.econ_margin_scale,
+                &mut c.econ_margin_cap,
+            ][field] = bad;
+            assert!(c.validate().is_err(), "{c:?}");
+        }
+    }
+    let mut c = margin_config();
+    c.econ_margin_scale = 0.;
+    assert!(c.validate().unwrap_err().contains("econ_margin_scale"));
+    c = margin_config();
+    c.econ_margin_cap = 0.;
+    assert!(c.validate().unwrap_err().contains("econ_margin_cap"));
+    // The margin cap joins the active-cap budget with every other enabled cap.
+    c = margin_config();
+    c.econ_margin_cap = 1.;
+    assert!(c.validate().is_err());
+    c.econ_margin_cap = 0.99;
+    c.validate().unwrap();
+    c = RewardConfig {
+        econ_shaping: 0.2,
+        ..margin_config()
+    };
+    assert_eq!(c.terminal_scale(), 1. - 0.25 - 0.5);
+    c.econ_margin_cap = 0.75;
+    assert!(c.validate().is_err());
+    c = RewardConfig {
+        econ_bank_weight: 0.25,
+        econ_bank_cap: 0.25,
+        ..margin_config()
+    };
+    c.validate().unwrap();
+    assert_eq!(c.terminal_scale(), 0.25);
+    c.econ_margin_cap = 0.75;
+    assert!(c.validate().is_err());
+    // Disabled: any scale/cap is inert, even ones that would break the budget.
+    c = reward_config();
+    c.econ_margin_scale = 0.;
+    c.econ_margin_cap = 5.;
+    c.validate().unwrap();
+    assert_eq!(c.terminal_scale(), reward_config().terminal_scale());
+    assert_eq!(c.margin_score(1e9), 0.);
+}
+
+#[test]
+fn margin_score_is_linear_then_clamps_at_both_signs() {
+    let cfg = margin_config();
+    assert_eq!(cfg.margin_score(0.), 0.);
+    assert_eq!(cfg.margin_score(10_000.), 0.1);
+    assert_eq!(cfg.margin_score(-10_000.), -0.1);
+    assert_eq!(cfg.margin_score(25_000.), 0.25);
+    assert!(cfg.margin_score(49_999.) < 0.5);
+    assert_eq!(cfg.margin_score(50_000.), 0.5);
+    assert_eq!(cfg.margin_score(-50_000.), -0.5);
+    assert_eq!(cfg.margin_score(1e300), 0.5);
+    assert_eq!(cfg.margin_score(-1e300), -0.5);
+    // Product, quotient, then clamp: a product that overflows saturates.
+    let mut huge = margin_config();
+    huge.econ_margin_weight = f64::MAX;
+    huge.econ_margin_scale = f64::MIN_POSITIVE;
+    assert_eq!(huge.margin_score(f64::MAX), 0.5);
+    assert_eq!(huge.margin_score(-f64::MAX), -0.5);
+    assert_eq!(huge.margin_score(0.), 0.);
+    let odd = RewardConfig {
+        econ_margin_weight: 0.1,
+        econ_margin_scale: 3.,
+        ..margin_config()
+    };
+    for margin in [7., 1. / 3., 12.345_678, 1.1] {
+        let product_first = 0.1 * margin / 3.;
+        assert_eq!(odd.margin_score(margin).to_bits(), product_first.to_bits());
+        assert_eq!(
+            odd.margin_score(-margin).to_bits(),
+            (-product_first).to_bits()
+        );
+    }
+}
+
+#[test]
+fn margin_term_is_zero_sum_bit_for_bit() {
+    let mut before = [[0; 32]; 2];
+    before[1][0] = 2;
+    let mut after = before;
+    after[0][0] = 3;
+    after[1][1] = 1;
+    for cfg in [
+        margin_config(),
+        RewardConfig {
+            econ_shaping: 0.2,
+            econ_margin_cap: 0.4,
+            ..margin_config()
+        },
+    ] {
+        cfg.validate().unwrap();
+        for (b0, b1) in [
+            ([3_000., 3_000.], [2_100., 4_700.]),
+            ([12_345.5, 7.25], [60_000., 1.]),
+            ([-40., 90_000.], [1e6, -1e6]),
+            ([5., 5.], [5., 5.]),
+        ] {
+            for done in [false, true] {
+                let r = cfg.transition(&before, &after, b0, b1, done).unwrap();
+                // Exact negation (a +0.0 / -0.0 pair counts as zero-sum).
+                assert_eq!(r[0], -r[1], "{b0:?} {b1:?} {done}");
+            }
+        }
+    }
+    // The own-bank term is not zero-sum, so only term M must be.
+}
+
+#[test]
+fn margin_transition_adds_the_potential_difference_before_f32() {
+    let cfg = RewardConfig {
+        econ_shaping: 0.2,
+        econ_margin_cap: 0.4,
+        ..margin_config()
+    };
+    let before = [[0; 32]; 2];
+    let mut after = before;
+    after[0][0] = 1;
+    let (b0, b1) = ([3_000., 3_000.], [7_000., 2_000.]);
+    let r = cfg.transition(&before, &after, b0, b1, false).unwrap();
+    for s in 0..2 {
+        let relative = (cfg.penalty(&after[1 - s]) - cfg.penalty(&before[1 - s]))
+            - (cfg.penalty(&after[s]) - cfg.penalty(&before[s]));
+        let economic =
+            relative + (cfg.margin_score(b1[s] - b1[1 - s]) - cfg.margin_score(b0[s] - b0[1 - s]));
+        assert_eq!(r[s].to_bits(), (economic as f32).to_bits());
+    }
+    // Seat 0 leads by 5,000 (score .05) but paid a death penalty (.25 capped).
+    assert_eq!(r[0], (-0.25_f64 + 0.05) as f32);
+    let done = cfg.transition(&before, &after, b0, b1, true).unwrap();
+    assert_eq!(done[0], (f64::from(r[0]) + 0.35) as f32);
+}
+
+#[test]
+fn disabled_margin_term_is_byte_identical_to_the_previous_reward() {
+    // w_m = 0 with any inactive scale/cap reproduces the pre-M formula
+    // (relative, then own bank when enabled, one f32 rounding) bit for bit.
+    let mut before = [[0; 32]; 2];
+    before[1][0] = 2;
+    let mut after = before;
+    after[0][0] = 3;
+    after[0][2] = 50;
+    after[1][1] = 1;
+    for base in [reward_config(), bank_reward_config()] {
+        for (scale, cap) in [(50_000., 0.), (0., 0.), (1., 0.9)] {
+            let mut cfg = base.clone();
+            cfg.econ_margin_scale = scale;
+            cfg.econ_margin_cap = cap;
+            cfg.validate().unwrap();
+            for banks_after in [[10., 5.], [5., 10.], [7., 7.], [-3., 1e300]] {
+                for banks_before in [banks_after, [0., 0.], [1e9, -1e9]] {
+                    for done in [false, true] {
+                        let legacy: [f32; 2] = std::array::from_fn(|s| {
+                            let relative = (cfg.penalty(&after[1 - s])
+                                - cfg.penalty(&before[1 - s]))
+                                - (cfg.penalty(&after[s]) - cfg.penalty(&before[s]));
+                            let economic = if cfg.econ_bank_weight > 0. {
+                                (relative
+                                    + (cfg.bank_score(banks_after[s])
+                                        - cfg.bank_score(banks_before[s])))
+                                    as f32
+                            } else {
+                                relative as f32
+                            };
+                            let sign = f64::from(i8::from(banks_after[s] > banks_after[1 - s]))
+                                - f64::from(i8::from(banks_after[s] < banks_after[1 - s]));
+                            if done {
+                                (f64::from(economic) + cfg.terminal_scale() * sign) as f32
+                            } else {
+                                economic
+                            }
+                        });
+                        let actual = cfg
+                            .transition(&before, &after, banks_before, banks_after, done)
+                            .unwrap();
+                        assert_eq!(actual.map(f32::to_bits), legacy.map(f32::to_bits));
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn margin_episode_telescopes_to_the_final_margin_score() {
+    let cfg = margin_config();
+    let steps = 719;
+    // Equal reset banks (the engine gives both farms startingMoney). Seat 0
+    // spends first, then out-earns seat 1 and crosses the +50k clamp late; the
+    // lead also swings sign mid-game.
+    let bank = |seat: usize, t: usize| -> f64 {
+        let t = t as f64;
+        if seat == 0 {
+            3_000. - 20. * t.min(100.) + 150. * (t - 100.).max(0.)
+        } else {
+            3_000. + 40. * t - 2. * (t * 0.37).sin() * 100.
+        }
+    };
+    let zero = [[0; 32]; 2];
+    let mut sum = [0.0_f64; 2];
+    let mut budget = [0.0_f64; 2];
+    let mut saw_lead = [false; 2];
+    for t in 0..steps {
+        let b0 = [bank(0, t), bank(1, t)];
+        let b1 = [bank(0, t + 1), bank(1, t + 1)];
+        let done = t + 1 == steps;
+        let r = cfg.transition(&zero, &zero, b0, b1, done).unwrap();
+        for s in 0..2 {
+            saw_lead[s] |= b1[s] > b1[1 - s];
+            let economic =
+                cfg.margin_score(b1[s] - b1[1 - s]) - cfg.margin_score(b0[s] - b0[1 - s]);
+            budget[s] += half_ulp32(economic) + 4. * f64::EPSILON;
+            if done {
+                budget[s] += half_ulp32(f64::from(economic as f32) + 1.);
+            }
+            sum[s] += f64::from(r[s]);
+        }
+    }
+    assert_eq!(bank(0, 0), bank(1, 0));
+    assert_eq!(saw_lead, [true, true], "the lead must change hands");
+    let final_banks = [bank(0, steps), bank(1, steps)];
+    assert!(final_banks[0] - final_banks[1] > 50_000.);
+    for s in 0..2 {
+        let sign = if final_banks[s] > final_banks[1 - s] {
+            1.
+        } else {
+            -1.
+        };
+        let endpoint =
+            cfg.margin_score(final_banks[s] - final_banks[1 - s]) + cfg.terminal_scale() * sign;
+        assert!(
+            (sum[s] - endpoint).abs() <= budget[s],
+            "{s}: {sum:?} {endpoint}"
+        );
+        assert!(endpoint.abs() <= 1.);
+    }
+    // Saturated win: +1 and -1 exactly in f64 endpoints.
+    assert_eq!(cfg.margin_score(final_banks[0] - final_banks[1]), 0.5);
+}
+
+#[test]
+fn autoreset_never_spans_two_games_in_the_margin_term() {
+    let config: Config = serde_json::from_value(json!({"episodeSteps":4})).unwrap();
+    let cfg = margin_config();
+    let mut env = NativeEnv::new(1, 17000, 1, config, cfg.clone(), 1, 241).unwrap();
+    let mut out = Output::new(1);
+    out.observe(&env);
+    let mut after_terminal = None;
+    let mut first = true;
+    for transition in 1..=6 {
+        let market = if transition == 1 {
+            json!([["BUY_SEED", "WHEAT", 2]])
+        } else {
+            json!([])
+        };
+        // Only seat 0 buys seed; seat 1 always passes, so the banks diverge.
+        let (mut t, mut l) = actions(&env, json!(["PASS"]), market);
+        let (pass_t, pass_l) = actions(&env, json!(["PASS"]), json!([]));
+        let seat1 = grammar::TOKENS_PER_SEAT..2 * grammar::TOKENS_PER_SEAT;
+        t[seat1.clone()].copy_from_slice(&pass_t[seat1]);
+        l[1] = pass_l[1];
+        out.step(&mut env, &t, &l).unwrap();
+        let before: [f64; 2] = out.transition.transition_banks_before[..]
+            .try_into()
+            .unwrap();
+        let after: [f64; 2] = out.transition.transition_banks_after[..]
+            .try_into()
+            .unwrap();
+        if first {
+            // Equal reset banks: the potential starts at zero.
+            assert_eq!(before, [3_000., 3_000.]);
+            first = false;
+        }
+        let done = out.transition.dones[0];
+        let expected = cfg
+            .transition(&[[0; 32]; 2], &[[0; 32]; 2], before, after, done)
+            .unwrap();
+        assert_eq!(out.transition.rewards, expected, "transition {transition}");
+        assert_eq!(expected[0], -expected[1]);
+        if after_terminal == Some(transition) {
+            // The next game's first transition starts from equal reset banks,
+            // never the previous game's final margin.
+            assert_eq!(before, [3_000., 3_000.]);
+        }
+        if done && after_terminal.is_none() {
+            // The first game ends with seat 0 behind (the seed purchase), so a
+            // carried-over margin would pay seat 0 on the next transition.
+            assert!(
+                after[0] < after[1],
+                "the margin walk must be discriminating"
+            );
+            after_terminal = Some(transition + 1);
+        }
+    }
     assert!(after_terminal.is_some_and(|t| t <= 6));
 }
 
