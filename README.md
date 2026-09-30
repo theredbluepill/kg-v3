@@ -165,7 +165,21 @@ Training presets live in `configs/`:
   native adapter with caller-owned buffers. The presets set
   `rl.eval_replay_games: 0` until Task 7.3 adds Kaggriculture replay export
   (restoring `scaling_6m`'s 8); a positive value fails at startup before
-  creating the run directory, environment or model.
+  creating the run directory, environment or model. The GPU presets (and
+  `kaggriculture_1gpu_eager.yaml`) set `rl.checkpoint_freq: 10_000_000`, half of
+  `scaling_6m`'s 20M by the owner's decision: each interval writes a checkpoint
+  and runs the last-best evaluation (promotion at win rate >= 0.7), about every
+  610 iterations of 16,384 env steps.
+- `kaggriculture_2rank_bc_finetune.yaml` and `kaggriculture_8rank_bc_finetune.yaml`
+  ("recipe J"): the 2- and 8-rank presets with both learning rates divided by
+  10 (`muon_lr` 0.0002, `adamw_lr` 1e-5) and nothing else changed, for PPO from
+  the BC best with the BC critic head kept (`--load-model-weights-mode
+  model_only`). A 2-rank ablation from the BC best found that the full learning
+  rates collapsed the self-play economy and that LR / 10 did not; the BC critic
+  head gave a mean explained variance of 0.84 against <= 0.29 for a fresh head.
+  Banks rising above the BC level is not established, and no 8-rank run has
+  used the preset. The 8-rank preset keeps the same global workload, so the
+  per-step learning rate carries over by construction.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.
@@ -386,13 +400,15 @@ online `wandb.init` fails because the run does not exist remotely.
 For a Kaggriculture launch on a suitable training host:
 
 ```sh
-uv run python scripts/run_ppo.py configs/kaggriculture.yaml runs \
+torchrun --nproc-per-node 8 scripts/run_ppo.py \
+  configs/kaggriculture_8rank_bc_finetune.yaml runs \
   --load-model-weights BC_BEST_CHECKPOINT \
-  --load-model-weights-mode model_fresh_critic_head --wandb-mode online
+  --load-model-weights-mode model_only --wandb-mode online
 ```
 
-`model_fresh_critic_head` keeps the BC trunk and actor and starts the critic
-head fresh (see the BC warm start section below).
+`model_only` keeps the whole BC model, critic head included (see the BC warm
+start section below). `configs/kaggriculture.yaml` is the tiny local CPU
+config for the same launch without `torchrun`.
 
 The fresh Kaggriculture `last_best` launch names its teacher checkpoint
 (`--load-model-weights` or `-o rl.teacher_init=CHECKPOINT`; see the teacher
@@ -619,11 +635,15 @@ validation rows are evaluated; the lowest held-out NLL is saved as
 0), beside the PPO `config.yaml`, so PPO can start from it with
 `--load-model-weights`, which also seeds the last-best teacher that a fresh
 Kaggriculture `teacher_mode: last_best` launch requires. Start PPO from it with
-`--load-model-weights <run>/checkpoint_bc_best.pt --load-model-weights-mode
-model_fresh_critic_head`: every BC game was the imitated team's win, and the BC
-critic saturates (|value| > 1 - 2e-6 on 97% of one held-out game's seat
-values), where the MSE value loss has almost no gradient, so PPO keeps the BC
-trunk and actor and starts the critic head fresh. Training stops after
+a `*_bc_finetune.yaml` preset and `--load-model-weights
+<run>/checkpoint_bc_best.pt --load-model-weights-mode model_only`, which keeps
+the BC critic head. The handoff first chose `model_fresh_critic_head`, because
+every BC game was the imitated team's win and the BC critic saturates
+(|value| > 1 - 2e-6 on 97% of one held-out game's seat values). A 2-rank
+ablation at LR / 10 contradicted that choice: the BC head's mean explained
+variance was 0.84 at two seeds against <= 0.29 for the fresh head, at equal
+trunk movement. `model_fresh_critic_head` stays available as the diagnostic
+comparison. Training stops after
 `patience_evals` evaluations without an improvement of more than `min_delta`
 over the last such improvement, at `max_steps` or at `--max-runtime-hours`;
 `min_delta` sets only that patience count, and every strict new minimum still

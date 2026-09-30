@@ -1,0 +1,58 @@
+== M1-non-lr-key: configs/kaggriculture_8rank_bc_finetune.yaml: '  vf_coef: 2.0' -> '  vf_coef: 1.0'
+98c98
+<   vf_coef: 2.0
+---
+>   vf_coef: 1.0
+FAILED tests/kaggriculture/test_configs.py::test_finetune_preset_equals_its_ranked_config_apart_from_the_lrs[kaggriculture_8rank_bc_finetune.yaml-kaggriculture_8rank.yaml]
+1 failed, 149 passed in 1.25s
+restored byte-for-byte
+== M2-dropped-lr-change: configs/kaggriculture_2rank_bc_finetune.yaml: '  adamw_lr: 1.0e-05' -> '  adamw_lr: 0.0001'
+65c65
+<   adamw_lr: 1.0e-05
+---
+>   adamw_lr: 0.0001
+FAILED tests/kaggriculture/test_configs.py::test_finetune_preset_divides_both_learning_rates_by_ten[kaggriculture_2rank_bc_finetune.yaml-kaggriculture_2rank.yaml]
+1 failed, 149 passed in 1.15s
+restored byte-for-byte
+== M3-cadence-reverted: configs/kaggriculture_4rank.yaml: '  checkpoint_freq: 10_000_000' -> '  checkpoint_freq: 20_000_000'
+59c59
+<   checkpoint_freq: 10_000_000
+---
+>   checkpoint_freq: 20_000_000
+FAILED tests/kaggriculture/test_configs.py::test_checkpoint_interval_is_the_owners_half_of_scaling_6m[kaggriculture_4rank.yaml-4]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes
+2 failed, 148 passed in 1.17s
+restored byte-for-byte
+== M4-eager-cadence-reverted: configs/kaggriculture_1gpu_eager.yaml: '  checkpoint_freq: 10_000_000' -> '  checkpoint_freq: 20_000_000'
+57c57
+<   checkpoint_freq: 10_000_000
+---
+>   checkpoint_freq: 20_000_000
+FAILED tests/kaggriculture/test_configs.py::test_checkpoint_interval_is_the_owners_half_of_scaling_6m[kaggriculture_1gpu_eager.yaml-1]
+1 failed, 149 passed in 1.19s
+restored byte-for-byte
+
+# r1 fixes rerun (2026-09-30, after claude-verify-8rank-prep-r1.md): the command is recorded.
+# The original runs above used an unrecorded selection (149-150 tests); this rerun uses test_configs.py alone.
+command: uv run --no-sync pytest -q -p no:cacheprovider tests/kaggriculture/test_configs.py
+unmutated: 78 passed in 1.15s
+== M1-non-lr-key: configs/kaggriculture_8rank_bc_finetune.yaml: 'vf_coef: 2.0' -> 'vf_coef: 1.0'
+FAILED tests/kaggriculture/test_configs.py::test_finetune_preset_equals_its_ranked_config_apart_from_the_lrs[kaggriculture_8rank_bc_finetune.yaml-kaggriculture_8rank.yaml]
+1 failed, 77 passed in 1.10s
+restored byte-for-byte
+== M2-dropped-lr-change: configs/kaggriculture_2rank_bc_finetune.yaml: 'adamw_lr: 1.0e-05' -> 'adamw_lr: 0.0001'
+FAILED tests/kaggriculture/test_configs.py::test_finetune_preset_divides_both_learning_rates_by_ten[kaggriculture_2rank_bc_finetune.yaml-kaggriculture_2rank.yaml]
+1 failed, 77 passed in 1.09s
+restored byte-for-byte
+== M3-cadence-reverted: configs/kaggriculture_4rank.yaml: 'checkpoint_freq: 10_000_000' -> 'checkpoint_freq: 20_000_000'
+FAILED tests/kaggriculture/test_configs.py::test_checkpoint_interval_is_the_owners_half_of_scaling_6m[kaggriculture_4rank.yaml-4]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes
+2 failed, 76 passed in 1.09s
+restored byte-for-byte
+== M4-eager-cadence-reverted: configs/kaggriculture_1gpu_eager.yaml: 'checkpoint_freq: 10_000_000' -> 'checkpoint_freq: 20_000_000'
+FAILED tests/kaggriculture/test_configs.py::test_checkpoint_interval_is_the_owners_half_of_scaling_6m[kaggriculture_1gpu_eager.yaml-1]
+1 failed, 77 passed in 1.09s
+restored byte-for-byte
+== W1-empty-attempts-guard-removed: watchdog.py 'if not lines:' -> 'if False:'
+self-test exit 1: IndexError: list index out of range
+restored byte-for-byte

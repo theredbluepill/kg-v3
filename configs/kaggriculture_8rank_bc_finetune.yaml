@@ -1,3 +1,32 @@
+# Recipe J: the BC fine-tune preset for 8 ranks. Identical to
+# configs/kaggriculture_8rank.yaml except both learning rates / 10
+# (optimizer.muon_lr 0.002 -> 0.0002, optimizer.adamw_lr 1e-4 -> 1e-5; the same
+# warm-up and cosine schedule). Launch it from the BC best with the BC critic
+# head kept:
+#   --load-model-weights <checkpoint_bc_best.pt> --load-model-weights-mode model_only
+#
+# Evidence (2-rank PPO-collapse ablation from the BC best, one seed per arm
+# except D/J, pre-landing, not Codex-verified; kg/pod-ppo-prelanding ddcbf84, ops/rebuild-2026-09-29/pod-6000-2026-09-29/ablation/
+# comparison.md, attribution.md, final-report.md, ablate-D-lr10-bccritic/ and
+# ablate-J-combined/):
+# - LR / 10 prevented the collapse in every matched pair (control -> B,
+#   H -> D, I -> G: game-4 banks from about 0.1k to 62-84k); every full-LR arm
+#   but the anchored one fell below 1k by game 4.
+# - The BC critic head (model_only) raised the critic's mean explained variance
+#   to 0.84 against <= 0.29 for every fresh-head arm at LR / 10, at two env
+#   seeds (D: 0, J: 1,000,000).
+# Limits: banks rising above the BC level is NOT established (game 4 - game 1:
+# D +11.6k, J -4.8k); every arm ran 46 iterations inside the 1,000-step LR
+# warm-up, so the recipe is untested at its 2e-4 peak; self-play banks are not
+# strength (no held-out evaluation ran). This departs from Isaiah's scaling_6m
+# LRs for a case Isaiah never had (PPO from imitation), for the measured reason
+# above; see cookbook/references/bc-fine-tune-presets-divide-both-learning-rates-by-ten.md.
+# At 8 ranks the global workload (256 envs, 16 optimizer steps and 16,384 env
+# steps per iteration) equals the 2-rank config's, so the per-step learning
+# rate transfers by construction. That is reasoning, not an 8-rank
+# measurement: no 8-rank PPO run has happened (plan Task 6.3b).
+#
+# The base config's header follows.
 # Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 8 ranks
 # (8x RTX PRO 6000, the owner's likely main-run hardware; 2 ranks stay the
 # diagnostics/building pod). Isaiah's 6M multi-GPU division
@@ -38,10 +67,10 @@ model: kaggriculture
 
 optimizer:
   optimizer: muon
-  adamw_lr: 0.0001
+  adamw_lr: 1.0e-05
   adamw_eps: 1.0e-05
   weight_decay: 0.0
-  muon_lr: 0.002
+  muon_lr: 0.0002
   muon_weight_decay: 0.01
   muon_momentum: 0.95
   lr_schedule:

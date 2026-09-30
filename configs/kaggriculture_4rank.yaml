@@ -4,7 +4,8 @@
 # the world size, so the GLOBAL batch
 # (256 envs), optimizer steps/iter (16), global segments per optimizer step (16)
 # and env steps/iter (16,384) equal scaling_6m; the optimizer, LR schedule, PPO
-# coefficients, compile settings, teacher and checkpoint cadence are unchanged.
+# coefficients, compile settings and teacher are unchanged; only checkpoint_freq
+# differs (halved to 10M by the owner, below).
 # seg_per_minibatch * grad_accum stays 4 per rank; the split is set from the
 # pre-launch memory smoke (plan Task 6.1; Task 6.3 runs four ranks).
 # See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
@@ -50,7 +51,12 @@ optimizer:
 
 rl:
   horizon: 64
-  checkpoint_freq: 20_000_000
+  # Owner decision 2026-09-30 ("cut the interval into half"): 10M global env
+  # steps, half of scaling_6m's 20M. A checkpoint and the last-best evaluation
+  # (promotion at win rate >= 0.7) share this cadence: at 16,384 env steps per
+  # iteration, about every 610 iterations. See
+  # cookbook/decisions/halve-the-kaggriculture-checkpoint-interval-to-10m-steps.md.
+  checkpoint_freq: 10_000_000
   ppo_epochs: 1
   segments_per_minibatch: 4
   gradient_accumulation_steps: 1
@@ -70,7 +76,7 @@ rl:
   eval_replay_games: 0
   # Teacher (Phase 4.4): scaling_6m's last-best teacher. The teacher is the
   # last-best model, refreshed in place when the student wins >= 0.7 of the
-  # evaluation at each checkpoint_freq (20M global env steps). Its targets are
+  # evaluation at each checkpoint_freq (10M global env steps). Its targets are
   # precomputed once per update and cached for the whole rollout
   # (837,287,936 B per rank, FP32; run_ppo prints it with the headroom).
   # The teacher checkpoint is a required launch-time input, never a config
