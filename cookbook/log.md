@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-30 — Land the own-bank reward shaping (owner term A, halved recipe-J LRs) onto the integration
+
+`kg/rebuild-reward-bank` `b73b693` lands through the staging branch `kg/merge-reward-bank-c`: merge `e85cf5b` (`--no-ff`, no conflicts, tree equal to the branch's) onto the integration tip `4731c49`. It carries the [[decisions/add-absolute-own-bank-shaping-and-halve-the-recipe-j-learning-rates|term A Decision]] (owner: "A is good + decrease the LR by half?"). That is, a capped absolute own-bank score whose per-step change is paid to its own seat, off (byte-identical) in every existing config, plus the `configs/kaggriculture_{2,4,8}rank_bc_finetune_bank.yaml` presets with the term on and both recipe-J LRs halved. `just prepare` on the merge exits 0 (Rust 284 passed with 5 ignored, Python 2,831 passed with 18 skipped), and six merge-seam mutations are all killed (`ops/rebuild-2026-09-29/merge-reward-bank-c/`). The merge verification `ops/rebuild-2026-09-29/codex/claude-verify-merge-reward-bank.md` (APPROVE) is by the landing Claude agent substituting for Codex (owner-approved; not a Codex verdict). The verify r2 report it cites is now tracked beside it. Nothing trained and no pod was touched. The Decision's checks now name the landing.
+
 ## 2026-09-30 — Apply the reward-bank verify r2 edits: operation-order and sign-of-zero pins, config migration note
 
 An independent Claude verification of `kg/rebuild-reward-bank` `8aeba3d` (`ops/rebuild-2026-09-29/codex/claude-verify-reward-bank-r2.md`, APPROVE WITH EDITS; a Claude stand-in, not a Codex verdict) found only minor issues, and its edits are applied on the same branch:

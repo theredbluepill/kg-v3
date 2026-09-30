@@ -1,0 +1,8 @@
+# Merge-seam mutations on e85cf5b after just prepare; each restored from git (harness: mutations.py beside this log).
+KILLED: MM1 env.rs passes the after-step banks as banks_before (src/kaggriculture/env.rs) exit=101 :: cargo test --lib kaggriculture::env_tests -q :: ['error: test failed, to rerun pass `--lib`']
+KILLED: MM2 4-rank bank preset keeps recipe J's full muon_lr (configs/kaggriculture_4rank_bc_finetune_bank.yaml) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_configs.py :: ['Installed 1 package in 1ms']
+KILLED: MM3 8-rank bank preset keeps recipe J's full adamw_lr (configs/kaggriculture_8rank_bc_finetune_bank.yaml) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_configs.py :: ['1 failed, 42 passed in 0.19s']
+KILLED: MM4 2-rank bank preset turns the bank term off (configs/kaggriculture_2rank_bc_finetune_bank.yaml) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_configs.py :: ['1 failed, 43 passed in 0.18s']
+KILLED: MM5 4-rank recipe-J base drifts from the 4-rank workload (n_envs) (configs/kaggriculture_4rank_bc_finetune.yaml) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_configs.py :: ['1 failed, 4 passed in 0.05s']
+KILLED: MM6 adapter metric sums seats instead of averaging (python/owl/kaggriculture/env.py) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_env.py :: ['1 failed, 54 passed in 0.11s']
+survivors=0 of 6; tree restored: True
