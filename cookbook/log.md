@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-10-01 — Package the 60M checkpoint with rule 1 baked on (not submitted)
+
+Owner, verbatim: "you can package, but not need to submit 60m".
+
+- `scripts/package_checkpoint.sh ... --full-episode --final-turn-liquidation` at `de26cd68` built `artifacts/60m-r1/submission.tar.gz` (sha256 `7b72346f…8db9`, 24,725,520 bytes) from checkpoint `20b1f795…1a2` with the clean native module `3e5e4e55…`.
+- Verify passed (67 files, 210/210 tensors). The strict 720-turn Kaggle-image self-play episode qualified with 0 faults; at step 718 both seats sold the full shed and the shed ended at 0.
+- Receipts are in `ops/package-60m-2026-10-01/`. Nothing was submitted.
+
+See [[final-turn-liquidation-sells-the-shed-on-the-last-resolved-turn|the rule 1 Reference]].
+
 ## 2026-10-01 — Add a packager option that bakes rule 1 on for the 60M package
 
 Owner, verbatim: "you can package, but not need to submit 60m"; earlier, rule 1 is to be applied and "let's not apply rule2."

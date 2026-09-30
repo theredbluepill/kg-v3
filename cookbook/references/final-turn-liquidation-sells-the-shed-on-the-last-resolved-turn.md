@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Final-turn liquidation sells the shed on the last resolved turn"
-description: "Adaptation and paired check, 2026-10-01. kg/submit-08bc 4c99768a adds an optional, default-off stateless rule to the Kaggle agent (KAGGRICULTURE_FINAL_TURN_LIQUIDATION=1). On observation step episodeSteps-2 it DROPs product carriers on shed tiles and replaces the market with one SELL per product for the full shed (plus dropped units), dropping BUY/HIRE. On c50, fixed-shop engine, 48 paired games vs smaller_market_shock, cha22 and v56 (8 seeds x 2 seats): 0 errors or fallbacks, play identical before step 718 in all 48, shed emptied in all 48, margin +874 ± 157 per game (SE over 8 seeds), no game worse, 0 of 42 losses flipped. About 11 carried and 11 tile units per game stay unsold. Packages keep the rule off unless built with --final-turn-liquidation (kg/package-60m), which bakes it on in the packaged main.py only; rule 2 stays on its env switch."
+description: "Adaptation and paired check, 2026-10-01. kg/submit-08bc 4c99768a adds an optional, default-off stateless rule to the Kaggle agent (KAGGRICULTURE_FINAL_TURN_LIQUIDATION=1). On observation step episodeSteps-2 it DROPs product carriers on shed tiles and replaces the market with one SELL per product for the full shed (plus dropped units), dropping BUY/HIRE. On c50, fixed-shop engine, 48 paired games vs smaller_market_shock, cha22 and v56 (8 seeds x 2 seats): 0 errors or fallbacks, play identical before step 718 in all 48, shed emptied in all 48, margin +874 ± 157 per game (SE over 8 seeds), no game worse, 0 of 42 losses flipped. About 11 carried and 11 tile units per game stay unsold. Packages keep the rule off unless built with --final-turn-liquidation (kg/package-60m), which bakes it on in the packaged main.py only; rule 2 stays on its env switch. The 60M package (7b72346f…8db9) was built that way and emptied the shed at step 718 in a full Kaggle-image game; not submitted."
 tags: ["kaggriculture-v3", "adaptation", "kaggle-runtime", "evaluation", "finding"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-10-01"}
@@ -16,6 +16,9 @@ sources:
   - resource: "repository:tests/scripts/test_build_kaggriculture_submission.py"
   - resource: "repository:README.md"
   - resource: "user-directive:2026-10-01:you-can-package-but-not-need-to-submit-60m"
+  - resource: "repository:ops/package-60m-2026-10-01/PACKAGE.md"
+  - resource: "repository:ops/package-60m-2026-10-01/final-turn-check.md"
+  - resource: "repository:ops/package-60m-2026-10-01/inner-manifest.json"
   - resource: "repository:ops/submit-08bc-2026-09-30/final-turn-ab/ab.md"
   - resource: "repository:ops/submit-08bc-2026-09-30/final-turn-ab/ab.py"
   - resource: "repository:ops/submit-08bc-2026-09-30/final-turn-ab/ab.jsonl"
@@ -62,6 +65,7 @@ Owner decisions: rule 1 is to be applied, and "let's not apply rule2."; for the 
 - The inner manifest's `entrypoint` records `final_turn_liquidation` (`baked on` or `environment (off)`) and `block_late_investments` (`environment (off)`). The packager's verify stage fails if the packaged `main.py` wiring or the manifest disagrees with the flag, and `PACKAGE.md` prints both.
 - Checks on the `kg/package-60m` working tree: 13 builder tests, including one that bakes, compares the packaged `main.py` with the repository file and compiles it, and one that refuses 0 or 2 matches. The 141 tests of the merge-check list passed, and ruff, mypy and docs-freshness were clean.
 - Limit: the 40-turn Kaggle-image episode never reaches step 718. Only a `--full-episode` run exercises the baked rule in the image.
+- **60M package** (`ops/package-60m-2026-10-01/`). Built from `de26cd68` with `--full-episode --final-turn-liquidation`: `submission.tar.gz` sha256 `7b72346f…8db9`, 24,725,520 bytes; checkpoint `20b1f795…1a2`, 210/210 tensors equal; clean native module `3e5e4e55…` (no fixed opponents). The strict 720-turn self-play episode in the local Kaggle image qualified: 719 calls per seat, 0 exceptions, invalid actions or default passes, steady p99 about 0.6 s emulated. On observation step 718 both seats sold the full shed (CARROT 7, WHEAT 22, FERTILIZER 4, MILK 11, highest price first) and the shed ended at 0; a carried CARROT 3 off the shed tiles stayed unsold. One self-play game is a wiring check, not a strength or A/B result. Not submitted.
 
 ## Evidence
 
