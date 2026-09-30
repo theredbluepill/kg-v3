@@ -1,0 +1,29 @@
+............F.................                                           [100%]
+=================================== FAILURES ===================================
+____________ test_equal_rank_partitions_draw_different_permutations ____________
+
+    def test_equal_rank_partitions_draw_different_permutations() -> None:
+        """The rank enters the permutation seed, not only the partition length."""
+        sharding = TrainSharding(
+            seed=5, rows_per_rank=4, gradient_accumulation_steps=1, rank_rows=(24, 24)
+        )
+        for step in (0, sharding.steps_per_epoch):
+            by_rank = [
+                np.concatenate(
+                    [
+                        sharding.rows(step=step + s, micro=0, rank=rank)
+                        for s in range(sharding.steps_per_epoch)
+                    ]
+                )
+                for rank in range(2)
+            ]
+>           assert not np.array_equal(by_rank[0], by_rank[1]), step
+E           AssertionError: 0
+E           assert not True
+E            +  where True = <function array_equal at 0x107c8a7b0>(array([18, 23, 11,  3,  9,  6,  7, 17,  1, 19, 12, 22, 16,  2,  4, 20, 15,\n       10, 13,  0,  5, 21, 14,  8]), array([18, 23, 11,  3,  9,  6,  7, 17,  1, 19, 12, 22, 16,  2,  4, 20, 15,\n       10, 13,  0,  5, 21, 14,  8]))
+E            +    where <function array_equal at 0x107c8a7b0> = np.array_equal
+
+tests/kaggriculture/test_bc.py:477: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_equal_rank_partitions_draw_different_permutations
+1 failed, 29 passed in 5.18s

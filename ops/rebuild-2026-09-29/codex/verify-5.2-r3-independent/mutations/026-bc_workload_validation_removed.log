@@ -1,0 +1,27 @@
+...........................F..                                           [100%]
+=================================== FAILURES ===================================
+___________ test_two_rank_bc_config_targets_the_two_rank_ppo_config ____________
+
+    def test_two_rank_bc_config_targets_the_two_rank_ppo_config() -> None:
+        bc_config, ppo_config = load_bc_configs(
+            _REPO / "configs" / "bc" / "kaggriculture_2rank.yaml"
+        )
+        assert ppo_config == FullConfig.from_file(
+            _REPO / "configs" / "kaggriculture_2rank.yaml"
+        )
+        assert ppo_config.rl.dtype == "bfloat16"
+        assert ppo_config.rl.model_compile == "trunk"
+        assert bc_config.optimizer == ppo_config.optimizer.model_copy(
+            update={"lr_schedule": bc_config.optimizer.lr_schedule}
+        )
+        reports = bc_module.check_bc_workload(bc_config, ppo_config)
+>       assert [r.name for r in reports] == ["bc_microbatch", "bc_validation"]
+E       AssertionError: assert ['bc_microbatch'] == ['bc_microbat...c_validation']
+E         
+E         Right contains one more item: 'bc_validation'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:913: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_two_rank_bc_config_targets_the_two_rank_ppo_config
+1 failed, 29 passed in 6.03s

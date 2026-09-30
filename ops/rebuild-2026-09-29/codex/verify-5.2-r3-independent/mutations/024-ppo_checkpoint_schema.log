@@ -1,0 +1,25 @@
+..........................F...                                           [100%]
+=================================== FAILURES ===================================
+__________________ test_best_checkpoint_loads_through_run_ppo __________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-248/test_best_checkpoint_loads_thr0')
+
+    def test_best_checkpoint_loads_through_run_ppo(tmp_path: Path) -> None:
+        data = _dataset_root(tmp_path)
+        run_dir = tmp_path / "run"
+        _run(run_dir, data, _bc_config(max_steps=2, eval_interval_steps=1))
+        best_path = run_dir / CHECKPOINT_BC_BEST
+        checkpoint = torch.load(best_path, weights_only=False)
+        metadata = run_ppo._checkpoint_metadata(checkpoint, path=best_path)
+>       assert metadata.env_steps == 0
+E       assert 12 == 0
+E        +  where 12 = PPOCheckpointMetadata(env_steps=12, player_step_total=0, total_games_played=0, total_active_entities=0, wandb_run_id=None).env_steps
+
+tests/kaggriculture/test_bc.py:870: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.010419208963867277, 'time/elapsed_seconds': 0.043171375000383705}
+{'bc/step': 1.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.261711597442627, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.261711597442627, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.011380749987438321, 'time/elapsed_seconds': 0.07392137497663498, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 259.0009468795453}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.01137375005055219, 'time/elapsed_seconds': 0.11137837497517467, 'bc/train_nll': 3.9168338775634766, 'bc/train_value_ce': 0.7537779808044434, 'bc/grad_norm': 2.7767531871795654, 'perf/learner_seat_rows_per_second': 250.65078417599494}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_best_checkpoint_loads_through_run_ppo
+1 failed, 29 passed in 5.54s

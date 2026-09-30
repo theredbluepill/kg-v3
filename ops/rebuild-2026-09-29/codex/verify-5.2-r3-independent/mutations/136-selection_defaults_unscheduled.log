@@ -1,0 +1,59 @@
+.............FFF..............                                           [100%]
+=================================== FAILURES ===================================
+____ test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience _____
+
+    def test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience() -> None:
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+        assert selection.observe(3.0, step=0)
+        assert selection.observe(2.0, step=2)
+        # A new minimum inside min_delta is still the best checkpoint; it only fails
+        # to reset the patience count.
+        assert selection.observe(1.97, step=4)
+        assert (selection.best_nll, selection.best_step) == (1.97, 4)
+>       assert selection.evals_since_improvement == 1
+E       assert 0 == 1
+E        +  where 0 = HeldOutSelection(patience_evals=2, min_delta=0.05, best_nll=1.97, best_step=4, improvement_nll=inf, evals_since_improvement=0, last_nll=1.97, last_step=4).evals_since_improvement
+
+tests/kaggriculture/test_bc.py:491: AssertionError
+_______ test_an_unscheduled_evaluation_selects_but_leaves_patience_alone _______
+
+    def test_an_unscheduled_evaluation_selects_but_leaves_patience_alone() -> None:
+        """An off-cadence evaluation may keep a lower checkpoint but not add patience.
+    
+        A budget or runtime stop evaluates between scheduled steps; a restart must
+        keep the scheduled cadence.
+        """
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.0)
+        assert selection.observe(3.0, step=0)
+        assert not selection.observe(4.0, step=1, scheduled=False)
+        assert selection.evals_since_improvement == 0
+        assert selection.observe(2.5, step=3, scheduled=False)
+        assert (selection.best_nll, selection.best_step) == (2.5, 3)
+>       assert (selection.improvement_nll, selection.evals_since_improvement) == (3.0, 0)
+E       assert (inf, 0) == (3.0, 0)
+E         
+E         At index 0 diff: inf != 3.0
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:514: AssertionError
+___________ test_held_out_patience_ignores_a_trickle_below_min_delta ___________
+
+    def test_held_out_patience_ignores_a_trickle_below_min_delta() -> None:
+        """Sub-min_delta gains keep the best current but do not slide the reference."""
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+        assert selection.observe(2.0, step=0)
+        assert selection.observe(1.97, step=1)
+        assert selection.observe(1.94, step=2)  # 0.06 below 2.0, only 0.03 below 1.97
+        assert selection.evals_since_improvement == 0
+        assert selection.observe(1.91, step=3)
+        assert selection.observe(1.90, step=4)
+>       assert selection.should_stop
+E       assert False
+E        +  where False = HeldOutSelection(patience_evals=2, min_delta=0.05, best_nll=1.9, best_step=4, improvement_nll=inf, evals_since_improvement=0, last_nll=1.9, last_step=4).should_stop
+
+tests/kaggriculture/test_bc.py:532: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience
+FAILED tests/kaggriculture/test_bc.py::test_an_unscheduled_evaluation_selects_but_leaves_patience_alone
+FAILED tests/kaggriculture/test_bc.py::test_held_out_patience_ignores_a_trickle_below_min_delta
+3 failed, 27 passed in 13.42s

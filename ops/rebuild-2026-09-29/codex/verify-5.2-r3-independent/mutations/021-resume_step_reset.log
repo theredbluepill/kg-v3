@@ -1,0 +1,357 @@
+..................FFF..F....F.                                           [100%]
+=================================== FAILURES ===================================
+_____________ test_restart_from_state_matches_an_uninterrupted_run _____________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-246/test_restart_from_state_matche0')
+
+    def test_restart_from_state_matches_an_uninterrupted_run(tmp_path: Path) -> None:
+        data = _dataset_root(tmp_path)
+        straight, straight_model = _run(
+            tmp_path / "straight", data, _bc_config(max_steps=4)
+        )
+        assert straight.stop_reason == "max_steps"
+        interrupted = tmp_path / "interrupted"
+        first, _ = _run(interrupted, data, _bc_config(max_steps=2))
+        assert first.steps == 2
+>       resumed, resumed_model = _run(
+            interrupted, data, _bc_config(max_steps=4), resume_from=interrupted / BC_STATE
+        )
+
+tests/kaggriculture/test_bc.py:624: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:173: in _run
+    result = train_bc(
+python/owl/train/bc.py:863: in train_bc
+    evaluate_and_record(interval, scheduled=True)
+python/owl/train/bc.py:756: in evaluate_and_record
+    improved = selection.observe(metrics.turn_nll, step=step, scheduled=scheduled)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = HeldOutSelection(patience_evals=3, min_delta=0.0, best_nll=4.253199974695842, best_step=2, improvement_nll=4.253199974695842, evals_since_improvement=0, last_nll=4.253199974695842, last_step=2)
+nll = 4.234729766845703
+
+    def observe(self, nll: float, *, step: int, scheduled: bool = True) -> bool:
+        """Record one evaluation; ``True`` when it is the new lowest NLL."""
+        if not math.isfinite(nll):
+            raise ValueError(f"held-out NLL must be finite, got {nll} at step {step}")
+        if step <= self.last_step:
+>           raise ValueError(
+                f"evaluations must advance: step {step} after {self.last_step}"
+            )
+E           ValueError: evaluations must advance: step 2 after 2
+
+python/owl/train/bc.py:422: ValueError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.010524582990910858, 'time/elapsed_seconds': 0.042523916985373944}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.011597834003623575, 'time/elapsed_seconds': 0.09061779198236763, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 256.07545405668793}
+{'bc/step': 4.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.24483847618103, 'bc/validation_frame_nll': 4.112016950334821, 'bc/validation_value_ce': 0.7213282585144043, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.24483847618103, 'bc/best_step': 4.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.012639416963793337, 'time/elapsed_seconds': 0.15123762498842552, 'bc/train_nll': 4.089404463768005, 'bc/train_value_ce': 0.7476610541343689, 'bc/grad_norm': 1.9763959646224976, 'perf/learner_seat_rows_per_second': 243.85690904873027}
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.011952083033975214, 'time/elapsed_seconds': 0.05659662501420826}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.010724208026658744, 'time/elapsed_seconds': 0.11181479203514755, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 201.07512350366156}
+_ test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls0-0] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-246/test_an_off_cadence_stop_resta0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e2d23c0>
+interrupted_nlls = [3.0, 4.0, 4.0, 4.0], best_step = 0
+
+    @pytest.mark.parametrize(
+        ("interrupted_nlls", "best_step"),
+        [
+            # The verifier's probe: the off-cadence NLL is no better.
+            ([3.0, 4.0, 4.0, 4.0], 0),
+            # A lower off-cadence NLL is kept, but patience still runs on cadence.
+            ([3.0, 2.5, 4.0, 4.0], 1),
+        ],
+    )
+    def test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        interrupted_nlls: list[float],
+        best_step: int,
+    ) -> None:
+        """A budget stop between evaluations must not shorten the resumed patience."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(eval_interval_steps=2, patience_evals=2, max_steps=8)
+        # Uninterrupted: evaluations at steps 0, 2, 4; then the interrupted run's.
+        nlls = iter([3.0, 4.0, 4.0, *interrupted_nlls])
+        _script_validation(monkeypatch, nlls, snapshots={})
+        straight, straight_model = _run(tmp_path / "straight", data, config)
+        assert (straight.stop_reason, straight.steps) == ("no_held_out_improvement", 4)
+    
+        interrupted = tmp_path / "interrupted"
+        first, _ = _run(interrupted, data, config.model_copy(update={"max_steps": 1}))
+        assert (first.stop_reason, first.steps) == ("max_steps", 1)
+        resumed, resumed_model = _run(
+            interrupted, data, config, resume_from=interrupted / BC_STATE
+        )
+        assert next(nlls, None) is None
+        assert (resumed.stop_reason, resumed.steps) == ("no_held_out_improvement", 4)
+        assert resumed.best_step == best_step
+        assert resumed.best_validation_nll <= straight.best_validation_nll
+        for (name, a), (_, b) in zip(
+            straight_model.state_dict().items(),
+            resumed_model.state_dict().items(),
+            strict=True,
+        ):
+>           assert torch.equal(a, b), name
+E           AssertionError: player_tokens
+E           assert False
+E            +  where False = <built-in method equal of type object at 0x109a6b778>(tensor([[-0.2068,  0.9573,  0.7350, -0.4189,  0.2872,  0.1709,  0.2205,  0.6372,\n          0.2298,  0.1599,  0.7897,  ... -0.0130,  0.1328, -0.1856,  0.1794,\n         -0.4718, -0.1848,  0.3501, -0.1615, -0.3968,  0.1550,  0.0760,  0.4254]]), tensor([[-0.2068,  0.9613,  0.7331, -0.4204,  0.2829,  0.1722,  0.2180,  0.6398,\n          0.2341,  0.1586,  0.7921,  ... -0.0138,  0.1372, -0.1837,  0.1766,\n         -0.4659, -0.1881,  0.3497, -0.1620, -0.3980,  0.1560,  0.0740,  0.4238]]))
+E            +    where <built-in method equal of type object at 0x109a6b778> = torch.equal
+
+tests/kaggriculture/test_bc.py:678: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.011402125004678965, 'time/elapsed_seconds': 0.04390883300220594}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.01199108303990215, 'time/elapsed_seconds': 0.09001200000056997, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 266.5252569897828}
+{'bc/step': 4.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.112016950334821, 'bc/validation_value_ce': 0.7213282585144043, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.011943916964810342, 'time/elapsed_seconds': 0.13991016702493653, 'bc/train_nll': 4.089404463768005, 'bc/train_value_ce': 0.7476610541343689, 'bc/grad_norm': 1.9763959646224976, 'perf/learner_seat_rows_per_second': 250.76044673758932}
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.011456249980255961, 'time/elapsed_seconds': 0.04338304203702137}
+{'bc/step': 1.0, 'bc/scheduled_evaluation': 0.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.011437416018452495, 'time/elapsed_seconds': 0.07344287500018254, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 266.87498894306987}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.120608329772949, 'bc/validation_value_ce': 0.8797058661778768, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.01185687497491017, 'time/elapsed_seconds': 0.04179350001504645, 'bc/train_nll': 4.031498908996582, 'bc/train_value_ce': 0.6675104200839996, 'bc/grad_norm': 2.3244348764419556, 'perf/learner_seat_rows_per_second': 269.53195304650166}
+{'bc/step': 4.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.119256973266602, 'bc/validation_value_ce': 0.7725578943888346, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.010189666005317122, 'time/elapsed_seconds': 0.08805825002491474, 'bc/train_nll': 4.086463451385498, 'bc/train_value_ce': 0.8486966490745544, 'bc/grad_norm': 2.8381625413894653, 'perf/learner_seat_rows_per_second': 263.60409694290166}
+_ test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls1-1] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-246/test_an_off_cadence_stop_resta1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e9ac230>
+interrupted_nlls = [3.0, 2.5, 4.0, 4.0], best_step = 1
+
+    @pytest.mark.parametrize(
+        ("interrupted_nlls", "best_step"),
+        [
+            # The verifier's probe: the off-cadence NLL is no better.
+            ([3.0, 4.0, 4.0, 4.0], 0),
+            # A lower off-cadence NLL is kept, but patience still runs on cadence.
+            ([3.0, 2.5, 4.0, 4.0], 1),
+        ],
+    )
+    def test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        interrupted_nlls: list[float],
+        best_step: int,
+    ) -> None:
+        """A budget stop between evaluations must not shorten the resumed patience."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(eval_interval_steps=2, patience_evals=2, max_steps=8)
+        # Uninterrupted: evaluations at steps 0, 2, 4; then the interrupted run's.
+        nlls = iter([3.0, 4.0, 4.0, *interrupted_nlls])
+        _script_validation(monkeypatch, nlls, snapshots={})
+        straight, straight_model = _run(tmp_path / "straight", data, config)
+        assert (straight.stop_reason, straight.steps) == ("no_held_out_improvement", 4)
+    
+        interrupted = tmp_path / "interrupted"
+        first, _ = _run(interrupted, data, config.model_copy(update={"max_steps": 1}))
+        assert (first.stop_reason, first.steps) == ("max_steps", 1)
+        resumed, resumed_model = _run(
+            interrupted, data, config, resume_from=interrupted / BC_STATE
+        )
+        assert next(nlls, None) is None
+        assert (resumed.stop_reason, resumed.steps) == ("no_held_out_improvement", 4)
+        assert resumed.best_step == best_step
+        assert resumed.best_validation_nll <= straight.best_validation_nll
+        for (name, a), (_, b) in zip(
+            straight_model.state_dict().items(),
+            resumed_model.state_dict().items(),
+            strict=True,
+        ):
+>           assert torch.equal(a, b), name
+E           AssertionError: player_tokens
+E           assert False
+E            +  where False = <built-in method equal of type object at 0x109a6b778>(tensor([[-0.2068,  0.9573,  0.7350, -0.4189,  0.2872,  0.1709,  0.2205,  0.6372,\n          0.2298,  0.1599,  0.7897,  ... -0.0130,  0.1328, -0.1856,  0.1794,\n         -0.4718, -0.1848,  0.3501, -0.1615, -0.3968,  0.1550,  0.0760,  0.4254]]), tensor([[-0.2068,  0.9613,  0.7331, -0.4204,  0.2829,  0.1722,  0.2180,  0.6398,\n          0.2341,  0.1586,  0.7921,  ... -0.0138,  0.1372, -0.1837,  0.1766,\n         -0.4659, -0.1881,  0.3497, -0.1620, -0.3980,  0.1560,  0.0740,  0.4238]]))
+E            +    where <built-in method equal of type object at 0x109a6b778> = torch.equal
+
+tests/kaggriculture/test_bc.py:678: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.011287458008155227, 'time/elapsed_seconds': 0.04239291697740555}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.012409041984938085, 'time/elapsed_seconds': 0.08747866697376594, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 276.6167942459308}
+{'bc/step': 4.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.112016950334821, 'bc/validation_value_ce': 0.7213282585144043, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.010743457998614758, 'time/elapsed_seconds': 0.1335332919843495, 'bc/train_nll': 4.089404463768005, 'bc/train_value_ce': 0.7476610541343689, 'bc/grad_norm': 1.9763959646224976, 'perf/learner_seat_rows_per_second': 268.31380922674185}
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.011772083002142608, 'time/elapsed_seconds': 0.04504474997520447}
+{'bc/step': 1.0, 'bc/scheduled_evaluation': 0.0, 'bc/validation_nll': 2.5, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.5, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.010595166007988155, 'time/elapsed_seconds': 0.07570208300603554, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 248.60676134358565}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.120608329772949, 'bc/validation_value_ce': 0.8797058661778768, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.5, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.011760124994907528, 'time/elapsed_seconds': 0.04272195900557563, 'bc/train_nll': 4.031498908996582, 'bc/train_value_ce': 0.6675104200839996, 'bc/grad_norm': 2.3244348764419556, 'perf/learner_seat_rows_per_second': 260.85290726973324}
+{'bc/step': 4.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.119256973266602, 'bc/validation_value_ce': 0.7725578943888346, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.5, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.012470833025872707, 'time/elapsed_seconds': 0.09148950001690537, 'bc/train_nll': 4.086463451385498, 'bc/train_value_ce': 0.8486966490745544, 'bc/grad_norm': 2.8381625413894653, 'perf/learner_seat_rows_per_second': 268.3348147217363}
+_________ test_script_resume_records_a_new_attempt_with_its_own_source _________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-246/test_script_resume_records_a_n0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e2e7b90>
+
+    def test_script_resume_records_a_new_attempt_with_its_own_source(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2, eval_interval_steps=1).to_file(config_path)
+        out = tmp_path / "runs"
+        _script_argv(
+            monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+        )
+        train_bc_script.main()
+        (run_dir,) = out.iterdir()
+        saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+        saved.model_copy(update={"max_steps": 4}).to_file(run_dir / "bc_config.yaml")
+        parent_sha = bc_module.file_sha256(run_dir / BC_STATE)
+        monkeypatch.setattr(train_bc_script, "_git_head", lambda: "b")
+        _script_argv(monkeypatch, run_dir, data)
+>       train_bc_script.main()
+
+tests/kaggriculture/test_bc.py:778: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/train_bc.py:189: in main
+    result = train_bc(
+python/owl/train/bc.py:863: in train_bc
+    evaluate_and_record(interval, scheduled=True)
+python/owl/train/bc.py:756: in evaluate_and_record
+    improved = selection.observe(metrics.turn_nll, step=step, scheduled=scheduled)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = HeldOutSelection(patience_evals=3, min_delta=0.0, best_nll=4.253199974695842, best_step=2, improvement_nll=4.253199974695842, evals_since_improvement=0, last_nll=4.253199974695842, last_step=2)
+nll = 4.244804700215657
+
+    def observe(self, nll: float, *, step: int, scheduled: bool = True) -> bool:
+        """Record one evaluation; ``True`` when it is the new lowest NLL."""
+        if not math.isfinite(nll):
+            raise ValueError(f"held-out NLL must be finite, got {nll} at step {step}")
+        if step <= self.last_step:
+>           raise ValueError(
+                f"evaluations must advance: step {step} after {self.last_step}"
+            )
+E           ValueError: evaluations must advance: step 1 after 2
+
+python/owl/train/bc.py:422: ValueError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.010997125005815178, 'time/elapsed_seconds': 0.04748945799656212}
+{'bc/step': 1.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.261711597442627, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.261711597442627, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.01115725003182888, 'time/elapsed_seconds': 0.07678249996388331, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 280.6976575116039}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.012446124979760498, 'time/elapsed_seconds': 0.11503837496275082, 'bc/train_nll': 3.9168338775634766, 'bc/train_value_ce': 0.7537779808044434, 'bc/grad_norm': 2.7767531871795654, 'perf/learner_seat_rows_per_second': 267.34988804560385}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-246/test_script_resume_records_a_n0/runs/bc-20260929-202723", "stop_reason": "max_steps", "steps": 2, "best_step": 2, "best_validation_nll": 4.253199974695842, "final_validation_nll": 4.253199974695842}
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+----------------------------- Captured stderr call -----------------------------
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/private/tmp/kg-bc-r3-w2-qvj4bx1_/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/private/tmp/kg-bc-r3-w2-qvj4bx1_/scripts/train_bc.py", line 189, in main
+    result = train_bc(
+             ^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w2-qvj4bx1_/python/owl/train/bc.py", line 863, in train_bc
+    evaluate_and_record(interval, scheduled=True)
+  File "/private/tmp/kg-bc-r3-w2-qvj4bx1_/python/owl/train/bc.py", line 756, in evaluate_and_record
+    improved = selection.observe(metrics.turn_nll, step=step, scheduled=scheduled)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w2-qvj4bx1_/python/owl/train/bc.py", line 422, in observe
+    raise ValueError(
+ValueError: evaluations must advance: step 1 after 2
+__________________ test_script_runs_fresh_and_resumes_on_cpu ___________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-246/test_script_runs_fresh_and_res0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e2c4bc0>
+
+    def test_script_runs_fresh_and_resumes_on_cpu(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2).to_file(config_path)
+        out = tmp_path / "runs"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "train_bc.py",
+                str(config_path),
+                "--data",
+                str(data),
+                "--output-dir",
+                str(out),
+                "--log-mode",
+                "debug",
+                "--source-commit",
+                "test-commit",
+            ],
+        )
+        train_bc_script.main()
+        (run_dir,) = out.iterdir()
+        (attempt,) = (run_dir / train_bc_script.ATTEMPTS).read_text().splitlines()
+        assert json.loads(attempt)["source_commit"] == "test-commit"
+        assert load_bc_state(run_dir / BC_STATE).step == 2
+        saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+        assert saved.ppo_config == Path(PPO_CONFIG_NAME)
+        # Raise the step budget in place, then resume from the run directory.
+        saved.model_copy(update={"max_steps": 4}).to_file(run_dir / "bc_config.yaml")
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "train_bc.py",
+                str(run_dir),
+                "--data",
+                str(data),
+                "--log-mode",
+                "debug",
+                "--source-commit",
+                "test-commit",
+            ],
+        )
+>       train_bc_script.main()
+
+tests/kaggriculture/test_bc.py:963: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/train_bc.py:189: in main
+    result = train_bc(
+python/owl/train/bc.py:863: in train_bc
+    evaluate_and_record(interval, scheduled=True)
+python/owl/train/bc.py:756: in evaluate_and_record
+    improved = selection.observe(metrics.turn_nll, step=step, scheduled=scheduled)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = HeldOutSelection(patience_evals=3, min_delta=0.0, best_nll=4.253199974695842, best_step=2, improvement_nll=4.253199974695842, evals_since_improvement=0, last_nll=4.253199974695842, last_step=2)
+nll = 4.234729766845703
+
+    def observe(self, nll: float, *, step: int, scheduled: bool = True) -> bool:
+        """Record one evaluation; ``True`` when it is the new lowest NLL."""
+        if not math.isfinite(nll):
+            raise ValueError(f"held-out NLL must be finite, got {nll} at step {step}")
+        if step <= self.last_step:
+>           raise ValueError(
+                f"evaluations must advance: step {step} after {self.last_step}"
+            )
+E           ValueError: evaluations must advance: step 2 after 2
+
+python/owl/train/bc.py:422: ValueError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.011959916970226914, 'time/elapsed_seconds': 0.04546429100446403}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.01144641696009785, 'time/elapsed_seconds': 0.09343995800008997, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 243.33335789347626}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-246/test_script_runs_fresh_and_res0/runs/bc-20260929-202724", "stop_reason": "max_steps", "steps": 2, "best_step": 2, "best_validation_nll": 4.253199974695842, "final_validation_nll": 4.253199974695842}
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+----------------------------- Captured stderr call -----------------------------
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/private/tmp/kg-bc-r3-w2-qvj4bx1_/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/private/tmp/kg-bc-r3-w2-qvj4bx1_/scripts/train_bc.py", line 189, in main
+    result = train_bc(
+             ^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w2-qvj4bx1_/python/owl/train/bc.py", line 863, in train_bc
+    evaluate_and_record(interval, scheduled=True)
+  File "/private/tmp/kg-bc-r3-w2-qvj4bx1_/python/owl/train/bc.py", line 756, in evaluate_and_record
+    improved = selection.observe(metrics.turn_nll, step=step, scheduled=scheduled)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w2-qvj4bx1_/python/owl/train/bc.py", line 422, in observe
+    raise ValueError(
+ValueError: evaluations must advance: step 2 after 2
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_restart_from_state_matches_an_uninterrupted_run
+FAILED tests/kaggriculture/test_bc.py::test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls0-0]
+FAILED tests/kaggriculture/test_bc.py::test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls1-1]
+FAILED tests/kaggriculture/test_bc.py::test_script_resume_records_a_new_attempt_with_its_own_source
+FAILED tests/kaggriculture/test_bc.py::test_script_runs_fresh_and_resumes_on_cpu
+5 failed, 25 passed in 5.55s

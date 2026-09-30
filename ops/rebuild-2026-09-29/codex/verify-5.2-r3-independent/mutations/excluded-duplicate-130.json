@@ -1,0 +1,25 @@
+{
+  "reason": "Exact duplicate of original case058; excluded from unique inventory and replaced before final summary",
+  "case": {
+    "name": "attempt_type_index_guard_removed",
+    "file": "scripts/train_bc.py",
+    "old": "if not isinstance(record, dict) or record.get(\"attempt\") != index:",
+    "new": "if False:",
+    "test": "",
+    "index": 130,
+    "category": "new_r3"
+  },
+  "result": {
+    "index": 130,
+    "name": "attempt_type_index_guard_removed",
+    "status": "KILLED",
+    "exit_code": 1,
+    "seconds": 16.94,
+    "summary": "\n/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/pathlib.py:1013: FileNotFoundError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_bc.py::test_attempt_records_reject_malformed_lineage\n1 failed, 29 passed in 13.85s",
+    "failed_tests": [
+      "tests/kaggriculture/test_bc.py::test_attempt_records_reject_malformed_lineage"
+    ],
+    "category": "new_r3",
+    "restored_sha256": "3bfce9baf204500c394c142c116330d2205b28eead968214aae9c055ecaf8bd4"
+  }
+}
