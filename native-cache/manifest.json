@@ -1,0 +1,67 @@
+{
+  "format": "kaggriculture-native-cache-v1",
+  "about": "The Linux x86-64 owl.rs module scripts/package_checkpoint.sh reuses. The .so itself is gitignored under native-cache/; this file is its custody record. Rebuild it (and replace this record) whenever a native_source_paths entry differs from source_commit.",
+  "module": {
+    "cache_path": "native-cache/2bbdd2f0c69efd9606e2a9f6b3a60698a15f039a4bf5337e69ca274139c078e4.abi3.so",
+    "sha256": "2bbdd2f0c69efd9606e2a9f6b3a60698a15f039a4bf5337e69ca274139c078e4",
+    "bytes": 14309312,
+    "source_commit": "9a743fad991593fdd372115a48e3b372acf45b8b",
+    "source_tree": "aaf9d4d29ea83343e0f72beeefeb2a8c6cca1947",
+    "glibc_symbol_max": "2.35",
+    "fixed_opponents_compiled_in": true,
+    "fixed_opponents_evidence": "built with default cargo features (receipt command has no --no-default-features); the module's strings name opponents_rs/src/native_agents/e776.rs, EcoBot and the cha22 registry key",
+    "seed_from": "artifacts/08bc/rs.abi3.so"
+  },
+  "native_source_paths": [
+    "src",
+    "engine_rs",
+    "opponents_rs",
+    "Cargo.toml",
+    "Cargo.lock",
+    "build.rs",
+    "rust-toolchain.toml",
+    ".cargo"
+  ],
+  "native_pyproject_table": "tool.maturin",
+  "receipt": {
+    "built_on": "RunPod pod abl4mvr5w1mmn4, /root/sub08bc (CPU only, nice -n 19, CUDA_VISIBLE_DEVICES empty; live run pcy5knet and /root/kg-v3-anchor untouched)",
+    "built_utc": "2026-09-30T14:56:49Z..2026-09-30T14:57:56Z",
+    "source_commit": "9a743fad991593fdd372115a48e3b372acf45b8b",
+    "source_tree": "aaf9d4d29ea83343e0f72beeefeb2a8c6cca1947",
+    "source_tree_clean": true,
+    "source_transport": "git bundle of kg/submit-08bc (sha256 c39321d8dba394741985a0eb12284e08eb4f70c86ce473340bfa5afe94479b2e), cloned on the pod",
+    "script": "artifacts/08bc/pod-native-build.sh (pod copy /root/sub08bc/build.sh; CARGO_BUILD_JOBS=8; RUSTFLAGS unset; no .cargo target-cpu config)",
+    "toolchain": {
+      "rustc": "1.97.0-nightly (e9e32aca5 2026-04-17)",
+      "cargo": "1.97.0-nightly (eb94155a9 2026-04-09)",
+      "maturin": "1.15.0",
+      "python": "CPython 3.11.13 (fresh uv venv /root/sub08bc/venv)"
+    },
+    "command": "maturin build --release --compatibility linux -i /root/sub08bc/venv/bin/python",
+    "host_glibc": "2.39 (Ubuntu 24.04)",
+    "wheel": {
+      "name": "owl-0.1.0-cp311-abi3-linux_x86_64.whl",
+      "sha256": "514c91f25c673909a64619e3abeeaa9cdf07283606fbfad55daea896a26200bf"
+    },
+    "module": {
+      "path": "owl/rs.abi3.so",
+      "bytes": 14309312,
+      "sha256": "2bbdd2f0c69efd9606e2a9f6b3a60698a15f039a4bf5337e69ca274139c078e4",
+      "elf": "ELF64 LSB x86-64 shared object, not stripped",
+      "needed": [
+        "libgcc_s.so.1",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "glibc_symbol_max": "2.35",
+      "glibc_2.35_symbols": [
+        "hypotf"
+      ]
+    },
+    "isa_check": "objdump -d: 0 zmm / 0 AVX-512 mask-register instructions; ymm (AVX2) only in chacha20 avx2 backend and memchr find_avx2 paths, which those crates select by runtime CPU detection",
+    "pod_smoke": "venv python 3.11.13 imported owl.rs from the wheel and assert_release_build() passed",
+    "runtime_glibc": "2.35 (ops/rebuild-2026-09-29/7.4/kaggle-runtime-receipt.json)",
+    "limits": "Not built inside Kaggle's image (no Docker on the pod). Module is 14.3 MB versus the BC build 3.5 MB; this source also links the engine and opponents crates (size cause not investigated); not stripped."
+  }
+}
