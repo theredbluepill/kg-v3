@@ -1,5 +1,14 @@
 # Change log
 
+## 2026-09-30 — Correct the A/A2 run ids, the h3lpxy6q sixths and two board wordings
+
+A review of `68202f10` (Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. REQUEST CHANGES) found two factual errors and two wording errors. The earlier entry below stays as written.
+- **Runs A and A2 were swapped.** W&B `04cy2m6s` is run A (group `A-bank-lr2-4rank-20260930`, own-bank term saturating at a 25k bank); A2 is `bqtke7iq` (group `A2-bank-w025-lr2-4rank-20260930`), per `ops/earn-money-2026-09-30/evidence-runs.md`. The [[references/a-long-credit-window-turned-bc-start-self-play-from-sliding-to-improving|credit-window Reference]] now lists both: A 74.5k -> 60.9k over 6 windows; A2 71.8k, peak 79.1k at iteration 57, 50.9k at iteration 248 over 22 windows. Its attribution section now cites A2, and names A as a weak test. The [[decisions/the-kaggriculture-v3-board|board]] tombstone cites `bqtke7iq`; its 30-61k from 64-82k range still holds. The [[references/earn-money-pod-runs-use-run-local-launch-copy-off-and-switch-scripts|run inventory]] now says the committed wrapper and watchdog copies are run A's (`A-bank-lr2-4rank/`).
+- **h3lpxy6q sixths recomputed.** Means of `train/own_bank_mean` over six equal `_step` ranges of its 357 windows are 78.1k, 81.2k, 87.4k, 94.7k, 89.8k, 89.2k (were 78.5k, 82.6k, 91.2k, 92.8k, 88.5k, 86.2k). The "peaked in its middle third" reading still holds.
+- **Board wording.** Option 1 is pulled for its lineage's two promotions (fc6b from the 256 run, f610 from the 720 run), not one line's. Option 2: h3lpxy6q is the only BC-start run that improved and beat BC at evaluation; other BC-start runs rose early, then slid.
+- **Checks.** W&B `spoon/kg-v3` read with `run.history(keys=["train/own_bank_mean"])` for `04cy2m6s`, `bqtke7iq` and `h3lpxy6q` (groups from the run objects; iteration = `_step` / 16,384). Board 9,381 UTF-16 code units after the edit. Cookbook lint, pre-commit and docs-fresh on this commit.
+- **Not changed.** The `J2-resume-r0208` receipts still call the shared wrapper "A2's"; they are frozen working evidence.
+
 ## 2026-09-30 — Open the v3 board and record the credit-window finding and the earn-money run inventory
 
 Owner, verbatim: "let's switch back to self play no matter what, and think about how do we get the agent to earn moneny for real?"; "OK go ahead." (reward); "ok go with 720 and relaunch the run"; "let eval complete, I pretty much sure it will promote, but let's run 2e-3 /1e-4 on the new run"; "Sure please do" (1e-4 relaunch).

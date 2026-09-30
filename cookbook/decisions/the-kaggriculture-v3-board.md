@@ -25,6 +25,8 @@ sources:
   - resource: "repository:configs/kaggriculture_4rank_bank_critic_credit.yaml"
   - resource: "wandb-run:spoon/kg-v3/pcy5knet"
   - resource: "wandb-run:spoon/kg-v3/pz3xhg9e"
+  - resource: "wandb-run:spoon/kg-v3/bqtke7iq"
+  - resource: "repository:ops/earn-money-2026-09-30/evidence-runs.md"
 ---
 
 # The Kaggriculture v3 board
@@ -40,7 +42,7 @@ The owner's words (verbatim):
 
 The owner chose those actions. The ranking and the loss conditions below are the agent's reading of the evidence. They are not owner adoption.
 
-Currently pulled: **option 1**, because it is the only line with two successive promotions and a paired anchor gain at each. `pcy5knet` is running.
+Currently pulled: **option 1**, because its lineage has two successive promotions (fc6b from the 256 run, then f610 from the 720 run) with a paired anchor gain at each. `pcy5knet` is running.
 
 **Common yardstick.** Local Kaggle-harness games on seeds 93001-93008, both seats, 16 games per anchor (`ops/earn-money-2026-09-30/anchor-games/`). The margin is own bank minus anchor bank:
 
@@ -63,7 +65,7 @@ No policy has won a game against cha22, smaller_market_shock or v43. f610 did no
 - **Stop condition.** The collapse signature (approx_kl, clip fraction, entropy and teacher KL rising together while the bank falls, as in `pz3xhg9e`) stops the run.
 
 **2. The 256-step window (λ 1, 16 envs/rank).**
-- **Evidence.** `h3lpxy6q` is the only BC-start run that improved. Its 10M evaluation beat BC 16/16 (own 117.6k vs 90.4k), and it promoted fc6b. fc6b beat BC's margin in 58/64 anchor games.
+- **Evidence.** `h3lpxy6q` is the only BC-start run that improved and beat BC at evaluation; the other BC-start runs that rose early then slid. Its 10M evaluation beat BC 16/16 (own 117.6k vs 90.4k), and it promoted fc6b. fc6b beat BC's margin in 58/64 anchor games.
 - **Why second.** The 720 run from fc6b then gained further. The two windows were never compared from the same start, so 720 over 256 is not attributed.
 - **Pull if** option 1 meets a loss condition.
 - **Loss conditions.** It slides from BC on a second seed, or it does not beat f610 on the yardstick.
@@ -83,7 +85,7 @@ No policy has won a game against cha22, smaller_market_shock or v43. f610 did no
 - **Muon 2e-3 / AdamW 1e-4 (Isaiah's LRs), from a promoted policy with the 720 window.** In `pz3xhg9e` (from f610), iterations 51-69 against 1-25 showed approx_kl 0.144 vs 0.017, clip fraction 0.55 vs 0.19, teacher KL 5.56 vs 0.36, and own bank 83.8k vs 94.5k. The last logged window was 45.9k. The owner approved the stop and the 1e-4 relaunch. This matches the collapse of the earlier full-LR arms from BC.
   - Scope: one seed, this reward, this start.
   - Reopen with a trust region or a KL stop.
-- **The 64-step λ 0.9 window.** J/2 (`nw3klj2s`), A2 (`04cy2m6s`), `hz4bpjnq` and M (`r350xr3w`) all slid, to 30-61k from peaks of 64-82k. M lost both of its evaluations.
+- **The 64-step λ 0.9 window.** J/2 (`nw3klj2s`), A2 (`bqtke7iq`), `hz4bpjnq` and M (`r350xr3w`) all slid, to 30-61k from peaks of 64-82k. M lost both of its evaluations.
   - Scope: BC or J/2 starts, Muon 1e-4, rewards J, A, J .2/.8 and M. It was never run with the current reward.
   - Reopen if that pairing does not slide.
 - **From-scratch starts.** `wk142q4b` (term M), `d6sh0akf` (the current reward, 1e-4) and `uujuarkx` (the current reward, 2e-3, 784 iterations, about 12.8M steps) banked 0 with draw rate about 1.0 at every game end: the random policy drains its 3,000 starting cash.
@@ -95,4 +97,4 @@ No policy has won a game against cha22, smaller_market_shock or v43. f610 did no
 
 ## History
 
-This is the first version of the board. The evidence is in [[../references/a-long-credit-window-turned-bc-start-self-play-from-sliding-to-improving|the credit-window Reference]] and [[../references/earn-money-pod-runs-use-run-local-launch-copy-off-and-switch-scripts|the run inventory]]. The earlier Decisions [[replace-the-reward-with-half-cash-difference-and-half-terminal-sign|term M]], [[train-ppo-against-a-fixed-opponent-with-a-learner-mask|fixed opponent]], [[add-a-per-seat-critic-offset-for-the-own-bank-reward|critic offset]] and [[stagger-game-phases-and-lengthen-the-credit-window|stagger]] record how these options were built.
+This is the first version of the board, with a same-day correction (run A2's W&B id, option 1's lineage wording, option 2's scope; see the log). The evidence is in [[../references/a-long-credit-window-turned-bc-start-self-play-from-sliding-to-improving|the credit-window Reference]] and [[../references/earn-money-pod-runs-use-run-local-launch-copy-off-and-switch-scripts|the run inventory]]. The earlier Decisions [[replace-the-reward-with-half-cash-difference-and-half-terminal-sign|term M]], [[train-ppo-against-a-fixed-opponent-with-a-learner-mask|fixed opponent]], [[add-a-per-seat-critic-offset-for-the-own-bank-reward|critic offset]] and [[stagger-game-phases-and-lengthen-the-credit-window|stagger]] record how these options were built.

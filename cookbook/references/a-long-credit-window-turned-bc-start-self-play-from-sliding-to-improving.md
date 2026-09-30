@@ -35,6 +35,7 @@ sources:
   - resource: "wandb-run:spoon/kg-v3/pcy5knet"
   - resource: "wandb-run:spoon/kg-v3/nw3klj2s"
   - resource: "wandb-run:spoon/kg-v3/04cy2m6s"
+  - resource: "wandb-run:spoon/kg-v3/bqtke7iq"
   - resource: "wandb-run:spoon/kg-v3/hz4bpjnq"
   - resource: "wandb-run:spoon/kg-v3/r350xr3w"
 ---
@@ -64,12 +65,13 @@ The [[../decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger De
 
 ## Evidence
 
-**Before: every short-window run slid** (horizon 64, λ 0.9, BC or J/2 start, Muon 1e-4). Values are rank-0 `train/own_bank_mean` at game-end windows (W&B):
+**Before: every short-window run slid** (horizon 64, λ 0.9, BC or J/2 start, Muon 1e-4). Values are rank-0 `train/own_bank_mean` at game-end windows (W&B); an iteration is 16,384 env steps (`_step`). Runs A and A2 are identified by their W&B groups `A-bank-lr2-4rank-20260930` and `A2-bank-w025-lr2-4rank-20260930` (`evidence-runs.md`):
 
 | Run (W&B) | Reward | Own bank |
 | --- | --- | --- |
 | J/2 (`nw3klj2s`) | recipe J shaping | peak 81.6k at iteration 45, 46.7k by 90, plateau 47-53k |
-| A2 (`04cy2m6s`) | + own bank term A | 74.5k -> 60.9k over 6 windows |
+| A (`04cy2m6s`) | + own bank term, w_b 1.0 (saturates at a 25k bank) | 74.5k -> 60.9k over 6 windows (iterations 12-68) |
+| A2 (`bqtke7iq`) | + own bank term, w_b .25 (saturates at a 100k bank) | 71.8k, peak 79.1k at iteration 57, 50.9k at iteration 248; 22 windows |
 | J/2 resume (`hz4bpjnq`) | J shaping .2, terminal .8 | 62.6k -> 30.4k over 87 windows |
 | M (`r350xr3w`) | term M .5 margin + .5 sign | about 64k -> 38.1k; lost both evaluations to its start (14.1%, 10.9%) |
 
@@ -77,7 +79,7 @@ The [[../decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger De
 
 | Run (W&B) | Start | Window, envs/rank | Outcome |
 | --- | --- | --- | --- |
-| `h3lpxy6q` | BC (`fd854587…`) | 256, 16 | Own bank first window 73.9k. Means over sixths of its 357 logged windows: 78.5k, 82.6k, 91.2k, 92.8k, 88.5k, 86.2k. 10M evaluation vs BC: 16/16 won, own 117.6k vs 90.4k, margin +27.1k; promoted `fc6b123c…`. Stopped at iteration 1,007 (about 16.5M steps) for the 512 window. |
+| `h3lpxy6q` | BC (`fd854587…`) | 256, 16 | Own bank first window 73.9k. Means of `train/own_bank_mean` over six equal `_step` ranges of its 357 logged windows (W&B `run.history` with that key): 78.1k, 81.2k, 87.4k, 94.7k, 89.8k, 89.2k; equal-count sixths differ by 0.3k or less. 10M evaluation vs BC: 16/16 won, own 117.6k vs 90.4k, margin +27.1k; promoted `fc6b123c…`. Stopped at iteration 1,007 (about 16.5M steps) for the 512 window. |
 | `ssoc84zg` | fc6b | 512, 8 | Stopped at iteration 41 for the 720 window; own bank about 95k. |
 | `pw6qjsz3` | fc6b | 720, 6 | Stopped at iteration 90 to raise envs per rank; own bank about 96-101k. |
 | `cmwjclbe` | fc6b | 720, 12 | Promoted at its 20M checkpoint: `f61006d9…`, weights bit-identical to `checkpoint_00_020_033_024`. The evaluation metrics were never logged because the run was stopped about 40 s after the checkpoint; promotion requires ≥ 70% of 12 games. Self-play own bank drifted from about 97k to 93k over its windows. |
@@ -104,7 +106,7 @@ Paired on the same games, f610's margin beat BC's in 32/32 games and fc6b's in 2
 
 ## Unresolved attribution
 
-- **Reward changed with the window.** No short-window run used the .25 bank + .25 cash difference + .5 sign reward from BC. So window versus reward is not separated. The own-bank term A under the short window (A2) still slid, which weakly counts against reward alone.
+- **Reward changed with the window.** No short-window run used the .25 bank + .25 cash difference + .5 sign reward from BC. So window versus reward is not separated. The own-bank term under the short window still slid: A2 (`bqtke7iq`, w_b .25) peaked at 79.1k and ended at 50.9k. That weakly counts against reward alone. Run A (`04cy2m6s`) is a weak test here, because its term stopped acting above a 25k bank.
 - **Batch structure changed.** At 256 each optimizer step used 1 segment of 256 steps per rank (4 envs globally) instead of 4 segments of 64 (16 envs). At 720 each step used one whole game per rank. Correlation within a minibatch is higher.
 - **Information, decision, execution or architecture.** Which class the window repaired is not measured. The plan's X5 paired investment forks (M3 a against c) were not run.
 
