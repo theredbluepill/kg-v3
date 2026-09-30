@@ -1,0 +1,50 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_configs_load_through_full_config_and_build_the_model[kaggriculture_8rank.yaml] _
+
+name = 'kaggriculture_8rank.yaml'
+
+    @pytest.mark.parametrize("name", _ALL)
+    def test_configs_load_through_full_config_and_build_the_model(name: str) -> None:
+        cfg = FullConfig.from_file(ROOT / "configs" / name)
+>       model = create_model(
+            cfg.model, obs_spec=cfg.env.obs_spec, action_spec=cfg.env.action_spec
+        )
+
+tests/kaggriculture/test_configs.py:390: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/model/factory.py:94: in create_model
+    assert_never(config)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+arg = KaggricultureTransformerConfig(model_arch='kaggriculture_transformer', embed_dim=256, depth=8, n_heads=8, mlp_ratio=2.0, activation='gelu', n_scratch_tokens=4, force_flash_attn=True)
+
+    def assert_never(arg: Never, /) -> Never:
+        """Statically assert that a line of code is unreachable.
+    
+        Example::
+    
+            def int_or_str(arg: int | str) -> None:
+                match arg:
+                    case int():
+                        print("It's an int")
+                    case str():
+                        print("It's a str")
+                    case _:
+                        assert_never(arg)
+    
+        If a type checker finds that a call to assert_never() is
+        reachable, it will emit an error.
+    
+        At runtime, this throws an exception when called.
+        """
+        value = repr(arg)
+        if len(value) > _ASSERT_NEVER_REPR_MAX_LENGTH:
+            value = value[:_ASSERT_NEVER_REPR_MAX_LENGTH] + '...'
+>       raise AssertionError(f"Expected code to be unreachable, but got: {value}")
+E       AssertionError: Expected code to be unreachable, but got: KaggricultureTransformerConfig(model_arch='kaggriculture_transformer', embed_dim=256, depth=8, n_hea...
+
+/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/typing.py:2443: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_configs_load_through_full_config_and_build_the_model[kaggriculture_8rank.yaml]
+1 failed in 0.06s

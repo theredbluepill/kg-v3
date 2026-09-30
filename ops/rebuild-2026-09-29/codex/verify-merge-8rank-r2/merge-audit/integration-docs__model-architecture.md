@@ -1,0 +1,805 @@
+# Model Architecture
+
+This document summarizes the current trainable actor-critic model for the Orbit
+Wars RL API.
+
+## Tagged Config
+
+The stateless model config is `StatelessTransformerV1Config` with discriminator:
+
+```python
+{"model_arch": "stateless_transformer_v1"}
+```
+
+The recurrent model config is `RecurrentTransformerV1Config` with discriminator:
+
+```python
+{"model_arch": "recurrent_transformer_v1"}
+```
+
+The exported `ModelConfig` type is a pydantic discriminated union alias over
+both configs. Callers should construct models through the shared model factory
+instead of instantiating `StatelessTransformerV1` directly when checkpoint
+configs may contain either architecture.
+
+## Config Reference
+
+`StatelessTransformerV1Config` fields:
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `model_arch` | `"stateless_transformer_v1"` | Pydantic discriminator tag. |
+| `embed_dim` | `128` | Hidden width for all projected tokens and transformer blocks. |
+| `depth` | `4` | Number of transformer blocks. |
+| `n_heads` | `8` | Attention heads; must evenly divide `embed_dim`. |
+| `mlp_ratio` | `4.0` | FFN hidden width multiplier. |
+| `player_count_adapters_enabled` | `False` | Enable per-still-playing-player-count actor/critic heads and optional trunk adapter blocks. |
+| `player_count_adapter_blocks` | `0` | Number of final transformer blocks to move from the shared trunk into each per-player-count branch; requires `player_count_adapters_enabled=True`. |
+| `activation` | `"gelu"` | FFN activation: `"gelu"`, `"silu"`, or `"swiglu"`. |
+| `force_flash_attn` | `False` | Require packed varlen flash-attn; raise an error instead of falling back when tensors are not flash-compatible. |
+| `use_learned_pairwise_bias` | `False` | Enable an auxiliary source-target feature MLP for discrete target selection. Only valid with `"discrete_targets"` and `"discrete_target_bins"` actors. |
+| `critic_mode` | `"softmax"` | `"softmax"`: winner-probability critic (`value = 2*p - 1`). `"independent"`: per-player sigmoid value in `[0, 1]` for non-zero-sum rewards (e.g. ship-ratio); requires `rl.teacher_value_coef=0`. |
+| `value_mode` | `"win_loss"` | For the softmax critic, `"win_loss"` maps winner probability to `[-1, 1]`; `"win_only"` returns raw probability in `[0, 1]`. `win_only` is required with `env.reward_mode="win_only"`; all other reward modes require `win_loss`. |
+| `n_scratch_tokens` | `4` | Learned shared scratch tokens appended to the trunk sequence. |
+| `actor` | `{"action_spec": "pure"}` | Discriminated actor-head config. Supported actor specs are `"pure"`, `"discrete_targets"`, and `"discrete_target_bins"`. |
+| `lora` | `null` | Optional LoRA fine-tuning config used by `scripts/run_ppo.py` for stateless transformer models. |
+
+Actor-specific fields live inside the actor config. `ActorPureConfig` owns
+pure-head fields such as `n_angle_mixtures`, `n_fleet_size_mixtures`,
+`kappa_min=1e-3`, `kappa_max=1e6`, `dir_eps`,
+`entropy_ship_quantiles=16`, and the logistic-mixture scale parameters
+`scale_min=0.10`, `scale_max_frac=0.5`, and `scale_max_abs_floor=8.0`.
+`ActorDiscreteTargetsConfig` owns
+`launch_mode="binary"`, `n_action_mixtures`,
+`entropy_ship_quantiles=16`, and the same logistic-mixture scale parameters.
+Set `launch_mode="target_token"` to replace the separate Bernoulli
+launch/stop choice with a learned no-launch target candidate in the target
+categorical. Set `launch_mode="binary_after"` to keep a Bernoulli launch/stop
+choice but project its logits from the selected target-conditioned hidden
+representation used by the fleet-size heads.
+`ActorDiscreteTargetBinsConfig` owns `n_bins`, which must match the
+environment's `ActionDiscreteTargetBinsConfig.n_bins`.
+`kappa_min` must be less than or equal to `kappa_max`.
+Model YAML files can reference actor presets by name through adjacent
+`configs/model/actor/*.yaml` files, for example `actor: discrete_targets`, or
+can inline an actor config to override preset fields such as mixture count.
+
+`force_flash_attn=True` is ignored for CPU tensors; CPU execution always uses
+the regular SDPA fallback path.
+`EntityBasedCrossAttnV1` currently uses padded SDPA for its interleaved
+cross-attention and ignores `force_flash_attn=True`.
+
+`FullConfig` validates that `env.action_spec.action_spec` matches
+`model.actor.action_spec`. Direct model construction performs the same check
+against the supplied environment action spec.
+
+`RecurrentTransformerV1Config` intentionally supports only the
+`"discrete_targets"` actor with `launch_mode="binary"`. The policy first samples
+whether to launch, then samples the target, then samples fleet size. Pure,
+target-bin, `binary_after`, and `target_token` actor modes are rejected for this
+architecture. The stateless per-player-count adapter option is disabled and
+fixed at `0` blocks for this architecture. Its recurrent-token scope is
+controlled by
+`recurrence_mode`, which defaults to `"global_only"` and can be set to
+`"include_planets"`.
+
+Observation and action specs are owned by `EnvConfig`. `StatelessTransformerV1`
+receives `env.obs_spec` and `env.action_spec` when it is instantiated, so model
+config presets cannot silently diverge from the environment tensor shapes.
+
+## Input Encoding
+
+`StatelessTransformerV1` consumes an `ObsBatch` containing on-device torch tensors
+from `docs/rl-api-specs.md`.
+
+Each observation tensor receives a small MLP stem from raw channels to
+`int(embed_dim * mlp_ratio)` and then to `embed_dim`:
+
+- static planets: `(batch, MAX_PLANETS, 107) -> (batch, MAX_PLANETS, embed_dim)`
+- orbiting planets: `(batch, MAX_PLANETS, 107) -> (batch, MAX_PLANETS, embed_dim)`
+- fleets: `(batch, max_fleets, 79) -> (batch, max_fleets, embed_dim)`
+- comets: `(batch, MAX_COMETS, 330) -> (batch, MAX_COMETS, embed_dim)`
+- globals: `(batch, 3) -> (batch, embed_dim)`
+- v2 player features, when present:
+  `(batch, OUTER_PLAYER_SLOTS, 14) -> (batch, OUTER_PLAYER_SLOTS, embed_dim)`
+
+For `EntityBasedExtV1`, planet input widths append
+`ship_count_one_hot_max + 1` channels and fleet input widths append
+`ship_count_one_hot_max` channels. With the default `ship_count_one_hot_max=50`,
+the planet width is `158` and the fleet width is `129`; comet and global widths
+are unchanged.
+
+For `EntityBasedExtV2`, planet, fleet, and comet widths stay at the base
+`EntityBased` sizes. The global input width increases from `3` to `17`, and
+`ObsBatch.player_features` supplies a fourteen-channel per-outer-player summary. The
+model creates a player-feature projection only when
+`obs_spec.player_feature_channels > 0`; old `entity_based` and
+`entity_based_ext_v1` stateless checkpoints therefore do not gain
+`player_feature_proj` parameters.
+
+For `EntityBasedCrossAttnV1`, planet, comet, global, and player feature widths
+match `EntityBasedExtV2`, but fleet rows have width `46`. The model also
+requires `ObsBatch.fleet_target` and `ObsBatch.target_incoming_features`.
+`target_incoming_features` is projected and added to the matching planet/comet
+action-entity hidden states before the trunk. Fleet rows are projected once into
+a separate fleet residual stream instead of being concatenated into the
+self-attention entity sequence.
+
+The boolean `orbiting_planets` mask selects the orbiting-planet projection for
+orbiting rows and the static-planet projection for all other planet rows.
+Planet, comet, and fleet tokens are concatenated on the entity axis in that
+order. This keeps the action-origin hidden states contiguous as the first
+`ACTION_ENTITY_SLOTS` tokens. The global projection is appended as its own
+global-feature token. For v2 observations, the projected per-player summary is
+added directly to the learned player token for the matching outer player slot
+before the transformer trunk. The full trunk sequence is:
+
+```text
+[planet tokens]
+[comet tokens]
+[fleet tokens]
+[player tokens]
+[global-feature token]
+[board scratch tokens]
+[actor plan tokens]
+[critic value tokens]
+```
+
+With the default four board scratch tokens this gives
+`(batch, max_entities + 17, embed_dim)`. The `entity_mask` uses the same
+planet, comet, fleet order and is concatenated with masks for the learned
+tokens. Player, actor-plan, and critic-value tokens use `still_playing`; the
+global-feature and board scratch tokens are always unmasked. Masked tokens are
+excluded from attention keys and are zeroed in the returned hidden states.
+`BaseModelAPI.count_non_masked_tokens` reports this unmasked token count for
+training throughput logs without running the model.
+Downstream code must consume the named `EncodedObservations` fields rather than
+assuming output meaning from positional slices.
+
+For `EntityBasedCrossAttnV1`, the self-attention trunk omits fleet tokens. Its
+sequence is:
+
+```text
+[planet and comet action-entity tokens]
+[player tokens]
+[global-feature token]
+[board scratch tokens]
+[actor plan tokens]
+[critic value tokens]
+```
+
+After each trunk self-attention operation, these query tokens run padded
+planet-to-fleet cross-attention before the trunk MLP. Planet and comet tokens
+attend only to fleet rows whose `fleet_target` matches that action-entity slot;
+player, actor-plan, and critic-value tokens attend to routed fleets owned by
+that outer player; the global-feature and board scratch tokens attend to all
+routed fleets. The fleet residual stream is updated once per shared block by a
+separate fleet MLP and remains outside self-attention. Player-count adapter
+blocks are rejected for this observation spec because they would otherwise add
+trunk MLPs without the matching interleaved fleet cross-attention.
+The throughput token count includes both the self-attention token mask and
+active fleet rows processed through this separate fleet stream.
+
+Kaggle serving may compact inactive planet, comet, and fleet rows before model
+inference. Recurrent checkpoints with `recurrence_mode="include_planets"` keep
+the fixed planet prefix and compact only comets/fleets, because their recurrent
+layout indexes the planet tokens directly. In the compacted path the
+actor-visible action slot count is the runtime
+`ObsBatch.action_mask.can_act.shape[2]` instead of the fixed
+`ACTION_ENTITY_SLOTS` API width. The compacted action slots still appear first
+in planet-then-comet order, and `Agent` expands sampled actions back to the full
+44-slot Rust/Kaggle contract before conversion. For `EntityBasedCrossAttnV1`,
+serving compaction also slices `target_incoming_features` to the compacted
+action-entity axis and remaps `fleet_target` to those compacted indices.
+
+## Transformer Trunk
+
+The shared trunk is a stack of pre-norm transformer blocks configured by:
+
+- `depth`
+- `n_heads`
+- `mlp_ratio`
+- `embed_dim`
+
+`n_heads` must evenly divide `embed_dim`, and `int(embed_dim * mlp_ratio)` must
+be at least 1. The default activation is GELU. LayerNorm is used for
+normalization, and no dropout is applied.
+
+When `player_count_adapters_enabled=True`, the stateless model creates one
+adapter branch for each still-playing player count from two through four. If
+`player_count_adapter_blocks > 0`, that count is subtracted from the shared
+trunk depth and moved into each branch. For example, `depth=16` and
+`player_count_adapter_blocks=4` builds 12 shared blocks followed by four
+per-count blocks. If `player_count_adapter_blocks=0`, the full transformer trunk
+remains shared and only the actor/critic heads are per-count. The per-count
+branch also owns the actor input projections, actor module, learned pairwise-bias
+MLP if enabled, and critic head. Rows are selected by
+`obs.still_playing.sum(dim=1)` and scattered back to the original batch order;
+one-player terminal-like rows are routed through the two-player branch while
+keeping their original `still_playing` mask. With packed flash attention, each
+branch with trunk adapter blocks receives a packed subsequence for its selected
+batch rows and keeps the original maximum sequence length.
+
+CPU execution uses torch scaled-dot-product attention over regular
+`(batch, seq, dim)` tensors with the token mask passed as the attention key
+mask. CUDA execution uses packed varlen `flash-attn` when it is installed and
+the attention tensors are fp16/bf16; otherwise it uses the same regular-shaped
+scaled-dot-product attention path without packing and unpacking activations.
+Set `force_flash_attn=True` to require packed varlen flash-attn and fail fast
+when the backend, device, or dtype is not compatible on CUDA. CPU execution
+ignores this flag and uses the SDPA fallback. Observation specs whose model
+path does not use packed flash-attn, such as `EntityBasedCrossAttnV1`, also
+ignore this flag.
+
+Attention uses separate `q`, `k`, and `v` linear layers instead of one packed
+QKV projection. SwiGLU also uses separate gate and value projections. This keeps
+each weight matrix tied to one projection role, which is a better fit for Muon
+optimizer assumptions than packing multiple operations into one parameter.
+Training defaults to compiling the stateless self-attention trunk as one
+dynamic-shape callable after packing and before unpacking with
+`rl.model_compile="trunk"` and
+`rl.model_compile_mode="max-autotune-no-cudagraphs"`. Packed FlashAttention uses
+the fixed padded sequence capacity `max_entities + 13 + n_scratch_tokens` as
+`max_seqlen`, so the compiled trunk can reuse one graph across different
+live-token counts. This mode currently rejects `EntityBasedCrossAttnV1`,
+`recurrent_transformer_v1`, and `player_count_adapter_blocks > 0`.
+`configure_model_compile` dispatches the trunk target through the nominal
+`TrunkCompileAPI` interface (`python/owl/model/base.py`), which
+`StatelessTransformerV1` and `KaggricultureTransformer` implement; any other
+model raises. Implementations compile only their blocks and final norm and call
+the compiled callable from their own trunk dispatch. The trainer never compiles
+a whole model.
+Before compiling, every public compile entry point claims the process-global
+Inductor GEMM backends for one game (`owl.model.compile_gemm`):
+`configure_model_compile` for the mlp target, and each model's
+`compile_transformer_trunk` (called by `configure_model_compile` or directly)
+for the trunk. `KaggricultureTransformer` compiles (trunk or mlp, any mode)
+check the probed torch/triton/driver stack and set
+`max_autotune_gemm_backends = "ATEN"` (cuBLAS only); Orbit compiles keep the
+backends they find; a process never compiles both games. A lock serializes
+each claim's check and write, so concurrent claims for different games raise too.
+
+Set `rl.model_compile="mlp"` to compile each transformer-block MLP in place
+while keeping packing, unpacking, and flash-attn varlen calls eager.
+Per-player-count adapter block MLPs are compiled by the same setting.
+
+## LoRA Fine-Tuning
+
+Stateless transformer configs may set `model.lora` to enable LoRA fine-tuning
+in `scripts/run_ppo.py`. When enabled, PPO freezes all base model parameters,
+wraps the selected linear projections with low-rank adapters, and optimizes only
+the LoRA parameters. By default only transformer-block projections are wrapped;
+`target_value_head` / `target_policy_head` extend adaptation to the critic and
+actor heads. Recurrent models reject `lora` fields.
+LoRA fine-tuning also rejects models with player-count adapters enabled.
+
+`LoRAConfig` fields:
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `rank` | Required | Low-rank adapter dimension. |
+| `alpha_scale` | `1.0` | LoRA update scale. The standard scaling is `alpha / rank`; `alpha` is derived as `clamped_rank * alpha_scale`, so the update is scaled by `alpha_scale` for every adapter regardless of clamping. |
+| `target_modules` | `["q", "v"]` | Transformer block projections to wrap. Supported values are `q`, `k`, `v`, `out`, `up`, `down`, `gate`, and `value`; `gate`/`value` exist only for SwiGLU MLPs. May be empty (`[]`) to wrap only the heads. |
+| `target_block_count` | `null` | If set, wrap only the final N shared transformer blocks; otherwise wrap all shared blocks. Only selects transformer-block projections, so it requires a non-empty `target_modules`. |
+| `target_value_head` | `false` | Wrap every linear projection in the critic (value) head with LoRA adapters. |
+| `target_policy_head` | `false` | Wrap every linear projection in the actor (policy) head, including its source/target input projections and learned pairwise-bias MLP when enabled, with LoRA adapters. |
+| `roundtrip_quantization` | `null` | Optional checkpoint quantization format. When set, fresh LoRA training quantizes and dequantizes the frozen base-model tensors before adapter optimization, leaving LoRA adapter tensors unchanged. |
+
+LoRA presets live under `configs/model/lora/`. For example,
+`model.lora=2p_200m_qv_r16` resolves
+`configs/model/lora/2p_200m_qv_r16.yaml`, a rank-16 q/v plus value/policy-head
+adapter preset intended for 200M two-player fine-tuning when the adapter will be
+merged into the NF4 base model before packaging with a 1-2M fallback.
+
+At least one of `target_modules`, `target_value_head`, or `target_policy_head`
+must select something. Head wrapping is structural: every `nn.Linear` leaf in
+the chosen head subtree is wrapped, so it adapts regardless of actor variant.
+Each adapter's rank is clamped to `min(rank, in_features, out_features)`, so tiny
+head projections (e.g. the critic's `embed_dim -> 1` output) still adapt without
+wasting parameters on a rank that could not raise the update's rank. The adapter
+always stays separate from the frozen base weight, and because `alpha` is derived
+from the clamped rank, the update scale stays at `alpha_scale` regardless of
+clamping.
+
+Fresh launches still reset the base model before LoRA is attached. When
+`--load-model-weights` points at a non-LoRA base checkpoint, missing LoRA
+adapter tensors are accepted and initialized from the LoRA config, while all
+non-LoRA base tensors must match. Resume checkpoints are expected to match the
+saved LoRA config and include adapter tensors. Fresh LoRA launches reject
+`--load-model-weights-mode model_and_optimizer`; use `model_only` for base
+checkpoint initialization or resume an existing LoRA run.
+If `roundtrip_quantization` is set, fresh scratch launches roundtrip the freshly
+initialized base tensors, and fresh checkpoint-initialized launches roundtrip
+after base checkpoint weights are loaded. Existing run resumes load their saved
+checkpoint state without an additional quantization pass.
+
+Checkpoint packaging keeps LoRA adapters as separate tensors. Quantized payloads
+can use one format for base-model tensors and another for adapter tensors; when
+base quantization is requested without an explicit adapter format, adapters
+default to fp16. Inference consumers fold adapters into ordinary `nn.Linear`
+weights after checkpoint dequantization and before int8 emulation/quantization.
+The Kaggle agent controls whether packaged adapters are used with
+`AgentConfig.lora_mode`: `always` folds them for every game, `2p` only for
+two-player games, and `4p` only for four-player games. If a checkpoint has no
+LoRA adapters, this setting is ignored.
+
+## Recurrent Transformer V1
+
+`RecurrentTransformerV1` reuses the stateless input stems, token layout,
+discrete-target actor, critic, pairwise-bias option, and masked attention
+behavior. Its trunk replaces each stateless transformer block with:
+
+```text
+transformer block over all current observation tokens
+minGRU block over the configured recurrent token set
+```
+
+`EntityBasedCrossAttnV1` is stateless-only for now. Recurrent model
+construction rejects that observation spec until a recurrent cross-attention
+layout is defined.
+
+`recurrence_mode` controls the recurrent token set:
+
+- `global_only` (default): global-feature token, board scratch tokens,
+  player tokens, actor-plan tokens, and critic-value tokens
+- `include_planets`: all `global_only` tokens plus non-comet planet tokens
+  `0..MAX_PLANETS-1`
+
+Comet and fleet tokens are not recurrent. Planet recurrence is keyed by the
+existing non-comet planet row order, which the RL API defines as ascending
+planet ID order. Planet token state is env-level state, so ownership changes do
+not reset it.
+The recurrent token layout is memoized per runtime entity count, so inference
+paths that compact inactive fleet rows can shift later token positions without
+changing the hidden-state contract.
+
+The recurrent hidden state has shape:
+
+```text
+(depth, batch, recurrent_tokens, embed_dim)
+```
+
+Shared token state resets when the whole environment episode resets. Per-player
+token state resets when that player slot is done. In `include_planets` mode,
+planet token state also resets only when the whole environment episode resets.
+During PPO updates, minGRU uses an affine parallel scan over the segment time
+dimension, with `dones[:, t]` applied as the reset boundary before processing
+observation `t + 1`.
+
+For packed flash-attention execution, the recurrent block builds an inverse map
+from padded token coordinates to packed rows, gathers only recurrent token rows,
+runs the dense recurrent scan as `(batch, time, recurrent_tokens, dim)`, and
+scatters the updated recurrent rows back into the packed tensor. Missing masked
+recurrent tokens do not scatter back and their recurrent state is zeroed.
+
+## Initialization
+
+Models expose `reset_parameters()` through `BaseModelAPI`. Fresh training,
+including fresh launches using `--load-model-weights`, calls this method
+explicitly before optimizer construction; the checkpoint then overwrites model
+weights. Resume and evaluation checkpoint-loading paths construct the module and
+load saved weights without resetting first.
+
+Linear layers use orthogonal initialization with zero biases. Only the first
+linear layer in each observation stem is treated as an input projection and
+uses unit gain; hidden projections use ReLU-style gain, and transformer
+residual output projections, including per-count adapter blocks, are scaled by
+`1 / sqrt(2 * depth)`.
+Learned token state parameters, including player, board scratch, actor-plan,
+critic-value, and discrete source/target role tags, are also classified as
+input layers for optimizer grouping so Muon does not update them.
+
+Actor and critic output heads are two-layer MLP projections with hidden width
+`embed_dim`, the configured activation in the middle, and output-specific final
+widths. Only the second linear layer in each output MLP is treated as an output
+layer for optimizer grouping and final-head initialization. Actor final output
+layers use small `0.01` gain with zero biases, matching the normal RL
+policy-layer initialization. The critic final output layer uses unit gain. When
+per-player-count adapters are enabled, each branch has its own actor and critic
+heads with the same initialization rules.
+
+## Critic
+
+The critic reads the per-player `critic_value_hidden` field from
+`EncodedObservations`. A two-layer MLP head produces one logit per player, then
+applies a masked softmax using `obs.still_playing` with shape `(batch, 4)`.
+With per-player-count adapters enabled, the branch selected by each row's
+still-playing player count owns the critic head for that row.
+
+By default, the resulting winner probabilities are mapped linearly into
+`win_loss` value targets:
+
+```text
+value = 2 * winner_probability - 1
+```
+
+This gives `0 -> -1`, `0.5 -> 0`, and `1 -> 1`.
+For `win_only` training, set `value_mode: win_only`; the critic skips this
+linear remapping and returns the raw winner probabilities in `[0, 1]`.
+
+The critic's value loss is selected by `rl.value_loss`. The default `"mse"`
+regresses the scalar value toward the GAE return. `"winner_ce"` instead trains
+the winner-probability softmax as a classifier: categorical cross-entropy toward
+a distributional GAE(lambda) winner target (`advantages.compute_winner_lambda_targets`,
+which carries the same lambda-return recursion on the per-player winner
+distribution, bottoming out at the terminal winner distribution and bootstrapping
+the critic's distribution on time-limit truncation). It requires the `win_only`
+reward (hence `value_mode='win_only'`), `critic_mode='softmax'`, `gamma=1.0`, and
+`vf_clip_coef=null` (value clipping has no cross-entropy analogue).
+`evaluate_actions` returns the critic's masked-`log_softmax` winner
+log-probabilities so this loss does not need to take the logarithm of rounded or
+underflowed probabilities.
+
+With `critic_mode="independent"`, the same per-player logits are instead passed
+through a sigmoid and masked to `0` for inactive slots, giving an independent
+per-player value in `[0, 1]` with no cross-player normalization. This represents
+non-zero-sum returns such as the ship-ratio reward, which the winner-probability
+softmax cannot. The winner-probability value distillation
+(`_critic_distillation`) is softmax-only, so independent mode requires
+`rl.teacher_value_coef=0`; teacher action-KL distillation is unaffected.
+
+`still_playing` is explicit in `ObsBatch`. It should not be inferred from
+`can_act`, since a player can be alive without having a launchable entity on a
+specific turn.
+
+## Actor
+
+The actor uses hidden states for the action entity slots:
+
+```text
+0..39  -> planet tokens
+40..43 -> comet tokens
+```
+
+For regular training and vector-env evaluation this is the fixed 44-slot API
+layout. For compacted Kaggle serving, the same actor heads operate on a smaller
+runtime slot count while preserving the compact planet-then-comet order.
+
+All actor heads start from the same shared transformer trunk. For each
+`(batch, player, action_entity)` position, the actor combines:
+
+- source entity hidden state
+- player hidden token
+- the actor plan token for that player
+
+The final action head is selected by `config.actor.action_spec`. The concrete
+heads live under `python/owl/model/actor/`: `PureActor` for raw angles and
+`DiscreteTargetsActor` for target slots, and `DiscreteTargetBinsActor` for
+target-plus-fleet-bin actions.
+With per-player-count adapters enabled, the selected branch owns these actor
+input projections and action heads for its rows.
+
+When `use_learned_pairwise_bias=True`, the discrete-target and discrete
+target-bin actors receive an auxiliary learned bias after the shared
+self-attention trunk. The model builds six raw source-target features over the
+runtime action entity slots, applies a two-layer MLP
+`6 -> embed_dim -> 1`, and adds the result to the target-selection attention
+score before action masking:
+
+- `has_more_ships`: source ship count is greater than target ship count.
+- `target_is_neutral`: target owner is neutral.
+- `target_is_mine`: source and target share the same non-neutral owner.
+- `target_is_enemy`: target has a non-neutral owner different from the source.
+- `normalized_distance`: Euclidean source-target distance in normalized board
+  coordinates, divided by the normalized board diagonal `sqrt(8)`.
+- `sun_proximity`: `1 - d / sqrt(2)`, where `d` is the minimum Euclidean
+  distance from the sun center `(0, 0)` to the source-target line segment in
+  normalized board coordinates.
+
+The source-target segment distance makes `sun_proximity` mathematically
+well-defined: it is the standard point-to-segment distance, with zero-length
+segments falling back to the source/target point distance. Feature construction
+uses planet slots `0..39` and comet slots `40..43`; comet positions use their
+current path position. Neutral planet ships are denormalized from `/100`,
+while owned planet and comet ships are denormalized from `/500` before
+comparison. Existing model configs default this path off and therefore do not
+gain extra parameters.
+
+### Pure Actor
+
+The pure actor supports `ActionPureConfig`.
+
+The pure actor supports `max_per_planet_launches=1`. `ActionPureConfig()`
+defaults to `max_per_planet_launches=1` and `min_fleet_size=6`. Python config
+validation and model construction both reject larger pure launch counts.
+
+For the launch slot, the policy emits:
+
+- Bernoulli launch/stop logits
+- mixture logits for angle components
+- von Mises angle parameters
+- discretized logistic mixture fleet-size parameters
+
+Each emitted parameter group uses its own two-layer MLP output head.
+
+The actor uses separate source and target streams matching the discrete-target
+actor's single-launch structure. The main policy-family difference is that
+pure actions sample a von Mises mixture angle instead of a categorical target
+slot. Each angle mixture has a learned base direction initialized to evenly
+spaced unit vectors around the circle; the direction head predicts residual
+Cartesian offsets before normalization. Von Mises concentration uses
+log interpolation between `kappa_min` and `kappa_max`, so very tight angles can
+be represented with ordinary logits.
+
+After sampling or replaying an angle, the actor projects `(sin(angle),
+cos(angle))` into the model width, adds it to the source stream, and uses the
+result as a query over target-stream keys for existing action entities other
+than the source. The soft attention value is added to the source residual
+stream before the fleet-size heads. This mirrors the discrete-target actor's
+selected-target value path while keeping the action itself continuous. Fleet
+sizes use the same discretized logistic mixture parameterization as
+`DiscreteTargetsActor`, but with separately configurable
+`n_fleet_size_mixtures`.
+
+The model returns a typed action bundle owned by the active action spec. Pure
+and discrete-target actions keep the final launch-slot dimension expected by
+their Rust API paths. For regular env/training batches the action-slot width is
+44; for compacted Kaggle serving the width is the runtime compact slot count
+until `Agent` expands the actions back to 44:
+
+- `launch`: bool, `(batch, 4, action_slots, max_per_planet_launches)`
+- `ships`: int64, `(batch, 4, action_slots, max_per_planet_launches)`
+- `angle`: float32, same shape, pure actor only
+- `target`: int64, same shape, discrete-target actor only
+- `target`: int64, `(batch, 4, action_slots)`, discrete target-bin actor only
+- `fleet_bin`: int64, `(batch, 4, action_slots)`, discrete target-bin actor only
+
+It also returns decomposed log-prob and entropy tensors for launch gates and
+target or angle/size events, plus per-player action-entity totals with shape
+`(batch, 4, action_slots)`. PPO stores and submits the typed action bundle
+directly, so action-spec-specific payloads such as `fleet_bin` cannot be
+silently dropped.
+Observation masks are likewise held in typed `ObsBatch.action_mask` bundles:
+pure and discrete-target masks carry `can_act` plus `max_launch`, while
+discrete target-bin masks carry only `can_act`.
+Entropy outputs also carry policy-specific component names for logging, such as
+`launch`, `target`, `fleet_size_full`, `fleet_size_mixture`,
+`fleet_size_logistic`, or `event`.
+
+Serving callers that only need actions and critic values use
+`BaseModelAPI.serve()`, which returns a `ModelServingOutput` without
+log-probability or entropy tensors. `StatelessTransformerV1` specializes this
+path for the discrete-target and target-bin actors by sampling actions directly
+from the policy parameters needed for action selection. `RecurrentTransformerV1`
+overrides the same serving path so runtime hidden state is consumed and the next
+hidden state is returned without computing PPO-only action statistics. Training
+still uses `forward()` to return the full PPO action statistics.
+
+Pure and discrete-target deterministic action selection resolves the launch
+gate before computing the exact fleet-size MAP. No-launch rows skip ship-support
+enumeration entirely. On CPU, the model enumerates only each launched row's own
+`min_fleet_size..max_launch` support. On non-CPU devices, it gathers launched
+rows, scores support only for that compacted row set, and scatters the selected
+ship counts back into the action tensor. Stochastic sampling never enumerates
+integer ship support; it samples one logistic component and uses inverse-CDF
+sampling for that component.
+
+The pure actor's angle entropy is an augmented latent-mixture entropy estimate:
+mixture-label entropy plus expected von Mises component entropy. Fleet-size
+entropy uses the same deterministic truncated-logistic quantile quadrature as
+the discrete-target actor, controlled by `entropy_ship_quantiles`; the size
+entropy path conditions on the current policy's deterministic angle proxy.
+
+### Discrete Targets Actor
+
+The discrete-target actor supports `ActionDiscreteTargetsConfig` with
+`max_per_planet_launches=1`. Model construction fails fast if the environment
+uses a larger per-planet launch count for this actor.
+
+The discrete-target actor uses one feedforward action block per source entity.
+The model constructs separate
+source and target streams for each player/action entity position. Both streams
+receive entity hidden state, player hidden state, and the player's actor plan
+token. The actor adds learned source/target role embeddings before normalizing
+the two streams, then projects source slots to queries and target slots to keys
+and values with a single target-selection head independent of the shared
+transformer trunk's attention head count. It computes scaled dot-product target
+logits for every `(source, target)` pair and masks those logits with the 4-D
+discrete `can_act` tensor. The environment action spec's `targeting_mode`
+decides whether this mask includes full simulator target eligibility or only
+entity existence plus self-targeting. Fully masked source rows are sanitized to
+finite zero logits and are suppressed by the launch/source mask.
+
+After sampling or replaying a target from the masked softmax, the actor gathers
+only the selected target value vector, adds it to the source residual stream,
+and applies a feedforward residual block. This is intentionally close to a
+standard attention block, except the value path uses the selected target row
+instead of a softmax-weighted average. The launch/stop decision and selected
+target-conditioned size decision use separate source projections so the
+source-only continue gate is not coupled to the pair-conditioned size head.
+
+With the default `launch_mode="binary"`, each source emits:
+
+- Bernoulli launch/stop logits
+- masked categorical target logits over the runtime action entity slots
+- mixture parameters for a truncated discretized logistic fleet-size policy
+
+With `launch_mode="binary_after"`, the target categorical remains over the
+runtime action entity slots and no no-launch target is added. The actor samples or
+replays the selected target first, gathers that target's value, applies the
+same residual feedforward and size-pair projection used by the fleet-size
+heads, then projects Bernoulli launch/stop logits from that target-conditioned
+representation. No-launch actions retain the sampled target in
+`DiscreteTargetActions.target` so replay can score
+`log P(target) + log P(no-launch | target)`; the environment still ignores the
+target when `launch=False`. Launch entropy uses the Bernoulli entropy of the
+selected target approximation, matching the fleet-size entropy approximation.
+
+With `launch_mode="target_token"`, the actor appends one learned
+no-launch token to the target/key/value stream only; the source/query stream
+remains the real runtime action entity slots. Selecting that extra target maps
+back to `launch=False` in the external `DiscreteTargetActions` bundle; selecting
+any real target maps to `launch=True`. Pairwise source-target bias is still
+defined only over the real target slots, and the actor appends a zero-bias
+column for the no-launch target before masking. In this mode the binary continue
+projection/head is not allocated, and the launch log-probability and launch
+entropy tensors are zero while target log-probability and target entropy include
+the no-launch candidate. The default binary mode does not allocate the extra
+learned token, so existing default model parameter shapes are unchanged.
+
+The fleet-size mixture maps raw means through a sigmoid into the current
+`min_fleet_size..max_launch` budget range. Raw scale outputs are passed through
+a sigmoid and log-interpolated between `scale_min` and
+`max(scale_max_abs_floor, scale_max_frac * support_width)`, where
+`support_width = max_launch - min_fleet_size + 1`. This keeps very small scales
+available for near-deterministic counts while still allowing broad fractional
+exploration for large ship budgets. PPO replay uses the marginal mixture
+log-probability of the integer ship count, not the sampled component
+log-probability. The discrete-target entropy bonus is an
+exploration heuristic rather than the exact joint-action entropy: it sums
+launch entropy, target entropy, and a target-conditioned size entropy without
+weighting target and size entropy by launch probability. To avoid materializing
+all source-target size parameters, the size entropy term uses the current
+policy's argmax target as a proxy; replayed action targets are used only for
+action log-probability, so no-launch placeholder targets do not affect entropy.
+Fleet-size entropy is estimated with deterministic per-component quantile
+quadrature under the continuous truncated logistic mixture. This accounts for
+component overlap and uses memory proportional to
+`n_action_mixtures * entropy_ship_quantiles`, independent of the ship budget.
+Because this is a continuous-density estimate rather than exact entropy over
+rounded integer ship counts, very narrow scales can produce a negative size
+entropy term; the PPO bonus still encourages broader size distributions, but
+the logged value should be interpreted as an exploration heuristic rather than a
+non-negative discrete entropy.
+
+### Discrete Target Bins Actor
+
+The discrete target-bin actor supports `ActionDiscreteTargetBinsConfig`. It uses
+the same source/target stream construction and target-selection logits as the
+discrete-target actor, but the environment supplies a 5-D mask
+`(batch, 4, action_slots, action_slots, n_bins)` and no `max_launch` tensor.
+
+For each active source, the actor samples target first from target slots with at
+least one valid bin, then samples `fleet_bin` from categorical logits
+conditioned on the selected target value. It returns only `target` and
+`fleet_bin` action tensors. The environment decodes bin `0` as no-op and
+nonzero bins as rounded ship counts, using the same target-to-angle decoder as
+`discrete_targets`.
+
+Replay log-probability follows the same factorization:
+`log p(target) + log p(fleet_bin | target)`. Entropy logging exposes `target`
+and `fleet_bin` components; the shared `event` field carries the
+fleet-bin term for compatibility with PPO loss aggregation. Like the
+discrete-target size entropy, fleet-bin entropy is computed only for the
+current policy's argmax target proxy rather than for every source-target pair.
+
+## Log-Prob Replay
+
+The model exposes `evaluate_actions(obs, actions)` to replay externally supplied
+action tensors through the same actor factorization and return both new-policy
+log-probs, entropies, and critic values from one encode.
+
+Inactive and stopped slots are given finite dummy event inputs before masking so
+their zeroed log-prob contributions do not introduce NaN gradients.
+
+## Teacher Distillation
+
+Training can add a frozen teacher model through `rl.teacher_mode`. The action
+term uses `KL(teacher || student)` for each replayed state and sums the relevant
+action-head divergences back to the player-step before applying
+`rl.teacher_kl_coef`. The value term uses cross-entropy from the teacher winner
+distribution to the student winner distribution over active player slots, then
+averages that per-state value over active states before applying
+`rl.teacher_value_coef`. The per-state reduction is the model's
+`teacher_value_cross_entropy(student_log_probs, teacher_probs, *, value_mask)`:
+the `BaseModelAPI` default is Isaiah's sum over the joint player-slot
+distribution, and a game with one distribution per seat overrides it. PPO's
+`_model_evaluate_actions_with_teacher` and
+`_model_evaluate_actions_with_cached_teacher` dispatch statelessly like
+`_model_evaluate_actions`: without hidden state they pass neither
+`hidden_state` nor `dones`. `rl.teacher_schedule.mode` defaults to `none`; with
+`linear_decay`, PPO multiplies both teacher coefficients by a linear
+optimizer-step schedule from `1.0` to `decay_min_ratio` over `decay_steps`.
+The teacher trunk runs once per iteration over the stored rollout segments, not
+once per update minibatch. Teacher models must be stateless; trainers reject
+teachers that require recurrent hidden state.
+
+When a teacher is active, PPO precomputes the teacher's contribution after
+rollout via `compute_teacher_distillation_targets(...)`: a chunked
+`torch.no_grad()` pass (chunk size `rl.teacher_segments_per_minibatch` segments) that
+caches the teacher's action targets and winner probabilities in segment-major
+layout: Orbit's `StatelessTransformerV1` caches its action-distribution params
+(`DiscreteTargetPolicyParams`) as a `CachedTeacherDistillationTargets`, and the
+Kaggriculture transformer caches its replay-conditioned per-slot logits as a
+`KaggricultureTeacherTargets` (see
+[Kaggriculture Transformer](#kaggriculture-transformer)). The cached targets implement the `TeacherTargets` protocol
+(`python/owl/model/teacher_targets.py`): PPO joins the chunks with
+`type(chunks[0]).concat(chunks)` and slices each minibatch with
+`targets.index(idx)`, both along the segment dimension, and reports the cache
+size with `nbytes()` (tensor metadata only). `BaseModelAPI` types
+`compute_teacher_distillation_targets` and `evaluate_actions_with_cached_teacher`
+by the protocol; each model returns its own target type and narrows the
+argument with `isinstance`, raising `TypeError` for another model's targets
+before any kernel (the DDP adapter and PPO pass the protocol type through).
+`CachedTeacherDistillationTargets.concat` follows the first chunk's layout: it
+raises when a later chunk lacks an optional target (action params, continuation
+logits or winner probabilities) that the first chunk carries, but silently drops
+a target that only later chunks carry. Phase 4 keeps this inherited asymmetry
+for Orbit (the trainer never builds mixed chunks);
+`KaggricultureTeacherTargets.concat` validates every chunk symmetrically. The
+PPO loop requests the same targets from the same teacher for every chunk. Each update minibatch
+then calls `evaluate_actions_with_cached_teacher(...)`,
+which encodes the student once (with grad), returns the normal PPO replay
+log-probs, entropy, and values from that encoding, and computes the action KL
+against the cached teacher targets without re-running the teacher trunk. Orbit
+computes it with the actor's `kl_divergence_from_teacher_params(...)`;
+Kaggriculture computes it inside the grammar `policy_core`, per policy slot at
+the replayed prefix, from the cached logits.
+`categorical_kl_from_logits` computes in `promote_types(teacher, student, float32)`: BF16/FP16 are upcast to FP32 as before, and FP64 is kept rather than demoted, so a `finfo(dtype).min` mask fill stays finite and FP64 gradient checks stay exact.
+The combined `evaluate_actions_with_teacher(...)` path (one student pass plus a
+no-grad teacher pass) is retained and is bit-for-bit equivalent to the cached
+path. For Orbit's `StatelessTransformerV1`, the cached action-KL path supports
+only the discrete_targets actor without player-count adapters, and a fixed
+teacher (`rl.teacher_mode: fixed`) must additionally share the student's launch
+mode. The Kaggriculture transformer supports the cached action-KL and value
+paths for its grammar actor and has no launch mode; its teacher must share the
+student's grammar signature (tables and `hire_limit`). Value distillation
+(`rl.teacher_value_coef` > 0) only uses the critic winner distribution and does
+not require actor KL support, but the trainer still requires matching action
+specs and non-adapter models. `evaluate_action_kl(...)` remains as a
+compatibility path, but PPO updates do not use it. The KL comparison uses the
+same masks and factorization gates used by PPO replay. Non-acting source rows
+contribute zero KL. For binary discrete-target launch mode, no-launch replay
+rows include only the Bernoulli launch KL; target and fleet-size KL are computed
+only for rows where the replayed action launched. Discrete target-bin KL
+compares the target categorical and the selected target's fleet-bin categorical.
+Pure-action KL compares launch, marginal angle, and selected fleet-size
+distributions for launched rows. Angle KL is a permutation-invariant numerical
+integral over the marginal Von Mises mixture using component-centered
+quadrature points for each teacher angle component.
+
+Fleet-size KL is computed as the exact marginal KL between the selected
+truncated logistic mixture distributions over integer fleet sizes from
+`min_fleet_size` through the row's `max_launch`. The KL does not compare latent
+mixture identities, so component permutations between teacher and student are
+not penalized. Per-action KL portions are logged as components such as
+`launch`, `target`, `angle`, `fleet_size_logistic`, and `fleet_size_full`.
+
+## Kaggriculture Transformer
+
+`KaggricultureTransformer` (`python/owl/model/kaggriculture.py`, config `configs/model/kaggriculture.yaml`) plays Kaggriculture on this model's layer topology. It reuses `ObservationInputStem`, `TransformerBlock`, the flash-packing path, the compile hook and the initialization helpers unchanged. The tensor contract is `docs/kaggriculture-contract.md`; the per-point conformance table is `docs/kaggriculture-model.md`.
+
+- **Compile targets:** `rl.model_compile="trunk"` reaches `compile_transformer_trunk` through `TrunkCompileAPI` and compiles `_forward_transformer_trunk` (blocks plus `final_norm`) only. `_run_trunk` calls the compiled callable, so the overflow guard and row chunking run first; stems, token assembly, packing, critic, actor projection and heads stay eager. `"mlp"` compiles each `blocks[i].mlp` in place, and those modules are reached only through `_run_trunk`. Tests pin the compiled region, the guard order and every compile call site on the trainer and model paths.
+- **Registration:** `KaggricultureTransformerConfig` is the third member of the shared `ModelConfig` union (discriminator `model_arch: kaggriculture_transformer`), next to `StatelessTransformerV1Config` and `RecurrentTransformerV1Config` (together `OrbitModelConfig`). `create_model` dispatches on the config class. Each architecture belongs to one game, so it raises `TypeError` when an Orbit model gets Kaggriculture specs or the reverse. Typed overloads return `BaseModelAPI` for Orbit configs and `KaggricultureTransformer` for this one. `FullConfig` pairs it with `KaggricultureEnvConfig` (`owl.kaggriculture.config`), selected when `env.obs_spec.obs_spec` is `kaggriculture`, and rejects either half without the other; Orbit models keep Isaiah's `EnvConfig` and cross-checks.
+
+- **Input encoding:** one stem per entity group, fed float channels concatenated with one-hot categorical fields: tiles (133 inputs), actors (371), shops (16, type plus slot), market (11), player features (44) and globals (15). There are no embedding tables. Player tokens are `player_tokens + player_feature_proj(player_features)` (self, opponent), and the global token is `global_proj(global_features)`.
+- **Sequence** per seat row (`B = 2 × envs`, each seat encoded independently), `705 + n_scratch_tokens` tokens: own actors (241), rival actors (241), tiles (200), shops (8), market (9), players (2), global (1), board scratch (n), actor plan (1), critic value (2). Masks: `actor_mask`, `shop_mask`, `still_playing` on player/plan/critic tokens, and all-true for the rest.
+- **Trunk:** `TransformerBlock × depth` and `final_norm`. The preset sits on the 6m ladder (width 256, 8 heads, GELU, `mlp_ratio` 2.0), with depth 8 for the 6–10M budget; SwiGLU is rejected.
+- **cuBLAS-only compiled GEMMs:** `owl.model.compile_gemm.claim_gemm_backends("kaggriculture")` sets `torch._inductor.config.max_autotune_gemm_backends = "ATEN"` (`COMPILED_GEMM_BACKENDS`) before any Kaggriculture compile, after rejecting an unprobed torch, triton or NVIDIA driver version. `configure_model_compile` claims before compiling the mlp target, and `compile_transformer_trunk` claims itself, so a direct call gets the same stack check and cross-game refusal; once a region is compiled `_run_trunk` re-checks it on every call, because Inductor compiles lazily and recompiles on new dynamic shapes. The measured A/B (cookbook decision `kaggriculture-compiles-gemms-with-cublas-only`) found no Triton GEMM template in the ATEN-only caches and correct outputs above the bound where the default backends corrupted or faulted; the guards below stay until the real-trunk backward above the bound and the production compile path are verified.
+- **Compiled-GEMM guard:** Torch 2.9 Inductor `mm`/`addmm` templates can form the A-load offset in int32; the pod probe measured corruption at `rows × input width > 2^31` (output-wide GEMMs stayed correct). Because backward reads forward outputs as inputs, every compiled region keeps the strict design bound `rows × max(in_features, out_features) < 2^31` (cookbook `references/compiled-gemm-template-overflows-above-2-21-rows`). `trunk_gemm_width` is the maximum of `max(in_features, out_features)` over every `nn.Linear` in a `TransformerBlock` (512 at the preset); a test enumerates the blocks' Linear layers against it. The padded path chunks complete rows (`rows_per_chunk`, 5,915 rows at 709 tokens). The packed path runs unchunked while the padded bound fits; otherwise it splits rows at row boundaries (`packed_row_chunks`) so each chunk's packed tokens × width stays below 2^31, and raises only if a single row cannot fit.
+- **Critic:** `critic_head = OutputProjectionMLP(trunk_config, 1)`, applied to the two critic-value tokens (self, opponent), gives one logit per player and Isaiah's masked winner softmax: logits of masked critic tokens are filled with the dtype minimum before `log_softmax`, exactly as `_critic_distillation`, so the probabilities equal `masked_softmax(logits, mask)`. The mask is the critic tokens' token mask (the row's `still_playing` on both tokens). Live rows are unchanged from a plain softmax; an all-masked row gets Isaiah's uniform result (value 0) rather than an error, because the heads already emit empty programs for such rows and contract v4 keeps `still_playing` true. `compute_value` returns `2·p(self) − 1` per seat (`win_loss`), and `winner_log_probabilities` returns `[env, seat, 2]`. Its output layer uses Isaiah's critic gain 1.0.
+- **Actor input:** `actor_input_proj = nn.Linear(3D, D)` over `[entity ‖ self player ‖ plan]`, as Isaiah's `source_actor_input_proj`. Unit frames use `own_actor_hidden[:, a]` as the entity; the market queue has no entity, so the plan hidden stands in (`[plan ‖ player ‖ plan]`).
+- **Grammar heads** (`KaggricultureGrammarActor`, `python/owl/model/kaggriculture_actor.py`): `source_norm`, `market_position: Embedding(11, D)`, prefix `slot_embeddings` (unit kind/item/quantity-present/quantity-high, market kind/item/quantity-high) and one `OutputProjectionMLP` per sampled slot (`unit_kind`, `unit_item`, `unit_quantity_present`, `unit_quantity_high`, `unit_quantity`, `market_kind`, `market_item`, `market_quantity_high`, `market_quantity`). All 241 unit frames and 11 market positions (10 queue slots plus the forced sentinel) are decided in parallel. Only the fixed within-frame stages are unrolled, with `hidden_stage = base + prefix / sqrt(stage + 1)`. The prefix resets for every observation; there is no GRU and no frame loop.
+  - Masks come from the typed `GrammarTables` (`python/owl/kaggriculture/gpu_grammar.py`), indexed by the frame's earlier choices, plus runtime overlays: unit liveness (`frame < actor_count`), queue availability (`position < order_limits`), and HIRE capacity (`actor_count + prior HIREs < hire_limit`, default 241). Until the Task 1.4 binding exposes the Task 1.2 native tables to Python (the Rust tables exist and match the stand-in bit-for-bit), `expected_grammar_tables()` builds them from the reference support rules, and a skipped test compares the two once the binding exists.
+  - Sampling uses exact Gumbel-max. Market kinds draw eight independent Gumbels per position; the exclusive raw-HIRE prefix masks HIRE where capacity is exhausted, and the argmax is re-taken over the same perturbed scores (the corrected kind can be NONE or EMPTY). Densities use the exclusive final-HIRE prefix. The first final NONE is STOP and keeps its slot-7 density; the forced sentinel has zero density; later positions are marginalized.
+  - `evaluate_actions` replays the tokens teacher-forced through the same core. It checks shapes and dtypes before any kernel, uses clamped temporary indices for every replay-derived gather, table lookup and embedding, and computes three device flag groups: support, length, and element-for-element canonical equality (actor ordinals, reserved target, cross-kind fields, STOP bits, padding, inactive rows). One compact host transfer follows, outside the tensor core, and raises `GrammarReplayError` naming the failing groups. Sampling adds no policy-validation host synchronization: `forward` never runs the replay check. The encode itself is not sync-free, because packed trunk dispatch sizes its packing on the host (`build_packed_sequence`) and, when the padded bound could overflow, transfers per-row token counts to plan chunks.
+  - Outputs: `KaggricultureActions(tokens [E,2,252,12], lengths [E,2])`. `log_probs.event` and `entropies.event` are `[E,2,252,12]` per-frame, per-slot values, zero for the implicit slots 0/2/11; `per_player_entity = event.sum(-1)`, `launch` is zeros, and `entropies.components[name] = event[..., slot]`. Values and winner probabilities come from the critic in the same encode.
+  - **Head-extent guard:** the heads run eager in production (`compile_transformer_trunk` compiles the trunk only). The actor still chunks rows so `rows × 252 × max(3D, D, widest head) < 2^31` (`head_rows_per_chunk`, 11,096 rows at D = 256), so a future compiled head core cannot silently corrupt outputs.
+  - **Teacher distillation (Phase 4.1):** `policy_core` takes two trailing arguments. `collect_logits=True` returns every policy slot's logits in the density dtype, masked with the replay-conditioned mask and filled with `finfo(dtype).min` outside it (`slot_logits[k]`: `[B, 241, W_k]` for unit slots, `[B, 11, W_k]` for market slots; `market_kind` uses the final HIRE-capacity mask). `teacher_logits` (the same layout, keyed by `POLICY_SLOTS`) adds `kl`: per slot, `categorical_kl_from_logits(teacher, student, mask)` = `KL(teacher ‖ student)` at the replayed prefix, weighted by `unit_live` or `market_live` exactly like the log-probs and placed in the same `[B, 252, 12]` layout. Slots 0/2/11, dead frames, positions after STOP, the forced sentinel and inactive rows are exactly 0. It is Isaiah's teacher-forced estimator (like his size KL at the selected target), not an unbiased joint-program KL. Both sides must share the grammar tables and `hire_limit`; replay admission does not check that. `_policy` slices `teacher_logits` per head chunk and joins `slot_logits` and `kl`.
+  - **Teacher targets (Phase 4.2):** `compute_teacher_distillation_targets` runs one `encode_observations` and `_policy(collect_logits=True)` under `no_grad`, so the trunk overflow guard and head row chunking apply. It admits the replay under the teacher's own grammar (`check_replay_flags`, one host sync) and returns `KaggricultureTeacherTargets` (`python/owl/model/kaggriculture_teacher.py`) in the observation lead layout: `slot_logits[k]` (`[*lead, 241 | 11, W_k]`, density dtype), FP32 `winner_probabilities [*lead, 2]` and the teacher's `GrammarSignature`. The signature is the SHA-256 of the eight tables (`grammar_tables_digest`), taken once when the actor is built, plus the live `action_spec.hire_limit`. Replay admission cannot see a teacher grammar that differs but still admits the program, so the student compares signatures. Rollout masks are not cached. At contract widths a seat row costs `TEACHER_TARGET_BYTES_PER_ROW` = 102,208 B (FP32), so 1,674,575,872 B for a 2-rank rollout of 16,384 rows and 837,287,936 B for 8,192 rows.
+  - **Teacher paths (Phase 4.3):** `supports_cached_teacher_distillation` and `supports_cached_value_distillation` return `True`. `evaluate_actions_with_cached_teacher` admits before any kernel: stateless checks, `isinstance(KaggricultureTeacherTargets)` (else `TypeError`), required targets present, grammar signature equal, slot keys equal to `POLICY_SLOTS`, FP32/FP64 slot dtypes and exact shapes (each else `ValueError`). It then encodes the student once and replays with the cached logits viewed in row layout. The student `ModelEvaluation` is exactly `evaluate_actions`'s (`_evaluation_from`), and `action_kl` carries `event [*lead,252,12]`, `per_player_entity = event.sum(-1)`, zero `launch` and per-slot `components`. The combined `evaluate_actions_with_teacher` also rejects a non-Kaggriculture teacher, a different `action_spec`, a different signature or any table that is not `torch.equal`. It feeds the no-grad teacher's row-layout logits straight to the student and is bit-for-bit equal to the cached path on CPU FP32. `teacher_value_cross_entropy` takes each seat's CE over (self, opponent) and averages over live seats (`value_mask = still_playing`): the mean keeps one CE per state, as Isaiah's joint distribution does, so `teacher_value_coef` keeps its meaning. A state with no live seat gives 0.
+- **Initialization:** `market_position.weight` and every slot-embedding `.weight` are listed by `get_input_layers` and initialized as Isaiah's token parameters (normal, std `D^-0.5`). Every head `.out` is in `get_output_layers` and gets `_init_linear(gain=0.01)` (Isaiah's actor-head gain); `critic_head.out` keeps 1.0.
+- **Muon:** stem inputs, token parameters, slot and position embeddings, `critic_head.out` and every head `.out` are excluded, as in `StatelessTransformerV1`; stem outputs, trunk matrices, `actor_input_proj.weight`, `critic_head.up` and every head `.up` use Muon.
+- **Size:** the preset has 6,252,223 parameters (actor input projection and heads 873,406), inside the owner's 6–10M budget at depth 8.
+- **Workload headroom** against the 2^31 limit at the preset: rollout 256 rows (trunk 23×, heads 43×); training minibatch 1,024 rows (trunk 5.8×, heads 10.8×). Teacher-precompute chunks of 16,384 rows exceed one chunk, so both the trunk and the heads now chunk them instead of failing.
+- **Startup workload check** (`python/owl/model/kaggriculture_workload.py`, Task 3.4): `ppo_forward_workloads` derives the per-rank seat rows of every PPO forward from config shapes (rollout `n_envs × 2`, minibatch `spm × horizon × 2`, teacher chunk `min(teacher_spm, n_envs) × horizon × 2` when `teacher_mode` is set, evaluation `n_envs × 2`; a BC caller adds its own `ForwardWorkload`). `check_workload_headroom` divides them by the model's own `rows_per_chunk` at the full padded sequence length and by `head_rows_per_chunk`, and raises when one row cannot fit either limit or a workload is empty. Head calls are exact; trunk calls are a full-padding **upper bound** and trunk headroom a **lower bound**, because the packed path plans chunks from actual token counts (16,384 rows of 300 tokens need 2 packed chunks, not 3). `scripts/run_ppo.py` runs the check through `_check_model_workload` after the per-rank shapes are final (runtime-GPU adaptation included) and before the run directory, env or model exist, and prints one headroom line per workload on the main process; Orbit models do not chunk and are skipped. At `configs/kaggriculture_2rank.yaml` the teacher chunk runs as at most 3 trunk and exactly 2 head calls; at 4 ranks, at most 2 and 1. The configs load through the real `FullConfig.from_file`, and the startup tests drive `main` from those YAML files (fresh, CLI override and resume paths). After the check, `require_orbit_env` stops the launch with an explicit error before the run directory exists, because no Kaggriculture environment is wired into the trainer until Tasks 1.4 and 3.1.

@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_config_env_and_cross_section_rules[kaggriculture_8rank.yaml] _______
+
+name = 'kaggriculture_8rank.yaml'
+
+    @pytest.mark.parametrize("name", _ALL)
+    def test_config_env_and_cross_section_rules(name: str) -> None:
+        ours = _sections(name)
+        assert ours.env.obs_spec == kt.KaggricultureObsConfig(schema_version=3)
+        assert ours.env.action_spec == kt.KaggricultureActionConfig(hire_limit=241)
+        assert ours.env.reward_mode == "win_loss"
+>       assert ours.env.reward_shaping == _REWARD_SHAPING
+E       assert Kaggriculture...ctive_cap=0.1) == Kaggriculture...ctive_cap=0.1)
+E         
+E         Use -v to get more diff
+
+tests/kaggriculture/test_configs.py:227: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_config_env_and_cross_section_rules[kaggriculture_8rank.yaml]
+1 failed in 0.04s

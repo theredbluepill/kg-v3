@@ -1,0 +1,11 @@
+# Tiny CPU preset for local functional tests (plan Task 3.5); not a training
+# model. Same architecture and ladder ratios as configs/model/kaggriculture.yaml
+# (GELU, mlp_ratio 2.0), with FlashAttention off because it needs CUDA.
+model_arch: kaggriculture_transformer
+embed_dim: 16
+depth: 1
+n_heads: 2
+mlp_ratio: 2.0
+activation: gelu
+n_scratch_tokens: 4
+force_flash_attn: false

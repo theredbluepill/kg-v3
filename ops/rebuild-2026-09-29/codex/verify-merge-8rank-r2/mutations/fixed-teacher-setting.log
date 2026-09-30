@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8] _
+
+name = 'kaggriculture_8rank.yaml', world_size = 8
+
+    @pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+    def test_ranked_config_per_rank_shapes_are_scaling_6m_divided(
+        name: str, world_size: int
+    ) -> None:
+        ours = _sections(name)
+        teacher_chunk = min(ours.rl.teacher_segments_per_minibatch, ours.env.n_envs)
+        assert _PerRankShape(
+            ours.env.n_envs, ours.rl.segments_per_minibatch, teacher_chunk
+        ) == _isaiah_per_rank_shape(_scaling_6m(), world_size)
+>       assert ours.rl.teacher_segments_per_minibatch == 128
+E       AssertionError: assert 64 == 128
+E        +  where 64 = PPOConfig(horizon=64, checkpoint_freq=20000000, ppo_epochs=1, segments_per_minibatch=2, gradient_accumulation_steps=1,...='trunk', model_compile_mode='max-autotune-no-cudagraphs', dtype='bfloat16', truncation_step=None, truncation_prob=0.0).teacher_segments_per_minibatch
+E        +    where PPOConfig(horizon=64, checkpoint_freq=20000000, ppo_epochs=1, segments_per_minibatch=2, gradient_accumulation_steps=1,...='trunk', model_compile_mode='max-autotune-no-cudagraphs', dtype='bfloat16', truncation_step=None, truncation_prob=0.0) = _Sections(env=KaggricultureEnvConfig(n_envs=32, obs_spec=KaggricultureObsConfig(obs_spec='kaggriculture', schema_versi...'trunk', model_compile_mode='max-autotune-no-cudagraphs', dtype='bfloat16', truncation_step=None, truncation_prob=0.0)).rl
+
+tests/kaggriculture/test_configs.py:153: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]
+1 failed in 0.05s

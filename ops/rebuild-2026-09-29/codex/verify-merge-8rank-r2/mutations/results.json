@@ -1,0 +1,622 @@
+[
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.127,
+    "log": "per-rank-spm.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]",
+      "1 failed in 0.05s"
+    ],
+    "name": "per-rank-spm",
+    "mutation_path": "configs/kaggriculture_8rank.yaml",
+    "old": "  segments_per_minibatch: 2\n",
+    "new": "  segments_per_minibatch: 4\n",
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutant_sha256": "181026ec6da3cc796978b7c6e6a8d49f23e1851da06301c9031591216f3205fb",
+    "expected": "segments_per_minibatch: 4 != 2",
+    "detected": true,
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.091,
+    "log": "per-rank-envs.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]",
+      "1 failed in 0.05s"
+    ],
+    "name": "per-rank-envs",
+    "mutation_path": "configs/kaggriculture_8rank.yaml",
+    "old": "  n_envs: 32\n",
+    "new": "  n_envs: 64\n",
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutant_sha256": "28186b713d032c2e93bf7963b321963639a3eae673b6057ce1e6bf75cd7d202e",
+    "expected": "n_envs: 64 != 32",
+    "detected": true,
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.075,
+    "log": "fixed-teacher-setting.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]",
+      "1 failed in 0.05s"
+    ],
+    "name": "fixed-teacher-setting",
+    "mutation_path": "configs/kaggriculture_8rank.yaml",
+    "old": "  teacher_segments_per_minibatch: 128\n",
+    "new": "  teacher_segments_per_minibatch: 64\n",
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutant_sha256": "465bfd1ac81a6043c2f862c79baa863975c50a33623c1c8f1eb150224218c1a5",
+    "expected": "assert 64 == 128",
+    "detected": true,
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_fails_loudly_when_not_divisible",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.162,
+    "log": "env-divisibility-guard.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_fails_loudly_when_not_divisible[3-n_envs=256 is not divisible by world size 3]",
+      "1 failed, 1 passed in 0.05s"
+    ],
+    "name": "env-divisibility-guard",
+    "mutation_path": "tests/kaggriculture/test_configs.py",
+    "old": "if value % world_size != 0:",
+    "new": "if name != 'n_envs' and value % world_size != 0:",
+    "before_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "mutant_sha256": "ac22abeb9c8d97051095e8cd74469a54dff744c190b6e459f1bc3b6579252071",
+    "expected": "Regex pattern did not match",
+    "detected": true,
+    "restored_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_fails_loudly_when_not_divisible",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.124,
+    "log": "spm-divisibility-guard.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_fails_loudly_when_not_divisible[32-segments_per_minibatch=16 is not divisible by world size 32]",
+      "1 failed, 1 passed in 0.05s"
+    ],
+    "name": "spm-divisibility-guard",
+    "mutation_path": "tests/kaggriculture/test_configs.py",
+    "old": "if value % world_size != 0:",
+    "new": "if name != 'segments_per_minibatch' and value % world_size != 0:",
+    "before_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "mutant_sha256": "4aad8ab0b9293250aa46a635ca970d3fa07838486a5d156162c881fd38e6fbbe",
+    "expected": "ZeroDivisionError",
+    "detected": true,
+    "restored_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.174,
+    "log": "partial-minibatch-guard.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks",
+      "1 failed in 0.04s"
+    ],
+    "name": "partial-minibatch-guard",
+    "mutation_path": "tests/kaggriculture/test_configs.py",
+    "old": "if n_envs % per_step != 0:",
+    "new": "if False and n_envs % per_step != 0:",
+    "before_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "mutant_sha256": "825ba51895d7a7c064d9945283d2a0552dbf32796e3ab98645a4a34d8f0cd12b",
+    "expected": "DID NOT RAISE",
+    "detected": true,
+    "restored_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.208,
+    "log": "partial-teacher-guard.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks",
+      "1 failed in 0.05s"
+    ],
+    "name": "partial-teacher-guard",
+    "mutation_path": "tests/kaggriculture/test_configs.py",
+    "old": "if n_envs % teacher_chunk != 0:",
+    "new": "if False and n_envs % teacher_chunk != 0:",
+    "before_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "mutant_sha256": "cf964f00e06786eaafec14235b1472ec7abcd378a01d257292354e0099aa061d",
+    "expected": "DID NOT RAISE",
+    "detected": true,
+    "restored_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.211,
+    "log": "cross-rank-optimizer.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes",
+      "1 failed in 0.05s"
+    ],
+    "name": "cross-rank-optimizer",
+    "mutation_path": "configs/kaggriculture_8rank.yaml",
+    "old": "  muon_lr: 0.002\n",
+    "new": "  muon_lr: 0.003\n",
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutant_sha256": "282b9d1ffe4ce90fac6ec0463f6769d6299f754e237af0dc53de5a380a7a24f0",
+    "expected": "assert two.optimizer == other.optimizer",
+    "detected": true,
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.077,
+    "log": "cross-rank-env.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes",
+      "1 failed in 0.05s"
+    ],
+    "name": "cross-rank-env",
+    "mutation_path": "configs/kaggriculture_8rank.yaml",
+    "old": "  native_threads: 2\n",
+    "new": "  native_threads: 3\n",
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutant_sha256": "d3aee543b47ae44d3fdde404d63da1f16326dd3c378d0981dbb7556ceaf5c242",
+    "expected": "assert two.env.model_copy",
+    "detected": true,
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.087,
+    "log": "cross-rank-ppo.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes",
+      "1 failed in 0.05s"
+    ],
+    "name": "cross-rank-ppo",
+    "mutation_path": "configs/kaggriculture_8rank.yaml",
+    "old": "  ent_coef: 1e-6\n",
+    "new": "  ent_coef: 2e-6\n",
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutant_sha256": "75a48bcc22f76cf26867ed47ffec81e5feb479f31a68badf88b7f9f9dcf18c86",
+    "expected": "assert two.rl.model_copy",
+    "detected": true,
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.069,
+    "log": "cross-rank-model.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes",
+      "1 failed in 0.05s"
+    ],
+    "name": "cross-rank-model",
+    "mutation_path": "configs/kaggriculture_8rank.yaml",
+    "old": "model: kaggriculture\n",
+    "new": "model:\n  # Kaggriculture encoder on Isaiah's stateless_transformer_6m ladder point:\n  # width 256, 8 heads (head_dim 32), GELU, mlp_ratio 2.0, 4 scratch tokens.\n  # Depth 8 meets the owner's 6-10M parameter budget (Isaiah's 6m uses depth 6).\n  model_arch: kaggriculture_transformer\n  embed_dim: 256\n  depth: 7\n  n_heads: 8\n  mlp_ratio: 2.0\n  activation: gelu\n  n_scratch_tokens: 4\n  force_flash_attn: true\n",
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutant_sha256": "7af3999adfcc0f052eb6c893e8c6bf29c947d749c18da8b7a65bf4d888f0988f",
+    "expected": "assert two.model == other.model",
+    "detected": true,
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.089,
+    "log": "rollout-seat-rows.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking",
+      "1 failed in 0.04s"
+    ],
+    "name": "rollout-seat-rows",
+    "mutation_path": "python/owl/model/kaggriculture_workload.py",
+    "old": "ForwardWorkload(\"rollout\", n_envs * kt.PLAYERS)",
+    "new": "ForwardWorkload(\"rollout\", n_envs)",
+    "before_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "mutant_sha256": "3a1c66ed080954869f98bdd2b0abea053c018386ce69a1c9ae475fb4ec209e85",
+    "expected": "'rollout': (32, 1, 1)",
+    "detected": true,
+    "restored_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.076,
+    "log": "minibatch-seat-rows.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking",
+      "1 failed in 0.04s"
+    ],
+    "name": "minibatch-seat-rows",
+    "mutation_path": "python/owl/model/kaggriculture_workload.py",
+    "old": "ForwardWorkload(\"minibatch\", segments_per_minibatch * horizon * kt.PLAYERS)",
+    "new": "ForwardWorkload(\"minibatch\", segments_per_minibatch * horizon)",
+    "before_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "mutant_sha256": "e8977d827263f569f65a16ee2601a468bb5491a8e2195b78737316007f137573",
+    "expected": "'minibatch': (128, 1, 1)",
+    "detected": true,
+    "restored_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.086,
+    "log": "teacher-clamp-and-call-counts.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking",
+      "1 failed in 0.04s"
+    ],
+    "name": "teacher-clamp-and-call-counts",
+    "mutation_path": "python/owl/model/kaggriculture_workload.py",
+    "old": "teacher_segments = min(teacher_segments_per_minibatch, n_envs)",
+    "new": "teacher_segments = teacher_segments_per_minibatch",
+    "before_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "mutant_sha256": "486745d292f14951e618d3665b2521c6bfe97a71f4e0f70261352e40c46685ad",
+    "expected": "'teacher_chunk': (16384, 3, 2)",
+    "detected": true,
+    "restored_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.102,
+    "log": "evaluation-seat-rows.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking",
+      "1 failed in 0.04s"
+    ],
+    "name": "evaluation-seat-rows",
+    "mutation_path": "python/owl/model/kaggriculture_workload.py",
+    "old": "ForwardWorkload(\"evaluation\", n_envs * kt.PLAYERS)",
+    "new": "ForwardWorkload(\"evaluation\", n_envs)",
+    "before_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "mutant_sha256": "6343020835d8bb64b343015fc9291cc859fe8d3c7774980a478dcd69b916349b",
+    "expected": "'evaluation': (32, 1, 1)",
+    "detected": true,
+    "restored_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.181,
+    "log": "startup-workload-caller.log",
+    "tail": [
+      "FAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]",
+      "1 failed in 0.16s"
+    ],
+    "name": "startup-workload-caller",
+    "mutation_path": "scripts/run_ppo.py",
+    "old": "        _check_model_workload(\n            cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed\n        )\n",
+    "new": "",
+    "before_sha256": "1f3f5054a47d1028fd4f0675002ebb1530fb1666a5891a0786e31708ad4fc682",
+    "mutant_sha256": "adc4354db5b05b8713b043ca0faa5ebd29c627d4a1d2c1ac412e2a62d3afbb9f",
+    "expected": "assert [] ==",
+    "detected": true,
+    "restored_sha256": "1f3f5054a47d1028fd4f0675002ebb1530fb1666a5891a0786e31708ad4fc682",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_8rank.yaml-8]",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.11,
+    "log": "global-workload.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_8rank.yaml-8]",
+      "1 failed in 0.04s"
+    ],
+    "name": "global-workload",
+    "mutation_path": "configs/kaggriculture_8rank.yaml",
+    "old": "  n_envs: 32\n",
+    "new": "  n_envs: 64\n",
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutant_sha256": "28186b713d032c2e93bf7963b321963639a3eae673b6057ce1e6bf75cd7d202e",
+    "expected": "global_envs: 512 != 256",
+    "detected": true,
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_8rank.yaml]",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.149,
+    "log": "scaling-optimizer.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_ranked_config_optimizer_and_ppo_equal_scaling_6m[kaggriculture_8rank.yaml]",
+      "1 failed in 0.05s"
+    ],
+    "name": "scaling-optimizer",
+    "mutation_path": "configs/kaggriculture_8rank.yaml",
+    "old": "  muon_lr: 0.002\n",
+    "new": "  muon_lr: 0.003\n",
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutant_sha256": "282b9d1ffe4ce90fac6ec0463f6769d6299f754e237af0dc53de5a380a7a24f0",
+    "expected": "assert ours.optimizer == scaling.optimizer",
+    "detected": true,
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_config_env_and_cross_section_rules[kaggriculture_8rank.yaml]",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.091,
+    "log": "reward-recipe.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_config_env_and_cross_section_rules[kaggriculture_8rank.yaml]",
+      "1 failed in 0.04s"
+    ],
+    "name": "reward-recipe",
+    "mutation_path": "configs/kaggriculture_8rank.yaml",
+    "old": "    econ_shaping: 0.2\n",
+    "new": "    econ_shaping: 0.1\n",
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutant_sha256": "7a7356d7788b76007adec4fe6fb271736905cfa32c511e43ef41177de87bb1ca",
+    "expected": "assert ours.env.reward_shaping == _REWARD_SHAPING",
+    "detected": true,
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  },
+  {
+    "command": [
+      "/Users/poonszesen/kg-v3-m-8rank/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py::test_configs_load_through_full_config_and_build_the_model[kaggriculture_8rank.yaml]",
+      "-q"
+    ],
+    "cwd": "/Users/poonszesen/kg-v3-m-8rank/ops/rebuild-2026-09-29/codex/verify-merge-8rank-r2/mutations/scratch",
+    "exit_code": 1,
+    "seconds": 1.153,
+    "log": "model-factory.log",
+    "tail": [
+      "FAILED tests/kaggriculture/test_configs.py::test_configs_load_through_full_config_and_build_the_model[kaggriculture_8rank.yaml]",
+      "1 failed in 0.06s"
+    ],
+    "name": "model-factory",
+    "mutation_path": "python/owl/model/factory.py",
+    "old": "        case KaggricultureTransformerConfig():\n",
+    "new": "        case KaggricultureTransformerConfig() if False:\n",
+    "before_sha256": "7162688103ebd0ee2a310eebe5baa090c9ab94ec657212e94008ba346d9fcd7b",
+    "mutant_sha256": "c7f05d446130cd2009210aacb8a5754041d2c6194a6f2ec3fdd0e6c40db2a993",
+    "expected": "Expected code to be unreachable",
+    "detected": true,
+    "restored_sha256": "7162688103ebd0ee2a310eebe5baa090c9ab94ec657212e94008ba346d9fcd7b",
+    "restored_byte_exact": true,
+    "live_source_unchanged": true
+  }
+]
