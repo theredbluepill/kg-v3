@@ -1,0 +1,282 @@
+[
+  {
+    "mutation": "restore_C1_zero_median_bypass",
+    "killed": true,
+    "detail": {
+      "check": "c1_verdict",
+      "pass": false,
+      "fails": [
+        "single erroneous path at median 0 not flagged: []"
+      ],
+      "retained_regenerated": 6,
+      "median0_single": [],
+      "all_zero": []
+    }
+  },
+  {
+    "mutation": "restore_C3_two_path_omission",
+    "killed": true,
+    "detail": {
+      "check": "c3_values",
+      "pass": false,
+      "fails": [
+        "teacher_self_cached student_values nonfinite not reported ([])",
+        "teacher_self_cached student_values below_-1 not reported ([])",
+        "teacher_self_cached student_values above_1 not reported ([])",
+        "teacher_perturbed_combined student_values nonfinite not reported ([])",
+        "teacher_perturbed_combined student_values below_-1 not reported ([])",
+        "teacher_perturbed_combined student_values above_1 not reported ([])"
+      ],
+      "retained": [
+        {
+          "file": "c3_dense_aten.jsonl",
+          "errors": []
+        },
+        {
+          "file": "c3_dense_default.jsonl",
+          "errors": []
+        },
+        {
+          "file": "c3_mid_aten.jsonl",
+          "errors": []
+        },
+        {
+          "file": "c3_mid_default.jsonl",
+          "errors": []
+        }
+      ],
+      "mutations": [
+        {
+          "path": "teacher_self_combined",
+          "mutation": "nonfinite",
+          "caught": true
+        },
+        {
+          "path": "teacher_self_combined",
+          "mutation": "below_-1",
+          "caught": true
+        },
+        {
+          "path": "teacher_self_combined",
+          "mutation": "above_1",
+          "caught": true
+        },
+        {
+          "path": "teacher_self_cached",
+          "mutation": "nonfinite",
+          "caught": false
+        },
+        {
+          "path": "teacher_self_cached",
+          "mutation": "below_-1",
+          "caught": false
+        },
+        {
+          "path": "teacher_self_cached",
+          "mutation": "above_1",
+          "caught": false
+        },
+        {
+          "path": "teacher_perturbed_combined",
+          "mutation": "nonfinite",
+          "caught": false
+        },
+        {
+          "path": "teacher_perturbed_combined",
+          "mutation": "below_-1",
+          "caught": false
+        },
+        {
+          "path": "teacher_perturbed_combined",
+          "mutation": "above_1",
+          "caught": false
+        },
+        {
+          "path": "teacher_perturbed_cached",
+          "mutation": "nonfinite",
+          "caught": true
+        },
+        {
+          "path": "teacher_perturbed_cached",
+          "mutation": "below_-1",
+          "caught": true
+        },
+        {
+          "path": "teacher_perturbed_cached",
+          "mutation": "above_1",
+          "caught": true
+        }
+      ]
+    }
+  },
+  {
+    "mutation": "remove_driver_stream_exception_boundary",
+    "killed": true,
+    "detail": [
+      {
+        "probe": "malformed_backend_record",
+        "rc": 0,
+        "launched": [
+          "c3_mutated",
+          "c4_after"
+        ],
+        "guard_rejected": false,
+        "evidence": "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-dclqcucu/driver.jsonl"
+      },
+      {
+        "probe": "spawn_exception",
+        "rc": 0,
+        "launched": [
+          "c3_mutated",
+          "c4_after"
+        ],
+        "guard_rejected": false,
+        "evidence": "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-7luuszz0/driver.jsonl"
+      }
+    ]
+  },
+  {
+    "mutation": "disable_spawn_signal_deferral:new_spawn_after_popen",
+    "killed": true,
+    "detail": {
+      "timed_out": false,
+      "rc": 143,
+      "elapsed_s": 0.46,
+      "scenario": "new_spawn_after_popen",
+      "driver": "scripts/driver.py",
+      "driver_sha256": "416004565da07c840a10e0889c13a7df5ccf574bca15693cb610f31b57af0495",
+      "workdir": "/Users/poonszesen/kg-v3-m-gpu-receipts/.codex-tmp/kgv3-new_spawn_after_popen-go4lbwzh",
+      "stage_pids_recorded": 2,
+      "stage_pids_alive": [
+        "grandchild-53683",
+        "leader-53681",
+        "race_stage-53681"
+      ],
+      "boundary": {
+        "hook": "after Popen returned, before _spawn line 379",
+        "stage_pid": 53681,
+        "registered_at_signal": false,
+        "registered_groups": [
+          "c2_quick",
+          "c3_quick"
+        ]
+      },
+      "survivors_by_token": [],
+      "driver_log": [
+        {
+          "t": 0.0,
+          "status": "driver_start"
+        },
+        {
+          "t": 0.0,
+          "stage": "c3_quick",
+          "status": "launch"
+        },
+        {
+          "t": 0.0,
+          "stage": "c2_quick",
+          "status": "launch"
+        },
+        {
+          "t": 0.4,
+          "stage": "c3_quick",
+          "status": "pass",
+          "rc": 0
+        },
+        {
+          "t": 0.4,
+          "stage": "c2_quick",
+          "status": "pass",
+          "rc": 0
+        },
+        {
+          "t": 0.4,
+          "status": "phase1_done"
+        },
+        {
+          "t": 0.4,
+          "stage": "c4_race",
+          "status": "launch"
+        },
+        {
+          "t": 0.4,
+          "status": "signal",
+          "signal": "SIGTERM"
+        }
+      ],
+      "survivors_after_test_kill": []
+    }
+  },
+  {
+    "mutation": "disable_spawn_signal_deferral:new_spawn_in_popen",
+    "killed": true,
+    "detail": {
+      "timed_out": false,
+      "rc": 143,
+      "elapsed_s": 0.44,
+      "scenario": "new_spawn_in_popen",
+      "driver": "scripts/driver.py",
+      "driver_sha256": "416004565da07c840a10e0889c13a7df5ccf574bca15693cb610f31b57af0495",
+      "workdir": "/Users/poonszesen/kg-v3-m-gpu-receipts/.codex-tmp/kgv3-new_spawn_in_popen-nve1qcdf",
+      "stage_pids_recorded": 2,
+      "stage_pids_alive": [
+        "grandchild-53698",
+        "leader-53697",
+        "race_stage-53697"
+      ],
+      "boundary": {
+        "hook": "inside Popen, after the child started",
+        "stage_pid": 53697,
+        "registered_at_signal": false,
+        "registered_groups": [
+          "c2_quick",
+          "c3_quick"
+        ]
+      },
+      "survivors_by_token": [],
+      "driver_log": [
+        {
+          "t": 0.0,
+          "status": "driver_start"
+        },
+        {
+          "t": 0.0,
+          "stage": "c3_quick",
+          "status": "launch"
+        },
+        {
+          "t": 0.0,
+          "stage": "c2_quick",
+          "status": "launch"
+        },
+        {
+          "t": 0.4,
+          "stage": "c3_quick",
+          "status": "pass",
+          "rc": 0
+        },
+        {
+          "t": 0.4,
+          "stage": "c2_quick",
+          "status": "pass",
+          "rc": 0
+        },
+        {
+          "t": 0.4,
+          "status": "phase1_done"
+        },
+        {
+          "t": 0.4,
+          "stage": "c4_race",
+          "status": "launch"
+        },
+        {
+          "t": 0.4,
+          "status": "signal",
+          "signal": "SIGTERM"
+        }
+      ],
+      "survivors_after_test_kill": []
+    }
+  }
+]
