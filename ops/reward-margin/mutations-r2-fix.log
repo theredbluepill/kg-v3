@@ -1,0 +1,9 @@
+Reward-margin review r2 P3-1 fix: re-run of mutation N7 against the fixed Rust test
+Date: 2026-09-30. Worktree /Users/poonszesen/kg-v3-margin, base 25412a7 plus the uncommitted r2 fix.
+Mutation N7 (src/kaggriculture/reward.rs transition): margin rounded to f32 separately and added in f32
+  (economic as f32) + (m as f32) in place of one f64 sum and one f32 rounding.
+Command: cargo test --lib kaggriculture::
+Result: KILLED. margin_transition_adds_the_potential_difference_before_f32 FAILED (env_tests.rs:762);
+  133 passed; 1 failed; 3 ignored.
+Source restored from a byte copy afterwards; git status showed only the intended fix files.
+Clean suite after restore: see the prepare log of the landing.

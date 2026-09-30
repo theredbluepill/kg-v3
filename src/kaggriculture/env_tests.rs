@@ -744,17 +744,24 @@ fn margin_transition_adds_the_potential_difference_before_f32() {
     let before = [[0; 32]; 2];
     let mut after = before;
     after[0][0] = 1;
-    let (b0, b1) = ([3_000., 3_000.], [7_000., 2_000.]);
+    // A 12,345 lead (score .12345) with a .25 death penalty: summing in f64
+    // and rounding once differs in the last bit from rounding the margin
+    // separately and adding in f32, so a double rounding fails.
+    let (b0, b1) = ([3_000., 3_000.], [15_345., 3_000.]);
     let r = cfg.transition(&before, &after, b0, b1, false).unwrap();
     for s in 0..2 {
         let relative = (cfg.penalty(&after[1 - s]) - cfg.penalty(&before[1 - s]))
             - (cfg.penalty(&after[s]) - cfg.penalty(&before[s]));
-        let economic =
-            relative + (cfg.margin_score(b1[s] - b1[1 - s]) - cfg.margin_score(b0[s] - b0[1 - s]));
-        assert_eq!(r[s].to_bits(), (economic as f32).to_bits());
+        let margin = cfg.margin_score(b1[s] - b1[1 - s]) - cfg.margin_score(b0[s] - b0[1 - s]);
+        let single = ((relative + margin) as f32).to_bits();
+        let double = ((relative as f32) + (margin as f32)).to_bits();
+        assert_ne!(
+            single, double,
+            "seat {s}: the inputs must separate the orders"
+        );
+        assert_eq!(r[s].to_bits(), single);
     }
-    // Seat 0 leads by 5,000 (score .05) but paid a death penalty (.25 capped).
-    assert_eq!(r[0], (-0.25_f64 + 0.05) as f32);
+    assert_eq!(r[0], (-0.25_f64 + 0.12345) as f32);
     let done = cfg.transition(&before, &after, b0, b1, true).unwrap();
     assert_eq!(done[0], (f64::from(r[0]) + 0.35) as f32);
 }

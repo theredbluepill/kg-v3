@@ -1,5 +1,13 @@
 # Change log
 
+## 2026-09-30 — Apply the reward-margin review r2: a discriminating Rust rounding-order pin and the teacher-value gap
+
+An independent Claude review r2 of `kg/rebuild-reward-margin` `25412a7` (`ops/reward-margin/review-r2.md`, APPROVE with no P1 or P2; a Claude substitute for Codex under the owner's approval, not a Codex verdict) found the reward code correct and all four r1 findings resolved. Its two P3 items are applied on the same branch:
+- **Rust pin (P3-1).** `margin_transition_adds_the_potential_difference_before_f32` in `src/kaggriculture/env_tests.rs` now uses a 12,345 lead, where one f64 sum with one f32 rounding differs from a separate f32 rounding, and asserts that the two differ. The surviving Rust mutation N7 is now killed (`ops/reward-margin/mutations-r2-fix.log`).
+- **Gap (P3-2).** The [[decisions/replace-the-reward-with-half-cash-difference-and-half-terminal-sign|term M Decision]] adds that the last-best teacher, built from J/2's weights, keeps distilling J/2-reward values into the critic until the first promotion.
+
+No reward code or preset value changed, so the live relaunch from `87beaf0` is unaffected. Nothing was trained.
+
 ## 2026-09-30 — Apply the reward-margin review r1: the critic-range limit of term M and the operation-order pins
 
 An independent Claude review of `kg/rebuild-reward-margin` `8b45577` (`ops/reward-margin/review-r1.md`, REQUEST CHANGES with no P1; a Claude substitute for Codex under the owner's approval, not a Codex verdict) found the reward code correct and its fixes are applied on the same branch. No reward code or preset value changed, so the live relaunch from `87beaf0` is unaffected.
