@@ -7,9 +7,14 @@ the weight load and the warm-up bill to turn 0's overage bank. All bundled
 ``sys.path`` only during that ``exec``. ``agent`` must stay the last callable
 defined in this module (Kaggle's loader takes the last callable).
 
-``KAGGRICULTURE_FINAL_TURN_LIQUIDATION=1`` turns on the optional final-turn
-liquidation rule (``owl.kaggriculture.final_turn``); unset or ``0`` keeps it off.
-Kaggle sets no such variable, so a shipped package runs with the rule off.
+Two optional stateless endgame rules are read from the environment; for each,
+unset or ``0`` keeps it off, ``1`` turns it on and any other value raises:
+
+* ``KAGGRICULTURE_FINAL_TURN_LIQUIDATION`` (rule 1, ``owl.kaggriculture.final_turn``);
+* ``KAGGRICULTURE_AGENT_BLOCK_LATE_INVESTMENTS`` (rule 2,
+  ``owl.kaggriculture.late_invest``).
+
+Kaggle sets no such variable, so a shipped package runs with both rules off.
 """
 
 import os
@@ -31,7 +36,7 @@ if torch.get_num_interop_threads() != 1:
 from typing import Any
 
 from owl import OWL_ROOT
-from owl.kaggriculture import final_turn
+from owl.kaggriculture import final_turn, late_invest
 from owl.kaggriculture.kaggle_agent import KaggricultureAgent
 from owl.rs import assert_release_build
 
@@ -45,6 +50,7 @@ AGENT = KaggricultureAgent(
     strict=os.environ.get("KAGGRICULTURE_AGENT_STRICT") == "1",
     min_overage_time=MIN_OVERAGE_TIME,
     final_turn_liquidation=final_turn.enabled_from_env(),
+    block_late_investments=late_invest.enabled_from_env(),
 )
 AGENT.warm_up()
 
