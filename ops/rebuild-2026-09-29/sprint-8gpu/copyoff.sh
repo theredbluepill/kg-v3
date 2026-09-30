@@ -9,8 +9,15 @@
 # mtime changed (earnB compared size only, so an in-place last_best promotion of the same
 # size was never recopied), verify it against the pod's sha256, keep every distinct
 # checkpoint_last_best.pt as last_best-history/<pod mtime>-<sha12>.pt, and rewrite
-# DEST/SHA256SUMS. Needs rsync on the pod (bootstrap.sh installs it).
-# ONCE=1 does a single pass and exits (the final copy after stop.sh).
+# DEST/SHA256SUMS. Each pass also copies the bootstrap receipts
+# (/root/receipts/sprint-bootstrap/ -> DEST/sprint-bootstrap/) and the frozen launch files
+# (/root/sprint/NAME/, including the executed run.sh -> DEST/sprint-frozen/), which exist only
+# on the pod. Needs rsync on the pod (bootstrap.sh installs it).
+# ONCE=1 does a single pass and exits (the final copy after stop.sh). Only one copyoff may run
+# per DEST (lock DEST/.copyoff.lock): stop the loop FIRST (kill its pid, see mac_side.md step 8);
+# the ONCE=1 pass then clears the dead loop's stale lock. A held lock is reported on stderr AND
+# stdout (the log) and exits 1. SIGTERM/SIGINT end the loop at once (the sleep is interruptible);
+# an rsync in progress is finished first, and the lock is released on exit.
 set -u
 HOST=${1:?usage: copyoff.sh HOST PORT NAME [DEST]}
 PORT=${2:?usage: copyoff.sh HOST PORT NAME [DEST]}
@@ -23,19 +30,28 @@ SSH_KEY=${SSH_KEY:-$HOME/.ssh/id_ed25519}
 KEY_OPTS=(-i "$SSH_KEY" -o IdentitiesOnly=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts.runpod" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 -o ServerAliveInterval=30)
 SSH=(ssh "${KEY_OPTS[@]}" -p "$PORT" "$HOST")
 RSYNC_E="ssh ${KEY_OPTS[*]} -p $PORT"
-mkdir -p "$DEST/checkpoints" "$DEST/receipts" "$DEST/last_best-history"
+mkdir -p "$DEST/checkpoints" "$DEST/receipts" "$DEST/last_best-history" "$DEST/sprint-bootstrap" "$DEST/sprint-frozen"
 LOCK="$DEST/.copyoff.lock"
 if ! mkdir "$LOCK" 2>/dev/null; then
-  if kill -0 "$(cat "$LOCK/pid" 2>/dev/null)" 2>/dev/null; then echo "another copyoff (pid $(cat "$LOCK/pid")) runs for $DEST" >&2; exit 1; fi
-  rm -rf "$LOCK"; mkdir "$LOCK"
+  HOLDER=$(cat "$LOCK/pid" 2>/dev/null)
+  if [ -n "$HOLDER" ] && kill -0 "$HOLDER" 2>/dev/null; then
+    MSG="$(date -u +%FT%TZ) copyoff REFUSED: another copyoff (pid $HOLDER) holds $LOCK; stop it first (kill $HOLDER), then rerun"
+    echo "$MSG" >&2; echo "$MSG"; exit 1
+  fi
+  echo "$(date -u +%FT%TZ) clearing stale lock $LOCK (pid '${HOLDER}' is not running)"
+  rm -rf "$LOCK"; mkdir "$LOCK" || { echo "cannot take $LOCK" >&2; exit 1; }
 fi
 echo $$ > "$LOCK/pid"
-trap 'rm -rf "$LOCK"' EXIT
+SLEEP_PID=""
+trap 'rm -rf "$LOCK"; [ -n "$SLEEP_PID" ] && kill "$SLEEP_PID" 2>/dev/null; true' EXIT
+trap 'echo "$(date -u +%FT%TZ) copyoff stopped by signal (pid $$)"; exit 143' TERM INT
 echo "$(date -u +%FT%TZ) copyoff start host=$HOST port=$PORT name=$NAME dest=$DEST pid=$$"
 while true; do
   echo "$(date -u +%FT%TZ) pass start"
   rsync -a --partial -e "$RSYNC_E" "$HOST:/root/runs/$NAME.log" "$HOST:/root/runs/$NAME-watchdog.log" "$DEST/" 2>&1 | sed 's/^/  rsync-log: /'
   rsync -a -e "$RSYNC_E" "$HOST:/root/receipts/$NAME/" "$DEST/receipts/" 2>&1 | sed 's/^/  rsync-receipts: /'
+  rsync -a -e "$RSYNC_E" "$HOST:/root/receipts/sprint-bootstrap/" "$DEST/sprint-bootstrap/" 2>&1 | sed 's/^/  rsync-bootstrap: /'
+  rsync -a -e "$RSYNC_E" "$HOST:/root/sprint/$NAME/" "$DEST/sprint-frozen/" 2>&1 | sed 's/^/  rsync-frozen: /'
   LIST=$("${SSH[@]}" "cd /root/runs/$NAME 2>/dev/null && find . -name 'checkpoint_*.pt' -mmin +1 -printf '%P\t%s\t%T@\n'" 2>&1) || { echo "  list failed: $LIST"; LIST=""; }
   while IFS=$'\t' read -r REL SIZE MTIME; do
     [ -z "$REL" ] && continue
@@ -62,5 +78,6 @@ while true; do
   (cd "$DEST" && { find checkpoints last_best-history -name '*.pt' -type f | sort | xargs -r shasum -a 256; shasum -a 256 "$NAME.log" 2>/dev/null; } > SHA256SUMS.tmp; mv SHA256SUMS.tmp SHA256SUMS)
   echo "$(date -u +%FT%TZ) pass end: $(grep -c '\.pt$' "$DEST/SHA256SUMS" 2>/dev/null) checkpoint files"
   [ "${ONCE:-0}" = 1 ] && break
-  sleep "$INTERVAL"
+  sleep "$INTERVAL" & SLEEP_PID=$!
+  wait "$SLEEP_PID"; SLEEP_PID=""
 done

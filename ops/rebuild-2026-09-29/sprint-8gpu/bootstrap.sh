@@ -1,28 +1,34 @@
 #!/bin/bash
 # Sprint pod bootstrap: runs ON the new pod, idempotent, fail-fast.
 #
-#   bash /root/sprint-kit/bootstrap.sh --bundle /root/sprint.bundle --sha <40-hex main sha> \
-#        [--expect-gpus 8] [--repo /root/kg-v3] [--allow-unprobed-driver]
+#   bash /root/sprint-kit/bootstrap.sh --bundle /root/sprint.bundle \
+#        [--sha 07c8fc9972297f28e0414da752700194a90d4fc3] [--expect-gpus 8] [--repo /root/kg-v3]
+#        [--allow-unprobed-driver]
 #
+# --sha defaults to the pinned sprint source 07c8fc99 (integration main whose preset hash
+# b7fa7f9d... matches the live run pcy5knet). Another --sha is a source change: launch.sh
+# still refuses a preset whose hash differs unless --allow-recipe-drift (owner's yes).
 # Steps (each safe to rerun): GPU inventory and driver gate -> repo from the git
 # bundle (detached at --sha; must contain 07c8fc99 and the live anchor 0f70773)
 # -> rustup -> uv 0.9.0 -> uv sync --frozen --group dev --extra flash-attn
 # (UV_LINK_MODE=copy) -> uv run maturin develop --release -> version, release
 # build and compile-stack checks with .venv/bin/python -> /root/sweep-cache ->
-# CPU/NUMA topology -> W&B credential check (never reads the key).
+# CPU/NUMA topology (non-fatal: a failure is recorded and points to launch.sh --numa off)
+# -> W&B credential check (never reads the key).
 # The W&B key is NOT handled here: mac_side.md step 3 pipes only the
 # api.wandb.ai netrc entry over stdin.
 # Receipts: /root/receipts/sprint-bootstrap/<UTC stamp>/ (log, versions, topology).
 set -euo pipefail
 
-BUNDLE="" SHA="" EXPECT_GPUS=8 REPO=/root/kg-v3 ALLOW_UNPROBED_DRIVER=0
+PINNED_SHA=07c8fc9972297f28e0414da752700194a90d4fc3   # the sprint source (mac_side.md step 1)
+BUNDLE="" SHA=$PINNED_SHA EXPECT_GPUS=8 REPO=/root/kg-v3 ALLOW_UNPROBED_DRIVER=0
 MAIN_FLOOR=07c8fc9972297f28e0414da752700194a90d4fc3   # integration main containing the recipe
 ANCHOR=0f707731                                          # live run pcy5knet's code (/root/kg-v3-anchor)
 PROBED_DRIVER_FALLBACK=595.91.07
 UV_VERSION=0.9.0
 KIT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-usage() { sed -n '2,15p' "$0"; exit 2; }
+usage() { sed -n '2,20p' "$0"; exit 2; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --bundle) BUNDLE=$2; shift 2 ;;
@@ -34,7 +40,7 @@ while [ $# -gt 0 ]; do
     *) echo "unknown argument: $1" >&2; usage ;;
   esac
 done
-[ -n "$BUNDLE" ] && [ -n "$SHA" ] || { echo "need --bundle and --sha" >&2; usage; }
+[ -n "$BUNDLE" ] || { echo "need --bundle" >&2; usage; }
 [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "--sha must be a full 40-hex commit id, got '$SHA'" >&2; exit 2; }
 [[ "$EXPECT_GPUS" =~ ^[1-9][0-9]*$ ]] || { echo "--expect-gpus must be a positive integer" >&2; exit 2; }
 
@@ -176,8 +182,19 @@ free -g | tee "$R/memory.txt"
 step "10. CPU / NUMA topology"
 { lscpu | grep -E '^(CPU\(s\)|Model name|Socket|NUMA)'; nproc; } | tee "$R/cpu.txt"
 for n in /sys/devices/system/node/node*; do [ -e "$n/cpulist" ] && echo "$(basename "$n") cpus $(cat "$n/cpulist")"; done | tee -a "$R/cpu.txt"
-KG_NT_NATIVE_THREADS=4 .venv/bin/python "$KIT/main_probe_auto.py" --topology "$EXPECT_GPUS" | tee "$R/topology.json"
-grep -q '"oversubscribed": true' "$R/topology.json" && echo "WARNING: some node has fewer CPUs than ranks x (native_threads + 2); see mac_side.md" || echo "no node oversubscribed at native_threads=4"
+# Non-fatal: a topology error (e.g. a cpuset covering one NUMA node only) must not skip step 11.
+TOPO_OK=1 TOPO_RC=0
+KG_NT_NATIVE_THREADS=4 .venv/bin/python "$KIT/main_probe_auto.py" --topology "$EXPECT_GPUS" > "$R/topology.json" 2> "$R/topology.err" || TOPO_RC=$?
+if [ "$TOPO_RC" = 0 ]; then
+  cat "$R/topology.json"
+  grep -q '"oversubscribed": true' "$R/topology.json" && echo "WARNING: some node has fewer CPUs than ranks x (native_threads + 2); see mac_side.md" || echo "no node oversubscribed at native_threads=4"
+else
+  TOPO_OK=0
+  cat "$R/topology.err"
+  echo "WARNING: topology discovery FAILED (exit $TOPO_RC; recorded in $R/topology.err)."
+  echo "  launch.sh with the default --numa cpu will refuse. Fix the cause, or launch with --numa off"
+  echo "  (ranks run unbound: a throughput difference from pcy5knet, not a recipe change; tell the owner)."
+fi
 
 step "11. W&B credential (the key is never read or printed here)"
 if [ -f /root/.netrc ]; then
@@ -189,4 +206,4 @@ else
   echo "no /root/.netrc yet: run mac_side.md step 3 before launch.sh (launch refuses without it)"
 fi
 
-step "BOOTSTRAP DONE head=$(git rev-parse --short HEAD) driver=$DRIVER gate_ok=$DRIVER_OK receipts=$R"
+step "BOOTSTRAP DONE head=$(git rev-parse --short HEAD) pinned=$([ "$(git rev-parse HEAD)" = "$PINNED_SHA" ] && echo yes || echo NO) driver=$DRIVER gate_ok=$DRIVER_OK topology_ok=$TOPO_OK receipts=$R"

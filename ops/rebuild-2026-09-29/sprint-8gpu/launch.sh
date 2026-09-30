@@ -3,7 +3,8 @@
 #
 #   bash /root/sprint-kit/launch.sh --checkpoint /root/start/checkpoint_last_best.pt \
 #        --name earn720-lr1e4-8gpu-sprint-YYYYMMDD [--gpus 8] [--n-envs 12] \
-#        [--repo /root/kg-v3] [--numa cpu|1|off] [--extra 'k=v k2=v2'] [--allow-tight-memory] [--dry-run]
+#        [--repo /root/kg-v3] [--numa cpu|1|off] [--extra 'k=v k2=v2'] [--allow-tight-memory]
+#        [--allow-recipe-drift] [--dry-run]
 #
 # CHECKPOINT, NAME and N_GPUS may also come from the environment; flags win.
 # Recipe (unchanged from pcy5knet except the world size): configs/kaggriculture_4rank_margin.yaml
@@ -13,6 +14,9 @@
 # --load-model-weights CHECKPOINT --load-model-weights-mode model_only; W&B online (spoon/kg-v3).
 # The "4rank" preset name is only its origin: run_ppo takes the world size from torchrun.
 # --extra appends further -o overrides (a recipe change: record the owner's yes).
+# Source pin: refuses unless sha256 of the preset is b7fa7f9d57363869... (the preset of pcy5knet and of
+# the pinned sprint source 07c8fc99); --allow-recipe-drift overrides (owner's yes). A HEAD other
+# than 07c8fc99 is warned about and recorded.
 #
 # Effects: /root/sprint/NAME/ (frozen copies of main_probe_auto.py, watchdog.py and the
 # generated run.sh), /root/receipts/NAME/ (receipts), /root/runs/NAME{,.log,-watchdog.log}.
@@ -31,8 +35,13 @@ DRY_RUN=0
 ALLOW_TIGHT=0
 NATIVE_THREADS=4   # the preset's env.native_threads; used for the topology report only
 CFG=configs/kaggriculture_4rank_margin.yaml
+# sha256 of $CFG in the live run pcy5knet's receipts (earn720-lr1e4-from-promoted2-4rank-20260930/
+# receipts/hashes.sha256) and at the pinned sprint source 07c8fc99.
+EXPECTED_CFG_SHA256=b7fa7f9d57363869546a076b20184d16fd97583c38c8541dbb8d5789e520fcae
+PINNED_SHA=07c8fc9972297f28e0414da752700194a90d4fc3
+ALLOW_DRIFT=0
 
-usage() { sed -n '2,20p' "$0"; exit 2; }
+usage() { sed -n '2,23p' "$0"; exit 2; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --checkpoint) CHECKPOINT=${2:?}; shift 2 ;;
@@ -44,6 +53,7 @@ while [ $# -gt 0 ]; do
     --extra) EXTRA=${2?}; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     --allow-tight-memory) ALLOW_TIGHT=1; shift ;;
+    --allow-recipe-drift) ALLOW_DRIFT=1; shift ;;
     -h|--help) usage ;;
     *) echo "unknown argument: $1" >&2; usage ;;
   esac
@@ -82,7 +92,7 @@ ENV_EXPORTS=(OMP_NUM_THREADS=1 WANDB_ENTITY=spoon KG_NT_NUMA="$NUMA" KG_NT_NATIV
 plan() {
   echo "name=$NAME gpus=$N_GPUS n_envs=$N_ENVS global_games_per_iteration=$((N_GPUS * N_ENVS)) env_steps_per_iteration=$((720 * N_ENVS * N_GPUS))"
   echo "optimizer_steps_per_iteration=$N_ENVS (each over $N_GPUS game-segments, one per rank) numa=$NUMA eager=$EAGER"
-  echo "checkpoint=$CHECKPOINT repo=$REPO"
+  echo "checkpoint=$CHECKPOINT repo=$REPO pinned_source=$PINNED_SHA expected_preset_sha256=$EXPECTED_CFG_SHA256 allow_recipe_drift=$ALLOW_DRIFT"
   echo "run_dir=$RUN log=$LOG watchdog_log=$WLOG receipts=$R frozen=$FROZEN"
   echo "env: ${ENV_EXPORTS[*]}"
   printf 'cmd (in %s):' "$REPO"; printf ' %q' "${CMD[@]}"; echo
@@ -99,6 +109,13 @@ fail() { echo "launch.sh REFUSED: $*" >&2; exit 3; }
 [ ! -e "$R" ] && [ ! -e "$RUN" ] && [ ! -e "$LOG" ] && [ ! -e "$FROZEN" ] || fail "NAME $NAME already used (one of $R $RUN $LOG $FROZEN exists); pick a new --name"
 [ -x "$REPO/.venv/bin/torchrun" ] || fail "$REPO/.venv/bin/torchrun missing; run bootstrap.sh first"
 [ -f "$REPO/$CFG" ] || fail "$REPO/$CFG missing"
+CFG_SHA256=$(sha256sum "$REPO/$CFG" | awk '{print $1}')
+if [ "$CFG_SHA256" != "$EXPECTED_CFG_SHA256" ]; then
+  [ "$ALLOW_DRIFT" = 1 ] || fail "preset $CFG sha256 $CFG_SHA256 differs from pcy5knet's $EXPECTED_CFG_SHA256 (source $(git -C "$REPO" rev-parse --short HEAD), pinned 07c8fc99); bootstrap at the pinned --sha, or pass --allow-recipe-drift with the owner's yes"
+  echo "WARNING: preset $CFG sha256 $CFG_SHA256 != $EXPECTED_CFG_SHA256 (--allow-recipe-drift given)"
+fi
+HEAD_SHA=$(git -C "$REPO" rev-parse HEAD)
+[ "$HEAD_SHA" = "$PINNED_SHA" ] || echo "WARNING: $REPO HEAD $HEAD_SHA is not the pinned sprint source $PINNED_SHA; code outside the preset may differ (review the diff against 07c8fc99 before launching)"
 [ -r "$CHECKPOINT" ] || fail "checkpoint $CHECKPOINT not readable"
 for f in main_probe_auto.py watchdog.py stop.sh; do [ -f "$KIT/$f" ] || fail "kit file $KIT/$f missing"; done
 [ -z "$(git -C "$REPO" status --porcelain --untracked-files=no)" ] || fail "$REPO has tracked changes; the run must start from a clean commit"
@@ -169,7 +186,7 @@ echo "$TOPO" > "$R/topology.json"
 } > "$FROZEN/run.sh"
 chmod +x "$FROZEN/run.sh"
 bash -n "$FROZEN/run.sh" || fail "generated $FROZEN/run.sh does not parse"
-{ echo "launch.sh $(date -u +%FT%TZ)"; plan; echo "kit=$KIT"; } > "$R/launch.txt"
+{ echo "launch.sh $(date -u +%FT%TZ)"; plan; echo "kit=$KIT head=$HEAD_SHA preset_sha256=$CFG_SHA256"; } > "$R/launch.txt"
 sha256sum "$KIT"/*.py "$KIT"/*.sh "$FROZEN"/* >> "$R/launch.txt"
 
 # ---- launch as a session leader; read the REAL pgid from the file it writes ----

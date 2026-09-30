@@ -41,17 +41,19 @@ The sprint does **not** use it. `run_ppo` reads the world size from torchrun, an
 
 **Code identity.** Main `07c8fc99` adds `rl.initial_stagger` and `model.critic_offset` on top of `0f70773`. Both are off by default, and neither the preset nor the overrides turn them on. The launch receipt records the commit it ran and the file hashes.
 
+**Source pin.** The sprint source is pinned to `07c8fc9972297f28e0414da752700194a90d4fc3`, not to whatever `origin/main` is at sprint time. `bootstrap.sh --sha` defaults to it. `launch.sh` refuses unless the preset's sha256 is `b7fa7f9d57363869546a076b20184d16fd97583c38c8541dbb8d5789e520fcae`, the hash in pcy5knet's `receipts/hashes.sha256` and at `07c8fc99`. `--allow-recipe-drift` overrides this and needs the owner's yes. A HEAD other than `07c8fc99` gets a warning, and the HEAD is recorded in `launch.txt`.
+
 ## Kit files (copied to `/root/sprint-kit` on the pod)
 
 | File | Role |
 |---|---|
-| `bootstrap.sh` | Sets up the pod. It is idempotent and stops at the first failure: GPU count and driver gate, repo from the bundle, rustup, uv, `uv sync`, `maturin develop --release`, `assert_release_build`, the exact compile-stack check, `/root/sweep-cache`, topology, W&B check. |
-| `launch.sh` | Pre-launch checks, then freezes the kit and generates `/root/sprint/NAME/run.sh`. It runs `setsid nohup`, reads the **real** pgid from the file that `run.sh` writes, starts the watchdog on that pgid, and prints how to stop. `--dry-run` only prints the plan. |
+| `bootstrap.sh` | Sets up the pod. It is idempotent and stops at the first failure: GPU count and driver gate, repo from the bundle (detached at the pinned `--sha`), rustup, uv, `uv sync`, `maturin develop --release`, `assert_release_build`, the exact compile-stack check, `/root/sweep-cache`, topology, W&B check. The topology step is the exception: a failure there is recorded in `topology.err`, points to `launch.sh --numa off`, and the W&B check still runs. |
+| `launch.sh` | Pre-launch checks (including the preset hash pin), then freezes the kit and generates `/root/sprint/NAME/run.sh`. It runs `setsid nohup`, reads the **real** pgid from the file that `run.sh` writes, starts the watchdog on that pgid, and prints how to stop. `--dry-run` only prints the plan. |
 | `main_probe_auto.py` | The `main_probe.py` wrapper (nt-probe records, W&B online gate, `KG_NT_NUMA=cpu` affinity), with the topology discovered at runtime. `--topology N` prints the planned binding. |
 | `watchdog.py` | The nonfinite-only watchdog of the live earn runs. Its per-rank counts are no longer fixed to 4 ranks. |
 | `stop.sh` | Sends SIGTERM to the run's group and all its descendants, then SIGKILL after 60 s, then stops the watchdog. Writes `receipts/NAME/stop.txt`. |
 | `first_iters.py` | Checks the first iterations from the log. It runs on the pod or on the Mac copy. |
-| `copyoff.sh` | The Mac copy-off loop (`HOST PORT NAME [DEST]`). |
+| `copyoff.sh` | The Mac copy-off loop (`HOST PORT NAME [DEST]`). Besides the log, the watchdog log, `receipts/NAME` and the checkpoints, it copies the bootstrap receipts (`/root/receipts/sprint-bootstrap/` → `DEST/sprint-bootstrap/`) and the frozen launch files including the executed `run.sh` (`/root/sprint/NAME/` → `DEST/sprint-frozen/`), which otherwise exist only on the pod. One copyoff per DEST: a second one (while the loop holds `DEST/.copyoff.lock`) exits 1 and says so on stderr and in the log. |
 | `test_main_probe_auto.py` | Parser tests that run on the Mac. Not part of the repo test suite. |
 
 **Topology semantics.** `main_probe.py` hardcoded `GPU_NODE {0:0,1:0,2:1,3:1}` and the two node CPU lists of `abl4mvr5w1mmn4`. The pod's `numa_bind` records show that each rank got its node's **whole** 128-CPU set, shared by the 2 ranks on that node, with no split.
@@ -107,15 +109,18 @@ CKPT=/Users/poonszesen/kg-v3-runs/earn720-lr1e4-from-promoted2-4rank-20260930/pr
 shasum -a 256 $CKPT          # write this into the launch record
 ```
 
-**1. Bundle main.**
+**1. Bundle main (the sprint source is pinned to `07c8fc99`).**
 
 ```bash
 cd /Users/poonszesen/kg-v3-int && git fetch origin
-SHA=$(git rev-parse origin/main); echo $SHA
-git merge-base --is-ancestor 07c8fc9972297f28e0414da752700194a90d4fc3 $SHA && echo "contains 07c8fc99"
+SHA=07c8fc9972297f28e0414da752700194a90d4fc3          # pinned; do not use the origin/main tip
+git merge-base --is-ancestor $SHA origin/main && echo "origin/main contains the pinned $SHA"
+git show $SHA:configs/kaggriculture_4rank_margin.yaml | shasum -a 256   # expect b7fa7f9d57363869546a076b20184d16fd97583c38c8541dbb8d5789e520fcae
 git bundle create $STAGE/sprint.bundle refs/remotes/origin/main && git bundle verify $STAGE/sprint.bundle
 shasum -a 256 $STAGE/sprint.bundle
 ```
+
+The bundle carries `origin/main`, which contains the pin; bootstrap checks out `$SHA` detached. Using a later commit is a source change: pass it as `--sha` only with the owner's yes, and `launch.sh` still refuses a changed preset unless `--allow-recipe-drift`.
 
 **2. Copy the bundle, the checkpoint and the kit.**
 
@@ -145,7 +150,9 @@ pod 'stat -c %a ~/.netrc'     # expect 600; bootstrap step 11 checks wandb.Api()
 pod "bash /root/sprint-kit/bootstrap.sh --bundle /root/sprint.bundle --sha $SHA --expect-gpus 8"
 ```
 
-Expect `BOOTSTRAP DONE ... gate_ok=1`, `compile stack accepted`, `wandb.Api ok, entity: spoon`, and a topology JSON with 8 ranks and `"oversubscribed": false`. On exit 3 (the driver gate), stop and bring options A/B/C to the owner. Receipts go to `/root/receipts/sprint-bootstrap/<stamp>/`.
+Expect `BOOTSTRAP DONE ... pinned=yes ... gate_ok=1 topology_ok=1`, `compile stack accepted`, `wandb.Api ok, entity: spoon`, and a topology JSON with 8 ranks and `"oversubscribed": false`. On exit 3 (the driver gate), stop and bring options A/B/C to the owner. With `topology_ok=0`, read `topology.err`: fix the cause, or launch with `--numa off` (ranks unbound; a throughput difference from pcy5knet, so tell the owner). Receipts go to `/root/receipts/sprint-bootstrap/<stamp>/`; the copy-off brings them to the Mac.
+
+`launch.sh` refuses with `preset ... sha256 ... differs` if the checkout is not the pinned source.
 
 **5. Launch.** Do a dry run first, then the real launch.
 
@@ -178,18 +185,28 @@ pod "tail -3 /root/runs/$NAME-watchdog.log"
 **7. Start the copy-off.**
 
 ```bash
-mkdir -p /Users/poonszesen/kg-v3-runs/$NAME
-nohup $KIT/copyoff.sh $HOST $PORT $NAME >> /Users/poonszesen/kg-v3-runs/$NAME/copyoff.log 2>&1 &
-echo "copyoff pid $!"
+DEST=/Users/poonszesen/kg-v3-runs/$NAME; mkdir -p $DEST
+nohup $KIT/copyoff.sh $HOST $PORT $NAME >> $DEST/copyoff.log 2>&1 &
+echo $! > $DEST/copyoff.loop.pid; echo "copyoff pid $(cat $DEST/copyoff.loop.pid)"
 ```
 
-**8. Stop (when the owner says so).**
+Besides the log and checkpoints, each pass copies `/root/receipts/sprint-bootstrap/` to `$DEST/sprint-bootstrap/` and `/root/sprint/$NAME/` (the executed `run.sh` and the frozen wrapper and watchdog) to `$DEST/sprint-frozen/`.
+
+**8. Stop (when the owner says so).** The order matters. The loop holds `$DEST/.copyoff.lock`, so a final pass started while it runs exits 1 and copies nothing. Stop the loop **first**.
 
 ```bash
 pod "bash /root/sprint-kit/stop.sh $NAME 'owner stop'"
-ONCE=1 $KIT/copyoff.sh $HOST $PORT $NAME >> /Users/poonszesen/kg-v3-runs/$NAME/copyoff.log 2>&1   # final pass
-kill <copyoff pid>
+CPID=$(cat $DEST/copyoff.loop.pid); kill $CPID      # 1. stop the loop (it finishes an rsync in progress, then exits)
+while kill -0 $CPID 2>/dev/null; do sleep 2; done; echo "loop $CPID gone"
+sleep 70                                            # 2. the pass skips checkpoints modified in the last 60 s
+ONCE=1 $KIT/copyoff.sh $HOST $PORT $NAME >> $DEST/copyoff.log; echo "final pass exit $?"   # 3. must print exit 0
+tail -8 $DEST/copyoff.log                           # 4. expect "pass end: N checkpoint files", no MISMATCH / copy failed
+(cd $DEST && shasum -a 256 -c SHA256SUMS | grep -v ': OK$'; echo "sha check done")
+pod "cd /root/runs/$NAME && find . -name 'checkpoint_*.pt' | wc -l"   # pod checkpoint count ...
+grep -c '  checkpoints/' $DEST/SHA256SUMS                          # ... must equal this (last_best-history lines are extra)
 ```
+
+Stderr of the final pass stays on the terminal, so a refused lock (`copyoff REFUSED: another copyoff (pid N) holds ...`) is visible; it also goes to the log. If the loop was killed hard, its lock is stale and the final pass clears it (`clearing stale lock`). Release the pod only after steps 3 and 4 are clean.
 
 Manual fallback: `pod "kill -TERM -\$(cat /root/receipts/$NAME/pgid)"` stops the launcher group only. The ranks are in their own sessions, which is why `stop.sh` walks the descendants.
 
@@ -205,6 +222,8 @@ Manual fallback: `pod "kill -TERM -\$(cat /root/receipts/$NAME/pgid)"` stops the
 - `first_iters.py` on the live `pcy5knet` log (4 ranks, 12 envs) printed `OK`: 48 games and +12 optimizer steps per iteration.
 - `launch.sh --dry-run` and each argument refusal were checked.
 - `copyoff.sh` argument checks were run.
+- After review (P1/P2 fixes): a local lock repro of `copyoff.sh` with shimmed `ssh`/`rsync` against a fake pod tree on the Mac. The old order (final pass while the loop runs) exits 1 with the REFUSED message on stderr and in the log. The new step 8 order (kill the loop, wait, `ONCE=1`) exits 0. SIGTERM ended the sleeping loop at once and it released its own lock. The final pass copied a checkpoint that appeared after the loop's last pass, and the bootstrap receipts and `run.sh` were on the Mac; `shasum -c SHA256SUMS` passed. A killed-hard loop (SIGKILL) left a stale lock, which the final pass cleared (exit 0). Not reproduced: a SIGTERM that arrives during an rsync (bash runs the trap after that rsync ends).
+- After review: bootstrap step 10's block, run under `set -euo pipefail` and the ERR trap with a stub python that fails, recorded `topology.err`, printed the `--numa off` pointer and reached step 11 with `topology_ok=0`; with a stub that succeeds, `topology_ok=1`. `launch.sh` against a local git repo: a drifted preset was refused (exit 3), `--allow-recipe-drift` let it pass with a warning, and the preset from `07c8fc99` passed the hash check and was stopped at the next check (no `/root/.netrc`).
 
 **In a throwaway Linux container** (`python:3.12-slim` plus procps and git; no network, no GPU, no training). The fakes were `nvidia-smi` and a torchrun that starts 8 setsid "ranks" printing `[nt-probe]` records.
 
@@ -239,4 +258,5 @@ The launch path worked:
 
 - Nothing has run on a GPU pod. That includes real NUMA sysfs on a 2-socket host, `nvidia-smi` output, torchrun and NCCL with 8 ranks, and memory and throughput at 8 ranks.
 - bootstrap steps 4 to 11: rustup, uv, `uv sync`, maturin, the version checks and W&B.
-- `copyoff.sh` against a real host.
+- `copyoff.sh` against a real host (the repro used shims, not ssh to a pod).
+- The preset hash refusal and the non-fatal topology step on a pod (checked locally with stubs only).
