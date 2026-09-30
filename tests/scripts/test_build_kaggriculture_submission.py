@@ -100,6 +100,19 @@ def test_archive_layout_manifest_and_slim_checkpoint(tmp_path: Path) -> None:
         assert (member.uid, member.gid, member.mtime) == (0, 0, 0)
 
 
+def test_native_receipt_is_bound_to_the_staged_module(tmp_path: Path) -> None:
+    inputs = _inputs(tmp_path)
+    module_sha = _sha(inputs["native_module"].read_bytes())
+    receipt = {"source_commit": "c" * 40, "module": {"sha256": module_sha}}
+    manifest = builder.build(**inputs, native_receipt=receipt)
+    assert manifest["native_module"]["build"] == receipt
+    assert manifest["native_module"]["sha256"] == module_sha
+    other = _inputs(tmp_path / "other")
+    with pytest.raises(ValueError, match="native receipt names module"):
+        builder.build(**other, native_receipt={"module": {"sha256": "0" * 64}})
+    assert not other["output"].exists()
+
+
 def test_archive_bytes_are_reproducible_apart_from_build_time(tmp_path: Path) -> None:
     first = _inputs(tmp_path / "a")
     second = _inputs(tmp_path / "b")

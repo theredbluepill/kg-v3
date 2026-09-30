@@ -168,6 +168,7 @@ def build(
     output: Path,
     identity: SourceIdentity,
     runtime_receipt: dict[str, Any] | None,
+    native_receipt: dict[str, Any] | None = None,
     expected_checkpoint_sha256: str | None = None,
     max_glibc: str = MAX_GLIBC,
     size_limit_bytes: int = SIZE_LIMIT_MIB * 1024 * 1024,
@@ -184,6 +185,14 @@ def build(
         )
     native = native_module.read_bytes()
     check_elf_x86_64(native)
+    if native_receipt is not None:
+        receipt_sha256 = native_receipt["module"]["sha256"]
+        native_sha256 = hashlib.sha256(native).hexdigest()
+        if receipt_sha256 != native_sha256:
+            raise ValueError(
+                f"native receipt names module {receipt_sha256}, "
+                f"not the staged {native_sha256}"
+            )
     glibc = glibc_requirement(native)
     if glibc is not None and _version_tuple(glibc) > _version_tuple(max_glibc):
         raise ValueError(
@@ -230,6 +239,7 @@ def build(
                 "elf": "ELF64 x86-64",
                 "glibc_symbol_max": glibc,
                 "glibc_limit": max_glibc,
+                "build": native_receipt,
             },
             "entrypoint": {
                 "source": ENTRYPOINT.as_posix(),
@@ -277,6 +287,12 @@ def _parse_args() -> argparse.Namespace:
         type=Path,
         help="JSON receipt of the Kaggle runtime image, copied into the manifest",
     )
+    parser.add_argument(
+        "--native-receipt",
+        type=Path,
+        help="JSON receipt of the native module's build; its module.sha256 "
+        "must equal the staged module's",
+    )
     parser.add_argument("--max-glibc", default=MAX_GLIBC)
     return parser.parse_args()
 
@@ -290,6 +306,11 @@ def main() -> None:
         if args.runtime_receipt is not None
         else None
     )
+    native_receipt = (
+        json.loads(args.native_receipt.read_text())
+        if args.native_receipt is not None
+        else None
+    )
     manifest = build(
         checkpoint=args.checkpoint.resolve(),
         config=config.resolve(),
@@ -297,6 +318,7 @@ def main() -> None:
         output=args.output.resolve(),
         identity=identity,
         runtime_receipt=receipt,
+        native_receipt=native_receipt,
         expected_checkpoint_sha256=args.expected_checkpoint_sha256,
         max_glibc=args.max_glibc,
     )
