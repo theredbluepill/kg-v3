@@ -1,0 +1,2988 @@
+Reading additional input from stdin...
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-bcnow
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /Users/poonszesen/.cache/uv, /tmp, /private/tmp]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ed4e-6d81-7b10-9783-1fb340a71c4c
+--------
+user
+# Re-verify the Task 5.1 BC shard preparer (r2)
+
+Your r1 report is `/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-5.1-prepare.md` (REQUEST CHANGES) and its evidence is under `/tmp/bc51-review-0z513d/`.
+The fix is commit `356d19f` on `kg/rebuild-bc-now` in `/Users/poonszesen/kg-v3-bcnow`. Review `git diff 49255ac 356d19f`.
+
+1. **P2 (resume identity).** `records/identity.json` now binds records to:
+   - the checkout identity (`_source_identity`, including `prepare_sha256` and the git head);
+   - the month, days, validation fraction, turn stride, hire limit and label pairing;
+   - every archive's SHA-256.
+
+   A mismatch, or records without an identity file, raises. Rerun your r1 winner-swap resume reproduction against `356d19f` in a scratch dir under `/tmp` and confirm it now fails. Say whether any label- or seat-affecting input is still unbound.
+2. **P3s.** Is `--days` now defaulting to `22-28`? Are mypy and ruff clean on the changed files?
+3. **Pod evidence to interpret; no action on the pod.** The production prep is running on the pod from `49255ac`: a fresh out_dir, `--days 22-28 --turn-stride 10 --workers 12`, with 7 symlinked day zips. Its `--pairing-sample 8` result on real 09-22..09-28 episodes was 5743/5752. All 9 mismatches differ only in one seat's `private` state, never public, at turns 335, 383, 431, 455, 527 and 623:
+
+   | Episode | Matches | Mismatch turns |
+   |---|---|---|
+   | 111810488 | 718/719 | 383 (private1) |
+   | 112862572 | 717/719 | 383 (private1), 527 (private0) |
+   | 114483925 | 715/719 | 335 (p0), 431 (p1), 455 (p1), 623 (p1) |
+   | 113243404 | 718/719 | 623 (p0) |
+   | 114001770 | 718/719 | 527 (p1) |
+   | 112158749, 112490397, 113637101 | 719/719 | none |
+
+   From the pinned engine source, explain the likely cause. For example, a periodic RNG-driven private event that re-stepping from a single `steps[t]` cannot reproduce. Say whether it affects label correctness. Labels are the recorded `steps[t+1]` actions, not predicted states.
+   Question: since fresh-run shards are unaffected by the resume fix, may the production prep from `49255ac` be used for BC training?
+
+One round; blocking findings only (owner: no over-engineering for BC). Do not modify tracked files; scratch only under `/tmp`; no downloads, GPU or training. Cite file:line.
+
+End with exactly one line: `VERDICT: APPROVE`, `VERDICT: APPROVE WITH EDITS`, or `VERDICT: REQUEST CHANGES`.
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll rerun the winner-swap reproduction, check the changed Python files, and trace the private-state mismatches in the pinned engine. I’ll use `/tmp` for scratch work and leave the checkout and pod untouched.
+
+exec
+/bin/zsh -lc 'pwd; git status --short; git rev-parse HEAD; git diff --stat 49255ac 356d19f; cat /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-5.1-prepare.md; rg --files /tmp/bc51-review-0z513d | head -60' in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+/Users/poonszesen/kg-v3-bcnow
+356d19f6b3bd5a0e1102c674d96f5b71cabfb5e3
+ scripts/kaggriculture_prepare_bc.py            | 118 ++++++++++++++++++++-----
+ tests/scripts/test_kaggriculture_prepare_bc.py |  69 +++++++++++----
+ 2 files changed, 150 insertions(+), 37 deletions(-)
+Found **one blocking correctness issue** in `49255ac`.
+
+- **P2 — Resume can silently reuse stale labels and the wrong winner.** [kaggriculture_prepare_bc.py:779](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:779) accepts completed records by filename without checking current source or preparation settings. I simulated an interrupted run, exchanged the terminal-bank winner in a **scratch copy** of its input, and resumed. Preparation succeeded; the trainer loaded the cached seat-1 winner mask although the current input’s winner was seat 0. This also permits reusing records generated before the pairing correction. Validate preparation/source identity before reuse; reject or rebuild mismatches. [Reproduction evidence](/tmp/bc51-review-0z513d/resume-result.json).
+
+Two non-blocking items:
+
+- **P3:** The default remains `21-27`, despite the requested `22-28`; explicit `--days 22-28` works. [CLI:718](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:718).
+- **P3:** Mypy reports seven errors: untyped Kaggle imports, inferred collection indexing, and a missing annotation. [Script:508](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:508), [script:557](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:557), [test:110](/Users/poonszesen/kg-v3-bcnow/tests/scripts/test_kaggriculture_prepare_bc.py:110). [Full output](/tmp/bc51-review-0z513d/mypy.log).
+
+The fresh preparation path passed verification:
+
+- Requested pytest suites: **52 passed**.
+- The `t`/`t+1` correction is complete for fresh runs: observations, actor counts and placeholders use `t`; farmer, hand and market labels use `t+1`; turns cover `0..718`.
+- Both shards loaded through the actual reader. All **1,438 winning-seat programs** decoded to their recorded `steps[t+1]` actions; all losing-seat placeholders matched PASS programs sized from `steps[t]`. Sampled observation tensors matched re-encoding.
+- Manifest keys and array dtypes match reader validation. Gather restores integer tensors to `int64`; `policy_seat` reaches the trainer’s policy-loss mask. Malformed winning actions are explicitly rejected and counted.
+- Winners match final banks. Keeping both seats on draws is sound under your allowance: both remain in the same episode split, with critic targets `0.5/0.5`.
+
+| Local episode | Recorded `info.seed` | Pairing matches | Winning seat |
+|---|---:|---:|---:|
+| 114406062 | 863363664 | 719/719 | 1 |
+| 114461109 | 1596988104 | 719/719 | 0 |
+
+The CLI succeeded with **seven symlinked day ZIPs and `--days 22-28`**. These were scratch archives containing the two unchanged local payloads plus six empty archives; this verifies the layout, not the full seven-day corpus.
+
+[Detailed report and evidence](/tmp/bc51-review-0z513d/report.md). Repository remained clean; no source-data writes, downloads, GPU execution, or training beyond the requested unit tests.
+
+VERDICT: REQUEST CHANGES/tmp/bc51-review-0z513d/resume-inspect.log
+/tmp/bc51-review-0z513d/changed-archives/kaggriculture-episodes-2026-09-24.zip
+/tmp/bc51-review-0z513d/changed-archives/kaggriculture-episodes-2026-09-25.zip
+/tmp/bc51-review-0z513d/changed-archives/kaggriculture-episodes-2026-09-27.zip
+/tmp/bc51-review-0z513d/changed-archives/kaggriculture-episodes-2026-09-26.zip
+/tmp/bc51-review-0z513d/changed-archives/kaggriculture-episodes-2026-09-22.zip
+/tmp/bc51-review-0z513d/changed-archives/kaggriculture-episodes-2026-09-23.zip
+/tmp/bc51-review-0z513d/changed-archives/kaggriculture-episodes-2026-09-28.zip
+/tmp/bc51-review-0z513d/resume-setup.py
+/tmp/bc51-review-0z513d/trace-result.json
+/tmp/bc51-review-0z513d/resume.log
+/tmp/bc51-review-0z513d/mypy.log
+/tmp/bc51-review-0z513d/resume-inspect.py
+/tmp/bc51-review-0z513d/pytest-cache/v/cache/nodeids
+/tmp/bc51-review-0z513d/pytest-cache/README.md
+/tmp/bc51-review-0z513d/pytest-cache/CACHEDIR.TAG
+/tmp/bc51-review-0z513d/resume-result.json
+/tmp/bc51-review-0z513d/local-prepare.log
+/tmp/bc51-review-0z513d/dataset/validation/2026-09-28-114461109.npz
+/tmp/bc51-review-0z513d/dataset/train/2026-09-28-114406062.npz
+/tmp/bc51-review-0z513d/dataset/manifest.json
+/tmp/bc51-review-0z513d/dataset/pairing.json
+/tmp/bc51-review-0z513d/mypy-cache/3.12/cache.db
+/tmp/bc51-review-0z513d/mypy-cache/CACHEDIR.TAG
+/tmp/bc51-review-0z513d/mypy-cache/missing_stubs
+/tmp/bc51-review-0z513d/trace.py
+/tmp/bc51-review-0z513d/dataset/records/2026-09-28-114406062.json
+/tmp/bc51-review-0z513d/dataset/records/2026-09-28-114461109.json
+/tmp/bc51-review-0z513d/trace.log
+/tmp/bc51-review-0z513d/report.md
+/tmp/bc51-review-0z513d/archive-targets/kaggriculture-episodes-2026-09-24.zip
+/tmp/bc51-review-0z513d/archive-targets/kaggriculture-episodes-2026-09-25.zip
+/tmp/bc51-review-0z513d/archive-targets/kaggriculture-episodes-2026-09-27.zip
+/tmp/bc51-review-0z513d/archive-targets/kaggriculture-episodes-2026-09-26.zip
+/tmp/bc51-review-0z513d/archive-targets/kaggriculture-episodes-2026-09-22.zip
+/tmp/bc51-review-0z513d/archive-targets/kaggriculture-episodes-2026-09-23.zip
+/tmp/bc51-review-0z513d/archive-targets/kaggriculture-episodes-2026-09-28.zip
+/tmp/bc51-review-0z513d/pytest.log
+/tmp/bc51-review-0z513d/resume-changed-source/manifest.json
+/tmp/bc51-review-0z513d/resume-changed-source/train/2026-09-28-114406062.npz
+/tmp/bc51-review-0z513d/resume-changed-source/records/2026-09-28-114461109.json
+/tmp/bc51-review-0z513d/resume-changed-source/records/2026-09-28-114406062.json
+/tmp/bc51-review-0z513d/resume-changed-source/validation/2026-09-28-114461109.npz
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/runs/bc-20260929-210707/bc_config.yaml
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/runs/bc-20260929-210707/checkpoint_bc_best.json
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/runs/bc-20260929-210707/bc_result.json
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/runs/bc-20260929-210707/config.yaml
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/runs/bc-20260929-210707/bc_attempts.jsonl
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/runs/bc-20260929-210707/bc_history.jsonl
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/runs/bc-20260929-210707/bc_state.pt
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/runs/bc-20260929-210707/checkpoint_bc_best.pt
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/bc-data/validation/2026-09-21-ep-v.npz
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/bc-data/train/2026-09-21-ep-a.npz
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/bc-data/train/2026-09-21-ep-c.npz
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/bc-data/train/2026-09-21-ep-b.npz
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/bc-data/manifest.json
+/tmp/bc51-review-0z513d/pytest/test_script_resume_records_a_n0/bc.yaml
+/tmp/bc51-review-0z513d/pytest/test_loader_rejects_old_or_for0/bc-data/validation/2026-09-21-ep-v.npz
+/tmp/bc51-review-0z513d/pytest/test_loader_rejects_old_or_for0/bc-data/train/2026-09-21-ep-a.npz
+/tmp/bc51-review-0z513d/pytest/test_loader_rejects_old_or_for0/bc-data/train/2026-09-21-ep-c.npz
+
+exec
+/bin/zsh -lc "cat cookbook/index.md; sed -n '1,85p' cookbook/log.md; rg -n -i 'bc.shard|bc.prepar|resume.identity|pairing|private.event' cookbook ops/rebuild-2026-09-29 -g '*.md' | head -100" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References are not all reference-branch notes: the References index's sections and entries state whether each describes the current tree or branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]]
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Credit the SPS run's GPU chunk counts in the compiled-GEMM Reference
+
+Codex verification r1 of the evidence merge (`4974888`, APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/verify-merge-evidence-r1.md`) found one P3: the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] still said the chunked teacher-sized packed path was "not measured on the GPU", although the [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]] run counted 1/2/3 teacher-proxy trunk chunks there. The Reference, its description and the [[references/index|References index]] line now credit that timing-only measurement and keep the numerical-correctness and production teacher-integration gaps.
+
+## 2026-09-29 — Merge the kg/rebuild-model ops evidence and cookbook refresh onto the integration
+
+The Codex-approved `kg/rebuild-model` commits `4fd40c7`..`8093d51` change only `ops/` and `cookbook/`: Phase 6.0 flash-attn, model-only SPS ceiling and ATEN-only GEMM A/B receipts, the cookbook refresh and the [[workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict|codex exec Workflow]]. Two files conflicted. This log keeps both sides, integration first. The [[references/index|References index]] keeps every integration line, including the cuBLAS-only lane's [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] text, adds the two new References at the top and takes the corrected Task 0.3 Rust status. `results.md` auto-merged to the branch's copy, so the integration's "`results.md` lines 259–303" citations now resolve in this tree. The [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment Reference]] no longer says the compiled-GEMM FlashAttention limit awaits revision, because the cuBLAS-only lane revised it.
+
+## 2026-09-29 — Keep BC patience on the scheduled cadence across restarts
+
+Codex verification r2 of Task 5.2 (`ops/rebuild-2026-09-29/codex/verify-5.2-trainer-r2.md`, APPROVE WITH EDITS) found one P3: the terminal evaluation of a budget or runtime stop between scheduled evaluations counted toward patience, so a run stopped at step 1 and extended stopped at step 2 where the uninterrupted run stopped at step 4, contradicting the exact-restart claim. `HeldOutSelection.observe` now takes `scheduled`; the off-cadence terminal evaluation still selects (it can keep a lower checkpoint) but leaves patience alone, and `bc_history.jsonl` marks it with `bc/scheduled_evaluation` 0. The restart claim in `bc.py`, `README.md` and the Reference now names rows, updates, evaluation steps and stopping step, with a best never higher in NLL. New tests also pin the rank in the permutation seed and the attempt-record guards, two of r2's surviving-mutant gaps. 11/11 targeted mutants killed; `just py-prepare`: 1,703 passed, 11 skipped. See [[references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best|BC trainer Reference]].
+
+## 2026-09-29 — Fix the BC trainer's verification r1 findings
+
+Codex verification r1 of Task 5.2 (`ops/rebuild-2026-09-29/codex/verify-5.2-trainer-r1.md`, REJECT) found two P2s. `HeldOutSelection` gated the best checkpoint by `min_delta`, so NLLs 2.0 → 1.97 with `min_delta` 0.05 kept 2.0; selection now follows every strict minimum and a separate `improvement_nll` / `evals_since_improvement` pair carries patience. A restart reused `launch.json`'s source and admitted a changed seed or batch; `launch.json` is replaced by `bc_attempts.jsonl`, one record per launch or restart with that checkout's source, source lineage and parent `bc_state.pt` SHA-256, copied into the best record and `bc_result.json`, and `bc_state.pt` now stores the trajectory settings, which a restart must match except `max_steps`. New tests also add a hand-computed objective oracle and prove the real update path lowers the loss, closing the reported loss-sign and `optimizer.step()` gaps. Seven tests red before the fix, 11/11 targeted mutants killed; `just py-prepare`: 1,698 passed, 11 skipped. See [[references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best|BC trainer Reference]].
+
+## 2026-09-29 — Build the Task 5.2 BC trainer script
+
+`scripts/train_bc.py`, `python/owl/train/bc.py` and `python/owl/kaggriculture/bc_data.py` add the BC warm start on the rebuilt model. It reuses Isaiah's `create_model`, `create_optimizer`, `autocast_context`, `configure_model_compile` and DDP adapter, and it reads the refreshed 5.1 brief's `kaggriculture-bc-shard-v1` format (`bcefd02`). Changes from the reference trainer: the critic is trained with a raw-bank winner CE (Isaiah's equal policy/value distillation weights) instead of frozen; training order is deterministic per rank, so a restart reproduces the uninterrupted run; the best checkpoint by held-out NLL has exactly `run_ppo.py`'s keys; a patience rule stops the run (L9). `configs/bc/kaggriculture_2rank.yaml` carries unmeasured starting values. 18 CPU tests and 11 of 12 mutants killed; `just py-prepare`: 1,691 passed, 11 skipped. No GPU, real-data or W&B execution; the run waits for the 5.1 shards and the pod. See [[references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best|BC trainer Reference]].
+
+## 2026-09-29 — Reconcile the teacher Reference's open dependencies after the merge
+
+Codex verification r1 of the Phase 4 merge (`a424d8c`, APPROVE WITH EDITS,
+`ops/rebuild-2026-09-29/codex/verify-merge-teacher-r1.md`) found one P3: the
+[[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]]
+still said T18 awaited the Task 3.2 value-mode guards, T19b and Task 4.4 awaited
+the configs merge, and described the old skip reason, while its appended
+post-merge line said those had landed. The launch-pair, T19-split and "Phase 4
+is not complete" prose now states the current seams in place: T18 and the
+trainer-checkpoint test wait for the Task 3.1 trainer mapping, the launch/resume
+pair for the run_ppo game seam and Task 1.4 native env, and 4.4 is undone with
+its configs prerequisite satisfied. The superseded appended line is folded in.
+Documentation only; the verification evidence is committed beside the verdict.
+`just py-prepare`: 1,673 passed, 11 skipped, docs-fresh passes
+(`ops/rebuild-2026-09-29/merge-teacher-r1-fixes/py-prepare.log`).
+
+## 2026-09-29 — Merge Phase 4 teacher distillation onto the Task 1.3 integration
+
+Phase 4 (Codex APPROVE at `8fde43c`) forked from Task 3.1 at `4cac1a1`, before
+Tasks 3.2–3.4, the cuBLAS-only compile claim and Task 1.3 merged. Four files
+conflicted. `scripts/run_ppo.py` keeps both imports (`terminal_seat_banks` and
+`KaggricultureObsConfig`); `docs/rl-api-specs.md` places Phase 4's Teacher
+targets bullet before the integration's Environment line and native sections;
+this log and the references index keep both sides, integration first. The
+auto-merged teacher paths all encode through `_run_trunk`, so the cuBLAS-only
+check covers them. An unskipped probe (`ops/rebuild-2026-09-29/merge-teacher/skip-probe.log`)
+shows the four skipped trainer and run_ppo tests still fail, on the trainer's
+missing `KaggricultureActionMask` mapping and run_ppo's no-env stop. Their skip
+reasons now name those seams instead of the merged configs branch, and the
+[[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]]
+records it. No Rust changed; `docs/rules-parity-coverage.md` records the merged
+counts. Full `just prepare`: engine 69, root Rust 254 with four ignored, Python
+1,673 passed with 11 skips; receipt `ops/rebuild-2026-09-29/merge-teacher/prepare.log`.
+
+## 2026-09-29 — Capture every engine build input in observation-oracle custody
+
+Codex verification r1 of the Task 1.3 merge (`e197528`, REJECT) found that the
+oracle source snapshot omitted the live engine `Cargo.toml` and `py_random.rs`,
+so edits to either during regeneration survived every recheck. `regenerate.py`
+now captures and rechecks those and `econ_attrib.rs`, recorded in
+`dirty_files`, and fails on any undeclared engine module. Seven new custody
+tests failed first and pass after the repair (53 total). The committed corpus
+predates the repair; its gap is stated in the
+[[references/structured-observations-preserve-legal-state-and-order|observation Reference]]
+and `docs/rules-parity-coverage.md`. Receipts:
+`ops/rebuild-2026-09-29/merge-1.3/verify-r1-fix/`.
+
+## 2026-09-29 — Test each recorder size budget and archive hash (Codex verify r2)
+
+Codex's second Task 1.4 verification confirmed both r1 fixes, found no
+production defect and approved with one P3 edit.
+
+- **Recorder tests.** The size and hash tests made the declared size disagree
+  with the file, so the size check fired first. The compressed-size cap and
+  both archive hash checks could be removed and every test still passed. The
+  new tests change one field at a time: a cap lowered below a valid fixture, a
+  declared size one byte too large, a same-length flipped byte, and a wrong
+  archive or expanded digest. Each asserts its exact error before `np.load`.
+  Removing any of the six size/hash guards now fails a named test.
+
+The [[references/native-game-semantics-use-v3-owned-buffers|native buffer Reference]]
+records the evidence. Receipts: `ops/rebuild-2026-09-29/1.4/verify-r2-fixes/`
+and `ops/rebuild-2026-09-29/codex/verify-env-r2/`.
+cookbook/log.md:21:`scripts/train_bc.py`, `python/owl/train/bc.py` and `python/owl/kaggriculture/bc_data.py` add the BC warm start on the rebuilt model. It reuses Isaiah's `create_model`, `create_optimizer`, `autocast_context`, `configure_model_compile` and DDP adapter, and it reads the refreshed 5.1 brief's `kaggriculture-bc-shard-v1` format (`bcefd02`). Changes from the reference trainer: the critic is trained with a raw-bank winner CE (Isaiah's equal policy/value distillation weights) instead of frozen; training order is deterministic per rank, so a restart reproduces the uninterrupted run; the best checkpoint by held-out NLL has exactly `run_ppo.py`'s keys; a patience rule stops the run (L9). `configs/bc/kaggriculture_2rank.yaml` carries unmeasured starting values. 18 CPU tests and 11 of 12 mutants killed; `just py-prepare`: 1,691 passed, 11 skipped. No GPU, real-data or W&B execution; the run waits for the 5.1 shards and the pod. See [[references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best|BC trainer Reference]].
+cookbook/log.md:412:- adds `KaggricultureEnvConfig` and `KaggricultureRewardConfig` (`python/owl/kaggriculture/config.py`), selected in `FullConfig` by the observation tag, with both game pairings, `gamma = 1` and Isaiah's Orbit cross-checks unchanged;
+cookbook/log.md:814:Owner: “修復差異吧 player token”. The [[references/explicit-game-tokens-and-grammar-replace-orbit-heads|model Reference]] records the restored player query and entity/player/plan projection, shared private-seat parameters, batched execution, 8,353,727 parameters and explicit old-checkpoint incompatibility. The focused suite passes33 cases; canonical py-prepare passes811 with three hardware/backend skips after repairing a stale assertion for concurrently added evaluation-log fields. Model docs and the [[references/full-turn-intentions-coordinate-batched-action-heads|optional coordination candidate]] distinguish current structure from prior benchmarks; U/A remains unimplemented. Original dirty bytes, checks and remaining GPU/strength limits are preserved in the repair receipt.
+cookbook/decisions/index.md:5:- [[diagnose-the-mechanism-before-spending-on-runs|Diagnose the mechanism before spending on runs]] — Keep decisions reproducible, map game capabilities to executable mechanisms, and distinguish four failure classes before repairing.
+ops/rebuild-2026-09-29/briefs/7.3-replay-export.md:89:  framework `step` (257–305) and reference BC preparation agree on this timing.
+cookbook/decisions/diagnose-the-mechanism-before-spending-on-runs.md:4:description: "Keep decisions reproducible, map game capabilities to executable mechanisms, and distinguish four failure classes before repairing."
+ops/rebuild-2026-09-29/1.1/before/cookbook/log.md:126:Owner: “修復差異吧 player token”. The [[references/explicit-game-tokens-and-grammar-replace-orbit-heads|model Reference]] records the restored player query and entity/player/plan projection, shared private-seat parameters, batched execution, 8,353,727 parameters and explicit old-checkpoint incompatibility. The focused suite passes33 cases; canonical py-prepare passes811 with three hardware/backend skips after repairing a stale assertion for concurrently added evaluation-log fields. Model docs and the [[references/full-turn-intentions-coordinate-batched-action-heads|optional coordination candidate]] distinguish current structure from prior benchmarks; U/A remains unimplemented. Original dirty bytes, checks and remaining GPU/strength limits are preserved in the repair receipt.
+ops/rebuild-2026-09-29/1.1/before/cookbook/decisions/index.md:5:- [[diagnose-the-mechanism-before-spending-on-runs|Diagnose the mechanism before spending on runs]] — Keep decisions reproducible, map game capabilities to executable mechanisms, and distinguish four failure classes before repairing.
+ops/rebuild-2026-09-29/briefs/1.3.md:782:- Read-only independent draft review found and corrected three plan defects: dense-case clone pairing, separating validation from prepared-write timing, and release checking of publication capacity. It also prompted explicit gzip streaming and recorder error-return types. The review ran no build and edited no file.
+cookbook/references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic.md:20:  - `python/owl/train/config.py`: this change made the validator reject `kaggriculture_transformer`, because `FullConfig.env` was Orbit's `EnvConfig`. Task 3.4's second fix replaced that rejection with the env pairing ([[kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]]); the validator still never reads Orbit-only fields (`actor`, `value_mode`, `critic_mode`) from the Kaggriculture config.
+cookbook/references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic.md:40:  - `FullConfig` rejects the model without a Kaggriculture env (the original test asserted rejection under Orbit's `EnvConfig`; its message still matches the pairing error)
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:50:The previous-best logic stays intact: evaluate against last best, promote at win rate **>= .7**, keep separate current/best checkpoints, and resume the current model/optimizer separately from the last-best opponent. The only runner change moves evaluation logging after the promotion write/barrier and adds `eval/promoted`, `eval/promotion_threshold` and `eval/games`. `tests/kaggriculture/test_last_best.py` exercises native evaluation, the .699/.7 branches and current/incumbent resume pairing. Periodic evaluation now follows upstream's 20M-step `checkpoint_freq`; short diagnostics need an explicit override. `OWL_ALLOW_CPU_DDP=1` enables Gloo/CPU diagnostics only; normal multi-rank runs require CUDA.
+cookbook/references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best.md:4:description: "Task 5.2 trainer script: scripts/train_bc.py trains the registered KaggricultureTransformer on teacher-forced replay NLL plus a winner cross-entropy critic target from raw final banks, through Isaiah's factory, optimizer, BF16 autocast, cuBLAS-only compile and DDP seams. It reads the refreshed 5.1 kaggriculture-bc-shard-v1 format into rank-partitioned host memory, keeps every strict held-out-NLL minimum as the best checkpoint in run_ppo's exact schema, stops after sustained non-improvement beyond min_delta over scheduled evaluations (L9), and records each resume as a new attempt with its own source under an unchanged trajectory config. CPU-tested with synthetic shards; no GPU, DDP, compile, real-data or W&B execution yet."
+cookbook/references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best.md:24:- **Shard format.** The loader follows the refreshed 5.1 brief (branch `kg/rebuild-bc-brief` at `bcefd02`, still awaiting Codex review). Shards are `kaggriculture-bc-shard-v1`: one `np.savez_compressed` per episode at `<split>/<day>-<episode_id>.npz`, with the 28 observation fields, `can_act`, `tokens`, `lengths`, `turn` and a `schema` id. The brief lists the manifest's contents but not its key names. The loader requires `schema`, `observation_schema_version`, `contract_document_version` and per-episode `episode_id`, `split`, `terminal_banks`, `admitted`, `shard_path`, `shard_sha256` and `shard_bytes`. It keeps other custody keys uninterpreted. Task 5.1's `prepare.py` must emit these names, or use `write_bc_episode` / `write_bc_manifest`.
+ops/rebuild-2026-09-29/codex/verify-3.4-r3/report.md:32:  Kaggriculture model, and FullConfig validates both game pairings and reward
+cookbook/references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe.md:50:  - the typed env round trip, Orbit configs still selecting Isaiah's `EnvConfig`, both game-pairing rejections, Orbit specs or unknown keys in the Kaggriculture env, `gamma != 1`, `winner_ce`, the reward budget checks and `require_orbit_env`.
+cookbook/references/index.md:5:- [[kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best|Kaggriculture BC trainer warm-starts PPO from the held-out best]]: Task 5.2 trainer script on Isaiah's factory, optimizer, BF16, cuBLAS-only compile and DDP seams. It trains the critic with a raw-bank winner CE and reads the refreshed 5.1 `kaggriculture-bc-shard-v1` shards into rank-partitioned host memory. It keeps every strict held-out-NLL minimum in run_ppo's checkpoint schema, stops after sustained non-improvement beyond `min_delta` over scheduled evaluations (L9), so a restart keeps the uninterrupted cadence, and records each restart as a new attempt with its own source under unchanged trajectory settings (verification r1/r2 fixes). 30 CPU tests on synthetic shards; no GPU, real-data or W&B execution; the run waits for 5.1 shards (Task 1.4 tokens) and the pod.
+ops/rebuild-2026-09-29/codex/verify-5.2-independent/report.md:43:`probe_resume_identity.py` exercises the real `main` resume branch, real config
+ops/rebuild-2026-09-29/codex/verify-5.2-independent/report.md:58:guarantee to unchanged settings. See `probe_resume_identity.log`.
+ops/rebuild-2026-09-29/codex/brief-2.1-review.md:12:   **Brief edit:** Specify these changes explicitly. Add `python/owl/train/optimizer.py` to Files: its model arguments must become generic, because their proposed Orbit defaults reject Kaggriculture statically. Add type checks for forward/serve outputs, action-spec pairing and rejection of mixed-game arguments. Existing Orbit annotations need no wholesale rewrite. Making token counting abstract would additionally require updating test doubles in `tests/owl/train/{test_ppo,test_optimizer,test_distributed}.py`.
+
+exec
+/bin/zsh -lc "git diff 49255ac 356d19f; nl -ba scripts/kaggriculture_prepare_bc.py | sed -n '1,255p'; nl -ba scripts/kaggriculture_prepare_bc.py | sed -n '450,980p'" in /Users/poonszesen/kg-v3-bcnow
+exec
+/bin/zsh -lc "cat /tmp/bc51-review-0z513d/report.md; cat /tmp/bc51-review-0z513d/resume-setup.py; cat /tmp/bc51-review-0z513d/resume-inspect.py; cat cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md; cat cookbook/references/kaggriculture-bc-trainer-warm-starts-ppo-from-the-held-out-best.md; rg -n 'mypy|ruff|py-prepare|pytest' justfile pyproject.toml; ls -ld .venv .venv/bin/python" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+Review of 49255acca0502c09a41d4d6a474127014cfd2cb2 against 8d29ae3
+
+P2 — Resume reuses stale source-derived labels without verifying preparation identity.
+Location: scripts/kaggriculture_prepare_bc.py:779-784; current invocation custody is published at :793-819.
+Records are loaded solely by day/episode filename. Their source hash, source/code identity, split and stride are not compared with the current task. A resumed run can therefore keep old labels/winner masks while presenting the current source/config as its dataset origin. This can also retain outputs from before a pairing correction.
+Reproduction: prepared the two original local episodes; copied only episode 114406062's completed record and shard into a scratch incomplete output; changed only its terminal banks in a scratch copy of the source ZIP to exchange the winner; invoked the same CLI with that scratch source. The CLI reported 1 done/1 to do and exited 0. Current source banks were [42478,7213] (winner 0), but the newly published manifest and successfully loaded trainer batch retained [7213,42478] and policy_seat [false,true] (winner 1). Source hashes differ. See resume-result.json and resume.log. Original source files were not modified.
+Fix: persist and validate preparation/source/options identity before reusing completed records; reject or rebuild mismatched episodes. This is one resume correctness issue, not proof of actual train/validation overlap. Same-input resume is covered by the passing test.
+
+P3 — CLI default dates are still 21-27 rather than owner-requested 22-28.
+Location: scripts/kaggriculture_prepare_bc.py:718 (also module text :4).
+Explicit --days 22-28 works. Align the default/help text to avoid an accidental wrong window.
+
+P3 — Mypy fails on the changed-file set.
+Locations: scripts/kaggriculture_prepare_bc.py:508, :509, :557, :560, :607; tests/scripts/test_kaggriculture_prepare_bc.py:34, :110.
+Seven errors: untyped Kaggle imports, non-indexable inferred collection, and a missing variable annotation. See mypy.log. No runtime failure was observed from these errors.
+
+Verification:
+- Requested pytest suites: 52 passed in 8.37 seconds (pytest.log).
+- Mypy on all five changed Python files: 7 errors in 2 files, exit 1 (mypy.log).
+- CPU only, UV_OFFLINE=1, OMP_NUM_THREADS=2; scratch output, test caches and review scripts under this directory. No downloads, GPU run, mutation sweep, or training beyond the expressly requested unit tests.
+- Created seven scratch day ZIPs and a directory of symlinks to all seven; six ZIPs empty, the seventh holds unchanged local episode payloads. Thus the CLI/path/day parsing is tested, not the actual seven-day corpus. Ran scripts/kaggriculture_prepare_bc.py LINKS OUT --days 22-28 --workers 1 --pairing-sample 2.
+- Episode 114406062: info.seed 863363664, pairing 719/719, banks [7213,42478], winner seat 1, train, 719 admitted turns.
+- Episode 114461109: info.seed 1596988104, pairing 719/719, banks [115007,0], winner seat 0, validation, 719 admitted turns.
+- Total pairing 1438/1438; total admitted 1438. Recorded info.seed is used by the Python Kaggle interpreter checker. These are not Rust transition-harness parity measurements.
+- End-to-end reader probe load_bc_dataset -> gather: 1438/1438 policy programs decode exactly to normalized steps[t+1].action; 1438 losing-seat placeholders equal PASS with the actor count at t. Actor counts cross-checked on every turn. All 29 observation arrays compared exactly with fresh encoding of t in {0,47,71,143,167,718} for both episodes. See trace-result.json.
+- Turn domain is 0..718 (kept_turns :128-133). Encoding uses turn_header(t), :328-343; actor/hand count and placeholder generation use t, :367-389; the entire raw farmer/hands/market label uses t+1, :391-408. No remaining fresh-run t/t+1 mismatch found.
+- Winner chosen from final farms[s].money, :170-175, :425-426. policy_seat survives BCEpisode -> NPZ -> strict reader -> gather -> bc_terms. write_bc_episode :223-241 and _read_shard :336-392 agree on exact array keys, schema, byte/hash checks and dtypes. Manifest identity keys match BCManifest at bc_data.py:79-99. Tokens, lengths and turn are int64; policy_seat and can_act bool; observation dtypes follow _SCHEMA. Gather restores compact storage to int64.
+- bc.py:302-321 masks policy NLL to selected seats, with critic CE on both legal observation rows. Winner targets at :274-288 orient self/opponent correctly. Losing placeholders are not imitation targets; the critic uses observation encoding, not supplied action tokens.
+- A scratch malformed winning farmer command was explicitly rejected as "unknown unit command": 1, with the row not admitted (:392-409). Decode round-trip failures use the same counted rejection path. Losing actions intentionally do not control admission.
+- Draws retaining both seats are sound under the owner's allowance: both are non-losing demonstrations, one shared episode split, critic targets 0.5/0.5. There was no real drawn episode in this probe; synthetic draw/loss tests pass.
+- Repository git status remained clean. No tracked edits, commits, pushes, or writes to kaggriculture-v2.
+
+VERDICT: REQUEST CHANGES
+from pathlib import Path
+import json, shutil, zipfile
+base=Path('/tmp/bc51-review-0z513d')
+original=json.loads((base/'dataset/manifest.json').read_text())
+train=next(r for r in original['episodes'] if r['split']=='train')
+out=base/'resume-changed-source'
+(out/'records').mkdir(parents=True)
+shard=out/train['shard_path']; shard.parent.mkdir()
+shutil.copy2(base/'dataset'/train['shard_path'], shard)
+record_name='2026-09-28-114406062.json'
+shutil.copy2(base/'dataset/records'/record_name, out/'records'/record_name)
+archives=base/'changed-archives'; archives.mkdir()
+for path in (base/'archive-targets').glob('*.zip'):
+    with zipfile.ZipFile(path) as src, zipfile.ZipFile(archives/path.name,'w',zipfile.ZIP_DEFLATED) as dst:
+        for name in src.namelist():
+            payload=src.read(name)
+            if name=='114406062.json':
+                data=json.loads(payload)
+                farms=data['steps'][-1][0]['observation']['farms']
+                farms[0]['money'],farms[1]['money']=farms[1]['money'],farms[0]['money']
+                payload=json.dumps(data).encode()
+            dst.writestr(name,payload)
+print('Simulated partial preparation: one intact finished record/shard; pending validation episode. Only scratch source terminal banks changed; original v2 untouched.')
+from pathlib import Path
+import json,hashlib,zipfile
+import numpy as np
+from owl.kaggriculture.bc_data import load_bc_dataset
+base=Path('/tmp/bc51-review-0z513d')
+out=base/'resume-changed-source'
+m=json.loads((out/'manifest.json').read_text())
+r=next(e for e in m['episodes'] if e['episode_id']=='114406062')
+with zipfile.ZipFile(base/'changed-archives/kaggriculture-episodes-2026-09-28.zip') as z:
+    payload=z.read('114406062.json')
+    raw=json.loads(payload)
+farms=raw['steps'][-1][0]['observation']['farms']
+banks=[f['money'] for f in farms]
+data=load_bc_dataset(out)
+batch=data.train.gather(np.array([0]))
+result={'input_terminal_banks':banks,'current_input_winner':int(banks[1]>banks[0]),'manifest_terminal_banks':r['terminal_banks'],'manifest_policy_seats':r['policy_seats'],'trainer_policy_mask':batch.policy_seat.tolist(),'trainer_terminal_banks':batch.final_banks.tolist(),'cached_source_sha256':r['source_sha256'],'current_source_sha256':hashlib.sha256(payload).hexdigest(),'manifest_source':m['source']['archives'],'reader_load_succeeded':True}
+assert result['current_input_winner']==0
+assert result['trainer_policy_mask']==[[False,True]]
+assert result['cached_source_sha256']!=result['current_source_sha256']
+(base/'resume-result.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps(result,indent=2))
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+---
+type: "Reference"
+title: "Kaggriculture BC trainer warm-starts PPO from the held-out best"
+description: "Task 5.2 trainer script: scripts/train_bc.py trains the registered KaggricultureTransformer on teacher-forced replay NLL plus a winner cross-entropy critic target from raw final banks, through Isaiah's factory, optimizer, BF16 autocast, cuBLAS-only compile and DDP seams. It reads the refreshed 5.1 kaggriculture-bc-shard-v1 format into rank-partitioned host memory, keeps every strict held-out-NLL minimum as the best checkpoint in run_ppo's exact schema, stops after sustained non-improvement beyond min_delta over scheduled evaluations (L9), and records each resume as a new attempt with its own source under an unchanged trajectory config. CPU-tested with synthetic shards; no GPU, DDP, compile, real-data or W&B execution yet."
+tags: ["kaggriculture-v3", "bc", "training", "adaptation"]
+status: "verified-scoped"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources: [{"resource": "repository:scripts/train_bc.py"}, {"resource": "repository:python/owl/train/bc.py"}, {"resource": "repository:python/owl/kaggriculture/bc_data.py"}, {"resource": "repository:configs/bc/kaggriculture_2rank.yaml"}, {"resource": "repository:configs/kaggriculture_2rank.yaml"}, {"resource": "repository:configs/kaggriculture.yaml"}, {"resource": "repository:configs/winner_ce_6m.yaml"}, {"resource": "repository:tests/kaggriculture/test_bc.py"}, {"resource": "repository:README.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:python/owl/train/ppo.py"}, {"resource": "repository:python/owl/train/optimizer.py"}, {"resource": "repository:python/owl/train/utils.py"}, {"resource": "repository:python/owl/train/distributed.py"}, {"resource": "repository:python/owl/model/kaggriculture.py"}, {"resource": "repository:python/owl/model/kaggriculture_workload.py"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/5.1-bc-data.md"}, {"resource": "repository:ops/rebuild-2026-09-29/5.2/py-prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/5.2/mutations.log"}, {"resource": "repository:ops/rebuild-2026-09-29/5.2/test-bc.log"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-5.2-trainer-r1.md"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-5.2-independent/report.md"}, {"resource": "repository:ops/rebuild-2026-09-29/5.2-r1/test-bc-red.log"}, {"resource": "repository:ops/rebuild-2026-09-29/5.2-r1/mutations.log"}, {"resource": "repository:ops/rebuild-2026-09-29/5.2-r1/py-prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-5.2-trainer-r2.md"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-5.2-r2-independent/report.md"}, {"resource": "repository:ops/rebuild-2026-09-29/bc-trainer-r2-fixes/red.log"}, {"resource": "repository:ops/rebuild-2026-09-29/bc-trainer-r2-fixes/mutations.log"}, {"resource": "repository:ops/rebuild-2026-09-29/bc-trainer-r2-fixes/py-prepare.log"}, {"resource": "rebuild-bc-brief-branch:bcefd02:ops/rebuild-2026-09-29/briefs/5.1-bc-data.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/train_bc.py"}, {"resource": "repository:docs/write-up.md"}]
+---
+
+# Kaggriculture BC trainer warm-starts PPO from the held-out best
+
+Plan Task 5.2 asks for a BC trainer on the rebuilt model that reuses Isaiah's optimizer factory, BF16 and compile path, keeps the best checkpoint by held-out NLL and stops on sustained held-out degradation (lesson L9). This change builds the trainer script and its tests. The BC run itself waits for the Task 5.1 shards and the pod.
+
+## Adaptation inventory
+
+- `scripts/train_bc.py`: CLI in `run_ppo.py`'s shape (fresh `CONFIG --data --output-dir`, restart from a run directory, `torchrun` for several GPUs, `--log-mode`, `--wandb-mode online|offline`, `--max-runtime-hours`, `--source-commit` on a fresh launch or a restart). Each launch or restart appends an attempt record to `bc_attempts.jsonl` (see "Restart identity" below). It runs the GEMM workload check for the BC microbatch and validation forwards and the compile-stack check. It then builds the model with `create_model` and `reset_parameters`, compiles through `configure_model_compile` (the Kaggriculture cuBLAS-only claim), builds the optimizer with `create_optimizer` / `create_lr_scheduler` and wraps it with Isaiah's DDP adapter.
+- `python/owl/train/bc.py`: `BCConfig`, the objective, `TrainSharding`, `HeldOutSelection`, checkpoint and resume state, a W&B logger (project `kg-v3`, `job_type` `bc`) and `train_bc`. BF16 comes from the PPO config's `rl.dtype` through `autocast_context`. The model, dtype and compile settings come from the PPO config that BC warm-starts (`ppo_config`), so the BC checkpoint matches that PPO run's model. `wrap_bc_model_for_distributed` casts the model for Isaiah's Orbit-annotated DDP adapter, whose dispatch passes Kaggriculture batches through unchanged. The Task 3.1 trainer seam has not generalized those annotations yet.
+- `python/owl/kaggriculture/bc_data.py`: the shard writer and loader. `configs/bc/kaggriculture_2rank.yaml`: the 2-rank BC config for `configs/kaggriculture_2rank.yaml`. It sits under `configs/bc/` because the existing config tests load every top-level `configs/*.yaml` as a PPO `FullConfig`. `README.md` has a new "Kaggriculture BC warm start" section.
+
+## Decisions made here
+
+- **The critic is trained, not frozen.** Isaiah trains all of the shared trunk and both heads together, and his teacher distillation weights policy KL and winner CE equally (`teacher_kl_coef = teacher_value_coef`). BC is distillation from the recorded player. So the loss is the turn NLL divided by program length, plus `value_coef` (1.0) times the per-seat winner CE against the episode's raw final banks (L1: the larger bank wins, a draw is 0.5 each). The reference froze the critic head, but its trunk still moved, so its critic reached PPO miscalibrated with no target. A test shows that a policy-only loss leaves the four `critic_head` tensors without gradients. Isaiah's adapter builds DDP without unused-parameter detection for this model, so the joint loss also gives every parameter a gradient. DDP itself was not run. Isaiah's own recipe used no imitation learning (`docs/write-up.md`); BC here is the plan's owner-required addition.
+- **Shard format.** The loader follows the refreshed 5.1 brief (branch `kg/rebuild-bc-brief` at `bcefd02`, still awaiting Codex review). Shards are `kaggriculture-bc-shard-v1`: one `np.savez_compressed` per episode at `<split>/<day>-<episode_id>.npz`, with the 28 observation fields, `can_act`, `tokens`, `lengths`, `turn` and a `schema` id. The brief lists the manifest's contents but not its key names. The loader requires `schema`, `observation_schema_version`, `contract_document_version` and per-episode `episode_id`, `split`, `terminal_banks`, `admitted`, `shard_path`, `shard_sha256` and `shard_bytes`. It keeps other custody keys uninterpreted. Task 5.1's `prepare.py` must emit these names, or use `write_bc_episode` / `write_bc_manifest`.
+- **Residency and sharding.** Each rank keeps rows `[rank::world_size]` of every episode in host memory (the reference's split). Exact integers are stored as range-checked int32 and tokens as int16, then gathered back as int64. Loading verifies every shard's SHA-256, byte count and schema id, and runs the full `check_contract` once. Training order is a permutation seeded by `(seed, epoch, rank)` over that rank's rows, so restarting from `bc_state.pt` under the same source and settings repeats the uninterrupted run's rows, updates, evaluation steps and stopping step on a deterministic device (the kept checkpoint can differ; see "Selection and stopping"). Every evaluation covers all validation rows. A preflight pass admits every training program through `evaluate_actions` before step 1.
+- **Selection and stopping.** Each evaluation's held-out NLL feeds `HeldOutSelection`, which keeps selection and patience apart. Every strict new minimum is written as `checkpoint_bc_best.pt`, with a SHA-256 record in `checkpoint_bc_best.json`. Patience counts evaluations since the last improvement of more than `min_delta` over the previous such improvement, so gains inside `min_delta` still replace the best checkpoint but do not reset the count (the early-stopping convention; the first version gated the checkpoint by `min_delta` too, which Codex verification r1 showed could discard the lowest NLL). Training stops when that count reaches `patience_evals`, at `max_steps` or at the runtime cap. Patience counts scheduled evaluations only. A budget or runtime stop between them evaluates the final weights once (`bc/scheduled_evaluation` 0 in `bc_history.jsonl`); that evaluation can replace the best checkpoint but leaves the patience count alone. Codex verification r2 showed that counting it let a run stopped at step 1 and extended to 4 stop at step 2, where the uninterrupted run stopped at step 4. With it excluded, the resumed run evaluates and stops at the uninterrupted steps, and its best checkpoint is the minimum over a superset of the same weights, so never higher in held-out NLL. This is a choice made here: Isaiah has no BC loop and PPO has no held-out patience rule.
+- **Restart identity.** A restart is a new attempt, not a continuation of the launch's identity. `bc_attempts.jsonl` gets one record per launch or restart: attempt index, that checkout's source (`git rev-parse HEAD` with a `-dirty` suffix, or `--source-commit`), the lineage of every attempt's source, start step, the parent `bc_state.pt` SHA-256, dataset root and manifest hash, world size and start time. The best-checkpoint record and `bc_result.json` copy the attempt that wrote them. `bc_state.pt` stores the trajectory settings (the BC config except `max_steps`, and the whole PPO config by content); a restart with any other difference fails and names the changed fields, so only the step budget can grow. A changed source is recorded, not rejected: exact replay is claimed only for an unchanged source. `bc_history.jsonl` holds the NLL curve and `bc_result.json` the stopping step and reason. The best checkpoint has exactly `run_ppo.py`'s keys with `env_steps` 0, next to the PPO `config.yaml`.
+- **Starting values** in `configs/bc/kaggriculture_2rank.yaml` are not measured. They are the PPO config's Muon/AdamW values with the cosine over `max_steps`, 256 turn rows per rank per step, `max_grad_norm` 10, evaluation every 200 steps and patience 10. The run statement has to name any change.
+
+## Checks
+
+- `tests/kaggriculture/test_bc.py` (30 tests) uses tiny CPU models and synthetic shards whose programs a second tiny model sampled. The tests cover:
+  - the shard round trip at contract dtypes, and rejection of a tampered hash, a duplicate episode, an old `features/context` shard, a missing split, unpaired rows and out-of-range compaction;
+  - the loss halving on a memorizable batch, and every parameter receiving a gradient;
+  - a hand-computed objective oracle (per-frame probabilities, lengths and winner probabilities in, the length-normalized NLL plus CE out), and `train_bc`'s own update path moving every floating tensor and lowering the full training objective by more than 10%;
+  - two fake ranks holding disjoint rows that cover each split, with deterministic per-rank order, and equal-length rank partitions drawing different permutations (so the rank is in the seed);
+  - a scripted evaluator that selects the best checkpoint and stops, with the best weights equal to the step-1 snapshot; the verifier's probe (NLLs 2.0, 1.97, 2.4 with `min_delta` 0.05) keeping step 1; and a sub-`min_delta` trickle that keeps updating the best yet stops;
+  - an unscheduled evaluation updating selection but not patience; a budget stop at step 1 extended to 8 stopping at step 4 like the uninterrupted run, with bit-equal weights, the same scheduled evaluations and a best no higher (the r2 probe, and a variant whose off-cadence NLL is the minimum);
+  - a restart from `bc_state.pt` that matches an uninterrupted run bit for bit, and a resume that rejects a different dataset, world size, seed, batch, accumulation, `min_delta`, optimizer or PPO `rl` section while admitting a larger `max_steps`;
+  - the best checkpoint loading through `run_ppo`'s `_load_model_from_checkpoint`, `_load_model_weights` and PPO's `_checkpoint_metadata`;
+  - the 2-rank BC config targeting the 2-rank PPO config;
+  - the script running fresh and resuming on CPU; a script restart recording attempt 1 with its own source, the parent state hash and the source lineage in `bc_result.json` and the best record; and a script restart with an edited seed failing before training; and the attempt-record guards rejecting a missing or empty file on resume, existing records on a fresh run, a wrong index, a non-object line and a missing or non-string source.
+- Mutation checks (`ops/rebuild-2026-09-29/5.2/mutations.log`) killed 11 of 12 mutants. The survivor shares one permutation seed across ranks. The rank partitions are disjoint, so it changes no row set. Codex's independent verification r1 (`ops/rebuild-2026-09-29/codex/verify-5.2-trainer-r1.md`, REJECT) ran 100 mutants (27 killed) and raised the two P2 findings fixed above. Its reported gaps for reversed loss signs and a removed real `optimizer.step()` are now killed by the r1 tests; 11 targeted mutants of the fixes, loss sign, length normalization and the real optimizer step were all killed (`ops/rebuild-2026-09-29/5.2-r1/mutations.log`). The seven new or changed tests failed before the fix (`5.2-r1/test-bc-red.log`).
+- Codex verification r2 (`ops/rebuild-2026-09-29/codex/verify-5.2-trainer-r2.md`, APPROVE WITH EDITS) resolved both r1 P2s and raised the P3 fixed above. Its surviving mutants for the rank seed and the attempt-record guards are now killed: 11 targeted mutants of the r2 fix, the rank seed and those guards all fail the suite (`ops/rebuild-2026-09-29/bc-trainer-r2-fixes/mutations.log`); the new selection and cadence tests failed before the fix (`bc-trainer-r2-fixes/red.log`).
+- `just py-prepare` after the r2 fixes: 1,703 passed, 11 skipped, mypy and docs-fresh clean (`ops/rebuild-2026-09-29/bc-trainer-r2-fixes/py-prepare.log`).
+
+## Limits and open dependencies
+
+- Codex's other reported wiring gaps remain untested on CPU: removing autocast, compile, DDP, startup workload/stack checks, accumulation normalization, clipping, scheduler stepping, preflight or the runtime cap survives the suite, and several malformed shard/config guards have no negative fixture (the attempt-record guards now do).
+- Nothing has run on a GPU yet: no BF16 autocast, compiled trunk, DDP/NCCL, pinned-memory transfer or live W&B. The owner's Mac ran FP32 with no compilation. Throughput, peak memory and load time are unmeasured: each rank decompresses every shard, gathers on the host each step, and `clip_grad_norm_(error_if_nonfinite=True)` syncs once per step. Host memory per rank for the real slice is unmeasured too.
+- The BC run needs the 5.1 shards. Their token half waits on the Task 1.4 `kaggriculture_encode/decode` binding, and the full-slice run needs a machine that can read volume `4llk4uaf20`. It also needs the pod and FlashAttention, because `configs/model/kaggriculture.yaml` forces it (plan 6.0). PPO from the BC best then needs `run_ppo.py` to run Kaggriculture (Tasks 1.4/3.1). Today only its loaders are exercised.
+- The synthetic fixture uses one `make_obs` env per row. Multi-env `make_obs` batches with small actor counts can draw a lifespan below the −1 sentinel and fail `check_contract` (seen with 4–5 envs), which is a limit of the test fixture.
+pyproject.toml:25:    "mypy",
+pyproject.toml:26:    "pytest>=9.0.3",
+pyproject.toml:75:[tool.ruff]
+pyproject.toml:79:[tool.ruff.lint]
+pyproject.toml:102:[tool.ruff.lint.pydocstyle]
+pyproject.toml:110:[tool.mypy]
+pyproject.toml:111:plugins = ["pydantic.mypy"]
+pyproject.toml:119:[[tool.mypy.overrides]]
+pyproject.toml:123:[[tool.mypy.overrides]]
+pyproject.toml:130:[tool.pytest.ini_options]
+justfile:18:    uvx ruff check {{all_py_code}} --select I --fix
+justfile:19:    uvx ruff format {{all_py_code}}
+justfile:23:    uvx ruff check {{all_py_code}}
+justfile:26:    uv run mypy {{py_src}} {{py_scripts}}
+justfile:29:    uv run pytest {{py_tests}} -m "not slow"
+justfile:32:    uv run pytest {{py_tests}}
+justfile:34:py-prepare: py-format py-lint py-static py-test docs-fresh
+justfile:152:    rm -rf .mypy_cache .pytest_cache .ruff_cache .venv/
+drwxr-xr-x@ 11 poonszesen  staff  352 Sep 29 20:55 .venv
+lrwxr-xr-x@  1 poonszesen  staff   87 Sep 29 20:54 .venv/bin/python -> /Users/poonszesen/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12
+
+ succeeded in 0ms:
+diff --git a/scripts/kaggriculture_prepare_bc.py b/scripts/kaggriculture_prepare_bc.py
+index f752aa9..af0d1b9 100644
+--- a/scripts/kaggriculture_prepare_bc.py
++++ b/scripts/kaggriculture_prepare_bc.py
+@@ -36,6 +36,9 @@ Per episode (one worker process each, one ZIP member in memory at a time):
+ 
+ Every finished episode leaves ``records/<day>-<episode_id>.json``; a rerun
+ skips those (resumable), and ``manifest.json`` is written once at the end.
++``records/identity.json`` binds the records to the source checkout, the
++label-affecting settings and every archive's SHA-256; a rerun whose identity
++differs fails instead of reusing stale labels or winners.
+ Agent and team names are never read.
+ 
+ ``--pairing-sample N`` first steps N episodes through kaggle-environments' own
+@@ -50,6 +53,7 @@ import argparse
+ import contextlib
+ import copy
+ import hashlib
++import importlib
+ import json
+ import math
+ import multiprocessing
+@@ -76,6 +80,8 @@ PAIRED_TURNS = EPISODE_STEPS - 1
+ HIRE_LIMIT = 241
+ ENCODE_BATCH = 32
+ RECORD_DIR = "records"
++IDENTITY_NAME = "identity.json"
++LABEL_PAIRING = "observation steps[t], action steps[t+1]"
+ PAIRING_NAME = "pairing.json"
+ ARCHIVE_PATTERN = "kaggriculture-episodes-{month}-{day:02d}.zip"
+ PUBLIC_KEYS = ("step", "day", "hour", "farms", "market", "town")
+@@ -395,7 +401,9 @@ def admit_turns(
+                     json.dumps(action), actors, order_limit, HIRE_LIMIT, out
+                 )
+                 decoded = json.loads(
+-                    rs.kaggriculture_decode(out, length, actors, order_limit, HIRE_LIMIT)
++                    rs.kaggriculture_decode(
++                        out, length, actors, order_limit, HIRE_LIMIT
++                    )
+                 )
+                 if decoded != action:
+                     raise ValueError("decode round trip")
+@@ -505,8 +513,12 @@ def pairing_check(data: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
+     Returns the number of the 719 transitions whose public state and both
+     privates equal ``steps[t + 1]`` (value equality), plus the mismatches.
+     """
+-    from kaggle_environments.envs.kaggriculture.kaggriculture import interpreter
+-    from kaggle_environments.utils import Struct, structify
++    # kaggle_environments ships no type information; bind it through importlib.
++    interpreter = importlib.import_module(
++        "kaggle_environments.envs.kaggriculture.kaggriculture"
++    ).interpreter
++    utils = importlib.import_module("kaggle_environments.utils")
++    Struct, structify = utils.Struct, utils.structify
+ 
+     env = Struct(
+         configuration=structify(copy.deepcopy(data["configuration"])),
+@@ -538,14 +550,14 @@ def pairing_check(data: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
+                 )
+             )
+         interpreter(state, env)
+-        predicted = _plain(
++        predicted: dict[str, Any] = _plain(
+             {
+                 "public": {k: state[0].observation[k] for k in PAIRING_PUBLIC_KEYS},
+                 "privates": [state[s].observation["private"] for s in (0, 1)],
+             }
+         )
+         nxt = steps[t + 1][0]["observation"]
+-        expected = {
++        expected: dict[str, Any] = {
+             "public": {k: nxt[k] for k in PAIRING_PUBLIC_KEYS},
+             "privates": [steps[t + 1][s]["observation"]["private"] for s in (0, 1)],
+         }
+@@ -553,10 +565,12 @@ def pairing_check(data: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
+             matches += 1
+         else:
+             differing = [
+-                k for k in PAIRING_PUBLIC_KEYS
++                k
++                for k in PAIRING_PUBLIC_KEYS
+                 if predicted["public"][k] != expected["public"][k]
+             ] + [
+-                f"private{s}" for s in (0, 1)
++                f"private{s}"
++                for s in (0, 1)
+                 if predicted["privates"][s] != expected["privates"][s]
+             ]
+             mismatches.append({"turn": t, "differs": differing})
+@@ -572,8 +586,13 @@ def _pairing_task(task: EpisodeTask) -> dict[str, Any]:
+     try:
+         check_envelope(data, task.episode_id)
+     except EpisodeRejected as error:
+-        return {"episode_id": task.episode_id, "day": task.day, "matches": 0,
+-                "total": 0, "rejected": str(error)}
++        return {
++            "episode_id": task.episode_id,
++            "day": task.day,
++            "matches": 0,
++            "total": 0,
++            "rejected": str(error),
++        }
+     matches, mismatches = pairing_check(data)
+     return {
+         "episode_id": task.episode_id,
+@@ -604,9 +623,11 @@ def pairing_sample(
+ def _engine_identity() -> dict[str, str]:
+     from importlib import metadata
+ 
+-    from kaggle_environments.envs.kaggriculture import kaggriculture
++    kaggriculture = importlib.import_module(
++        "kaggle_environments.envs.kaggriculture.kaggriculture"
++    )
+ 
+-    source = Path(kaggriculture.__file__)
++    source = Path(str(kaggriculture.__file__))
+     return {
+         "kaggle_environments": metadata.version("kaggle-environments"),
+         "interpreter_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+@@ -633,7 +654,9 @@ def build_manifest(
+         totals[split] = {
+             "episodes": len(mine),
+             "admitted_turns": sum(r["admitted"] for r in mine),
+-            "policy_seat_rows": sum(r["admitted"] * len(r["policy_seats"]) for r in mine),
++            "policy_seat_rows": sum(
++                r["admitted"] * len(r["policy_seats"]) for r in mine
++            ),
+             "draw_episodes": sum(len(r["policy_seats"]) == 2 for r in mine),
+         }
+     turn_rejections: Counter[str] = Counter()
+@@ -641,7 +664,9 @@ def build_manifest(
+     for r in kept:
+         turn_rejections.update(r["rejections"])
+         normalizations.update(r["normalizations"])
+-    episode_rejections = Counter(rejection_reason(Exception(r["rejected"])) for r in rejected)
++    episode_rejections = Counter(
++        rejection_reason(Exception(r["rejected"])) for r in rejected
++    )
+     episodes = [bc_data.BCManifestEpisode.model_validate(r) for r in kept]
+     return bc_data.write_bc_manifest(
+         out_dir,
+@@ -710,13 +735,44 @@ def _parse_days(text: str) -> list[int]:
+     return [int(part) for part in text.split(",")]
+ 
+ 
++def _bind_identity(out_dir: Path, identity: dict[str, Any]) -> None:
++    """Record the preparation identity, or require an exact match on resume."""
++    records = out_dir / RECORD_DIR
++    path = records / IDENTITY_NAME
++    if path.is_file():
++        stored = json.loads(path.read_text(encoding="utf-8"))
++        if stored != identity:
++            changed = sorted(
++                key
++                for key in stored.keys() | identity.keys()
++                if stored.get(key) != identity.get(key)
++            )
++            raise RuntimeError(
++                f"{path} differs from this run in {changed}; "
++                "prepare into a fresh out_dir"
++            )
++        return
++    if records.is_dir() and any(records.glob("*.json")):
++        raise RuntimeError(
++            f"{records} has records but no {IDENTITY_NAME}; use a fresh out_dir"
++        )
++    records.mkdir(parents=True, exist_ok=True)
++    path.write_text(
++        json.dumps(identity, indent=2, sort_keys=True) + "\n", encoding="utf-8"
++    )
++
++
+ def main(argv: Sequence[str] | None = None) -> int:
+     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+     parser.add_argument("archives", type=Path, help="directory of day archive ZIPs")
+-    parser.add_argument("out_dir", type=Path, help="dataset root (outside the checkout)")
++    parser.add_argument(
++        "out_dir", type=Path, help="dataset root (outside the checkout)"
++    )
+     parser.add_argument("--month", default="2026-09")
+-    parser.add_argument("--days", default="21-27", help="e.g. 21-27 or 21,22")
+-    parser.add_argument("--workers", type=int, default=max(1, min(16, (os.cpu_count() or 2) - 2)))
++    parser.add_argument("--days", default="22-28", help="e.g. 22-28 or 22,23")
++    parser.add_argument(
++        "--workers", type=int, default=max(1, min(16, (os.cpu_count() or 2) - 2))
++    )
+     parser.add_argument("--validation-fraction", type=float, default=0.03)
+     stride = parser.add_mutually_exclusive_group()
+     stride.add_argument("--turn-stride", type=int, default=None)
+@@ -743,8 +799,11 @@ def main(argv: Sequence[str] | None = None) -> int:
+     run = _source_identity(repo)
+     days = _parse_days(args.days)
+     tasks = list_tasks(
+-        args.archives, month=args.month, days=days,
+-        validation_fraction=args.validation_fraction, turn_stride=1,
++        args.archives,
++        month=args.month,
++        days=days,
++        validation_fraction=args.validation_fraction,
++        turn_stride=1,
+     )
+     if args.limit_episodes is not None:
+         tasks = tasks[: args.limit_episodes]
+@@ -758,6 +817,23 @@ def main(argv: Sequence[str] | None = None) -> int:
+         for t in tasks
+     ]
+     out_dir.mkdir(parents=True, exist_ok=True)
++    archive_sha256 = {
++        Path(archive).name: _sha256(Path(archive))
++        for archive in sorted({t.archive for t in tasks})
++    }
++    _bind_identity(
++        out_dir,
++        {
++            "run": run,
++            "month": args.month,
++            "days": days,
++            "validation_fraction": args.validation_fraction,
++            "turn_stride": turn_stride,
++            "hire_limit": HIRE_LIMIT,
++            "label_pairing": LABEL_PAIRING,
++            "archive_sha256": archive_sha256,
++        },
++    )
+     print(
+         f"episodes={len(tasks)} days={days} turn_stride={turn_stride} "
+         f"bytes_per_turn_row={resident_bytes_per_turn()} workers={args.workers}",
+@@ -802,16 +878,16 @@ def main(argv: Sequence[str] | None = None) -> int:
+                 "turn_stride": turn_stride,
+                 "bytes_per_turn_row": resident_bytes_per_turn(),
+                 "validation_fraction": args.validation_fraction,
+-                "label_pairing": "observation steps[t], action steps[t+1]",
++                "label_pairing": LABEL_PAIRING,
+                 "policy_seats": "winner by final bank; both on a draw",
+             },
+             "source": {
+                 "archives": str(args.archives),
+                 "month": args.month,
+                 "days": days,
++                "archive_sha256": archive_sha256,
+                 "archive_bytes": {
+-                    Path(t.archive).name: Path(t.archive).stat().st_size
+-                    for t in tasks
++                    Path(t.archive).name: Path(t.archive).stat().st_size for t in tasks
+                 },
+                 "episodes_listed": len(tasks),
+             },
+diff --git a/tests/scripts/test_kaggriculture_prepare_bc.py b/tests/scripts/test_kaggriculture_prepare_bc.py
+index 13cdb27..5e098e4 100644
+--- a/tests/scripts/test_kaggriculture_prepare_bc.py
++++ b/tests/scripts/test_kaggriculture_prepare_bc.py
+@@ -7,6 +7,7 @@ interpreter (the project dependency), so its step+1 pairing is real.
+ from __future__ import annotations
+ 
+ import copy
++import importlib
+ import importlib.util
+ import json
+ import sys
+@@ -31,9 +32,9 @@ _SECRET_NAME = "Sentinel Team Name"
+ 
+ @pytest.fixture(scope="module")
+ def played() -> dict[str, Any]:
+-    from kaggle_environments import make
+-
+-    env = make("kaggriculture", configuration={"seed": 12345})
++    env = importlib.import_module("kaggle_environments").make(
++        "kaggriculture", configuration={"seed": 12345}
++    )
+     env.run(["starter", "pass"])
+     data: dict[str, Any] = env.toJSON()
+     data["info"] |= {"TeamNames": [_SECRET_NAME, "B"], "Agents": [_SECRET_NAME]}
+@@ -79,10 +80,11 @@ def test_turn_stride_keeps_a_per_episode_phase() -> None:
+     assert prepare.kept_turns("7", 1) == list(range(719))
+     kept = prepare.kept_turns("7", 5)
+     assert kept == prepare.kept_turns("7", 5)
+-    assert len(kept) in (143, 144) and np.all(np.diff(kept) == 5)
++    assert len(kept) in (143, 144)
++    assert np.all(np.diff(kept) == 5)
+     phases = {prepare.kept_turns(str(n), 5)[0] for n in range(40)}
+     assert len(phases) > 1
+-    with pytest.raises(ValueError):
++    with pytest.raises(ValueError, match="turn stride"):
+         prepare.kept_turns("7", 0)
+ 
+ 
+@@ -94,7 +96,14 @@ def test_winner_is_the_larger_final_bank_and_draws_keep_both() -> None:
+ 
+ @pytest.mark.parametrize(
+     ("value", "kind"),
+-    [(None, "null"), (False, "false"), (0, "zero"), (0.0, "zero"), ("", "empty_string"), ({}, "empty_object")],
++    [
++        (None, "null"),
++        (False, "false"),
++        (0, "zero"),
++        (0.0, "zero"),
++        ("", "empty_string"),
++        ({}, "empty_object"),
++    ],
+ )
+ @pytest.mark.parametrize("key", ["hands", "market"])
+ def test_falsy_hands_and_market_normalize_to_empty_lists_counted(
+@@ -107,11 +116,13 @@ def test_falsy_hands_and_market_normalize_to_empty_lists_counted(
+ 
+ 
+ def test_bad_action_envelopes_are_rejected() -> None:
+-    for raw in (None, [], {"farmer": ["PASS"], "extra": 1}, {"hands": "EAST"}):
++    raws: list[object] = [None, [], {"farmer": ["PASS"], "extra": 1}, {"hands": "EAST"}]
++    for raw in raws:
+         with pytest.raises(ValueError, match="action envelope"):
+             prepare.normalize_action(raw)
+     action, kinds = prepare.normalize_action({"hands": [], "market": []})
+-    assert action["farmer"] is None and kinds == []
++    assert action["farmer"] is None
++    assert kinds == []
+ 
+ 
+ def test_envelope_checks(played: dict[str, Any]) -> None:
+@@ -142,8 +153,9 @@ def test_header_copies_shared_keys_from_seat_zero(played: dict[str, Any]) -> Non
+     header = prepare.turn_header(played, 5)
+     assert header["seed"] == 0
+     assert header["initial"]["public"]["step"] == 5
+-    assert header["initial"]["privates"][1] == (
+-        played["steps"][5][1]["observation"]["private"]
++    assert (
++        header["initial"]["privates"][1]
++        == (played["steps"][5][1]["observation"]["private"])
+     )
+     assert header["configuration"] is played["configuration"]
+ 
+@@ -169,7 +181,8 @@ def test_step_plus_one_pairing_reproduces_kaggle_and_shifted_does_not(
+         for seat in (0, 1):
+             shifted["steps"][t][seat]["action"] = played["steps"][t - 1][seat]["action"]
+     matches, mismatches = prepare.pairing_check(shifted)
+-    assert matches < 719 and mismatches
++    assert matches < 719
++    assert mismatches
+ 
+ 
+ # --- end to end -------------------------------------------------------------------
+@@ -178,7 +191,7 @@ def test_step_plus_one_pairing_reproduces_kaggle_and_shifted_does_not(
+ def test_end_to_end_writes_loadable_winner_shards_and_resumes(
+     played: dict[str, Any], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+ ) -> None:
+-    monkeypatch.setattr(prepare, "_source_identity", lambda repo: {"git_head": "t"})
++    monkeypatch.setattr(prepare, "_source_identity", lambda _repo: {"git_head": "t"})
+     train_id, valid_id = _ids("train", 1)[0], _ids("validation", 1)[0]
+     bad = _episode(played, "999")
+     bad["steps"] = bad["steps"][:700]
+@@ -186,8 +199,18 @@ def test_end_to_end_writes_loadable_winner_shards_and_resumes(
+     _archive(archives, 21, {train_id: _episode(played, train_id), "999": bad})
+     _archive(archives, 22, {valid_id: _episode(played, valid_id)})
+     out = tmp_path / "bc"
+-    argv = [str(archives), str(out), "--days", "21-22", "--workers", "1",
+-            "--turn-stride", "3", "--pairing-sample", "3"]
++    argv = [
++        str(archives),
++        str(out),
++        "--days",
++        "21-22",
++        "--workers",
++        "1",
++        "--turn-stride",
++        "3",
++        "--pairing-sample",
++        "3",
++    ]
+     assert prepare.main(argv) == 0
+ 
+     manifest_text = (out / MANIFEST_NAME).read_text()
+@@ -201,7 +224,8 @@ def test_end_to_end_writes_loadable_winner_shards_and_resumes(
+     winner = [s for s in (0, 1) if banks[s]["money"] == max(f["money"] for f in banks)]
+     for episode_id, split in ((train_id, "train"), (valid_id, "validation")):
+         record = records[episode_id]
+-        assert record["split"] == split and record["policy_seats"] == winner
++        assert record["split"] == split
++        assert record["policy_seats"] == winner
+         assert record["kept_turns"] == len(prepare.kept_turns(episode_id, 3))
+         assert record["admitted"] == record["kept_turns"]
+     assert manifest["run"]["turn_stride"] == 3
+@@ -229,9 +253,22 @@ def test_end_to_end_writes_loadable_winner_shards_and_resumes(
+     shards = {p: p.read_bytes() for p in out.glob("*/*.npz")}
+     (out / MANIFEST_NAME).unlink()
+     monkeypatch.setattr(
+-        prepare, "process_episode", lambda *a: pytest.fail("finished episode redone")
++        prepare, "process_episode", lambda *_: pytest.fail("finished episode redone")
+     )
+     assert prepare.main(argv[:-2]) == 0
+     assert {p: p.read_bytes() for p in out.glob("*/*.npz")} == shards
+     with pytest.raises(FileExistsError):
+         prepare.main(argv)
++
++    # A resume whose source or label settings changed refuses the old records.
++    (out / MANIFEST_NAME).unlink()
++    with pytest.raises(RuntimeError, match=r"turn_stride"):
++        prepare.main([*argv[:-4], "--turn-stride", "2"])
++    swapped = _episode(played, train_id)
++    swapped["steps"][-1][0]["observation"]["farms"].reverse()
++    _archive(archives, 21, {train_id: swapped, "999": bad})
++    with pytest.raises(RuntimeError, match=r"archive_sha256"):
++        prepare.main(argv[:-2])
++    monkeypatch.setattr(prepare, "_source_identity", lambda _repo: {"git_head": "u"})
++    with pytest.raises(RuntimeError, match=r"\['archive_sha256', 'run'\]"):
++        prepare.main(argv[:-2])
+     1	"""Kaggle episode archives -> ``kaggriculture-bc-shard-v1`` BC shards (Task 5.1).
+     2	
+     3	Lean preparation for the owner's BC data: every episode of the chosen days
+     4	(default 2026-09-21..27), imitating one seat per episode, the winner by final
+     5	bank (both seats on a draw).
+     6	
+     7	Input is a directory of day archives ``kaggriculture-episodes-YYYY-MM-DD.zip``
+     8	whose members are ``<episode_id>.json`` Kaggle episodes. On the RunPod volume
+     9	``4llk4uaf20`` that directory is
+    10	``<mount>/kaggriculture-v2/public-episodes-2026-09-14-to-2026-09-27/archives``;
+    11	the pod must confirm its actual mount path (``/workspace`` is the RunPod
+    12	default, the historical reader used ``/data``).
+    13	
+    14	Per episode (one worker process each, one ZIP member in memory at a time):
+    15	
+    16	1. Envelope: 720 steps of two seats, ``info.EpisodeId`` equal to the member
+    17	   name, an integer ``info.seed`` (custody only, never encoded), both final
+    18	   statuses ``DONE``, the full Rust config key set.
+    19	2. Winner seat(s) by final bank ``farms[s].money`` at the last step.
+    20	3. For each kept turn ``t`` in ``0..718`` (all turns unless ``--turn-stride``),
+    21	   the observation is ``steps[t]`` (seat 1's shared keys come from seat 0) and
+    22	   the label of seat ``s`` is ``steps[t + 1][s].action``: Kaggle records the
+    23	   action answering step ``t``'s observation at step ``t + 1``. The explicit
+    24	   state header (placeholder seed 0) is encoded by the native Task 1.3 encoder
+    25	   into both seat rows.
+    26	4. Each policy seat's action is admitted strictly by the native Task 1.4 codec
+    27	   (``kaggriculture_encode`` plus a decode round trip); falsy ``hands`` /
+    28	   ``market`` values become ``[]`` as in the reference, counted by kind. A turn
+    29	   is kept only if every policy seat is admitted; rejections are counted by
+    30	   reason. The other seat row keeps its observation (the critic trains on both
+    31	   outcomes) and carries an all-PASS placeholder program, which the trainer
+    32	   never imitates (``policy_seat`` is false).
+    33	5. The episode's split is a deterministic hash of its id (about
+    34	   ``--validation-fraction``), and admitted rows go to one shard at
+    35	   ``<split>/<day>-<episode_id>.npz`` through ``owl.kaggriculture.bc_data``.
+    36	
+    37	Every finished episode leaves ``records/<day>-<episode_id>.json``; a rerun
+    38	skips those (resumable), and ``manifest.json`` is written once at the end.
+    39	``records/identity.json`` binds the records to the source checkout, the
+    40	label-affecting settings and every archive's SHA-256; a rerun whose identity
+    41	differs fails instead of reusing stale labels or winners.
+    42	Agent and team names are never read.
+    43	
+    44	``--pairing-sample N`` first steps N episodes through kaggle-environments' own
+    45	Kaggriculture interpreter (with the recorded ``info.seed``) from every
+    46	``steps[t]`` with ``steps[t + 1].action`` and counts how many transitions
+    47	reproduce ``steps[t + 1]``: evidence for the step+1 pairing on this corpus.
+    48	"""
+    49	
+    50	from __future__ import annotations
+    51	
+    52	import argparse
+    53	import contextlib
+    54	import copy
+    55	import hashlib
+    56	import importlib
+    57	import json
+    58	import math
+    59	import multiprocessing
+    60	import os
+    61	import re
+    62	import subprocess
+    63	import sys
+    64	import zipfile
+    65	from collections import Counter
+    66	from collections.abc import Callable, Iterable, Iterator, Sequence
+    67	from dataclasses import dataclass
+    68	from pathlib import Path
+    69	from typing import Any
+    70	
+    71	import numpy as np
+    72	import numpy.typing as npt
+    73	import torch
+    74	from owl import rs
+    75	from owl.kaggriculture import bc_data
+    76	from owl.kaggriculture import types as kt
+    77	
+    78	EPISODE_STEPS = 720
+    79	PAIRED_TURNS = EPISODE_STEPS - 1
+    80	HIRE_LIMIT = 241
+    81	ENCODE_BATCH = 32
+    82	RECORD_DIR = "records"
+    83	IDENTITY_NAME = "identity.json"
+    84	LABEL_PAIRING = "observation steps[t], action steps[t+1]"
+    85	PAIRING_NAME = "pairing.json"
+    86	ARCHIVE_PATTERN = "kaggriculture-episodes-{month}-{day:02d}.zip"
+    87	PUBLIC_KEYS = ("step", "day", "hour", "farms", "market", "town")
+    88	PAIRING_PUBLIC_KEYS = ("day", "hour", "farms", "market", "town")
+    89	CONFIG_KEYS = frozenset(
+    90	    {
+    91	        "episodeSteps",
+    92	        "boardSize",
+    93	        "startingMoney",
+    94	        "maxMarketOrdersPerTurn",
+    95	        "turnsPerDay",
+    96	        "shedCapacity",
+    97	        "weedSpawnChance",
+    98	        "townShopUnlockInterval",
+    99	        "townShopSellInterval",
+   100	        "townCenterSellInterval",
+   101	        "farmHandCostMult",
+   102	        "marketParams",
+   103	    }
+   104	)
+   105	CONFIG_EXTRA_KEYS = frozenset({"actTimeout", "runTimeout", "seed"})
+   106	ACTION_KEYS = frozenset({"farmer", "hands", "market"})
+   107	_EPISODE_ID = re.compile(r"^[0-9A-Za-z_-]+$")
+   108	_ABSENT = object()
+   109	
+   110	
+   111	class EpisodeRejected(Exception):
+   112	    """The whole episode is unusable; the message is the counted reason."""
+   113	
+   114	
+   115	@dataclass(frozen=True)
+   116	class EpisodeTask:
+   117	    archive: str
+   118	    member: str
+   119	    day: str
+   120	    episode_id: str
+   121	    split: bc_data.Split
+   122	    turn_stride: int
+   123	
+   124	
+   125	# --- pure helpers (unit tested) ---------------------------------------------------
+   126	
+   127	
+   128	def validation_split(episode_id: str, fraction: float) -> bc_data.Split:
+   129	    """Deterministic episode-level split: a hash of the id, never of its content."""
+   130	    bucket = int(hashlib.sha256(episode_id.encode()).hexdigest()[:8], 16) % 10_000
+   131	    return "validation" if bucket < round(fraction * 10_000) else "train"
+   132	
+   133	
+   134	def kept_turns(episode_id: str, stride: int) -> list[int]:
+   135	    """Turns ``t`` in ``0..718`` kept under ``stride``, phase-shifted per episode."""
+   136	    if stride < 1:
+   137	        raise ValueError(f"turn stride must be >= 1, got {stride}")
+   138	    offset = int(hashlib.sha256(f"turn:{episode_id}".encode()).hexdigest()[:8], 16)
+   139	    return [t for t in range(PAIRED_TURNS) if (t + offset) % stride == 0]
+   140	
+   141	
+   142	def winner_seats(banks: Sequence[float]) -> tuple[bool, bool]:
+   143	    """Policy seats: the larger final bank, both on a draw."""
+   144	    return (banks[0] >= banks[1], banks[1] >= banks[0])
+   145	
+   146	
+   147	def check_envelope(data: dict[str, Any], episode_id: str) -> None:
+   148	    steps = data.get("steps")
+   149	    if not isinstance(steps, list) or len(steps) != EPISODE_STEPS:
+   150	        count = len(steps) if isinstance(steps, list) else None
+   151	        raise EpisodeRejected(f"steps: expected {EPISODE_STEPS}, got {count}")
+   152	    if any(not isinstance(step, list) or len(step) != 2 for step in steps):
+   153	        raise EpisodeRejected("steps: every step needs exactly two seats")
+   154	    info = data.get("info")
+   155	    if not isinstance(info, dict) or str(info.get("EpisodeId")) != episode_id:
+   156	        raise EpisodeRejected("info.EpisodeId differs from the member name")
+   157	    seed = info.get("seed")
+   158	    if isinstance(seed, bool) or not isinstance(seed, int):
+   159	        raise EpisodeRejected("info.seed is not an integer")
+   160	    statuses = [seat.get("status") for seat in steps[-1]]
+   161	    if statuses != ["DONE", "DONE"]:
+   162	        raise EpisodeRejected(f"final statuses {statuses}")
+   163	    config = data.get("configuration")
+   164	    if not isinstance(config, dict):
+   165	        raise EpisodeRejected("configuration missing")
+   166	    missing = CONFIG_KEYS - set(config)
+   167	    extra = set(config) - CONFIG_KEYS - CONFIG_EXTRA_KEYS
+   168	    if missing or extra:
+   169	        raise EpisodeRejected(
+   170	            f"configuration keys: missing {sorted(missing)}, extra {sorted(extra)}"
+   171	        )
+   172	    if config["episodeSteps"] != EPISODE_STEPS:
+   173	        raise EpisodeRejected(f"episodeSteps {config['episodeSteps']}")
+   174	
+   175	
+   176	def final_banks(data: dict[str, Any]) -> tuple[float, float]:
+   177	    farms = data["steps"][-1][0]["observation"]["farms"]
+   178	    banks = (float(farms[0]["money"]), float(farms[1]["money"]))
+   179	    if not all(math.isfinite(bank) for bank in banks):
+   180	        raise EpisodeRejected(f"final banks not finite: {banks}")
+   181	    return banks
+   182	
+   183	
+   184	def turn_header(data: dict[str, Any], t: int, *, seed: int = 0) -> dict[str, Any]:
+   185	    """Explicit-state header for ``steps[t]``; seat 1's shared keys from seat 0.
+   186	
+   187	    Encoding always uses the placeholder seed 0, so the recorded seed never
+   188	    reaches observation buffers.
+   189	    """
+   190	    obs0 = data["steps"][t][0]["observation"]
+   191	    obs1 = data["steps"][t][1]["observation"]
+   192	    return {
+   193	        "format": "kaggriculture-re-parity-v1",
+   194	        "seed": seed,
+   195	        "configuration": data["configuration"],
+   196	        "shop_schedule": [],
+   197	        "rng_schedule": [],
+   198	        "initial": {
+   199	            "public": {key: obs0[key] for key in PUBLIC_KEYS},
+   200	            "privates": [obs0["private"], obs1["private"]],
+   201	        },
+   202	        "terminal_banks": [],
+   203	        "transitions": 0,
+   204	    }
+   205	
+   206	
+   207	def _falsy_kind(value: object) -> str | None:
+   208	    """The reference's ``raw.get(k) or []``: which falsy value became ``[]``."""
+   209	    if value is _ABSENT:
+   210	        return "absent"
+   211	    if value is None:
+   212	        return "null"
+   213	    if value is False:
+   214	        return "false"
+   215	    if isinstance(value, (int, float)) and not isinstance(value, bool) and value == 0:
+   216	        return "zero"
+   217	    if isinstance(value, str) and value == "":
+   218	        return "empty_string"
+   219	    if isinstance(value, dict) and not value:
+   220	        return "empty_object"
+   221	    return None
+   222	
+   223	
+   224	def normalize_action(raw: object) -> tuple[dict[str, Any], list[str]]:
+   225	    """Reference envelope normalization; raises ``ValueError`` on a bad envelope."""
+   226	    if not isinstance(raw, dict) or not set(raw) <= ACTION_KEYS:
+   227	        raise ValueError("action envelope")
+   228	    action: dict[str, Any] = {"farmer": raw.get("farmer")}
+   229	    normalized: list[str] = []
+   230	    for key in ("hands", "market"):
+   231	        value = raw.get(key, _ABSENT)
+   232	        kind = _falsy_kind(value)
+   233	        if kind is not None:
+   234	            normalized.append(f"normalized_{key}_{kind}")
+   235	            value = []
+   236	        elif not isinstance(value, list):
+   237	            raise ValueError("action envelope")
+   238	        action[key] = value
+   239	    return action, normalized
+   240	
+   241	
+   242	def pass_action(actors: int) -> dict[str, Any]:
+   243	    return {"farmer": ["PASS"], "hands": [["PASS"]] * (actors - 1), "market": []}
+   244	
+   245	
+   246	def rejection_reason(error: Exception) -> str:
+   247	    return str(error).split(":", 1)[0].strip()[:80] or type(error).__name__
+   248	
+   249	
+   250	def resident_bytes_per_turn() -> int:
+   251	    """Host bytes one turn row occupies in ``load_bc_dataset``'s compact store."""
+   252	    sizes = {torch.int64: 4, torch.float32: 4, torch.float64: 8, torch.bool: 1}
+   253	    per_seat = sum(
+   254	        sizes[dtype] * math.prod(shape) for dtype, shape, _, _ in kt._SCHEMA.values()
+   255	    )
+   450	        "admitted": int(admitted.sum()),
+   451	        "rejections": dict(sorted(rejections.items())),
+   452	        "normalizations": dict(sorted(normalizations.items())),
+   453	    }
+   454	    del data
+   455	    if record["admitted"] == 0:
+   456	        record["rejected"] = "no admitted turns"
+   457	        _write_record(out_dir, task, record)
+   458	        return record
+   459	    keep = np.flatnonzero(admitted)
+   460	    tensors = {name: torch.from_numpy(a[keep]) for name, a in arrays.items()}
+   461	    can_act = tensors.pop("can_act")
+   462	    episode = bc_data.BCEpisode(
+   463	        episode_id=task.episode_id,
+   464	        split=task.split,
+   465	        day=task.day,
+   466	        obs=kt.KaggricultureObsBatch(
+   467	            **tensors, action_mask=kt.KaggricultureActionMask(can_act=can_act)
+   468	        ),
+   469	        actions=kt.KaggricultureActions(
+   470	            tokens=torch.from_numpy(tokens[keep]),
+   471	            lengths=torch.from_numpy(lengths[keep]),
+   472	        ),
+   473	        policy_seat=torch.tensor([policy] * keep.size, dtype=torch.bool),
+   474	        turn=torch.tensor([turns[i] for i in keep], dtype=torch.int64),
+   475	        terminal_banks=banks,
+   476	    )
+   477	    episode.obs.check_contract()
+   478	    shard = out_dir / bc_data.shard_path(task.split, task.day, task.episode_id)
+   479	    shard.unlink(missing_ok=True)  # a crash before the record left a partial shard
+   480	    written = bc_data.write_bc_episode(out_dir, episode)
+   481	    record |= {
+   482	        "shard_path": written.shard_path,
+   483	        "shard_sha256": written.shard_sha256,
+   484	        "shard_bytes": written.shard_bytes,
+   485	    }
+   486	    _write_record(out_dir, task, record)
+   487	    return record
+   488	
+   489	
+   490	def _record_path(out_dir: Path, task: EpisodeTask) -> Path:
+   491	    return out_dir / RECORD_DIR / f"{task.day}-{task.episode_id}.json"
+   492	
+   493	
+   494	def _write_record(out_dir: Path, task: EpisodeTask, record: dict[str, Any]) -> None:
+   495	    path = _record_path(out_dir, task)
+   496	    path.parent.mkdir(parents=True, exist_ok=True)
+   497	    tmp = path.with_suffix(".tmp")
+   498	    tmp.write_text(json.dumps(record, sort_keys=True) + "\n", encoding="utf-8")
+   499	    os.replace(tmp, path)
+   500	
+   501	
+   502	def _run_task(args: tuple[EpisodeTask, str]) -> dict[str, Any]:
+   503	    task, out_dir = args
+   504	    return process_episode(task, Path(out_dir))
+   505	
+   506	
+   507	# --- pairing sanity with Kaggle's own engine --------------------------------------
+   508	
+   509	
+   510	def pairing_check(data: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
+   511	    """Step Kaggle's interpreter from ``steps[t]`` with ``steps[t + 1].action``.
+   512	
+   513	    Returns the number of the 719 transitions whose public state and both
+   514	    privates equal ``steps[t + 1]`` (value equality), plus the mismatches.
+   515	    """
+   516	    # kaggle_environments ships no type information; bind it through importlib.
+   517	    interpreter = importlib.import_module(
+   518	        "kaggle_environments.envs.kaggriculture.kaggriculture"
+   519	    ).interpreter
+   520	    utils = importlib.import_module("kaggle_environments.utils")
+   521	    Struct, structify = utils.Struct, utils.structify
+   522	
+   523	    env = Struct(
+   524	        configuration=structify(copy.deepcopy(data["configuration"])),
+   525	        info={"seed": data["info"]["seed"]},
+   526	        done=False,
+   527	    )
+   528	    steps = data["steps"]
+   529	    matches = 0
+   530	    mismatches: list[dict[str, Any]] = []
+   531	    for t in range(PAIRED_TURNS):
+   532	        # structify copies every container. Kaggle shares one public
+   533	        # farms/market/town object across seats, so both seats get the same one.
+   534	        public = structify({k: steps[t][0]["observation"][k] for k in PUBLIC_KEYS})
+   535	        state = []
+   536	        for seat in (0, 1):
+   537	            own = structify(
+   538	                {
+   539	                    k: v
+   540	                    for k, v in steps[t][seat]["observation"].items()
+   541	                    if k not in PUBLIC_KEYS
+   542	                }
+   543	            )
+   544	            state.append(
+   545	                Struct(
+   546	                    observation=Struct(**own, **public),
+   547	                    action=structify(steps[t + 1][seat]["action"]),
+   548	                    status="ACTIVE",
+   549	                    reward=0,
+   550	                )
+   551	            )
+   552	        interpreter(state, env)
+   553	        predicted: dict[str, Any] = _plain(
+   554	            {
+   555	                "public": {k: state[0].observation[k] for k in PAIRING_PUBLIC_KEYS},
+   556	                "privates": [state[s].observation["private"] for s in (0, 1)],
+   557	            }
+   558	        )
+   559	        nxt = steps[t + 1][0]["observation"]
+   560	        expected: dict[str, Any] = {
+   561	            "public": {k: nxt[k] for k in PAIRING_PUBLIC_KEYS},
+   562	            "privates": [steps[t + 1][s]["observation"]["private"] for s in (0, 1)],
+   563	        }
+   564	        if predicted == expected:
+   565	            matches += 1
+   566	        else:
+   567	            differing = [
+   568	                k
+   569	                for k in PAIRING_PUBLIC_KEYS
+   570	                if predicted["public"][k] != expected["public"][k]
+   571	            ] + [
+   572	                f"private{s}"
+   573	                for s in (0, 1)
+   574	                if predicted["privates"][s] != expected["privates"][s]
+   575	            ]
+   576	            mismatches.append({"turn": t, "differs": differing})
+   577	    return matches, mismatches
+   578	
+   579	
+   580	def _plain(value: object) -> Any:
+   581	    return json.loads(json.dumps(value))
+   582	
+   583	
+   584	def _pairing_task(task: EpisodeTask) -> dict[str, Any]:
+   585	    data, _, _ = _read_member(task)
+   586	    try:
+   587	        check_envelope(data, task.episode_id)
+   588	    except EpisodeRejected as error:
+   589	        return {
+   590	            "episode_id": task.episode_id,
+   591	            "day": task.day,
+   592	            "matches": 0,
+   593	            "total": 0,
+   594	            "rejected": str(error),
+   595	        }
+   596	    matches, mismatches = pairing_check(data)
+   597	    return {
+   598	        "episode_id": task.episode_id,
+   599	        "day": task.day,
+   600	        "matches": matches,
+   601	        "total": PAIRED_TURNS,
+   602	        "mismatches": mismatches[:20],
+   603	    }
+   604	
+   605	
+   606	def pairing_sample(
+   607	    tasks: Sequence[EpisodeTask], count: int, mapper: Any
+   608	) -> dict[str, Any]:
+   609	    step = max(1, len(tasks) // count)
+   610	    chosen = list(tasks[::step][:count])
+   611	    results = list(mapper(_pairing_task, chosen))
+   612	    matches = sum(r["matches"] for r in results)
+   613	    total = sum(r["total"] for r in results)
+   614	    return {
+   615	        "engine": _engine_identity(),
+   616	        "episodes": results,
+   617	        "matches": matches,
+   618	        "total": total,
+   619	        "fraction": matches / total if total else 0.0,
+   620	    }
+   621	
+   622	
+   623	def _engine_identity() -> dict[str, str]:
+   624	    from importlib import metadata
+   625	
+   626	    kaggriculture = importlib.import_module(
+   627	        "kaggle_environments.envs.kaggriculture.kaggriculture"
+   628	    )
+   629	
+   630	    source = Path(str(kaggriculture.__file__))
+   631	    return {
+   632	        "kaggle_environments": metadata.version("kaggle-environments"),
+   633	        "interpreter_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+   634	    }
+   635	
+   636	
+   637	# --- manifest ---------------------------------------------------------------------
+   638	
+   639	
+   640	def build_manifest(
+   641	    out_dir: Path, records: Sequence[dict[str, Any]], custody: dict[str, Any]
+   642	) -> bc_data.BCManifest:
+   643	    kept = sorted(
+   644	        (r for r in records if "rejected" not in r),
+   645	        key=lambda r: (r["day"], r["episode_id"]),
+   646	    )
+   647	    rejected = sorted(
+   648	        (r for r in records if "rejected" in r),
+   649	        key=lambda r: (r["day"], r["episode_id"]),
+   650	    )
+   651	    totals: dict[str, dict[str, int]] = {}
+   652	    for split in ("train", "validation"):
+   653	        mine = [r for r in kept if r["split"] == split]
+   654	        totals[split] = {
+   655	            "episodes": len(mine),
+   656	            "admitted_turns": sum(r["admitted"] for r in mine),
+   657	            "policy_seat_rows": sum(
+   658	                r["admitted"] * len(r["policy_seats"]) for r in mine
+   659	            ),
+   660	            "draw_episodes": sum(len(r["policy_seats"]) == 2 for r in mine),
+   661	        }
+   662	    turn_rejections: Counter[str] = Counter()
+   663	    normalizations: Counter[str] = Counter()
+   664	    for r in kept:
+   665	        turn_rejections.update(r["rejections"])
+   666	        normalizations.update(r["normalizations"])
+   667	    episode_rejections = Counter(
+   668	        rejection_reason(Exception(r["rejected"])) for r in rejected
+   669	    )
+   670	    episodes = [bc_data.BCManifestEpisode.model_validate(r) for r in kept]
+   671	    return bc_data.write_bc_manifest(
+   672	        out_dir,
+   673	        episodes,
+   674	        **custody,
+   675	        totals=totals,
+   676	        turn_rejections=dict(sorted(turn_rejections.items())),
+   677	        normalizations=dict(sorted(normalizations.items())),
+   678	        episode_rejections=dict(sorted(episode_rejections.items())),
+   679	        rejected_episodes=rejected,
+   680	    )
+   681	
+   682	
+   683	def _sha256(path: Path) -> str:
+   684	    digest = hashlib.sha256()
+   685	    with path.open("rb") as handle:
+   686	        for block in iter(lambda: handle.read(1 << 20), b""):
+   687	            digest.update(block)
+   688	    return digest.hexdigest()
+   689	
+   690	
+   691	def _source_identity(repo: Path) -> dict[str, Any]:
+   692	    head = subprocess.run(
+   693	        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+   694	        check=True,
+   695	        capture_output=True,
+   696	        text=True,
+   697	    ).stdout.strip()
+   698	    dirty = subprocess.run(
+   699	        ["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=no"],
+   700	        check=True,
+   701	        capture_output=True,
+   702	        text=True,
+   703	    ).stdout.strip()
+   704	    if dirty:
+   705	        raise RuntimeError(f"refusing to prepare from a dirty checkout:\n{dirty}")
+   706	    extension = Path(str(rs.__file__))
+   707	    return {
+   708	        "git_head": head,
+   709	        "uv_lock_sha256": _sha256(repo / "uv.lock"),
+   710	        "cargo_lock_sha256": _sha256(repo / "Cargo.lock"),
+   711	        "prepare_sha256": _sha256(Path(__file__)),
+   712	        "owl_rs_extension": extension.name,
+   713	        "owl_rs_sha256": _sha256(extension),
+   714	    }
+   715	
+   716	
+   717	# --- CLI --------------------------------------------------------------------------
+   718	
+   719	
+   720	@contextlib.contextmanager
+   721	def _mapper(workers: int) -> Iterator[Callable[..., Iterable[Any]]]:
+   722	    """In-process ``map`` for one worker, else a bounded spawn pool."""
+   723	    if workers == 1:
+   724	        yield map
+   725	        return
+   726	    context = multiprocessing.get_context("spawn")
+   727	    with context.Pool(workers, maxtasksperchild=64) as pool:
+   728	        yield pool.imap_unordered
+   729	
+   730	
+   731	def _parse_days(text: str) -> list[int]:
+   732	    if "-" in text:
+   733	        first, last = (int(part) for part in text.split("-", 1))
+   734	        return list(range(first, last + 1))
+   735	    return [int(part) for part in text.split(",")]
+   736	
+   737	
+   738	def _bind_identity(out_dir: Path, identity: dict[str, Any]) -> None:
+   739	    """Record the preparation identity, or require an exact match on resume."""
+   740	    records = out_dir / RECORD_DIR
+   741	    path = records / IDENTITY_NAME
+   742	    if path.is_file():
+   743	        stored = json.loads(path.read_text(encoding="utf-8"))
+   744	        if stored != identity:
+   745	            changed = sorted(
+   746	                key
+   747	                for key in stored.keys() | identity.keys()
+   748	                if stored.get(key) != identity.get(key)
+   749	            )
+   750	            raise RuntimeError(
+   751	                f"{path} differs from this run in {changed}; "
+   752	                "prepare into a fresh out_dir"
+   753	            )
+   754	        return
+   755	    if records.is_dir() and any(records.glob("*.json")):
+   756	        raise RuntimeError(
+   757	            f"{records} has records but no {IDENTITY_NAME}; use a fresh out_dir"
+   758	        )
+   759	    records.mkdir(parents=True, exist_ok=True)
+   760	    path.write_text(
+   761	        json.dumps(identity, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+   762	    )
+   763	
+   764	
+   765	def main(argv: Sequence[str] | None = None) -> int:
+   766	    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+   767	    parser.add_argument("archives", type=Path, help="directory of day archive ZIPs")
+   768	    parser.add_argument(
+   769	        "out_dir", type=Path, help="dataset root (outside the checkout)"
+   770	    )
+   771	    parser.add_argument("--month", default="2026-09")
+   772	    parser.add_argument("--days", default="22-28", help="e.g. 22-28 or 22,23")
+   773	    parser.add_argument(
+   774	        "--workers", type=int, default=max(1, min(16, (os.cpu_count() or 2) - 2))
+   775	    )
+   776	    parser.add_argument("--validation-fraction", type=float, default=0.03)
+   777	    stride = parser.add_mutually_exclusive_group()
+   778	    stride.add_argument("--turn-stride", type=int, default=None)
+   779	    stride.add_argument(
+   780	        "--resident-budget-gib",
+   781	        type=float,
+   782	        default=None,
+   783	        help="derive the turn stride so all turn rows fit this host-memory budget",
+   784	    )
+   785	    parser.add_argument("--limit-episodes", type=int, default=None)
+   786	    parser.add_argument("--pairing-sample", type=int, default=0)
+   787	    parser.add_argument("--pairing-only", action="store_true")
+   788	    args = parser.parse_args(argv)
+   789	    if not 0.0 < args.validation_fraction < 1.0:
+   790	        raise ValueError("--validation-fraction must be in (0, 1)")
+   791	    if args.workers < 1:
+   792	        raise ValueError("--workers must be >= 1")
+   793	    repo = Path(__file__).resolve().parents[1]
+   794	    out_dir: Path = args.out_dir.resolve()
+   795	    if out_dir.is_relative_to(repo):
+   796	        raise ValueError("out_dir must lie outside the checkout")
+   797	    if (out_dir / "manifest.json").exists():
+   798	        raise FileExistsError(f"{out_dir}/manifest.json exists; dataset is complete")
+   799	    run = _source_identity(repo)
+   800	    days = _parse_days(args.days)
+   801	    tasks = list_tasks(
+   802	        args.archives,
+   803	        month=args.month,
+   804	        days=days,
+   805	        validation_fraction=args.validation_fraction,
+   806	        turn_stride=1,
+   807	    )
+   808	    if args.limit_episodes is not None:
+   809	        tasks = tasks[: args.limit_episodes]
+   810	    if not tasks:
+   811	        raise ValueError("no episodes found")
+   812	    turn_stride = args.turn_stride or 1
+   813	    if args.resident_budget_gib is not None:
+   814	        turn_stride = stride_for_budget(len(tasks), args.resident_budget_gib)
+   815	    tasks = [
+   816	        EpisodeTask(t.archive, t.member, t.day, t.episode_id, t.split, turn_stride)
+   817	        for t in tasks
+   818	    ]
+   819	    out_dir.mkdir(parents=True, exist_ok=True)
+   820	    archive_sha256 = {
+   821	        Path(archive).name: _sha256(Path(archive))
+   822	        for archive in sorted({t.archive for t in tasks})
+   823	    }
+   824	    _bind_identity(
+   825	        out_dir,
+   826	        {
+   827	            "run": run,
+   828	            "month": args.month,
+   829	            "days": days,
+   830	            "validation_fraction": args.validation_fraction,
+   831	            "turn_stride": turn_stride,
+   832	            "hire_limit": HIRE_LIMIT,
+   833	            "label_pairing": LABEL_PAIRING,
+   834	            "archive_sha256": archive_sha256,
+   835	        },
+   836	    )
+   837	    print(
+   838	        f"episodes={len(tasks)} days={days} turn_stride={turn_stride} "
+   839	        f"bytes_per_turn_row={resident_bytes_per_turn()} workers={args.workers}",
+   840	        flush=True,
+   841	    )
+   842	    with _mapper(args.workers) as mapper:
+   843	        if args.pairing_sample > 0:
+   844	            pairing = pairing_sample(tasks, args.pairing_sample, mapper)
+   845	            (out_dir / PAIRING_NAME).write_text(json.dumps(pairing, indent=2) + "\n")
+   846	            print(
+   847	                f"pairing: {pairing['matches']}/{pairing['total']} transitions match "
+   848	                f"({pairing['fraction']:.4f}) over {len(pairing['episodes'])} episodes",
+   849	                flush=True,
+   850	            )
+   851	            if args.pairing_only:
+   852	                return 0
+   853	        records: list[dict[str, Any]] = []
+   854	        todo: list[EpisodeTask] = []
+   855	        for task in tasks:
+   856	            path = _record_path(out_dir, task)
+   857	            if path.is_file():
+   858	                records.append(json.loads(path.read_text(encoding="utf-8")))
+   859	            else:
+   860	                todo.append(task)
+   861	        print(f"resuming: {len(records)} done, {len(todo)} to do", flush=True)
+   862	        for index, record in enumerate(
+   863	            mapper(_run_task, [(t, str(out_dir)) for t in todo]), 1
+   864	        ):
+   865	            records.append(record)
+   866	            if index % 50 == 0 or index == len(todo):
+   867	                print(f"episodes {index}/{len(todo)}", flush=True)
+   868	    pairing_path = out_dir / PAIRING_NAME
+   869	    manifest = build_manifest(
+   870	        out_dir,
+   871	        records,
+   872	        {
+   873	            "run": run
+   874	            | {
+   875	                "command": [sys.executable, *sys.argv],
+   876	                "workers": args.workers,
+   877	                "hire_limit": HIRE_LIMIT,
+   878	                "turn_stride": turn_stride,
+   879	                "bytes_per_turn_row": resident_bytes_per_turn(),
+   880	                "validation_fraction": args.validation_fraction,
+   881	                "label_pairing": LABEL_PAIRING,
+   882	                "policy_seats": "winner by final bank; both on a draw",
+   883	            },
+   884	            "source": {
+   885	                "archives": str(args.archives),
+   886	                "month": args.month,
+   887	                "days": days,
+   888	                "archive_sha256": archive_sha256,
+   889	                "archive_bytes": {
+   890	                    Path(t.archive).name: Path(t.archive).stat().st_size for t in tasks
+   891	                },
+   892	                "episodes_listed": len(tasks),
+   893	            },
+   894	            "pairing": (
+   895	                json.loads(pairing_path.read_text()) if pairing_path.is_file() else None
+   896	            ),
+   897	        },
+   898	    )
+   899	    extra = manifest.model_extra or {}
+   900	    print(json.dumps(extra.get("totals"), indent=2), flush=True)
+   901	    return 0
+   902	
+   903	
+   904	if __name__ == "__main__":
+   905	    raise SystemExit(main())
+
+exec
+/bin/zsh -lc "nl -ba scripts/kaggriculture_prepare_bc.py | sed -n '100,200p;245,320p;355,510p;685,920p'" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+   100	        "townCenterSellInterval",
+   101	        "farmHandCostMult",
+   102	        "marketParams",
+   103	    }
+   104	)
+   105	CONFIG_EXTRA_KEYS = frozenset({"actTimeout", "runTimeout", "seed"})
+   106	ACTION_KEYS = frozenset({"farmer", "hands", "market"})
+   107	_EPISODE_ID = re.compile(r"^[0-9A-Za-z_-]+$")
+   108	_ABSENT = object()
+   109	
+   110	
+   111	class EpisodeRejected(Exception):
+   112	    """The whole episode is unusable; the message is the counted reason."""
+   113	
+   114	
+   115	@dataclass(frozen=True)
+   116	class EpisodeTask:
+   117	    archive: str
+   118	    member: str
+   119	    day: str
+   120	    episode_id: str
+   121	    split: bc_data.Split
+   122	    turn_stride: int
+   123	
+   124	
+   125	# --- pure helpers (unit tested) ---------------------------------------------------
+   126	
+   127	
+   128	def validation_split(episode_id: str, fraction: float) -> bc_data.Split:
+   129	    """Deterministic episode-level split: a hash of the id, never of its content."""
+   130	    bucket = int(hashlib.sha256(episode_id.encode()).hexdigest()[:8], 16) % 10_000
+   131	    return "validation" if bucket < round(fraction * 10_000) else "train"
+   132	
+   133	
+   134	def kept_turns(episode_id: str, stride: int) -> list[int]:
+   135	    """Turns ``t`` in ``0..718`` kept under ``stride``, phase-shifted per episode."""
+   136	    if stride < 1:
+   137	        raise ValueError(f"turn stride must be >= 1, got {stride}")
+   138	    offset = int(hashlib.sha256(f"turn:{episode_id}".encode()).hexdigest()[:8], 16)
+   139	    return [t for t in range(PAIRED_TURNS) if (t + offset) % stride == 0]
+   140	
+   141	
+   142	def winner_seats(banks: Sequence[float]) -> tuple[bool, bool]:
+   143	    """Policy seats: the larger final bank, both on a draw."""
+   144	    return (banks[0] >= banks[1], banks[1] >= banks[0])
+   145	
+   146	
+   147	def check_envelope(data: dict[str, Any], episode_id: str) -> None:
+   148	    steps = data.get("steps")
+   149	    if not isinstance(steps, list) or len(steps) != EPISODE_STEPS:
+   150	        count = len(steps) if isinstance(steps, list) else None
+   151	        raise EpisodeRejected(f"steps: expected {EPISODE_STEPS}, got {count}")
+   152	    if any(not isinstance(step, list) or len(step) != 2 for step in steps):
+   153	        raise EpisodeRejected("steps: every step needs exactly two seats")
+   154	    info = data.get("info")
+   155	    if not isinstance(info, dict) or str(info.get("EpisodeId")) != episode_id:
+   156	        raise EpisodeRejected("info.EpisodeId differs from the member name")
+   157	    seed = info.get("seed")
+   158	    if isinstance(seed, bool) or not isinstance(seed, int):
+   159	        raise EpisodeRejected("info.seed is not an integer")
+   160	    statuses = [seat.get("status") for seat in steps[-1]]
+   161	    if statuses != ["DONE", "DONE"]:
+   162	        raise EpisodeRejected(f"final statuses {statuses}")
+   163	    config = data.get("configuration")
+   164	    if not isinstance(config, dict):
+   165	        raise EpisodeRejected("configuration missing")
+   166	    missing = CONFIG_KEYS - set(config)
+   167	    extra = set(config) - CONFIG_KEYS - CONFIG_EXTRA_KEYS
+   168	    if missing or extra:
+   169	        raise EpisodeRejected(
+   170	            f"configuration keys: missing {sorted(missing)}, extra {sorted(extra)}"
+   171	        )
+   172	    if config["episodeSteps"] != EPISODE_STEPS:
+   173	        raise EpisodeRejected(f"episodeSteps {config['episodeSteps']}")
+   174	
+   175	
+   176	def final_banks(data: dict[str, Any]) -> tuple[float, float]:
+   177	    farms = data["steps"][-1][0]["observation"]["farms"]
+   178	    banks = (float(farms[0]["money"]), float(farms[1]["money"]))
+   179	    if not all(math.isfinite(bank) for bank in banks):
+   180	        raise EpisodeRejected(f"final banks not finite: {banks}")
+   181	    return banks
+   182	
+   183	
+   184	def turn_header(data: dict[str, Any], t: int, *, seed: int = 0) -> dict[str, Any]:
+   185	    """Explicit-state header for ``steps[t]``; seat 1's shared keys from seat 0.
+   186	
+   187	    Encoding always uses the placeholder seed 0, so the recorded seed never
+   188	    reaches observation buffers.
+   189	    """
+   190	    obs0 = data["steps"][t][0]["observation"]
+   191	    obs1 = data["steps"][t][1]["observation"]
+   192	    return {
+   193	        "format": "kaggriculture-re-parity-v1",
+   194	        "seed": seed,
+   195	        "configuration": data["configuration"],
+   196	        "shop_schedule": [],
+   197	        "rng_schedule": [],
+   198	        "initial": {
+   199	            "public": {key: obs0[key] for key in PUBLIC_KEYS},
+   200	            "privates": [obs0["private"], obs1["private"]],
+   245	
+   246	def rejection_reason(error: Exception) -> str:
+   247	    return str(error).split(":", 1)[0].strip()[:80] or type(error).__name__
+   248	
+   249	
+   250	def resident_bytes_per_turn() -> int:
+   251	    """Host bytes one turn row occupies in ``load_bc_dataset``'s compact store."""
+   252	    sizes = {torch.int64: 4, torch.float32: 4, torch.float64: 8, torch.bool: 1}
+   253	    per_seat = sum(
+   254	        sizes[dtype] * math.prod(shape) for dtype, shape, _, _ in kt._SCHEMA.values()
+   255	    )
+   256	    labels = kt.MAX_FRAMES + 2 * kt.MAX_FRAMES * kt.ACTION_SLOTS + 4 + 1
+   257	    return kt.PLAYERS * (per_seat + labels) + 4 + 8
+   258	
+   259	
+   260	def stride_for_budget(episodes: int, budget_gib: float) -> int:
+   261	    rows = episodes * PAIRED_TURNS
+   262	    budget_rows = int(budget_gib * 2**30) // resident_bytes_per_turn()
+   263	    if budget_rows < 1:
+   264	        raise ValueError(f"resident budget {budget_gib} GiB holds no turn row")
+   265	    return max(1, math.ceil(rows / budget_rows))
+   266	
+   267	
+   268	# --- archive listing --------------------------------------------------------------
+   269	
+   270	
+   271	def list_tasks(
+   272	    archives: Path,
+   273	    *,
+   274	    month: str,
+   275	    days: Iterable[int],
+   276	    validation_fraction: float,
+   277	    turn_stride: int,
+   278	) -> list[EpisodeTask]:
+   279	    tasks: list[EpisodeTask] = []
+   280	    seen: set[str] = set()
+   281	    for day in days:
+   282	        path = archives / ARCHIVE_PATTERN.format(month=month, day=day)
+   283	        if not path.is_file():
+   284	            raise FileNotFoundError(f"day archive missing: {path}")
+   285	        with zipfile.ZipFile(path) as archive:
+   286	            names = sorted(n for n in archive.namelist() if n.endswith(".json"))
+   287	        for member in names:
+   288	            episode_id = member[: -len(".json")]
+   289	            if "/" in member or not _EPISODE_ID.match(episode_id):
+   290	                raise ValueError(f"{path}: unexpected member {member!r}")
+   291	            if episode_id in seen:
+   292	                raise ValueError(f"episode {episode_id} appears in two archives")
+   293	            seen.add(episode_id)
+   294	            tasks.append(
+   295	                EpisodeTask(
+   296	                    archive=str(path),
+   297	                    member=member,
+   298	                    day=f"{month}-{day:02d}",
+   299	                    episode_id=episode_id,
+   300	                    split=validation_split(episode_id, validation_fraction),
+   301	                    turn_stride=turn_stride,
+   302	                )
+   303	            )
+   304	    return tasks
+   305	
+   306	
+   307	# --- one episode ------------------------------------------------------------------
+   308	
+   309	
+   310	def _read_member(task: EpisodeTask) -> tuple[dict[str, Any], str, int]:
+   311	    with zipfile.ZipFile(task.archive) as archive:
+   312	        payload = archive.read(task.member)
+   313	    data = json.loads(payload)
+   314	    return data, hashlib.sha256(payload).hexdigest(), len(payload)
+   315	
+   316	
+   317	_NUMPY_DTYPES: dict[torch.dtype, type[np.generic]] = {
+   318	    torch.int64: np.int64,
+   319	    torch.float32: np.float32,
+   320	    torch.float64: np.float64,
+   355	    arrays: dict[str, npt.NDArray[Any]],
+   356	    policy: tuple[bool, bool],
+   357	) -> tuple[
+   358	    npt.NDArray[np.bool_],
+   359	    npt.NDArray[np.int64],
+   360	    npt.NDArray[np.int64],
+   361	    Counter[str],
+   362	    Counter[str],
+   363	]:
+   364	    """Strict per-turn admission of the policy seats' step+1 actions."""
+   365	    order_limit_config = int(data["configuration"]["maxMarketOrdersPerTurn"])
+   366	    rows = len(turns)
+   367	    admitted = np.zeros(rows, dtype=np.bool_)
+   368	    tokens = np.zeros((rows, 2, kt.MAX_FRAMES, kt.ACTION_SLOTS), dtype=np.int64)
+   369	    lengths = np.zeros((rows, 2), dtype=np.int64)
+   370	    rejections: Counter[str] = Counter()
+   371	    normalizations: Counter[str] = Counter()
+   372	    for row, t in enumerate(turns):
+   373	        farms = data["steps"][t][0]["observation"]["farms"]
+   374	        ok = True
+   375	        for seat in (0, 1):
+   376	            actors = int(arrays["actor_mask"][row, seat, :HIRE_LIMIT].sum())
+   377	            order_limit = int(arrays["order_limits"][row, seat])
+   378	            if actors != 1 + len(farms[seat]["hands"]):
+   379	                raise EpisodeRejected(f"turn {t} seat {seat}: actor count mismatch")
+   380	            if order_limit != order_limit_config:
+   381	                raise EpisodeRejected(f"turn {t} seat {seat}: order limit mismatch")
+   382	            out = tokens[row, seat]
+   383	            if not policy[seat]:
+   384	                try:
+   385	                    lengths[row, seat] = rs.kaggriculture_encode(
+   386	                        json.dumps(pass_action(actors)),
+   387	                        actors,
+   388	                        order_limit,
+   389	                        HIRE_LIMIT,
+   390	                        out,
+   391	                    )
+   392	                except ValueError as error:
+   393	                    rejections[f"placeholder {rejection_reason(error)}"] += 1
+   394	                    ok = False
+   395	                continue
+   396	            # Step+1 pairing: the action answering steps[t] is recorded at steps[t + 1].
+   397	            raw = data["steps"][t + 1][seat]["action"]
+   398	            try:
+   399	                action, kinds = normalize_action(raw)
+   400	                length = rs.kaggriculture_encode(
+   401	                    json.dumps(action), actors, order_limit, HIRE_LIMIT, out
+   402	                )
+   403	                decoded = json.loads(
+   404	                    rs.kaggriculture_decode(
+   405	                        out, length, actors, order_limit, HIRE_LIMIT
+   406	                    )
+   407	                )
+   408	                if decoded != action:
+   409	                    raise ValueError("decode round trip")
+   410	            except ValueError as error:
+   411	                rejections[rejection_reason(error)] += 1
+   412	                out[:] = 0
+   413	                ok = False
+   414	                continue
+   415	            normalizations.update(kinds)
+   416	            lengths[row, seat] = length
+   417	        admitted[row] = ok
+   418	    return admitted, tokens, lengths, rejections, normalizations
+   419	
+   420	
+   421	def process_episode(task: EpisodeTask, out_dir: Path) -> dict[str, Any]:
+   422	    """Prepare one episode and write its shard and record; return the record."""
+   423	    record: dict[str, Any] = {
+   424	        "episode_id": task.episode_id,
+   425	        "day": task.day,
+   426	        "member": task.member,
+   427	        "split": task.split,
+   428	    }
+   429	    try:
+   430	        data, sha256, size = _read_member(task)
+   431	        record |= {"source_sha256": sha256, "source_bytes": size}
+   432	        check_envelope(data, task.episode_id)
+   433	        banks = final_banks(data)
+   434	        policy = winner_seats(banks)
+   435	        turns = kept_turns(task.episode_id, task.turn_stride)
+   436	        arrays = encode_observations(data, turns)
+   437	        admitted, tokens, lengths, rejections, normalizations = admit_turns(
+   438	            data, turns, arrays, policy
+   439	        )
+   440	    except EpisodeRejected as error:
+   441	        record["rejected"] = str(error)
+   442	        _write_record(out_dir, task, record)
+   443	        return record
+   444	    record |= {
+   445	        "info_seed": int(data["info"]["seed"]),
+   446	        "terminal_banks": list(banks),
+   447	        "policy_seats": [seat for seat in (0, 1) if policy[seat]],
+   448	        "paired_turns": PAIRED_TURNS,
+   449	        "kept_turns": len(turns),
+   450	        "admitted": int(admitted.sum()),
+   451	        "rejections": dict(sorted(rejections.items())),
+   452	        "normalizations": dict(sorted(normalizations.items())),
+   453	    }
+   454	    del data
+   455	    if record["admitted"] == 0:
+   456	        record["rejected"] = "no admitted turns"
+   457	        _write_record(out_dir, task, record)
+   458	        return record
+   459	    keep = np.flatnonzero(admitted)
+   460	    tensors = {name: torch.from_numpy(a[keep]) for name, a in arrays.items()}
+   461	    can_act = tensors.pop("can_act")
+   462	    episode = bc_data.BCEpisode(
+   463	        episode_id=task.episode_id,
+   464	        split=task.split,
+   465	        day=task.day,
+   466	        obs=kt.KaggricultureObsBatch(
+   467	            **tensors, action_mask=kt.KaggricultureActionMask(can_act=can_act)
+   468	        ),
+   469	        actions=kt.KaggricultureActions(
+   470	            tokens=torch.from_numpy(tokens[keep]),
+   471	            lengths=torch.from_numpy(lengths[keep]),
+   472	        ),
+   473	        policy_seat=torch.tensor([policy] * keep.size, dtype=torch.bool),
+   474	        turn=torch.tensor([turns[i] for i in keep], dtype=torch.int64),
+   475	        terminal_banks=banks,
+   476	    )
+   477	    episode.obs.check_contract()
+   478	    shard = out_dir / bc_data.shard_path(task.split, task.day, task.episode_id)
+   479	    shard.unlink(missing_ok=True)  # a crash before the record left a partial shard
+   480	    written = bc_data.write_bc_episode(out_dir, episode)
+   481	    record |= {
+   482	        "shard_path": written.shard_path,
+   483	        "shard_sha256": written.shard_sha256,
+   484	        "shard_bytes": written.shard_bytes,
+   485	    }
+   486	    _write_record(out_dir, task, record)
+   487	    return record
+   488	
+   489	
+   490	def _record_path(out_dir: Path, task: EpisodeTask) -> Path:
+   491	    return out_dir / RECORD_DIR / f"{task.day}-{task.episode_id}.json"
+   492	
+   493	
+   494	def _write_record(out_dir: Path, task: EpisodeTask, record: dict[str, Any]) -> None:
+   495	    path = _record_path(out_dir, task)
+   496	    path.parent.mkdir(parents=True, exist_ok=True)
+   497	    tmp = path.with_suffix(".tmp")
+   498	    tmp.write_text(json.dumps(record, sort_keys=True) + "\n", encoding="utf-8")
+   499	    os.replace(tmp, path)
+   500	
+   501	
+   502	def _run_task(args: tuple[EpisodeTask, str]) -> dict[str, Any]:
+   503	    task, out_dir = args
+   504	    return process_episode(task, Path(out_dir))
+   505	
+   506	
+   507	# --- pairing sanity with Kaggle's own engine --------------------------------------
+   508	
+   509	
+   510	def pairing_check(data: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
+   685	    with path.open("rb") as handle:
+   686	        for block in iter(lambda: handle.read(1 << 20), b""):
+   687	            digest.update(block)
+   688	    return digest.hexdigest()
+   689	
+   690	
+   691	def _source_identity(repo: Path) -> dict[str, Any]:
+   692	    head = subprocess.run(
+   693	        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+   694	        check=True,
+   695	        capture_output=True,
+   696	        text=True,
+   697	    ).stdout.strip()
+   698	    dirty = subprocess.run(
+   699	        ["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=no"],
+   700	        check=True,
+   701	        capture_output=True,
+   702	        text=True,
+   703	    ).stdout.strip()
+   704	    if dirty:
+   705	        raise RuntimeError(f"refusing to prepare from a dirty checkout:\n{dirty}")
+   706	    extension = Path(str(rs.__file__))
+   707	    return {
+   708	        "git_head": head,
+   709	        "uv_lock_sha256": _sha256(repo / "uv.lock"),
+   710	        "cargo_lock_sha256": _sha256(repo / "Cargo.lock"),
+   711	        "prepare_sha256": _sha256(Path(__file__)),
+   712	        "owl_rs_extension": extension.name,
+   713	        "owl_rs_sha256": _sha256(extension),
+   714	    }
+   715	
+   716	
+   717	# --- CLI --------------------------------------------------------------------------
+   718	
+   719	
+   720	@contextlib.contextmanager
+   721	def _mapper(workers: int) -> Iterator[Callable[..., Iterable[Any]]]:
+   722	    """In-process ``map`` for one worker, else a bounded spawn pool."""
+   723	    if workers == 1:
+   724	        yield map
+   725	        return
+   726	    context = multiprocessing.get_context("spawn")
+   727	    with context.Pool(workers, maxtasksperchild=64) as pool:
+   728	        yield pool.imap_unordered
+   729	
+   730	
+   731	def _parse_days(text: str) -> list[int]:
+   732	    if "-" in text:
+   733	        first, last = (int(part) for part in text.split("-", 1))
+   734	        return list(range(first, last + 1))
+   735	    return [int(part) for part in text.split(",")]
+   736	
+   737	
+   738	def _bind_identity(out_dir: Path, identity: dict[str, Any]) -> None:
+   739	    """Record the preparation identity, or require an exact match on resume."""
+   740	    records = out_dir / RECORD_DIR
+   741	    path = records / IDENTITY_NAME
+   742	    if path.is_file():
+   743	        stored = json.loads(path.read_text(encoding="utf-8"))
+   744	        if stored != identity:
+   745	            changed = sorted(
+   746	                key
+   747	                for key in stored.keys() | identity.keys()
+   748	                if stored.get(key) != identity.get(key)
+   749	            )
+   750	            raise RuntimeError(
+   751	                f"{path} differs from this run in {changed}; "
+   752	                "prepare into a fresh out_dir"
+   753	            )
+   754	        return
+   755	    if records.is_dir() and any(records.glob("*.json")):
+   756	        raise RuntimeError(
+   757	            f"{records} has records but no {IDENTITY_NAME}; use a fresh out_dir"
+   758	        )
+   759	    records.mkdir(parents=True, exist_ok=True)
+   760	    path.write_text(
+   761	        json.dumps(identity, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+   762	    )
+   763	
+   764	
+   765	def main(argv: Sequence[str] | None = None) -> int:
+   766	    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+   767	    parser.add_argument("archives", type=Path, help="directory of day archive ZIPs")
+   768	    parser.add_argument(
+   769	        "out_dir", type=Path, help="dataset root (outside the checkout)"
+   770	    )
+   771	    parser.add_argument("--month", default="2026-09")
+   772	    parser.add_argument("--days", default="22-28", help="e.g. 22-28 or 22,23")
+   773	    parser.add_argument(
+   774	        "--workers", type=int, default=max(1, min(16, (os.cpu_count() or 2) - 2))
+   775	    )
+   776	    parser.add_argument("--validation-fraction", type=float, default=0.03)
+   777	    stride = parser.add_mutually_exclusive_group()
+   778	    stride.add_argument("--turn-stride", type=int, default=None)
+   779	    stride.add_argument(
+   780	        "--resident-budget-gib",
+   781	        type=float,
+   782	        default=None,
+   783	        help="derive the turn stride so all turn rows fit this host-memory budget",
+   784	    )
+   785	    parser.add_argument("--limit-episodes", type=int, default=None)
+   786	    parser.add_argument("--pairing-sample", type=int, default=0)
+   787	    parser.add_argument("--pairing-only", action="store_true")
+   788	    args = parser.parse_args(argv)
+   789	    if not 0.0 < args.validation_fraction < 1.0:
+   790	        raise ValueError("--validation-fraction must be in (0, 1)")
+   791	    if args.workers < 1:
+   792	        raise ValueError("--workers must be >= 1")
+   793	    repo = Path(__file__).resolve().parents[1]
+   794	    out_dir: Path = args.out_dir.resolve()
+   795	    if out_dir.is_relative_to(repo):
+   796	        raise ValueError("out_dir must lie outside the checkout")
+   797	    if (out_dir / "manifest.json").exists():
+   798	        raise FileExistsError(f"{out_dir}/manifest.json exists; dataset is complete")
+   799	    run = _source_identity(repo)
+   800	    days = _parse_days(args.days)
+   801	    tasks = list_tasks(
+   802	        args.archives,
+   803	        month=args.month,
+   804	        days=days,
+   805	        validation_fraction=args.validation_fraction,
+   806	        turn_stride=1,
+   807	    )
+   808	    if args.limit_episodes is not None:
+   809	        tasks = tasks[: args.limit_episodes]
+   810	    if not tasks:
+   811	        raise ValueError("no episodes found")
+   812	    turn_stride = args.turn_stride or 1
+   813	    if args.resident_budget_gib is not None:
+   814	        turn_stride = stride_for_budget(len(tasks), args.resident_budget_gib)
+   815	    tasks = [
+   816	        EpisodeTask(t.archive, t.member, t.day, t.episode_id, t.split, turn_stride)
+   817	        for t in tasks
+   818	    ]
+   819	    out_dir.mkdir(parents=True, exist_ok=True)
+   820	    archive_sha256 = {
+   821	        Path(archive).name: _sha256(Path(archive))
+   822	        for archive in sorted({t.archive for t in tasks})
+   823	    }
+   824	    _bind_identity(
+   825	        out_dir,
+   826	        {
+   827	            "run": run,
+   828	            "month": args.month,
+   829	            "days": days,
+   830	            "validation_fraction": args.validation_fraction,
+   831	            "turn_stride": turn_stride,
+   832	            "hire_limit": HIRE_LIMIT,
+   833	            "label_pairing": LABEL_PAIRING,
+   834	            "archive_sha256": archive_sha256,
+   835	        },
+   836	    )
+   837	    print(
+   838	        f"episodes={len(tasks)} days={days} turn_stride={turn_stride} "
+   839	        f"bytes_per_turn_row={resident_bytes_per_turn()} workers={args.workers}",
+   840	        flush=True,
+   841	    )
+   842	    with _mapper(args.workers) as mapper:
+   843	        if args.pairing_sample > 0:
+   844	            pairing = pairing_sample(tasks, args.pairing_sample, mapper)
+   845	            (out_dir / PAIRING_NAME).write_text(json.dumps(pairing, indent=2) + "\n")
+   846	            print(
+   847	                f"pairing: {pairing['matches']}/{pairing['total']} transitions match "
+   848	                f"({pairing['fraction']:.4f}) over {len(pairing['episodes'])} episodes",
+   849	                flush=True,
+   850	            )
+   851	            if args.pairing_only:
+   852	                return 0
+   853	        records: list[dict[str, Any]] = []
+   854	        todo: list[EpisodeTask] = []
+   855	        for task in tasks:
+   856	            path = _record_path(out_dir, task)
+   857	            if path.is_file():
+   858	                records.append(json.loads(path.read_text(encoding="utf-8")))
+   859	            else:
+   860	                todo.append(task)
+   861	        print(f"resuming: {len(records)} done, {len(todo)} to do", flush=True)
+   862	        for index, record in enumerate(
+   863	            mapper(_run_task, [(t, str(out_dir)) for t in todo]), 1
+   864	        ):
+   865	            records.append(record)
+   866	            if index % 50 == 0 or index == len(todo):
+   867	                print(f"episodes {index}/{len(todo)}", flush=True)
+   868	    pairing_path = out_dir / PAIRING_NAME
+   869	    manifest = build_manifest(
+   870	        out_dir,
+   871	        records,
+   872	        {
+   873	            "run": run
+   874	            | {
+   875	                "command": [sys.executable, *sys.argv],
+   876	                "workers": args.workers,
+   877	                "hire_limit": HIRE_LIMIT,
+   878	                "turn_stride": turn_stride,
+   879	                "bytes_per_turn_row": resident_bytes_per_turn(),
+   880	                "validation_fraction": args.validation_fraction,
+   881	                "label_pairing": LABEL_PAIRING,
+   882	                "policy_seats": "winner by final bank; both on a draw",
+   883	            },
+   884	            "source": {
+   885	                "archives": str(args.archives),
+   886	                "month": args.month,
+   887	                "days": days,
+   888	                "archive_sha256": archive_sha256,
+   889	                "archive_bytes": {
+   890	                    Path(t.archive).name: Path(t.archive).stat().st_size for t in tasks
+   891	                },
+   892	                "episodes_listed": len(tasks),
+   893	            },
+   894	            "pairing": (
+   895	                json.loads(pairing_path.read_text()) if pairing_path.is_file() else None
+   896	            ),
+   897	        },
+   898	    )
+   899	    extra = manifest.model_extra or {}
+   900	    print(json.dumps(extra.get("totals"), indent=2), flush=True)
+   901	    return 0
+   902	
+   903	
+   904	if __name__ == "__main__":
+   905	    raise SystemExit(main())
+
+exec
+/bin/zsh -lc "cat /tmp/bc51-review-0z513d/resume-setup.py /tmp/bc51-review-0z513d/resume-inspect.py /tmp/bc51-review-0z513d/report.md; sed -n '110,145p' pyproject.toml; cat tests/conftest.py" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+from pathlib import Path
+import json, shutil, zipfile
+base=Path('/tmp/bc51-review-0z513d')
+original=json.loads((base/'dataset/manifest.json').read_text())
+train=next(r for r in original['episodes'] if r['split']=='train')
+out=base/'resume-changed-source'
+(out/'records').mkdir(parents=True)
+shard=out/train['shard_path']; shard.parent.mkdir()
+shutil.copy2(base/'dataset'/train['shard_path'], shard)
+record_name='2026-09-28-114406062.json'
+shutil.copy2(base/'dataset/records'/record_name, out/'records'/record_name)
+archives=base/'changed-archives'; archives.mkdir()
+for path in (base/'archive-targets').glob('*.zip'):
+    with zipfile.ZipFile(path) as src, zipfile.ZipFile(archives/path.name,'w',zipfile.ZIP_DEFLATED) as dst:
+        for name in src.namelist():
+            payload=src.read(name)
+            if name=='114406062.json':
+                data=json.loads(payload)
+                farms=data['steps'][-1][0]['observation']['farms']
+                farms[0]['money'],farms[1]['money']=farms[1]['money'],farms[0]['money']
+                payload=json.dumps(data).encode()
+            dst.writestr(name,payload)
+print('Simulated partial preparation: one intact finished record/shard; pending validation episode. Only scratch source terminal banks changed; original v2 untouched.')
+from pathlib import Path
+import json,hashlib,zipfile
+import numpy as np
+from owl.kaggriculture.bc_data import load_bc_dataset
+base=Path('/tmp/bc51-review-0z513d')
+out=base/'resume-changed-source'
+m=json.loads((out/'manifest.json').read_text())
+r=next(e for e in m['episodes'] if e['episode_id']=='114406062')
+with zipfile.ZipFile(base/'changed-archives/kaggriculture-episodes-2026-09-28.zip') as z:
+    payload=z.read('114406062.json')
+    raw=json.loads(payload)
+farms=raw['steps'][-1][0]['observation']['farms']
+banks=[f['money'] for f in farms]
+data=load_bc_dataset(out)
+batch=data.train.gather(np.array([0]))
+result={'input_terminal_banks':banks,'current_input_winner':int(banks[1]>banks[0]),'manifest_terminal_banks':r['terminal_banks'],'manifest_policy_seats':r['policy_seats'],'trainer_policy_mask':batch.policy_seat.tolist(),'trainer_terminal_banks':batch.final_banks.tolist(),'cached_source_sha256':r['source_sha256'],'current_source_sha256':hashlib.sha256(payload).hexdigest(),'manifest_source':m['source']['archives'],'reader_load_succeeded':True}
+assert result['current_input_winner']==0
+assert result['trainer_policy_mask']==[[False,True]]
+assert result['cached_source_sha256']!=result['current_source_sha256']
+(base/'resume-result.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps(result,indent=2))
+Review of 49255acca0502c09a41d4d6a474127014cfd2cb2 against 8d29ae3
+
+P2 — Resume reuses stale source-derived labels without verifying preparation identity.
+Location: scripts/kaggriculture_prepare_bc.py:779-784; current invocation custody is published at :793-819.
+Records are loaded solely by day/episode filename. Their source hash, source/code identity, split and stride are not compared with the current task. A resumed run can therefore keep old labels/winner masks while presenting the current source/config as its dataset origin. This can also retain outputs from before a pairing correction.
+Reproduction: prepared the two original local episodes; copied only episode 114406062's completed record and shard into a scratch incomplete output; changed only its terminal banks in a scratch copy of the source ZIP to exchange the winner; invoked the same CLI with that scratch source. The CLI reported 1 done/1 to do and exited 0. Current source banks were [42478,7213] (winner 0), but the newly published manifest and successfully loaded trainer batch retained [7213,42478] and policy_seat [false,true] (winner 1). Source hashes differ. See resume-result.json and resume.log. Original source files were not modified.
+Fix: persist and validate preparation/source/options identity before reusing completed records; reject or rebuild mismatched episodes. This is one resume correctness issue, not proof of actual train/validation overlap. Same-input resume is covered by the passing test.
+
+P3 — CLI default dates are still 21-27 rather than owner-requested 22-28.
+Location: scripts/kaggriculture_prepare_bc.py:718 (also module text :4).
+Explicit --days 22-28 works. Align the default/help text to avoid an accidental wrong window.
+
+P3 — Mypy fails on the changed-file set.
+Locations: scripts/kaggriculture_prepare_bc.py:508, :509, :557, :560, :607; tests/scripts/test_kaggriculture_prepare_bc.py:34, :110.
+Seven errors: untyped Kaggle imports, non-indexable inferred collection, and a missing variable annotation. See mypy.log. No runtime failure was observed from these errors.
+
+Verification:
+- Requested pytest suites: 52 passed in 8.37 seconds (pytest.log).
+- Mypy on all five changed Python files: 7 errors in 2 files, exit 1 (mypy.log).
+- CPU only, UV_OFFLINE=1, OMP_NUM_THREADS=2; scratch output, test caches and review scripts under this directory. No downloads, GPU run, mutation sweep, or training beyond the expressly requested unit tests.
+- Created seven scratch day ZIPs and a directory of symlinks to all seven; six ZIPs empty, the seventh holds unchanged local episode payloads. Thus the CLI/path/day parsing is tested, not the actual seven-day corpus. Ran scripts/kaggriculture_prepare_bc.py LINKS OUT --days 22-28 --workers 1 --pairing-sample 2.
+- Episode 114406062: info.seed 863363664, pairing 719/719, banks [7213,42478], winner seat 1, train, 719 admitted turns.
+- Episode 114461109: info.seed 1596988104, pairing 719/719, banks [115007,0], winner seat 0, validation, 719 admitted turns.
+- Total pairing 1438/1438; total admitted 1438. Recorded info.seed is used by the Python Kaggle interpreter checker. These are not Rust transition-harness parity measurements.
+- End-to-end reader probe load_bc_dataset -> gather: 1438/1438 policy programs decode exactly to normalized steps[t+1].action; 1438 losing-seat placeholders equal PASS with the actor count at t. Actor counts cross-checked on every turn. All 29 observation arrays compared exactly with fresh encoding of t in {0,47,71,143,167,718} for both episodes. See trace-result.json.
+- Turn domain is 0..718 (kept_turns :128-133). Encoding uses turn_header(t), :328-343; actor/hand count and placeholder generation use t, :367-389; the entire raw farmer/hands/market label uses t+1, :391-408. No remaining fresh-run t/t+1 mismatch found.
+- Winner chosen from final farms[s].money, :170-175, :425-426. policy_seat survives BCEpisode -> NPZ -> strict reader -> gather -> bc_terms. write_bc_episode :223-241 and _read_shard :336-392 agree on exact array keys, schema, byte/hash checks and dtypes. Manifest identity keys match BCManifest at bc_data.py:79-99. Tokens, lengths and turn are int64; policy_seat and can_act bool; observation dtypes follow _SCHEMA. Gather restores compact storage to int64.
+- bc.py:302-321 masks policy NLL to selected seats, with critic CE on both legal observation rows. Winner targets at :274-288 orient self/opponent correctly. Losing placeholders are not imitation targets; the critic uses observation encoding, not supplied action tokens.
+- A scratch malformed winning farmer command was explicitly rejected as "unknown unit command": 1, with the row not admitted (:392-409). Decode round-trip failures use the same counted rejection path. Losing actions intentionally do not control admission.
+- Draws retaining both seats are sound under the owner's allowance: both are non-losing demonstrations, one shared episode split, critic targets 0.5/0.5. There was no real drawn episode in this probe; synthetic draw/loss tests pass.
+- Repository git status remained clean. No tracked edits, commits, pushes, or writes to kaggriculture-v2.
+
+VERDICT: REQUEST CHANGES
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+disallow_untyped_defs = true
+allow_redefinition = true
+
+[[tool.mypy.overrides]]
+module = ["owl.*"]
+no_implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = [
+    "flash_attn.*",
+    "kaggle.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+strict_markers = true
+markers = [
+    "slow: long-running tests excluded from the default fast test target",
+]
+"""Isolate the process-global compile state that every model compile claims.
+
+``configure_model_compile`` and each ``compile_transformer_trunk`` claim
+``torch._inductor.config.max_autotune_gemm_backends`` for one game per process
+(``owl.model.compile_gemm``). The test session compiles both games' models, so
+every test starts unclaimed with the backends it found and restores both
+afterwards.
+"""
+
+from __future__ import annotations
+
+import pytest
+import torch._inductor.config as inductor_config
+from owl.model import compile_gemm
+
+
+@pytest.fixture(autouse=True)
+def _isolate_compile_gemm_backend_claim(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(compile_gemm, "_GEMM_BACKEND_CLAIM", None)
+    monkeypatch.setattr(
+        inductor_config,
+        "max_autotune_gemm_backends",
+        inductor_config.max_autotune_gemm_backends,
+    )
+
+codex
+The identity check now runs before cached records are read and covers the options and source data that determine labels and seats. I’ll test both rejection paths: changed terminal banks and records with no identity file. I’ll also verify that an unchanged resume still works.
+
+exec
+/bin/zsh -lc 'mktemp -d /tmp/bc51-r2-review-XXXXXX' in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+/tmp/bc51-r2-review-DJT5dX
+
+exec
+/bin/zsh -lc 'UV_OFFLINE=1 uvx --offline ruff check --no-cache scripts/kaggriculture_prepare_bc.py tests/scripts/test_kaggriculture_prepare_bc.py > /tmp/bc51-r2-review-DJT5dX/ruff.log 2>&1; cat /tmp/bc51-r2-review-DJT5dX/ruff.log' in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+error: Could not create temporary file
+  Caused by: Operation not permitted (os error 1) at path "/Users/poonszesen/.local/share/uv/tools/.tmplhwc5r"
+
+exec
+/bin/zsh -lc 'PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=2 .venv/bin/python -B -m pytest tests/scripts/test_kaggriculture_prepare_bc.py --basetemp=/tmp/bc51-r2-review-DJT5dX/pytest -o cache_dir=/tmp/bc51-r2-review-DJT5dX/pytest-cache > /tmp/bc51-r2-review-DJT5dX/pytest.log 2>&1; cat /tmp/bc51-r2-review-DJT5dX/pytest.log' in /Users/poonszesen/kg-v3-bcnow
+exec
+/bin/zsh -lc 'PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -B -m mypy --cache-dir /tmp/bc51-r2-review-DJT5dX/mypy-cache scripts/kaggriculture_prepare_bc.py tests/scripts/test_kaggriculture_prepare_bc.py > /tmp/bc51-r2-review-DJT5dX/mypy.log 2>&1; cat /tmp/bc51-r2-review-DJT5dX/mypy.log' in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 5355ms:
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0
+cachedir: /tmp/bc51-r2-review-DJT5dX/pytest-cache
+rootdir: /Users/poonszesen/kg-v3-bcnow
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 21 items
+
+tests/scripts/test_kaggriculture_prepare_bc.py .....................     [100%]
+
+============================== 21 passed in 3.96s ==============================
+
+ succeeded in 6946ms:
+Success: no issues found in 2 source files
+
+exec
+/bin/zsh -lc "command -v ruff; ls .venv/bin/ruff /Users/poonszesen/.local/share/uv/tools/ruff/bin/ruff; rg --files /Users/poonszesen/.cache/uv | rg '/bin/ruff"'$'"' | head -8" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 1044ms:
+/Users/poonszesen/.local/bin/ruff
+ls: .venv/bin/ruff: No such file or directory
+/Users/poonszesen/.local/share/uv/tools/ruff/bin/ruff
+/Users/poonszesen/.cache/uv/archive-v0/VKjsdexmSSPo_YPaPLOUD/bin/ruff
+/Users/poonszesen/.cache/uv/archive-v0/wfQNSgCKFk89OMgk86p0M/bin/ruff
+/Users/poonszesen/.cache/uv/archive-v0/t2kUkd_NYpNpbX8Y-_63c/bin/ruff
+/Users/poonszesen/.cache/uv/archive-v0/0nnULqvE1ZC5NZ7o83jSf/bin/ruff
+/Users/poonszesen/.cache/uv/archive-v0/IK0vzvt1MnRRXs1f7WGPZ/bin/ruff
+
+exec
+/bin/zsh -lc "cat > /tmp/bc51-r2-review-DJT5dX/resume-repro.py <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+import zipfile
+
+root = Path(__file__).parent
+repo = Path('/Users/poonszesen/kg-v3-bcnow')
+old = Path('/tmp/bc51-review-0z513d')
+archives = root / 'archives'
+targets = root / 'archive-targets'
+out = root / 'dataset'
+archives.mkdir()
+targets.mkdir()
+for src in (old / 'archive-targets').glob('*.zip'):
+    dst = targets / src.name
+    shutil.copy2(src, dst)
+    (archives / src.name).symlink_to(dst)
+# Deliberately omit --days to exercise the corrected default (22-28).
+args = [sys.executable, '-B', str(repo/'scripts/kaggriculture_prepare_bc.py'), str(archives), str(out), '--workers', '1']
+env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1', OMP_NUM_THREADS='2', UV_OFFLINE='1')
+def invoke(name):
+    p = subprocess.run(args, cwd=repo, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    (root / f'{name}.log').write_text(p.stdout)
+    return p
+
+def interrupt():
+    (out/'manifest.json').unlink()
+    (out/'records/2026-09-28-114461109.json').unlink()
+    (out/'validation/2026-09-28-114461109.npz').unlink()
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+fresh = invoke('fresh')
+assert fresh.returncode == 0, fresh.stdout
+identity = json.loads((out/'records/identity.json').read_text())
+assert identity['days'] == list(range(22,29))
+assert identity['run']['git_head'] == '356d19f6b3bd5a0e1102c674d96f5b71cabfb5e3'
+train = out/'train/2026-09-28-114406062.npz'
+cached_hash = digest(train)
+record_path = out/'records/2026-09-28-114406062.json'
+record_hash = digest(record_path)
+interrupt()
+same = invoke('same-input-resume')
+assert same.returncode == 0, same.stdout
+assert 'resuming: 1 done, 1 to do' in same.stdout
+assert digest(train) == cached_hash
+interrupt()
+archive = targets/'kaggriculture-episodes-2026-09-28.zip'
+with zipfile.ZipFile(archive) as src:
+    payloads = {name: src.read(name) for name in src.namelist()}
+data = json.loads(payloads['114406062.json'])
+farms = data['steps'][-1][0]['observation']['farms']
+before = [f['money'] for f in farms]
+farms[0]['money'], farms[1]['money'] = farms[1]['money'], farms[0]['money']
+after = [f['money'] for f in farms]
+payloads['114406062.json'] = json.dumps(data).encode()
+with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as dst:
+    for name, payload in payloads.items():
+        dst.writestr(name, payload)
+swapped = invoke('winner-swap-resume')
+assert swapped.returncode "'!= 0, swapped.stdout
+assert "differs from this run in ['"'archive_sha256']\" in swapped.stdout, swapped.stdout
+assert 'resuming:' not in swapped.stdout
+assert not (out/'manifest.json').exists()
+assert not (out/'records/2026-09-28-114461109.json').exists()
+assert digest(train) == cached_hash and digest(record_path) == record_hash
+(out/'records/identity.json').rename(out/'records/identity.saved')
+missing = invoke('missing-identity-resume')
+assert missing.returncode "'!= 0, missing.stdout
+assert '"'has records but no identity.json' in missing.stdout, missing.stdout
+result = {'head': identity['run']['git_head'], 'default_days': identity['days'], 'fresh_exit': fresh.returncode, 'unchanged_resume_exit': same.returncode, 'swapped_input_banks_before': before, 'swapped_input_banks_after': after, 'winner_swap_exit': swapped.returncode, 'winner_swap_error': swapped.stdout.splitlines()[-1], 'missing_identity_exit': missing.returncode, 'missing_identity_error': missing.stdout.splitlines()[-1], 'cached_record_and_shard_unchanged': True, 'no_manifest_or_pending_record_published': True}
+(root/'resume-result.json').write_text(json.dumps(result, indent=2)+'\\n')
+print(json.dumps(result, indent=2))
+PY
+PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=2 .venv/bin/python -B /tmp/bc51-r2-review-DJT5dX/resume-repro.py > /tmp/bc51-r2-review-DJT5dX/resume-repro.log 2>&1; cat /tmp/bc51-r2-review-DJT5dX/resume-repro.log" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 4527ms:
+{
+  "head": "356d19f6b3bd5a0e1102c674d96f5b71cabfb5e3",
+  "default_days": [
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28
+  ],
+  "fresh_exit": 0,
+  "unchanged_resume_exit": 0,
+  "swapped_input_banks_before": [
+    7213.0,
+    42478.0
+  ],
+  "swapped_input_banks_after": [
+    42478.0,
+    7213.0
+  ],
+  "winner_swap_exit": 1,
+  "winner_swap_error": "RuntimeError: /private/tmp/bc51-r2-review-DJT5dX/dataset/records/identity.json differs from this run in ['archive_sha256']; prepare into a fresh out_dir",
+  "missing_identity_exit": 1,
+  "missing_identity_error": "RuntimeError: /private/tmp/bc51-r2-review-DJT5dX/dataset/records has records but no identity.json; use a fresh out_dir",
+  "cached_record_and_shard_unchanged": true,
+  "no_manifest_or_pending_record_published": true
+}
+
+exec
+/bin/zsh -lc "rg -n 'random|rng|shuffle|_drop_inventories|shed|rng_state' .venv/lib/python3.12/site-packages/kaggle_environments/envs/kaggriculture/kaggriculture.py | tail -100; nl -ba scripts/kaggriculture_prepare_bc.py | sed -n '510,580p;622,640p'; rg -n 'kaggle-environments|version = \"1.32.7\"' uv.lock pyproject.toml" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+3:import random
+132:def _shed_access_tiles(board_size):
+133:    """Four inner-corner tiles around the shed, in NWSE order."""
+138:def _is_shed_adjacent(pos, board_size):
+139:    return tuple(pos) in {(x, y) for (x, y) in _shed_access_tiles(board_size)}
+162:    """First free shed-access tile, NWSE preference."""
+163:    for tile in _shed_access_tiles(board_size):
+171:        "shed": {item: 0 for item in PRODUCTS + list(ANIMALS)},
+312:def _apply_unit_action(farm, private, idx, action, board_size, day, turns_per_day, shed_capacity=100):
+329:        # shed-access tile, and blocking movement would strand it there forever.
+340:    # a standing position -- the shed itself is always owned -- and three of the
+341:    # four shed-access tiles start LOCKED, so guarding them first would make the
+342:    # shed unreachable from those tiles.
+344:        if not _is_shed_adjacent((fx, fy), board_size):
+346:        shed = private["shed"]
+351:            room = max(0, shed_capacity - sum(shed.values()))
+354:                shed[item] = shed.get(item, 0) + take
+359:        if not _is_shed_adjacent((fx, fy), board_size):
+368:        # they never pass through farmer inventory or the shed.
+369:        available = private["shed"].get(item, 0)
+373:        private["shed"][item] -= n
+383:        # there and PLACE falls through to the shed path below.
+393:        # Shed drop: orthogonally adjacent to the shed; obeys shedCapacity.
+394:        if _is_shed_adjacent((fx, fy), board_size):
+401:            current = sum(private["shed"].values())
+402:            room = max(0, shed_capacity - current)
+409:            private["shed"][item] = private["shed"].get(item, 0) + n
+534:    """First free shed-access tile (NWSE order); ties broken by min occupancy."""
+535:    occupants = {tile: 0 for tile in _shed_access_tiles(board_size)}
+540:    best = sorted(occupants.items(), key=lambda kv: (kv[1], _shed_access_tiles(board_size).index(kv[0])))
+553:    shed_capacity = int(get(env.configuration, "shedCapacity", 100))
+618:                ok = _commit_unit(op, item, price, farms[player_id], privates[player_id], market, shed_capacity)
+652:def _commit_unit(op, item, price, farm, private, market, shed_capacity=100):
+654:        if private["shed"].get(item, 0) <= 0:
+656:        private["shed"][item] -= 1
+665:        # Bought goods land in the shed, which obeys shedCapacity like every
+666:        # other deposit path (pickup, shed-drop, end-of-day drop).
+667:        if sum(private["shed"].values()) >= shed_capacity:
+670:        private["shed"][item] = private["shed"].get(item, 0) + 1
+682:        if sum(private["shed"].values()) >= shed_capacity:
+685:        private["shed"][item] = private["shed"].get(item, 0) + 1
+836:def _spawn_weeds(farm, board_size, weed_chance, rng):
+839:            if farm["tiles"][y][x] is None and rng.random() < weed_chance:
+843:def _drop_inventories_to_shed(private, capacity):
+844:    """Drop every per-farmer inventory into the shed up to `capacity`; overflow is discarded.
+845:    Seeds are tracked separately in private["seeds"] and don't pass through the shed."""
+846:    shed = private["shed"]
+852:            current = sum(v for k, v in shed.items())
+856:                shed[item] = shed.get(item, 0) + take
+866:    shed_cap = int(get(cfg, "shedCapacity", 100))
+871:    rng = random.Random((seed * 1_000_003) ^ day)
+877:        _spawn_weeds(farm, board_size, weed_chance, rng)
+878:        _drop_inventories_to_shed(private, shed_cap)
+891:            town["unlocked_shops"].append(rng.choice(sorted(SHOPS)))
+908:    shed_capacity = int(get(cfg, "shedCapacity", 100))
+936:                           board_size, day, turns_per_day, shed_capacity)
+939:                               _allowed(hand_action), board_size, day, turns_per_day, shed_capacity)
+1003:            f"shed={priv.get('shed')}  seeds={priv.get('seeds')}\n"
+1027:def random_agent(obs):
+1028:    rng = random.Random()
+1041:    if affordable and rng.random() < 0.1:
+1042:        market.append(["BUY_SEED", rng.choice(affordable), 1])
+1045:    if available_seeds and rng.random() < 0.3:
+1046:        farmer = ["PLANT", rng.choice(available_seeds)]
+1048:        farmer = [rng.choice(farmer_ops)]
+1050:    hands_actions = [[rng.choice(farmer_ops)] for _ in farm.get("hands", [])]
+1066:    shed = private.get("shed", {})
+1069:    if shed.get("CARROT", 0) > 0:
+1070:        market.append(["SELL", "CARROT", shed["CARROT"]])
+1086:agents = {"pass": pass_agent, "random": random_agent, "starter": starter_agent}
+   510	def pairing_check(data: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
+   511	    """Step Kaggle's interpreter from ``steps[t]`` with ``steps[t + 1].action``.
+   512	
+   513	    Returns the number of the 719 transitions whose public state and both
+   514	    privates equal ``steps[t + 1]`` (value equality), plus the mismatches.
+   515	    """
+   516	    # kaggle_environments ships no type information; bind it through importlib.
+   517	    interpreter = importlib.import_module(
+   518	        "kaggle_environments.envs.kaggriculture.kaggriculture"
+   519	    ).interpreter
+   520	    utils = importlib.import_module("kaggle_environments.utils")
+   521	    Struct, structify = utils.Struct, utils.structify
+   522	
+   523	    env = Struct(
+   524	        configuration=structify(copy.deepcopy(data["configuration"])),
+   525	        info={"seed": data["info"]["seed"]},
+   526	        done=False,
+   527	    )
+   528	    steps = data["steps"]
+   529	    matches = 0
+   530	    mismatches: list[dict[str, Any]] = []
+   531	    for t in range(PAIRED_TURNS):
+   532	        # structify copies every container. Kaggle shares one public
+   533	        # farms/market/town object across seats, so both seats get the same one.
+   534	        public = structify({k: steps[t][0]["observation"][k] for k in PUBLIC_KEYS})
+   535	        state = []
+   536	        for seat in (0, 1):
+   537	            own = structify(
+   538	                {
+   539	                    k: v
+   540	                    for k, v in steps[t][seat]["observation"].items()
+   541	                    if k not in PUBLIC_KEYS
+   542	                }
+   543	            )
+   544	            state.append(
+   545	                Struct(
+   546	                    observation=Struct(**own, **public),
+   547	                    action=structify(steps[t + 1][seat]["action"]),
+   548	                    status="ACTIVE",
+   549	                    reward=0,
+   550	                )
+   551	            )
+   552	        interpreter(state, env)
+   553	        predicted: dict[str, Any] = _plain(
+   554	            {
+   555	                "public": {k: state[0].observation[k] for k in PAIRING_PUBLIC_KEYS},
+   556	                "privates": [state[s].observation["private"] for s in (0, 1)],
+   557	            }
+   558	        )
+   559	        nxt = steps[t + 1][0]["observation"]
+   560	        expected: dict[str, Any] = {
+   561	            "public": {k: nxt[k] for k in PAIRING_PUBLIC_KEYS},
+   562	            "privates": [steps[t + 1][s]["observation"]["private"] for s in (0, 1)],
+   563	        }
+   564	        if predicted == expected:
+   565	            matches += 1
+   566	        else:
+   567	            differing = [
+   568	                k
+   569	                for k in PAIRING_PUBLIC_KEYS
+   570	                if predicted["public"][k] != expected["public"][k]
+   571	            ] + [
+   572	                f"private{s}"
+   573	                for s in (0, 1)
+   574	                if predicted["privates"][s] != expected["privates"][s]
+   575	            ]
+   576	            mismatches.append({"turn": t, "differs": differing})
+   577	    return matches, mismatches
+   578	
+   579	
+   580	def _plain(value: object) -> Any:
+   622	
+   623	def _engine_identity() -> dict[str, str]:
+   624	    from importlib import metadata
+   625	
+   626	    kaggriculture = importlib.import_module(
+   627	        "kaggle_environments.envs.kaggriculture.kaggriculture"
+   628	    )
+   629	
+   630	    source = Path(str(kaggriculture.__file__))
+   631	    return {
+   632	        "kaggle_environments": metadata.version("kaggle-environments"),
+   633	        "interpreter_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+   634	    }
+   635	
+   636	
+   637	# --- manifest ---------------------------------------------------------------------
+   638	
+   639	
+   640	def build_manifest(
+pyproject.toml:11:    "kaggle-environments==1.32.7",
+uv.lock:1774:name = "kaggle-environments"
+uv.lock:1775:version = "1.32.7"
+uv.lock:3015:    { name = "kaggle-environments" },
+uv.lock:3045:    { name = "kaggle-environments", specifier = "==1.32.7" },
+
+exec
+/bin/zsh -lc 'ruff check --no-cache scripts/kaggriculture_prepare_bc.py tests/scripts/test_kaggriculture_prepare_bc.py > /tmp/bc51-r2-review-DJT5dX/ruff-direct.log 2>&1; cat /tmp/bc51-r2-review-DJT5dX/ruff-direct.log' in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+All checks passed!
+
+codex
+The winner-swap resume now fails on `archive_sha256` before reading cached records; missing identity also fails, and unchanged resume succeeds. All 21 preparer tests pass, with mypy and ruff clean.
+
+The engine points to a different explanation for the pod mismatches: every listed turn is a day boundary, where inventories are deposited into capacity-limited sheds. That operation depends on item order. The pinned engine has no RNG-driven private event on that path, so I’m checking the JSON export behavior before attributing the nine mismatches.
+
+exec
+/bin/zsh -lc "nl -ba .venv/lib/python3.12/site-packages/kaggle_environments/envs/kaggriculture/kaggriculture.py | sed -n '830,980p'; nl -ba .venv/lib/python3.12/site-packages/kaggle_environments/core.py | sed -n '385,420p'; nl -ba scripts/kaggriculture_prepare_bc.py | sed -n '324,354p'; git diff --check 49255ac 356d19f; git status --short" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+   830	                tile["pending_care_bonus"] = tile.get("pending_care_bonus", 0) + 1
+   831	            tile["fertilizer_available"] = True
+   832	            tile["fed_today"] = False
+   833	            tile["cared_today"] = False
+   834	
+   835	
+   836	def _spawn_weeds(farm, board_size, weed_chance, rng):
+   837	    for y in range(board_size):
+   838	        for x in range(board_size):
+   839	            if farm["tiles"][y][x] is None and rng.random() < weed_chance:
+   840	                farm["tiles"][y][x] = {"kind": "WEED"}
+   841	
+   842	
+   843	def _drop_inventories_to_shed(private, capacity):
+   844	    """Drop every per-farmer inventory into the shed up to `capacity`; overflow is discarded.
+   845	    Seeds are tracked separately in private["seeds"] and don't pass through the shed."""
+   846	    shed = private["shed"]
+   847	    for inv in private["inventories"]:
+   848	        for item, n in list(inv.items()):
+   849	            if n <= 0:
+   850	                del inv[item]
+   851	                continue
+   852	            current = sum(v for k, v in shed.items())
+   853	            room = max(0, capacity - current)
+   854	            take = min(n, room)
+   855	            if take > 0:
+   856	                shed[item] = shed.get(item, 0) + take
+   857	            del inv[item]
+   858	
+   859	
+   860	def _end_of_day(state, env, day):
+   861	    obs0 = state[0].observation
+   862	    cfg = env.configuration
+   863	    board_size = int(get(cfg, "boardSize", 10))
+   864	    turns_per_day = max(1, int(get(cfg, "turnsPerDay", 24)))
+   865	    weed_chance = float(get(cfg, "weedSpawnChance", 0.005))
+   866	    shed_cap = int(get(cfg, "shedCapacity", 100))
+   867	    shop_interval = max(1, int(get(cfg, "townShopUnlockInterval", 3)))
+   868	
+   869	    # Stable RNG keyed off env.info["seed"] + day so replays reproduce.
+   870	    seed = env.info.get("seed", 0)
+   871	    rng = random.Random((seed * 1_000_003) ^ day)
+   872	
+   873	    for player_id, farm in enumerate(obs0.farms):
+   874	        private = state[player_id].observation.private
+   875	        _daily_refresh_plants(farm, day, turns_per_day)
+   876	        _daily_refresh_animals(farm, day)
+   877	        _spawn_weeds(farm, board_size, weed_chance, rng)
+   878	        _drop_inventories_to_shed(private, shed_cap)
+   879	        farm["farmer"] = list(_default_spawn(board_size))
+   880	        farm["hands"] = []
+   881	        farm["hires_today"] = 0
+   882	        private["inventories"] = [{}]
+   883	
+   884	    next_day = day + 1
+   885	    town = obs0.town
+   886	    if next_day > 0 and next_day % shop_interval == 0:
+   887	        # Drawn with replacement: the same shop can unlock repeatedly, and each
+   888	        # copy consumes independently. Variety is not guaranteed; only the total
+   889	        # instance count is capped.
+   890	        if len(town["unlocked_shops"]) < MAX_SHOP_INSTANCES:
+   891	            town["unlocked_shops"].append(rng.choice(sorted(SHOPS)))
+   892	
+   893	
+   894	def interpreter(state, env):
+   895	    num_agents = len(state)
+   896	    obs0 = state[0].observation
+   897	
+   898	    if not hasattr(obs0, "farms") or not obs0.farms:
+   899	        _initialize(state, env)
+   900	        return state
+   901	
+   902	    if env.done:
+   903	        return state
+   904	
+   905	    cfg = env.configuration
+   906	    turns_per_day = max(1, int(get(cfg, "turnsPerDay", 24)))
+   907	    board_size = int(get(cfg, "boardSize", 10))
+   908	    shed_capacity = int(get(cfg, "shedCapacity", 100))
+   909	
+   910	    step = get(obs0, "step", 0)
+   911	    day = step // turns_per_day
+   912	
+   913	    for i, s in enumerate(state):
+   914	        action = s.action if isinstance(s.action, dict) else {}
+   915	        farmer_action = action.get("farmer", ["PASS"]) if isinstance(action, dict) else ["PASS"]
+   916	        hands_actions = action.get("hands", []) if isinstance(action, dict) else []
+   917	        if not isinstance(hands_actions, list):
+   918	            hands_actions = []
+   919	
+   920	        # Atomic PLANT validation: if total PLANT requests for a crop this turn
+   921	        # exceed available seeds, drop ALL PLANT requests for that crop.
+   922	        unit_actions = [farmer_action, *hands_actions]
+   923	        plant_demand = {}
+   924	        for a in unit_actions:
+   925	            if isinstance(a, list) and len(a) >= 2 and a[0] == "PLANT":
+   926	                plant_demand[a[1]] = plant_demand.get(a[1], 0) + 1
+   927	        seeds = s.observation.private.get("seeds", {}) if hasattr(s.observation.private, "get") else {}
+   928	        blocked = {crop for crop, n in plant_demand.items() if n > seeds.get(crop, 0)}
+   929	
+   930	        def _allowed(a):
+   931	            if isinstance(a, list) and len(a) >= 2 and a[0] == "PLANT" and a[1] in blocked:
+   932	                return ["PASS"]
+   933	            return a
+   934	
+   935	        _apply_unit_action(obs0.farms[i], s.observation.private, 0, _allowed(farmer_action),
+   936	                           board_size, day, turns_per_day, shed_capacity)
+   937	        for h_idx, hand_action in enumerate(hands_actions):
+   938	            _apply_unit_action(obs0.farms[i], s.observation.private, h_idx + 1,
+   939	                               _allowed(hand_action), board_size, day, turns_per_day, shed_capacity)
+   940	
+   941	    _process_market(state, env)
+   942	    _town_consume(env, state, step)
+   943	    for farm in obs0.farms:
+   944	        _decay_plants(farm, step)
+   945	    if (step + 1) % turns_per_day == 0:
+   946	        _end_of_day(state, env, day)
+   947	
+   948	    next_step = step + 1
+   949	    obs0.day = next_step // turns_per_day
+   950	    obs0.hour = next_step % turns_per_day
+   951	    for i in range(1, num_agents):
+   952	        state[i].observation.farms = obs0.farms
+   953	        state[i].observation.market = obs0.market
+   954	        state[i].observation.town = obs0.town
+   955	        state[i].observation.day = obs0.day
+   956	        state[i].observation.hour = obs0.hour
+   957	
+   958	    # `step` here is the previous step counter; framework records the post-interpreter
+   959	    # state at the next index. -2 fires DONE on the final recorded step.
+   960	    if step >= cfg.episodeSteps - 2:
+   961	        for s in state:
+   962	            s.status = "DONE"
+   963	            s.reward = float(obs0.farms[s.observation.player]["money"])
+   964	
+   965	    return state
+   966	
+   967	
+   968	def _render_tile(tile):
+   969	    if tile is None:
+   970	        return "."
+   971	    if tile == "LOCKED":
+   972	        return "#"
+   973	    if isinstance(tile, dict):
+   974	        kind = tile.get("kind")
+   975	        if kind == "WEED":
+   976	            return "x"
+   977	        if kind == "PLANT":
+   978	            return tile["crop"][0].lower()
+   979	        if "animal" in tile:
+   980	            return tile["animal"][0]
+   385	            is_playing = get(kwargs, bool, self.done, path=["playing"])
+   386	            window_kaggle = {
+   387	                "debug": get(kwargs, bool, self.debug, path=["debug"]),
+   388	                "playing": is_playing,
+   389	                "step": 0 if is_playing else len(self.steps) - 1,
+   390	                "controls": get(kwargs, bool, self.done, path=["controls"]),
+   391	                "environment": self.toJSON(),
+   392	                "logs": self.logs,
+   393	                **kwargs,
+   394	            }
+   395	            args = [self, mode]
+   396	            player_html = get_player(
+   397	                window_kaggle, self.html_renderer(*args[: self.html_renderer.__code__.co_argcount])
+   398	            )
+   399	            if mode == "html":
+   400	                return player_html
+   401	
+   402	            from IPython.display import HTML, display
+   403	
+   404	            player_html = player_html.replace('"', "&quot;")
+   405	            width = get(kwargs, int, 300, path=["width"])
+   406	            height = get(kwargs, int, 300, path=["height"])
+   407	            html = f'<iframe srcdoc="{player_html}" width="{width}" height="{height}" frameborder="0"></iframe> '
+   408	            display(HTML(html))
+   409	        elif mode == "json":
+   410	            return json.dumps(self.toJSON(), sort_keys=True, indent=2 if self.debug else None)
+   411	        else:
+   412	            raise InvalidArgument("Available render modes: human, ansi, html, ipython")
+   413	
+   414	    def play(self, agents: list[str | Callable | Agent] | None = None, **kwargs: Any) -> None:
+   415	        """
+   416	        Renders a visual representation of the environment and allows interactive action selection.
+   417	
+   418	        Args:
+   419	            **kwargs (dict): Args directly passed into render().  Mode is fixed to ipython.
+   420	
+   324	
+   325	def _allocate(rows: int) -> dict[str, npt.NDArray[Any]]:
+   326	    arrays = {
+   327	        name: np.zeros((rows, kt.PLAYERS, *shape), dtype=_NUMPY_DTYPES[dtype])
+   328	        for name, (dtype, shape, _, _) in kt._SCHEMA.items()
+   329	    }
+   330	    arrays["can_act"] = np.zeros((rows, kt.PLAYERS, kt.MAX_FRAMES), dtype=np.bool_)
+   331	    return arrays
+   332	
+   333	
+   334	def encode_observations(
+   335	    data: dict[str, Any], turns: Sequence[int]
+   336	) -> dict[str, npt.NDArray[Any]]:
+   337	    """Native Task 1.3 encoding of ``steps[t]`` for every kept turn, both seats."""
+   338	    arrays = _allocate(len(turns))
+   339	    for start in range(0, len(turns), ENCODE_BATCH):
+   340	        chunk = turns[start : start + ENCODE_BATCH]
+   341	        headers = json.dumps([turn_header(data, t) for t in chunk])
+   342	        view = {name: a[start : start + len(chunk)] for name, a in arrays.items()}
+   343	        try:
+   344	            rs.encode_kaggriculture_headers_into(headers, **view)
+   345	        except ValueError as error:
+   346	            raise EpisodeRejected(
+   347	                f"encoder: turns {chunk[0]}..{chunk[-1]}: {error}"
+   348	            ) from error
+   349	    return arrays
+   350	
+   351	
+   352	def admit_turns(
+   353	    data: dict[str, Any],
+   354	    turns: Sequence[int],
+
+exec
+/bin/zsh -lc 'ruff format --check --no-cache scripts/kaggriculture_prepare_bc.py tests/scripts/test_kaggriculture_prepare_bc.py > /tmp/bc51-r2-review-DJT5dX/ruff-format.log 2>&1; cat /tmp/bc51-r2-review-DJT5dX/ruff-format.log' in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+2 files already formatted
+
+exec
+/bin/zsh -lc "cat > /tmp/bc51-r2-review-DJT5dX/private-order-probe.py <<'PY'
+import copy
+import hashlib
+import importlib
+from importlib import metadata
+import json
+from pathlib import Path
+
+engine = importlib.import_module('kaggle_environments.envs.kaggriculture.kaggriculture')
+private = {'shed': {'WHEAT': 99}, 'inventories': [{'WHEAT': 1, 'CARROT': 1}]}
+live = copy.deepcopy(private)
+reloaded = json.loads(json.dumps(private, sort_keys=True))
+engine._drop_inventories_to_shed(live, 100)
+engine._drop_inventories_to_shed(reloaded, 100)
+assert live == {'shed': {'WHEAT': 100}, 'inventories': [{}]}
+assert reloaded == {'shed': {'WHEAT': 99, 'CARROT': 1}, 'inventories': [{}]}
+result = {'kaggle_environments': metadata.version('kaggle-environments'), 'interpreter_sha256': hashlib.sha256(Path(engine.__file__).read_bytes()).hexdigest(), 'turns': [335,383,431,455,527,623], 'all_at_day_boundary': all((t+1)%24==0 for t in [335,383,431,455,527,623]), 'live_private': live, 'sorted_json_reload_private': reloaded, 'scope': 'Synthetic source-function demonstration; exact nine pod differences not available locally.'}
+Path(__file__).with_suffix('.json').write_text(json.dumps(result, indent=2)+'\\n')
+print(json.dumps(result, indent=2))
+PY
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -B /tmp/bc51-r2-review-DJT5dX/private-order-probe.py > /tmp/bc51-r2-review-DJT5dX/private-order-probe.log 2>&1; tail -35 /tmp/bc51-r2-review-DJT5dX/private-order-probe.log" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 264ms:
+{
+  "kaggle_environments": "1.32.7",
+  "interpreter_sha256": "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e",
+  "turns": [
+    335,
+    383,
+    431,
+    455,
+    527,
+    623
+  ],
+  "all_at_day_boundary": true,
+  "live_private": {
+    "shed": {
+      "WHEAT": 100
+    },
+    "inventories": [
+      {}
+    ]
+  },
+  "sorted_json_reload_private": {
+    "inventories": [
+      {}
+    ],
+    "shed": {
+      "WHEAT": 99,
+      "CARROT": 1
+    }
+  },
+  "scope": "Synthetic source-function demonstration; exact nine pod differences not available locally."
+}
+
+exec
+/bin/zsh -lc "cat > /tmp/bc51-r2-review-DJT5dX/report.md <<'MD'
+# Task 5.1 preparer r2 verification
+
+Reviewed clean HEAD 356d19f6b3bd5a0e1102c674d96f5b71cabfb5e3 and git diff 49255ac 356d19f. No blocking findings. No tracked changes, pod access, downloads, GPU execution or training. All scratch artifacts are in this directory. Preparation tests execute the CPU preparer, not a learner.
+
+## Resume identity
+
+The actual CLI reproduction reuses the r1 two-episode payloads, copied into scratch archives exposed via seven scratch day-ZIP symlinks. Six archives are empty, as in r1; this tests the path/CLI and cached-record behavior, not the production corpus. The fresh run deliberately omits --days and records [22,23,24,25,26,27,28]. Both episodes are prepared with the original data, then manifest and the validation episode's record/shard are removed to model interruption. Same-input resume returns 0, reports 1 done / 1 to do, and preserves the cached train shard exactly.
+
+After another simulated interruption, only the train episode's recorded terminal banks are exchanged in the scratch archive: [7213,42478] -> [42478,7213]. Resume returns 1 with RuntimeError: identity.json differs from this run in ['archive_sha256']. It never enters the cached-record loop, never publishes the pending record or manifest, and leaves the cached record and shard byte-identical. Removing identity.json also returns 1 with the explicit records-but-no-identity error. See resume-result.json, resume-repro.py and the per-invocation logs.
+
+Source references: scripts/kaggriculture_prepare_bc.py:691 (clean checkout/head, locks, preparer and native-extension hashes); :738 (exact identity comparison and missing-identity rejection); :820 (archives of selected tasks hashed through symlinks); :824 (month/days/split/stride/hire limit/pairing binding); :855 (cached-record reuse after identity check).
+
+No remaining label- or seat-affecting input was found unbound in the supported clean-checkout CLI path. Archive bytes bind recorded observations, actions, configuration and final banks. Clean revision identity, preparer hash and loaded native-extension hash bind the transformation. --resident-budget-gib is represented by the resulting turn_stride. --limit-episodes, worker count and pairing-sample size do not change an existing episode's labels or selected seats; limit changes episode selection. Hashes cover archives referenced by selected tasks; empty/unselected archives do not contribute records. The Python Kaggle interpreter is diagnostic only, not the source of training observations/actions.
+
+## Defaults and static checks
+
+scripts/kaggriculture_prepare_bc.py:772 defaults --days to 22-28, confirmed by actual CLI execution above. Mypy succeeds on both changed Python files. Ruff check succeeds and Ruff format --check reports both already formatted. The preparer pytest suite passes 21/21 in 3.96 seconds. git diff --check passes. Logs: mypy.log, ruff-direct.log, ruff-format.log, pytest.log. The first uvx invocation was prevented from creating a tools-directory temp file; the installed ruff binary then completed successfully without downloading anything.
+
+## Pod evidence interpretation
+
+The supplied 5743/5752 result is not a full transition-parity pass. All reported mismatch turns satisfy (t+1)%24 == 0. In the pinned kaggle-environments 1.32.7 interpreter, line 945 triggers _end_of_day. Lines 843-857 deposit carried inventory into the shed in dict iteration order, discard overflow, and lines 878-882 reset inventory. This is the likely location of a private-only day-boundary discrepancy.
+
+A plausible concrete cause is loss of live dictionary insertion order during JSON export: core.py:409-410 uses sort_keys=True. With one free shed slot, carried WHEAT then CARROT preserves WHEAT; sorted-JSON reload preserves CARROT instead. private-order-probe.py calls the actual pinned helper and demonstrates this private-only difference; private-order-probe.json records outputs and interpreter SHA-256 bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e (same as r1). This is a demonstrated mechanism, not proof of these nine exact episodes' export path or differing fields, which were not available locally.
+
+The proposed hidden/private RNG explanation is unsupported by this source. kaggriculture.py:869-871 reconstructs RNG from the recorded seed and day every day; its consumers at :877 and :891 change public weeds/shops. scripts/kaggriculture_prepare_bc.py:523 supplies that seed. No carried RNG state is required here.
+
+Absolute engine source: /Users/poonszesen/kg-v3-bcnow/.venv/lib/python3.12/site-packages/kaggle_environments/envs/kaggriculture/kaggriculture.py
+Absolute framework source: /Users/poonszesen/kg-v3-bcnow/.venv/lib/python3.12/site-packages/kaggle_environments/core.py
+
+## BC use
+
+Yes: under the stated fresh-out_dir provenance and explicit --days 22-28 --turn-stride 10, completed production shards from 49255ac may be used for BC. The reviewed fix changes resume admission, default days, custody and typing/formatting; it does not change the fresh observation/action/winner mapping under those arguments. Preparation reads observations directly from recorded steps[t] (:184, :334), actions directly from recorded steps[t+1] (:396), and winner banks from the recorded terminal observation (:176, :433). Pairing predictions only enter diagnostics (:843-852), never those data paths. The nine predicted-private mismatches therefore do not corrupt the recorded BC targets and do not justify discarding fresh shards. Preserve 5743/5752 as the diagnostic result; exact attribution of those nine differences remains open. This review does not independently inspect or certify the entire production corpus.
+
+VERDICT: APPROVE
+MD
+ git status --short" in /Users/poonszesen/kg-v3-bcnow
+ succeeded in 0ms:
+codex
+No blocking findings in `356d19f`. **Yes, the completed fresh-run shards from `49255ac` may be used for BC under the stated production arguments.**
+
+- **Resume fix confirmed.** Rerunning the r1 winner-swap reproduction now exits with `RuntimeError … ['archive_sha256']` before cached records are read. Records without an identity also fail; unchanged-input resume succeeds. No remaining label- or seat-affecting input was found unbound: archive contents cover observations, actions, configuration and banks; checkout/preparer/native hashes cover their transformation. [Source identity:691](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:691), [guard:738](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:738), [bound inputs:824](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:824).
+- **P3 checks pass.** `--days` defaults to `22-28`, confirmed through an actual invocation without that option. Mypy and ruff pass on both changed files; formatting passes; **21 preparer tests pass**. [Default:772](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:772).
+
+The pod mismatches most plausibly involve **day-end inventory deposits and shed capacity**. Every reported turn satisfies `(t + 1) % 24 == 0`, triggering day-end processing. Deposits iterate inventory dictionary order and discard overflow. JSON export can change that order: Kaggle’s renderer uses `sort_keys=True`. A local source-function probe demonstrated different surviving goods after sorted-JSON reload when only one shed slot remained. This fits private-only discrepancies, but the exact cause of these nine remains unproven without their differing fields. [Day boundary:945](/Users/poonszesen/kg-v3-bcnow/.venv/lib/python3.12/site-packages/kaggle_environments/envs/kaggriculture/kaggriculture.py:945), [deposit:843](/Users/poonszesen/kg-v3-bcnow/.venv/lib/python3.12/site-packages/kaggle_environments/envs/kaggriculture/kaggriculture.py:843), [JSON export:410](/Users/poonszesen/kg-v3-bcnow/.venv/lib/python3.12/site-packages/kaggle_environments/core.py:410).
+
+The suggested hidden-RNG explanation is unsupported: this engine recreates day-end RNG from the recorded seed and day; its random effects are public weeds and shops. [Engine:869](/Users/poonszesen/kg-v3-bcnow/.venv/lib/python3.12/site-packages/kaggle_environments/envs/kaggriculture/kaggriculture.py:869).
+
+These prediction mismatches **do not corrupt BC labels**. Preparation uses recorded `steps[t]` observations, recorded `steps[t+1]` actions and recorded final banks. Predicted states never become training data. The fix leaves that fresh-run mapping unchanged with explicit `--days 22-28`; regeneration solely for the resume fix is unnecessary. Preserve **5743/5752** as the diagnostic result, not exact transition parity. [Observations:334](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:334), [labels:396](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:396), [banks:176](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:176).
+
+[Report and evidence](/tmp/bc51-r2-review-DJT5dX/report.md). Checkout remained clean; no pod access, downloads, GPU execution or training.
+
+VERDICT: APPROVE
+hook: Stop
+hook: Stop Completed
+tokens used
+65,786
+No blocking findings in `356d19f`. **Yes, the completed fresh-run shards from `49255ac` may be used for BC under the stated production arguments.**
+
+- **Resume fix confirmed.** Rerunning the r1 winner-swap reproduction now exits with `RuntimeError … ['archive_sha256']` before cached records are read. Records without an identity also fail; unchanged-input resume succeeds. No remaining label- or seat-affecting input was found unbound: archive contents cover observations, actions, configuration and banks; checkout/preparer/native hashes cover their transformation. [Source identity:691](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:691), [guard:738](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:738), [bound inputs:824](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:824).
+- **P3 checks pass.** `--days` defaults to `22-28`, confirmed through an actual invocation without that option. Mypy and ruff pass on both changed files; formatting passes; **21 preparer tests pass**. [Default:772](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:772).
+
+The pod mismatches most plausibly involve **day-end inventory deposits and shed capacity**. Every reported turn satisfies `(t + 1) % 24 == 0`, triggering day-end processing. Deposits iterate inventory dictionary order and discard overflow. JSON export can change that order: Kaggle’s renderer uses `sort_keys=True`. A local source-function probe demonstrated different surviving goods after sorted-JSON reload when only one shed slot remained. This fits private-only discrepancies, but the exact cause of these nine remains unproven without their differing fields. [Day boundary:945](/Users/poonszesen/kg-v3-bcnow/.venv/lib/python3.12/site-packages/kaggle_environments/envs/kaggriculture/kaggriculture.py:945), [deposit:843](/Users/poonszesen/kg-v3-bcnow/.venv/lib/python3.12/site-packages/kaggle_environments/envs/kaggriculture/kaggriculture.py:843), [JSON export:410](/Users/poonszesen/kg-v3-bcnow/.venv/lib/python3.12/site-packages/kaggle_environments/core.py:410).
+
+The suggested hidden-RNG explanation is unsupported: this engine recreates day-end RNG from the recorded seed and day; its random effects are public weeds and shops. [Engine:869](/Users/poonszesen/kg-v3-bcnow/.venv/lib/python3.12/site-packages/kaggle_environments/envs/kaggriculture/kaggriculture.py:869).
+
+These prediction mismatches **do not corrupt BC labels**. Preparation uses recorded `steps[t]` observations, recorded `steps[t+1]` actions and recorded final banks. Predicted states never become training data. The fix leaves that fresh-run mapping unchanged with explicit `--days 22-28`; regeneration solely for the resume fix is unnecessary. Preserve **5743/5752** as the diagnostic result, not exact transition parity. [Observations:334](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:334), [labels:396](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:396), [banks:176](/Users/poonszesen/kg-v3-bcnow/scripts/kaggriculture_prepare_bc.py:176).
+
+[Report and evidence](/tmp/bc51-r2-review-DJT5dX/report.md). Checkout remained clean; no pod access, downloads, GPU execution or training.
+
+VERDICT: APPROVE

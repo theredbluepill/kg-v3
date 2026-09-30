@@ -5,7 +5,7 @@ description: "The rebuilt encoder uses Isaiah's StatelessTransformerV1 classes, 
 tags: ["kaggriculture-v3", "model", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
-sources: [{"resource": "repository:python/owl/model/kaggriculture.py"}, {"resource": "repository:python/owl/kaggriculture/types.py"}, {"resource": "repository:python/owl/model/base.py"}, {"resource": "repository:python/owl/train/optimizer.py"}, {"resource": "repository:configs/model/kaggriculture.yaml"}, {"resource": "repository:tests/kaggriculture/test_model_encoder.py"}, {"resource": "repository:tests/kaggriculture/test_types.py"}, {"resource": "repository:tests/owl/model/test_model_config_files.py"}, {"resource": "repository:docs/kaggriculture-model.md"}, {"resource": "repository:docs/model-architecture.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/2.1-encoder.md"}]
+sources: [{"resource": "repository:python/owl/model/kaggriculture.py"}, {"resource": "repository:python/owl/kaggriculture/types.py"}, {"resource": "repository:python/owl/model/base.py"}, {"resource": "repository:python/owl/train/optimizer.py"}, {"resource": "repository:configs/model/kaggriculture.yaml"}, {"resource": "repository:tests/kaggriculture/test_model_encoder.py"}, {"resource": "repository:tests/kaggriculture/test_types.py"}, {"resource": "repository:tests/owl/model/test_model_config_files.py"}, {"resource": "repository:docs/kaggriculture-model.md"}, {"resource": "repository:docs/model-architecture.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/2.1-encoder.md"}, {"resource": "repository:ops/v3-architecture-image-2026-09-29/README.md"}, {"resource": "repository:ops/v3-architecture-image-2026-09-29/prompt.txt"}, {"resource": "repository:ops/v3-architecture-image-2026-09-29/v3-agent-architecture.png"}]
 ---
 
 # Kaggriculture encoder reuses Isaiah's stateless layers
@@ -44,3 +44,7 @@ sources: [{"resource": "repository:python/owl/model/kaggriculture.py"}, {"resour
 ## Limits
 
 Task 2.2 adds Isaiah's critic: an `OutputProjectionMLP` over the two critic-value tokens, a winner softmax, value `2p(self) − 1`, output gain 1.0 excluded from Muon. The action heads (2.3), shared factory registration and trainer integration are open. The full-model 6–10M budget is checked in 2.3. `check_contract` checks dtypes, shapes and bounds, not the semantic zero-fill and privacy rules; those are asserted only for the synthetic fixture, and the native writer (Task 1.x) must be tested against them separately.
+
+## Architecture illustration
+
+The owner-requested [architecture image](../../ops/v3-architecture-image-2026-09-29/v3-agent-architecture.png) depicts this checkout at `8093d51`: the observation schema, encoder and critic are solid teal; the actor heads and target Kaggriculture training pipeline are dashed amber. The [artifact receipt](../../ops/v3-architecture-image-2026-09-29/README.md) inventories the PNG and exact ImageGen prompt, source checks, visual inspection and simplifications. This is an explanatory artifact, not new implementation or runtime evidence. Regenerate its status after integration lands; the snapshot says nothing about work present only on other branches.

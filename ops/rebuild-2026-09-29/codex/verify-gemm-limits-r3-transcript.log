@@ -1,0 +1,1177 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ebc4-806e-7203-9834-388516add0ab
+--------
+user
+You are Codex. READ-ONLY confirmation. Your r2 report ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md was APPROVE WITH EDITS with four wording items: O5 (INDEX_DTYPE storage check vs size-arg dtype from output numel, results.md:108 and Reference:44), O7 (limit 'every failing graph' to attributable kernels; state the autotune localization gap), O11 (run statement Triton 3.5.0 is the lockfile pin, installed version not captured), B2/O9 notation (L_in = floor(2^31/K); strict < 2^31 design bound). Verify commit 432abe0 applies each accurately in ops/rebuild-2026-09-29/results.md, cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md, ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md and cookbook/log.md, with no new overclaim. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll compare commit `432abe0` with the r2 findings and retained evidence. I’ll finish once all four wording items and the surrounding claims are checked; this review will remain read-only.
+
+exec
+/bin/zsh -lc 'cat ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+Verified against the cookbook’s [measured endpoints](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:39), [version limits](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:62), and linked [arithmetic record](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:85): L−1 passed, L was rejected, Triton’s installed version was uncaptured, and 2³¹/768 = 2,796,202⅔. **VERDICT: APPROVE WITH EDITS**
+exec
+/bin/zsh -lc 'git show --format=fuller --no-ext-diff --no-renames 432abe0 -- ops/rebuild-2026-09-29/results.md cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md cookbook/log.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+commit 432abe09a98406b601681e3d41dc344c6f933b7a
+Author:     Season <seasonluke@gmail.com>
+AuthorDate: Tue Sep 29 14:05:11 2026 +0800
+Commit:     Season <seasonluke@gmail.com>
+CommitDate: Tue Sep 29 14:05:11 2026 +0800
+
+    Apply Codex's second-round wording edits to the GEMM-limit evidence
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+diff --git a/cookbook/log.md b/cookbook/log.md
+index 256bf59..e69197f 100644
+--- a/cookbook/log.md
++++ b/cookbook/log.md
+@@ -1,5 +1,15 @@
+ # Change log
+ 
++## 2026-09-29 — Tighten the compiled-GEMM Reference after Codex's second review
++
++Codex re-verified the GEMM-limit evidence (APPROVE WITH EDITS, no blocking findings; `ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md`). The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] and `results.md` now:
++- separate the emitted `INDEX_DTYPE` (an all-buffer storage check) from the template size-arg dtype (output numel);
++- limit the "every failing graph" claim to kernels attributable from retained code, since two failures occurred during autotuning;
++- write L_in as floor(2³¹/K);
++- state the design bound as the strict < 2³¹ the guard implements.
++
++The run statement no longer implies Triton 3.5.0 was the installed version.
++
+ ## 2026-09-29 — Measure the compiled-GEMM limit at the rebuild's shapes (Codex-verified)
+ 
+ A bounded probe ran on GPU 0 of the running pod (GEMM-limits run statement in `ops/rebuild-2026-09-29/run-statements/`). Codex verified it (`ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md`, APPROVE WITH EDITS), and all its findings are applied. This revises the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]:
+diff --git a/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md b/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md
+index a9b51be..888cf51 100644
+--- a/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md
++++ b/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md
+@@ -25,9 +25,9 @@ A controlled probe confirmed the threshold. It used a synthetic BF16 MLP (256→
+ 
+ A second bounded probe compared compiled output against eager at every point. It covered synthetic compiled Linears and MLPs, plus the real `KaggricultureTransformer` trunk from `kg/rebuild-model` @ `1ddc71d`, compiled directly through its own `compile_transformer_trunk`. Precision matched `run_ppo`: fp32 parameters under bf16 autocast, `max-autotune-no-cudagraphs`, `dynamic=True`, compiled small first. Codex verified the evidence and requested edits, applied here. The table, the generated-code attribution and the source citations are in `ops/rebuild-2026-09-29/results.md`, "GEMM limits at our shapes".
+ 
+-Measured (L_in = 2³¹ / GEMM input width; trunk L = 2³¹/512 = 4,194,304):
++Measured (L_in = floor(2³¹ / K) for GEMM input width K, e.g. 2,796,202 for K = 768; trunk L = 2³¹/512 = 4,194,304):
+ - **The overflow is input-side at these shapes.** Input-wide GEMMs (4096→16, 768→256) were correct at L_in and failed at L_in+1. Output-wide GEMMs (16→4096, 256→512, 256→256) stayed correct up to M·N = 2³². The corrected kernel summaries show why:
+-  - Every failing graph launches the template with a 32-bit size argument (`ks0: i32`) and an A-load of `K*idx_m`.
++  - Every failing graph whose kernel can be attributed from the retained code launches the template with a 32-bit size argument (`ks0: i32`) and an A-load of `K*idx_m`. The 768→256 and 512→256 failures happened during autotuning, so their failing candidate kernel is not localized.
+   - Graphs whose output exceeds int32 get `ks0: i64` and stayed correct.
+   - In the real trunk, the corrupting kernel is the 512→256 MLP down-projection. Above L it kept `ks0: i32`, while the 256→512 up-projection had been promoted.
+ 
+@@ -41,11 +41,11 @@ Measured (L_in = 2³¹ / GEMM input width; trunk L = 2³¹/512 = 4,194,304):
+ Inferred, not measured:
+ - **Unguarded trunk at exactly L.** It was not run, so whether the guard's rejection at equality is stricter than necessary is unknown.
+ - **Real-trunk backward.** It was not run at any size. The synthetic MLP backward faulted while compiling at L+1, which does not localize a backward-kernel threshold.
+-- **Mechanism.** The source path and the generated code agree that the size-arg dtype follows a storage-size check on the template output, and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
++- **Mechanism.** The source path and the generated code agree that the emitted `INDEX_DTYPE` follows an all-buffer storage-size check while the template's size-arg dtype is chosen separately from the output numel (`SIMDKernelFeatures([], output_numel)`), and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
+ 
+ ## Consequences
+ 
+-- **Design bound: keep every compiled region at M × max(in, out) ≤ 2³¹ over its Linear layers.** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
++- **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
+   - For the trunk that width is 512, which is `gemm_kmax`.
+   - Nothing enforces the bound outside the trunk. The stems are eager today, but the full stem is 371→512→256. The heads and the planned 768-wide `actor_input_proj` are not implemented yet; compiled, `actor_input_proj` would exceed L_in at 2,796,203 rows × frames.
+ - **Production compliance is unproven.** Kaggriculture is not yet in `ModelConfig` or the model factory, and `configure_model_compile` rejects it for `model_compile="trunk"`. Integrated rollout, PPO recompute, evaluation, BC and teacher workloads stay unverified until Task 3.1 and Phase 6.
+diff --git a/ops/rebuild-2026-09-29/results.md b/ops/rebuild-2026-09-29/results.md
+index 13dd158..5c63052 100644
+--- a/ops/rebuild-2026-09-29/results.md
++++ b/ops/rebuild-2026-09-29/results.md
+@@ -105,12 +105,12 @@ What is **measured** (this stack, these shapes):
+ 4. **Above the bound, behavior is not a usable threshold.** It depends on the recompile hint and on autotune's backend choice. 512→256 stayed correct to L+4,096 only because autotune picked cuBLAS. The real trunk corrupted at L+1 and was correct again at 8,388,888 after an i64 recompile. A passing test above the bound proves nothing. **Recompilation is not a safety guarantee:** R1's int32 guards protect only their own specialization, and a recompile can land in the unsafe regime (R2).
+ 
+ **Mechanism** (source reading plus generated code; partly unverified). Codex confirmed these points in the installed torch 2.9.0 (`0fabc3ba…`) `_inductor`:
+-- A template's size-arg dtype comes from a **storage-size** check (`codegen/simd.py:1413–1443`), not from abstract matrix dimensions. M·N, M·K and K·N are the contiguous-layout specialization.
+-- For templates, `select_algorithm.py:388–395` builds `SIMDKernelFeatures([], output_numel)` (`codegen/simd_kernel_features.py:133–150`). `select_algorithm.py:578–585` and `codegen/triton_utils.py:78–81` carry the result into the template's size-arg types.
++- The emitted `INDEX_DTYPE` comes from an all-buffer **storage-size** check (`codegen/simd.py:1413–1443`), not from abstract matrix dimensions; M·N, M·K and K·N are the contiguous-layout specialization.
++- The template's **size-arg** dtype is decided separately: `select_algorithm.py:388–395` builds `SIMDKernelFeatures([], output_numel)` (`codegen/simd_kernel_features.py:133–150`). `select_algorithm.py:578–585` and `codegen/triton_utils.py:78–81` carry the result into the template's size-arg types.
+ - The hint path returns at `utils.py:3066`, with guards via `sizevars.py:404–426,444–445` and `symbolic_shapes.py:7709–7714`. Guards are installed only on the successful int32 branch.
+ - `INDEX_DTYPE` is emitted (`select_algorithm.py:1530–1539`) but not consumed by the standard mm/addmm template (`kernel/mm.py:80–136`; ADDMM reuses it at `kernel/mm.py:997–1006`). That is why `INDEX_DTYPE = tl.int64` next to `ks0: i32` did not help.
+ 
+-With an i64 `ks0`, the chain `M → grid_m → group_size → pid_m` (`kernel/mm.py:81–89`) starts from a 64-bit value. That plausibly promotes `idx_m`, and with it the A-load offset. With an i32 `ks0`, `K·idx_m` wraps once M·K > 2³¹. This matches every failing and passing graph above. **Triton IR promotion is unverified**, because no lowered IR was captured. Rematerializing `rm` does not by itself establish int32.
++With an i64 `ks0`, the chain `M → grid_m → group_size → pid_m` (`kernel/mm.py:81–89`) starts from a 64-bit value. That plausibly promotes `idx_m`, and with it the A-load offset. With an i32 `ks0`, `K·idx_m` wraps once M·K > 2³¹. This matches every failing and passing graph whose kernel can be attributed from the retained generated code. The 768→256 and 512→256 failures happened during autotuning and do not identify the failing candidate kernel; that localization gap remains. **Triton IR promotion is unverified**, because no lowered IR was captured. Rematerializing `rm` does not by itself establish int32.
+ 
+ What is **inferred, not measured**:
+ - **The unguarded real trunk at exactly L** was not run. The synthetic single GEMMs were correct at exactly L_in, so the guard's `≥ 2³¹` rejection may be stricter than necessary. For the real trunk that is unmeasured, so the guard is a conservative admission rule, not a measured edge.
+diff --git a/ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md b/ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md
+index 09a3149..22a6975 100644
+--- a/ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md
++++ b/ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md
+@@ -13,7 +13,7 @@
+   - Real-trunk probe: `probe/probe_trunk.py`, sha256 `5ce3f09afd85cd881ae04311c848cb070c7ac1a2cb6e57411894b009df57d5e7`.
+   - Driver: `probe/driver.py`, sha256 `aa42c12b7e7fb55045d07967c6439d0556dbd9c110da3d7e0d904549bd626c3f`. It runs each case in a fresh subprocess and restarts after a fault, because an illegal memory access kills the CUDA context.
+   - Kernel analysis: `probe/analyze_kernels.py`, sha256 `10539f56e0d2635a3c7f5abb2eaaff842569b4c7422edf5d0dda963dfee28d52`. *Post-run correction (Codex verify-gemm-limits-r1, finding 4):* revision 1 misattributed signatures and missed `bias_addmm`. Revision 2 (sha256 `ee26698a8535f32ded6e846a30233a5f461e1c005597fdf8a75a8440d719e953`) was rerun locally on the copied caches; see `results.md`. Revision 1 and its outputs remain only in the pod copy.
+-  - Model source: `git archive --prefix=gemm-limits-src-1ddc71d/ 1ddc71d python/owl` (*post-run correction:* this line originally omitted `--prefix`; the recorded tar hash below is the prefixed archive's, and without the prefix the same pathspec gives `29cfaafec3f899fa8a7d84e020a38f5372baae9bc3d9ba6a94c975fbc427996b`; `kg/rebuild-model`, `1ddc71da3c4d8461ff123da40c12bbf4bb531b46`; tree `python/owl` `9848d1d2…`, `python/owl/model` `f5dd01ee…`, `python/owl/kaggriculture` `bd88d802…`; `kaggriculture.py` sha256 `92f4df61…`; tar sha256 `47293ba8eb4f97c38f3b96f2c9cf11c90f6709e6ba789db00b2042f392ed701e`). It is unpacked on the pod at `/workspace/gemm-limits-src-1ddc71d/` via `PYTHONPATH`. `/workspace/kg-v3` is not touched; its `.venv` interpreter is used read-only (torch 2.9.0+cu128, triton 3.5.0).
++  - Model source: `git archive --prefix=gemm-limits-src-1ddc71d/ 1ddc71d python/owl` (*post-run correction:* this line originally omitted `--prefix`; the recorded tar hash below is the prefixed archive's, and without the prefix the same pathspec gives `29cfaafec3f899fa8a7d84e020a38f5372baae9bc3d9ba6a94c975fbc427996b`; `kg/rebuild-model`, `1ddc71da3c4d8461ff123da40c12bbf4bb531b46`; tree `python/owl` `9848d1d2…`, `python/owl/model` `f5dd01ee…`, `python/owl/kaggriculture` `bd88d802…`; `kaggriculture.py` sha256 `92f4df61…`; tar sha256 `47293ba8eb4f97c38f3b96f2c9cf11c90f6709e6ba789db00b2042f392ed701e`). It is unpacked on the pod at `/workspace/gemm-limits-src-1ddc71d/` via `PYTHONPATH`. `/workspace/kg-v3` is not touched; its `.venv` interpreter is used read-only (torch 2.9.0+cu128; Triton 3.5.0 is the lockfile pin, and the installed Triton version was not captured).
+   - Precision is exactly what `run_ppo` uses: fp32 parameters, `torch.autocast(bfloat16)`, TF32 on, `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. The trunk is compiled through the model's own `compile_transformer_trunk`, since `configure_model_compile('trunk')` does not yet accept this model class.
+   - **Known deviation:** the pod venv has no `flash-attn` package. The packed path therefore substitutes torch's own varlen `aten._flash_attention_forward` (or `_efficient_attention_forward`), checked against per-sequence SDPA before use. Only the attention kernel changes; all GEMMs, pack/unpack and the guard are branch code.
+   - Hardware: pod `w7ia3zvxqsvs3g`, GPU 0 only (`CUDA_VISIBLE_DEVICES=0`), RTX PRO 6000 Blackwell, driver 595.91.07.
+
+exec
+/bin/zsh -lc 'git status --short && git rev-parse --show-toplevel && git show --stat --oneline --decorate --no-renames 432abe0' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+?? .claude/worktrees/
+?? ops/rebuild-2026-09-29/codex/stream-d-report.md
+?? ops/rebuild-2026-09-29/codex/stream-d-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.1-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-resume-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-resume-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt1-usage-limit-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt2-killed-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps.md
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-b-2.1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-c-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-stream-c-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-c.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1.md
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+/Users/poonszesen/kg-v3
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+432abe0 (HEAD -> kg/rebuild-model) Apply Codex's second-round wording edits to the GEMM-limit evidence
+ cookbook/log.md                                    |   10 +
+ ...iled-gemm-template-overflows-above-2-21-rows.md |    8 +-
+ .../codex/verify-gemm-limits-r2-prompt.md          |    1 +
+ .../codex/verify-gemm-limits-r2-transcript.log     | 2810 ++++++++++++++++++++
+ .../codex/verify-gemm-limits-r2.md                 |    1 +
+ ops/rebuild-2026-09-29/results.md                  |    6 +-
+ .../run-statements/gemm-limits-probe.md            |    2 +-
+ 7 files changed, 2830 insertions(+), 8 deletions(-)
+
+exec
+/bin/zsh -lc 'nl -ba ops/rebuild-2026-09-29/results.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+     1	# Rebuild results log
+     2	
+     3	Working evidence for `ops/rebuild-2026-09-29/plan.md`. Durable conclusions move to the cookbook when a task closes.
+     4	
+     5	## Task 0.2 — CUDA illegal memory access (reference branch, pod `w7ia3zvxqsvs3g`)
+     6	
+     7	Run statement: `run-statements/cuda-repro-blocking.md`. Launched 2026-09-29T03:34:45Z with `CUDA_LAUNCH_BLOCKING=1`, reusing the crashed run's own config and the BC best checkpoint (`ffd7d9e4…`), 2 ranks.
+     8	
+     9	**Observation while running (iteration 1, before any fault):** the first PPO update on BC-policy rollouts shows `policy/logratio_mean −3.77`, `approx_kl 3.43`, `ratio_mean 0.66`, `logratio_abs_max 12.08`, and a KL stop after 2 optimizer steps. At the first minibatch the weights haven't changed, so replayed log-probs should equal rollout log-probs (log-ratio 0). A mean of −3.77 nats means the reference model's **sampling path and evaluation path disagree** on the states the BC policy reaches. Rollout was 4,878 env steps/s even with blocking launches; evaluation: 128 games, win rate 8.6% vs the BC incumbent.
+    10	
+    11	Interim interpretation (superseded by the result below): I read the mismatch as an H1 index overflow in the model's own code. The actual cause is a compiler-generated GEMM overflow (H3), which corrupts the rollout activations the same way.
+    12	
+    13	### Result — root cause established (2026-09-29, 03:42–03:55Z)
+    14	
+    15	- **Reproduced:** the blocking run faulted after 3 iterations on both ranks (`exit=1`, 7m43s wall), matching the original crash. With blocking launches, both tracebacks end in the same compiled kernel, `triton_tem_fused__to_copy_addmm_gelu_t_view_9`. This is an Inductor **max-autotune Triton GEMM template** in the transformer trunk MLP (`M = ks0·ks1` = batch rows × tokens, K = 1024, N = 256), called from `KaggricultureTransformer._run_trunk`. It is not the model's own indexing, not the async copies (H2), and not attention.
+    16	- **Mechanism:** the kernel declares `INDEX_DTYPE = tl.int64` but computes `rm = pid_m*BLOCK_M + arange` and `xindex = k + 1024*idx_m` in int32. Once M > 2²¹ = 2,097,152, `1024·idx_m` passes 2³¹ and wraps. Wrapped addresses first land in valid memory (silent corruption), then eventually outside it (fault). The generated source is `/tmp/torchinductor_root/2e/c2ezrgfnyc…py` on the pod.
+    17	- **Controlled confirmation (`int32_probe.py`, sha256 `78dd05d3…`; log `ea88948b…`):** a synthetic MLP (256→1024, GELU, 1024→256), BF16, `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. At M = 2,088,960 (< 2²¹) max |compiled − eager| = 0.0078 (BF16 noise). At M = 2,105,344 (> 2²¹): **CUDA illegal memory access**. torch 2.9.0+cu128, RTX PRO 6000 Blackwell, driver 595.91.07.
+    18	- **Why it hit the reference:** a rollout forward used 4096 envs × 2 seats = 8,192 rows, so any padded sequence above 256 tokens crossed the threshold. Tiles alone are 200 tokens, so the extra actors a BC policy hires push dense states over. Training minibatches (128 rows) stay far below it. That explains **both** symptoms: the fault, and the iteration-1 log-ratio of −3.77 (sampling ran on corrupted activations; replay didn't).
+    19	- **Consequence for the reference's PPO-from-BC failure:** its KL spikes and falling win rates came from corrupted rollout activations. They are not evidence that the BC policy or the BC→PPO handoff is bad.
+    20	
+    21	### Design requirements for the rebuild (from this result)
+    22	
+    23	1. **Workload:** Isaiah's cadence (Task 3.4: 128 envs/rank → 256 rows per forward) keeps M far below the threshold. Even at 710 padded tokens, M ≈ 182k.
+    24	2. **Guard (Task 2.1):** the model's compiled trunk path fails fast when `rows × tokens × max_inner_dim ≥ 2³¹`, or chunks the forward, with a test at the boundary. This protects evaluation, BC and any future larger batch.
+    25	3. **Silent-corruption alarm (Task 3.x):** at the first minibatch of every update, before any optimizer step, |mean log-ratio| must be ≈ 0. A threshold breach aborts the run with the offending batch shape, because this is how the corruption was first visible.
+    26	4. **Upstream:** record the torch version. Don't upgrade torch or drivers as a fix without a separate, measured decision. Retest the probe after any upgrade.
+    27	
+    28	### Torch 2.8 comparison (ran 03:54Z; the owner rejected the command after it had already started)
+    29	
+    30	The unchanged probe under the pod's system torch 2.8.0+cu128 on GPU 0 gives max |compiled − eager| = 0.0078 both below (M = 2,088,960) and above (M = 2,105,344) the threshold: **no overflow in torch 2.8** for this template. (The "out of resource" autotune lines are candidate configs exceeding sm_120 shared memory, which autotune discards.) Log: pod `runs/cuda-repro-2026-09-29/int32_probe_torch28.log`.
+    31	
+    32	**Owner decision: stay on torch 2.9** (Isaiah's pin, with its locked flash-attn 2.8.3 / triton 3.5.0). The 2.9 overflow is handled by the design requirements above: Isaiah's cadence keeps rows far below the threshold, the trunk chunks and guards, and the first-minibatch log-ratio alarm catches silent corruption. Torch 2.8 remains a measured fallback if 2.9 ever needs replacing.
+    33	
+    34	## GEMM limits at our shapes (2026-09-29, 05:23–05:32Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+    35	
+    36	Revised after Codex verification (`codex/verify-gemm-limits-r1.md`, APPROVE WITH EDITS). The first draft overstated three things: it called the trunk bounds "measured exact", stated a universal `M·max(K, N)` overflow rule, and cited generated-kernel summaries from a buggy analyzer. This text replaces it.
+    37	
+    38	**Scope: production compliance is unproven.** The probe compiled the trunk directly through the model's own `compile_transformer_trunk`. The production wiring does not reach it yet:
+    39	- Kaggriculture is absent from `ModelConfig` (`python/owl/model/config.py`) and the model factory (`python/owl/model/factory.py`).
+    40	- `configure_model_compile` (`python/owl/train/utils.py:84`, called from `scripts/run_ppo.py:171`) rejects this model for `model_compile="trunk"`.
+    41	- `forward`/`evaluate_actions` and the teacher APIs are unfinished. `actor_input_proj` and the nine action heads are **not implemented yet**; they are absent, not eager.
+    42	
+    43	What this run supports: the overflow is real at our widths, and the current encoder's `_run_trunk` admission bound is enforced. Integrated Kaggriculture rollout, PPO recompute, evaluation, BC and teacher workloads remain **unverified** until Task 3.1 wires the model into the trainer and Phase 6 runs them on the pod.
+    44	
+    45	**Anomaly: no FlashAttention on the pod.** The pod venv has **no `flash-attn` package**, and the pod's run config had `force_flash_attn: false`. That config lives on the pod and was not copied here. The model preset (`configs/model/kaggriculture.yaml`) and Isaiah's recipe (plan I8) require `force_flash_attn: true` with flash-attn 2.8.3. Consequences:
+    46	- The packed path in this probe ran on a shim: torch's own varlen `aten._flash_attention_forward` in place of `flash_attn_varlen_func`. The shim was checked against per-sequence SDPA: max |Δ| 0.0022 in the pre-launch smoke check, and 0.00225955 in-run (`pod-run/trunk_packed.jsonl:1`). Every GEMM, the pack/unpack and the guard are branch code, but the packed results say nothing about the real flash-attn kernel.
+    47	- **Phase 6 must install or build flash-attn 2.8.3 on the pod (`uv sync --extra flash-attn`) and verify that the real FlashAttention path ran before any qualification or throughput claim** (plan, Phase 6).
+    48	
+    49	Run statement: `run-statements/gemm-limits-probe.md`. Driver wall time: 514 s, within the 45-minute budget. Inputs:
+    50	- Probes: `gemm-limits-2026-09-29/probe/`, sha256 `0a7af363…` (linear), `5ce3f09a…` (trunk), `aa42c12b…` (driver).
+    51	- Model source: `kg/rebuild-model` @ `1ddc71d`; `kaggriculture.py` sha256 `92f4df61…`, byte-identical to the current tree (Codex).
+    52	- The source tar's sha256 `47293ba8…` is the output of `git archive --prefix=gemm-limits-src-1ddc71d/ 1ddc71d python/owl`. Without `--prefix`, the same pathspec gives `29cfaafe…`, which is the hash Codex reproduced from the run statement's command. Both hashes were reproduced locally with git 2.50.1. The run statement had omitted the prefix and is now corrected. The tree IDs and model-file hash match either way.
+    53	- Stack: torch 2.9.0+cu128 (runtime records), sm_120 (generated metadata), RTX PRO 6000 Blackwell, driver 595.91.07.
+    54	- **Triton version not captured:** 3.5.0 is the `uv.lock` pin (`uv.lock:4227`), but the process records do not emit Triton's installed version. The pod's torch git identity was not captured either.
+    55	- The Rust-extension symlink and the missing flash-attn are disclosed deviations. This run is not a full production-path check.
+    56	
+    57	Setup, matching `run_ppo`'s precision:
+    58	- fp32 parameters under `torch.autocast(bfloat16)`, TF32 on.
+    59	- `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. For `lin_4096_16`, the logs show the warm compile specialized M: the recompile guard reads "expected 4096". Dynamic-M graphs come from the first recompile.
+    60	- Every point is compared against the eager (cuBLAS) forward, so silent corruption is measured, not just faults.
+    61	- Each case runs in a fresh process, and the driver restarts after a fault.
+    62	
+    63	**Custody:**
+    64	- Logs, JSONL, generated kernels: `gemm-limits-2026-09-29/pod-run/`; the pod copy is at `/workspace/kg-v3/runs/gemm-limits-2026-09-29/`.
+    65	- `pod-run/sha256.txt` has 14 entries, all re-verified by Codex. It covers the 13 JSONL files and the *first* `kernel_analysis.json` (`c295ce49…`), which is superseded and kept only on the pod.
+    66	- The pod manifest did not cover the generated kernels, attempt logs, `driver.out` or `kernel_analysis.txt`. `pod-run/sha256-local.txt` hashes every file in the local copy, including the regenerated analysis.
+    67	
+    68	**Generated-code attribution** comes from `probe/analyze_kernels.py` revision 2 (sha256 `ee26698a…`). Revision 1 gave every template the first signature in its file (usually a pointwise `xnumel: i32`), printed one variant per name and missed `extern_kernels.bias_addmm`. Revision 2 was rerun locally on the copied caches (text parsing only) and produced `pod-run/kernel_analysis.{json,txt}`. The analyzer cannot map a wrapper to its compile hint. The mappings below come from the recompile hints in the attempt logs, by elimination.
+    69	
+    70	Definitions:
+    71	- **L_in** = ⌊2³¹ / GEMM input width K⌋; **L_out** = ⌊2³¹ / output width N⌋.
+    72	- For the trunk, L = 2³¹ / 512 = 4,194,304 is the design bound (below). M = token rows: padded rows × 709, or packed tokens.
+    73	- For single GEMMs, "correct" means every element satisfies `|Δ| ≤ 0.02 + 0.02|ref|`.
+    74	- For the trunk, "correct" means no valid token with |Δ| > 0.25 in any channel. Passing points reached max |Δ| 0.1703 packed (0.17025495 at 5,915 dense rows) and 0.1792 padded; the L+1 corruption reached 45.8.
+    75	- These tolerances detect the corruption reported here. They do not prove BF16 equivalence for arbitrary inputs.
+    76	
+    77	| Case | L_in / L_out | Correct at (measured) | First failure (measured) | Kind |
+    78	|---|---|---|---|---|
+    79	| **Real trunk, packed, guard on** | trunk L = 4,194,304 | 256 rows sparse (62,003 tok), 256 dense (181,504), 5,914 and 5,915 dense rows, **4,194,303 tok = L−1** (`trunk_packed.jsonl:13`) | none admitted. The guard raises `ValueError` at 4,194,304 tok = L (line 15), 5,916 rows and 11,830 rows, with **zero trunk calls** | — |
+    80	| **Real trunk, padded, guard on** | trunk L | 256, 5,914 and 5,915 rows in one call. 5,916 rows → calls [4,193,735, 709]. 11,830 rows → [4,193,735, 4,193,735] | none | — |
+    81	| Real trunk, packed, **guard off** | trunk L | (L−1 above; L itself was not run unguarded) | 4,194,305 = **L+1** (`trunk_packed_bypass.jsonl:5`): 2 tokens wrong (max \|Δ\| 45.8, rows 46 and 5,915). 4,194,444: 236 tokens. 4,198,400: 4,665 tokens, 1.19M non-finite values. **All silent.** 8,387,470: illegal memory access. 8,388,888: correct again | silent, then fault |
+    82	| Real trunk, padded, **guard off** | trunk L | — | 4,194,444: 287 tokens wrong. 8,387,470: every token past row 5,915 wrong or non-finite (4,193,735 tokens). **No fault at either size** | silent |
+    83	| Linear 4096→16 (wide input only) | 524,288 / 134,217,728 | 524,288 = L_in | 524,289 = L_in+1: run-time fault | fault |
+    84	| Linear 16→4096 (wide output only) | 134,217,728 / 524,288 | 1,048,576 = 2·L_out (M·N = 2³²) | none | — |
+    85	| Linear 768→256 (planned `actor_input_proj`) | 2,796,202 / 8,388,608 | 2,796,202 = L_in (2³¹/768 = 2,796,202⅔) | 2,796,203 = L_in+1: fault in autotune benchmarking at the new shape (`lin_768_256.attempt0.log:91`) | fault |
+    86	| Linear 512→256 | 4,194,304 / 8,388,608 | 4,198,400 = L_in+4,096. At hint L_in, autotune picked extern cuBLAS `bias_addmm` (`lin_512_256.attempt0.log:92`) | 8,388,608 = 2·L_in: fault in autotune benchmarking (`…attempt0.log:179`) | fault |
+    87	| Linear 256→512 | 8,388,608 / 4,194,304 | 8,388,608 = L_in = 2·L_out | none | — |
+    88	| Linear 256→256 (q/k/v/out) | 8,388,608 / 8,388,608 | 16,777,216 = 2·L | none | — |
+    89	| MLP 256→512→256, forward | max width 512: 4,194,304 | 4,198,400 | 8,388,608: fault during the recompile | fault |
+    90	| MLP 256→512→256, forward + backward | max width 512: 4,194,304 | 4,190,208 (L−4,096) | 4,194,305 (L+1): fault **while compiling** at that shape. Only L−4,096, L+1 and 2L were tested (`probe/driver.py:59`) | fault |
+    91	
+    92	Generated code, from the corrected summaries (`pod-run/kernel_analysis.txt`):
+    93	- **Failing input-wide graphs keep a 32-bit size argument.**
+    94	  - 4096→16: the graph recompiled at hint 520,192 (`inductor_cache/lin_4096_16/rv/…`) has `ks0: i32` with A-load `xindex = idx_n + 4096*idx_m`. It ran correctly at L_in and faulted at L_in+1.
+    95	  - The recompile at hint 528,384, where M·4096 > 2³¹ (`…/mp/…`), still has `ks0: i32`. It declares `INDEX_DTYPE = tl.int64`, which the standard mm template does not consume. It faulted at 528,384 and at 1,048,576.
+    96	  - 768→256: 3 of its 4 wrappers call extern `bias_addmm`. The Triton wrapper has `ks0: i32` with A-load `768*idx_m`.
+    97	- **The trunk's corrupting kernel is the MLP down-projection.** In the packed bypass's first recompile above L (`trunk_packed_bypass/ar/…`), the down-projection `…addmm_gelu_t_9` (A-load `512*idx_m`, store `256*idx_m`) kept `ks0: i32`. The up-projection `…add_addmm_native_layer_norm_t_7` (A-load `256*idx_m`, store `512*idx_m`) got `ks0: i64`. The padded bypass shows the same split (`trunk_padded_bypass/2b/…`). The recompile at 8,388,888 tokens, where M·256 > 2³¹ as well (`trunk_packed_bypass/jg/…`), has `ks0: i64` in every template and was correct. (The first draft called `…native_layer_norm_t_7` the down-projection; that was wrong.)
+    98	- **Output-wide graphs that passed above L_out have `ks0: i64`.** The 16→4096 recompile at M = 524,288 selected Triton `triton_mm_22` (`lin_16_4096.attempt0.log:88–96`; wrapper `…/s2/…:173`, launched at line 304). The same holds for 256→512 at 4,194,304 (`…/5i/…:173`) and 256→256 at 16,777,216 (`…/7v/…:173`).
+    99	- Extern cuBLAS: 2 of 3 `lin_512_256` wrappers and several trunk-padded and MLP wrappers call `bias_addmm` or `mm`.
+   100	
+   101	What is **measured** (this stack, these shapes):
+   102	1. **Real trunk forward, guard on:** correct at L−1 = 4,194,303 packed tokens. The guard rejects L with zero trunk calls. The padded path chunks to 4,193,735 tokens per call, and the chunks are correct.
+   103	2. **Real trunk forward, guard off:** silent corruption at L+1 = 4,194,305. It stayed silent up to at least 4,198,400 packed tokens. The padded path corrupted half its tokens at 8.39M with no fault. A crash is not a detector, and a corrupted token appeared at row 46, far from the wrap point.
+   104	3. **Single GEMMs:** input-wide GEMMs (4096→16, 768→256) were correct at L_in and failed at L_in+1. Output-wide GEMMs (16→4096, 256→512, 256→256) stayed correct up to M·N = 2³² or 2·L. **The measured overflow at these shapes is input-side: the A-load, M·K.** The audit's universal "overflow iff M·max(K, N) > 2³¹" rule is **withdrawn**.
+   105	4. **Above the bound, behavior is not a usable threshold.** It depends on the recompile hint and on autotune's backend choice. 512→256 stayed correct to L+4,096 only because autotune picked cuBLAS. The real trunk corrupted at L+1 and was correct again at 8,388,888 after an i64 recompile. A passing test above the bound proves nothing. **Recompilation is not a safety guarantee:** R1's int32 guards protect only their own specialization, and a recompile can land in the unsafe regime (R2).
+   106	
+   107	**Mechanism** (source reading plus generated code; partly unverified). Codex confirmed these points in the installed torch 2.9.0 (`0fabc3ba…`) `_inductor`:
+   108	- The emitted `INDEX_DTYPE` comes from an all-buffer **storage-size** check (`codegen/simd.py:1413–1443`), not from abstract matrix dimensions; M·N, M·K and K·N are the contiguous-layout specialization.
+   109	- The template's **size-arg** dtype is decided separately: `select_algorithm.py:388–395` builds `SIMDKernelFeatures([], output_numel)` (`codegen/simd_kernel_features.py:133–150`). `select_algorithm.py:578–585` and `codegen/triton_utils.py:78–81` carry the result into the template's size-arg types.
+   110	- The hint path returns at `utils.py:3066`, with guards via `sizevars.py:404–426,444–445` and `symbolic_shapes.py:7709–7714`. Guards are installed only on the successful int32 branch.
+   111	- `INDEX_DTYPE` is emitted (`select_algorithm.py:1530–1539`) but not consumed by the standard mm/addmm template (`kernel/mm.py:80–136`; ADDMM reuses it at `kernel/mm.py:997–1006`). That is why `INDEX_DTYPE = tl.int64` next to `ks0: i32` did not help.
+   112	
+   113	With an i64 `ks0`, the chain `M → grid_m → group_size → pid_m` (`kernel/mm.py:81–89`) starts from a 64-bit value. That plausibly promotes `idx_m`, and with it the A-load offset. With an i32 `ks0`, `K·idx_m` wraps once M·K > 2³¹. This matches every failing and passing graph whose kernel can be attributed from the retained generated code. The 768→256 and 512→256 failures happened during autotuning and do not identify the failing candidate kernel; that localization gap remains. **Triton IR promotion is unverified**, because no lowered IR was captured. Rematerializing `rm` does not by itself establish int32.
+   114	
+   115	What is **inferred, not measured**:
+   116	- **The unguarded real trunk at exactly L** was not run. The synthetic single GEMMs were correct at exactly L_in, so the guard's `≥ 2³¹` rejection may be stricter than necessary. For the real trunk that is unmeasured, so the guard is a conservative admission rule, not a measured edge.
+   117	- **Real-trunk backward** was not measured at any size. The synthetic MLP backward was tested only at L−4,096 (correct), L+1 and 2L. Its L+1 failure happened during compilation, so no backward-kernel threshold is localized.
+   118	- **Design bound for training: M × max(in, out) over every Linear in a compiled region.** Backward consumes forward outputs as GEMM inputs: dX = dY·W reads dY at the forward *output* width. Under the measured input-side rule, a backward GEMM can therefore wrap at M × (forward output width) even when the forward's input side is safe. Weight-gradient GEMMs reduce over M and index offsets up to M × width.
+   119	  - For the trunk, every Linear has max(in, out) ≤ 512, so `gemm_kmax = 512` is that design bound. It is justified by the input-side rule plus backward, not by any output-store overflow.
+   120	  - Decompose-K is **enabled by default**: 10 splits, threshold 32 (`config.py:1434–1442`). It is allowed when K ≥ 32M and K ≥ 32N, subject to more conditions (`utils.py:1825–1840`), which weight-gradient GEMMs can meet. Unmeasured.
+   121	- **Other templates:** outside mm/addmm, pointwise and reduction kernels have their own safeguards (`codegen/simd_kernel_features.py:133–150`, `codegen/simd.py:1435–1442`, `codegen/triton.py:4451–4459,4480–4481`). Forcing non-template `ks*` arguments to int64 applies only when `use_block_ptr=False` (`codegen/triton_utils.py:141–147`).
+   122	- `bmm` stays unmeasured. `kernel/bmm.py:85–110` uses raw batch program ids and stride-dependent offsets without `INDEX_DTYPE` casts, and the MM rule does not establish its batch indexing. Static-shape compiles and persistent TMA (disabled by default) are also unmeasured.
+   123	
+   124	Where our workloads sit, as rows × 709 tokens against L = 4,194,304 (2³¹/512):
+   125	- **Measured correct (forward):**
+   126	  - Rollout, 256 rows: 181,504 tokens, 23.1086× headroom. Compiled vs eager was measured at this shape, dense and sparse.
+   127	- **Arithmetic only:**
+   128	  - PPO minibatch, 1,024 rows (spm 8 × horizon 64 × 2): 726,016 tokens, 5.77715×. Its backward sits under the design bound; that is inferred, not measured.
+   129	- **Over the limit as planned:**
+   130	  - Teacher precompute, 128 segments × 64 × 2 = 16,384 rows. A mean of **256** tokens per row already reaches L (16,384 × 256 = 2²²) and triggers the guard, so the safe mean is **strictly below 256**.
+   131	  - At the worst case of 709 tokens per row, 46 segments give 4,174,592 tokens (under L) and 47 give 4,265,344 (over). So `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunk.
+   132	  - The packed guard would **raise**, not corrupt.
+   133	- **Uncovered by the trunk guard:**
+   134	  - The heads are not implemented yet. If the head core is ever compiled, the planned `actor_input_proj` (768 in) exceeds L_in at M = 2,796,203 rows × frames.
+   135	  - Stems are eager today. `ObservationInputStem` is 371→512→256 (`stateless_transformer_v1.py:2750`), so a compiled full stem would include a 512-wide projection, with the same L as the trunk.
+   136	  - The audit's 371/376 figures are conditional stride bounds, not observed kernel limits: ⌊2³¹/371⌋ = 5,788,365, and ⌊2³¹/376⌋ = **5,711,392**, if BF16 alignment padding rounds 371 to 376 (`fx_passes/pad_mm.py:69–71,121–130`). That padding is conditional (line 728). No 376 stride was generated for these eager stems.
+   137	
+   138	**Open and handoffs:**
+   139	- Real-trunk backward and the unguarded real trunk at L: not measured.
+   140	- flash-attn: absent on the pod. Install and verify it in Phase 6 (above).
+   141	- bmm, persistent TMA, decompose-K, static compiles, and other torch/Triton versions: unchecked.
+   142	- **For Task 2.3:** the comment at `python/owl/model/kaggriculture.py:53` should distinguish the observed overflow *above* the bound from the conservative rejection *at* equality. It is part of the docstring correction in brief §9 item 1 and out of scope for this evidence commit.
+
+exec
+/bin/zsh -lc 'nl -ba cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md && nl -ba ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md' in /Users/poonszesen/kg-v3
+exec
+/bin/zsh -lc "rg -n 'O5|O7|O11|B2|O9|blocking|APPROVE|storage.size|every failing|strict|floor' ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2-transcript.log && cat cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md && cat cookbook/decisions/diagnose-the-mechanism-before-spending-on-runs.md" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+     1	---
+     2	type: "Reference"
+     3	title: "Compiled GEMM template overflows above 2^21 rows"
+     4	description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. The rebuilt trunk guard is measured correct at L−1 and rejects L; production compliance is unproven."
+     5	tags: ["kaggriculture-v3", "cuda", "compile"]
+     6	status: "verified-scoped"
+     7	generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+     8	sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/cuda-repro-blocking.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/ppo-from-bc-2026-09-29/train.log"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/train.log"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.log"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/driver.jsonl"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/gemm-limits-2026-09-29/"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/kernel_analysis.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md"}]
+     9	---
+    10	
+    11	# Compiled GEMM template overflows above 2^21 rows
+    12	
+    13	## What was observed
+    14	
+    15	The reference branch's PPO run from the BC checkpoint crashed with a CUDA illegal memory access after 3 iterations. Rerunning the exact setup with `CUDA_LAUNCH_BLOCKING=1` reproduced it on both ranks. Both tracebacks end in the Inductor **max-autotune Triton GEMM template** `triton_tem_fused__to_copy_addmm_gelu_t_view_9`, the transformer trunk's MLP with `M` = batch rows × tokens, K = 1024, N = 256. The kernel declares `INDEX_DTYPE = tl.int64`, which the mm template does not use, and forms the input-side offset `xindex = k + 1024*idx_m` in 32-bit arithmetic. Once `M > 2^21`, that offset passes 2³¹ and wraps. Here K = 1024 is the input width of the MLP down-projection.
+    16	
+    17	A controlled probe confirmed the threshold. It used a synthetic BF16 MLP (256→1024, GELU, 1024→256) with `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. At M = 2,088,960 the compiled output matches eager within BF16 noise (max diff 0.0078). At M = 2,105,344 it faults. Environment: torch 2.9.0+cu128, RTX PRO 6000 Blackwell, driver 595.91.07. Hashes and logs are in `ops/rebuild-2026-09-29/results.md`.
+    18	
+    19	## Why it matters
+    20	
+    21	- Below the fault, wrapped offsets land in valid memory and **silently corrupt** activations. In the reference run, rollout forwards (8,192 rows × more than 256 padded tokens) exceeded the threshold, while training minibatches (128 rows) did not. That produced the first-update log-ratio mean of −3.77 before any weight change. The earlier "BC→PPO deterioration" was infrastructure corruption, not evidence against the BC policy.
+    22	- The bug is in compiler-generated code, so it is invisible in the model source. It can reappear for any compiled GEMM whose `rows × input width` exceeds 2³¹: rollouts, evaluation, BC, and other models with larger batches. In training, backward reads forward outputs as inputs, so the forward output width counts too (below).
+    23	
+    24	## Measured limits at the rebuild's shapes (2026-09-29)
+    25	
+    26	A second bounded probe compared compiled output against eager at every point. It covered synthetic compiled Linears and MLPs, plus the real `KaggricultureTransformer` trunk from `kg/rebuild-model` @ `1ddc71d`, compiled directly through its own `compile_transformer_trunk`. Precision matched `run_ppo`: fp32 parameters under bf16 autocast, `max-autotune-no-cudagraphs`, `dynamic=True`, compiled small first. Codex verified the evidence and requested edits, applied here. The table, the generated-code attribution and the source citations are in `ops/rebuild-2026-09-29/results.md`, "GEMM limits at our shapes".
+    27	
+    28	Measured (L_in = floor(2³¹ / K) for GEMM input width K, e.g. 2,796,202 for K = 768; trunk L = 2³¹/512 = 4,194,304):
+    29	- **The overflow is input-side at these shapes.** Input-wide GEMMs (4096→16, 768→256) were correct at L_in and failed at L_in+1. Output-wide GEMMs (16→4096, 256→512, 256→256) stayed correct up to M·N = 2³². The corrected kernel summaries show why:
+    30	  - Every failing graph whose kernel can be attributed from the retained code launches the template with a 32-bit size argument (`ks0: i32`) and an A-load of `K*idx_m`. The 768→256 and 512→256 failures happened during autotuning, so their failing candidate kernel is not localized.
+    31	  - Graphs whose output exceeds int32 get `ks0: i64` and stayed correct.
+    32	  - In the real trunk, the corrupting kernel is the 512→256 MLP down-projection. Above L it kept `ks0: i32`, while the 256→512 up-projection had been promoted.
+    33	
+    34	  The earlier universal rule, "overflow iff M·max(K, N) > 2³¹", is withdrawn.
+    35	- **In the real trunk the corruption is silent.** With the guard patched off:
+    36	  - 2 tokens were wrong at L+1 = 4,194,305 packed tokens, and 4,665 at 4,198,400.
+    37	  - The padded path was wrong on half its tokens at 8.39M, with no fault.
+    38	- **Above the bound, nothing is reliable.** Whether a given M corrupts, faults or happens to be correct depends on the recompile hint and on autotune's backend choice. For example, cuBLAS won for a lone 512→256, and the trunk was correct again at 8.39M tokens after an i64 recompile. Recompilation is not a safety guarantee.
+    39	- **The guard, measured endpoints:** with the guard on, `_run_trunk` is correct at L−1 = 4,194,303 packed tokens. It raises at L with zero trunk calls, and chunks the padded path into calls of 4,193,735 tokens, which are also correct.
+    40	
+    41	Inferred, not measured:
+    42	- **Unguarded trunk at exactly L.** It was not run, so whether the guard's rejection at equality is stricter than necessary is unknown.
+    43	- **Real-trunk backward.** It was not run at any size. The synthetic MLP backward faulted while compiling at L+1, which does not localize a backward-kernel threshold.
+    44	- **Mechanism.** The source path and the generated code agree that the emitted `INDEX_DTYPE` follows an all-buffer storage-size check while the template's size-arg dtype is chosen separately from the output numel (`SIMDKernelFeatures([], output_numel)`), and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
+    45	
+    46	## Consequences
+    47	
+    48	- **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
+    49	  - For the trunk that width is 512, which is `gemm_kmax`.
+    50	  - Nothing enforces the bound outside the trunk. The stems are eager today, but the full stem is 371→512→256. The heads and the planned 768-wide `actor_input_proj` are not implemented yet; compiled, `actor_input_proj` would exceed L_in at 2,796,203 rows × frames.
+    51	- **Production compliance is unproven.** Kaggriculture is not yet in `ModelConfig` or the model factory, and `configure_model_compile` rejects it for `model_compile="trunk"`. Integrated rollout, PPO recompute, evaluation, BC and teacher workloads stay unverified until Task 3.1 and Phase 6.
+    52	- **Size margins against 2³¹/width, not against observed faults.** A passing test above the bound is not evidence of safety.
+    53	- **Workload margins against the trunk L:**
+    54	  - Rollout at 256 rows: 23.1× headroom, forward measured correct.
+    55	  - PPO minibatch at 1,024 rows: 5.78×, arithmetic only.
+    56	  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. It needs `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunking. The guard would raise, not corrupt.
+    57	- **Log-ratio alarm:** treat a non-zero log-ratio at the first minibatch (before any optimizer step) as a correctness failure and abort, recording the batch shape.
+    58	- **Upgrades:** don't upgrade torch or drivers as a remedy without a separate measured decision. Rerun both probes after any upgrade.
+    59	
+    60	## Limits
+    61	
+    62	- **Stack:** measured on torch 2.9.0+cu128, driver 595.91.07, RTX PRO 6000 Blackwell (sm_120). Triton 3.5.0 is the lockfile pin; its installed version was not captured.
+    63	- **Templates:** `mm`/`addmm` templates with fused prologues and epilogues, dynamic shapes. Unmeasured:
+    64	  - the real trunk's backward;
+    65	  - the unguarded trunk at exactly L;
+    66	  - `bmm`, persistent-TMA and decompose-K paths (decompose-K is on by default and can apply to weight-gradient GEMMs);
+    67	  - static-shape compiles;
+    68	  - other versions.
+    69	- **Tolerances:** the checks detect the reported corruption. They do not prove BF16 equivalence for arbitrary inputs.
+    70	- **FlashAttention:** the packed-path runs used torch's ATen varlen flash shim, because the pod venv has no `flash-attn`; the pod's run config also had `force_flash_attn: false`. The real flash-attn kernel is untested, and Phase 6 must install and verify it.
+    71	- **Other versions:** torch 2.8 showed no overflow at width 1024 (Task 0.2).
+     1	# Run statement — compiled-GEMM limits at our shapes (single GPU, ≤ 45 min)
+     2	
+     3	- **Question (diagnostic, not training):** the rebuild's `_run_trunk` guard assumes the torch 2.9 Inductor max-autotune GEMM template goes wrong exactly when `M × 512 > 2³¹` (M = token rows). That number was extrapolated from one probe at width 1024. This run asks two things. (1) At our widths, where do compiled GEMMs start disagreeing with eager or faulting? (2) Does the real `KaggricultureTransformer` trunk on `kg/rebuild-model` stay correct everywhere the guard admits it, and raise or chunk everywhere it doesn't? A separate question: is the limit set by the input width K, the output width N, or max(K, N)? The source-reading audit predicts max(K, N).
+     4	- **Hypotheses and discriminating observations:**
+     5	  - **Input/output split:** `Linear(16→4096)` (N-only) and `Linear(4096→16)` (K-only) both go wrong just above M = 2¹⁹ = 524,288 → the limit is M·max(K,N). Only the K-only case goes wrong → the limit is input-side only.
+     6	  - **Our trunk widths:** `Linear(256→512)`, `Linear(512→256)` and the GELU MLP `256→512→256`. Compiled output matches eager (within the BF16 tolerance `|d| ≤ 0.02 + 0.02|ref|`) at M ≤ 4,194,304. It has bad rows or faults at M = 4,194,305 (L+1), L+4096 and 2L → the guard constant 512 is measured, not just inferred. A match above L means the limit is looser than predicted, or autotune picked cuBLAS; the generated code decides which.
+     7	  - **Head/q-k-v widths:** `256→256`, with L = 8,388,608. `768→256` (the planned actor_input_proj), with L = 2,796,202.
+     8	  - **Real trunk, packed path** (`force_flash_attn=True`): matches eager at 256 rows (sparse and dense), 5,914 and 5,915 dense rows, and exactly 4,194,303 packed tokens. Raises `ValueError` before any trunk call at 4,194,304 tokens, 5,916 dense rows and 11,830 dense rows. **Negative control** (guard patched off): wrong or faulting at 4,194,305+ tokens. This shows the guard is load-bearing and that the compare would have seen the corruption.
+     9	  - **Real trunk, padded path:** 5,916 rows splits into trunk calls [4,193,735, 709] and 11,830 rows into [4,193,735, 4,193,735], all matching eager. The negative control (no chunking) goes wrong at 5,916 or 11,830 rows.
+    10	  - Silent corruption is detected separately from faults, because every point compares against eager. It is not just "no crash".
+    11	- **Inputs and code path:**
+    12	  - Synthetic probes: `probe/probe_linear.py`, sha256 `0a7af36325d74485bc491cf72a03e1860da483f60b9f945ff5d3711b3d46f8b1`.
+    13	  - Real-trunk probe: `probe/probe_trunk.py`, sha256 `5ce3f09afd85cd881ae04311c848cb070c7ac1a2cb6e57411894b009df57d5e7`.
+    14	  - Driver: `probe/driver.py`, sha256 `aa42c12b7e7fb55045d07967c6439d0556dbd9c110da3d7e0d904549bd626c3f`. It runs each case in a fresh subprocess and restarts after a fault, because an illegal memory access kills the CUDA context.
+    15	  - Kernel analysis: `probe/analyze_kernels.py`, sha256 `10539f56e0d2635a3c7f5abb2eaaff842569b4c7422edf5d0dda963dfee28d52`. *Post-run correction (Codex verify-gemm-limits-r1, finding 4):* revision 1 misattributed signatures and missed `bias_addmm`. Revision 2 (sha256 `ee26698a8535f32ded6e846a30233a5f461e1c005597fdf8a75a8440d719e953`) was rerun locally on the copied caches; see `results.md`. Revision 1 and its outputs remain only in the pod copy.
+    16	  - Model source: `git archive --prefix=gemm-limits-src-1ddc71d/ 1ddc71d python/owl` (*post-run correction:* this line originally omitted `--prefix`; the recorded tar hash below is the prefixed archive's, and without the prefix the same pathspec gives `29cfaafec3f899fa8a7d84e020a38f5372baae9bc3d9ba6a94c975fbc427996b`; `kg/rebuild-model`, `1ddc71da3c4d8461ff123da40c12bbf4bb531b46`; tree `python/owl` `9848d1d2…`, `python/owl/model` `f5dd01ee…`, `python/owl/kaggriculture` `bd88d802…`; `kaggriculture.py` sha256 `92f4df61…`; tar sha256 `47293ba8eb4f97c38f3b96f2c9cf11c90f6709e6ba789db00b2042f392ed701e`). It is unpacked on the pod at `/workspace/gemm-limits-src-1ddc71d/` via `PYTHONPATH`. `/workspace/kg-v3` is not touched; its `.venv` interpreter is used read-only (torch 2.9.0+cu128; Triton 3.5.0 is the lockfile pin, and the installed Triton version was not captured).
+    17	  - Precision is exactly what `run_ppo` uses: fp32 parameters, `torch.autocast(bfloat16)`, TF32 on, `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. The trunk is compiled through the model's own `compile_transformer_trunk`, since `configure_model_compile('trunk')` does not yet accept this model class.
+    18	  - **Known deviation:** the pod venv has no `flash-attn` package. The packed path therefore substitutes torch's own varlen `aten._flash_attention_forward` (or `_efficient_attention_forward`), checked against per-sequence SDPA before use. Only the attention kernel changes; all GEMMs, pack/unpack and the guard are branch code.
+    19	  - Hardware: pod `w7ia3zvxqsvs3g`, GPU 0 only (`CUDA_VISIBLE_DEVICES=0`), RTX PRO 6000 Blackwell, driver 595.91.07.
+    20	- **Stopping condition:** every case is attempted, or the 45-minute wall budget runs out. The driver launches no case after 41 minutes and kills any process still running at 45. At most 3 restarts per case. No bisection beyond the listed points.
+    21	- **Budget:** ≤ 45 min on GPU 0 of the already-running pod ($4.18/h; no new billable resource).
+    22	- **Artifacts:** on the pod, `/workspace/kg-v3/runs/gemm-limits-2026-09-29/` (per-case JSONL, attempt logs with `TORCH_LOGS=recompiles[,guards]`, per-case Inductor caches, `kernel_analysis.json`, `driver.jsonl`). A local copy of the logs and a summary goes in `ops/rebuild-2026-09-29/gemm-limits-2026-09-29/`. The measured table goes in `ops/rebuild-2026-09-29/results.md`, section "GEMM limits at our shapes".
+    23	- **Safety:** before launch, check that `nvidia-smi` shows 0 MiB and 0% on both GPUs and that `ps` shows no python/torchrun/run_ppo process (checked 05:15Z: idle). If a learner appears, do not run. Never stop, restart or delete the pod; leave it running and idle afterwards.
+    24	- **Import isolation (set up before launch):** the branch tree has no built Rust extension. `OWL_NATIVE_MODULE_DIR=/workspace/gemm-limits-src-1ddc71d/native` holds only a symlink to the pod's `rs.abi3.so` (sha256 `51b32d3b…`), which the model never calls. `probe_trunk.py` refuses to run unless `owl.model.kaggriculture` imports from `/workspace/gemm-limits-src-1ddc71d/`. The smoke import confirmed that. A first attempt that pointed the variable at `/workspace/kg-v3/python/owl` resolved the model from the reference tree, so it was discarded. The attention-shim check picked `aten_flash_varlen`: max |Δ| vs per-sequence SDPA is 0.0021 on 3 sequences of lengths 709, 219 and 300.
+
+ succeeded in 0ms:
+13:You are Codex. READ-ONLY re-verification. Your r1 report is ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md (APPROVE WITH EDITS, findings B1-B4 and O5-O12). Claude's fix commits: cde91cb Add GEMM-limit probe evidence, corrected kernel analyzer and Codex verification; c4fbf41 Record GEMM limits at our shapes with Codex's corrections; flag missing flash-attn; 59b5eca Revise the compiled-GEMM Reference after Codex verification. Confirm each finding is resolved accurately in ops/rebuild-2026-09-29/results.md, the run statement, ops/rebuild-2026-09-29/gemm-limits-2026-09-29/ (including the corrected analyze_kernels.py output), cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md, the plan's Phase 6 flash-attn note and the 2.3 brief §9 rationale; check no new overclaim was introduced. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT, with findings.
+20:I’ll check B1–B4 and O5–O12 against the corrected records and retained evidence, then audit for new overclaims. This review will remain read-only and end once every finding has a supported disposition.
+68:   - `codegen/simd.py:1413–1443` checks **storage sizes**, not abstract matrix dimensions. M·N, M·K and K·N are the contiguous-layout specialization. Guards are installed only on the successful int32 branch.
+105:   | Width/stride | floor(2³¹ / width) |
+144:VERDICT: APPROVE WITH EDITS
+154:ops/rebuild-2026-09-29/run-statements/cuda-repro-blocking.md
+422:Under today's instruction to reuse useful discipline, high throughput is a requirement for the v3 collection, model and training design. Preserve correctness while reporting collection rate, valid learner turns through a full update, phase timings and the total workflow cost. Separate startup/compilation from steady state. State hardware, precision, batch/rollout work, recording settings, transfer and evaluation boundaries. No absolute SPS floor or allowed regression percentage has been supplied.
+428:Use [[../workflows/profile-cuda-bottlenecks-with-nsight-systems|Nsight Systems]] for NVIDIA timeline attribution. Temporary downscaling can diagnose a fault but does not close the throughput requirement. Measured scopes so far (the rejected old decoder and the historical fixed-minibatch sweep) live in `ops/gpu-sps-2026-09-29/results.md`. None of them establishes playing strength, dense-game capacity or an owner-specified performance floor, and each recipe change, including the Isaiah-aligned cadence, needs its own complete-work qualification.
+539:     7	Run statement: `run-statements/cuda-repro-blocking.md`. Launched 2026-09-29T03:34:45Z with `CUDA_LAUNCH_BLOCKING=1`, reusing the crashed run's own config and the BC best checkpoint (`ffd7d9e4…`), 2 ranks.
+541:     9	**Observation while running (iteration 1, before any fault):** the first PPO update on BC-policy rollouts shows `policy/logratio_mean −3.77`, `approx_kl 3.43`, `ratio_mean 0.66`, `logratio_abs_max 12.08`, and a KL stop after 2 optimizer steps. At the first minibatch the weights haven't changed, so replayed log-probs should equal rollout log-probs (log-ratio 0). A mean of −3.77 nats means the reference model's **sampling path and evaluation path disagree** on the states the BC policy reaches. Rollout was 4,878 env steps/s even with blocking launches; evaluation: 128 games, win rate 8.6% vs the BC incumbent.
+547:    15	- **Reproduced:** the blocking run faulted after 3 iterations on both ranks (`exit=1`, 7m43s wall), matching the original crash. With blocking launches, both tracebacks end in the same compiled kernel, `triton_tem_fused__to_copy_addmm_gelu_t_view_9`. This is an Inductor **max-autotune Triton GEMM template** in the transformer trunk MLP (`M = ks0·ks1` = batch rows × tokens, K = 1024, N = 256), called from `KaggricultureTransformer._run_trunk`. It is not the model's own indexing, not the async copies (H2), and not attention.
+568:    36	Revised after Codex verification (`codex/verify-gemm-limits-r1.md`, APPROVE WITH EDITS). The first draft overstated three things: it called the trunk bounds "measured exact", stated a universal `M·max(K, N)` overflow rule, and cited generated-kernel summaries from a buggy analyzer. This text replaces it.
+640:   108	- A template's size-arg dtype comes from a **storage-size** check (`codegen/simd.py:1413–1443`), not from abstract matrix dimensions. M·N, M·K and K·N are the contiguous-layout specialization.
+645:   113	With an i64 `ks0`, the chain `M → grid_m → group_size → pid_m` (`kernel/mm.py:81–89`) starts from a 64-bit value. That plausibly promotes `idx_m`, and with it the A-load offset. With an i32 `ks0`, `K·idx_m` wraps once M·K > 2³¹. This matches every failing and passing graph above. **Triton IR promotion is unverified**, because no lowered IR was captured. Rematerializing `rm` does not by itself establish int32.
+648:   116	- **The unguarded real trunk at exactly L** was not run. The synthetic single GEMMs were correct at exactly L_in, so the guard's `≥ 2³¹` rejection may be stricter than necessary. For the real trunk that is unmeasured, so the guard is a conservative admission rule, not a measured edge.
+662:   130	  - Teacher precompute, 128 segments × 64 × 2 = 16,384 rows. A mean of **256** tokens per row already reaches L (16,384 × 256 = 2²²) and triggers the guard, so the safe mean is **strictly below 256**.
+710:     8	sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/cuda-repro-blocking.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/ppo-from-bc-2026-09-29/train.log"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/train.log"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.log"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/driver.jsonl"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/gemm-limits-2026-09-29/"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/kernel_analysis.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md"}]
+744:    42	- **Unguarded trunk at exactly L.** It was not run, so whether the guard's rejection at equality is stricter than necessary is unknown.
+746:    44	- **Mechanism.** The source path and the generated code agree that the size-arg dtype follows a storage-size check on the template output, and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
+758:    56	  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. It needs `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunking. The guard would raise, not corrupt.
+818:VERDICT: APPROVE WITH EDITS4. **Above the bound, behavior is not a usable threshold.** It depends on the recompile hint and on autotune's backend choice. 512→256 stayed correct to L+4,096 only because autotune picked cuBLAS. The real trunk corrupted at L+1 and was correct again at 8,388,888 after an i64 recompile. A passing test above the bound proves nothing. **Recompilation is not a safety guarantee:** R1's int32 guards protect only their own specialization, and a recompile can land in the unsafe regime (R2).
+821:- A template's size-arg dtype comes from a **storage-size** check (`codegen/simd.py:1413–1443`), not from abstract matrix dimensions. M·N, M·K and K·N are the contiguous-layout specialization.
+826:With an i64 `ks0`, the chain `M → grid_m → group_size → pid_m` (`kernel/mm.py:81–89`) starts from a 64-bit value. That plausibly promotes `idx_m`, and with it the A-load offset. With an i32 `ks0`, `K·idx_m` wraps once M·K > 2³¹. This matches every failing and passing graph above. **Triton IR promotion is unverified**, because no lowered IR was captured. Rematerializing `rm` does not by itself establish int32.
+829:- **The unguarded real trunk at exactly L** was not run. The synthetic single GEMMs were correct at exactly L_in, so the guard's `≥ 2³¹` rejection may be stricter than necessary. For the real trunk that is unmeasured, so the guard is a conservative admission rule, not a measured edge.
+862:ops/rebuild-2026-09-29/plan.md:288:- [ ] **6.0 FlashAttention on the pod (blocking for 6.1–6.4):** the GEMM-limit probe found that the pod venv has **no `flash-attn` package**, and the pod's run config had `force_flash_attn: false` (`results.md`, "GEMM limits at our shapes"). Install or build flash-attn 2.8.3 on the pod with `uv sync --extra flash-attn`, and set `force_flash_attn: true`. Verify that the real FlashAttention varlen path runs (import, kernel in use, compiled vs eager on the packed trunk) before any qualification or throughput claim.
+878:-sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/cuda-repro-blocking.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/ppo-from-bc-2026-09-29/train.log"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/train.log"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.log"}]
+879:+sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/cuda-repro-blocking.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/ppo-from-bc-2026-09-29/train.log"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/train.log"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.log"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/driver.jsonl"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/gemm-limits-2026-09-29/"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/kernel_analysis.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md"}]
+915:+- **Unguarded trunk at exactly L.** It was not run, so whether the guard's rejection at equality is stricter than necessary is unknown.
+917:+- **Mechanism.** The source path and the generated code agree that the size-arg dtype follows a storage-size check on the template output, and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
+932:+  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. It needs `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunking. The guard would raise, not corrupt.
+1440:  1421	            buf.get_layout().storage_size()
+1449:  1430	                    buf.get_layout().storage_size()
+1625:   185	   - Tests: CPU-mocked packed dispatch showing distinct per-chunk inputs, order, the strict bound, and equality with the unchunked result. This removes the predicted fail-fast at teacher-precompute chunks of 16,384 rows.
+2168:.venv/lib/python3.12/site-packages/torch/_inductor/codegen/triton.py:672:            f"libdevice.floor({self._print(expr.args[0])}).to({V.kernel.index_dtype})"
+2169:.venv/lib/python3.12/site-packages/torch/_inductor/codegen/triton.py:678:            f"libdevice.floor({self._print(expr.args[0])}).to({V.kernel.index_dtype})"
+2371:   288	- [ ] **6.0 FlashAttention on the pod (blocking for 6.1–6.4):** the GEMM-limit probe found that the pod venv has **no `flash-attn` package**, and the pod's run config had `force_flash_attn: false` (`results.md`, "GEMM limits at our shapes"). Install or build flash-attn 2.8.3 on the pod with `uv sync --extra flash-attn`, and set `force_flash_attn: true`. Verify that the real FlashAttention varlen path runs (import, kernel in use, compiled vs eager on the packed trunk) before any qualification or throughput claim.
+2772:1. **O5 — The dtype explanation still conflates two decisions.** [results.md:108](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:108) attributes the all-buffer storage-size check to template size arguments. That check selects emitted `INDEX_DTYPE`; the separate `SIMDKernelFeatures([], output_numel)` path determines size-argument dtype using output numel. Correct this distinction and the corresponding [Reference wording](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:44).
+2774:2. **O7 — A new attribution overclaim was introduced.** The [Reference:30](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:30) says “Every failing graph launches” an i32 template; [results.md:113](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:113) similarly claims agreement with every failing graph. The 768→256 and 512→256 failures during autotuning do not identify the precise faulting candidate. Narrow these statements to attributable retained kernels and explicitly preserve that localization gap.
+2776:3. **O11 — The run statement retains an unsupported installed-version assertion.** [Run statement:16](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md:16) still names Triton 3.5.0 without qualification. Match the corrected results: **3.5.0 is the lockfile pin; the installed version was not captured.**
+2778:4. **B2/O9 — Two boundary notations need reconciliation.** [Reference:28](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:28) needs `floor(2³¹/K)` for `L_in`; the 768 quotient is fractional. Its [design bound at line 48](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:48) says `≤2³¹`, while the implemented and prescribed conservative admission rule is `<2³¹`. Use the strict rule, or explicitly distinguish the inferred equality allowance from the unmeasured real-trunk endpoint.
+2785:| B2 | Measured endpoints/backward limitations corrected; equality wording remains above. |
+2788:| O5 | Partly resolved; dtype conflation remains above. |
+2790:| O7 | Numerical checks and process isolation confirmed; candidate-attribution overclaim remains above. |
+2792:| O9 | Workload arithmetic and strict teacher mean corrected; Reference floor notation remains above. |
+2794:| O11 | Shim limitations and numerical rounding corrected; run-statement version assertion remains above. |
+2801:**VERDICT: APPROVE WITH EDITS**
+2805:Verified against the cookbook’s [measured endpoints](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:39), [version limits](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:62), and linked [arithmetic record](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:85): L−1 passed, L was rejected, Triton’s installed version was uncaptured, and 2³¹/768 = 2,796,202⅔. **VERDICT: APPROVE WITH EDITS**
+2810:Verified against the cookbook’s [measured endpoints](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:39), [version limits](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:62), and linked [arithmetic record](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:85): L−1 passed, L was rejected, Triton’s installed version was uncaptured, and 2³¹/768 = 2,796,202⅔. **VERDICT: APPROVE WITH EDITS**
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+---
+type: "Decision"
+title: "Diagnose the mechanism before spending on runs"
+description: "Keep decisions reproducible, map game capabilities to executable mechanisms, and distinguish four failure classes before repairing."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/kaggriculture-v2-starts-with-a-clean-design.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/the-architecture-must-express-the-decisions-needed-to-win.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/failures-must-distinguish-information-decision-execution-and-architecture-errors.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/stalled-improvement-requires-attribution-and-explicit-architecture-limits.md"}]
+---
+
+# Diagnose the mechanism before spending on runs
+
+The owner's reuse instruction adopts useful v2 discipline for this adaptation. Its original owner directives include:
+
+> crafting a system that is undebuggable and reuqesting blind guess/ experiment is banned explicitly in this project.
+
+> 證據是你有信心的時候才去收集的，不是沒有信心下的賭博.
+
+> 贏所需的決策，架構能否表達？
+
+V3 operationalizes those requirements as follows. Before a costly run, state the observed problem, code/data path, supported mechanism or diagnostic question, expected discriminating observation, and stopping condition. Preserve source/configuration, inputs, seeds and outputs sufficient to replay and localize it. Inspect implementation or add focused diagnostics when visibility is missing. A diagnostic may resolve an unknown cause; mark uncertainty rather than inventing confidence.
+
+Before relying on an architecture, map investment payback, labor allocation, sale timing and market adaptation to available information, represented state, a choice mechanism and executable actions. Trace a worked case through those boundaries. Explicit capacity is necessary, but does not prove effective learned use.
+
+Distinguish **information insufficiency**, **decision error**, **execution error**, and **architecture error**, following the original owner quote “資訊不足、決策錯誤與執行錯誤，或者是架構錯誤”. Trace observed inputs → representation → intended choice → emitted action → engine outcome. Information available but discarded by representation is not an environmental information shortage. Multiple causes may coexist; unresolved attribution must be named.
+
+When repeated repairs fail, inspect the engine, relevant original research and applicable competition discussion before spending again. A justified repair needs a mechanism and discriminating check. Record `ARCHITECTURE LIMITATION` only with its evidence, conditions, attempted repairs and reopening condition; qualify it as suspected when attribution remains unresolved. Repeated poor scores alone never prove impossibility. These rules add no approval step.
+
+exec
+/bin/zsh -lc "nl -ba cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md && nl -ba ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md && sed -n '115,190p' ops/rebuild-2026-09-29/results.md" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+     1	---
+     2	type: "Reference"
+     3	title: "Compiled GEMM template overflows above 2^21 rows"
+     4	description: "Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × GEMM input width exceeds 2^31 while the size argument stays int32 (measured at widths 4096, 768 and 512 and silent in the real trunk; output-wide GEMMs stayed correct to 2^32); this caused the reference PPO-from-BC crash. The rebuilt trunk guard is measured correct at L−1 and rejects L; production compliance is unproven."
+     5	tags: ["kaggriculture-v3", "cuda", "compile"]
+     6	status: "verified-scoped"
+     7	generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+     8	sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/cuda-repro-blocking.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/ppo-from-bc-2026-09-29/train.log"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/model/kaggriculture.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/train.log"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.py"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/cuda-repro-2026-09-29/int32_probe.log"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/driver.jsonl"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3/runs/gemm-limits-2026-09-29/"}, {"resource": "repository:ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/kernel_analysis.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md"}]
+     9	---
+    10	
+    11	# Compiled GEMM template overflows above 2^21 rows
+    12	
+    13	## What was observed
+    14	
+    15	The reference branch's PPO run from the BC checkpoint crashed with a CUDA illegal memory access after 3 iterations. Rerunning the exact setup with `CUDA_LAUNCH_BLOCKING=1` reproduced it on both ranks. Both tracebacks end in the Inductor **max-autotune Triton GEMM template** `triton_tem_fused__to_copy_addmm_gelu_t_view_9`, the transformer trunk's MLP with `M` = batch rows × tokens, K = 1024, N = 256. The kernel declares `INDEX_DTYPE = tl.int64`, which the mm template does not use, and forms the input-side offset `xindex = k + 1024*idx_m` in 32-bit arithmetic. Once `M > 2^21`, that offset passes 2³¹ and wraps. Here K = 1024 is the input width of the MLP down-projection.
+    16	
+    17	A controlled probe confirmed the threshold. It used a synthetic BF16 MLP (256→1024, GELU, 1024→256) with `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. At M = 2,088,960 the compiled output matches eager within BF16 noise (max diff 0.0078). At M = 2,105,344 it faults. Environment: torch 2.9.0+cu128, RTX PRO 6000 Blackwell, driver 595.91.07. Hashes and logs are in `ops/rebuild-2026-09-29/results.md`.
+    18	
+    19	## Why it matters
+    20	
+    21	- Below the fault, wrapped offsets land in valid memory and **silently corrupt** activations. In the reference run, rollout forwards (8,192 rows × more than 256 padded tokens) exceeded the threshold, while training minibatches (128 rows) did not. That produced the first-update log-ratio mean of −3.77 before any weight change. The earlier "BC→PPO deterioration" was infrastructure corruption, not evidence against the BC policy.
+    22	- The bug is in compiler-generated code, so it is invisible in the model source. It can reappear for any compiled GEMM whose `rows × input width` exceeds 2³¹: rollouts, evaluation, BC, and other models with larger batches. In training, backward reads forward outputs as inputs, so the forward output width counts too (below).
+    23	
+    24	## Measured limits at the rebuild's shapes (2026-09-29)
+    25	
+    26	A second bounded probe compared compiled output against eager at every point. It covered synthetic compiled Linears and MLPs, plus the real `KaggricultureTransformer` trunk from `kg/rebuild-model` @ `1ddc71d`, compiled directly through its own `compile_transformer_trunk`. Precision matched `run_ppo`: fp32 parameters under bf16 autocast, `max-autotune-no-cudagraphs`, `dynamic=True`, compiled small first. Codex verified the evidence and requested edits, applied here. The table, the generated-code attribution and the source citations are in `ops/rebuild-2026-09-29/results.md`, "GEMM limits at our shapes".
+    27	
+    28	Measured (L_in = floor(2³¹ / K) for GEMM input width K, e.g. 2,796,202 for K = 768; trunk L = 2³¹/512 = 4,194,304):
+    29	- **The overflow is input-side at these shapes.** Input-wide GEMMs (4096→16, 768→256) were correct at L_in and failed at L_in+1. Output-wide GEMMs (16→4096, 256→512, 256→256) stayed correct up to M·N = 2³². The corrected kernel summaries show why:
+    30	  - Every failing graph whose kernel can be attributed from the retained code launches the template with a 32-bit size argument (`ks0: i32`) and an A-load of `K*idx_m`. The 768→256 and 512→256 failures happened during autotuning, so their failing candidate kernel is not localized.
+    31	  - Graphs whose output exceeds int32 get `ks0: i64` and stayed correct.
+    32	  - In the real trunk, the corrupting kernel is the 512→256 MLP down-projection. Above L it kept `ks0: i32`, while the 256→512 up-projection had been promoted.
+    33	
+    34	  The earlier universal rule, "overflow iff M·max(K, N) > 2³¹", is withdrawn.
+    35	- **In the real trunk the corruption is silent.** With the guard patched off:
+    36	  - 2 tokens were wrong at L+1 = 4,194,305 packed tokens, and 4,665 at 4,198,400.
+    37	  - The padded path was wrong on half its tokens at 8.39M, with no fault.
+    38	- **Above the bound, nothing is reliable.** Whether a given M corrupts, faults or happens to be correct depends on the recompile hint and on autotune's backend choice. For example, cuBLAS won for a lone 512→256, and the trunk was correct again at 8.39M tokens after an i64 recompile. Recompilation is not a safety guarantee.
+    39	- **The guard, measured endpoints:** with the guard on, `_run_trunk` is correct at L−1 = 4,194,303 packed tokens. It raises at L with zero trunk calls, and chunks the padded path into calls of 4,193,735 tokens, which are also correct.
+    40	
+    41	Inferred, not measured:
+    42	- **Unguarded trunk at exactly L.** It was not run, so whether the guard's rejection at equality is stricter than necessary is unknown.
+    43	- **Real-trunk backward.** It was not run at any size. The synthetic MLP backward faulted while compiling at L+1, which does not localize a backward-kernel threshold.
+    44	- **Mechanism.** The source path and the generated code agree that the emitted `INDEX_DTYPE` follows an all-buffer storage-size check while the template's size-arg dtype is chosen separately from the output numel (`SIMDKernelFeatures([], output_numel)`), and that the mm template ignores `INDEX_DTYPE`. Promotion of the A-load offset through `M → grid_m → group_size → pid_m` in the Triton IR is unverified.
+    45	
+    46	## Consequences
+    47	
+    48	- **Design bound: keep every compiled region at M × max(in, out) < 2³¹ over its Linear layers (the strict rule the guard implements; whether equality is safe on the real trunk was never measured).** This follows from the measured input-side rule plus backward: dX = dY·W reads dY at the forward output width, and weight-gradient GEMMs reduce over M. It is not justified by an output-store overflow.
+    49	  - For the trunk that width is 512, which is `gemm_kmax`.
+    50	  - Nothing enforces the bound outside the trunk. The stems are eager today, but the full stem is 371→512→256. The heads and the planned 768-wide `actor_input_proj` are not implemented yet; compiled, `actor_input_proj` would exceed L_in at 2,796,203 rows × frames.
+    51	- **Production compliance is unproven.** Kaggriculture is not yet in `ModelConfig` or the model factory, and `configure_model_compile` rejects it for `model_compile="trunk"`. Integrated rollout, PPO recompute, evaluation, BC and teacher workloads stay unverified until Task 3.1 and Phase 6.
+    52	- **Size margins against 2³¹/width, not against observed faults.** A passing test above the bound is not evidence of safety.
+    53	- **Workload margins against the trunk L:**
+    54	  - Rollout at 256 rows: 23.1× headroom, forward measured correct.
+    55	  - PPO minibatch at 1,024 rows: 5.78×, arithmetic only.
+    56	  - Planned 16,384-row teacher precompute: reaches L at a mean of 256 tokens per row, so the safe mean is strictly below 256. It needs `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunking. The guard would raise, not corrupt.
+    57	- **Log-ratio alarm:** treat a non-zero log-ratio at the first minibatch (before any optimizer step) as a correctness failure and abort, recording the batch shape.
+    58	- **Upgrades:** don't upgrade torch or drivers as a remedy without a separate measured decision. Rerun both probes after any upgrade.
+    59	
+    60	## Limits
+    61	
+    62	- **Stack:** measured on torch 2.9.0+cu128, driver 595.91.07, RTX PRO 6000 Blackwell (sm_120). Triton 3.5.0 is the lockfile pin; its installed version was not captured.
+    63	- **Templates:** `mm`/`addmm` templates with fused prologues and epilogues, dynamic shapes. Unmeasured:
+    64	  - the real trunk's backward;
+    65	  - the unguarded trunk at exactly L;
+    66	  - `bmm`, persistent-TMA and decompose-K paths (decompose-K is on by default and can apply to weight-gradient GEMMs);
+    67	  - static-shape compiles;
+    68	  - other versions.
+    69	- **Tolerances:** the checks detect the reported corruption. They do not prove BF16 equivalence for arbitrary inputs.
+    70	- **FlashAttention:** the packed-path runs used torch's ATen varlen flash shim, because the pod venv has no `flash-attn`; the pod's run config also had `force_flash_attn: false`. The real flash-attn kernel is untested, and Phase 6 must install and verify it.
+    71	- **Other versions:** torch 2.8 showed no overflow at width 1024 (Task 0.2).
+     1	# Run statement — compiled-GEMM limits at our shapes (single GPU, ≤ 45 min)
+     2	
+     3	- **Question (diagnostic, not training):** the rebuild's `_run_trunk` guard assumes the torch 2.9 Inductor max-autotune GEMM template goes wrong exactly when `M × 512 > 2³¹` (M = token rows). That number was extrapolated from one probe at width 1024. This run asks two things. (1) At our widths, where do compiled GEMMs start disagreeing with eager or faulting? (2) Does the real `KaggricultureTransformer` trunk on `kg/rebuild-model` stay correct everywhere the guard admits it, and raise or chunk everywhere it doesn't? A separate question: is the limit set by the input width K, the output width N, or max(K, N)? The source-reading audit predicts max(K, N).
+     4	- **Hypotheses and discriminating observations:**
+     5	  - **Input/output split:** `Linear(16→4096)` (N-only) and `Linear(4096→16)` (K-only) both go wrong just above M = 2¹⁹ = 524,288 → the limit is M·max(K,N). Only the K-only case goes wrong → the limit is input-side only.
+     6	  - **Our trunk widths:** `Linear(256→512)`, `Linear(512→256)` and the GELU MLP `256→512→256`. Compiled output matches eager (within the BF16 tolerance `|d| ≤ 0.02 + 0.02|ref|`) at M ≤ 4,194,304. It has bad rows or faults at M = 4,194,305 (L+1), L+4096 and 2L → the guard constant 512 is measured, not just inferred. A match above L means the limit is looser than predicted, or autotune picked cuBLAS; the generated code decides which.
+     7	  - **Head/q-k-v widths:** `256→256`, with L = 8,388,608. `768→256` (the planned actor_input_proj), with L = 2,796,202.
+     8	  - **Real trunk, packed path** (`force_flash_attn=True`): matches eager at 256 rows (sparse and dense), 5,914 and 5,915 dense rows, and exactly 4,194,303 packed tokens. Raises `ValueError` before any trunk call at 4,194,304 tokens, 5,916 dense rows and 11,830 dense rows. **Negative control** (guard patched off): wrong or faulting at 4,194,305+ tokens. This shows the guard is load-bearing and that the compare would have seen the corruption.
+     9	  - **Real trunk, padded path:** 5,916 rows splits into trunk calls [4,193,735, 709] and 11,830 rows into [4,193,735, 4,193,735], all matching eager. The negative control (no chunking) goes wrong at 5,916 or 11,830 rows.
+    10	  - Silent corruption is detected separately from faults, because every point compares against eager. It is not just "no crash".
+    11	- **Inputs and code path:**
+    12	  - Synthetic probes: `probe/probe_linear.py`, sha256 `0a7af36325d74485bc491cf72a03e1860da483f60b9f945ff5d3711b3d46f8b1`.
+    13	  - Real-trunk probe: `probe/probe_trunk.py`, sha256 `5ce3f09afd85cd881ae04311c848cb070c7ac1a2cb6e57411894b009df57d5e7`.
+    14	  - Driver: `probe/driver.py`, sha256 `aa42c12b7e7fb55045d07967c6439d0556dbd9c110da3d7e0d904549bd626c3f`. It runs each case in a fresh subprocess and restarts after a fault, because an illegal memory access kills the CUDA context.
+    15	  - Kernel analysis: `probe/analyze_kernels.py`, sha256 `10539f56e0d2635a3c7f5abb2eaaff842569b4c7422edf5d0dda963dfee28d52`. *Post-run correction (Codex verify-gemm-limits-r1, finding 4):* revision 1 misattributed signatures and missed `bias_addmm`. Revision 2 (sha256 `ee26698a8535f32ded6e846a30233a5f461e1c005597fdf8a75a8440d719e953`) was rerun locally on the copied caches; see `results.md`. Revision 1 and its outputs remain only in the pod copy.
+    16	  - Model source: `git archive --prefix=gemm-limits-src-1ddc71d/ 1ddc71d python/owl` (*post-run correction:* this line originally omitted `--prefix`; the recorded tar hash below is the prefixed archive's, and without the prefix the same pathspec gives `29cfaafec3f899fa8a7d84e020a38f5372baae9bc3d9ba6a94c975fbc427996b`; `kg/rebuild-model`, `1ddc71da3c4d8461ff123da40c12bbf4bb531b46`; tree `python/owl` `9848d1d2…`, `python/owl/model` `f5dd01ee…`, `python/owl/kaggriculture` `bd88d802…`; `kaggriculture.py` sha256 `92f4df61…`; tar sha256 `47293ba8eb4f97c38f3b96f2c9cf11c90f6709e6ba789db00b2042f392ed701e`). It is unpacked on the pod at `/workspace/gemm-limits-src-1ddc71d/` via `PYTHONPATH`. `/workspace/kg-v3` is not touched; its `.venv` interpreter is used read-only (torch 2.9.0+cu128; Triton 3.5.0 is the lockfile pin, and the installed Triton version was not captured).
+    17	  - Precision is exactly what `run_ppo` uses: fp32 parameters, `torch.autocast(bfloat16)`, TF32 on, `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. The trunk is compiled through the model's own `compile_transformer_trunk`, since `configure_model_compile('trunk')` does not yet accept this model class.
+    18	  - **Known deviation:** the pod venv has no `flash-attn` package. The packed path therefore substitutes torch's own varlen `aten._flash_attention_forward` (or `_efficient_attention_forward`), checked against per-sequence SDPA before use. Only the attention kernel changes; all GEMMs, pack/unpack and the guard are branch code.
+    19	  - Hardware: pod `w7ia3zvxqsvs3g`, GPU 0 only (`CUDA_VISIBLE_DEVICES=0`), RTX PRO 6000 Blackwell, driver 595.91.07.
+    20	- **Stopping condition:** every case is attempted, or the 45-minute wall budget runs out. The driver launches no case after 41 minutes and kills any process still running at 45. At most 3 restarts per case. No bisection beyond the listed points.
+    21	- **Budget:** ≤ 45 min on GPU 0 of the already-running pod ($4.18/h; no new billable resource).
+    22	- **Artifacts:** on the pod, `/workspace/kg-v3/runs/gemm-limits-2026-09-29/` (per-case JSONL, attempt logs with `TORCH_LOGS=recompiles[,guards]`, per-case Inductor caches, `kernel_analysis.json`, `driver.jsonl`). A local copy of the logs and a summary goes in `ops/rebuild-2026-09-29/gemm-limits-2026-09-29/`. The measured table goes in `ops/rebuild-2026-09-29/results.md`, section "GEMM limits at our shapes".
+    23	- **Safety:** before launch, check that `nvidia-smi` shows 0 MiB and 0% on both GPUs and that `ps` shows no python/torchrun/run_ppo process (checked 05:15Z: idle). If a learner appears, do not run. Never stop, restart or delete the pod; leave it running and idle afterwards.
+    24	- **Import isolation (set up before launch):** the branch tree has no built Rust extension. `OWL_NATIVE_MODULE_DIR=/workspace/gemm-limits-src-1ddc71d/native` holds only a symlink to the pod's `rs.abi3.so` (sha256 `51b32d3b…`), which the model never calls. `probe_trunk.py` refuses to run unless `owl.model.kaggriculture` imports from `/workspace/gemm-limits-src-1ddc71d/`. The smoke import confirmed that. A first attempt that pointed the variable at `/workspace/kg-v3/python/owl` resolved the model from the reference tree, so it was discarded. The attention-shim check picked `aten_flash_varlen`: max |Δ| vs per-sequence SDPA is 0.0021 on 3 sequences of lengths 709, 219 and 300.
+What is **inferred, not measured**:
+- **The unguarded real trunk at exactly L** was not run. The synthetic single GEMMs were correct at exactly L_in, so the guard's `≥ 2³¹` rejection may be stricter than necessary. For the real trunk that is unmeasured, so the guard is a conservative admission rule, not a measured edge.
+- **Real-trunk backward** was not measured at any size. The synthetic MLP backward was tested only at L−4,096 (correct), L+1 and 2L. Its L+1 failure happened during compilation, so no backward-kernel threshold is localized.
+- **Design bound for training: M × max(in, out) over every Linear in a compiled region.** Backward consumes forward outputs as GEMM inputs: dX = dY·W reads dY at the forward *output* width. Under the measured input-side rule, a backward GEMM can therefore wrap at M × (forward output width) even when the forward's input side is safe. Weight-gradient GEMMs reduce over M and index offsets up to M × width.
+  - For the trunk, every Linear has max(in, out) ≤ 512, so `gemm_kmax = 512` is that design bound. It is justified by the input-side rule plus backward, not by any output-store overflow.
+  - Decompose-K is **enabled by default**: 10 splits, threshold 32 (`config.py:1434–1442`). It is allowed when K ≥ 32M and K ≥ 32N, subject to more conditions (`utils.py:1825–1840`), which weight-gradient GEMMs can meet. Unmeasured.
+- **Other templates:** outside mm/addmm, pointwise and reduction kernels have their own safeguards (`codegen/simd_kernel_features.py:133–150`, `codegen/simd.py:1435–1442`, `codegen/triton.py:4451–4459,4480–4481`). Forcing non-template `ks*` arguments to int64 applies only when `use_block_ptr=False` (`codegen/triton_utils.py:141–147`).
+- `bmm` stays unmeasured. `kernel/bmm.py:85–110` uses raw batch program ids and stride-dependent offsets without `INDEX_DTYPE` casts, and the MM rule does not establish its batch indexing. Static-shape compiles and persistent TMA (disabled by default) are also unmeasured.
+
+Where our workloads sit, as rows × 709 tokens against L = 4,194,304 (2³¹/512):
+- **Measured correct (forward):**
+  - Rollout, 256 rows: 181,504 tokens, 23.1086× headroom. Compiled vs eager was measured at this shape, dense and sparse.
+- **Arithmetic only:**
+  - PPO minibatch, 1,024 rows (spm 8 × horizon 64 × 2): 726,016 tokens, 5.77715×. Its backward sits under the design bound; that is inferred, not measured.
+- **Over the limit as planned:**
+  - Teacher precompute, 128 segments × 64 × 2 = 16,384 rows. A mean of **256** tokens per row already reaches L (16,384 × 256 = 2²²) and triggers the guard, so the safe mean is **strictly below 256**.
+  - At the worst case of 709 tokens per row, 46 segments give 4,174,592 tokens (under L) and 47 give 4,265,344 (over). So `teacher_segments_per_minibatch ≤ 46` at horizon 64, or chunk.
+  - The packed guard would **raise**, not corrupt.
+- **Uncovered by the trunk guard:**
+  - The heads are not implemented yet. If the head core is ever compiled, the planned `actor_input_proj` (768 in) exceeds L_in at M = 2,796,203 rows × frames.
+  - Stems are eager today. `ObservationInputStem` is 371→512→256 (`stateless_transformer_v1.py:2750`), so a compiled full stem would include a 512-wide projection, with the same L as the trunk.
+  - The audit's 371/376 figures are conditional stride bounds, not observed kernel limits: ⌊2³¹/371⌋ = 5,788,365, and ⌊2³¹/376⌋ = **5,711,392**, if BF16 alignment padding rounds 371 to 376 (`fx_passes/pad_mm.py:69–71,121–130`). That padding is conditional (line 728). No 376 stride was generated for these eager stems.
+
+**Open and handoffs:**
+- Real-trunk backward and the unguarded real trunk at L: not measured.
+- flash-attn: absent on the pod. Install and verify it in Phase 6 (above).
+- bmm, persistent TMA, decompose-K, static compiles, and other torch/Triton versions: unchecked.
+- **For Task 2.3:** the comment at `python/owl/model/kaggriculture.py:53` should distinguish the observed overflow *above* the bound from the conservative rejection *at* equality. It is part of the docstring correction in brief §9 item 1 and out of scope for this evidence commit.
+
+exec
+/bin/zsh -lc "sed -n '2764,2802p' ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2-transcript.log && rg -n 'gemm_kmax|2\\*\\*31|2 \\*\\* 31|2\\"'^31|max_elements'"' python/owl/model/kaggriculture.py && rg -n '"'^name = "triton"|''^version = "3.5.0"'"' uv.lock && rg --files ops/rebuild-2026-09-29/gemm-limits-2026-09-29 | head -35" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+59b5eca12b58eee28e98aaf61794c441cb12525a
+
+codex
+Reviewed through `59b5eca`, read-only. Most corrections are accurate; four documentation issues remain.
+
+1. **O5 — The dtype explanation still conflates two decisions.** [results.md:108](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:108) attributes the all-buffer storage-size check to template size arguments. That check selects emitted `INDEX_DTYPE`; the separate `SIMDKernelFeatures([], output_numel)` path determines size-argument dtype using output numel. Correct this distinction and the corresponding [Reference wording](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:44).
+
+2. **O7 — A new attribution overclaim was introduced.** The [Reference:30](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:30) says “Every failing graph launches” an i32 template; [results.md:113](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:113) similarly claims agreement with every failing graph. The 768→256 and 512→256 failures during autotuning do not identify the precise faulting candidate. Narrow these statements to attributable retained kernels and explicitly preserve that localization gap.
+
+3. **O11 — The run statement retains an unsupported installed-version assertion.** [Run statement:16](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md:16) still names Triton 3.5.0 without qualification. Match the corrected results: **3.5.0 is the lockfile pin; the installed version was not captured.**
+
+4. **B2/O9 — Two boundary notations need reconciliation.** [Reference:28](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:28) needs `floor(2³¹/K)` for `L_in`; the 768 quotient is fractional. Its [design bound at line 48](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:48) says `≤2³¹`, while the implemented and prescribed conservative admission rule is `<2³¹`. Use the strict rule, or explicitly distinguish the inferred equality allowance from the unmeasured real-trunk endpoint.
+
+Each original finding’s disposition:
+
+| Finding | Re-verification |
+|---|---|
+| B1 | Resolved: production compliance explicitly remains unproven. |
+| B2 | Measured endpoints/backward limitations corrected; equality wording remains above. |
+| B3 | Resolved: universal max-width overflow rule withdrawn; successful i64 Triton output-wide cases acknowledged. |
+| B4 | Resolved: signatures are per kernel, variants retained, `bias_addmm` counted; regenerated JSON/text reproduce byte-for-byte. |
+| O5 | Partly resolved; dtype conflation remains above. |
+| O6 | Resolved: `use_block_ptr=False`, enabled decompose-K, and unmeasured BMM/static/TMA scope are accurate. |
+| O7 | Numerical checks and process isolation confirmed; candidate-attribution overclaim remains above. |
+| O8 | Model identity/scope accurate. Code-comment correction is explicitly deferred to Task 2.3, not completed. |
+| O9 | Workload arithmetic and strict teacher mean corrected; Reference floor notation remains above. |
+| O10 | Resolved: 371→512→256 topology and conditional 376 stride correctly scoped. |
+| O11 | Shim limitations and numerical rounding corrected; run-statement version assertion remains above. |
+| O12 | Resolved: archive hashes reconcile with/without prefix; all 214 local-manifest entries match. Superseded analysis checksum is disclosed. |
+
+The [Phase 6 requirement](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/plan.md:288) correctly requires installing and verifying real FlashAttention execution. The [2.3 brief §9 rationale](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/briefs/2.3-action-heads.md:175) correctly retains max(input, output) as an inferred training bound through backward inputs.
+
+No files changed or GPU runs launched. The remaining edits concern accuracy of the records, not a requirement for another probe.
+
+**VERDICT: APPROVE WITH EDITS**
+hook: Stop
+54:# rows x inner dim reaches 2**31 (cookbook reference
+56:_GEMM_ELEMENT_LIMIT = 2**31
+125:def gemm_kmax(config: KaggricultureTransformerConfig) -> int:
+359:        kmax = gemm_kmax(self.config)
+365:                    f"at or above 2**31; see {_OVERFLOW_REFERENCE}"
+372:                f"2**31 GEMM limit; see {_OVERFLOW_REFERENCE}"
+4227:name = "triton"
+4228:version = "3.5.0"
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/probe/driver.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/probe/analyze_kernels.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/probe/probe_trunk.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/probe/probe_linear.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_16_4096.jsonl
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/kernel_analysis.txt
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/mlp_256_512_256.attempt0.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/trunk_padded_bypass.jsonl
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/trunk_packed_bypass.jsonl
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_4096_16.attempt2.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_768_256.attempt2.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_4096_16.attempt1.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/trunk_packed_bypass.attempt0.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_768_256.attempt1.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_768_256.attempt0.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/trunk_packed_bypass.attempt1.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_4096_16.attempt0.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/kernel_analysis.json
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_256_256.jsonl
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_768_256.jsonl
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/driver.jsonl
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/trunk_padded.jsonl
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/mlpbwd_256_512_256.attempt1.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/mlp_256_512_256.jsonl
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_256_256.attempt0.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/mlpbwd_256_512_256.attempt0.log
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/inductor_cache/lin_512_256/ge/cge6w3vubvhmzeshaodksrl2zmvneqborsrc6bbg6wo5u4dhul37.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/inductor_cache/lin_512_256/rz/crz4iekzrjxb3pccaryom7rmnqcmmbqatefx2dob7pwxn7esfiqu.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/inductor_cache/lin_512_256/hv/chvfhqb5vaswecbrscotxmzjymxf4jrfxtgfalc7jt3mijrq55km.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/inductor_cache/lin_512_256/ke/ckeabf3uauhket4dovmchx2xyricmf6pfjm7eui5vwmwjrlkqkfs.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/inductor_cache/trunk_packed_bypass/wo/cwobingxswk27jekcuunxpx7jslhxb7fn52xtvwrf46ex3difxob.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/inductor_cache/trunk_packed_bypass/ry/cryn2zx24fynrsv4zd4jozwsbkiwy3t7vvjdxfhbbqqjva4r326s.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/inductor_cache/trunk_packed_bypass/q3/cq3yrp6duod4np5ydfeoxlll3b2g44xsxpns5gikpfl7d7jgjzxw.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/inductor_cache/trunk_packed_bypass/th/cthqppfknorkffps5pskss575yr55nohezx653pqjdierb6x6e65.py
+ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/inductor_cache/trunk_packed_bypass/4o/c4olq4ha6i2pbmqqux2y6ewmvkhevsm7svc76tbchpyit45f6egn.py
+
+codex
+All four corrections are present in `432abe0`, and the log describes them accurately. I’m checking the dtype paths and guard code against the revised wording, including the retained limits on autotune attribution and the unmeasured equality case.
+
+exec
+/bin/zsh -lc "sed -n '1406,1447p' .venv/lib/python3.12/site-packages/torch/_inductor/codegen/simd.py && sed -n '382,400p' .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py && sed -n '572,586p' .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py && sed -n '131,157p' .venv/lib/python3.12/site-packages/torch/_inductor/codegen/simd_kernel_features.py && sed -n '70,87p' .venv/lib/python3.12/site-packages/torch/_inductor/codegen/triton_utils.py && sed -n '1522,1544p' .venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py && sed -n '80,138p' .venv/lib/python3.12/site-packages/torch/_inductor/kernel/mm.py" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+    @staticmethod
+    def can_use_32bit_indexing(
+        numel: sympy.Expr,
+        buffers: Iterable[
+            Union[ir.Buffer, ir.TensorBox, ir.TorchBindObject, ir.IRNode]
+        ],
+    ) -> bool:
+        int_max = torch.iinfo(torch.int32).max
+
+        if not expr_fits_within_32bit(numel):
+            return False
+
+        # Any use of a MultiOutputLayout will create a buffer with a
+        # Layout whose sizes are accounted for
+        buf_sizes = [
+            buf.get_layout().storage_size()
+            for buf in buffers
+            if buf.has_tensor_output()
+        ]
+
+        for buf in buffers:
+            if not buf.has_tensor_output() and isinstance(buf, ir.MutationOutput):
+                mutated_bufs = buf.get_mutation_buffers()
+                buf_sizes += [
+                    buf.get_layout().storage_size()
+                    for buf in mutated_bufs
+                    if buf.has_tensor_output()
+                ]
+
+        if not all(expr_fits_within_32bit(size) for size in buf_sizes):
+            return False
+
+        # Only install guards for 32-bit indexing as there is no correctness
+        # issue with using 64-bit for everything
+        V.graph.sizevars.check_leq(numel, int_max)  # type: ignore[arg-type]
+        for size in buf_sizes:
+            V.graph.sizevars.check_leq(size, int_max)  # type: ignore[arg-type]
+        return True
+
+    def codegen_node_schedule(self, kernel_features: SIMDKernelFeatures):
+        node_schedule = kernel_features.node_schedule
+
+        epilogue_fn=identity,
+        subgraphs: Optional[list[ir.ComputedBuffer]] = None,
+        workspace_arg: Optional[WorkspaceArg] = None,
+        prologue_loads_all_inputs=False,
+        hint_override: Optional[int] = None,
+    ) -> None:
+        numel = sympy_product(output_node.get_size())
+        super().__init__(
+            {
+                "x": numel,
+                "r0_": sympy.S.One,
+            },
+            features=SIMDKernelFeatures([], numel),
+            hint_override=hint_override,
+        )
+        self.input_nodes = input_nodes
+        self.output_node = output_node
+        self.named_input_nodes = {}  # type: ignore[var-annotated]
+        self.defines = defines
+        return 0
+
+    def jit_lines(self):
+        if self.use_jit:
+            return "@triton.jit"
+
+        argdefs, _, signature, _ = self.args.python_argdefs()
+        triton_meta: dict[str, Any] = {
+            "signature": signature_to_meta(
+                signature,
+                size_dtype=self.index_dtype,
+                argdefs=argdefs,
+                is_template=True,
+            ),
+            "device": DeviceProperties.create(self.output_node.get_device()),
+
+    @cache_on_self
+    def select_index_dtype(self) -> torch.dtype:
+        # Gather all used buffer names
+        buffer_names: OrderedSet[str] = OrderedSet()
+        for node in self.scheduler_nodes():
+            buffer_names.update(node.get_buffer_names())
+            buffer_names.update(node.used_buffer_names())
+        buffers = [V.graph.get_buffer(name) for name in buffer_names]
+
+        # In theory we can separately check xnumel and rnumel are <= int_max
+        # but some indexers do use the full linear index so we need to be
+        # conservative here.
+        total_numel = self.numel * self.reduction_numel
+
+        from .simd import SIMDScheduling
+
+        if SIMDScheduling.can_use_32bit_indexing(total_numel, buffers):
+            return torch.int32
+        return torch.int64
+
+    @cache_on_self
+    def get_reduction_hint(self) -> ReductionHint:
+        reductions = self.reduction_nodes()
+        if len(reductions) > 0:
+            hints = [self.reduction_hint(n) for n in reductions]
+            if hints.count(hints[0]) == len(hints):
+            # it should be marked as "constexpr" in the signature.
+            return "constexpr"
+        elif isinstance(arg.expr, (float, sympy.Float)):
+            return "fp32"
+        elif isinstance(arg.expr, bool):
+            return "i1"
+
+        # if this is a integer
+        if size_dtype == "tl.int32":
+            return "i32"
+        elif size_dtype == "tl.int64":
+            return "i64"
+        elif size_dtype is None:
+            # no hint: we'll see if we know that this is a 32-bit int, and guard if possible.
+            int_max = torch.iinfo(torch.int32).max
+            if expr_fits_within_32bit(arg.expr):
+                V.graph.sizevars.check_leq(arg.expr, int_max)
+                return "i32"
+        defines = StringIO()
+
+        for name, val in kwargs.items():
+            defines.write(f"{name} : tl.constexpr = {val}\n")
+
+        fake_out = ir.Buffer(name="buf_out", layout=layout)
+        kernel_name = f"triton_{self.name}"
+
+        numel = sympy_product(layout.size)
+        buffers = itertools.chain(input_nodes, (fake_out,))
+
+        if TritonScheduling.can_use_32bit_indexing(numel, buffers):
+            index_dtype = "tl.int32"
+        else:
+            index_dtype = "tl.int64"
+
+        # Add index dtype to defines so it's available in the template
+        defines.write(f"INDEX_DTYPE : tl.constexpr = {index_dtype}\n")
+        defines = defines.getvalue()
+
+        kernel_options = {
+            "input_nodes": input_nodes,
+            "defines": defines,
+    pid = tl.program_id(0)
+    grid_m = (M + BLOCK_M - 1) // BLOCK_M
+    grid_n = (N + BLOCK_N - 1) // BLOCK_N
+
+    # re-order program ID for better L2 performance
+    width = GROUP_M * grid_n
+    group_id = pid // width
+    group_size = min(grid_m - group_id * GROUP_M, GROUP_M)
+    pid_m = group_id * GROUP_M + (pid % group_size)
+    pid_n = (pid % width) // (group_size)
+    tl.assume(pid_m >= 0)
+    tl.assume(pid_n >= 0)
+
+    rm = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    rn = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    if ((stride_am == 1 and stride_ak == M) or (stride_am == K and stride_ak == 1)) and (M >= BLOCK_M and K > 1):
+        offs_a_m = tl.max_contiguous(tl.multiple_of(rm % M, BLOCK_M), BLOCK_M)
+    else:
+        offs_a_m = rm % M
+    if ((stride_bk == 1 and stride_bn == K) or (stride_bk == N and stride_bn == 1)) and (N >= BLOCK_N and K > 1):
+        offs_b_n = tl.max_contiguous(tl.multiple_of(rn % N, BLOCK_N), BLOCK_N)
+    else:
+        offs_b_n = rn % N
+    offs_k = tl.arange(0, BLOCK_K)
+    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=ACC_TYPE)
+
+    for k_idx in range(0, tl.cdiv(K, BLOCK_K)):
+        {% if not EVEN_K %}
+        a_mask = offs_k[None, :] < (K - k_idx * BLOCK_K)
+        b_mask = offs_k[:, None] < (K - k_idx * BLOCK_K)
+        {% endif %}
+        a_k_idx_vals = offs_k[None, :] + (k_idx * BLOCK_K)
+        b_k_idx_vals = offs_k[:, None] + (k_idx * BLOCK_K)
+
+        idx_m = offs_a_m[:, None]
+        idx_n = a_k_idx_vals
+        {{load_input("A", "a", ("idx_m", "idx_n"), mask=None if EVEN_K else "a_mask", indent_width=8)}}
+
+        idx_m = b_k_idx_vals
+        idx_n = offs_b_n[None, :]
+        {{load_input("B", "b", ("idx_m", "idx_n"), mask=None if EVEN_K else "b_mask", indent_width=8)}}
+
+        {% if USE_FAST_ACCUM %}
+        acc = tl.dot(a, b, acc, allow_tf32=ALLOW_TF32, out_dtype=ACC_TYPE)
+        {% else %}
+        acc += tl.dot(a, b, allow_tf32=ALLOW_TF32, out_dtype=ACC_TYPE)
+        {% endif %}
+
+    # rematerialize rm and rn to save registers
+    rm = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    rn = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    idx_m = rm[:, None]
+    idx_n = rn[None, :]
+    mask = (idx_m < M) & (idx_n < N)
+
+    # inductor generates a suffix
+    {{store_output(("idx_m", "idx_n"), "acc", "mask")}}
+"""
+        if (torch.version.hip is None) or triton_version >= "3.3.0"
+
+exec
+/bin/zsh -lc "sed -n '349,400p' python/owl/model/kaggriculture.py && sed -n '72,98p' ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_768_256.attempt0.log && sed -n '160,188p' ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/lin_512_256.attempt0.log && sed -n '10,16p' ops/rebuild-2026-09-29/gemm-limits-2026-09-29/pod-run/trunk_packed.jsonl && nl -ba cookbook/log.md | head -16 && git diff --exit-code 432abe0 -- ops/rebuild-2026-09-29/results.md cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md cookbook/log.md" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+        should_use_flash = use_flash_attn(x)
+        if (
+            _requires_flash_attn(x, force_flash_attn=self.config.force_flash_attn)
+            and not should_use_flash
+        ):
+            raise RuntimeError(
+                "force_flash_attn=True requires CUDA fp16/bf16 tensors "
+                "and the flash-attn package"
+            )
+        trunk = self._compiled_transformer_trunk or self._forward_transformer_trunk
+        kmax = gemm_kmax(self.config)
+        if should_use_flash:
+            packed_x, packed = pack_sequence(x, token_mask, max_seqlen=x.shape[1])
+            if packed_x.shape[0] * kmax >= _GEMM_ELEMENT_LIMIT:
+                raise ValueError(
+                    f"packed trunk input has {packed_x.shape[0]} rows x {kmax}, "
+                    f"at or above 2**31; see {_OVERFLOW_REFERENCE}"
+                )
+            return unpack_sequence(trunk(packed_x, None, packed), packed)
+        chunk = rows_per_chunk(tokens=x.shape[1], kmax=kmax)
+        if chunk <= 0:
+            raise ValueError(
+                f"a single padded row of {x.shape[1]} tokens x {kmax} reaches the "
+                f"2**31 GEMM limit; see {_OVERFLOW_REFERENCE}"
+            )
+        if x.shape[0] <= chunk:
+            return trunk(x, token_mask, None)
+        return torch.cat(
+            [
+                trunk(x[start : start + chunk], token_mask[start : start + chunk], None)
+                for start in range(0, x.shape[0], chunk)
+            ],
+            dim=0,
+        )
+
+    def _forward_transformer_trunk(
+        self,
+        x: torch.Tensor,
+        token_mask: torch.Tensor | None,
+        packed: PackedSequence | None,
+    ) -> torch.Tensor:
+        for block in self.blocks:
+            x = block(x, token_mask, packed)
+        return self.final_norm(x)
+
+    def compile_transformer_trunk(self, *, mode: str) -> int:
+        self._compiled_transformer_trunk = torch.compile(
+            self._forward_transformer_trunk, mode=mode, dynamic=True
+        )
+        return 1
+
+    # --- policy / value API (Tasks 2.2 and 2.3) --------------------------------
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_pre_hooks, accessed_by=GetAttrGuardAccessor(_global_forward_pre_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_pre_hooks, 10741888)
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_pre_hooks, accessed_by=GetAttrGuardAccessor(_global_backward_pre_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_pre_hooks, 10741888)
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | +- GuardManager: source=L['fn'], accessed_by=FrameLocalsGuardAccessor(key='fn', framelocals_idx=2), type=<class 'torch.nn.modules.linear.Linear'>, tag_safe=(True, True)
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- TYPE_MATCH: ___check_type_id(L['fn'], 470092208)                        
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | +- GuardManager: source=L['fn'].__dict__, accessed_by=GetGenericDictGuardAccessor, type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- DICT_CONTAINS: not ___dict_contains('forward', L['fn'].__dict__)           
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | +- GuardManager: source=L['fn']._parameters, accessed_by=DictGetItemGuardAccessor('_parameters'), type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(L['fn']._parameters, 10737728)               # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- GuardManager: source=L['fn']._parameters['bias'], accessed_by=DictGetItemGuardAccessor('bias'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | +- TENSOR_MATCH: check_tensor(L['fn']._parameters['bias'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[256], stride=[1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | +- GuardManager: source=L['fn']._parameters['weight'], accessed_by=DictGetItemGuardAccessor('weight'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] | | | | | +- TENSOR_MATCH: check_tensor(L['fn']._parameters['weight'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[256, 768], stride=[768, 1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:30:19.134000 119400 torch/_dynamo/guards.py:3404] [0/0] [__guards] 
+V0929 05:30:19.143000 119400 torch/_dynamo/guards.py:3436] [0/0] [__guards] Guard eval latency = 40.42 us
+V0929 05:30:20.375000 119400 torch/_dynamo/guards.py:4181] [0/1] [__recompiles] Recompiling function inner in /workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/external_utils.py:66
+V0929 05:30:20.375000 119400 torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V0929 05:30:20.375000 119400 torch/_dynamo/guards.py:4181] [0/1] [__recompiles]     - 0/0: 768*args[0].size()[0] <= 2147483647  # (_inductor/codegen/simd.py:1442 in can_use_32bit_indexing)
+E0929 05:30:20.847000 119400 torch/_inductor/select_algorithm.py:2967] [0/1] Runtime error during autotuning: 
+E0929 05:30:20.847000 119400 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA error: an illegal memory access was encountered
+E0929 05:30:20.847000 119400 torch/_inductor/select_algorithm.py:2967] [0/1] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:30:20.847000 119400 torch/_inductor/select_algorithm.py:2967] [0/1] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:30:20.847000 119400 torch/_inductor/select_algorithm.py:2967] [0/1] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:30:20.847000 119400 torch/_inductor/select_algorithm.py:2967] [0/1] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:30:20.847000 119400 torch/_inductor/select_algorithm.py:2967] [0/1] 
+E0929 05:30:20.847000 119400 torch/_inductor/select_algorithm.py:2967] [0/1] 
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_forward_pre_hooks, 10741888)
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- GuardManager: source=G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_pre_hooks, accessed_by=GetAttrGuardAccessor(_global_backward_pre_hooks), type=<class 'collections.OrderedDict'>, tag_safe=(True, False)
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(G['__import_torch_dot_nn_dot_modules_dot_module']._global_backward_pre_hooks, 10741888)
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | +- GuardManager: source=L['fn'], accessed_by=FrameLocalsGuardAccessor(key='fn', framelocals_idx=2), type=<class 'torch.nn.modules.linear.Linear'>, tag_safe=(True, True)
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- TYPE_MATCH: ___check_type_id(L['fn'], 934170640)                        
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | +- GuardManager: source=L['fn'].__dict__, accessed_by=GetGenericDictGuardAccessor, type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- DICT_CONTAINS: not ___dict_contains('forward', L['fn'].__dict__)           
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | +- GuardManager: source=L['fn']._parameters, accessed_by=DictGetItemGuardAccessor('_parameters'), type=<class 'dict'>, tag_safe=(True, False)
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- TYPE_MATCH: ___check_type_id(L['fn']._parameters, 10737728)               # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- GuardManager: source=L['fn']._parameters['bias'], accessed_by=DictGetItemGuardAccessor('bias'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | | +- TENSOR_MATCH: check_tensor(L['fn']._parameters['bias'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[256], stride=[1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | +- GuardManager: source=L['fn']._parameters['weight'], accessed_by=DictGetItemGuardAccessor('weight'), type=<class 'torch.nn.parameter.Parameter'>, tag_safe=(True, False)
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] | | | | | +- TENSOR_MATCH: check_tensor(L['fn']._parameters['weight'], Parameter, DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView, AutogradCUDA, AutocastCUDA), torch.float32, device=0, requires_grad=True, size=[256, 512], stride=[512, 1])  # return F.linear(input, self.weight, self.bias)  # nn/modules/linear.py:134 in forward
+V0929 05:24:54.810000 106462 torch/_dynamo/guards.py:3404] [0/1] [__guards] 
+V0929 05:24:54.821000 106462 torch/_dynamo/guards.py:3436] [0/1] [__guards] Guard eval latency = 40.61 us
+V0929 05:24:56.426000 106462 torch/_dynamo/guards.py:4181] [0/2] [__recompiles] Recompiling function inner in /workspace/kg-v3/.venv/lib/python3.12/site-packages/torch/_dynamo/external_utils.py:66
+V0929 05:24:56.426000 106462 torch/_dynamo/guards.py:4181] [0/2] [__recompiles]     triggered by the following guard failure(s):
+V0929 05:24:56.426000 106462 torch/_dynamo/guards.py:4181] [0/2] [__recompiles]     - 0/1: 256*args[0].size()[0] <= 2147483647  # (_inductor/codegen/simd.py:1440 in can_use_32bit_indexing)
+V0929 05:24:56.426000 106462 torch/_dynamo/guards.py:4181] [0/2] [__recompiles]     - 0/0: 256*args[0].size()[0] <= 2147483647  # (_inductor/codegen/simd.py:1440 in can_use_32bit_indexing)
+E0929 05:24:57.212000 106462 torch/_inductor/select_algorithm.py:2967] [0/2] Runtime error during autotuning: 
+E0929 05:24:57.212000 106462 torch/_inductor/select_algorithm.py:2967] [0/2] CUDA error: an illegal memory access was encountered
+E0929 05:24:57.212000 106462 torch/_inductor/select_algorithm.py:2967] [0/2] Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+E0929 05:24:57.212000 106462 torch/_inductor/select_algorithm.py:2967] [0/2] CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+E0929 05:24:57.212000 106462 torch/_inductor/select_algorithm.py:2967] [0/2] For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+E0929 05:24:57.212000 106462 torch/_inductor/select_algorithm.py:2967] [0/2] Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+E0929 05:24:57.212000 106462 torch/_inductor/select_algorithm.py:2967] [0/2] 
+E0929 05:24:57.212000 106462 torch/_inductor/select_algorithm.py:2967] [0/2] 
+E0929 05:24:57.212000 106462 torch/_inductor/select_algorithm.py:2967] [0/2] Either error in template or triton bug.
+E0929 05:24:57.212000 106462 torch/_inductor/select_algorithm.py:2967] [0/2] . 
+{"event": "start", "case": "trunk_packed", "label": "target", "spec": "dense:5915", "rows": 5915, "packed_tokens": 4193735}
+{"event": "result", "case": "trunk_packed", "label": "target", "spec": "dense:5915", "rows": 5915, "packed_tokens": 4193735, "padded_token_rows": 4193735, "eager": "ok", "compiled": "ok", "compiled_s": 0.44202093593776226, "trunk_call_M": [4193735], "trunk_call_M_x_kmax_over_2p31": [0.9998643398284912], "max_abs_diff": 0.17025494575500488, "tokens_diff_gt_0.25": 0, "tokens_diff_gt_1.0": 0, "nonfinite": 0, "first_bad_row": null, "last_bad_row": null}
+{"event": "start", "case": "trunk_packed", "label": "target", "spec": "packed:4194303", "rows": 5916, "packed_tokens": 4194303}
+{"event": "result", "case": "trunk_packed", "label": "target", "spec": "packed:4194303", "rows": 5916, "packed_tokens": 4194303, "padded_token_rows": 4194444, "eager": "ok", "compiled": "ok", "compiled_s": 0.4419671050272882, "trunk_call_M": [4194303], "trunk_call_M_x_kmax_over_2p31": [0.9999997615814209], "max_abs_diff": 0.15578222274780273, "tokens_diff_gt_0.25": 0, "tokens_diff_gt_1.0": 0, "nonfinite": 0, "first_bad_row": null, "last_bad_row": null}
+{"event": "start", "case": "trunk_packed", "label": "target", "spec": "packed:4194304", "rows": 5916, "packed_tokens": 4194304}
+{"event": "result", "case": "trunk_packed", "label": "target", "spec": "packed:4194304", "rows": 5916, "packed_tokens": 4194304, "padded_token_rows": 4194444, "eager": "ValueError: packed trunk input has 4194304 rows x 512, at or above 2**31; see cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md", "compiled": "ValueError: packed trunk input has 4194304 rows x 512, at or above 2**31; see cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md", "compiled_s": 0.00017984071746468544, "trunk_call_M": [], "trunk_call_M_x_kmax_over_2p31": []}
+{"event": "start", "case": "trunk_packed", "label": "target", "spec": "dense:5916", "rows": 5916, "packed_tokens": 4194444}
+     1	# Change log
+     2	
+     3	## 2026-09-29 — Tighten the compiled-GEMM Reference after Codex's second review
+     4	
+     5	Codex re-verified the GEMM-limit evidence (APPROVE WITH EDITS, no blocking findings; `ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md`). The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] and `results.md` now:
+     6	- separate the emitted `INDEX_DTYPE` (an all-buffer storage check) from the template size-arg dtype (output numel);
+     7	- limit the "every failing graph" claim to kernels attributable from retained code, since two failures occurred during autotuning;
+     8	- write L_in as floor(2³¹/K);
+     9	- state the design bound as the strict < 2³¹ the guard implements.
+    10	
+    11	The run statement no longer implies Triton 3.5.0 was the installed version.
+    12	
+    13	## 2026-09-29 — Measure the compiled-GEMM limit at the rebuild's shapes (Codex-verified)
+    14	
+    15	A bounded probe ran on GPU 0 of the running pod (GEMM-limits run statement in `ops/rebuild-2026-09-29/run-statements/`). Codex verified it (`ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md`, APPROVE WITH EDITS), and all its findings are applied. This revises the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]:
+    16	- **Input-side overflow.** At these shapes the overflow is on the input side: the A-load wraps once M·K > 2³¹ while the template size argument stays int32. Input-wide GEMMs failed at L_in+1, and output-wide GEMMs stayed correct to M·N = 2³². The universal `M·max(K, N)` rule is withdrawn. M × max(in, out) remains the design bound, justified by backward reading forward outputs as inputs.
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+
+codex
+Verified commit `432abe0` read-only. All four r2 wording items are accurately resolved:
+
+- **O5:** [results.md:108](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:108) and [Reference:44](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:44) correctly separate the all-buffer storage check for `INDEX_DTYPE` from the output-numel decision for size-argument dtype.
+- **O7:** Both documents restrict attribution to retained, attributable kernels and explicitly preserve the unlocalized autotune failures for 768→256 and 512→256.
+- **O11:** The [run statement:16](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md:16) correctly identifies Triton 3.5.0 as the lockfile pin; its installed version was not captured.
+- **B2/O9:** The Reference uses `L_in = floor(2³¹/K)` and the strict `< 2³¹` design bound, consistent with the guard. Equality safety remains explicitly unmeasured.
+
+The [log entry](/Users/poonszesen/kg-v3/cookbook/log.md:3) accurately summarizes these corrections. Source and retained-log spot checks support the wording. No new overclaim found in the changes; backward, IR-promotion and production-verification limits remain explicit.
+
+No files changed or GPU runs launched.
+
+VERDICT: APPROVE
+hook: Stop
+hook: Stop Completed
+tokens used
+54,993
+Verified commit `432abe0` read-only. All four r2 wording items are accurately resolved:
+
+- **O5:** [results.md:108](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:108) and [Reference:44](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:44) correctly separate the all-buffer storage check for `INDEX_DTYPE` from the output-numel decision for size-argument dtype.
+- **O7:** Both documents restrict attribution to retained, attributable kernels and explicitly preserve the unlocalized autotune failures for 768→256 and 512→256.
+- **O11:** The [run statement:16](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/gemm-limits-probe.md:16) correctly identifies Triton 3.5.0 as the lockfile pin; its installed version was not captured.
+- **B2/O9:** The Reference uses `L_in = floor(2³¹/K)` and the strict `< 2³¹` design bound, consistent with the guard. Equality safety remains explicitly unmeasured.
+
+The [log entry](/Users/poonszesen/kg-v3/cookbook/log.md:3) accurately summarizes these corrections. Source and retained-log spot checks support the wording. No new overclaim found in the changes; backward, IR-promotion and production-verification limits remain explicit.
+
+No files changed or GPU runs launched.
+
+VERDICT: APPROVE

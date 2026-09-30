@@ -1,0 +1,3697 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-merge
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /Users/poonszesen/.cache/uv, /Users/poonszesen/.local/share/uv, /Users/poonszesen/.cargo, /Users/poonszesen/kg-v3-merge/.codex-tmp]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ebca-9ad7-7351-b348-5498cf5e0f60
+--------
+user
+You are Codex, the INDEPENDENT VERIFIER of merge commit 82091936df52125e7f4cce687887a8c259b7ee02 (branch kg/merge-1.1b) = kg/isaiah-gap-closure 69397da + Task 1.1b 16e56b6 (which you approved). Leave no tracked modification.
+
+Claude's resolution notes:
+- scripts/check_engine_trim.py: Kept Task 1.1 r1 in full: `EDITABLE`, `RAYON_CLOSURE`, `TRIM_APPENDIX_HEADING`/`TRIM_APPENDIX_SHA256`, `reference_files()`, the thin `check()` calling `verify_task(value, originals, current)`, `_expected_lock` and `_verify_provenance`. Kept Task 1.1b in full: its docstring, the `tomllib` import, the `GENERATED_*`/`TRACE_FORMAT`/`TRACE_KEYS`/`DIVERGENCE_KEYS` constants, `engine_pin`, `split_generated`, `verify_generated`, the two-path `verify_task_authored` and main()'s wider except tuple. The generated-trace logic moved into `verify_task`, the Task 1.1 function, not 1.1b's `check()`. Order: `parse_manifest`, then `split_generated(current)` (with a comment), then `verify(manifest, originals, engine files)`, then `verify_generated(manifest bytes, traces, engine_pin(Cargo.toml))`, then require `generated_count >= 6`, then the fixed Task 1.1 retained/authored/justfile/lib.rs/Cargo.toml/Cargo.lock/provenance checks.
+- tests/tools/test_check_engine_trim.py: Kept the union of imports (`json`, `re`, `sys`), the Task 1.1 renamed retained-file test and all 8 Task 1.1 check()-level regressions with their fixtures (`reference`, `trimmed`, `_declare`, `_whole_file_edit`). Kept all Task 1.1b tests: the two-path authored inventory, `generated_fixture`, 11 parametrized manifest-drift cases, the split test and the engine-pin test. Added two merged-path regressions through the full `check()` via the `trimmed` copy: an edited generated trace is rejected with '<name>: trace hash', and an unlisted one with 'generated trace inventory'.
+- cookbook/log.md: Kept both sides newest first, with no duplicate headings. Task 1.1b's three entries (committed 13:03 to 14:01) sit above the base's entries (latest 12:41). A new top entry records the merge reconciliation.
+- cookbook/references/index.md: Kept both sides. Task 1.1b's live-parity line comes first, then the base's trainer-seams and data-preparation lines, then the existing failure-status line.
+- engine_rs/TRIM_MANIFEST.json: No conflict and no regeneration needed; it is byte-identical to 16e56b6. The base never edited `replay_parity.rs`, the generated MANIFEST.json or the manifest itself, and the checker and tests are listed only by reason, not hash. Vendored bytes (src/, Cargo.toml, Cargo.lock, VENDORED_FROM.md, LICENSE) are unchanged from 69397da.
+- docs/rules-parity-coverage.md: Auto-merged. It keeps the Task 1.1 hardening paragraph (EDITABLE, Rayon lockfile, appendix SHA-256) and the whole Task 1.1b live-differential section. Counts already match the merged reality: 69/69 engine tests, 19 replay-parity. One stale sentence was edited (see notes).
+
+Verify the conflicted files (scripts/check_engine_trim.py, tests/tools/test_check_engine_trim.py, cookbook/log.md, cookbook/references/index.md, and any manifest/docs changes) preserve BOTH Task 1.1's round-1 hardening (EDITABLE set, RAYON_CLOSURE lockfile derivation, TRIM_APPENDIX_SHA256, verify_task, its check()-level regressions) AND Task 1.1b's generated-fixture manifest verification; that no test was dropped (compare test names in both parents vs merge); that TRIM_MANIFEST.json changes, if any, were regenerated not hand-edited; and try one mutation per contract on a scratch copy. Run cargo test --manifest-path engine_rs/Cargo.toml --locked --offline, uv run python scripts/check_engine_trim.py, uv run pytest tests/tools tests/scripts -q; report counts. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll compare the merge with both parents, run the three requested checks, and test each contract with a mutation in a scratch copy. I’ll finish with a verdict and confirm that no tracked files changed.
+
+The stopping condition is evidence for both preserved contracts, the test-name comparison, and the check results; no training or GPU work is needed.
+
+exec
+/bin/zsh -lc "cat cookbook/index.md && sed -n '1,85p' cookbook/log.md && cat cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md && cat cookbook/references/live-differential-parity-checks-the-rust-kernel.md" in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References describe branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]]
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Merge live parity with the hardened rules-kernel checker
+
+Task 1.1b (Codex APPROVE at `16e56b6`) and Task 1.1's verification hardening
+edited `scripts/check_engine_trim.py` independently. The merge keeps both
+contracts: `verify_task` separates generated traces, runs the generic and
+fixed Task 1.1 checks (`EDITABLE`, Rayon lockfile derivation, pinned appendix
+hash), then validates the generated manifest (engine pin, budget, at least six
+traces). Two new `check()`-level tests reject an edited or unlisted generated
+trace. The base's owner 1.32.7 project pin made one Task 1.1b test premise
+stale; it now asserts that the project environment passes the engine guard and
+that a mismatched pin exits before writing. The
+[[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]]
+and coverage document say so. Engine 69/69; `just prepare` passes with Python
+1,209 passed and 3 skipped. On a scratch copy, reverting `EDITABLE` or removing
+the trace-hash check fails its regressions. Receipts are in
+`ops/rebuild-2026-09-29/merge-1.1b/`.
+
+## 2026-09-29 — Correct live-parity test totals after Codex re-verification
+
+Codex re-verified Task 1.1b at `25ec814` (APPROVE WITH EDITS, no blocking findings; every round-one finding resolved). The [[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]] and `docs/rules-parity-coverage.md` now state the current totals, 69 engine tests including 19 replay-parity tests, rather than 66 and 16. The compact verification evidence is in `ops/rebuild-2026-09-29/1.1b/verify-r2/`.
+
+## 2026-09-29 — Close Codex verification of the live parity check
+
+Codex approved Task 1.1b with edits; commit `6217868` fixes them test-first. The
+[[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]]
+now records that the sweep classifies D1/D2 only from the observed mismatch (a
+corrupted state on a D1 line stays unclassified), submits the `null` probe
+exactly, checks full-state rollback on rejected steps and keeps seven minimal
+one-step repros. The rerun 40-game sweep matches the first (306/343 agree, 37
+confirmed D1/D2, 0 new); receipts are in `ops/rebuild-2026-09-29/1.1b/verify-r1/`.
+Kernel bytes are unchanged.
+
+## 2026-09-29 — Check the Rust kernel live against Kaggle's engine
+
+Owner: “can you add a parity check after your rust engine, with kaggle envcironments?”
+The new [[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]]
+records Task 1.1b. A hash-guarded generator runs kaggle-environments 1.32.7's
+own engine in an isolated uv environment, leaving the project lock unchanged.
+It records official-format traces plus `rejected` records. The Rust replay
+checks official, committed and swept traces with one first-divergence comparator.
+Eight committed games (3,960 transitions) and a 40-game local sweep (21,824)
+agree. Of 303 probes, 37 diverge in two malformed-input classes: D1, Unicode digit
+strings, and D2, unhashable verbs/items. The pinned kernel is not edited. Seven
+repros are exact expected failures; failing traces are kept in
+`ops/rebuild-2026-09-29/1.1b/`. The trim checker now pins the generated
+manifest. No training or GPU work ran.
+
+## 2026-09-29 — Report action-mask shapes in the replay-drift alarm and refresh its evidence
+
+Codex's stream C re-verification (approve with edits) found stale evidence and one diagnostic gap, now corrected in the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:
+- The references index still cited 924 passes, and the note called that Phase 4 prep `py-prepare` run "final". The index now carries the current count, and the note labels the older run.
+- The alarm's `RuntimeError` promised every observation tensor shape but omitted nested action-mask tensors. `_observation_tensor_shapes` now lists `action_mask.can_act` and `action_mask.max_launch` (7 red, then green, over all three Orbit mask types and a second schema). README says so.
+
+Python suite: 941 passed, 3 skipped. No GPU, training or Rust check ran.
+
+## 2026-09-29 — Narrow the trainer-seam claims after Codex's stream C review
+
+Codex's stream C verification (approve with edits) found three overstated claims, now corrected in the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:
+- `TeacherTargets.concat` docs promised rejection of any optional-target mismatch; they now state the inherited first-chunk asymmetry, and tests pin both chunk orders. Behavior is unchanged; Phase 4 decides.
+- The log-ratio alarm's units follow `ppo_clip_mode` (joint action under `per_player`, entity mean under `per_entity`), documented in `PPOConfig` and README with multi-entity and two-fake-rank tests. The 0.05 default awaits Phase 6 GPU noise measurement.
+- The observation oracle is an extracted successful-path copy, not a frozen one; the invalid-limit tests assert exact Pydantic errors (7 red with the field removed).
+
+Python suite: 934 passed, 3 skipped. No GPU, training or Rust check ran.
+
+## 2026-09-29 — Make the trainer seams schema-generic and alarm on replay drift
+
+Three game-neutral refactors of Isaiah's trainer, each test-first on Orbit types, are recorded in the new [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|trainer seams Reference]]:
+- Task 3.1: one schema-generic `_map_observation` replaces the Orbit field lists, checked against a frozen copy of Isaiah's helpers.
+- Task 3.6: `rl.first_minibatch_logratio_limit` (0.05 nats, `None` disables) aborts before the first optimizer step when replay disagrees with the rollout. This is the alarm required by the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]].
+- Phase 4 prep: a `TeacherTargets` protocol replaces the free index/concat functions.
+
+The full Python suite and `py-prepare` pass (924 passed, 3 skipped). No GPU, training or Rust check ran. The threshold's GPU noise margin, multi-rank behavior and Kaggriculture batches remain unverified.
+
+## 2026-09-29 — Port replay selection and bound the data/evaluation rebuild
+
+Stream D ports the engine-independent selector with typed manifests, unchanged
+seeds/counts/splits and early duplicate rejection. The
+[[references/rebuild-data-preparation-preserves-replay-identity|new Reference]]
+records the 252-ID offline inventory match, synthetic tests and source-bound
+check receipt. The three task briefs locate volume 4llk4uaf20, specify v4 native
+preparation and seed replay requirements, and recommend four compact opponents
+without importing them. Current pod reachability and raw-payload admission remain
+unverified. The [[references/bc-bootstrap-uses-native-replay-features-and-current-heads|historical BC Reference]]
+---
+type: "Decision"
+title: "Restart the port from Isaiah's clean base"
+description: "Restart from Isaiah's 32b3ec9 with the prior port as a reviewed reference; preserve layer topology, rerun BC and verify RTX PRO 6000. Task 1.1 rebuilds the isolated, hash-pinned rules kernel with 59 passing engine tests and four native-reset replays; explicit tooling exceptions preserve vendored bytes."
+tags: ["kaggriculture-v3", "decisions"]
+status: "adopted"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+decider: "Owner: restore kg/isaiah-gap-closure and main to 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again from a clean state with Codex, keeping a reference branch and carrying the cookbook with the .claude/.codex setup."
+sources: [{"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.1-brief-prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.1-review-claude.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.1/results.md"}, {"resource": "repository:engine_rs/TRIM_MANIFEST.json"}, {"resource": "repository:engine_rs/tests/replay_parity.rs"}, {"resource": "repository:scripts/check_engine_trim.py"}, {"resource": "repository:tests/tools/test_check_engine_trim.py"}, {"resource": "repository:justfile"}, {"resource": "repository:rustfmt.toml"}, {"resource": "repository:docs/rules-parity-coverage.md"}, {"resource": "user-directive:2026-09-29:update-kaggle-environments-1-32-7"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:uv.lock"}]
+---
+
+# Restart the port from Isaiah's clean base
+
+The owner directs, on 2026-09-29:
+
+> also for kg/isaiah gap closeure and main branch can you restore to starting points 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again? For grammar/tokens/game rust engine, you can have a reference branch from this current branch snapshot to refer on, I want you & codex started from a clean state. Carry the cookbooks with you with .claude/.codex setup.
+
+and, just before it:
+
+> Yes, we have different games, so we had different action heads, etc., these kind of things, but the model layers/ topologies should remain. We are just playign different games.
+
+> Also an extra BC is for sure required. Yo ucan use 2/4-rank RTX 6000 to verify your work. Work with codex as well.
+
+## What was done
+
+- Local `main` and `kg/isaiah-gap-closure` were reset to Isaiah's `32b3ec9`. The remote was not changed: `origin/main` is still `0d01234`, and nothing was pushed.
+- Branch `kg/reference-2026-09-29` and annotated tag `kg-reference-2026-09-29` (both at `65f0eac`) hold the whole prior port: the initial adaptation `0d01234`, `a2bf23c`, and the cookbook cleanup `65f0eac`. Consult it for the grammar and action codec, observation tokens, the vendored Rust engine (`engine_rs/`), native bindings (`src/kaggriculture.rs`), rewards, BC data preparation, and run evidence under `ops/`.
+- Carried onto the working branch: `cookbook/`, `.claude/`, `.codex/`, `AGENTS.md` (with the `CLAUDE.md` symlink), `kaggriculture-v3.base`, `ops/pre-commit` (Git uses `core.hooksPath=ops`), `ops/cookbook-setup-checks.md`, and `.gitignore` (the starter's rules plus bulk and credential exclusions).
+- Local run artifacts under `ops/` and `runs/`, which Git ignores, stay on disk; nothing was deleted.
+
+## Consequences
+
+- **References describe the reference branch, not the current tree.** Sources whose files no longer exist are re-pointed as `reference-branch:kg/reference-2026-09-29/<path>`. Sources for files that still exist (Isaiah's own files) stay `repository:` so the first-edit gate still surfaces them. Until the rebuild, those notes describe the reference branch's adapted versions of those files.
+- Owner Decisions remain in force.
+- **Same layer topology:** the rebuilt model uses Isaiah's `StatelessTransformerV1` layer classes, arrangement and roles: observation stems, learned per-role tokens, trunk blocks, critic head and actor input projection. Only the game I/O differs: input channel widths, categorical encodings fed to the stems, and the action heads. See the [[the-policy-is-stateless-and-observation-only|stateless Decision]].
+- **One BC rerun is required** on the rebuilt model, using the reference branch's BC data pipeline.
+- **Verification hardware:** 2- and 4-rank RTX PRO 6000 runs are authorized for verification. Read the live price first and write a run statement before each run; see the [[start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]].
+- **Codex collaboration:** Claude and Codex both start from this clean state and work in separate worktrees, cross-reviewing each other's changes.
+- The previous gap-closure plan (`reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md`) feeds a rebuild plan. Its principles table and task designs stay valid; its file-level steps assumed the old code.
+
+## Using the reference branch — implementation interpretation
+
+The owner asks to use the reference branch "properly, without blindly copying". The rebuild plan (`ops/rebuild-2026-09-29/plan.md`) gives every reference component exactly one disposition:
+- **Vendor, trimmed and hash-pinned:** only the rules kernel (`lib.rs`, `py_random.rs`, `econ_attrib.rs`), because it must match Kaggle's Python engine exactly.
+- **Port after review:** the native grammar, rewards, device mask tables and benchmark harness.
+- **Rebuild, with the reference as test oracle:** the observation encoding (named per-entity tensors instead of the flat v2 vector sliced at fixed offsets), the environment bindings, the codec, the model, the trainer seams, the configs and BC training.
+- **Reference only:** scripted bots until evaluation needs a few of them, the v2 experiments, and the run receipts.
+
+Lessons from the reference (raw-bank winners, truncation reward, seed streams, the CUDA fault (since traced to a compiler GEMM overflow), cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
+
+## Task 1.1 — rebuilt rules kernel
+
+Claude's brief review approved the standalone package and required the Python
+checker/pytest and separate engine preparation invocations; the owner requested
+implementation. This is scoped to Task 1.1. The reviewed brief remains at
+`ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md`; the review and actual command
+receipts are linked in the sources and `ops/rebuild-2026-09-29/1.1/results.md`.
+
+The source audit pins `65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`. The manifest
+accounts for all 125 reference paths, retaining 12 including licensing,
+append-only provenance and four traces, and excluding 113 with per-file reasons.
+Exactly seven module declarations are removed from `lib.rs`, producing SHA-256
+`c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd`.
+`py_random.rs`, `econ_attrib.rs` and the RNG tests retain their original bytes.
+Cargo alone removes Rayon and its unused lockfile closure; target cleanup removes
+the excluded binary and cdylib. No model, bot, collector or trainer is imported.
+
+The retained 41 unit and nine RNG tests pass. Nine new integration tests pass:
+one API test, four comparator regressions and four native-reset replays totaling
+2,876 transitions and 2,880 snapshots. State, numeric representation, object key
+insertion order at every depth of public and private state, statuses, typed
+rewards and terminal banks match the pinned 1.32.7 official-engine traces. The
+plain-equality private comparator fails its regression before repair; Claude's
+implementation review extended the order check from three private fields to all
+objects (including public market maps), test-first. A deliberately corrupted
+initial state also fails the first episode before restoration. All 59 engine
+tests pass with none ignored. Final offline `just prepare` also
+passes 769 Python tests (three platform skips), including 47 checker regressions;
+build, formatting, lint, typing and documentation checks pass.
+
+Verification round 1 (copied to
+`ops/rebuild-2026-09-29/1.1/verify-r1/verify-1.1-r1.md`) approved with edits and no blocking findings. Its probes showed
+that updated manifest declarations could authorize a LICENSE change or remove
+the trim provenance appendix. The checker now fixes the editable set
+(`lib.rs`, `Cargo.toml`, `Cargo.lock`, `VENDORED_FROM.md`), derives the exact
+trimmed lockfile, and pins the appendix hash. Eight `check()`-level regressions
+(55 checker tests) drive a copy of the package; three failed before the repair
+(`ops/rebuild-2026-09-29/1.1/verify-r1/`). Four gitignored `replay-*.json`
+receipts were force-added, and the receipt opening now matches the 59-test commit.
+
+The package stays standalone, with its own lockfile and no root dependency or
+shared workspace. This is Claude's accepted refinement of the parent plan's
+workspace wording. Root Cargo files and Rust sources stay byte-identical and
+the root suite remains 155 passed/two ignored. Keep the engine's numeric features
+and reopen L4's test-only `fixture_float` repair at the first compiled root
+consumer (potentially Task 1.3, certainly needed by Task 1.4).
+
+Adaptation inventory: the 12 retained engine paths plus manifest/replay test;
+`scripts/check_engine_trim.py`, `tests/tools/test_check_engine_trim.py`, `justfile`,
+`rustfmt.toml`, `docs/rules-parity-coverage.md`, this Decision/index/log, and receipts
+under `ops/rebuild-2026-09-29/1.1/`. The manifest records non-engine change reasons.
+Both preparation entry points run the checker and separate engine fmt/Clippy/test
+commands. Raw checks exposed inherited formatting drift and six style-only Clippy
+findings. Preserve the byte contract with two exact formatter ignores (`lib.rs`,
+`econ_attrib.rs`) and three engine-only Clippy allowances (`too_many_arguments`,
+`collapsible_if`, `needless_range_loop`), re-denied for authored replay code.
+These are explicit implementer deviations supported by failed-check receipts,
+not an owner policy to weaken linting. Independent Codex review checked this
+boundary; Claude's implementation review confirmed it and committed the task.
+Engine Cargo invocations in `justfile` use `--locked` without `--offline`, so a
+fresh machine can fetch crates; offline hosts set `CARGO_NET_OFFLINE=true`.
+
+Existing-concept search covered this restart Decision, native-buffer and shared-PPO
+records, including negative evidence from the earlier `arbitrary_precision`
+failure. Independent sources/checks are the pinned Git tree, official trace
+headers, test-first failures, source/hash verification and the actual test suites.
+Future changes must preserve that custody, exercise new rules against real oracles,
+and revisit feature unification at integration. These checks qualify only this
+kernel on four recorded worlds plus unit/RNG cases. They establish neither
+exhaustive malformed-input parity, fresh Python differential testing, game adapter
+completion, playing strength nor GPU throughput. No training or network operation
+ran. Pre-existing dirty cookbook bytes and checksums are preserved in the receipt.
+
+## kaggle-environments 1.32.7 — owner, 2026-09-29
+
+> Found that Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture, while 1.32.7 (already cached locally) has it. this we will have to update it.
+
+Source: `user-directive:2026-09-29:update-kaggle-environments-1-32-7`. Isaiah's project took `kaggle-environments` from git HEAD, locked at 1.29.0, which has no Kaggriculture environment. It is now pinned to `==1.32.7` via `uv remove` + `uv add`, which also removes the git source override. 1.32.7's `envs/kaggriculture/kaggriculture.py` has SHA-256 `bc8a5487…`, the engine the vendored Rust kernel targets.
+
+Isaiah's critical pins are unchanged: torch 2.9.0, triton 3.5.0, flash-attn 2.8.3, numpy, pydantic, wandb, mypy. The other 55 changed dependency names (plus the `owl` requirement record) are kaggle-environments' own dependency tree (e.g. jax 0.10 → 0.11.2; `click` is shared with W&B, whose live telemetry was not exercised). Checks with 1.32.7: `just prepare` passes, with Rust 155 passed / 2 ignored (expensive action-angle audits; Orbit replay and generation parity pass) and Python 722 passed / 3 skipped. Codex independently reproduced the lock byte-for-byte from the recorded `uv remove` + `uv add` (`ops/deps-independent-verification-fb65e1f/`).
+---
+type: "Reference"
+title: "Live differential parity checks the Rust kernel"
+description: "Task 1.1b replays traces generated live from Kaggle's hash-pinned kaggriculture engine through the vendored Rust kernel: 8 committed games and a 40-game local sweep agree; 303 input probes find two malformed-input divergence classes (Unicode digits, unhashable items), kept as minimal expected failures and classified only from their observed mismatch."
+tags: ["kaggriculture-v3", "adaptation", "parity", "rules-engine"]
+status: "verified-scoped"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources:
+  - resource: "user-directive:2026-09-29:add-a-parity-check-with-kaggle-environments"
+  - resource: "external:pypi:kaggle-environments==1.32.7"
+  - resource: "repository:scripts/kaggriculture_parity/generate_traces.py"
+  - resource: "repository:scripts/kaggriculture_parity/sweep.py"
+  - resource: "repository:engine_rs/tests/replay_parity.rs"
+  - resource: "repository:engine_rs/fixtures/generated/MANIFEST.json"
+  - resource: "repository:engine_rs/TRIM_MANIFEST.json"
+  - resource: "repository:scripts/check_engine_trim.py"
+  - resource: "repository:tests/scripts/test_kaggriculture_parity.py"
+  - resource: "repository:tests/tools/test_check_engine_trim.py"
+  - resource: "repository:docs/rules-parity-coverage.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.1b/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.1b/sweep-summary.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.1b/verify-r1/sweep-summary.json"
+---
+
+# Live differential parity checks the Rust kernel
+
+The owner asked, on 2026-09-29: “can you add a parity check after your rust
+engine, with kaggle envcironments? thanks a lot”. Task 1.1 had replayed only
+four recorded official episodes; its limits named “a fresh differential run
+against Python” as missing. This Reference records the check that fills it and
+what it found. It serves the
+[[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]],
+whose Task 1.1 rules kernel it exercises. Searches for parity, differential,
+kaggle_environments, generated traces and malformed input found no existing
+concept beyond that Decision and the coverage document.
+
+## Mechanism
+
+- **Oracle.** `generate_traces.py` runs `kaggle_environments.make("kaggriculture")`
+  itself, only when the installed package is 1.32.7 and the engine file's
+  SHA-256 equals the `engine_rs/Cargo.toml` pin. Task 1.1b left the project
+  lock at 1.29.0, which has no Kaggriculture environment, and ran the generator
+  in `uv run --isolated --no-project --with kaggle-environments==1.32.7`. The
+  owner's separate 1.32.7 project pin merged with Task 1.1b, so the project
+  environment now also passes the guard (a Python test asserts it); the sweep
+  keeps the isolated environment.
+- **Format.** Traces use the official `kaggriculture-re-parity-v1` records. They
+  add a `rejected` record for steps on which Python's interpreter raises, where
+  Kaggle's `env.step` keeps its state. Rust must error without mutating state:
+  public and private values and key order, statuses, rewards and completion.
+- **Inputs.** The inputs come from seeded random, edge-case, Kaggle built-in and
+  mixed-seat policies across default, free-hire (250 actors), rich (market-loop
+  escape) and custom configurations. There are also 303 one-command probes;
+  scripted actions, including a `null` whole action, are submitted exactly.
+- **Comparator.** `replay_parity.rs` compares official, committed-generated and
+  `KAGG_PARITY_TRACES` traces using the same code. It reports the first line,
+  step, kind and field path, with expected and actual values.
+- **Classification.** The sweep names a known class only when the observed
+  mismatch has that class's signature: D2 needs Python's unhashable
+  `TypeError` and Rust acceptance on that line; D1 needs a Rust recheck, with
+  that line's Unicode digits spelled in ASCII, to pass the line. Otherwise the
+  divergence is new and the sweep exits 1.
+- **Custody.** `engine_rs/fixtures/generated/MANIFEST.json` pins 15 traces
+  (665,021 bytes); `check_engine_trim.py` validates it, and `TRIM_MANIFEST.json`
+  pins the manifest.
+
+## Findings
+
+On this version (commits `33e1428`, `8ca378b`), 8 committed games (3,960
+transitions) and a 40-game sweep (21,824 transitions) agree completely. That
+includes 180 steps Python rejects and Rust also rejects without state change.
+Of the 303 probes, 266 agree. The other 37 divergences fall into two classes, both
+on malformed input:
+
+- **D1:** Python `int()` accepts non-ASCII decimal digit strings (`"٣"`,
+  `"３"`); Rust errors on them as unit counts and drops them as market
+  quantities.
+- **D2:** Python raises `TypeError` when an array or object reaches a dict
+  lookup: a unit verb, a PLANT crop (also for missing hands), a PICKUP/PLACE
+  item, or a BUY_SEED/BUY_ANIMAL item. Rust treats these as no-ops.
+
+The vendored kernel bytes are pinned, so nothing was repaired. Seven minimal
+repros, one-step games whose first action carries only the divergent field, are
+expected-failure fixtures with explicit reasons. Rust asserts the
+exact divergence, so a change in either engine fails the test. Full-game
+policies exclude D1/D2 inputs by default; with them restored, 8 of 12 games
+diverge, all classified D1/D2. The model's grammar emits only ASCII names and
+integers, so neither class is reachable from policy actions. An adapter that
+accepts external actions would need explicit handling.
+
+## Verification and limits
+
+Checks run on this branch are recorded in `ops/rebuild-2026-09-29/1.1b/results.md`:
+69/69 engine tests (19 replay-parity), the trim checker, the Python tests (including live
+byte-identical regeneration of the committed set), perturbation tests, and
+`just prepare`. Codex verification (`verify-1.1b-r1`) approved with edits; the
+fixes (confirmed classification, exact null probe, full-state rollback check,
+minimal repros, corrected wording) and their checks are recorded in the same
+receipt, with the rerun sweep in `ops/rebuild-2026-09-29/1.1b/verify-r1/`.
+After merging with Task 1.1's checker hardening, `verify_task` splits generated
+traces from the trim inventory before the fixed Task 1.1 checks, and two
+`check()`-level tests reject an edited or unlisted generated trace; receipts
+are in `ops/rebuild-2026-09-29/merge-1.1b/`.
+Generated games use weak policies (most random seats go
+bankrupt); only the four official episodes are competitive worlds. Kaggle
+framework behavior outside the interpreter is not modeled. The 40-game, 303-probe
+sweep is a bounded sample, and a pod-scale sweep remains open. Reopen D1/D2 if
+the adapter must accept untrusted actions or if the pinned engine changes.
+
+exec
+/bin/zsh -lc "rg -n 'EDITABLE|RAYON_CLOSURE|TRIM_APPENDIX|verify_task|generated.fixture|trace.hash|check_engine_trim|negative|mutation' cookbook ops/rebuild-2026-09-29/merge-1.1b README.md docs/rules-parity-coverage.md docs/rules-engine.md && rg --files -g AGENTS.md -g '*check_engine_trim*' -g '*gen*manifest*'" in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+docs/rules-engine.md:15:- Fail-fast means invalid typed/manual inputs may panic after earlier mutations
+README.md:467:The generated fixture is written to
+docs/rules-parity-coverage.md:54:The generated fixture currently covers:
+docs/rules-parity-coverage.md:145:`python scripts/check_engine_trim.py` checks hashes, exhaustive inventory,
+docs/rules-parity-coverage.md:168:negative seeds, rollover and long streams. These 50 tests do not read episodes.
+docs/rules-parity-coverage.md:273:HIRE until and past the 241-actor model capacity, 0/1023/negative/float/string/
+docs/rules-parity-coverage.md:285:overrides, including `hinge` and `log10` curves). Seeds include negative and
+docs/rules-parity-coverage.md:313:15 files total 665,021 bytes (budget 4,000,000). `scripts/check_engine_trim.py` validates
+cookbook/log.md:6:edited `scripts/check_engine_trim.py` independently. The merge keeps both
+cookbook/log.md:7:contracts: `verify_task` separates generated traces, runs the generic and
+cookbook/log.md:8:fixed Task 1.1 checks (`EDITABLE`, Rayon lockfile derivation, pinned appendix
+cookbook/log.md:16:1,209 passed and 3 skipped. On a scratch copy, reverting `EDITABLE` or removing
+cookbook/log.md:17:the trace-hash check fails its regressions. Receipts are in
+cookbook/log.md:95:Codex's [verification](../ops/rebuild-2026-09-29/codex/verify-stream-b-2.1.md) approved Task 2.1 with edits. `check_contract` now requires leading dims exactly `[E, 2]` and per-field bounds (non-negative counts, ranks, globals and order limits; −1 tile sentinels and signed `market_int` still pass). The synthetic fixture now writes each seat's legal view of one game. New tests cover packed dispatch, distinct-mask chunk slices, marker-checked offsets, the mypy generics probe, and initialization, API and Muon membership, each seen failing against the old code or a deliberate one-line mutation (the compile-key and SiLU checks were not mutation-tested). The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] records the checks: `tests/kaggriculture` 155 passed, `just py-prepare` 878 passed, 3 skipped.
+ops/rebuild-2026-09-29/merge-1.1b/prepare.log:48:uv run python scripts/check_engine_trim.py
+ops/rebuild-2026-09-29/merge-1.1b/prepare.log:291:test rules_engine::env::tests::step_rejects_negative_non_neutral_planet_owner - should panic ... ok
+ops/rebuild-2026-09-29/merge-1.1b/prepare.log:395:test rollback_check_rejects_a_key_order_only_mutation ... ok
+ops/rebuild-2026-09-29/merge-1.1b/prepare.log:396:test rollback_check_rejects_status_reward_and_done_mutations ... ok
+ops/rebuild-2026-09-29/merge-1.1b/prepare.log:405:test generated_fixtures_replay ... ok
+ops/rebuild-2026-09-29/merge-1.1b/prepare.log:472:tests/tools/test_check_engine_trim.py .................................. [ 96%]
+cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:9:sources: [{"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.1-brief-prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.1-review-claude.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.1/results.md"}, {"resource": "repository:engine_rs/TRIM_MANIFEST.json"}, {"resource": "repository:engine_rs/tests/replay_parity.rs"}, {"resource": "repository:scripts/check_engine_trim.py"}, {"resource": "repository:tests/tools/test_check_engine_trim.py"}, {"resource": "repository:justfile"}, {"resource": "repository:rustfmt.toml"}, {"resource": "repository:docs/rules-parity-coverage.md"}, {"resource": "user-directive:2026-09-29:update-kaggle-environments-1-32-7"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:uv.lock"}]
+cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:99:`scripts/check_engine_trim.py`, `tests/tools/test_check_engine_trim.py`, `justfile`,
+cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:114:records, including negative evidence from the earlier `arbitrary_precision`
+ops/rebuild-2026-09-29/merge-1.1b/non-vacuity.log:2:# m1: EDITABLE guard reverted to the pre-hardening '.rs and not lib.rs' condition.
+ops/rebuild-2026-09-29/merge-1.1b/non-vacuity.log:8:== m1: <         if path not in EDITABLE: >         if path.endswith(".rs") and path != "engine_rs/src/lib.rs": 
+ops/rebuild-2026-09-29/merge-1.1b/non-vacuity.log:9:FAILED tests/tools/test_check_engine_trim.py::test_declared_license_edit_is_rejected
+ops/rebuild-2026-09-29/merge-1.1b/non-vacuity.log:12:== m2: <         _require(sha(data) == _digest(entry["sha256"], name), f"{name}: trace hash") >         _digest(entry["sha256"], name) 
+ops/rebuild-2026-09-29/merge-1.1b/non-vacuity.log:13:FAILED tests/tools/test_check_engine_trim.py::test_generated_manifest_drift_is_rejected[edited trace-trace hash]
+ops/rebuild-2026-09-29/merge-1.1b/non-vacuity.log:14:FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_edited_generated_trace
+cookbook/references/live-differential-parity-checks-the-rust-kernel.md:16:  - resource: "repository:scripts/check_engine_trim.py"
+cookbook/references/live-differential-parity-checks-the-rust-kernel.md:18:  - resource: "repository:tests/tools/test_check_engine_trim.py"
+cookbook/references/live-differential-parity-checks-the-rust-kernel.md:64:  (665,021 bytes); `check_engine_trim.py` validates it, and `TRIM_MANIFEST.json`
+cookbook/references/live-differential-parity-checks-the-rust-kernel.md:100:After merging with Task 1.1's checker hardening, `verify_task` splits generated
+cookbook/references/kaggriculture-encoder-reuses-isaiah-stateless-layers.md:30:- `tests/kaggriculture` has 155 passing cases. After Codex's verification (`ops/rebuild-2026-09-29/codex/verify-stream-b-2.1.md`, findings 1–7), each claimed gap got a test that was seen failing against the old `check_contract` or a deliberate one-line mutation of the model or base: zeroed or shifted readouts, reused chunk masks, `>` for `>=` at the packed limit, no `max_seqlen`, the eager trunk in the packed path, a changed PEP 696 default, residual gain, output-layer and input-layer lists, and `hidden_state` handling. The compile-key and SiLU checks were not mutation-tested.
+cookbook/references/kaggriculture-encoder-reuses-isaiah-stateless-layers.md:31:  - contract types: lead shapes `(2,)` and `(1,1,2)` rejected; negative counts, ranks, globals and order limits rejected; −1 tile sentinels and signed `market_int` accepted; dtype, shape and missing field (pydantic `ValidationError`) for every field
+cookbook/references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift.md:82:- **3.6:** the original 4 red passes were invalid-limit cases that unknown-field rejection already satisfied. After Codex's review they assert the exact Pydantic error (`greater_than` for 0 and negatives, `finite_number` for NaN and ±inf) on this field, and a custom positive limit is accepted; with the field removed all 7 fail (`3.6-review-red.log`). A replay-shifted fake model (±0.2 nats, with and without gradient accumulation) raises after one evaluation, with zero optimizer steps and bit-identical parameters. No existing PPO test trips the default-on alarm. With all 44 action entities acting, a 0.002-nat drift per entity aborts `per_player` at +0.0880 nats but passes `per_entity`, and a 0.06-nat drift aborts `per_entity` at +0.0600. A two-fake-rank unit test of `_distributed_ppo_loss_metrics` (monkeypatched sum and max reductions) shows unequal active-player counts reduce to one global weighted mean in both clip modes: 0.3 nats on 1 of 4 players gives 0.075 on both ranks, not 0.15.
+cookbook/references/reward-reuse-preserves-objective-and-critic-semantics.md:30:An optional third failure-money component is `min(c_f, k*money)`, with k=0 off and c_f=.10. Its per-counter money values come from an explicit external map; unknown names/negative or nonfinite values fail closed and absent names mean zero. This audit does not invent a cost table or select that optional extension.
+cookbook/references/native-game-semantics-use-v3-owned-buffers.md:19:Fallible mutable NumPy borrows and explicit C-layout validation reject alias/Fortran misuse before mutation; staged step/reset catch panics before commit. Final local checks report 32 environment/codec and 14 PPO/incumbent cases, 155 root Rust cases with two existing ignored, 120 vendored cases, pinned build/fmt/Clippy/docs, seven-file mypy and Ruff. The paired fixed-action CPU adapter benchmark retains 108 equality checkpoints and exact source/binary identities in `ops/gpu-sps-2026-09-29/native-lifecycle/`; at eight games/two threads PASS measures 22,727→32,295 game steps/s and movement-plus-market 18,738→25,184. The benchmark excludes model/GPU/PPO and high actors. Combined Linux/GPU evidence now covers the fixed-minibatch8/32/128/2,048/4,096-environment runs in the GPU receipt; earlier adapter checks below remain historical support for the preserved low-level oracle, not substitution for new-path qualification.
+AGENTS.md
+ops/rebuild-2026-09-29/1.1/generate_manifest.py
+scripts/check_engine_trim.py
+tests/tools/test_check_engine_trim.py
+
+exec
+/bin/zsh -lc "git status --short && git rev-parse HEAD && git show -s --format='%H%n%P%n%s' 82091936df52125e7f4cce687887a8c259b7ee02" in /Users/poonszesen/kg-v3-merge
+ succeeded in 627ms:
+82091936df52125e7f4cce687887a8c259b7ee02
+82091936df52125e7f4cce687887a8c259b7ee02
+69397da3d1559be4fbb525636122d8a9bc614a49 16e56b60c4bd11da3bdacdd6a7e45e5637654ad6
+Merge Task 1.1b: live Kaggle-vs-Rust differential parity (Codex APPROVE at 16e56b6)
+
+exec
+/bin/zsh -lc "sed -n '1,300p' scripts/check_engine_trim.py && sed -n '301,680p' scripts/check_engine_trim.py" in /Users/poonszesen/kg-v3-merge
+exec
+/bin/zsh -lc "sed -n '1,320p' tests/tools/test_check_engine_trim.py && sed -n '321,700p' tests/tools/test_check_engine_trim.py" in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+"""Verify the pinned rules-kernel inventory and every declared byte-level edit.
+
+Generated parity traces under ``engine_rs/fixtures/generated`` are pinned
+transitively: TRIM_MANIFEST.json pins the bytes of their MANIFEST.json, which pins
+each trace's SHA-256, size and generation inputs.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import subprocess
+import sys
+import tomllib
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import TypedDict, cast
+
+PIN = "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0"
+LIB_SHA256 = "c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd"
+# Only these retained files may carry declared edits; every other retained file
+# (LICENSE, RNG/attribution sources, RNG tests, fixtures) stays byte-identical.
+EDITABLE = frozenset(
+    {
+        "engine_rs/Cargo.lock",
+        "engine_rs/Cargo.toml",
+        "engine_rs/VENDORED_FROM.md",
+        "engine_rs/src/lib.rs",
+    }
+)
+# Packages that `cargo remove rayon` prunes from the pinned lockfile.
+RAYON_CLOSURE = frozenset(
+    {
+        "crossbeam-deque",
+        "crossbeam-epoch",
+        "crossbeam-utils",
+        "either",
+        "rayon",
+        "rayon-core",
+    }
+)
+TRIM_APPENDIX_HEADING = "\n## Task 1.1 rules-only trim \u2014 2026-09-29\n".encode()
+# SHA-256 of the Task 1.1 appendix section, from its heading up to the next
+# `## ` section (later provenance may be appended after it, never inside it).
+TRIM_APPENDIX_SHA256 = (
+    "1d089760261e8fef7ed0fddcaaa1a60776cb9abbb65386ef08d529f863d76c93"
+)
+GENERATED_DIR = "engine_rs/fixtures/generated"
+GENERATED_MANIFEST = f"{GENERATED_DIR}/MANIFEST.json"
+GENERATED_BUDGET_BYTES = 4_000_000
+TRACE_FORMAT = "kaggriculture-re-parity-v1"
+TRACE_KEYS = (
+    "path",
+    "sha256",
+    "bytes",
+    "seed",
+    "policies",
+    "policy_seed",
+    "config_variant",
+    "transitions",
+    "rejected",
+)
+DIVERGENCE_KEYS = ("line", "from_step", "kind", "field", "reason")
+
+
+class Edit(TypedDict):
+    start_line: int
+    delete_lines: int
+    insert: str
+    reason: str
+
+
+class Retained(TypedDict):
+    path: str
+    reference_sha256: str
+    sha256: str
+    edits: list[Edit]
+
+
+class Excluded(TypedDict):
+    path: str
+    reference_sha256: str
+    reason: str
+
+
+class Authored(TypedDict):
+    path: str
+    sha256: str
+    reason: str
+
+
+class NonEngineChange(TypedDict):
+    path: str
+    reason: str
+
+
+class Manifest(TypedDict):
+    schema_version: int
+    reference_commit: str
+    retained: list[Retained]
+    excluded: list[Excluded]
+    authored: list[Authored]
+    non_engine_changes: list[NonEngineChange]
+
+
+def sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ValueError(message)
+
+
+def _object(value: object, keys: Sequence[str], label: str) -> dict[str, object]:
+    _require(isinstance(value, dict), f"{label}: expected object")
+    result = cast(dict[str, object], value)
+    _require(set(result) == set(keys), f"{label}: schema keys must be {list(keys)}")
+    return result
+
+
+def _array(value: object, label: str) -> list[object]:
+    _require(isinstance(value, list), f"{label}: expected array")
+    return cast(list[object], value)
+
+
+def _string(value: object, label: str) -> str:
+    _require(isinstance(value, str), f"{label}: expected string")
+    return cast(str, value)
+
+
+def _integer(value: object, label: str) -> int:
+    _require(type(value) is int, f"{label}: expected integer")
+    return cast(int, value)
+
+
+def _reason(value: object, label: str) -> str:
+    reason = _string(value, f"{label}: reason")
+    _require(bool(reason.strip()), f"{label}: reason must not be empty")
+    return reason
+
+
+def _path(value: object, *, engine: bool) -> str:
+    path = _string(value, "path")
+    parts = path.split("/")
+    _require(
+        "\\" not in path
+        and "\x00" not in path
+        and not any(part in ("", ".", "..", ".git") for part in parts),
+        f"{path!r}: unsafe path",
+    )
+    if engine:
+        _require(
+            len(parts) > 1
+            and parts[0] == "engine_rs"
+            and parts[1] not in ("target", "TRIM_MANIFEST.json"),
+            f"{path}: invalid engine path",
+        )
+    else:
+        _require(parts[0] != "engine_rs", f"{path}: invalid non-engine path")
+    return path
+
+
+def _digest(value: object, label: str) -> str:
+    digest = _string(value, label)
+    _require(re.fullmatch(r"[0-9a-f]{64}", digest) is not None, f"{label}: SHA-256")
+    return digest
+
+
+def _edit(value: object, path: str) -> Edit:
+    entry = _object(value, ("start_line", "delete_lines", "insert", "reason"), path)
+    return {
+        "start_line": _integer(entry["start_line"], f"{path}: start_line"),
+        "delete_lines": _integer(entry["delete_lines"], f"{path}: delete_lines"),
+        "insert": _string(entry["insert"], f"{path}: insert"),
+        "reason": _reason(entry["reason"], path),
+    }
+
+
+def parse_manifest(value: object) -> Manifest:
+    raw = _object(
+        value,
+        (
+            "schema_version",
+            "reference_commit",
+            "retained",
+            "excluded",
+            "authored",
+            "non_engine_changes",
+        ),
+        "manifest",
+    )
+    version = _integer(raw["schema_version"], "schema_version")
+    _require(version == 1, "schema_version must be 1")
+    pin = _string(raw["reference_commit"], "reference_commit")
+    _require(pin == PIN, f"reference_commit must be {PIN}")
+    retained: list[Retained] = []
+    for value in _array(raw["retained"], "retained"):
+        entry = _object(
+            value, ("path", "reference_sha256", "sha256", "edits"), "retained"
+        )
+        path = _path(entry["path"], engine=True)
+        retained.append(
+            {
+                "path": path,
+                "reference_sha256": _digest(entry["reference_sha256"], path),
+                "sha256": _digest(entry["sha256"], path),
+                "edits": [_edit(edit, path) for edit in _array(entry["edits"], path)],
+            }
+        )
+    excluded: list[Excluded] = []
+    for value in _array(raw["excluded"], "excluded"):
+        entry = _object(value, ("path", "reference_sha256", "reason"), "excluded")
+        path = _path(entry["path"], engine=True)
+        excluded.append(
+            {
+                "path": path,
+                "reference_sha256": _digest(entry["reference_sha256"], path),
+                "reason": _reason(entry["reason"], path),
+            }
+        )
+    authored: list[Authored] = []
+    for value in _array(raw["authored"], "authored"):
+        entry = _object(value, ("path", "sha256", "reason"), "authored")
+        path = _path(entry["path"], engine=True)
+        authored.append(
+            {
+                "path": path,
+                "sha256": _digest(entry["sha256"], path),
+                "reason": _reason(entry["reason"], path),
+            }
+        )
+    changes: list[NonEngineChange] = []
+    for value in _array(raw["non_engine_changes"], "non_engine_changes"):
+        entry = _object(value, ("path", "reason"), "non_engine_changes")
+        path = _path(entry["path"], engine=False)
+        changes.append({"path": path, "reason": _reason(entry["reason"], path)})
+    return {
+        "schema_version": version,
+        "reference_commit": pin,
+        "retained": retained,
+        "excluded": excluded,
+        "authored": authored,
+        "non_engine_changes": changes,
+    }
+
+
+def _same_inventory(actual: Sequence[str], expected: Sequence[str], label: str) -> None:
+    missing = sorted(set(expected) - set(actual))
+    extra = sorted(set(actual) - set(expected))
+    _require(not missing and not extra, f"{label}: missing={missing}; extra={extra}")
+
+
+def verify_task_authored(authored: Sequence[Authored]) -> None:
+    _same_inventory(
+        [entry["path"] for entry in authored],
+        ["engine_rs/tests/replay_parity.rs", GENERATED_MANIFEST],
+        "Task 1.1 authored set",
+    )
+
+
+def engine_pin(cargo_toml: bytes) -> tuple[str, str]:
+    """The (kaggle-environments version, Python engine SHA-256) compatibility pin."""
+    metadata = tomllib.loads(cargo_toml.decode("utf-8"))
+    target = metadata["package"]["metadata"]["kaggriculture"]
+    return (
+        _string(target["kaggle-environments-version"], "Cargo pin version"),
+        _digest(target["python-engine-sha256"], "Cargo pin engine"),
+    )
+
+
+def split_generated(
+    current: Mapping[str, bytes],
+) -> tuple[dict[str, bytes], dict[str, bytes]]:
+    """Separate generated traces (pinned by their manifest) from engine files."""
+    prefix = GENERATED_DIR + "/"
+    engine: dict[str, bytes] = {}
+    generated: dict[str, bytes] = {}
+    for path, data in current.items():
+        if path.startswith(prefix) and path != GENERATED_MANIFEST:
+            generated[path.removeprefix(prefix)] = data
+        else:
+            engine[path] = data
+    return engine, generated
+
+
+def verify_generated(
+    manifest_bytes: bytes, traces: Mapping[str, bytes], pin: tuple[str, str]
+) -> int:
+    """Validate the generated-trace manifest against the files; return trace count."""
+    raw = _object(
+        json.loads(manifest_bytes.decode("utf-8")),
+        (
+            "schema_version",
+            "format",
+            "generator",
+            "kaggle_environments_version",
+            "python_engine_sha256",
+            "traces",
+        ),
+        "generated manifest",
+    )
+    _require(
+        _integer(raw["schema_version"], "generated schema_version") == 1,
+        "generated schema_version must be 1",
+    )
+    _require(raw["format"] == TRACE_FORMAT, f"generated format must be {TRACE_FORMAT}")
+    _require(
+        raw["generator"] == "scripts/kaggriculture_parity/generate_traces.py",
+        "generated traces must name their generator",
+    )
+    _require(
+        (raw["kaggle_environments_version"], raw["python_engine_sha256"]) == pin,
+        f"generated traces must target the Cargo engine pin {pin}",
+    )
+    listed: list[str] = []
+    total = 0
+    for value in _array(raw["traces"], "generated traces"):
+        _require(isinstance(value, dict), "generated trace: expected object")
+        entry = cast(dict[str, object], value)
+        optional = {"probe", "expected_divergence"} & set(entry)
+        _require(
+            optional in (set(), {"probe", "expected_divergence"}),
+            "generated trace: probe and expected_divergence go together",
+        )
+        entry = _object(entry, (*TRACE_KEYS, *sorted(optional)), "generated trace")
+        name = _string(entry["path"], "generated trace path")
+        _require(
+            re.fullmatch(r"[a-z0-9][a-z0-9.-]*\.jsonl\.gz", name) is not None,
+            f"{name!r}: generated trace names are plain *.jsonl.gz files",
+        )
+        _require(name not in listed, f"duplicate generated trace: {name}")
+        listed.append(name)
+        _require(name in traces, f"{name}: listed generated trace is missing")
+        data = traces[name]
+        _require(sha(data) == _digest(entry["sha256"], name), f"{name}: trace hash")
+        _require(_integer(entry["bytes"], name) == len(data), f"{name}: trace size")
+        for key in ("seed", "policy_seed", "transitions", "rejected"):
+            _integer(entry[key], f"{name}: {key}")
+        _require(_integer(entry["transitions"], name) > 0, f"{name}: needs transitions")
+        policies = _array(entry["policies"], f"{name}: policies")
+        _require(
+            len(policies) == 2 and all(isinstance(p, str) for p in policies),
+            f"{name}: policies must name both seats",
+        )
+        _string(entry["config_variant"], f"{name}: config_variant")
+        if optional:
+            _string(entry["probe"], f"{name}: probe")
+            divergence = _object(
+                entry["expected_divergence"], DIVERGENCE_KEYS, f"{name}: divergence"
+            )
+            _reason(divergence["reason"], f"{name}: expected_divergence")
+        total += len(data)
+    _same_inventory(sorted(traces), listed, "generated trace inventory")
+    _require(
+        total <= GENERATED_BUDGET_BYTES,
+        f"generated traces use {total:,} B; budget is {GENERATED_BUDGET_BYTES:,} B",
+    )
+    return len(listed)
+
+
+def _reconstruct(original: bytes, edits: Sequence[Edit], path: str) -> bytes:
+    if not edits:
+        return original
+    _require(not path.endswith(".gz"), f"{path}: binary fixtures cannot have edits")
+    try:
+        text = original.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise ValueError(f"{path}: edits require UTF-8") from error
+    lines = re.findall(r"[^\n]*\n|[^\n]+$", text)
+    cursor = 0
+    parts: list[str] = []
+    for edit in edits:
+        start = edit["start_line"] - 1
+        end = start + edit["delete_lines"]
+        _require(
+            cursor <= start <= len(lines) and edit["delete_lines"] >= 0,
+            f"{path}: edit range",
+        )
+        _require(end <= len(lines), f"{path}: edit end")
+        parts.extend(("".join(lines[cursor:start]), edit["insert"]))
+        cursor = end
+    parts.append("".join(lines[cursor:]))
+    try:
+        return "".join(parts).encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ValueError(f"{path}: inserted text requires UTF-8") from error
+
+
+def verify(
+    value: object, originals: Mapping[str, bytes], current: Mapping[str, bytes]
+) -> None:
+    manifest = parse_manifest(value)
+    entries = [*manifest["retained"], *manifest["excluded"], *manifest["authored"]]
+    seen: set[str] = set()
+    for entry in [*entries, *manifest["non_engine_changes"]]:
+        path = entry["path"]
+        _require(path not in seen, f"duplicate: {path}")
+        seen.add(path)
+    _same_inventory(
+        [entry["path"] for entry in [*manifest["retained"], *manifest["excluded"]]],
+        list(originals),
+        "reference inventory",
+    )
+    _same_inventory(
+        [entry["path"] for entry in [*manifest["retained"], *manifest["authored"]]],
+        list(current),
+        "current inventory",
+    )
+    for excluded in manifest["excluded"]:
+        path = excluded["path"]
+        _require(
+            sha(originals[path]) == excluded["reference_sha256"],
+            f"{path}: reference hash",
+        )
+        _require(path not in current, f"{path}: excluded file present")
+    for retained in manifest["retained"]:
+        path = retained["path"]
+        original, actual = originals[path], current[path]
+        _require(
+            sha(original) == retained["reference_sha256"], f"{path}: reference hash"
+        )
+        _require(sha(actual) == retained["sha256"], f"{path}: current hash")
+        _require(
+            actual == _reconstruct(original, retained["edits"], path),
+            f"{path}: undeclared edit",
+        )
+        if path not in EDITABLE:
+            _require(not retained["edits"], f"{path}: retained file must be unchanged")
+    for authored in manifest["authored"]:
+        path = authored["path"]
+        _require(sha(current[path]) == authored["sha256"], f"{path}: authored hash")
+
+
+def _current_files(root: Path) -> dict[str, bytes]:
+    current: dict[str, bytes] = {}
+
+    def walk(directory: Path) -> None:
+        _require(not directory.is_symlink(), f"{directory}: symlink")
+        for child in sorted(directory.iterdir()):
+            relative = child.relative_to(root).as_posix()
+            if relative in ("engine_rs/target", "engine_rs/TRIM_MANIFEST.json"):
+                continue
+            _require(not child.is_symlink(), f"{relative}: symlink")
+            if child.is_dir():
+                walk(child)
+            else:
+                _require(child.is_file(), f"{relative}: not a regular file")
+                current[relative] = child.read_bytes()
+
+    walk(root / "engine_rs")
+    return current
+
+
+def reference_files(root: Path) -> dict[str, bytes]:
+    """Read every pinned-reference ``engine_rs`` blob from the Git object store."""
+
+    def git(*args: str) -> bytes:
+        # check_output has no Node-style 1 MiB limit; the largest blob is 5,099,830 B.
+        return subprocess.check_output(["git", *args], cwd=root)
+
+    paths = git("ls-tree", "-r", "--name-only", PIN, "engine_rs").decode().splitlines()
+    return {path: git("show", f"{PIN}:{path}") for path in paths}
+
+
+def check(root: Path) -> None:
+    root = root.resolve()
+    manifest_path = root / "engine_rs/TRIM_MANIFEST.json"
+    _require(not manifest_path.is_symlink(), f"{manifest_path}: symlink")
+    value = json.loads(manifest_path.read_text(encoding="utf-8"))
+    verify_task(value, reference_files(root), _current_files(root))
+
+
+def verify_task(
+    value: object, originals: Mapping[str, bytes], current: Mapping[str, bytes]
+) -> None:
+    """Apply the generic manifest checks plus the fixed Task 1.1 trim contract."""
+    manifest = parse_manifest(value)
+    # Generated traces are pinned by their own manifest, not the trim inventory.
+    current, generated = split_generated(current)
+    verify(manifest, originals, current)
+    generated_count = verify_generated(
+        current[GENERATED_MANIFEST],
+        generated,
+        engine_pin(current["engine_rs/Cargo.toml"]),
+    )
+    _require(generated_count >= 6, "expected the committed generated trace set")
+    retained = [
+        "Cargo.toml",
+        "Cargo.lock",
+        "LICENSE",
+        "VENDORED_FROM.md",
+        "src/lib.rs",
+        "src/py_random.rs",
+        "src/econ_attrib.rs",
+        "tests/py_random.rs",
+        *[
+            f"fixtures/episode-{episode}.jsonl.gz"
+            for episode in (95324500, 95901360, 95921764, 95990191)
+        ],
+    ]
+    _same_inventory(
+        [entry["path"] for entry in manifest["retained"]],
+        [f"engine_rs/{path}" for path in retained],
+        "Task 1.1 retained set",
+    )
+    verify_task_authored(manifest["authored"])
+    _require(
+        "justfile" in {entry["path"] for entry in manifest["non_engine_changes"]},
+        "Task 1.1 non_engine_changes must include justfile",
+    )
+    removed = {19, 21, 22, 23, 24, 25, 27}
+    original_lines = originals["engine_rs/src/lib.rs"].splitlines(keepends=True)
+    expected_lib = b"".join(
+        line
+        for number, line in enumerate(original_lines, start=1)
+        if number not in removed
+    )
+    _require(
+        current["engine_rs/src/lib.rs"] == expected_lib, "lib.rs: exact seven removals"
+    )
+    _require(sha(expected_lib) == LIB_SHA256, "lib.rs: expected trim SHA-256")
+    cargo = (
+        originals["engine_rs/Cargo.toml"]
+        .replace(b'crate-type = ["rlib", "cdylib"]\n', b"")
+        .replace(b'[[bin]]\nname = "re_engine"\npath = "src/main.rs"\n\n', b"")
+        .replace(b'rayon = "1.12.0"\n', b"")
+    )
+    _require(
+        current["engine_rs/Cargo.toml"] == cargo,
+        "Cargo.toml: target/dependency removals only",
+    )
+    _require(
+        current["engine_rs/Cargo.lock"]
+        == _expected_lock(originals["engine_rs/Cargo.lock"]),
+        "Cargo.lock: Rayon closure removal only",
+    )
+    _verify_provenance(
+        originals["engine_rs/VENDORED_FROM.md"], current["engine_rs/VENDORED_FROM.md"]
+    )
+
+
+def _expected_lock(original: bytes) -> bytes:
+    """Derive the trimmed lockfile: drop the Rayon closure and the Rayon edge."""
+    separator = b"\n\n[[package]]\n"
+    header, *packages = original.split(separator)
+    names = [package.split(b"\n", 1)[0] for package in packages]
+    pruned = {f'name = "{name}"'.encode() for name in RAYON_CLOSURE}
+    _require(pruned <= set(names), "Cargo.lock: reference lacks the Rayon closure")
+    kept = [
+        package
+        for package, name in zip(packages, names, strict=True)
+        if name not in pruned
+    ]
+    lock = separator.join([header, *kept])
+    edge = b'\n "rayon",\n'
+    _require(lock.count(edge) == 1, "Cargo.lock: expected one Rayon dependency edge")
+    return lock.replace(edge, b"\n")
+
+
+def _verify_provenance(original: bytes, current: bytes) -> None:
+    """Historical bytes stay intact and the exact Task 1.1 appendix follows them."""
+    _require(current.startswith(original), "VENDORED_FROM.md: append-only provenance")
+    tail = current[len(original) :]
+    end = tail.find(b"\n## ", 1)
+    section = tail if end < 0 else tail[:end]
+    _require(
+        tail.startswith(TRIM_APPENDIX_HEADING) and sha(section) == TRIM_APPENDIX_SHA256,
+        "VENDORED_FROM.md: Task 1.1 trim appendix must follow the history unchanged",
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("root", nargs="?", type=Path, default=Path.cwd())
+    args = parser.parse_args()
+    try:
+        check(args.root)
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        tomllib.TOMLDecodeError,
+        subprocess.CalledProcessError,
+    ) as error:
+        print(error, file=sys.stderr)
+        return 1
+    print("engine trim manifest: OK")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+ succeeded in 0ms:
+from __future__ import annotations
+
+import importlib.util
+import json
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+_SPEC = importlib.util.spec_from_file_location(
+    "check_engine_trim", Path(__file__).parents[2] / "scripts/check_engine_trim.py"
+)
+assert _SPEC is not None
+assert _SPEC.loader is not None
+checker = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(checker)
+
+
+def fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, bytes]]:
+    kept = "engine_rs/src/py_random.rs"
+    omitted = "engine_rs/src/ffi.rs"
+    authored = "engine_rs/tests/replay_parity.rs"
+    originals = {kept: b"original\n", omitted: b"ffi\n"}
+    current = {kept: originals[kept], authored: b"test\n"}
+    manifest = {
+        "schema_version": 1,
+        "reference_commit": checker.PIN,
+        "retained": [
+            {
+                "path": kept,
+                "reference_sha256": checker.sha(originals[kept]),
+                "sha256": checker.sha(current[kept]),
+                "edits": [],
+            }
+        ],
+        "excluded": [
+            {
+                "path": omitted,
+                "reference_sha256": checker.sha(originals[omitted]),
+                "reason": "C5 excluded ABI",
+            }
+        ],
+        "authored": [
+            {
+                "path": authored,
+                "sha256": checker.sha(current[authored]),
+                "reason": "replay regression",
+            }
+        ],
+        "non_engine_changes": [
+            {"path": "justfile", "reason": "Separate engine package preparation"}
+        ],
+    }
+    return manifest, originals, current
+
+
+def test_valid_full_inventory_passes() -> None:
+    checker.verify(*fixture())
+
+
+def test_task_authored_inventory_accepts_replay_test_and_generated_manifest() -> None:
+    authored = [
+        {"path": path, "sha256": checker.sha(b"x"), "reason": "authored"}
+        for path in ("engine_rs/tests/replay_parity.rs", checker.GENERATED_MANIFEST)
+    ]
+    checker.verify_task_authored(authored)
+
+
+@pytest.mark.parametrize(
+    ("paths", "message"),
+    [
+        ([], r"Task 1.1 authored set: missing=.*MANIFEST.json.*replay_parity"),
+        (
+            [
+                "engine_rs/tests/replay_parity.rs",
+                checker.GENERATED_MANIFEST,
+                "engine_rs/tests/other.rs",
+            ],
+            r"Task 1.1 authored set: .*extra=.*other.rs",
+        ),
+    ],
+)
+def test_task_authored_inventory_requires_exact_replay_test(
+    paths: list[str], message: str
+) -> None:
+    authored = [
+        {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+        for path in paths
+    ]
+    with pytest.raises(ValueError, match=message):
+        checker.verify_task_authored(authored)
+
+
+def test_declared_line_removal_reconstructs_exact_original_bytes() -> None:
+    path = "engine_rs/Cargo.toml"
+    before = b"keep\nremove\nkeep2\n"
+    after = b"keep\nkeep2\n"
+    manifest = {
+        "schema_version": 1,
+        "reference_commit": checker.PIN,
+        "excluded": [],
+        "authored": [],
+        "non_engine_changes": [],
+        "retained": [
+            {
+                "path": path,
+                "reference_sha256": checker.sha(before),
+                "sha256": checker.sha(after),
+                "edits": [
+                    {
+                        "start_line": 2,
+                        "delete_lines": 1,
+                        "insert": "",
+                        "reason": "remove excluded target",
+                    }
+                ],
+            }
+        ],
+    }
+    checker.verify(manifest, {path: before}, {path: after})
+    manifest["retained"][0]["edits"][0]["start_line"] = 1
+    with pytest.raises(ValueError, match="undeclared edit"):
+        checker.verify(manifest, {path: before}, {path: after})
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "modified retained bytes",
+        "wrong reference hash",
+        "undeclared edit despite updated hash",
+        "extra excluded module",
+        "missing retained file",
+        "missing authored file",
+        "unaccounted reference file",
+        "duplicate entry",
+        "unsafe path",
+        "unexpected schema key",
+    ],
+)
+def test_drift_is_rejected(mutation: str) -> None:
+    manifest, originals, current = fixture()
+    kept = manifest["retained"][0]["path"]
+    if mutation == "modified retained bytes":
+        current[kept] = b"changed\n"
+    elif mutation == "wrong reference hash":
+        manifest["retained"][0]["reference_sha256"] = "0" * 64
+    elif mutation == "undeclared edit despite updated hash":
+        current[kept] = b"changed\n"
+        manifest["retained"][0]["sha256"] = checker.sha(current[kept])
+    elif mutation == "extra excluded module":
+        current[manifest["excluded"][0]["path"]] = b"ffi\n"
+    elif mutation == "missing retained file":
+        del current[kept]
+    elif mutation == "missing authored file":
+        del current[manifest["authored"][0]["path"]]
+    elif mutation == "unaccounted reference file":
+        manifest["excluded"].pop()
+    elif mutation == "duplicate entry":
+        manifest["retained"].append(manifest["retained"][0])
+    elif mutation == "unsafe path":
+        manifest["retained"][0]["path"] = "engine_rs/../escape"
+    else:
+        manifest["fallback"] = True
+    with pytest.raises(
+        ValueError, match=r"hash|edit|inventory|duplicate|path|schema keys"
+    ):
+        checker.verify(manifest, originals, current)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/outside",
+        "../escape",
+        "a//b",
+        "a/./b",
+        "a\\b",
+        "engine_rs/src/lib.rs",
+        ".git/config",
+    ],
+)
+def test_invalid_non_engine_path_is_rejected(path: str) -> None:
+    manifest, originals, current = fixture()
+    manifest["non_engine_changes"][0]["path"] = path
+    with pytest.raises(ValueError, match="path"):
+        checker.verify(manifest, originals, current)
+
+
+def test_duplicate_non_engine_change_is_rejected() -> None:
+    manifest, originals, current = fixture()
+    manifest["non_engine_changes"].append(manifest["non_engine_changes"][0])
+    with pytest.raises(ValueError, match="duplicate"):
+        checker.verify(manifest, originals, current)
+
+
+@pytest.mark.parametrize(
+    "field", ["retained", "excluded", "authored", "non_engine_changes"]
+)
+def test_inventory_entry_schema_is_strict(field: str) -> None:
+    manifest, originals, current = fixture()
+    manifest[field][0]["unexpected"] = "value"
+    with pytest.raises(ValueError, match="schema keys"):
+        checker.verify(manifest, originals, current)
+
+
+@pytest.mark.parametrize("value", [True, "1", 1.0, None])
+def test_schema_version_requires_an_integer(value: object) -> None:
+    manifest, originals, current = fixture()
+    manifest["schema_version"] = value
+    with pytest.raises(ValueError, match="schema_version"):
+        checker.verify(manifest, originals, current)
+
+
+@pytest.mark.parametrize("value", ["", "   ", 4, None])
+def test_non_engine_reason_is_required(value: object) -> None:
+    manifest, originals, current = fixture()
+    manifest["non_engine_changes"][0]["reason"] = value
+    with pytest.raises(ValueError, match="reason"):
+        checker.verify(manifest, originals, current)
+
+
+def test_retained_file_cannot_be_edited_even_when_declared() -> None:
+    manifest, originals, current = fixture()
+    retained = manifest["retained"][0]
+    current[retained["path"]] = b"changed\n"
+    retained["sha256"] = checker.sha(b"changed\n")
+    retained["edits"] = [
+        {"start_line": 1, "delete_lines": 1, "insert": "changed\n", "reason": "change"}
+    ]
+    with pytest.raises(ValueError, match="retained file must be unchanged"):
+        checker.verify(manifest, originals, current)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("start_line", True, "start_line"),
+        ("start_line", 0, "edit range"),
+        ("start_line", 3, "edit range"),
+        ("delete_lines", False, "delete_lines"),
+        ("delete_lines", -1, "edit range"),
+        ("delete_lines", 2, "edit end"),
+        ("insert", None, "insert"),
+        ("reason", "", "reason"),
+        ("unexpected", "value", "schema keys"),
+    ],
+)
+def test_invalid_edit_is_rejected(field: str, value: object, message: str) -> None:
+    manifest, originals, current = fixture()
+    manifest["retained"][0]["edits"] = [
+        {"start_line": 1, "delete_lines": 0, "insert": "", "reason": "test edit"}
+    ]
+    manifest["retained"][0]["edits"][0][field] = value
+    with pytest.raises(ValueError, match=message):
+        checker.verify(manifest, originals, current)
+
+
+@pytest.mark.parametrize(
+    "path", ["engine_rs/LICENSE", "engine_rs/fixtures/episode.jsonl.gz"]
+)
+def test_binary_edits_are_rejected(path: str) -> None:
+    original = b"\xff\xfe\n"
+    manifest = {
+        "schema_version": 1,
+        "reference_commit": checker.PIN,
+        "excluded": [],
+        "authored": [],
+        "non_engine_changes": [],
+        "retained": [
+            {
+                "path": path,
+                "reference_sha256": checker.sha(original),
+                "sha256": checker.sha(original),
+                "edits": [
+                    {"start_line": 1, "delete_lines": 0, "insert": "", "reason": "test"}
+                ],
+            }
+        ],
+    }
+    with pytest.raises(ValueError, match=r"UTF-8|binary fixtures"):
+        checker.verify(manifest, {path: original}, {path: original})
+
+
+# --- Task 1.1 check()-level regressions against the real pinned reference ---
+
+_REPO = Path(__file__).parents[2]
+_LOCK = "engine_rs/Cargo.lock"
+_VENDORED = "engine_rs/VENDORED_FROM.md"
+
+
+@pytest.fixture(scope="module")
+def reference() -> dict[str, bytes]:
+    return checker.reference_files(_REPO)
+
+
+@pytest.fixture
+def trimmed(
+    tmp_path: Path, reference: dict[str, bytes], monkeypatch: pytest.MonkeyPatch
+) -> Path:
+    """A copy of the committed engine package whose reference comes from the pin."""
+    for relative, data in checker._current_files(_REPO).items():
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+    manifest = _REPO / "engine_rs/TRIM_MANIFEST.json"
+    (tmp_path / "engine_rs/TRIM_MANIFEST.json").write_bytes(manifest.read_bytes())
+    monkeypatch.setattr(checker, "reference_files", lambda _root: reference)
+    return tmp_path
+
+
+def _declare(root: Path, path: str, current: bytes, edits: list[Any]) -> None:
+    """Write new bytes and update the manifest so they are fully declared."""
+    (root / path).write_bytes(current)
+    manifest_path = root / "engine_rs/TRIM_MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    (entry,) = [e for e in manifest["retained"] if e["path"] == path]
+    entry["sha256"] = checker.sha(current)
+    entry["edits"] = edits
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+
+def _whole_file_edit(original: bytes, current: bytes) -> list[Any]:
+    lines = len(original.decode("utf-8").splitlines())
+    return [
+        {
+            "start_line": 1,
+            "delete_lines": lines,
+            "insert": current.decode("utf-8"),
+            "reason": "declared rewrite",
+        }
+    ]
+
+
+def test_committed_package_passes_check() -> None:
+    checker.check(_REPO)
+
+
+def test_check_entry_point_passes_on_unmodified_copy(trimmed: Path) -> None:
+    checker.check(trimmed)
+
+
+def test_main_reports_failure_exit_code(
+    trimmed: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (trimmed / "engine_rs/src/py_random.rs").write_bytes(b"changed\n")
+    monkeypatch.setattr(sys, "argv", ["check_engine_trim.py", str(trimmed)])
+    assert checker.main() == 1
+
+
+def test_declared_license_edit_is_rejected(
+    trimmed: Path, reference: dict[str, bytes]
+) -> None:
+    path = "engine_rs/LICENSE"
+    changed = reference[path] + b"Additional terms.\n"
+    _declare(trimmed, path, changed, _whole_file_edit(reference[path], changed))
+    with pytest.raises(
+        ValueError, match=re.escape("LICENSE: retained file must be unchanged")
+    ):
+        checker.check(trimmed)
+
+
+def test_declared_removal_of_trim_provenance_is_rejected(
+    trimmed: Path, reference: dict[str, bytes]
+) -> None:
+    original = reference[_VENDORED]
+    lines = len(original.decode("utf-8").splitlines())
+    _declare(trimmed, _VENDORED, original, [])
+    with pytest.raises(
+        ValueError, match=re.escape("VENDORED_FROM.md: Task 1.1 trim appendix")
+    ):
+        checker.check(trimmed)
+    # Also reject a rewritten appendix that keeps the heading.
+    tampered = (
+        original
+        + b"\n## Task 1.1 rules-only trim \xe2\x80\x94 2026-09-29\n\nRewritten.\n"
+    )
+    appended = tampered[len(original) :].decode("utf-8")
+    _declare(
+        trimmed,
+        _VENDORED,
+        tampered,
+        [
+            {
+                "start_line": lines + 1,
+                "delete_lines": 0,
+                "insert": appended,
+                "reason": "rewrite",
+            }
+        ],
+    )
+    with pytest.raises(
+        ValueError, match=re.escape("VENDORED_FROM.md: Task 1.1 trim appendix")
+    ):
+        checker.check(trimmed)
+
+
+def test_later_provenance_append_is_accepted(
+    trimmed: Path, reference: dict[str, bytes]
+) -> None:
+    original = reference[_VENDORED]
+    current = (trimmed / _VENDORED).read_bytes()
+    appended = current + b"\n## Later task\n\nMore provenance.\n"
+    lines = len(original.decode("utf-8").splitlines())
+    _declare(
+        trimmed,
+        _VENDORED,
+        appended,
+        [
+            {
+                "start_line": lines + 1,
+                "delete_lines": 0,
+                "insert": appended[len(original) :].decode("utf-8"),
+                "reason": "append-only provenance",
+            }
+        ],
+    )
+    checker.check(trimmed)
+
+
+def test_declared_extra_lockfile_change_is_rejected(
+    trimmed: Path, reference: dict[str, bytes]
+) -> None:
+    current = (trimmed / _LOCK).read_bytes()
+    changed = current.replace(b'version = "1.0.229"', b'version = "1.0.230"', 1)
+    assert changed != current
+    _declare(trimmed, _LOCK, changed, _whole_file_edit(reference[_LOCK], changed))
+    with pytest.raises(
+        ValueError, match=re.escape("Cargo.lock: Rayon closure removal only")
+    ):
+        checker.check(trimmed)
+
+
+def test_declared_eighth_lib_removal_is_rejected(
+    trimmed: Path, reference: dict[str, bytes]
+) -> None:
+    path = "engine_rs/src/lib.rs"
+    original = reference[path]
+    lines = original.splitlines(keepends=True)
+    removed = {19, 21, 22, 23, 24, 25, 27, 20}
+    changed = b"".join(
+        line for number, line in enumerate(lines, 1) if number not in removed
+    )
+    _declare(trimmed, path, changed, _whole_file_edit(original, changed))
+    with pytest.raises(ValueError, match=re.escape("lib.rs: exact seven removals")):
+        checker.check(trimmed)
+
+
+PIN_PAIR = ("1.32.7", "a" * 64)
+
+
+def generated_fixture() -> tuple[dict[str, Any], dict[str, bytes]]:
+    traces = {"gen-a.jsonl.gz": b"trace a", "divergence-b.jsonl.gz": b"trace b"}
+    entries: list[dict[str, Any]] = [
+        {
+            "path": name,
+            "sha256": checker.sha(data),
+            "bytes": len(data),
+            "seed": 1,
+            "policies": ["random", "edge"],
+            "policy_seed": 2,
+            "config_variant": "default",
+            "transitions": 719,
+            "rejected": 0,
+        }
+        for name, data in traces.items()
+    ]
+    entries[1]["probe"] = '{"farmer":["PLANT",["WHEAT"]]}'
+    entries[1]["expected_divergence"] = {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "reason": "D2: documented",
+    }
+    manifest = {
+        "schema_version": 1,
+        "format": checker.TRACE_FORMAT,
+        "generator": "scripts/kaggriculture_parity/generate_traces.py",
+        "kaggle_environments_version": PIN_PAIR[0],
+        "python_engine_sha256": PIN_PAIR[1],
+        "traces": entries,
+    }
+    return manifest, traces
+
+
+def _verify_generated(manifest: dict[str, Any], traces: dict[str, bytes]) -> int:
+    return int(
+        checker.verify_generated(json.dumps(manifest).encode(), traces, PIN_PAIR)
+    )
+
+
+def test_generated_manifest_pins_every_trace() -> None:
+    assert _verify_generated(*generated_fixture()) == 2
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("edited trace", "trace hash"),
+        ("wrong size", "trace size"),
+        ("unlisted trace", "generated trace inventory"),
+        ("missing trace", "is missing"),
+        ("other engine", "Cargo engine pin"),
+        ("over budget", "budget"),
+        ("no reason", "reason"),
+        ("probe without expectation", "go together"),
+        ("nested path", "plain"),
+        ("duplicate", "duplicate"),
+        ("extra key", "schema keys"),
+    ],
+)
+def test_generated_manifest_drift_is_rejected(mutation: str, message: str) -> None:
+    manifest, traces = generated_fixture()
+    first = manifest["traces"][0]
+    if mutation == "edited trace":
+        traces[first["path"]] = b"trace A"
+    elif mutation == "wrong size":
+        first["bytes"] += 1
+    elif mutation == "unlisted trace":
+        traces["gen-c.jsonl.gz"] = b"unlisted"
+    elif mutation == "missing trace":
+        del traces[first["path"]]
+    elif mutation == "other engine":
+        manifest["python_engine_sha256"] = "b" * 64
+    elif mutation == "over budget":
+        traces[first["path"]] = b"x" * (checker.GENERATED_BUDGET_BYTES + 1)
+        first["sha256"] = checker.sha(traces[first["path"]])
+        first["bytes"] = len(traces[first["path"]])
+    elif mutation == "no reason":
+        manifest["traces"][1]["expected_divergence"]["reason"] = " "
+    elif mutation == "probe without expectation":
+        del manifest["traces"][1]["expected_divergence"]
+    elif mutation == "nested path":
+        first["path"] = "sub/gen-a.jsonl.gz"
+    elif mutation == "duplicate":
+        manifest["traces"].append(dict(first))
+    else:
+        first["note"] = "unexpected"
+    with pytest.raises(ValueError, match=message):
+        _verify_generated(manifest, traces)
+
+
+def test_generated_traces_are_split_from_engine_inventory() -> None:
+    current = {
+        "engine_rs/src/lib.rs": b"lib",
+        checker.GENERATED_MANIFEST: b"{}",
+        f"{checker.GENERATED_DIR}/gen-a.jsonl.gz": b"trace",
+    }
+    engine, generated = checker.split_generated(current)
+    assert set(engine) == {"engine_rs/src/lib.rs", checker.GENERATED_MANIFEST}
+    assert generated == {"gen-a.jsonl.gz": b"trace"}
+
+
+def test_engine_pin_reads_cargo_metadata() -> None:
+    cargo = (Path(__file__).parents[2] / "engine_rs/Cargo.toml").read_bytes()
+    assert checker.engine_pin(cargo) == (
+        "1.32.7",
+        "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e",
+    )
+
+
+# --- Merged Task 1.1 + 1.1b: generated traces through the full check() path ---
+
+
+def test_check_rejects_edited_generated_trace(trimmed: Path) -> None:
+    trace = sorted((trimmed / checker.GENERATED_DIR).glob("gen-*.jsonl.gz"))[0]
+    trace.write_bytes(trace.read_bytes() + b"\x00")
+    with pytest.raises(ValueError, match=re.escape(f"{trace.name}: trace hash")):
+        checker.check(trimmed)
+
+
+def test_check_rejects_unlisted_generated_trace(trimmed: Path) -> None:
+    (trimmed / checker.GENERATED_DIR / "gen-unlisted.jsonl.gz").write_bytes(b"x")
+    with pytest.raises(ValueError, match="generated trace inventory"):
+        checker.check(trimmed)
+
+exec
+/bin/zsh -lc 'git diff --stat HEAD''^1 HEAD && git diff HEAD''^2 HEAD -- scripts/check_engine_trim.py tests/tools/test_check_engine_trim.py tests/scripts/test_kaggriculture_parity.py docs/rules-parity-coverage.md && cat ops/rebuild-2026-09-29/1.1/generate_manifest.py' in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+ cookbook/log.md                                    |   47 +
+ cookbook/references/index.md                       |    1 +
+ ...e-differential-parity-checks-the-rust-kernel.md |  108 ++
+ docs/rules-parity-coverage.md                      |  166 ++-
+ engine_rs/TRIM_MANIFEST.json                       |   41 +-
+ engine_rs/fixtures/generated/MANIFEST.json         |  275 +++++
+ ...gence-d1-unicode-digit-market-quantity.jsonl.gz |  Bin 0 -> 1077 bytes
+ ...divergence-d1-unicode-digit-unit-count.jsonl.gz |  Bin 0 -> 1043 bytes
+ .../divergence-d2-unhashable-market-item.jsonl.gz  |  Bin 0 -> 1089 bytes
+ .../divergence-d2-unhashable-plant-crop.jsonl.gz   |  Bin 0 -> 1079 bytes
+ ...ce-d2-unhashable-plant-in-missing-hand.jsonl.gz |  Bin 0 -> 1092 bytes
+ .../divergence-d2-unhashable-shed-item.jsonl.gz    |  Bin 0 -> 1090 bytes
+ .../divergence-d2-unhashable-unit-verb.jsonl.gz    |  Bin 0 -> 1071 bytes
+ .../fixtures/generated/gen-edge-free-hire.jsonl.gz |  Bin 0 -> 49255 bytes
+ .../fixtures/generated/gen-edge-vs-edge.jsonl.gz   |  Bin 0 -> 117171 bytes
+ .../generated/gen-edge-vs-random-rich.jsonl.gz     |  Bin 0 -> 21607 bytes
+ .../gen-pass-vs-edge-negative-seed.jsonl.gz        |  Bin 0 -> 95654 bytes
+ .../fixtures/generated/gen-random-vs-edge.jsonl.gz |  Bin 0 -> 111741 bytes
+ .../generated/gen-random-vs-random.jsonl.gz        |  Bin 0 -> 105461 bytes
+ .../gen-random-vs-starter-custom.jsonl.gz          |  Bin 0 -> 70921 bytes
+ .../generated/gen-starter-vs-random.jsonl.gz       |  Bin 0 -> 85670 bytes
+ engine_rs/tests/replay_parity.rs                   |  830 ++++++++++++--
+ .../MANIFEST-generated-then.json                   |  121 ++
+ .../gen-edge-free-hire.jsonl.gz                    |  Bin 0 -> 46236 bytes
+ .../first-failing-games/gen-edge-vs-edge.jsonl.gz  |  Bin 0 -> 113940 bytes
+ .../gen-edge-vs-random-rich.jsonl.gz               |  Bin 0 -> 18583 bytes
+ .../gen-pass-vs-edge-negative-seed.jsonl.gz        |  Bin 0 -> 95633 bytes
+ .../gen-random-vs-edge.jsonl.gz                    |  Bin 0 -> 111835 bytes
+ .../evidence/first-failing-games/rust-replay.log   |   27 +
+ .../evidence/first-failing-games/rust-report.json  |   62 ++
+ ops/rebuild-2026-09-29/1.1b/prepare.log            |  455 ++++++++
+ ops/rebuild-2026-09-29/1.1b/results.md             |  147 +++
+ ops/rebuild-2026-09-29/1.1b/sweep-summary.json     |  880 +++++++++++++++
+ ops/rebuild-2026-09-29/1.1b/sweep.log              |  407 +++++++
+ .../1.1b/update_trim_manifest.py                   |   81 ++
+ .../1.1b/verify-r1/negative-classification.log     |    4 +
+ ops/rebuild-2026-09-29/1.1b/verify-r1/prepare.log  |  353 ++++++
+ .../1.1b/verify-r1/sweep-summary.json              |  878 +++++++++++++++
+ ops/rebuild-2026-09-29/1.1b/verify-r1/sweep.log    |  416 +++++++
+ .../1.1b/verify-r1/with-known-divergences.log      |   71 ++
+ .../with-known-divergences/sweep-summary.json      |  251 +++++
+ ops/rebuild-2026-09-29/1.1b/verify-r2/cargo.log    |   94 ++
+ .../1.1b/verify-r2/check_live_guard.py             |   18 +
+ .../verify-r2/classification-ascii-report.json     |   14 +
+ .../1.1b/verify-r2/classification-ascii.log        |   20 +
+ .../verify-r2/classification-corrupt-report.json   |   14 +
+ .../1.1b/verify-r2/classification-corrupt.log      |   20 +
+ .../1.1b/verify-r2/classification-summary.json     |   55 +
+ .../1.1b/verify-r2/controls-replay.log             |    9 +
+ .../1.1b/verify-r2/controls-report.json            |   44 +
+ .../1.1b/verify-r2/divergences-report.json         |   86 ++
+ .../1.1b/verify-r2/divergences.log                 |   26 +
+ .../1.1b/verify-r2/experiments.log                 |    4 +
+ .../1.1b/verify-r2/experiments.py                  |   84 ++
+ .../1.1b/verify-r2/hash-refusal.log                |    3 +
+ .../1.1b/verify-r2/perturb-summary.json            |   32 +
+ .../1.1b/verify-r2/perturbed-report.json           |   14 +
+ .../1.1b/verify-r2/perturbed.log                   |   20 +
+ ops/rebuild-2026-09-29/1.1b/verify-r2/pytest.log   |    3 +
+ ops/rebuild-2026-09-29/1.1b/verify-r2/report.md    |   78 ++
+ .../1.1b/verify-r2/restored-report.json            |    8 +
+ ops/rebuild-2026-09-29/1.1b/verify-r2/restored.log |    9 +
+ ops/rebuild-2026-09-29/1.1b/verify-r2/sweep.log    |  383 +++++++
+ .../1.1b/verify-r2/sweep/sweep-summary.json        |  829 ++++++++++++++
+ ops/rebuild-2026-09-29/1.1b/verify-r2/verdict.md   |   79 ++
+ .../1.1b/with-known-divergences.log                |   46 +
+ .../1.1b/with-known-divergences/sweep-summary.json |  253 +++++
+ ops/rebuild-2026-09-29/merge-1.1b/non-vacuity.log  |   16 +
+ ops/rebuild-2026-09-29/merge-1.1b/prepare.log      |  482 ++++++++
+ scripts/check_engine_trim.py                       |  142 ++-
+ scripts/kaggriculture_parity/generate_traces.py    | 1165 ++++++++++++++++++++
+ scripts/kaggriculture_parity/sweep.py              |  418 +++++++
+ tests/scripts/test_kaggriculture_parity.py         |  394 +++++++
+ tests/tools/test_check_engine_trim.py              |  147 ++-
+ 74 files changed, 10509 insertions(+), 121 deletions(-)
+diff --git a/docs/rules-parity-coverage.md b/docs/rules-parity-coverage.md
+index 0ca5ea4..dfc8b01 100644
+--- a/docs/rules-parity-coverage.md
++++ b/docs/rules-parity-coverage.md
+@@ -144,6 +144,10 @@ Task 1.1 retains a standalone `engine_rs` package pinned to reference commit
+ 113 excluded, plus the authored replay test and non-engine change inventory.
+ `python scripts/check_engine_trim.py` checks hashes, exhaustive inventory,
+ declared original-line edits, exact Cargo removals and append-only provenance.
++Independently of manifest declarations, only `lib.rs`, `Cargo.toml`,
++`Cargo.lock` and `VENDORED_FROM.md` may differ from the reference; the lockfile
++must equal the reference minus the six-package Rayon closure, and the Task 1.1
++provenance appendix must follow the historical bytes with a pinned SHA-256.
+ 
+ Only reference `lib.rs` lines 19, 21–25 and 27 are removed: declarations for
+ `ffi`, `joint_matching`, `myolie_features`, `myolie_sampler`, `native_agents`,
+@@ -242,9 +246,11 @@ explicit seed and records traces in the official
+ `kaggriculture-re-parity-v1` format: complete public and private state, statuses
+ and rewards after every step. It refuses to run unless the installed package is
+ 1.32.7 and `envs/kaggriculture/kaggriculture.py` has exactly the SHA-256 pinned
+-in `engine_rs/Cargo.toml`; each header records both. The project lock pins
+-kaggle-environments 1.29.0, which has no Kaggriculture environment, so the
+-generator runs in an isolated environment and the project lock is unchanged:
++in `engine_rs/Cargo.toml`; each header records both. Task 1.1b was built when
++the project lock still pinned 1.29.0 (no Kaggriculture environment), so its
++receipts and the sweep use an isolated environment. The owner's 1.32.7 project
++pin, merged alongside, also satisfies the guard; a Python test asserts that the
++project environment loads the pinned engine. The isolated command stays valid:
+ 
+ ```sh
+ UV_OFFLINE=1 uv run --isolated --no-project --with kaggle-environments==1.32.7 \
+diff --git a/scripts/check_engine_trim.py b/scripts/check_engine_trim.py
+index b233e03..7ea7b34 100644
+--- a/scripts/check_engine_trim.py
++++ b/scripts/check_engine_trim.py
+@@ -20,6 +20,33 @@ from typing import TypedDict, cast
+ 
+ PIN = "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0"
+ LIB_SHA256 = "c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd"
++# Only these retained files may carry declared edits; every other retained file
++# (LICENSE, RNG/attribution sources, RNG tests, fixtures) stays byte-identical.
++EDITABLE = frozenset(
++    {
++        "engine_rs/Cargo.lock",
++        "engine_rs/Cargo.toml",
++        "engine_rs/VENDORED_FROM.md",
++        "engine_rs/src/lib.rs",
++    }
++)
++# Packages that `cargo remove rayon` prunes from the pinned lockfile.
++RAYON_CLOSURE = frozenset(
++    {
++        "crossbeam-deque",
++        "crossbeam-epoch",
++        "crossbeam-utils",
++        "either",
++        "rayon",
++        "rayon-core",
++    }
++)
++TRIM_APPENDIX_HEADING = "\n## Task 1.1 rules-only trim \u2014 2026-09-29\n".encode()
++# SHA-256 of the Task 1.1 appendix section, from its heading up to the next
++# `## ` section (later provenance may be appended after it, never inside it).
++TRIM_APPENDIX_SHA256 = (
++    "1d089760261e8fef7ed0fddcaaa1a60776cb9abbb65386ef08d529f863d76c93"
++)
+ GENERATED_DIR = "engine_rs/fixtures/generated"
+ GENERATED_MANIFEST = f"{GENERATED_DIR}/MANIFEST.json"
+ GENERATED_BUDGET_BYTES = 4_000_000
+@@ -400,8 +427,8 @@ def verify(
+             actual == _reconstruct(original, retained["edits"], path),
+             f"{path}: undeclared edit",
+         )
+-        if path.endswith(".rs") and path != "engine_rs/src/lib.rs":
+-            _require(not retained["edits"], f"{path}: retained Rust must be unchanged")
++        if path not in EDITABLE:
++            _require(not retained["edits"], f"{path}: retained file must be unchanged")
+     for authored in manifest["authored"]:
+         path = authored["path"]
+         _require(sha(current[path]) == authored["sha256"], f"{path}: authored hash")
+@@ -427,19 +454,32 @@ def _current_files(root: Path) -> dict[str, bytes]:
+     return current
+ 
+ 
+-def check(root: Path) -> None:
+-    root = root.resolve()
+-    manifest_path = root / "engine_rs/TRIM_MANIFEST.json"
+-    _require(not manifest_path.is_symlink(), f"{manifest_path}: symlink")
+-    manifest = parse_manifest(json.loads(manifest_path.read_text(encoding="utf-8")))
++def reference_files(root: Path) -> dict[str, bytes]:
++    """Read every pinned-reference ``engine_rs`` blob from the Git object store."""
+ 
+     def git(*args: str) -> bytes:
+         # check_output has no Node-style 1 MiB limit; the largest blob is 5,099,830 B.
+         return subprocess.check_output(["git", *args], cwd=root)
+ 
+     paths = git("ls-tree", "-r", "--name-only", PIN, "engine_rs").decode().splitlines()
+-    originals = {path: git("show", f"{PIN}:{path}") for path in paths}
+-    current, generated = split_generated(_current_files(root))
++    return {path: git("show", f"{PIN}:{path}") for path in paths}
++
++
++def check(root: Path) -> None:
++    root = root.resolve()
++    manifest_path = root / "engine_rs/TRIM_MANIFEST.json"
++    _require(not manifest_path.is_symlink(), f"{manifest_path}: symlink")
++    value = json.loads(manifest_path.read_text(encoding="utf-8"))
++    verify_task(value, reference_files(root), _current_files(root))
++
++
++def verify_task(
++    value: object, originals: Mapping[str, bytes], current: Mapping[str, bytes]
++) -> None:
++    """Apply the generic manifest checks plus the fixed Task 1.1 trim contract."""
++    manifest = parse_manifest(value)
++    # Generated traces are pinned by their own manifest, not the trim inventory.
++    current, generated = split_generated(current)
+     verify(manifest, originals, current)
+     generated_count = verify_generated(
+         current[GENERATED_MANIFEST],
+@@ -493,10 +533,42 @@ def check(root: Path) -> None:
+         "Cargo.toml: target/dependency removals only",
+     )
+     _require(
+-        current["engine_rs/VENDORED_FROM.md"].startswith(
+-            originals["engine_rs/VENDORED_FROM.md"]
+-        ),
+-        "VENDORED_FROM.md: append-only provenance",
++        current["engine_rs/Cargo.lock"]
++        == _expected_lock(originals["engine_rs/Cargo.lock"]),
++        "Cargo.lock: Rayon closure removal only",
++    )
++    _verify_provenance(
++        originals["engine_rs/VENDORED_FROM.md"], current["engine_rs/VENDORED_FROM.md"]
++    )
++
++
++def _expected_lock(original: bytes) -> bytes:
++    """Derive the trimmed lockfile: drop the Rayon closure and the Rayon edge."""
++    separator = b"\n\n[[package]]\n"
++    header, *packages = original.split(separator)
++    names = [package.split(b"\n", 1)[0] for package in packages]
++    pruned = {f'name = "{name}"'.encode() for name in RAYON_CLOSURE}
++    _require(pruned <= set(names), "Cargo.lock: reference lacks the Rayon closure")
++    kept = [
++        package
++        for package, name in zip(packages, names, strict=True)
++        if name not in pruned
++    ]
++    lock = separator.join([header, *kept])
++    edge = b'\n "rayon",\n'
++    _require(lock.count(edge) == 1, "Cargo.lock: expected one Rayon dependency edge")
++    return lock.replace(edge, b"\n")
++
++
++def _verify_provenance(original: bytes, current: bytes) -> None:
++    """Historical bytes stay intact and the exact Task 1.1 appendix follows them."""
++    _require(current.startswith(original), "VENDORED_FROM.md: append-only provenance")
++    tail = current[len(original) :]
++    end = tail.find(b"\n## ", 1)
++    section = tail if end < 0 else tail[:end]
++    _require(
++        tail.startswith(TRIM_APPENDIX_HEADING) and sha(section) == TRIM_APPENDIX_SHA256,
++        "VENDORED_FROM.md: Task 1.1 trim appendix must follow the history unchanged",
+     )
+ 
+ 
+diff --git a/tests/scripts/test_kaggriculture_parity.py b/tests/scripts/test_kaggriculture_parity.py
+index 00aba0e..f33c3ca 100644
+--- a/tests/scripts/test_kaggriculture_parity.py
++++ b/tests/scripts/test_kaggriculture_parity.py
+@@ -75,10 +75,21 @@ def test_hash_guard_rejects_another_package_version(tmp_path: Path) -> None:
+         generator.verify_engine(engine, "1.29.0", pin)
+ 
+ 
+-def test_generator_refuses_the_project_kaggle_environments() -> None:
+-    """The project lock pins 1.29.0 (no kaggriculture env): the guard must refuse."""
+-    code = generator.main(["--preset", "committed", "--out", os.devnull])
+-    assert code == 2
++def test_generator_refuses_before_writing_when_the_pin_differs(
++    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
++) -> None:
++    """main() exits 2 and writes nothing when the installed engine misses the pin."""
++    other = generator.EnginePin(version="0.0.0", sha256=FULL_ENGINE_SHA)
++    monkeypatch.setattr(generator, "pinned_engine", lambda: other)
++    out = tmp_path / "out"
++    assert generator.main(["--preset", "committed", "--out", str(out)]) == 2
++    assert not out.exists()
++
++
++def test_project_environment_satisfies_the_engine_pin() -> None:
++    """The project lock pins kaggle-environments 1.32.7, whose engine is the pin."""
++    _, _, digest = generator.load_pinned_kaggle(generator.pinned_engine())
++    assert digest == FULL_ENGINE_SHA
+ 
+ 
+ def test_cargo_pin_must_be_hex(tmp_path: Path) -> None:
+diff --git a/tests/tools/test_check_engine_trim.py b/tests/tools/test_check_engine_trim.py
+index 884030a..364c554 100644
+--- a/tests/tools/test_check_engine_trim.py
++++ b/tests/tools/test_check_engine_trim.py
+@@ -2,6 +2,8 @@ from __future__ import annotations
+ 
+ import importlib.util
+ import json
++import re
++import sys
+ from pathlib import Path
+ from typing import Any
+ 
+@@ -220,7 +222,7 @@ def test_non_engine_reason_is_required(value: object) -> None:
+         checker.verify(manifest, originals, current)
+ 
+ 
+-def test_retained_rust_cannot_be_edited_even_when_declared() -> None:
++def test_retained_file_cannot_be_edited_even_when_declared() -> None:
+     manifest, originals, current = fixture()
+     retained = manifest["retained"][0]
+     current[retained["path"]] = b"changed\n"
+@@ -228,7 +230,7 @@ def test_retained_rust_cannot_be_edited_even_when_declared() -> None:
+     retained["edits"] = [
+         {"start_line": 1, "delete_lines": 1, "insert": "changed\n", "reason": "change"}
+     ]
+-    with pytest.raises(ValueError, match="retained Rust must be unchanged"):
++    with pytest.raises(ValueError, match="retained file must be unchanged"):
+         checker.verify(manifest, originals, current)
+ 
+ 
+@@ -282,6 +284,170 @@ def test_binary_edits_are_rejected(path: str) -> None:
+         checker.verify(manifest, {path: original}, {path: original})
+ 
+ 
++# --- Task 1.1 check()-level regressions against the real pinned reference ---
++
++_REPO = Path(__file__).parents[2]
++_LOCK = "engine_rs/Cargo.lock"
++_VENDORED = "engine_rs/VENDORED_FROM.md"
++
++
++@pytest.fixture(scope="module")
++def reference() -> dict[str, bytes]:
++    return checker.reference_files(_REPO)
++
++
++@pytest.fixture
++def trimmed(
++    tmp_path: Path, reference: dict[str, bytes], monkeypatch: pytest.MonkeyPatch
++) -> Path:
++    """A copy of the committed engine package whose reference comes from the pin."""
++    for relative, data in checker._current_files(_REPO).items():
++        target = tmp_path / relative
++        target.parent.mkdir(parents=True, exist_ok=True)
++        target.write_bytes(data)
++    manifest = _REPO / "engine_rs/TRIM_MANIFEST.json"
++    (tmp_path / "engine_rs/TRIM_MANIFEST.json").write_bytes(manifest.read_bytes())
++    monkeypatch.setattr(checker, "reference_files", lambda _root: reference)
++    return tmp_path
++
++
++def _declare(root: Path, path: str, current: bytes, edits: list[Any]) -> None:
++    """Write new bytes and update the manifest so they are fully declared."""
++    (root / path).write_bytes(current)
++    manifest_path = root / "engine_rs/TRIM_MANIFEST.json"
++    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
++    (entry,) = [e for e in manifest["retained"] if e["path"] == path]
++    entry["sha256"] = checker.sha(current)
++    entry["edits"] = edits
++    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
++
++
++def _whole_file_edit(original: bytes, current: bytes) -> list[Any]:
++    lines = len(original.decode("utf-8").splitlines())
++    return [
++        {
++            "start_line": 1,
++            "delete_lines": lines,
++            "insert": current.decode("utf-8"),
++            "reason": "declared rewrite",
++        }
++    ]
++
++
++def test_committed_package_passes_check() -> None:
++    checker.check(_REPO)
++
++
++def test_check_entry_point_passes_on_unmodified_copy(trimmed: Path) -> None:
++    checker.check(trimmed)
++
++
++def test_main_reports_failure_exit_code(
++    trimmed: Path, monkeypatch: pytest.MonkeyPatch
++) -> None:
++    (trimmed / "engine_rs/src/py_random.rs").write_bytes(b"changed\n")
++    monkeypatch.setattr(sys, "argv", ["check_engine_trim.py", str(trimmed)])
++    assert checker.main() == 1
++
++
++def test_declared_license_edit_is_rejected(
++    trimmed: Path, reference: dict[str, bytes]
++) -> None:
++    path = "engine_rs/LICENSE"
++    changed = reference[path] + b"Additional terms.\n"
++    _declare(trimmed, path, changed, _whole_file_edit(reference[path], changed))
++    with pytest.raises(
++        ValueError, match=re.escape("LICENSE: retained file must be unchanged")
++    ):
++        checker.check(trimmed)
++
++
++def test_declared_removal_of_trim_provenance_is_rejected(
++    trimmed: Path, reference: dict[str, bytes]
++) -> None:
++    original = reference[_VENDORED]
++    lines = len(original.decode("utf-8").splitlines())
++    _declare(trimmed, _VENDORED, original, [])
++    with pytest.raises(
++        ValueError, match=re.escape("VENDORED_FROM.md: Task 1.1 trim appendix")
++    ):
++        checker.check(trimmed)
++    # Also reject a rewritten appendix that keeps the heading.
++    tampered = (
++        original
++        + b"\n## Task 1.1 rules-only trim \xe2\x80\x94 2026-09-29\n\nRewritten.\n"
++    )
++    appended = tampered[len(original) :].decode("utf-8")
++    _declare(
++        trimmed,
++        _VENDORED,
++        tampered,
++        [
++            {
++                "start_line": lines + 1,
++                "delete_lines": 0,
++                "insert": appended,
++                "reason": "rewrite",
++            }
++        ],
++    )
++    with pytest.raises(
++        ValueError, match=re.escape("VENDORED_FROM.md: Task 1.1 trim appendix")
++    ):
++        checker.check(trimmed)
++
++
++def test_later_provenance_append_is_accepted(
++    trimmed: Path, reference: dict[str, bytes]
++) -> None:
++    original = reference[_VENDORED]
++    current = (trimmed / _VENDORED).read_bytes()
++    appended = current + b"\n## Later task\n\nMore provenance.\n"
++    lines = len(original.decode("utf-8").splitlines())
++    _declare(
++        trimmed,
++        _VENDORED,
++        appended,
++        [
++            {
++                "start_line": lines + 1,
++                "delete_lines": 0,
++                "insert": appended[len(original) :].decode("utf-8"),
++                "reason": "append-only provenance",
++            }
++        ],
++    )
++    checker.check(trimmed)
++
++
++def test_declared_extra_lockfile_change_is_rejected(
++    trimmed: Path, reference: dict[str, bytes]
++) -> None:
++    current = (trimmed / _LOCK).read_bytes()
++    changed = current.replace(b'version = "1.0.229"', b'version = "1.0.230"', 1)
++    assert changed != current
++    _declare(trimmed, _LOCK, changed, _whole_file_edit(reference[_LOCK], changed))
++    with pytest.raises(
++        ValueError, match=re.escape("Cargo.lock: Rayon closure removal only")
++    ):
++        checker.check(trimmed)
++
++
++def test_declared_eighth_lib_removal_is_rejected(
++    trimmed: Path, reference: dict[str, bytes]
++) -> None:
++    path = "engine_rs/src/lib.rs"
++    original = reference[path]
++    lines = original.splitlines(keepends=True)
++    removed = {19, 21, 22, 23, 24, 25, 27, 20}
++    changed = b"".join(
++        line for number, line in enumerate(lines, 1) if number not in removed
++    )
++    _declare(trimmed, path, changed, _whole_file_edit(original, changed))
++    with pytest.raises(ValueError, match=re.escape("lib.rs: exact seven removals")):
++        checker.check(trimmed)
++
++
+ PIN_PAIR = ("1.32.7", "a" * 64)
+ 
+ 
+@@ -394,3 +560,19 @@ def test_engine_pin_reads_cargo_metadata() -> None:
+         "1.32.7",
+         "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e",
+     )
++
++
++# --- Merged Task 1.1 + 1.1b: generated traces through the full check() path ---
++
++
++def test_check_rejects_edited_generated_trace(trimmed: Path) -> None:
++    trace = sorted((trimmed / checker.GENERATED_DIR).glob("gen-*.jsonl.gz"))[0]
++    trace.write_bytes(trace.read_bytes() + b"\x00")
++    with pytest.raises(ValueError, match=re.escape(f"{trace.name}: trace hash")):
++        checker.check(trimmed)
++
++
++def test_check_rejects_unlisted_generated_trace(trimmed: Path) -> None:
++    (trimmed / checker.GENERATED_DIR / "gen-unlisted.jsonl.gz").write_bytes(b"x")
++    with pytest.raises(ValueError, match="generated trace inventory"):
++        checker.check(trimmed)
+from pathlib import Path
+import difflib, hashlib, json, subprocess
+
+pin = '65f0eac5bb00b18a9d3acce319c2a231cbd5dff0'
+prefix = 'engine_rs/'
+kept = {'Cargo.toml', 'Cargo.lock', 'LICENSE', 'VENDORED_FROM.md', 'src/lib.rs',
+        'src/py_random.rs', 'src/econ_attrib.rs', 'tests/py_random.rs'}
+kept |= {f'fixtures/episode-{i}.jsonl.gz' for i in (95324500, 95901360, 95921764, 95990191)}
+why_edit = {
+    'src/lib.rs': 'Remove only excluded module declarations at reference lines 19, 21-25, 27; see brief dependency table.',
+    'Cargo.toml': 'Remove unused cdylib, re_engine binary and Rayon dependency; preserve numeric features and compatibility metadata.',
+    'Cargo.lock': 'Generated by cargo remove --offline rayon; prune only unused Rayon dependency closure, no manual edits.',
+    'VENDORED_FROM.md': 'Append current trim scope while preserving all historical provenance bytes.',
+}
+excluded_sources = {
+    'ffi': 'C5 C ABI/ctypes replaced by native adapter in Task 1.4',
+    'joint_matching': 'C2 policy matching enumeration is outside rules kernel',
+    'myolie_features': 'C4 flat v2 encoder rebuilt in Task 1.3',
+    'myolie_sampler': 'C3 grammar port after review in Task 1.2',
+    'native_agents': 'C2 scripted opponents deferred to selected Phase 7 imports',
+    'policy_rows': 'C2 policy action-row machinery is outside rules kernel',
+    'training': 'C5 old training lifecycle/collector rebuilt in Task 1.4',
+    'main': 'Replay/benchmark CLI excluded; direct replay integration test replaces test purpose',
+}
+def exclusion(path):
+    if path.startswith('src/native_agents/'):
+        return excluded_sources['native_agents']
+    if path.startswith('src/bin/') or path.startswith('examples/'):
+        return 'C2 bot executable/oracle not required for rules transitions'
+    if path.startswith('src/') and Path(path).stem in excluded_sources:
+        return excluded_sources[Path(path).stem]
+    if path.startswith('fixtures/'):
+        return 'Bot/controller/matching oracle unused by retained rules and RNG tests'
+    if path == 'tests/shoprouter_parity.rs':
+        return 'Requires excluded ShopRouterController; tests controller actions, zero engine transitions'
+    if path == 'README.md':
+        return 'Describes excluded full engine/ABI/matching surfaces and unavailable sibling tools'
+    if path == 'V3_IMPORT.json':
+        return 'Full prior import manifest superseded by exhaustive TRIM_MANIFEST.json'
+    raise ValueError(f'unclassified reference path: {path}')
+sha = lambda data: hashlib.sha256(data).hexdigest()
+paths = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', pin, 'engine_rs'], text=True).splitlines()
+manifest = dict(schema_version=1, reference_commit=pin, retained=[], excluded=[], authored=[])
+for path in paths:
+    relative = path.removeprefix(prefix)
+    before = subprocess.check_output(['git', 'show', f'{pin}:{path}'])
+    if relative not in kept:
+        manifest['excluded'].append(dict(path=path, reference_sha256=sha(before), reason=exclusion(relative)))
+        continue
+    after = Path(path).read_bytes()
+    edits = []
+    if before != after:
+        reason = why_edit[relative]  # Deliberately fail for an unauthorized edited file.
+        a = before.decode('utf-8').splitlines(keepends=True)
+        b = after.decode('utf-8').splitlines(keepends=True)
+        for tag, i, j, x, y in difflib.SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes():
+            if tag != 'equal':
+                edits.append(dict(start_line=i+1, delete_lines=j-i, insert=''.join(b[x:y]), reason=reason))
+    manifest['retained'].append(dict(path=path, reference_sha256=sha(before), sha256=sha(after), edits=edits))
+new = Path('engine_rs/tests/replay_parity.rs')
+if new.exists():
+    manifest['authored'].append(dict(path=new.as_posix(), sha256=sha(new.read_bytes()),
+                                     reason='New direct native-reset official-trace parity and comparator regressions'))
+assert len(paths) == 125 and len(manifest['retained']) == 12 and len(manifest['excluded']) == 113
+manifest['non_engine_changes'] = [
+    dict(path='rustfmt.toml', reason='Exclude exactly two immutable vendored sources with known upstream formatting drift; their bytes are checked by provenance manifest.'),
+    dict(path='scripts/check_engine_trim.py', reason='Python provenance checker required by Claude review; replaces planned Node tool.'),
+    dict(path='tests/tools/test_check_engine_trim.py', reason='Test-first pytest coverage for provenance and inventory drift.'),
+    dict(path='justfile', reason='Separate engine manifest-path fmt/check, clippy and test invocations under rs-prepare and prepare; preserve feature isolation.'),
+    dict(path='docs/rules-parity-coverage.md', reason='Document current Kaggriculture replay and unit coverage without changing Orbit coverage.'),
+    dict(path='cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md', reason='Record completed reviewed trim, verified scope and remaining integration limits.'),
+    dict(path='cookbook/decisions/index.md', reason='Reconcile current restart Decision description.'),
+    dict(path='cookbook/log.md', reason='Prepend material Task 1.1 adaptation record.'),
+    dict(path='ops/rebuild-2026-09-29/1.1', reason='Directory of source-bound command receipts, test-first failures, preserved dirty bytes and result inventory.'),
+]
+Path('engine_rs/TRIM_MANIFEST.json').write_text(json.dumps(manifest, indent=2) + '\n')
+
+exec
+/bin/zsh -lc "mkdir -p ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193 && git check-ignore ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/checker.log && sed -n '1,110p' tests/conftest.py && sed -n '450,630p' scripts/check_engine_trim.py && sed -n '1,90p' tests/tools/test_check_engine_trim.py" in /Users/poonszesen/kg-v3-merge
+ exited 1 in 0ms:
+exec
+/bin/zsh -lc "cat .gitignore && sed -n '1,110p' tests/conftest.py && sed -n '450,630p' scripts/check_engine_trim.py && sed -n '1,90p' tests/tools/test_check_engine_trim.py" in /Users/poonszesen/kg-v3-merge
+ exited 1 in 0ms:
+# Compilation artifacts and link files
+target/
+python/owl/rs*.so
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Large Kaggle replay downloads used by parity tests.
+replays/
+replay-*.json
+replay-*.jsonl
+tests/fixtures/orbit_wars_replays/*.jsonl
+tests/fixtures/generation/reference_generation.json
+
+# Virtual environments
+.venv
+
+# Submission files
+artifacts/
+
+# Kaggriculture local training state and credentials
+runs/
+wandb/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.nsys-rep
+*.sqlite
+.env
+.env.*
+.netrc
+.DS_Store
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+sed: tests/conftest.py: No such file or directory
+
+exec
+/bin/zsh -lc 'uv run pytest tests/tools tests/scripts -q > ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/pytest.log 2>&1
+result=$?
+tail -n 40 ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/pytest.log
+exit $result' in /Users/poonszesen/kg-v3-merge
+exec
+/bin/zsh -lc 'cargo test --manifest-path engine_rs/Cargo.toml --locked --offline > ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/cargo.log 2>&1
+result=$?
+tail -n 35 ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/cargo.log
+exit $result' in /Users/poonszesen/kg-v3-merge
+exec
+/bin/zsh -lc 'uv run python scripts/check_engine_trim.py > ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/checker.log 2>&1
+result=$?
+cat ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/checker.log
+exit $result' in /Users/poonszesen/kg-v3-merge
+ succeeded in 2422ms:
+engine trim manifest: OK
+
+ succeeded in 5758ms:
+test mt19937_twists_match_cpython_across_multiple_state_rollovers ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/replay_parity.rs (engine_rs/target/debug/deps/replay_parity-c38030bb30dd03b7)
+
+running 19 tests
+test env_directory_traces ... ok
+test comparator_names_first_differing_field ... ok
+test kernel_public_api ... ok
+test nested_private_order_mismatch_is_rejected - should panic ... ok
+test private_order_mismatch_is_rejected - should panic ... ok
+test public_number_mismatch_is_rejected - should panic ... ok
+test public_order_mismatch_is_rejected - should panic ... ok
+test rollback_check_accepts_an_untouched_state ... ok
+test rollback_check_rejects_a_key_order_only_mutation ... ok
+test rollback_check_rejects_status_reward_and_done_mutations ... ok
+test generated_trace_perturbed_action_is_rejected ... ok
+test generated_trace_perturbed_private_order_is_rejected ... ok
+test generated_trace_rejection_claims_are_checked ... ok
+test generated_trace_perturbed_state_is_rejected ... ok
+test episode_95324500 ... ok
+test episode_95921764 ... ok
+test episode_95990191 ... ok
+test episode_95901360 ... ok
+test generated_fixtures_replay ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.60s
+
+   Doc-tests kaggriculture_engine
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+ succeeded in 12900ms:
+........................................................................ [ 27%]
+........................................................................ [ 55%]
+........................................................................ [ 82%]
+.............................................                            [100%]
+261 passed in 12.34s
+
+exec
+/bin/zsh -lc "sed -n '450,630p' scripts/check_engine_trim.py && sed -n '1,100p' tests/tools/test_check_engine_trim.py && sed -n '450,590p' tests/tools/test_check_engine_trim.py && rg --files -g '*conftest*' -g '*manifest*' ops/rebuild-2026-09-29/1.1b" in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+                _require(child.is_file(), f"{relative}: not a regular file")
+                current[relative] = child.read_bytes()
+
+    walk(root / "engine_rs")
+    return current
+
+
+def reference_files(root: Path) -> dict[str, bytes]:
+    """Read every pinned-reference ``engine_rs`` blob from the Git object store."""
+
+    def git(*args: str) -> bytes:
+        # check_output has no Node-style 1 MiB limit; the largest blob is 5,099,830 B.
+        return subprocess.check_output(["git", *args], cwd=root)
+
+    paths = git("ls-tree", "-r", "--name-only", PIN, "engine_rs").decode().splitlines()
+    return {path: git("show", f"{PIN}:{path}") for path in paths}
+
+
+def check(root: Path) -> None:
+    root = root.resolve()
+    manifest_path = root / "engine_rs/TRIM_MANIFEST.json"
+    _require(not manifest_path.is_symlink(), f"{manifest_path}: symlink")
+    value = json.loads(manifest_path.read_text(encoding="utf-8"))
+    verify_task(value, reference_files(root), _current_files(root))
+
+
+def verify_task(
+    value: object, originals: Mapping[str, bytes], current: Mapping[str, bytes]
+) -> None:
+    """Apply the generic manifest checks plus the fixed Task 1.1 trim contract."""
+    manifest = parse_manifest(value)
+    # Generated traces are pinned by their own manifest, not the trim inventory.
+    current, generated = split_generated(current)
+    verify(manifest, originals, current)
+    generated_count = verify_generated(
+        current[GENERATED_MANIFEST],
+        generated,
+        engine_pin(current["engine_rs/Cargo.toml"]),
+    )
+    _require(generated_count >= 6, "expected the committed generated trace set")
+    retained = [
+        "Cargo.toml",
+        "Cargo.lock",
+        "LICENSE",
+        "VENDORED_FROM.md",
+        "src/lib.rs",
+        "src/py_random.rs",
+        "src/econ_attrib.rs",
+        "tests/py_random.rs",
+        *[
+            f"fixtures/episode-{episode}.jsonl.gz"
+            for episode in (95324500, 95901360, 95921764, 95990191)
+        ],
+    ]
+    _same_inventory(
+        [entry["path"] for entry in manifest["retained"]],
+        [f"engine_rs/{path}" for path in retained],
+        "Task 1.1 retained set",
+    )
+    verify_task_authored(manifest["authored"])
+    _require(
+        "justfile" in {entry["path"] for entry in manifest["non_engine_changes"]},
+        "Task 1.1 non_engine_changes must include justfile",
+    )
+    removed = {19, 21, 22, 23, 24, 25, 27}
+    original_lines = originals["engine_rs/src/lib.rs"].splitlines(keepends=True)
+    expected_lib = b"".join(
+        line
+        for number, line in enumerate(original_lines, start=1)
+        if number not in removed
+    )
+    _require(
+        current["engine_rs/src/lib.rs"] == expected_lib, "lib.rs: exact seven removals"
+    )
+    _require(sha(expected_lib) == LIB_SHA256, "lib.rs: expected trim SHA-256")
+    cargo = (
+        originals["engine_rs/Cargo.toml"]
+        .replace(b'crate-type = ["rlib", "cdylib"]\n', b"")
+        .replace(b'[[bin]]\nname = "re_engine"\npath = "src/main.rs"\n\n', b"")
+        .replace(b'rayon = "1.12.0"\n', b"")
+    )
+    _require(
+        current["engine_rs/Cargo.toml"] == cargo,
+        "Cargo.toml: target/dependency removals only",
+    )
+    _require(
+        current["engine_rs/Cargo.lock"]
+        == _expected_lock(originals["engine_rs/Cargo.lock"]),
+        "Cargo.lock: Rayon closure removal only",
+    )
+    _verify_provenance(
+        originals["engine_rs/VENDORED_FROM.md"], current["engine_rs/VENDORED_FROM.md"]
+    )
+
+
+def _expected_lock(original: bytes) -> bytes:
+    """Derive the trimmed lockfile: drop the Rayon closure and the Rayon edge."""
+    separator = b"\n\n[[package]]\n"
+    header, *packages = original.split(separator)
+    names = [package.split(b"\n", 1)[0] for package in packages]
+    pruned = {f'name = "{name}"'.encode() for name in RAYON_CLOSURE}
+    _require(pruned <= set(names), "Cargo.lock: reference lacks the Rayon closure")
+    kept = [
+        package
+        for package, name in zip(packages, names, strict=True)
+        if name not in pruned
+    ]
+    lock = separator.join([header, *kept])
+    edge = b'\n "rayon",\n'
+    _require(lock.count(edge) == 1, "Cargo.lock: expected one Rayon dependency edge")
+    return lock.replace(edge, b"\n")
+
+
+def _verify_provenance(original: bytes, current: bytes) -> None:
+    """Historical bytes stay intact and the exact Task 1.1 appendix follows them."""
+    _require(current.startswith(original), "VENDORED_FROM.md: append-only provenance")
+    tail = current[len(original) :]
+    end = tail.find(b"\n## ", 1)
+    section = tail if end < 0 else tail[:end]
+    _require(
+        tail.startswith(TRIM_APPENDIX_HEADING) and sha(section) == TRIM_APPENDIX_SHA256,
+        "VENDORED_FROM.md: Task 1.1 trim appendix must follow the history unchanged",
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("root", nargs="?", type=Path, default=Path.cwd())
+    args = parser.parse_args()
+    try:
+        check(args.root)
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        tomllib.TOMLDecodeError,
+        subprocess.CalledProcessError,
+    ) as error:
+        print(error, file=sys.stderr)
+        return 1
+    print("engine trim manifest: OK")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+from __future__ import annotations
+
+import importlib.util
+import json
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+_SPEC = importlib.util.spec_from_file_location(
+    "check_engine_trim", Path(__file__).parents[2] / "scripts/check_engine_trim.py"
+)
+assert _SPEC is not None
+assert _SPEC.loader is not None
+checker = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(checker)
+
+
+def fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, bytes]]:
+    kept = "engine_rs/src/py_random.rs"
+    omitted = "engine_rs/src/ffi.rs"
+    authored = "engine_rs/tests/replay_parity.rs"
+    originals = {kept: b"original\n", omitted: b"ffi\n"}
+    current = {kept: originals[kept], authored: b"test\n"}
+    manifest = {
+        "schema_version": 1,
+        "reference_commit": checker.PIN,
+        "retained": [
+            {
+                "path": kept,
+                "reference_sha256": checker.sha(originals[kept]),
+                "sha256": checker.sha(current[kept]),
+                "edits": [],
+            }
+        ],
+        "excluded": [
+            {
+                "path": omitted,
+                "reference_sha256": checker.sha(originals[omitted]),
+                "reason": "C5 excluded ABI",
+            }
+        ],
+        "authored": [
+            {
+                "path": authored,
+                "sha256": checker.sha(current[authored]),
+                "reason": "replay regression",
+            }
+        ],
+        "non_engine_changes": [
+            {"path": "justfile", "reason": "Separate engine package preparation"}
+        ],
+    }
+    return manifest, originals, current
+
+
+def test_valid_full_inventory_passes() -> None:
+    checker.verify(*fixture())
+
+
+def test_task_authored_inventory_accepts_replay_test_and_generated_manifest() -> None:
+    authored = [
+        {"path": path, "sha256": checker.sha(b"x"), "reason": "authored"}
+        for path in ("engine_rs/tests/replay_parity.rs", checker.GENERATED_MANIFEST)
+    ]
+    checker.verify_task_authored(authored)
+
+
+@pytest.mark.parametrize(
+    ("paths", "message"),
+    [
+        ([], r"Task 1.1 authored set: missing=.*MANIFEST.json.*replay_parity"),
+        (
+            [
+                "engine_rs/tests/replay_parity.rs",
+                checker.GENERATED_MANIFEST,
+                "engine_rs/tests/other.rs",
+            ],
+            r"Task 1.1 authored set: .*extra=.*other.rs",
+        ),
+    ],
+)
+def test_task_authored_inventory_requires_exact_replay_test(
+    paths: list[str], message: str
+) -> None:
+    authored = [
+        {"path": path, "sha256": checker.sha(b"test\n"), "reason": "test"}
+        for path in paths
+    ]
+    with pytest.raises(ValueError, match=message):
+        checker.verify_task_authored(authored)
+
+
+def test_declared_line_removal_reconstructs_exact_original_bytes() -> None:
+    path = "engine_rs/Cargo.toml"
+    before = b"keep\nremove\nkeep2\n"
+    after = b"keep\nkeep2\n"
+    manifest = {
+
+PIN_PAIR = ("1.32.7", "a" * 64)
+
+
+def generated_fixture() -> tuple[dict[str, Any], dict[str, bytes]]:
+    traces = {"gen-a.jsonl.gz": b"trace a", "divergence-b.jsonl.gz": b"trace b"}
+    entries: list[dict[str, Any]] = [
+        {
+            "path": name,
+            "sha256": checker.sha(data),
+            "bytes": len(data),
+            "seed": 1,
+            "policies": ["random", "edge"],
+            "policy_seed": 2,
+            "config_variant": "default",
+            "transitions": 719,
+            "rejected": 0,
+        }
+        for name, data in traces.items()
+    ]
+    entries[1]["probe"] = '{"farmer":["PLANT",["WHEAT"]]}'
+    entries[1]["expected_divergence"] = {
+        "line": 3,
+        "from_step": 2,
+        "kind": "rust_accepted",
+        "field": "step",
+        "reason": "D2: documented",
+    }
+    manifest = {
+        "schema_version": 1,
+        "format": checker.TRACE_FORMAT,
+        "generator": "scripts/kaggriculture_parity/generate_traces.py",
+        "kaggle_environments_version": PIN_PAIR[0],
+        "python_engine_sha256": PIN_PAIR[1],
+        "traces": entries,
+    }
+    return manifest, traces
+
+
+def _verify_generated(manifest: dict[str, Any], traces: dict[str, bytes]) -> int:
+    return int(
+        checker.verify_generated(json.dumps(manifest).encode(), traces, PIN_PAIR)
+    )
+
+
+def test_generated_manifest_pins_every_trace() -> None:
+    assert _verify_generated(*generated_fixture()) == 2
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("edited trace", "trace hash"),
+        ("wrong size", "trace size"),
+        ("unlisted trace", "generated trace inventory"),
+        ("missing trace", "is missing"),
+        ("other engine", "Cargo engine pin"),
+        ("over budget", "budget"),
+        ("no reason", "reason"),
+        ("probe without expectation", "go together"),
+        ("nested path", "plain"),
+        ("duplicate", "duplicate"),
+        ("extra key", "schema keys"),
+    ],
+)
+def test_generated_manifest_drift_is_rejected(mutation: str, message: str) -> None:
+    manifest, traces = generated_fixture()
+    first = manifest["traces"][0]
+    if mutation == "edited trace":
+        traces[first["path"]] = b"trace A"
+    elif mutation == "wrong size":
+        first["bytes"] += 1
+    elif mutation == "unlisted trace":
+        traces["gen-c.jsonl.gz"] = b"unlisted"
+    elif mutation == "missing trace":
+        del traces[first["path"]]
+    elif mutation == "other engine":
+        manifest["python_engine_sha256"] = "b" * 64
+    elif mutation == "over budget":
+        traces[first["path"]] = b"x" * (checker.GENERATED_BUDGET_BYTES + 1)
+        first["sha256"] = checker.sha(traces[first["path"]])
+        first["bytes"] = len(traces[first["path"]])
+    elif mutation == "no reason":
+        manifest["traces"][1]["expected_divergence"]["reason"] = " "
+    elif mutation == "probe without expectation":
+        del manifest["traces"][1]["expected_divergence"]
+    elif mutation == "nested path":
+        first["path"] = "sub/gen-a.jsonl.gz"
+    elif mutation == "duplicate":
+        manifest["traces"].append(dict(first))
+    else:
+        first["note"] = "unexpected"
+    with pytest.raises(ValueError, match=message):
+        _verify_generated(manifest, traces)
+
+
+def test_generated_traces_are_split_from_engine_inventory() -> None:
+    current = {
+        "engine_rs/src/lib.rs": b"lib",
+        checker.GENERATED_MANIFEST: b"{}",
+        f"{checker.GENERATED_DIR}/gen-a.jsonl.gz": b"trace",
+    }
+    engine, generated = checker.split_generated(current)
+    assert set(engine) == {"engine_rs/src/lib.rs", checker.GENERATED_MANIFEST}
+    assert generated == {"gen-a.jsonl.gz": b"trace"}
+
+
+def test_engine_pin_reads_cargo_metadata() -> None:
+    cargo = (Path(__file__).parents[2] / "engine_rs/Cargo.toml").read_bytes()
+    assert checker.engine_pin(cargo) == (
+        "1.32.7",
+        "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e",
+    )
+
+
+# --- Merged Task 1.1 + 1.1b: generated traces through the full check() path ---
+
+
+def test_check_rejects_edited_generated_trace(trimmed: Path) -> None:
+    trace = sorted((trimmed / checker.GENERATED_DIR).glob("gen-*.jsonl.gz"))[0]
+    trace.write_bytes(trace.read_bytes() + b"\x00")
+    with pytest.raises(ValueError, match=re.escape(f"{trace.name}: trace hash")):
+        checker.check(trimmed)
+
+
+def test_check_rejects_unlisted_generated_trace(trimmed: Path) -> None:
+    (trimmed / checker.GENERATED_DIR / "gen-unlisted.jsonl.gz").write_bytes(b"x")
+    with pytest.raises(ValueError, match="generated trace inventory"):
+        checker.check(trimmed)
+ops/rebuild-2026-09-29/1.1b/update_trim_manifest.py
+
+exec
+/bin/zsh -lc 'git diff HEAD''^1 HEAD -- scripts/check_engine_trim.py && git diff HEAD''^1 HEAD -- docs/rules-parity-coverage.md cookbook/references/index.md && rg -n '"'pytest|pythonpath|testpaths' pyproject.toml" in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+diff --git a/scripts/check_engine_trim.py b/scripts/check_engine_trim.py
+index ea5d119..7ea7b34 100644
+--- a/scripts/check_engine_trim.py
++++ b/scripts/check_engine_trim.py
+@@ -1,4 +1,9 @@
+-"""Verify the pinned rules-kernel inventory and every declared byte-level edit."""
++"""Verify the pinned rules-kernel inventory and every declared byte-level edit.
++
++Generated parity traces under ``engine_rs/fixtures/generated`` are pinned
++transitively: TRIM_MANIFEST.json pins the bytes of their MANIFEST.json, which pins
++each trace's SHA-256, size and generation inputs.
++"""
+ 
+ from __future__ import annotations
+ 
+@@ -8,6 +13,7 @@ import json
+ import re
+ import subprocess
+ import sys
++import tomllib
+ from collections.abc import Mapping, Sequence
+ from pathlib import Path
+ from typing import TypedDict, cast
+@@ -41,6 +47,22 @@ TRIM_APPENDIX_HEADING = "\n## Task 1.1 rules-only trim \u2014 2026-09-29\n".enco
+ TRIM_APPENDIX_SHA256 = (
+     "1d089760261e8fef7ed0fddcaaa1a60776cb9abbb65386ef08d529f863d76c93"
+ )
++GENERATED_DIR = "engine_rs/fixtures/generated"
++GENERATED_MANIFEST = f"{GENERATED_DIR}/MANIFEST.json"
++GENERATED_BUDGET_BYTES = 4_000_000
++TRACE_FORMAT = "kaggriculture-re-parity-v1"
++TRACE_KEYS = (
++    "path",
++    "sha256",
++    "bytes",
++    "seed",
++    "policies",
++    "policy_seed",
++    "config_variant",
++    "transitions",
++    "rejected",
++)
++DIVERGENCE_KEYS = ("line", "from_step", "kind", "field", "reason")
+ 
+ 
+ class Edit(TypedDict):
+@@ -234,11 +256,111 @@ def _same_inventory(actual: Sequence[str], expected: Sequence[str], label: str)
+ def verify_task_authored(authored: Sequence[Authored]) -> None:
+     _same_inventory(
+         [entry["path"] for entry in authored],
+-        ["engine_rs/tests/replay_parity.rs"],
++        ["engine_rs/tests/replay_parity.rs", GENERATED_MANIFEST],
+         "Task 1.1 authored set",
+     )
+ 
+ 
++def engine_pin(cargo_toml: bytes) -> tuple[str, str]:
++    """The (kaggle-environments version, Python engine SHA-256) compatibility pin."""
++    metadata = tomllib.loads(cargo_toml.decode("utf-8"))
++    target = metadata["package"]["metadata"]["kaggriculture"]
++    return (
++        _string(target["kaggle-environments-version"], "Cargo pin version"),
++        _digest(target["python-engine-sha256"], "Cargo pin engine"),
++    )
++
++
++def split_generated(
++    current: Mapping[str, bytes],
++) -> tuple[dict[str, bytes], dict[str, bytes]]:
++    """Separate generated traces (pinned by their manifest) from engine files."""
++    prefix = GENERATED_DIR + "/"
++    engine: dict[str, bytes] = {}
++    generated: dict[str, bytes] = {}
++    for path, data in current.items():
++        if path.startswith(prefix) and path != GENERATED_MANIFEST:
++            generated[path.removeprefix(prefix)] = data
++        else:
++            engine[path] = data
++    return engine, generated
++
++
++def verify_generated(
++    manifest_bytes: bytes, traces: Mapping[str, bytes], pin: tuple[str, str]
++) -> int:
++    """Validate the generated-trace manifest against the files; return trace count."""
++    raw = _object(
++        json.loads(manifest_bytes.decode("utf-8")),
++        (
++            "schema_version",
++            "format",
++            "generator",
++            "kaggle_environments_version",
++            "python_engine_sha256",
++            "traces",
++        ),
++        "generated manifest",
++    )
++    _require(
++        _integer(raw["schema_version"], "generated schema_version") == 1,
++        "generated schema_version must be 1",
++    )
++    _require(raw["format"] == TRACE_FORMAT, f"generated format must be {TRACE_FORMAT}")
++    _require(
++        raw["generator"] == "scripts/kaggriculture_parity/generate_traces.py",
++        "generated traces must name their generator",
++    )
++    _require(
++        (raw["kaggle_environments_version"], raw["python_engine_sha256"]) == pin,
++        f"generated traces must target the Cargo engine pin {pin}",
++    )
++    listed: list[str] = []
++    total = 0
++    for value in _array(raw["traces"], "generated traces"):
++        _require(isinstance(value, dict), "generated trace: expected object")
++        entry = cast(dict[str, object], value)
++        optional = {"probe", "expected_divergence"} & set(entry)
++        _require(
++            optional in (set(), {"probe", "expected_divergence"}),
++            "generated trace: probe and expected_divergence go together",
++        )
++        entry = _object(entry, (*TRACE_KEYS, *sorted(optional)), "generated trace")
++        name = _string(entry["path"], "generated trace path")
++        _require(
++            re.fullmatch(r"[a-z0-9][a-z0-9.-]*\.jsonl\.gz", name) is not None,
++            f"{name!r}: generated trace names are plain *.jsonl.gz files",
++        )
++        _require(name not in listed, f"duplicate generated trace: {name}")
++        listed.append(name)
++        _require(name in traces, f"{name}: listed generated trace is missing")
++        data = traces[name]
++        _require(sha(data) == _digest(entry["sha256"], name), f"{name}: trace hash")
++        _require(_integer(entry["bytes"], name) == len(data), f"{name}: trace size")
++        for key in ("seed", "policy_seed", "transitions", "rejected"):
++            _integer(entry[key], f"{name}: {key}")
++        _require(_integer(entry["transitions"], name) > 0, f"{name}: needs transitions")
++        policies = _array(entry["policies"], f"{name}: policies")
++        _require(
++            len(policies) == 2 and all(isinstance(p, str) for p in policies),
++            f"{name}: policies must name both seats",
++        )
++        _string(entry["config_variant"], f"{name}: config_variant")
++        if optional:
++            _string(entry["probe"], f"{name}: probe")
++            divergence = _object(
++                entry["expected_divergence"], DIVERGENCE_KEYS, f"{name}: divergence"
++            )
++            _reason(divergence["reason"], f"{name}: expected_divergence")
++        total += len(data)
++    _same_inventory(sorted(traces), listed, "generated trace inventory")
++    _require(
++        total <= GENERATED_BUDGET_BYTES,
++        f"generated traces use {total:,} B; budget is {GENERATED_BUDGET_BYTES:,} B",
++    )
++    return len(listed)
++
++
+ def _reconstruct(original: bytes, edits: Sequence[Edit], path: str) -> bytes:
+     if not edits:
+         return original
+@@ -356,7 +478,15 @@ def verify_task(
+ ) -> None:
+     """Apply the generic manifest checks plus the fixed Task 1.1 trim contract."""
+     manifest = parse_manifest(value)
++    # Generated traces are pinned by their own manifest, not the trim inventory.
++    current, generated = split_generated(current)
+     verify(manifest, originals, current)
++    generated_count = verify_generated(
++        current[GENERATED_MANIFEST],
++        generated,
++        engine_pin(current["engine_rs/Cargo.toml"]),
++    )
++    _require(generated_count >= 6, "expected the committed generated trace set")
+     retained = [
+         "Cargo.toml",
+         "Cargo.lock",
+@@ -448,7 +578,13 @@ def main() -> int:
+     args = parser.parse_args()
+     try:
+         check(args.root)
+-    except (OSError, ValueError, subprocess.CalledProcessError) as error:
++    except (
++        OSError,
++        ValueError,
++        KeyError,
++        tomllib.TOMLDecodeError,
++        subprocess.CalledProcessError,
++    ) as error:
+         print(error, file=sys.stderr)
+         return 1
+     print("engine trim manifest: OK")
+diff --git a/cookbook/references/index.md b/cookbook/references/index.md
+index 1f5550e..afe1590 100644
+--- a/cookbook/references/index.md
++++ b/cookbook/references/index.md
+@@ -2,6 +2,7 @@
+ 
+ ## Current rebuild
+ 
++- [[live-differential-parity-checks-the-rust-kernel|Live differential parity checks the Rust kernel]] — Task 1.1b generates traces from Kaggle's hash-pinned engine; 8 committed games and a 40-game sweep agree with Rust; 303 probes find two malformed-input divergence classes (Unicode digits, unhashable items), kept as minimal expected failures and classified only from their observed mismatch.
+ - [[ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|PPO trainer seams and replay-drift alarm]] — Tasks 3.1/3.6 and Phase 4 prep: schema-generic observation mapping, a default-on 0.05-nat first-minibatch log-ratio alarm and a `TeacherTargets` protocol, proven on Orbit types with CPU TDD and 941 Python passes (the replay-alarm error lists action-mask shapes too); GPU noise, multi-rank and Kaggriculture use unverified.
+ - [[rebuild-data-preparation-preserves-replay-identity|Replay identity and data/evaluation preparation]] — Typed engine-independent selector preserves all 252 historical episode IDs and splits; offline source custody, v4 preparation, seed replay export and four compact opponent recommendations carry explicit native/runtime gaps.
+ - [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope and Rust parity blocked by missing fixtures.
+diff --git a/docs/rules-parity-coverage.md b/docs/rules-parity-coverage.md
+index c5f8bfa..dfc8b01 100644
+--- a/docs/rules-parity-coverage.md
++++ b/docs/rules-parity-coverage.md
+@@ -167,8 +167,9 @@ failure rollback, and economic/attribution counters including state neutrality.
+ Nine RNG integration tests use embedded CPython vectors, including large and
+ negative seeds, rollover and long streams. These 50 tests do not read episodes.
+ 
+-The nine new `tests/replay_parity.rs` tests comprise four replay tests, a public
+-API test, and four comparator regressions. The API test covers decoded PASS
++Task 1.1 added nine `tests/replay_parity.rs` tests: four replay tests, a public
++API test, and four comparator regressions. Task 1.1b extends the file to 19
++(see [live differential parity](#kaggriculture-live-differential-parity)). The API test covers decoded PASS
+ commands, public state, terminal banks, and economic/attribution counters.
+ Comparator tests reject private inventory and private field insertion-order
+ drift, public market-map insertion-order drift, and public integer-versus-float
+@@ -199,7 +200,8 @@ selected opponent coverage returns when those opponents are imported.
+ 
+ ### Kaggriculture Verification and Limits
+ 
+-Offline engine tests pass **59/59 with none ignored**; the retained root suite
++Task 1.1's offline engine tests passed **59/59 with none ignored** (69/69 after
++Task 1.1b); the retained root suite
+ passes **155 with two ignored**. Receipts in `ops/rebuild-2026-09-29/1.1/` show the
+ private-order regression fail with plain JSON equality, then pass with explicit
+ key-order checks. Claude's review added the public-order and nested private-order
+@@ -226,10 +228,154 @@ test-only `fixture_float` repair at the first compiled root consumer (potentiall
+ Task 1.3, certainly Task 1.4); selecting multiple packages together can unify
+ features even with a newer Cargo resolver.
+ 
+-Parity is scoped to these four recorded worlds plus synthetic unit/RNG coverage.
+-The trace headers' recorded RNG and shop schedules are not compared directly;
+-their effects are checked only through the resulting public and private state.
+-It does not establish exhaustive malformed-input parity, a fresh differential
+-run against Python, adapter/model integration, learning quality or GPU throughput.
+-Historical full-engine and performance claims in provenance do not qualify this
+-trim. No training or network access is required by these checks.
++Task 1.1 parity was scoped to these four recorded worlds plus synthetic unit/RNG
++coverage. The trace headers' recorded RNG and shop schedules are not compared
++directly; their effects are checked only through the resulting public and
++private state. Task 1.1b adds a live differential check against Kaggle's own
++Python engine (below). Neither establishes adapter/model integration, learning
++quality or GPU throughput. Historical full-engine and performance claims in
++provenance do not qualify this trim. No training or network access is required
++by these checks.
++
++### Kaggriculture Live Differential Parity
++
++Task 1.1b answers the owner request "add a parity check after your rust engine,
++with kaggle environments". `scripts/kaggriculture_parity/generate_traces.py`
++runs `kaggle_environments.make("kaggriculture", configuration=...)` with an
++explicit seed and records traces in the official
++`kaggriculture-re-parity-v1` format: complete public and private state, statuses
++and rewards after every step. It refuses to run unless the installed package is
++1.32.7 and `envs/kaggriculture/kaggriculture.py` has exactly the SHA-256 pinned
++in `engine_rs/Cargo.toml`; each header records both. Task 1.1b was built when
++the project lock still pinned 1.29.0 (no Kaggriculture environment), so its
++receipts and the sweep use an isolated environment. The owner's 1.32.7 project
++pin, merged alongside, also satisfies the guard; a Python test asserts that the
++project environment loads the pinned engine. The isolated command stays valid:
++
++```sh
++UV_OFFLINE=1 uv run --isolated --no-project --with kaggle-environments==1.32.7 \
++  python scripts/kaggriculture_parity/generate_traces.py --preset committed \
++  --out engine_rs/fixtures/generated --manifest
++```
++
++The format adds one record type. When Python's interpreter raises on an input,
++Kaggle's `env.step` fails and keeps its state; the generator records a
++`rejected` record (actions and Python exception) and then steps the policy's
++fallback actions. Rust must return an error for the same actions without
++changing any state: public and private trees (values and map key order),
++statuses, rewards and completion are compared before and after. Actions are recorded as submitted (after a
++JSON round trip); Kaggle's action-schema defaulting only adds missing top-level
++`farmer`/`hands`/`market` keys, which the interpreter defaults identically.
++
++Policies are seeded and selectable per seat: `random` (legal-looking unit
++commands for every actor, usually meaningful on the actor's tile, plus 0–4
++market orders and occasional over-limit queues); `edge` (the random policy plus
++HIRE until and past the 241-actor model capacity, 0/1023/negative/float/string/
++boolean/null/array/huge quantities, empty orders and markets, duplicate and
++reversed queues, BUY_LAND past three quadrants, unknown and lower-case verbs,
++malformed orders and unit commands, commands for non-existent hands,
++oversubscribed PLANT, malformed whole actions, and uncaught-`int()` probes);
++Kaggle's built-in `pass`, `random` (seeded through the policy RNG) and `starter`
++agents; and mixed seats. Configuration variants cover the defaults, free hires
++with 12 orders per turn (up to 249 hands, 250 actors), 10,000,000 starting money
++for the edge policy's 10^12-unit seed orders, which reach Python's
++100,000-iteration market-loop escape,
++and a custom set (7 turns per day, capacity 30, weed chance 0.2, shop and
++town-centre intervals, hire multiplier 3, 4 orders and sparse `marketParams`
++overrides, including `hinge` and `log10` curves). Seeds include negative and
++above-`u64` integers. The 303 one-command probes step a two-turn preamble (buy
++wheat, a goose and carrots, hire, pick up), then one probe command: every
++malformed unit and order, 33 quantity spellings for PICKUP, PLACE and the four
++quantity-taking market verbs (BUY_SEED, SELL, BUY_PRODUCT, BUY_ANIMAL),
++unhashable verbs and items, missing-hand commands and malformed whole actions,
++including `null`. Scripted actions are submitted exactly; before the Task 1.1b
++verification fix the `null` whole-action probe (probe 296) was replaced by PASS,
++so the sweep recorded at `8ca378b` did not probe it (full-game policies did).
++
++`engine_rs/tests/replay_parity.rs` uses one comparator for three sources and
++reports the first divergence as line, step, kind and field path with expected
++and actual values. Rust starts from configuration and seed only.
++
++| Source | Traces | Transitions | Result |
++| --- | --- | --- | --- |
++| Official recorded episodes | 4 | 2,876 | agree |
++| Committed generated games | 8 | 3,960 (25 Python rejections) | agree |
++| Committed divergence repros | 7 | 7 (5 Python rejections) | expected failures, asserted exactly |
++| Local sweep, 40 games | 40 | 21,824 (155 Python rejections) | agree |
++| Local sweep, 303 probes | 303 | 1,515 | 266 agree, 37 diverge (D1 12, D2 25) |
++
++The committed games are `random` vs `random`, `edge` vs `edge`, built-in
++`starter` vs built-in `random`, `random` vs `edge`, `edge` free-hire, `edge` vs
++`random` rich, `random` vs built-in `starter` custom, and built-in `pass` vs
++`edge` with seed −123,456; seeds are 11, 22, 33, 44, 55, 66, 2^64+7 and −123,456.
++`engine_rs/fixtures/generated/MANIFEST.json` pins each trace's SHA-256, size,
++policies, policy seed, configuration, counts and any expected divergence. The
++15 files total 665,021 bytes (budget 4,000,000). `scripts/check_engine_trim.py` validates
++that manifest, its exact file inventory, the Cargo engine pin and the budget;
++`TRIM_MANIFEST.json` pins the manifest bytes. Rust tests also fail when a
++committed state value, private key order, action or rejection claim is
++perturbed. A Python test regenerates the committed set from the live engine and
++requires identical bytes; it skips with a message when an isolated 1.32.7
++environment cannot be built offline.
++
++The current recorded sweep ran `uv run python
++scripts/kaggriculture_parity/sweep.py --games 40` at commit `6217868` (after the
++verification fixes) on the owner's Mac (single process, 47 s): base seed
++20,260,929, 12 rotating policy/configuration pairs, 343 traces and 23,339
++transitions, 204 Python rejections (155 in games, 49 in probes). All 40 games
++agree; 37 probe divergences are confirmed D1 12 and D2 25 (every D1 ASCII
++recheck passes), with 0 new. Its summary, including per-policy counts and every
++first divergence, is `ops/rebuild-2026-09-29/1.1b/verify-r1/sweep-summary.json`;
++the first sweep at `8ca378b` (same counts, input-only classification, null probe
++submitted as PASS) is kept at `ops/rebuild-2026-09-29/1.1b/sweep-summary.json`.
++With `--include-known-divergences` (12 games, base seed 777), 8 diverge, all
++confirmed (D1 2, D2 6). Set
++`KAGG_PARITY_TRACES=<absolute dir>` (and optionally `KAGG_PARITY_REPORT`) to
++replay a larger directory with the same comparator.
++
++#### Known Divergences
++
++Both classes concern malformed input only. The vendored kernel bytes are pinned,
++so they are recorded, not repaired. Seven minimal repros are expected-failure
++fixtures with these reasons: one-step games (`episodeSteps` 2) whose first
++seat-0 action carries only the divergent field, so each diverges at line 1,
++step 0; the test fails if any stops diverging exactly there. Full-game policies
++exclude these inputs by default so a game can test the rest of the episode;
++`--include-known-divergences` restores them.
++
++The sweep classifies a divergence from the observed mismatch, not from the
++input alone. D2 requires a `rejected` record whose Python error is
++`TypeError: unhashable type`, an unhashable input on that line and a Rust
++`rust_accepted` result. D1 requires a Python-accepted transition with Unicode
++digit input on the divergent line, and a Rust recheck of the same trace with
++only that line's digits spelled in ASCII (what Python's `int()` read) must pass
++that line. Anything else is reported as a new divergence and the sweep exits 1;
++a trace corrupted at `public.day` on a D1 line stays unclassified.
++
++- **D1, Unicode decimal digits.** Python `int()` accepts non-ASCII decimal digit
++  strings such as `"\u0663"` (Arabic-Indic three) and `"\uff13"` (full-width
++  three). In PICKUP/PLACE counts Rust returns an error where Python acts; in
++  BUY_SEED, SELL, BUY_PRODUCT and BUY_ANIMAL quantities Rust drops the order
++  where Python executes three units. First found at step 13 of the free-hire
++  edge game (`BUY_PRODUCT FERTILIZER "\u0663"`, money 2,159 versus 2,460).
++- **D2, unhashable arrays/objects.** Python raises `TypeError`, so Kaggle's step
++  fails, when an array or object reaches a dict lookup: a unit verb
++  (`[["NORTH"]]`), a PLANT crop (also for a non-existent hand, via the atomic
++  seed check), a PICKUP or PLACE item, or a BUY_SEED or BUY_ANIMAL item. Rust
++  treats these as no-ops and accepts the step.
++
++All ASCII quantity spellings agree, including `" 4 "`, `"+2"`, `"0002"`,
++`"1_0"`, floats, booleans, `null`, arrays, 10^30 and uncaught-`int()` errors
++(`"abc"`, `null`, `[1]` counts), which both engines reject. Our policy's
++grammar emits only ASCII verbs, item names and integers, so neither class is
++reachable from model actions; an adapter accepting external actions would need
++explicit handling. The original failing full-game traces, their first
++divergences and the replay receipt are in
++`ops/rebuild-2026-09-29/1.1b/evidence/first-failing-games/`.
++
++Limits: generated games come from seeded random, edge and built-in policies,
++not strong play, and most random seats go bankrupt; the four official episodes
++remain the only recorded competitive worlds. Framework behavior outside the
++interpreter (timeouts, agent errors, `INVALID` statuses) is not modeled. The
++sweep is a bounded sample: 40 games and 303 probes, not exhaustive input
++coverage. A larger pod sweep remains open.
+26:    "pytest>=9.0.3",
+130:[tool.pytest.ini_options]
+
+codex
+The requested checks passed: 69 engine tests, the trim checker, and 261 Python tests. The checker comparison also shows that both sets of safeguards are present.
+
+I’m checking mutation sensitivity and the remaining inventory details now. So far, I found one minor documentation error: the newest cookbook log reverses the order of generated-manifest verification and the fixed Task 1.1 checks.
+
+exec
+/bin/zsh -lc "cat > ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/mutation_check.py <<'PY'
+from pathlib import Path
+import io
+import json
+import os
+import subprocess
+import sys
+import tarfile
+
+root = Path.cwd()
+evidence = root / 'ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193'
+scratch = evidence / 'scratch'
+scratch.mkdir(exist_ok=True)
+paths = ['scripts/check_engine_trim.py', 'tests/tools/test_check_engine_trim.py', 'engine_rs']
+archive = subprocess.check_output(['git', 'archive', '82091936df52125e7f4cce687887a8c259b7ee02', *paths])
+with tarfile.open(fileobj=io.BytesIO(archive)) as stream:
+    stream.extractall(scratch, filter='data')
+checker = scratch / 'scripts/check_engine_trim.py'
+original = checker.read_text()
+env = os.environ.copy()
+env['GIT_DIR'] = subprocess.check_output(['git', 'rev-parse', '--absolute-git-dir'], text=True).strip()
+env['GIT_WORK_TREE'] = str(scratch)
+env['PYTHONDONTWRITEBYTECODE'] = '1'
+python = root / '.venv/bin/python'
+command = [str(python), '-B', '-m', 'pytest', 'tests/tools/test_check_engine_trim.py', '-q', '-p', 'no:cacheprovider']
+results = []
+
+def run(label, source, expected_code):
+    checker.write_text(source)
+    result = subprocess.run(command, cwd=scratch, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    (evidence / f'{label}.log').write_text(result.stdout)
+    summary = [line for line in result.stdout.splitlines() if ' passed' in line or line.startswith('FAILED ')]
+    print(label, 'exit', result.returncode, '\\n' + '\\n'.join(summary), flush=True)
+    results.append({'label': label, 'exit_code': result.returncode, 'summary': summary})
+    assert result.returncode == expected_code, result.stdout
+
+run('mutation-baseline', original, 0)
+old = 'if path not in EDITABLE:'
+new = 'if path.endswith(\".rs\") and path "'!= "engine_rs/src/lib.rs":'"'
+assert original.count(old) == 1
+run('mutation-task1_1-editable', original.replace(old, new), 1)
+old = '_require(sha(data) == _digest(entry[\"sha256\"], name), f\"{name}: trace hash\")'
+new = '_digest(entry[\"sha256\"], name)'
+assert original.count(old) == 1
+run('mutation-task1_1b-trace-hash', original.replace(old, new), 1)
+checker.write_text(original)
+(evidence / 'mutation-summary.json').write_text(json.dumps(results, indent=2) + '\\n')
+PY
+.venv/bin/python ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/mutation_check.py" in /Users/poonszesen/kg-v3-merge
+ succeeded in 8479ms:
+mutation-baseline exit 0 
+71 passed in 2.84s
+mutation-task1_1-editable exit 1 
+FAILED tests/tools/test_check_engine_trim.py::test_declared_license_edit_is_rejected
+1 failed, 70 passed in 2.74s
+mutation-task1_1b-trace-hash exit 1 
+FAILED tests/tools/test_check_engine_trim.py::test_generated_manifest_drift_is_rejected[edited trace-trace hash]
+FAILED tests/tools/test_check_engine_trim.py::test_check_rejects_edited_generated_trace
+2 failed, 69 passed in 2.50s
+
+exec
+/bin/zsh -lc 'cat ops/rebuild-2026-09-29/1.1b/update_trim_manifest.py && git diff HEAD''^1 HEAD -- engine_rs/TRIM_MANIFEST.json && sed -n '"'1,115p' tests/scripts/test_kaggriculture_parity.py && sed -n '125,145p' pyproject.toml" in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+"""Refresh Task 1.1b authored hashes and inventory in engine_rs/TRIM_MANIFEST.json."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[3]
+MANIFEST = ROOT / "engine_rs/TRIM_MANIFEST.json"
+AUTHORED = {
+    "engine_rs/tests/replay_parity.rs": (
+        "Direct native-reset parity replay over official, committed generated and "
+        "KAGG_PARITY_TRACES traces; comparator regressions; perturbation and "
+        "expected-divergence checks (Task 1.1b)"
+    ),
+    "engine_rs/fixtures/generated/MANIFEST.json": (
+        "Pins each Task 1.1b trace generated live from kaggle-environments 1.32.7 "
+        "(SHA-256, size, policies, seeds, config, documented expected divergences)"
+    ),
+}
+NON_ENGINE = {
+    "scripts/kaggriculture_parity/generate_traces.py": (
+        "Task 1.1b hash-guarded live trace generator over Kaggle's Python engine"
+    ),
+    "scripts/kaggriculture_parity/sweep.py": (
+        "Task 1.1b local differential sweep runner and JSON summary"
+    ),
+    "tests/scripts/test_kaggriculture_parity.py": (
+        "Task 1.1b hash guard, trace-format round trip, coverage and optional live "
+        "regeneration tests"
+    ),
+    "ops/rebuild-2026-09-29/1.1b": (
+        "Task 1.1b receipts: sweep summary, first failing traces and command logs"
+    ),
+    "cookbook/references/live-differential-parity-checks-the-rust-kernel.md": (
+        "Task 1.1b Reference for the live differential parity check and findings"
+    ),
+    "cookbook/references/index.md": "List the Task 1.1b parity Reference",
+}
+APPEND = {
+    "scripts/check_engine_trim.py": (
+        " Task 1.1b: also validates the generated-trace manifest, inventory, "
+        "hashes, engine pin and 4 MB budget."
+    ),
+    "tests/tools/test_check_engine_trim.py": (
+        " Task 1.1b: generated-manifest drift cases."
+    ),
+    "docs/rules-parity-coverage.md": (
+        " Task 1.1b: live differential parity coverage, divergences and limits."
+    ),
+    "cookbook/log.md": " Task 1.1b: prepend the live parity record.",
+}
+
+
+def main() -> None:
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    manifest["authored"] = [
+        {
+            "path": path,
+            "sha256": hashlib.sha256((ROOT / path).read_bytes()).hexdigest(),
+            "reason": reason,
+        }
+        for path, reason in AUTHORED.items()
+    ]
+    changes = manifest["non_engine_changes"]
+    known = {entry["path"] for entry in changes}
+    for entry in changes:
+        suffix = APPEND.get(entry["path"])
+        if suffix and not entry["reason"].endswith(suffix):
+            entry["reason"] += suffix
+    changes += [
+        {"path": path, "reason": reason}
+        for path, reason in NON_ENGINE.items()
+        if path not in known
+    ]
+    MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()
+diff --git a/engine_rs/TRIM_MANIFEST.json b/engine_rs/TRIM_MANIFEST.json
+index 0797141..1864c61 100644
+--- a/engine_rs/TRIM_MANIFEST.json
++++ b/engine_rs/TRIM_MANIFEST.json
+@@ -703,8 +703,13 @@
+   "authored": [
+     {
+       "path": "engine_rs/tests/replay_parity.rs",
+-      "sha256": "a581631ec0837869be81d1aff2479d00d813c739cd712188fa52ecba09ffb8da",
+-      "reason": "New direct native-reset official-trace parity and comparator regressions"
++      "sha256": "eaefe5d2e4aadae3648a5a1a12210405a7b9feb9beb8f4b695b80431b6add7e7",
++      "reason": "Direct native-reset parity replay over official, committed generated and KAGG_PARITY_TRACES traces; comparator regressions; perturbation and expected-divergence checks (Task 1.1b)"
++    },
++    {
++      "path": "engine_rs/fixtures/generated/MANIFEST.json",
++      "sha256": "89a66bc1d3e2314e736e8196347ea1dd7888faa72c2f4f187ee7f5e8c6465c2f",
++      "reason": "Pins each Task 1.1b trace generated live from kaggle-environments 1.32.7 (SHA-256, size, policies, seeds, config, documented expected divergences)"
+     }
+   ],
+   "non_engine_changes": [
+@@ -714,11 +719,11 @@
+     },
+     {
+       "path": "scripts/check_engine_trim.py",
+-      "reason": "Python provenance checker required by Claude review; replaces planned Node tool."
++      "reason": "Python provenance checker required by Claude review; replaces planned Node tool. Task 1.1b: also validates the generated-trace manifest, inventory, hashes, engine pin and 4 MB budget."
+     },
+     {
+       "path": "tests/tools/test_check_engine_trim.py",
+-      "reason": "Test-first pytest coverage for provenance and inventory drift."
++      "reason": "Test-first pytest coverage for provenance and inventory drift. Task 1.1b: generated-manifest drift cases."
+     },
+     {
+       "path": "justfile",
+@@ -726,7 +731,7 @@
+     },
+     {
+       "path": "docs/rules-parity-coverage.md",
+-      "reason": "Document current Kaggriculture replay and unit coverage without changing Orbit coverage."
++      "reason": "Document current Kaggriculture replay and unit coverage without changing Orbit coverage. Task 1.1b: live differential parity coverage, divergences and limits."
+     },
+     {
+       "path": "cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md",
+@@ -738,11 +743,35 @@
+     },
+     {
+       "path": "cookbook/log.md",
+-      "reason": "Prepend material Task 1.1 adaptation record."
++      "reason": "Prepend material Task 1.1 adaptation record. Task 1.1b: prepend the live parity record."
+     },
+     {
+       "path": "ops/rebuild-2026-09-29/1.1",
+       "reason": "Directory of source-bound command receipts, test-first failures, preserved dirty bytes and result inventory."
++    },
++    {
++      "path": "scripts/kaggriculture_parity/generate_traces.py",
++      "reason": "Task 1.1b hash-guarded live trace generator over Kaggle's Python engine"
++    },
++    {
++      "path": "scripts/kaggriculture_parity/sweep.py",
++      "reason": "Task 1.1b local differential sweep runner and JSON summary"
++    },
++    {
++      "path": "tests/scripts/test_kaggriculture_parity.py",
++      "reason": "Task 1.1b hash guard, trace-format round trip, coverage and optional live regeneration tests"
++    },
++    {
++      "path": "ops/rebuild-2026-09-29/1.1b",
++      "reason": "Task 1.1b receipts: sweep summary, first failing traces and command logs"
++    },
++    {
++      "path": "cookbook/references/live-differential-parity-checks-the-rust-kernel.md",
++      "reason": "Task 1.1b Reference for the live differential parity check and findings"
++    },
++    {
++      "path": "cookbook/references/index.md",
++      "reason": "List the Task 1.1b parity Reference"
+     }
+   ]
+ }
+from __future__ import annotations
+
+import gzip
+import hashlib
+import importlib.util
+import json
+import os
+import random
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from types import ModuleType
+from typing import Any
+
+import pytest
+
+REPO_ROOT = Path(__file__).parents[2]
+FIXTURES = REPO_ROOT / "engine_rs/fixtures"
+GENERATED = FIXTURES / "generated"
+OFFICIAL = FIXTURES / "episode-95324500.jsonl.gz"
+FULL_ENGINE_SHA = "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e"
+
+
+def _load(name: str) -> ModuleType:
+    path = REPO_ROOT / f"scripts/kaggriculture_parity/{name}.py"
+    spec = importlib.util.spec_from_file_location(f"kaggriculture_parity_{name}", path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+generator = _load("generate_traces")
+sweep = _load("sweep")
+
+
+def _records(path: Path) -> list[dict[str, Any]]:
+    with gzip.open(path, "rt", encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle]
+
+
+def _manifest() -> dict[str, Any]:
+    return dict(json.loads((GENERATED / "MANIFEST.json").read_text(encoding="utf-8")))
+
+
+# ------------------------------------------------------------------ hash guard
+
+
+def test_pin_is_read_from_cargo_metadata() -> None:
+    pin = generator.pinned_engine()
+    assert pin.version == "1.32.7"
+    assert pin.sha256 == FULL_ENGINE_SHA
+
+
+def test_hash_guard_accepts_only_the_pinned_engine(tmp_path: Path) -> None:
+    engine = tmp_path / "kaggriculture.py"
+    engine.write_bytes(b"pinned engine bytes\n")
+    digest = hashlib.sha256(engine.read_bytes()).hexdigest()
+    pin = generator.EnginePin(version="1.32.7", sha256=digest)
+    assert generator.verify_engine(engine, "1.32.7", pin) == digest
+
+    engine.write_bytes(b"pinned engine bytes, edited\n")
+    with pytest.raises(generator.ParityGeneratorError, match="Refusing to generate"):
+        generator.verify_engine(engine, "1.32.7", pin)
+
+
+def test_hash_guard_rejects_another_package_version(tmp_path: Path) -> None:
+    engine = tmp_path / "kaggriculture.py"
+    engine.write_bytes(b"x")
+    pin = generator.EnginePin("1.32.7", hashlib.sha256(b"x").hexdigest())
+    with pytest.raises(generator.ParityGeneratorError, match=r"1\.29\.0 is installed"):
+        generator.verify_engine(engine, "1.29.0", pin)
+
+
+def test_generator_refuses_before_writing_when_the_pin_differs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """main() exits 2 and writes nothing when the installed engine misses the pin."""
+    other = generator.EnginePin(version="0.0.0", sha256=FULL_ENGINE_SHA)
+    monkeypatch.setattr(generator, "pinned_engine", lambda: other)
+    out = tmp_path / "out"
+    assert generator.main(["--preset", "committed", "--out", str(out)]) == 2
+    assert not out.exists()
+
+
+def test_project_environment_satisfies_the_engine_pin() -> None:
+    """The project lock pins kaggle-environments 1.32.7, whose engine is the pin."""
+    _, _, digest = generator.load_pinned_kaggle(generator.pinned_engine())
+    assert digest == FULL_ENGINE_SHA
+
+
+def test_cargo_pin_must_be_hex(tmp_path: Path) -> None:
+    cargo = tmp_path / "Cargo.toml"
+    cargo.write_text(
+        '[package.metadata.kaggriculture]\nkaggle-environments-version = "1.32.7"\n'
+        'python-engine-sha256 = "not-a-digest"\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(generator.ParityGeneratorError, match="not hex"):
+        generator.pinned_engine(cargo)
+
+
+# --------------------------------------------------------- format round trip
+
+
+def test_generated_traces_use_the_official_trace_schema() -> None:
+    official = _records(OFFICIAL)
+    header, transition = official[0], official[1]
+    manifest = _manifest()
+    assert manifest["python_engine_sha256"] == FULL_ENGINE_SHA
+    kinds = set()
+    for entry in manifest["traces"]:
+    "flash_attn.*",
+    "kaggle.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+strict_markers = true
+markers = [
+    "slow: long-running tests excluded from the default fast test target",
+]
+
+exec
+/bin/zsh -lc "git status --short && git diff --quiet && git diff --cached --quiet && rg -n 'test result:' ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/cargo.log && nl -ba cookbook/log.md | head -n 24 && git diff HEAD"'^2 HEAD -- docs/rules-parity-coverage.md' in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+?? ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/
+47:test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+62:test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+87:test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.60s
+93:test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     1	# Change log
+     2	
+     3	## 2026-09-29 — Merge live parity with the hardened rules-kernel checker
+     4	
+     5	Task 1.1b (Codex APPROVE at `16e56b6`) and Task 1.1's verification hardening
+     6	edited `scripts/check_engine_trim.py` independently. The merge keeps both
+     7	contracts: `verify_task` separates generated traces, runs the generic and
+     8	fixed Task 1.1 checks (`EDITABLE`, Rayon lockfile derivation, pinned appendix
+     9	hash), then validates the generated manifest (engine pin, budget, at least six
+    10	traces). Two new `check()`-level tests reject an edited or unlisted generated
+    11	trace. The base's owner 1.32.7 project pin made one Task 1.1b test premise
+    12	stale; it now asserts that the project environment passes the engine guard and
+    13	that a mismatched pin exits before writing. The
+    14	[[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]]
+    15	and coverage document say so. Engine 69/69; `just prepare` passes with Python
+    16	1,209 passed and 3 skipped. On a scratch copy, reverting `EDITABLE` or removing
+    17	the trace-hash check fails its regressions. Receipts are in
+    18	`ops/rebuild-2026-09-29/merge-1.1b/`.
+    19	
+    20	## 2026-09-29 — Correct live-parity test totals after Codex re-verification
+    21	
+    22	Codex re-verified Task 1.1b at `25ec814` (APPROVE WITH EDITS, no blocking findings; every round-one finding resolved). The [[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]] and `docs/rules-parity-coverage.md` now state the current totals, 69 engine tests including 19 replay-parity tests, rather than 66 and 16. The compact verification evidence is in `ops/rebuild-2026-09-29/1.1b/verify-r2/`.
+    23	
+    24	## 2026-09-29 — Close Codex verification of the live parity check
+diff --git a/docs/rules-parity-coverage.md b/docs/rules-parity-coverage.md
+index 0ca5ea4..dfc8b01 100644
+--- a/docs/rules-parity-coverage.md
++++ b/docs/rules-parity-coverage.md
+@@ -144,6 +144,10 @@ Task 1.1 retains a standalone `engine_rs` package pinned to reference commit
+ 113 excluded, plus the authored replay test and non-engine change inventory.
+ `python scripts/check_engine_trim.py` checks hashes, exhaustive inventory,
+ declared original-line edits, exact Cargo removals and append-only provenance.
++Independently of manifest declarations, only `lib.rs`, `Cargo.toml`,
++`Cargo.lock` and `VENDORED_FROM.md` may differ from the reference; the lockfile
++must equal the reference minus the six-package Rayon closure, and the Task 1.1
++provenance appendix must follow the historical bytes with a pinned SHA-256.
+ 
+ Only reference `lib.rs` lines 19, 21–25 and 27 are removed: declarations for
+ `ffi`, `joint_matching`, `myolie_features`, `myolie_sampler`, `native_agents`,
+@@ -242,9 +246,11 @@ explicit seed and records traces in the official
+ `kaggriculture-re-parity-v1` format: complete public and private state, statuses
+ and rewards after every step. It refuses to run unless the installed package is
+ 1.32.7 and `envs/kaggriculture/kaggriculture.py` has exactly the SHA-256 pinned
+-in `engine_rs/Cargo.toml`; each header records both. The project lock pins
+-kaggle-environments 1.29.0, which has no Kaggriculture environment, so the
+-generator runs in an isolated environment and the project lock is unchanged:
++in `engine_rs/Cargo.toml`; each header records both. Task 1.1b was built when
++the project lock still pinned 1.29.0 (no Kaggriculture environment), so its
++receipts and the sweep use an isolated environment. The owner's 1.32.7 project
++pin, merged alongside, also satisfies the guard; a Python test asserts that the
++project environment loads the pinned engine. The isolated command stays valid:
+ 
+ ```sh
+ UV_OFFLINE=1 uv run --isolated --no-project --with kaggle-environments==1.32.7 \
+
+exec
+/bin/zsh -lc "cat > ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/manifest_check.py <<'PY'
+from pathlib import Path
+import hashlib
+import importlib.util
+import json
+import subprocess
+
+root = Path.cwd()
+evidence = root / 'ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193'
+scratch = evidence / 'scratch'
+manifest_path = 'engine_rs/TRIM_MANIFEST.json'
+
+def blob(ref, path):
+    return subprocess.check_output(['git', 'show', f'{ref}:{path}'])
+
+expected = blob('8209193', manifest_path)
+second_parent = blob('16e56b6', manifest_path)
+assert second_parent == expected
+spec = importlib.util.spec_from_file_location('trim_updater', root / 'ops/rebuild-2026-09-29/1.1b/update_trim_manifest.py')
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+module.ROOT = scratch
+module.MANIFEST = scratch / manifest_path
+module.MANIFEST.write_bytes(blob('69397da', manifest_path))
+module.main()
+actual = module.MANIFEST.read_bytes()
+assert actual == expected
+module.main()
+assert module.MANIFEST.read_bytes() == expected
+retained = json.loads(expected)['retained']
+for entry in retained:
+    assert blob('69397da', entry['path']) == blob('8209193', entry['path'])
+for path in ['engine_rs/tests/replay_parity.rs', 'engine_rs/fixtures/generated/MANIFEST.json']:
+    assert blob('16e56b6', path) == blob('8209193', path)
+result = {
+    'merge': subprocess.check_output(['git', 'rev-parse', '8209193'], text=True).strip(),
+    'manifest_sha256': hashlib.sha256(actual).hexdigest(),
+    'manifest_identical_to_second_parent': True,
+    'updater_from_first_parent_reproduces_merge_byte_for_byte': True,
+    'updater_idempotent': True,
+    'retained_files_identical_to_first_parent': len(retained),
+    'replay_test_and_generated_manifest_identical_to_second_parent': True,
+}
+(evidence / 'manifest-check.json').write_text(json.dumps(result, indent=2) + '\\n')
+print(json.dumps(result, indent=2))
+PY
+.venv/bin/python -B ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/manifest_check.py" in /Users/poonszesen/kg-v3-merge
+ succeeded in 162ms:
+{
+  "merge": "82091936df52125e7f4cce687887a8c259b7ee02",
+  "manifest_sha256": "e507deba750e5bc64abaf3463b0d8e7f1aa13eba0db5fb017276905f2b1b6b5c",
+  "manifest_identical_to_second_parent": true,
+  "updater_from_first_parent_reproduces_merge_byte_for_byte": true,
+  "updater_idempotent": true,
+  "retained_files_identical_to_first_parent": 12,
+  "replay_test_and_generated_manifest_identical_to_second_parent": true
+}
+
+codex
+Both scratch mutations were caught: weakening `EDITABLE` failed the declared-LICENSE regression, and removing trace-hash validation failed two regressions.
+
+The manifest is byte-identical to Task 1.1b’s parent. Running the committed updater from the first parent’s manifest also reproduced it exactly. All parent tests are accounted for, including the renamed tests and the replacement of the stale 1.29.0 environment test. The only finding is the cookbook log’s check-order wording.
+
+exec
+/bin/zsh -lc "cat > ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/verification.md <<'EOF'
+# Independent merge verification — 82091936
+
+Target: "'`82091936df52125e7f4cce687887a8c259b7ee02`, checked at HEAD on `kg/merge-1.1b`.
+Parents: `69397da3d1559be4fbb525636122d8a9bc614a49` and `16e56b60c4bd11da3bdacdd6a7e45e5637654ad6`.
+Date: 2026-09-29. No tracked files modified. This is verification evidence, not a repository adaptation.
+
+## Finding
+
+P3 — `cookbook/log.md:7–10` reverses part of the checker sequence. It says the fixed Task 1.1 checks (including lockfile derivation and appendix hash) run before generated-manifest verification. Actual `verify_task` at `scripts/check_engine_trim.py:480–542` runs: parse, split generated traces, generic verification (including EDITABLE), generated-manifest verification and minimum count, then fixed retained/authored/justfile/lib/Cargo/lock/provenance checks. Correct the log'"'s sequence. Both contracts execute, so this is documentation only and does not change acceptance/rejection.
+
+No blocking or behavioral merge findings.
+
+## Preservation review
+
+Against the first parent, every checker definition/constant is retained; 31 top-level AST nodes are identical. Intentional changed functions are "'`verify_task_authored` (two authored paths), `verify_task` (generated split/verification), and `main` (wider caught exceptions). Against the second parent, every definition/constant is retained; 33 nodes are identical, with changes only to `verify` (EDITABLE strengthening) and `check` (delegation). Task 1.1'"'s EDITABLE, RAYON_CLOSURE, appendix heading/hash, reference_files, thin check, verify_task, _expected_lock and _verify_provenance survive. Task 1.1b's constants, engine_pin, split_generated and verify_generated remain intact. The generated minimum count remains six; actual committed inventory is 15 traces.
+
+All eight first-parent check-level regression functions and their supporting fixtures are unchanged. The two merged-path tests exercise trace-hash and unlisted-trace rejection through the full "'`check()` entry point. The eleven parametrized generated-manifest drift cases remain.
+
+| Python test function definitions (not parametrized test cases) | First parent | Second parent | Merge |
+| --- | ---: | ---: | ---: |
+| tests/tools/test_check_engine_trim.py | 21 | 17 | 27 |
+| tests/scripts/test_kaggriculture_parity.py | 0 | 17 | 18 |
+| All files under tests/ | 682 | 601 | 706 |
+
+The raw parent test-name union has 705 names. Four merge-only names and three absent names yield 706. Every absent name has an intentional replacement:
+
+- `test_task_authored_inventory_accepts_replay_test` becomes `test_task_authored_inventory_accepts_replay_test_and_generated_manifest` for the two-path inventory.
+- `test_retained_rust_cannot_be_edited_even_when_declared` becomes `test_retained_file_cannot_be_edited_even_when_declared` with the strengthened diagnostic.
+- `test_generator_refuses_the_project_kaggle_environments` is replaced by `test_generator_refuses_before_writing_when_the_pin_differs` and `test_project_environment_satisfies_the_engine_pin`, because the merged project already pins 1.32.7. The negative check verifies no output directory is written.
+
+The other merge-only names are the two full-check generated-trace regressions. Rust engine test-name counts are 59/69/69; none from either parent is missing. Replay-parity counts are 9/19/19.
+
+The log retains all parent headings and entry bodies (59/50/63 headings, no duplicates); the references index retains all parent links. The coverage document retains the first-parent hardening paragraph and the complete live-parity section with the project-pin clarification. The live-parity Reference also reconciles that pin. The new log sequence wording above is the sole requested correction.
+
+## Manifest and byte custody
+
+`TRIM_MANIFEST.json` is byte-identical to the second parent; SHA-256:
+`e507deba750e5bc64abaf3463b0d8e7f1aa13eba0db5fb017276905f2b1b6b5c`.
+
+There is no merge-specific manifest edit requiring regeneration. For independent confirmation of the first-parent delta, ran the committed `ops/rebuild-2026-09-29/1.1b/update_trim_manifest.py` with redirected paths on a scratch copy starting with first-parent manifest bytes and merged authored files. Its output reproduced the merge byte-for-byte; a second run was idempotent. This establishes reproducibility, without claiming to observe the historical edit process. See `manifest_check.py` and `manifest-check.json`.
+
+All 12 retained engine paths are byte-identical to the first parent, including the seven vendored source/Cargo/provenance/license paths. `replay_parity.rs` and generated `MANIFEST.json` are byte-identical to the second parent.
+
+## Executed checks
+
+| Command | Result |
+| --- | --- |
+| `cargo test --manifest-path engine_rs/Cargo.toml --locked --offline` | 69 passed: 41 unit, 9 RNG, 19 replay-parity; 0 failed, 0 ignored; 0 doc tests |
+| `uv run python scripts/check_engine_trim.py` | Exit 0, `engine trim manifest: OK` |
+| `uv run pytest tests/tools tests/scripts -q` | 261 passed, 0 skipped, 12.34 s |
+
+Raw output: `cargo.log`, `checker.log`, `pytest.log`. No full prepare, new sweep, training or GPU run was performed in this verification.
+
+## Independent scratch mutation checks
+
+Used a `git archive` snapshot of the merge'"'s checker, tests and engine. Git reference reads were directed to the repository object store, while GIT_WORK_TREE pointed at scratch. The original tracked checkout was never mutated. Ran the full checker test file with the project Python, without bytecode/cache reuse.
+
+- Baseline: 71 passed.
+- Task 1.1 mutation: replace "'`if path not in EDITABLE` with the old Rust-only guard. Result: 1 failed, 70 passed. `test_declared_license_edit_is_rejected` fails because the declared LICENSE edit is accepted.
+- Task 1.1b mutation: remove the trace-byte SHA-256 equality requirement, retaining digest shape validation. Result: 2 failed, 69 passed. The same-size synthetic edited trace is accepted, failing the parametrized drift test; the full-check edited trace instead reaches its size check, failing its required trace-hash diagnostic.
+
+See `mutation_check.py`, `mutation-summary.json` and the three mutation logs. Restored the scratch checker afterward. Scratch copies were removed after recording results; the scripts reconstruct them.
+
+Final worktree check: HEAD remains the target; tracked index and worktree diffs are empty. Only this untracked verification evidence directory was added.
+
+VERDICT: APPROVE WITH EDITS
+EOF
+.venv/bin/python -B - <<'"'PY'
+from pathlib import Path
+import shutil
+scratch = Path('ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/scratch')
+assert scratch.is_dir() and not scratch.is_symlink()
+shutil.rmtree(scratch)
+PY
+git diff --exit-code && git diff --cached --exit-code && git rev-parse HEAD && git status --short" in /Users/poonszesen/kg-v3-merge
+ succeeded in 0ms:
+82091936df52125e7f4cce687887a8c259b7ee02
+?? ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/
+
+codex
+No blocking code findings. One documentation correction:
+
+- **P3:** [cookbook/log.md:7](/Users/poonszesen/kg-v3-merge/cookbook/log.md:7) reverses the verification order. Actual order is generic checks → generated-manifest checks → fixed Task 1.1 checks, including lockfile derivation and provenance hash.
+
+Both contracts are preserved, including all eight hardening regressions and all generated-manifest drift cases. No tests were silently dropped: two names were updated, and the obsolete 1.29.0 environment test was replaced with wrong-pin rejection and current-pin acceptance checks.
+
+`TRIM_MANIFEST.json` is byte-identical to `16e56b6`. Running the committed updater from first-parent manifest bytes reproduced it exactly. All 12 retained engine files remain byte-identical to `69397da`.
+
+| Requested check | Result |
+|---|---|
+| Offline locked engine tests | **69 passed**: 41 unit, 9 RNG, 19 replay |
+| Trim checker | **PASS** |
+| Python tools/scripts tests | **261 passed**, no skips |
+
+Scratch mutation checks confirmed sensitivity:
+
+- Baseline: **71 passed**.
+- Weakened `EDITABLE`: **1 failed**, 70 passed.
+- Removed trace-hash validation: **2 failed**, 69 passed.
+
+[Full report and receipts](/Users/poonszesen/kg-v3-merge/ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/verification.md). No tracked modifications; only untracked verification evidence was added.
+
+VERDICT: APPROVE WITH EDITS
+hook: Stop
+hook: Stop Completed
+tokens used
+60,125
+No blocking code findings. One documentation correction:
+
+- **P3:** [cookbook/log.md:7](/Users/poonszesen/kg-v3-merge/cookbook/log.md:7) reverses the verification order. Actual order is generic checks → generated-manifest checks → fixed Task 1.1 checks, including lockfile derivation and provenance hash.
+
+Both contracts are preserved, including all eight hardening regressions and all generated-manifest drift cases. No tests were silently dropped: two names were updated, and the obsolete 1.29.0 environment test was replaced with wrong-pin rejection and current-pin acceptance checks.
+
+`TRIM_MANIFEST.json` is byte-identical to `16e56b6`. Running the committed updater from first-parent manifest bytes reproduced it exactly. All 12 retained engine files remain byte-identical to `69397da`.
+
+| Requested check | Result |
+|---|---|
+| Offline locked engine tests | **69 passed**: 41 unit, 9 RNG, 19 replay |
+| Trim checker | **PASS** |
+| Python tools/scripts tests | **261 passed**, no skips |
+
+Scratch mutation checks confirmed sensitivity:
+
+- Baseline: **71 passed**.
+- Weakened `EDITABLE`: **1 failed**, 70 passed.
+- Removed trace-hash validation: **2 failed**, 69 passed.
+
+[Full report and receipts](/Users/poonszesen/kg-v3-merge/ops/rebuild-2026-09-29/merge-1.1b/verify-codex-8209193/verification.md). No tracked modifications; only untracked verification evidence was added.
+
+VERDICT: APPROVE WITH EDITS

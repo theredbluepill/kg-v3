@@ -1,0 +1,3 @@
+1. Cookbook log and notes checked: the [earlier trunk-numerics record](/Users/poonszesen/kg-v3-valuegap/cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md:32) concerns different comparisons. The numerical corrections are measured in this diagnostic’s [log-probability records](/Users/poonszesen/kg-v3-valuegap/ops/rebuild-2026-09-29/value-gap-2026-09-29/summary.json:1803) and [hidden-state records](/Users/poonszesen/kg-v3-valuegap/ops/rebuild-2026-09-29/value-gap-2026-09-29/summary.json:1833), independently reconciled against raw outputs. Findings remain unchanged.
+
+VERDICT: APPROVE WITH EDITS

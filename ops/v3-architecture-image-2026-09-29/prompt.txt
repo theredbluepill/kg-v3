@@ -1,0 +1,46 @@
+Use case: infographic-diagram
+Asset type: One polished technical architecture infographic for the Kaggriculture v3 repository, landscape 16:10, very high resolution, readable presentation typography.
+Primary request: Explain the v3 agent model architecture and intended training pipeline, with precise implementation status. Use Traditional Chinese section headings and concise English technical labels. This is an explanatory engineering diagram, not code, a dashboard, or a screenshot.
+
+Visual direction: elegant light-background scientific diagram, white/off-white canvas, dark navy text, restrained blue/teal for implemented components, amber dashed outlines for planned Kaggriculture components. Crisp flat vector-like design rendered as an image, thin directed arrows, generous whitespace, aligned cards, consistent sans-serif fonts, minimal abstract farm-grid icon only beside title. No robots, no decorative neural-network spaghetti, no 3D, no watermark. Make the diagram the entire image.
+
+Header:
+Large title: "Kaggriculture v3 Agent"
+Subtitle: "模型架構 × 訓練流程"
+Small legend: solid teal outline "已實作" | dashed amber outline "待整合"
+
+UPPER SECTION, roughly 56% of page. Heading: "01  模型架構"
+A clean left-to-right flow with five stages:
+1. Solid teal card "Current observation", smaller "[E, 2] · one legal view per seat", and short labels on separate lines "Actors · Tiles", "Shops · Market", "Players · Globals". Small caption underneath: "席位獨立編碼 · 私有資訊隔離".
+2. Solid teal card "Game-specific stems" with "Numeric + one-hot features", "ObservationInputStem", "raw → 512 → 256".
+3. Solid teal visual stack "Token sequence", in this exact order, using compact colored chips and a few lines:
+"Own actors → Rival actors"
+"Tiles → Shops → Market"
+"2 Player · 1 Global · 4 Scratch"
+"1 Actor-plan · 2 Critic-value"
+4. The most prominent solid teal card "Isaiah stateless trunk", with eight subtly stacked block icons, and labels "TransformerBlock × 8", "D = 256 · 8 heads", "MLP ratio = 2 · GELU", "Final LayerNorm". Small bottom band "FlashAttention / SDPA · GEMM guard".
+5. Split into TWO non-overlapping output branches:
+Upper dashed amber card "Actor heads", with "[entity, player, plan]", "3D → D projection", "Batched grammar heads", "Unit actions · Market orders · STOP". Outgoing arrow label "Action".
+Lower solid teal card "Critic head", with "Shared OutputProjectionMLP", "Winner softmax", "V = 2p(self) − 1". Outgoing arrow label "Value".
+Below upper section, a narrow principle strip with exactly:
+"Current observation only  |  No recurrent memory  |  No opponent identity"
+Do not imply player-role self/opponent tokens are opponent identity; opponent identity means a named rival ID and is forbidden. Do not draw recurrent state links or any cross-seat attention. The grammar heads use native syntax/support masks; do not imply masks guarantee affordability or execution.
+
+LOWER SECTION, roughly 34% of page. Heading: "02  目標訓練流程" with a visible amber pill "Kaggriculture integration pending".
+Draw one clear main left-to-right path in dashed amber boxes:
+"Rust game engine" → "PyO3 buffers" → "Policy + rollout" → "GAE + returns" → "PPO update" → "Checkpoint / Eval"
+Under engine: "v2 rules semantics"
+Under buffers: "caller-owned buffers"
+Under Policy + rollout: "obs · actions · rewards · values"
+Under PPO update: "policy + value + entropy"
+Under Checkpoint / Eval: "Multiple opponents · seeds · seats"
+Draw a tidy loop arrow from PPO update back to Policy + rollout, labeled "Updated policy". Draw a separate short return arrow from Policy + rollout to Rust game engine, labeled "Actions", making the environment interaction explicit. Do not return a recurrent state. Above the Policy + rollout box, a small amber auxiliary flow "Public replays → BC rerun" feeding Policy + rollout, arrow label "Initial weights". Above PPO update, a small amber auxiliary box "Last-best teacher" feeding PPO update with arrow label "KL + value distillation". Keep these auxiliary elements neatly separated with no overlapping arrows.
+A strong caption under the main path: "Single PPO trainer: scripts/run_ppo.py"
+A short companion caption: "W&B · source-bound checkpoints · held-out evaluation"
+
+Footer, remaining space, small but legible:
+"Snapshot: kg/rebuild-model · 8093d51 · 2026-09-29"
+"Encoder + critic implemented; actor heads and full training integration pending in this checkout."
+"6–10M full-model target · end-to-end qualification pending"
+
+Constraints: All visible text must be spelled correctly and legible. Preserve the precise architecture and current-vs-target distinction. Never claim the full pipeline is operational, GPU qualified, or benchmarked. Do not add measured speed, win rate, accuracy, or a model parameter count asserted as final. No Orbit Wars game entities, no recurrent transformer, no v2 neural model. Exact directed arrows and uncluttered hierarchy are more important than decorative detail.

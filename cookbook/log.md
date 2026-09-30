@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-29 — Illustrate the v3 model and target training pipeline
+
+The owner requested an ImageGen architecture diagram. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now links the PNG, exact prompt and source/visual-check receipt in `ops/v3-architecture-image-2026-09-29/`. The image is pinned to `kg/rebuild-model` at `8093d51`: implemented schema/encoder/critic are distinct from actor heads and target training integration. No code or training result changed; its status must be refreshed after integration lands.
+
 ## 2026-09-29 — Narrow the orchestration-receipt claim in the codex exec workflow
 
 Codex's second cookbook-refresh review (P3) noted that an exit status proves only the child's outcome. The [[workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict|codex exec workflow]] now says that tying a parent's return to a child's exit needs a timestamped process-lifecycle log.

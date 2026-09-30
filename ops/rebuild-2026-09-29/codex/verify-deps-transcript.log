@@ -1,0 +1,3144 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-deps
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /Users/poonszesen/.cache/uv, /Users/poonszesen/.local/share/uv, /Users/poonszesen/.cargo, /Users/poonszesen/kg-v3-deps/.codex-tmp]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0eb74-3749-7b73-b077-d6b311ea82dc
+--------
+user
+You are Codex, the INDEPENDENT VERIFIER of branch kg/rebuild-deps (commit fb65e1f): the kaggle-environments 1.32.7 pin, an owner decision. Do not leave any tracked modification.
+Verify:
+1. pyproject.toml pins kaggle-environments==1.32.7, the git source override is removed, and the change was made by uv (lock consistent: `uv lock --check`).
+2. The installed envs/kaggriculture/kaggriculture.py SHA-256 equals the full engine hash in kg/reference-2026-09-29:engine_rs/Cargo.toml metadata.
+3. Isaiah's critical pins are unchanged (torch, triton, flash-attn, numpy, pydantic, wandb, maturin, mypy). List every other lock change, and flag any that could affect training or Orbit behavior.
+4. Run `CARGO_BUILD_JOBS=3 uvx --from rust-just just prepare` (the generated Orbit fixtures are present in tests/fixtures) and report the counts, including Orbit replay/generation parity.
+5. The contract change is only Markdown spacing.
+FINAL: findings with severity, command results, and VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll verify the commit, audit the full lockfile delta, and run the requested preparation suite. I’ll also check engine identity and Orbit parity, then confirm that no tracked files changed.
+exec
+/bin/zsh -lc "cat cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md && cat justfile && rg -n 'kaggle|fixture|prepare|parity' README.md docs/pr-checklist.md" in /Users/poonszesen/kg-v3-deps
+exec
+/bin/zsh -lc "rg --files -g AGENTS.md -g '*deps*' -g '*pin*' ops cookbook .codex && git diff fb65e1f"'^ fb65e1f -- pyproject.toml && git diff --name-status fb65e1f''^ fb65e1f && command -v uv && uv --version' in /Users/poonszesen/kg-v3-deps
+ exited 1 in 0ms:
+ succeeded in 0ms:
+---
+type: "Decision"
+title: "Restart the port from Isaiah's clean base"
+description: "Main and the working branch restart from Isaiah's 32b3ec9; the prior port is a reference branch for grammar, tokens and the Rust engine; the cookbook and Claude/Codex setup carry over; the model keeps Isaiah's layer topology; one BC rerun and RTX PRO 6000 verification follow."
+tags: ["kaggriculture-v3", "decisions"]
+status: "adopted"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+decider: "Owner: restore kg/isaiah-gap-closure and main to 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again from a clean state with Codex, keeping a reference branch and carrying the cookbook with the .claude/.codex setup."
+sources: [{"resource": "user-directive:2026-09-29:update-kaggle-environments-1-32-7"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:uv.lock"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}]
+---
+
+# Restart the port from Isaiah's clean base
+
+The owner directs, on 2026-09-29:
+
+> also for kg/isaiah gap closeure and main branch can you restore to starting points 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again? For grammar/tokens/game rust engine, you can have a reference branch from this current branch snapshot to refer on, I want you & codex started from a clean state. Carry the cookbooks with you with .claude/.codex setup.
+
+and, just before it:
+
+> Yes, we have different games, so we had different action heads, etc., these kind of things, but the model layers/ topologies should remain. We are just playign different games.
+
+> Also an extra BC is for sure required. Yo ucan use 2/4-rank RTX 6000 to verify your work. Work with codex as well.
+
+## What was done
+
+- Local `main` and `kg/isaiah-gap-closure` were reset to Isaiah's `32b3ec9`. The remote was not changed: `origin/main` is still `0d01234`, and nothing was pushed.
+- Branch `kg/reference-2026-09-29` and annotated tag `kg-reference-2026-09-29` (both at `65f0eac`) hold the whole prior port: the initial adaptation `0d01234`, `a2bf23c`, and the cookbook cleanup `65f0eac`. Consult it for the grammar and action codec, observation tokens, the vendored Rust engine (`engine_rs/`), native bindings (`src/kaggriculture.rs`), rewards, BC data preparation, and run evidence under `ops/`.
+- Carried onto the working branch: `cookbook/`, `.claude/`, `.codex/`, `AGENTS.md` (with the `CLAUDE.md` symlink), `kaggriculture-v3.base`, `ops/pre-commit` (Git uses `core.hooksPath=ops`), `ops/cookbook-setup-checks.md`, and `.gitignore` (the starter's rules plus bulk and credential exclusions).
+- Local run artifacts under `ops/` and `runs/`, which Git ignores, stay on disk; nothing was deleted.
+
+## Consequences
+
+- **References describe the reference branch, not the current tree.** Sources whose files no longer exist are re-pointed as `reference-branch:kg/reference-2026-09-29/<path>`. Sources for files that still exist (Isaiah's own files) stay `repository:` so the first-edit gate still surfaces them. Until the rebuild, those notes describe the reference branch's adapted versions of those files.
+- Owner Decisions remain in force.
+- **Same layer topology:** the rebuilt model uses Isaiah's `StatelessTransformerV1` layer classes, arrangement and roles: observation stems, learned per-role tokens, trunk blocks, critic head and actor input projection. Only the game I/O differs: input channel widths, categorical encodings fed to the stems, and the action heads. See the [[the-policy-is-stateless-and-observation-only|stateless Decision]].
+- **One BC rerun is required** on the rebuilt model, using the reference branch's BC data pipeline.
+- **Verification hardware:** 2- and 4-rank RTX PRO 6000 runs are authorized for verification. Read the live price first and write a run statement before each run; see the [[start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]].
+- **Codex collaboration:** Claude and Codex both start from this clean state and work in separate worktrees, cross-reviewing each other's changes.
+- The previous gap-closure plan (`reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md`) feeds a rebuild plan. Its principles table and task designs stay valid; its file-level steps assumed the old code.
+
+## Using the reference branch — implementation interpretation
+
+The owner asks to use the reference branch "properly, without blindly copying". The rebuild plan (`ops/rebuild-2026-09-29/plan.md`) gives every reference component exactly one disposition:
+- **Vendor, trimmed and hash-pinned:** only the rules kernel (`lib.rs`, `py_random.rs`, `econ_attrib.rs`), because it must match Kaggle's Python engine exactly.
+- **Port after review:** the native grammar, rewards, device mask tables and benchmark harness.
+- **Rebuild, with the reference as test oracle:** the observation encoding (named per-entity tensors instead of the flat v2 vector sliced at fixed offsets), the environment bindings, the codec, the model, the trainer seams, the configs and BC training.
+- **Reference only:** scripted bots until evaluation needs a few of them, the v2 experiments, and the run receipts.
+
+Lessons from the reference (raw-bank winners, truncation reward, seed streams, the CUDA fault (since traced to a compiler GEMM overflow), cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
+
+## kaggle-environments 1.32.7 — owner, 2026-09-29
+
+> Found that Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture, while 1.32.7 (already cached locally) has it. this we will have to update it.
+
+Source: `user-directive:2026-09-29:update-kaggle-environments-1-32-7`. Isaiah's project took `kaggle-environments` from git HEAD, locked at 1.29.0, which has no Kaggriculture environment. It is now pinned to `==1.32.7` via `uv remove` + `uv add`, which also removes the git source override. 1.32.7's `envs/kaggriculture/kaggriculture.py` has SHA-256 `bc8a5487…`, the engine the vendored Rust kernel targets.
+
+Isaiah's critical pins are unchanged: torch 2.9.0, triton 3.5.0, flash-attn 2.8.3, numpy, pydantic, wandb, mypy. The other 50 lockfile changes are kaggle-environments' own dependency tree (e.g. jax 0.10 → 0.11.2). Checks with 1.32.7: `just prepare` passes, with Rust 155 passed / 2 ignored (Orbit replay and generation parity) and Python 722 passed / 3 skipped.
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+docs := "docs/"
+py_src := "python/"
+py_scripts := "scripts/"
+py_tests := "tests/"
+all_py_code := f"{{py_src}} {{py_scripts}} {{py_tests}}"
+all_rs_code := "src/"
+
+[group: 'docs']
+docs-lint:
+	uvx pymarkdownlnt scan *.md
+	uvx pymarkdownlnt scan --recurse {{all_py_code}} {{all_rs_code}} {{docs}}
+[group: 'docs']
+docs-fresh:
+	uv run python scripts/check_doc_freshness.py
+
+[group: 'python']
+py-format:
+    uvx ruff check {{all_py_code}} --select I --fix
+    uvx ruff format {{all_py_code}}
+[group: 'python']
+py-lint:
+    uv run python scripts/check_python_311_syntax.py
+    uvx ruff check {{all_py_code}}
+[group: 'python']
+py-static:
+    uv run mypy {{py_src}} {{py_scripts}}
+[group: 'python']
+py-test:
+    uv run pytest {{py_tests}} -m "not slow"
+[group: 'python']
+py-test-full:
+    uv run pytest {{py_tests}}
+[group: 'python']
+py-prepare: py-format py-lint py-static py-test docs-fresh
+
+[group: 'rust']
+rs-format:
+    cargo fmt
+[group: 'rust']
+rs-lint:
+    cargo clippy --all-targets -- -D warnings
+[group: 'rust']
+rs-test:
+	cargo test
+[group: 'rust']
+rs-prepare: rs-format rs-lint rs-test docs-fresh
+
+[group: 'build']
+build:
+	uv run maturin develop
+[group: 'build']
+build-release:
+	uv run maturin develop --release
+[group: 'build']
+kaggle-image: prepare
+	docker buildx build \
+	  --platform linux/amd64 \
+	  -f Dockerfile.kaggle \
+	  --output type=docker,name=orbit-wars:kaggle,compression=zstd,compression-level=1 \
+	  .
+[group: 'build']
+kaggle-submission model submission="submission" quantization="fp32" *extra_args: prepare kaggle-image
+	#!/usr/bin/env bash
+	set -euo pipefail
+	submission="{{submission}}"
+	quantization="{{quantization}}"
+	lora_quantization=""
+	extra_args=({{extra_args}})
+	if [[ -z "$submission" || "$submission" == *"/"* || "$submission" == "." || "$submission" == ".." ]]; then
+	  echo "Submission name must be a non-empty file name, not a path: $submission" >&2
+	  exit 2
+	fi
+	model_abs="$(cd "$(dirname "{{model}}")" && pwd)/$(basename "{{model}}")"
+	fallback_model_abs=""
+	while [[ ${#extra_args[@]} -gt 0 ]]; do
+	  case "${extra_args[0]}" in
+	    --fallback-checkpoint)
+	      if [[ ${#extra_args[@]} -lt 2 ]]; then
+	        echo "--fallback-checkpoint requires a path argument" >&2
+	        exit 2
+	      fi
+	      fallback_model_abs="$(cd "$(dirname "${extra_args[1]}")" && pwd)/$(basename "${extra_args[1]}")"
+	      extra_args=("${extra_args[@]:2}")
+	      ;;
+	    --lora-quantization)
+	      if [[ ${#extra_args[@]} -lt 2 ]]; then
+	        echo "--lora-quantization requires a format argument" >&2
+	        exit 2
+	      fi
+	      lora_quantization="${extra_args[1]}"
+	      extra_args=("${extra_args[@]:2}")
+	      ;;
+	    *)
+	      echo "Unexpected kaggle-submission argument: ${extra_args[0]}" >&2
+	      exit 2
+	      ;;
+	  esac
+	done
+	if [[ "$submission" == *.tar.gz ]]; then
+	  output="artifacts/${submission}"
+	else
+	  output="artifacts/${submission}.tar.gz"
+	fi
+	output_abs="$(mkdir -p "$(dirname "$output")" && cd "$(dirname "$output")" && pwd)/$(basename "$output")"
+	submission_args=()
+	docker_args=(-v "$(dirname "$model_abs"):/model:ro")
+	if [[ -n "$fallback_model_abs" ]]; then
+	  submission_args+=(--fallback-checkpoint "/fallback-model/$(basename "$fallback_model_abs")")
+	  docker_args+=(-v "$(dirname "$fallback_model_abs"):/fallback-model:ro")
+	fi
+	if [[ "$quantization" != "fp32" ]]; then
+	  submission_args+=(--quantization "$quantization")
+	fi
+	if [[ -n "$lora_quantization" ]]; then
+	  submission_args+=(--lora-quantization "$lora_quantization")
+	fi
+	docker run --rm \
+	  "${docker_args[@]}" \
+	  -v "$(dirname "$output_abs"):/artifacts" \
+	  orbit-wars:kaggle "${submission_args[@]}" "/model/$(basename "$model_abs")" "/artifacts/$(basename "$output_abs")"
+	artifact_limit_bytes=$((100 * 1024 * 1024))
+	artifact_bytes="$(wc -c < "$output_abs" | tr -d '[:space:]')"
+	if (( artifact_bytes > artifact_limit_bytes )); then
+	  warning="WARNING: Kaggle submission artifact exceeds 100MiB: $output_abs is ${artifact_bytes} bytes"
+	  if [[ -t 2 ]]; then
+	    printf '\033[31m%s\033[0m\n' "$warning" >&2
+	  else
+	    printf '%s\n' "$warning" >&2
+	  fi
+	fi
+
+_prepare_base: build rs-format py-format rs-lint py-lint docs-lint py-static rs-test py-test-full
+[group: 'ci']
+prepare: _prepare_base docs-fresh
+[group: 'ci']
+prepare-rl: prepare build-release
+[group: 'ci']
+prepare-container: _prepare_base build-release
+
+[group: 'misc']
+audit-selected-target-angles:
+    cargo test --lib rl::action_spec::tests::audit_selected_target_angle_quality -- --ignored --nocapture
+
+[group: 'misc']
+clean:
+    cargo clean
+    rm -rf .mypy_cache .pytest_cache .ruff_cache .venv/
+    rm -f python/owl/rs*.so
+    rm -f tests/fixtures/**/*.{json,jsonl}
+docs/pr-checklist.md:29:   cleanup, local reference files, downloaded replay fixtures, or generated
+docs/pr-checklist.md:39:   oracle logic only when it is clearly serving parity validation.
+docs/pr-checklist.md:41:6. Run the strongest relevant prepare target:
+docs/pr-checklist.md:44:just prepare
+docs/pr-checklist.md:47:Use `just py-prepare` or `just rs-prepare` only when the change is strictly
+docs/pr-checklist.md:48:limited and a full prepare would not add signal. If only the doc freshness
+docs/pr-checklist.md:49:portion of `just prepare` fails and the mapped docs are genuinely still current,
+docs/pr-checklist.md:50:rerun it as `DOCS_CURRENT=1 just prepare`.
+docs/pr-checklist.md:53:   - Replay fixtures are present in `tests/fixtures/orbit_wars_replays`.
+docs/pr-checklist.md:54:   - `tests/fixtures/generation/reference_generation.json` is current if
+docs/pr-checklist.md:57:   - `docs/rules-parity-coverage.md` still describes the real coverage and
+docs/pr-checklist.md:73:review should focus on bugs, missing tests, stale docs, orphaned code, fixture
+README.md:15:3. Generate replay fixtures:
+README.md:18:scripts/regenerate_test_fixtures.sh
+README.md:21:4. `just prepare` should run without errors. If mapped docs are genuinely still
+README.md:22:   current after a small code change, rerun it as `DOCS_CURRENT=1 just prepare`
+README.md:37:just kaggle-submission runs/20260505-120000/checkpoint_last_best.pt
+README.md:43:just kaggle-submission runs/20260505-120000/checkpoint_last_best.pt my-run
+README.md:50:just kaggle-submission runs/20260505-120000/checkpoint_last_best.pt my-run fp4
+README.md:57:just kaggle-submission runs/20260505-120000/checkpoint_last_best.pt my-run fp4 \
+README.md:61:The submission recipe runs `just prepare`, rebuilds the `orbit-wars:kaggle`
+README.md:110:The Rust rules engine targets the installed `kaggle-environments` Orbit Wars
+README.md:114:uv run python -c 'from importlib import import_module; from pathlib import Path; m = import_module("kaggle_environments.envs.orbit_wars.orbit_wars"); print(Path(m.__file__).resolve()); print(Path(m.__file__).with_name("README.md").resolve())'
+README.md:400:## Orbit Wars replay parity
+README.md:402:Replay parity tests use compact Kaggle episode transition fixtures. The
+README.md:411:If fixture files are missing, download them directly into the test fixture
+README.md:415:scripts/regenerate_test_fixtures.sh
+README.md:421:### Replay parity workflow
+README.md:423:The fixture shape is JSONL with one row per transition: episode id, player
+README.md:428:the fixture directory and fails by default if none are present.
+README.md:432:- `ORBIT_WARS_PARITY_FIXTURE_DIR`: directory containing extracted JSONL parity
+README.md:433:  fixtures.
+README.md:434:- `REQUIRE_PARITY_FIXTURES=0`: skip replay parity, and skip generation parity
+README.md:435:  only when generation fixtures are missing. Missing fixtures fail by default.
+README.md:439:JSONL fixtures, update `REQUIRED_REPLAY_COVERAGE` in
+README.md:442:`docs/rules-parity-coverage.md` before running the parity tests.
+README.md:444:## Generation parity
+README.md:447:sampling are checked against fixtures produced by the Python reference
+README.md:448:implementation under recorded random streams. Regenerate those fixtures after
+README.md:452:uv run python scripts/generate_reference_fixtures.py
+README.md:455:The generated fixture is written to
+README.md:456:`tests/fixtures/generation/reference_generation.json` and ignored by Git.
+README.md:460:When the official Orbit Wars environment changes, update the Rust parity tests
+README.md:463:1. Update the installed `kaggle-environments` package to the latest version.
+README.md:464:2. Regenerate all test fixtures. With no arguments, the script uses the current
+README.md:468:scripts/regenerate_test_fixtures.sh
+README.md:474:scripts/regenerate_test_fixtures.sh NEW_EPISODE_ID_1 NEW_EPISODE_ID_2
+README.md:478:set, and rewrites `tests/fixtures/generation/reference_generation.json` from the
+README.md:484:   and `docs/rules-parity-coverage.md`.
+README.md:486:4. Run the full checks with the new fixtures present:
+README.md:489:just prepare
+README.md:492:5. Fix any failing Rust parity tests by matching the updated Python behavior,
+README.md:493:   then rerun `just prepare`.
+README.md:495:Generation and replay fixtures remain ignored by Git; keep only the episode IDs
+
+exec
+/bin/zsh -lc 'git status --short && git rev-parse HEAD && git branch --show-current && git show --stat --oneline fb65e1f' in /Users/poonszesen/kg-v3-deps
+ succeeded in 360ms:
+?? .codex-tmp/
+fb65e1fad5e0b772623eaf7e660cdc62cdfda02e
+kg/rebuild-deps
+fb65e1f Pin kaggle-environments 1.32.7 (owner decision)
+ .../restart-the-port-from-isaiahs-clean-base.md    |   10 +-
+ cookbook/log.md                                    |    4 +
+ docs/kaggriculture-contract.md                     |    1 +
+ pyproject.toml                                     |    3 +-
+ uv.lock                                            | 3984 ++++++++++++--------
+ 5 files changed, 2323 insertions(+), 1679 deletions(-)
+
+exec
+/bin/zsh -lc "ls -ld .venv ops tests/fixtures tests/fixtures/orbit_wars_replays tests/fixtures/generation && sed -n '1,220p' pyproject.toml && sed -n '1,240p' scripts/generate_reference_fixtures.py && sed -n '1,200p' tests/test_rules_replay_parity.py" in /Users/poonszesen/kg-v3-deps
+ exited 1 in 0ms:
+drwxr-xr-x@ 11 poonszesen  staff  352 Sep 29 12:35 .venv
+drwxr-xr-x@  5 poonszesen  staff  160 Sep 29 12:35 ops
+drwxr-xr-x@  4 poonszesen  staff  128 Sep 29 12:36 tests/fixtures
+drwxr-xr-x@  3 poonszesen  staff   96 Sep 28 23:30 tests/fixtures/generation
+drwxr-xr-x@  4 poonszesen  staff  128 Sep 28 23:30 tests/fixtures/orbit_wars_replays
+[project]
+name = "owl"
+version = "0.1.0"
+description = "An RL library for the Kaggle 2026 Orbit Wars competition"
+readme = "README.md"
+authors = [
+    { name = "IsaiahPressman" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "kaggle-environments==1.32.7",
+    "numpy>=2.4.4",
+    "pydantic>=2.13.2",
+    "pyyaml>=6.0.3",
+    "torch==2.9.0",
+    "tqdm>=4.67.3",
+    "wandb>=0.26.0",
+]
+
+[dependency-groups]
+dev = [
+    "kaggle>=2.1.0",
+    "maturin>=1.13.1,<2.0",
+    "mypy",
+    "pytest>=9.0.3",
+    "types-pyyaml>=6.0.12.20260408",
+    "types-tqdm>=4.67.3.20260408",
+]
+
+[project.optional-dependencies]
+flash-attn = [
+    "flash-attn>=2.8.3",
+]
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+module-name = "owl.rs"
+python-packages = ["owl"]
+python-source = "python"
+features = ["extension-module"]
+
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.rs" }, { file = "Cargo.toml" }, { file = "Cargo.lock" }]
+constraint-dependencies = ["protobuf<7"]
+no-build-isolation-package = ["flash-attn"]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+torchvision = [
+  { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.extra-build-variables]
+flash-attn = { FLASH_ATTENTION_SKIP_CUDA_BUILD = "TRUE" }
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "A",
+    "B",
+    "D",
+    "E",
+    "F",
+    "G",
+    "I",
+    "PT",
+    "UP",
+    "ARG",
+    "ERA",
+    "PIE",
+    "RET",
+    "RSE",
+    "RUF",
+    "SIM",
+]
+ignore = [
+    "D1",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pymarkdown]
+mode.strict-config = true
+plugins.MD013.enabled = false
+plugins.MD029.enabled = false
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+disallow_untyped_defs = true
+allow_redefinition = true
+
+[[tool.mypy.overrides]]
+module = ["owl.*"]
+no_implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = [
+    "flash_attn.*",
+    "kaggle.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+strict_markers = true
+markers = [
+    "slow: long-running tests excluded from the default fast test target",
+]
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import importlib
+import json
+import random
+from collections.abc import Callable
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any, Protocol, cast
+
+DEFAULT_OUTFILE = Path("tests/fixtures/generation/reference_generation.json")
+ORBIT_WARS_MODULE = "kaggle_environments.envs.orbit_wars.orbit_wars"
+COMET_CASES = [
+    {"name": "spawn_50", "seed": 93, "spawn_step": 50, "comet_planet_ids": []},
+    {"name": "spawn_150", "seed": 193, "spawn_step": 150, "comet_planet_ids": []},
+    {"name": "spawn_250", "seed": 293, "spawn_step": 250, "comet_planet_ids": []},
+    {"name": "spawn_350", "seed": 393, "spawn_step": 350, "comet_planet_ids": []},
+    {"name": "spawn_450", "seed": 493, "spawn_step": 450, "comet_planet_ids": []},
+    {
+        "name": "existing_comet_ids",
+        "seed": 80,
+        "spawn_step": 150,
+        "comet_planet_ids": [0, 1, 2, 3],
+    },
+    {
+        "name": "failed_attempts_before_success",
+        "seed": 40,
+        "spawn_step": 50,
+        "comet_planet_ids": [],
+    },
+]
+
+
+class OrbitWarsModule(Protocol):
+    __file__: str
+    random: Any
+
+    def generate_planets(self) -> list[list[int | float]]: ...
+
+    def generate_comet_paths(
+        self,
+        initial_planets: list[list[int | float]],
+        angular_velocity: float,
+        _spawn_step: int,
+        comet_planet_ids: list[int],
+        _comet_speed: float,
+    ) -> list[list[list[float]]] | None: ...
+
+    def interpreter(self, state: list[Any], env: Any) -> list[Any]: ...
+
+
+class RecordingRandom:
+    def __init__(self, seed: int | str) -> None:
+        self._rng = random.Random(seed)
+        self.calls: list[dict[str, int | float | str]] = []
+
+    def randint(self, low: int, high: int) -> int:
+        value = self._rng.randint(low, high)
+        self.calls.append({"kind": "randint", "low": low, "high": high, "value": value})
+        return value
+
+    def uniform(self, low: float, high: float) -> float:
+        value = self._rng.uniform(low, high)
+        self.calls.append({"kind": "uniform", "low": low, "high": high, "value": value})
+        return value
+
+
+class RecordingRandomFactory:
+    def __init__(self) -> None:
+        self.recorders: list[RecordingRandom] = []
+
+    def Random(self, seed: int | str) -> RecordingRandom:
+        recorder = RecordingRandom(seed)
+        self.recorders.append(recorder)
+        return recorder
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate Python-reference fixtures for Rust generation parity."
+    )
+    parser.add_argument(
+        "--outfile",
+        type=Path,
+        default=DEFAULT_OUTFILE,
+        help="Fixture JSON path to write.",
+    )
+    parser.add_argument("--planet-seed", type=int, default=42)
+    parser.add_argument("--comet-seed", type=int, default=43)
+    return parser.parse_args()
+
+
+def load_reference() -> OrbitWarsModule:
+    return cast(OrbitWarsModule, importlib.import_module(ORBIT_WARS_MODULE))
+
+
+def run_with_recording_random(
+    module: OrbitWarsModule,
+    seed: int,
+    function: Callable[..., Any],
+    *args: Any,
+) -> tuple[Any, list[dict[str, int | float | str]]]:
+    recorder = RecordingRandom(seed)
+    original_random = module.random
+    module.random = recorder
+    try:
+        return function(*args), recorder.calls
+    finally:
+        module.random = original_random
+
+
+def reset_case(module: OrbitWarsModule, seed: int, players: int) -> dict[str, Any]:
+    recorder_factory = RecordingRandomFactory()
+    original_random = module.random
+    module.random = recorder_factory
+    try:
+        state = [
+            SimpleNamespace(
+                observation=SimpleNamespace(),
+                action=[],
+                status="ACTIVE",
+                reward=0,
+            )
+            for _ in range(players)
+        ]
+        env = SimpleNamespace(
+            configuration=SimpleNamespace(
+                episodeSteps=500,
+                shipSpeed=6.0,
+                cometSpeed=4.0,
+                seed=seed,
+            ),
+            done=False,
+        )
+        module.interpreter(state, env)
+        obs = state[0].observation
+    finally:
+        module.random = original_random
+
+    return {
+        "seed": seed,
+        "players": players,
+        "random_calls": recorder_factory.recorders[0].calls,
+        "state": {
+            "angular_velocity": obs.angular_velocity,
+            "planets": obs.planets,
+            "initial_planets": obs.initial_planets,
+            "fleets": obs.fleets,
+            "next_fleet_id": obs.next_fleet_id,
+            "comets": obs.comets,
+            "comet_planet_ids": obs.comet_planet_ids,
+            "step": 1,
+        },
+    }
+
+
+def comet_path_case(
+    module: OrbitWarsModule,
+    planets: list[list[int | float]],
+    case: dict[str, Any],
+) -> dict[str, Any]:
+    comet_paths, comet_calls = run_with_recording_random(
+        module,
+        case["seed"],
+        module.generate_comet_paths,
+        planets,
+        0.04,
+        case["spawn_step"],
+        case["comet_planet_ids"],
+        4.0,
+    )
+    if comet_paths is None:
+        raise RuntimeError(f"comet case {case['name']} did not produce a valid path")
+
+    return {
+        "name": case["name"],
+        "seed": case["seed"],
+        "inputs": {
+            "angular_velocity": 0.04,
+            "spawn_step": case["spawn_step"],
+            "comet_planet_ids": case["comet_planet_ids"],
+            "comet_speed": 4.0,
+        },
+        "initial_planets": planets,
+        "random_calls": comet_calls,
+        "paths": comet_paths,
+    }
+
+
+def comet_ship_case(seed: int) -> dict[str, Any]:
+    recorder = RecordingRandom(seed)
+    values = [recorder.randint(1, 99) for _ in range(4)]
+    return {
+        "seed": seed,
+        "random_calls": recorder.calls,
+        "ships": min(values),
+    }
+
+
+def no_op_terminal_case(module: OrbitWarsModule) -> dict[str, Any]:
+    planets = [
+        [0, 0, 20.0, 20.0, 2.0, 10, 0],
+        [1, 1, 80.0, 80.0, 2.0, 10, 0],
+    ]
+    observation = SimpleNamespace(
+        angular_velocity=0.0,
+        comet_planet_ids=[],
+        comets=[],
+        fleets=[],
+        initial_planets=[planet.copy() for planet in planets],
+        next_fleet_id=0,
+        planets=[planet.copy() for planet in planets],
+        step=2,
+    )
+    state = [
+        SimpleNamespace(
+            observation=observation if player == 0 else SimpleNamespace(),
+            action=[],
+            status="ACTIVE",
+            reward=0,
+        )
+        for player in range(2)
+    ]
+    env = SimpleNamespace(
+        configuration=SimpleNamespace(
+            episodeSteps=4,
+            shipSpeed=6.0,
+            cometSpeed=4.0,
+        ),
+        done=False,
+    )
+
+    module.interpreter(state, env)
+
+    return {
+        "players": 2,
+        "configuration": {
+            "episodeSteps": 4,
+sed: tests/test_rules_replay_parity.py: No such file or directory
+
+exec
+/bin/zsh -lc "cat README.md | head -n 28; sed -n '400,505p' README.md; cat docs/rules-parity-coverage.md; cat scripts/regenerate_test_fixtures.sh; rg -n 'uv (add|remove)|1.32.7|bc8a5487' ops .codex-tmp cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md; rg --files --hidden -g AGENTS.md -g '"'!target'"' -g '"'!.venv'"' -g '"'!.git'"'; git log -5 --oneline" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+# OWL: Orbit Wars (reinforcement) Learning
+
+## Setup instructions
+
+1. Install prerequisites:
+   - [Rust](https://www.rust-lang.org/tools/install)
+   - [uv](https://docs.astral.sh/uv/getting-started/installation/)
+   - [just](https://github.com/casey/just)
+2. Install the repository's pinned Rust toolchain and `rustfmt` component:
+
+```sh
+rustup toolchain install nightly-2026-04-18 --component rustfmt
+```
+
+3. Generate replay fixtures:
+
+```sh
+scripts/regenerate_test_fixtures.sh
+```
+
+4. `just prepare` should run without errors. If mapped docs are genuinely still
+   current after a small code change, rerun it as `DOCS_CURRENT=1 just prepare`
+   to acknowledge that review.
+
+## Containerized builds
+
+See `docs/containerization.md` for building a Docker image with the locked Python
+dependencies, Rust toolchain, compiled extension module, and example Slurm launch
+## Orbit Wars replay parity
+
+Replay parity tests use compact Kaggle episode transition fixtures. The
+`replay-*.jsonl` files are intentionally ignored by Git because full episodes can
+be large.
+
+The current reference episodes are:
+
+- `75930761` (2-player game)
+- `75926553` (4-player game)
+
+If fixture files are missing, download them directly into the test fixture
+directory:
+
+```sh
+scripts/regenerate_test_fixtures.sh
+```
+
+The regeneration script requires Kaggle API credentials configured for the local
+user.
+
+### Replay parity workflow
+
+The fixture shape is JSONL with one row per transition: episode id, player
+count, step, normalized numeric player action triples from
+`steps[t][player].action`, per-player Kaggle `status` and `reward`, the input
+observation from `steps[t - 1][0].observation`, and the expected state from
+`steps[t][0].observation`. `cargo test` discovers all `replay-*.jsonl` files in
+the fixture directory and fails by default if none are present.
+
+Supported test environment variables:
+
+- `ORBIT_WARS_PARITY_FIXTURE_DIR`: directory containing extracted JSONL parity
+  fixtures.
+- `REQUIRE_PARITY_FIXTURES=0`: skip replay parity, and skip generation parity
+  only when generation fixtures are missing. Missing fixtures fail by default.
+
+When the upstream rules change without replacing the reference episode set,
+keep the replay test code stable. When replacing episodes, download replacement
+JSONL fixtures, update `REQUIRED_REPLAY_COVERAGE` in
+`src/rules_engine/replay_tests.rs` with each episode's id, player count, and row
+count, and update the episode lists in this README, `docs/rules-engine.md`, and
+`docs/rules-parity-coverage.md` before running the parity tests.
+
+## Generation parity
+
+Map generation, reset/home assignment, comet path generation, and comet ship
+sampling are checked against fixtures produced by the Python reference
+implementation under recorded random streams. Regenerate those fixtures after
+intentional upstream rule changes:
+
+```sh
+uv run python scripts/generate_reference_fixtures.py
+```
+
+The generated fixture is written to
+`tests/fixtures/generation/reference_generation.json` and ignored by Git.
+
+## Updating tests after Python rule changes
+
+When the official Orbit Wars environment changes, update the Rust parity tests
+in this order:
+
+1. Update the installed `kaggle-environments` package to the latest version.
+2. Regenerate all test fixtures. With no arguments, the script uses the current
+   reference episodes listed above:
+
+```sh
+scripts/regenerate_test_fixtures.sh
+```
+
+To switch replay episodes, pass the replacement Kaggle episode IDs:
+
+```sh
+scripts/regenerate_test_fixtures.sh NEW_EPISODE_ID_1 NEW_EPISODE_ID_2
+```
+
+The script removes outdated `replay-*.jsonl` files before downloading the new
+set, and rewrites `tests/fixtures/generation/reference_generation.json` from the
+installed Python environment. Replay tests also validate the documented
+reference episode player counts and row counts, so update the required coverage
+in `src/rules_engine/replay_tests.rs` when replacing the episode set.
+
+3. Update the documented episode IDs in this README, `docs/rules-engine.md`,
+   and `docs/rules-parity-coverage.md`.
+
+4. Run the full checks with the new fixtures present:
+
+```sh
+just prepare
+```
+
+5. Fix any failing Rust parity tests by matching the updated Python behavior,
+   then rerun `just prepare`.
+
+Generation and replay fixtures remain ignored by Git; keep only the episode IDs
+and setup commands in source control.
+# Rules Parity Coverage
+
+This document is the system of record for Orbit Wars parity coverage. Keep it
+updated whenever the Python reference, fixture generators, or Rust rules engine
+changes.
+
+## Covered By Replay Fixtures
+
+Replay fixtures are generated with `scripts/download_replays.py` and loaded from
+`tests/fixtures/orbit_wars_replays/replay-*.jsonl`.
+
+The parity tests fail by default when required fixtures are missing. Set
+`REQUIRE_PARITY_FIXTURES=0` to skip replay parity, and to skip generation parity
+when generation fixtures are missing.
+
+Replay coverage is required for:
+
+- `75930761`: 2 players, 103 recorded transitions.
+- `75926553`: 4 players, 222 recorded transitions.
+
+The replay parity test checks each transition against the Python reference for:
+
+- step counter
+- per-player Kaggle status/reward, mapped to active, won, or lost. The replay
+  check requires exact status parity once Kaggle marks every player `DONE`.
+  Before that global terminal row, Kaggle can keep eliminated players `ACTIVE`
+  while Rust intentionally reports them as `Lost`, so the test only verifies
+  that Rust has not ended the game early.
+- angular velocity
+- planets: id, owner, position, radius, ships, production
+- initial planets
+- fleets: id, owner, position, angle, source planet, ships
+- next fleet id
+- comet planet ids
+- comet groups: planet ids, full paths, path index
+
+Auxiliary Rust `StepResult` counters for fleets and ships lost in the sun, out
+of bounds, or combat resolution, and for planets and comet planets captured,
+plus neutral capture/undershot counters, are not fields in the Kaggle rows.
+They are covered by focused Rust unit tests rather than replay parity
+assertions.
+
+The current local replay set covers both 2-player and 4-player games, launches,
+production, fleet movement, collisions, captures, and comet movement and expiry.
+Step-limit termination is covered by focused Rust unit tests.
+
+## Covered By Generation Fixtures
+
+Generation fixtures are produced by `scripts/generate_reference_fixtures.py`
+from the installed `kaggle-environments` Orbit Wars implementation and written
+to `tests/fixtures/generation/reference_generation.json`. Rust consumes the
+recorded random call stream and compares generated output.
+
+The generated fixture currently covers:
+
+- planet generation from seed `42`
+- current Python-reference random static and fill phases, including the
+  reference fourfold symmetry ordering
+- full reset for 2-player and 4-player games, including angular velocity,
+  planet generation, initial planets, and current random-group home assignment
+- comet paths at spawn steps `50`, `150`, `250`, `350`, and `450`
+- comet path generation with existing comet ids excluded
+- comet path generation where failed attempts occur before success
+- comet ship sampling
+- step-limit no-op terminal tie status/reward mapping, where all tied players
+  win
+
+## Covered By Unit Tests
+
+Rust unit tests cover focused rules behavior that is hard to isolate from full
+replays:
+
+- geometry helpers
+- Python-compatible inclusive `RandomSource::uniform` behavior, including equal
+  bounds
+- RL discrete-target launch-angle selection for static target cones, dynamic
+  target-hit windows, sun avoidance, static and dynamic blocker arc
+  subtraction, strict static arc caching, full-mask masking for fully blocked
+  static targets, and no-op fallback accounting
+- fleet speed curve
+- launch validation and side effects
+- production order
+- fleet movement and removal
+- fleet collision priority: swept planet/comet collisions before out-of-bounds
+  or sun removal
+- sun, planet, out-of-bounds, and simultaneous swept-pair collisions
+- combat resolution, ties, and reinforcement
+- neutral non-comet planet and comet undershot counters
+- comet spawning before same-step movement
+- comet movement and expiry
+- comet planet/path alignment when only part of a comet group expires
+- terminal score ties where all tied players win
+- invalid owner and planet-ID invariant rejection
+- immediate nonterminal elimination and result cardinality matching the actual
+  player count
+- replay accepted-action filtering with exact planet-ID matching and no numeric
+  ID truncation
+- replay skip-spawn injection that keeps step parity isolated from RNG-backed
+  comet generation
+
+## Known Boundaries
+
+Replay parity intentionally injects comet paths and comet ships from the
+expected observation. It also explicitly injects "skip spawn" on comet spawn
+steps where the replay has no new comet, so replay parity never falls through to
+RNG-backed comet generation. This isolates step parity from random generation.
+Comet generation parity is covered separately by generation fixtures.
+
+The Rust simulator receives typed actions and fails fast on invalid actions.
+Kaggle/Python action parsing is outside the inner simulator API. The replay
+harness mirrors Python's accepted-action filtering only to turn historical
+Kaggle replay actions into typed Rust actions.
+
+Floating-point parity uses close comparisons rather than bit-for-bit equality.
+Discrete ids, owners, ship counts, production, and removals match exactly. Final
+terminal statuses match exactly; on nonterminal rows the harness permits Rust's
+intentional early `Lost` status while requiring the game remain nonterminal.
+
+The Rust state stores planets and initial planets in ID-indexed slots. Parity
+comparison iterates live slots in ID order, which matches generated and fixture
+planet ordering because fixture IDs are unique and contiguous for live planets.
+Manual duplicate planet IDs and IDs at/above `MAX_PLANET_ID` are intentionally
+rejected before parity comparison.
+
+Replay and generation fixtures are ignored by Git because full episodes and
+recorded reference streams can be large. A fresh checkout must run
+`scripts/regenerate_test_fixtures.sh` or restore fixtures from cache before
+running required parity. Use `REQUIRE_PARITY_FIXTURES=0 just rs-test` only when
+intentionally skipping replay parity or missing generation fixtures.
+
+RL-only terminal metrics such as `ships_lost_in_combat_per_game`,
+`fleets_lost_in_combat_per_game`, `neutral_planet_undershot_rate`, and
+`neutral_comet_undershot_rate` are derived from simulator step results and are
+covered by focused Rust/Python metric tests, not by replay fixture parity
+assertions.
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPLAY_FIXTURE_DIR="${ORBIT_WARS_PARITY_FIXTURE_DIR:-tests/fixtures/orbit_wars_replays}"
+GENERATION_FIXTURE="tests/fixtures/generation/reference_generation.json"
+REPLAY_FIXTURE_PARENT="$(dirname "$REPLAY_FIXTURE_DIR")"
+
+if [ "$#" -eq 0 ]; then
+  EPISODE_IDS=(75930761 75926553)
+else
+  EPISODE_IDS=("$@")
+fi
+
+mkdir -p "$REPLAY_FIXTURE_DIR"
+mkdir -p "$(dirname "$GENERATION_FIXTURE")"
+mkdir -p "$REPLAY_FIXTURE_PARENT"
+
+GENERATION_TMP="$(mktemp "${GENERATION_FIXTURE}.tmp.XXXXXX")"
+REPLAY_TMP_DIR="$(mktemp -d "${REPLAY_FIXTURE_DIR}.tmp.XXXXXX")"
+
+cleanup() {
+  rm -f "$GENERATION_TMP"
+  rm -rf "$REPLAY_TMP_DIR"
+}
+trap cleanup EXIT
+
+uv run python scripts/generate_reference_fixtures.py --outfile "$GENERATION_TMP"
+uv run python scripts/download_replays.py "${EPISODE_IDS[@]}" --save-dir "$REPLAY_TMP_DIR"
+
+mv "$GENERATION_TMP" "$GENERATION_FIXTURE"
+rm -f "$REPLAY_FIXTURE_DIR"/replay-*.jsonl
+mv "$REPLAY_TMP_DIR"/replay-*.jsonl "$REPLAY_FIXTURE_DIR"/
+
+echo "Regenerated Orbit Wars test fixtures."
+echo "Next: just prepare"
+cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:9:sources: [{"resource": "user-directive:2026-09-29:update-kaggle-environments-1-32-7"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:uv.lock"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}]
+cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:51:## kaggle-environments 1.32.7 — owner, 2026-09-29
+cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:53:> Found that Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture, while 1.32.7 (already cached locally) has it. this we will have to update it.
+cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:55:Source: `user-directive:2026-09-29:update-kaggle-environments-1-32-7`. Isaiah's project took `kaggle-environments` from git HEAD, locked at 1.29.0, which has no Kaggriculture environment. It is now pinned to `==1.32.7` via `uv remove` + `uv add`, which also removes the git source override. 1.32.7's `envs/kaggriculture/kaggriculture.py` has SHA-256 `bc8a5487…`, the engine the vendored Rust kernel targets.
+cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:57:Isaiah's critical pins are unchanged: torch 2.9.0, triton 3.5.0, flash-attn 2.8.3, numpy, pydantic, wandb, mypy. The other 50 lockfile changes are kaggle-environments' own dependency tree (e.g. jax 0.10 → 0.11.2). Checks with 1.32.7: `just prepare` passes, with Rust 155 passed / 2 ignored (Orbit replay and generation parity) and Python 722 passed / 3 skipped.
+ops/rebuild-2026-09-29/plan.md:58:| C1 | Rules kernel: `engine_rs/src/lib.rs` (Game/Config/step), `py_random.rs`, `econ_attrib.rs` (economic counters used by rewards), plus the parity tests and fixtures they need | V | Must match Kaggle's Python engine exactly (targets `kaggle-environments==1.32.7`, Python engine SHA in `engine_rs/Cargo.toml` metadata); rewriting rules only adds risk | SHA-256 manifest shows the retained files byte-identical to the reference; the engine unit and replay-parity suites pass; `VENDORED_FROM.md` provenance carries over with a trim note |
+ops/rebuild-2026-09-29/plan.md:72:| C15 | Build/infra: Cargo workspace member, `pyproject.toml` reference extra with the `kaggle-environments` pin, `justfile`, `Dockerfile*` | P, minimal, via `cargo add` / `uv add` | Needed seams only | Isaiah's suites; Orbit fixture parity under 1.32.7 |
+ops/rebuild-2026-09-29/plan.md:113:| I12 | `just py-prepare` / `rs-prepare` / `prepare`, `uv add` / `cargo add`, tracked lockfiles, PR checklist, merge commits | Same | all |
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:127:- Add dependencies with `uv add` / `cargo add`; don't edit `.toml` or `.lock` files directly when adding dependencies.
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:271:| C1 | Rules kernel: `engine_rs/src/lib.rs` (Game/Config/step), `py_random.rs`, `econ_attrib.rs` (economic counters used by rewards), plus the parity tests and fixtures they need | V | Must match Kaggle's Python engine exactly (targets `kaggle-environments==1.32.7`, Python engine SHA in `engine_rs/Cargo.toml` metadata); rewriting rules only adds risk | SHA-256 manifest shows the retained files byte-identical to the reference; the engine unit and replay-parity suites pass; `VENDORED_FROM.md` provenance carries over with a trim note |
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:285:| C15 | Build/infra: Cargo workspace member, `pyproject.toml` reference extra with the `kaggle-environments` pin, `justfile`, `Dockerfile*` | P, minimal, via `cargo add` / `uv add` | Needed seams only | Isaiah's suites; Orbit fixture parity under 1.32.7 |
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:326:| I12 | `just py-prepare` / `rs-prepare` / `prepare`, `uv add` / `cargo add`, tracked lockfiles, PR checklist, merge commits | Same | all |
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:625:| C1 | Rules kernel: `engine_rs/src/lib.rs` (Game/Config/step), `py_random.rs`, `econ_attrib.rs` (economic counters used by rewards), plus the parity tests and fixtures they need | V | Must match Kaggle's Python engine exactly (targets `kaggle-environments==1.32.7`, Python engine SHA in `engine_rs/Cargo.toml` metadata); rewriting rules only adds risk | SHA-256 manifest shows the retained files byte-identical to the reference; the engine unit and replay-parity suites pass; `VENDORED_FROM.md` provenance carries over with a trim note |
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:639:| C15 | Build/infra: Cargo workspace member, `pyproject.toml` reference extra with the `kaggle-environments` pin, `justfile`, `Dockerfile*` | P, minimal, via `cargo add` / `uv add` | Needed seams only | Isaiah's suites; Orbit fixture parity under 1.32.7 |
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:680:| I12 | `just py-prepare` / `rs-prepare` / `prepare`, `uv add` / `cargo add`, tracked lockfiles, PR checklist, merge commits | Same | all |
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:1182:ops/rebuild-2026-09-29/plan.md:46:| C1 | Rules kernel: `engine_rs/src/lib.rs` (Game/Config/step), `py_random.rs`, `econ_attrib.rs` (economic counters used by rewards), plus the parity tests and fixtures they need | V | Must match Kaggle's Python engine exactly (targets `kaggle-environments==1.32.7`, Python engine SHA in `engine_rs/Cargo.toml` metadata); rewriting rules only adds risk | SHA-256 manifest shows the retained files byte-identical to the reference; the engine unit and replay-parity suites pass; `VENDORED_FROM.md` provenance carries over with a trim note |
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:1209:cookbook/references/native-game-semantics-use-v3-owned-buffers.md:41:Adding the vendored crate unifies `serde_json/arbitrary_precision`, exposing a test-only float decode incompatibility in starter `src/rules_engine/generation.rs`. The fixture enum now reads `serde_json::Number` and checks conversion to finite f64; production game logic and oracle comparisons are unchanged. Missing official Orbit fixtures were regenerated with `kaggle-environments==1.32.7` and replays downloaded using `kaggle==2.1.0`; `docs/rules-engine.md` and `docs/rules-parity-coverage.md` record the retained coverage. This preserves starter regression discipline rather than claiming Kaggriculture parity. The retained final `rs-prepare` log reports 155 passed, zero failed, two ignored, with formatting, all-target Clippy and documentation freshness checks; intermediate missing-fixture, decode and stale-doc failures are retained in the final receipt.
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:1212:cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:39:- `.gitignore` excludes run output, weights, traces and credentials. `pyproject.toml` moves `kaggle`/`kaggle-environments` into an optional `reference` extra with `kaggle-environments==1.32.7`; `justfile` test recipes request that extra. Orbit reference fixtures on this host were regenerated with 1.32.7. Native-build cache keys include `engine_rs/src/**/*.rs` and `engine_rs/Cargo.toml`, so vendored engine edits rebuild the extension.
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:1223:kaggle-environments-version = "1.32.7"
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:1224:python-engine-sha256 = "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e"
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:1259:The crate targets `kaggle-environments==1.32.7` and Python game source SHA-256
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:1260:`bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`.
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:2937:The transition kernel targets `kaggle-environments==1.32.7`, with
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:2939:`bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`.
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:4423:kaggle-environments-version = "1.32.7"
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:4424:python-engine-sha256 = "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e"
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:4445:0 ['type', 'format', 'source', 'seed', 'configuration', 'shop_schedule', 'rng_schedule', 'initial', 'terminal_banks', 'transitions'] {'type': 'header', 'format': 'kaggriculture-re-parity-v1', 'source': {'episode_id': 95324500, 'module_version': '1.32.7', 'engine_sha256': 'bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e', 'replay_sha256': '58d1f5e26eabc733236728b7b003f5e315f42686d5ef4a501c31c2da0350e589'}, 'seed': 181681617, 'configuration': {'actTimeout': 1, 'boardSize': 10, 'episodeSteps': 720, 'farmHandCostMult': 1, 'marketParams': {}, 'maxMarketOrdersPerTurn': 10, 'runTimeout': 1200, 'seed': None, 'shedCapacity': 100, 'startingMoney': 3000, 'townCenterSellInterval': 24, 'townShopSellInterval': 4, 'townShopUnlockInterval': 3, 'turnsPerDay': 24, 'weedSpawnChance': 0.005}, 'shop_schedule': ['BRUNCH_SPOT', 'BAKERY', 'PIZZA_SHOP', 'PET_CAFE', 'PET_CAFE', 'ICE_CREAM_SHOP', 'YARN_STORE', 'YARN_STORE'], 'rng_schedule': [{'day': 0, 'weed_rolls': [0.47648770919100025, 0.4266249802577169, 0.9547137945324417, 0.12403222211107934, 0.462439988236903, 0.7948216063796417, 0.2745858854933244, 0.3817826383523192, 0.37251826196379845, 0.8659514230067876, 0.7925928542460475, 0.6646865032298309, 0.03555258175664533, 0.6824762878869208, 0.7692235860504872, 0.5851760626208172, 0.48427608410720246, 0.8302425292377118, 0.9113159768082505, 0.5028699652747143, 0.49129460258039337, 0.6271436022659554, 0.33913445969957
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:4465:95324500 181681617 [97126.0, 32640.0] {'episode_id': 95324500, 'module_version': '1.32.7', 'engine_sha256': 'bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e', 'replay_sha256': '58d1f5e26eabc733236728b7b003f5e315f42686d5ef4a501c31c2da0350e589'} privates [{'shed': {'WHEAT': 4, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 0, 'EGG': 0, 'MILK': 0, 'WOOL': 0, 'FERTILIZER': 0, 'GOOSE': 0, 'COW': 0, 'SHEEP': 0}, 'seeds': {'WHEAT': 6, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 4}, 'inventories': [{}, {}, {}, {}, {}, {}]}, {'shed': {'WHEAT': 0, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 0, 'EGG': 0, 'MILK': 0, 'WOOL': 0, 'FERTILIZER': 0, 'GOOSE': 0, 'COW': 0, 'SHEEP': 0}, 'seeds': {'WHEAT': 0, 'CARROT': 0, 'TOMATO': 0, 'STRAWBER rewards [97126.0, 32640.0]
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:4466:95901360 804786120 [143344.0, 151788.0] {'episode_id': 95901360, 'module_version': '1.32.7', 'engine_sha256': 'bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e', 'replay_sha256': '339e3a4281a9257c2694064ef573d6c4f1cfdff8e828ee81be78dbed491075e6'} privates [{'shed': {'WHEAT': 5, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 0, 'EGG': 0, 'MILK': 0, 'WOOL': 0, 'FERTILIZER': 0, 'GOOSE': 0, 'COW': 2, 'SHEEP': 2}, 'seeds': {'WHEAT': 7, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 12}, 'inventories': [{}, {}, {}, {}, {}, {}]}, {'shed': {'WHEAT': 4, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 0, 'EGG': 0, 'MILK': 0, 'WOOL': 0, 'FERTILIZER': 0, 'GOOSE': 0, 'COW': 0, 'SHEEP': 0}, 'seeds': {'WHEAT': 6, 'CARROT': 0, 'TOMATO': 0, 'STRAWBE rewards [143344.0, 151788.0]
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:4467:95921764 2089097928 [7843.0, 94230.0] {'episode_id': 95921764, 'module_version': '1.32.7', 'engine_sha256': 'bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e', 'replay_sha256': 'c66179775ee30b749dadf79c9cb665b2f06d006b9f8103ab8bbf28a47bd21c15'} privates [{'shed': {'WHEAT': 0, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 0, 'EGG': 0, 'MILK': 0, 'WOOL': 0, 'FERTILIZER': 0, 'GOOSE': 0, 'COW': 0, 'SHEEP': 0}, 'seeds': {'WHEAT': 0, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 0}, 'inventories': [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}]}, {'shed': {'WHEAT': 5, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 0, 'EGG': 0, 'MILK': 0, 'WOOL': 0, 'FERTILIZER': 0, 'GOOSE': 0, 'COW': 2, 'SHEEP': 2}, 'seeds': {'WHEAT': 7, 'CARROT': 0, 'T rewards [7843.0, 94230.0]
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:4468:95990191 1447832391 [87792.0, 99703.0] {'episode_id': 95990191, 'module_version': '1.32.7', 'engine_sha256': 'bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e', 'replay_sha256': '8a59bf2e2620460103081b660eb4cdda6462d87737ddaaade1ea7973a1ae33b9'} privates [{'shed': {'WHEAT': 5, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 0, 'EGG': 0, 'MILK': 0, 'WOOL': 0, 'FERTILIZER': 0, 'GOOSE': 0, 'COW': 2, 'SHEEP': 2}, 'seeds': {'WHEAT': 7, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 12}, 'inventories': [{}, {}, {}, {}, {}, {}]}, {'shed': {'WHEAT': 5, 'CARROT': 0, 'TOMATO': 0, 'STRAWBERRY': 0, 'MELON': 0, 'EGG': 0, 'MILK': 0, 'WOOL': 0, 'FERTILIZER': 0, 'GOOSE': 0, 'COW': 2, 'SHEEP': 2}, 'seeds': {'WHEAT': 7, 'CARROT': 0, 'TOMATO': 0, 'STRAWBE rewards [87792.0, 99703.0]
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:4470:41:Adding the vendored crate unifies `serde_json/arbitrary_precision`, exposing a test-only float decode incompatibility in starter `src/rules_engine/generation.rs`. The fixture enum now reads `serde_json::Number` and checks conversion to finite f64; production game logic and oracle comparisons are unchanged. Missing official Orbit fixtures were regenerated with `kaggle-environments==1.32.7` and replays downloaded using `kaggle==2.1.0`; `docs/rules-engine.md` and `docs/rules-parity-coverage.md` record the retained coverage. This preserves starter regression discipline rather than claiming Kaggriculture parity. The retained final `rs-prepare` log reports 155 passed, zero failed, two ignored, with formatting, all-target Clippy and documentation freshness checks; intermediate missing-fixture, decode and stale-doc failures are retained in the final receipt.
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:4870:+All headers identify `kaggle-environments==1.32.7` and engine SHA-256 `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`. Replay parity is scoped to these recorded worlds plus synthetic unit coverage, not a fresh exhaustive differential run against Python, malformed-input completeness, learning quality, or GPU performance. Preserve integer-versus-float representation in public market values. Compare rewards as typed `Vec<f64>` because nonterminal trace rewards are `[0,0]`, whereas snapshots serialize `[0.0,0.0]`. Check private-map insertion order separately: JSON object equality alone misses it.
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log:5236:+All headers identify `kaggle-environments==1.32.7` and engine SHA-256 `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`. Replay parity is scoped to these recorded worlds plus synthetic unit coverage, not a fresh exhaustive differential run against Python, malformed-input completeness, learning quality, or GPU performance. Preserve integer-versus-float representation in public market values. Compare rewards as typed `Vec<f64>` because nonterminal trace rewards are `[0,0]`, whereas snapshots serialize `[0.0,0.0]`. Check private-map insertion order separately: JSON object equality alone misses it.
+ops/rebuild-2026-09-29/codex/task-0.1-review-transcript.log:252:    46	| C1 | Rules kernel: `engine_rs/src/lib.rs` (Game/Config/step), `py_random.rs`, `econ_attrib.rs` (economic counters used by rewards), plus the parity tests and fixtures they need | V | Must match Kaggle's Python engine exactly (targets `kaggle-environments==1.32.7`, Python engine SHA in `engine_rs/Cargo.toml` metadata); rewriting rules only adds risk | SHA-256 manifest shows the retained files byte-identical to the reference; the engine unit and replay-parity suites pass; `VENDORED_FROM.md` provenance carries over with a trim note |
+ops/rebuild-2026-09-29/codex/task-0.1-review-transcript.log:266:    60	| C15 | Build/infra: Cargo workspace member, `pyproject.toml` reference extra with the `kaggle-environments` pin, `justfile`, `Dockerfile*` | P, minimal, via `cargo add` / `uv add` | Needed seams only | Isaiah's suites; Orbit fixture parity under 1.32.7 |
+ops/rebuild-2026-09-29/codex/task-0.1-review-transcript.log:307:   101	| I12 | `just py-prepare` / `rs-prepare` / `prepare`, `uv add` / `cargo add`, tracked lockfiles, PR checklist, merge commits | Same | all |
+ops/rebuild-2026-09-29/codex/task-0.1-review-transcript.log:509:    46	| C1 | Rules kernel: `engine_rs/src/lib.rs` (Game/Config/step), `py_random.rs`, `econ_attrib.rs` (economic counters used by rewards), plus the parity tests and fixtures they need | V | Must match Kaggle's Python engine exactly (targets `kaggle-environments==1.32.7`, Python engine SHA in `engine_rs/Cargo.toml` metadata); rewriting rules only adds risk | SHA-256 manifest shows the retained files byte-identical to the reference; the engine unit and replay-parity suites pass; `VENDORED_FROM.md` provenance carries over with a trim note |
+ops/rebuild-2026-09-29/codex/task-0.1-review-transcript.log:523:    60	| C15 | Build/infra: Cargo workspace member, `pyproject.toml` reference extra with the `kaggle-environments` pin, `justfile`, `Dockerfile*` | P, minimal, via `cargo add` / `uv add` | Needed seams only | Isaiah's suites; Orbit fixture parity under 1.32.7 |
+ops/rebuild-2026-09-29/codex/task-0.1-review-transcript.log:564:   101	| I12 | `just py-prepare` / `rs-prepare` / `prepare`, `uv add` / `cargo add`, tracked lockfiles, PR checklist, merge commits | Same | all |
+ops/rebuild-2026-09-29/codex/brief-2.1-review-transcript.log:1354:| C1 | Rules kernel: `engine_rs/src/lib.rs` (Game/Config/step), `py_random.rs`, `econ_attrib.rs` (economic counters used by rewards), plus the parity tests and fixtures they need | V | Must match Kaggle's Python engine exactly (targets `kaggle-environments==1.32.7`, Python engine SHA in `engine_rs/Cargo.toml` metadata); rewriting rules only adds risk | SHA-256 manifest shows the retained files byte-identical to the reference; the engine unit and replay-parity suites pass; `VENDORED_FROM.md` provenance carries over with a trim note |
+ops/rebuild-2026-09-29/codex/brief-2.1-review-transcript.log:1368:| C15 | Build/infra: Cargo workspace member, `pyproject.toml` reference extra with the `kaggle-environments` pin, `justfile`, `Dockerfile*` | P, minimal, via `cargo add` / `uv add` | Needed seams only | Isaiah's suites; Orbit fixture parity under 1.32.7 |
+ops/rebuild-2026-09-29/codex/brief-2.1-review-transcript.log:1409:| I12 | `just py-prepare` / `rs-prepare` / `prepare`, `uv add` / `cargo add`, tracked lockfiles, PR checklist, merge commits | Same | all |
+ops/rebuild-2026-09-29/codex/task-0.1-rereview-transcript.log:962:Adding the vendored crate unifies `serde_json/arbitrary_precision`, exposing a test-only float decode incompatibility in starter `src/rules_engine/generation.rs`. The fixture enum now reads `serde_json::Number` and checks conversion to finite f64; production game logic and oracle comparisons are unchanged. Missing official Orbit fixtures were regenerated with `kaggle-environments==1.32.7` and replays downloaded using `kaggle==2.1.0`; `docs/rules-engine.md` and `docs/rules-parity-coverage.md` record the retained coverage. This preserves starter regression discipline rather than claiming Kaggriculture parity. The retained final `rs-prepare` log reports 155 passed, zero failed, two ignored, with formatting, all-target Clippy and documentation freshness checks; intermediate missing-fixture, decode and stale-doc failures are retained in the final receipt.
+ops/rebuild-2026-09-29/codex/task-0.1-rereview-transcript.log:1294:| C1 | Rules kernel: `engine_rs/src/lib.rs` (Game/Config/step), `py_random.rs`, `econ_attrib.rs` (economic counters used by rewards), plus the parity tests and fixtures they need | V | Must match Kaggle's Python engine exactly (targets `kaggle-environments==1.32.7`, Python engine SHA in `engine_rs/Cargo.toml` metadata); rewriting rules only adds risk | SHA-256 manifest shows the retained files byte-identical to the reference; the engine unit and replay-parity suites pass; `VENDORED_FROM.md` provenance carries over with a trim note |
+ops/rebuild-2026-09-29/codex/task-0.1-rereview-transcript.log:1308:| C15 | Build/infra: Cargo workspace member, `pyproject.toml` reference extra with the `kaggle-environments` pin, `justfile`, `Dockerfile*` | P, minimal, via `cargo add` / `uv add` | Needed seams only | Isaiah's suites; Orbit fixture parity under 1.32.7 |
+ops/rebuild-2026-09-29/codex/task-0.1-rereview-transcript.log:1349:| I12 | `just py-prepare` / `rs-prepare` / `prepare`, `uv add` / `cargo add`, tracked lockfiles, PR checklist, merge commits | Same | all |
+ops/rebuild-2026-09-29/codex/task-0.1-rereview-transcript.log:2853:Adding the vendored crate unifies `serde_json/arbitrary_precision`, exposing a test-only float decode incompatibility in starter `src/rules_engine/generation.rs`. The fixture enum now reads `serde_json::Number` and checks conversion to finite f64; production game logic and oracle comparisons are unchanged. Missing official Orbit fixtures were regenerated with `kaggle-environments==1.32.7` and replays downloaded using `kaggle==2.1.0`; `docs/rules-engine.md` and `docs/rules-parity-coverage.md` record the retained coverage. This preserves starter regression discipline rather than claiming Kaggriculture parity. The retained final `rs-prepare` log reports 155 passed, zero failed, two ignored, with formatting, all-target Clippy and documentation freshness checks; intermediate missing-fixture, decode and stale-doc failures are retained in the final receipt.
+ops/rebuild-2026-09-29/codex/task-0.1-rereview-transcript.log:4888:kaggle-environments-version = "1.32.7"
+ops/rebuild-2026-09-29/codex/task-0.1-rereview-transcript.log:4889:python-engine-sha256 = "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e"
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:125:- Add dependencies with `uv add` / `cargo add`; don't edit `.toml` or `.lock` files directly when adding dependencies.
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:269:| C1 | Rules kernel: `engine_rs/src/lib.rs` (Game/Config/step), `py_random.rs`, `econ_attrib.rs` (economic counters used by rewards), plus the parity tests and fixtures they need | V | Must match Kaggle's Python engine exactly (targets `kaggle-environments==1.32.7`, Python engine SHA in `engine_rs/Cargo.toml` metadata); rewriting rules only adds risk | SHA-256 manifest shows the retained files byte-identical to the reference; the engine unit and replay-parity suites pass; `VENDORED_FROM.md` provenance carries over with a trim note |
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:283:| C15 | Build/infra: Cargo workspace member, `pyproject.toml` reference extra with the `kaggle-environments` pin, `justfile`, `Dockerfile*` | P, minimal, via `cargo add` / `uv add` | Needed seams only | Isaiah's suites; Orbit fixture parity under 1.32.7 |
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:324:| I12 | `just py-prepare` / `rs-prepare` / `prepare`, `uv add` / `cargo add`, tracked lockfiles, PR checklist, merge commits | Same | all |
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:613:| I9 | Parity-first engine: `docs/rules-parity-coverage.md` is the source of truth; replay parity against Kaggle reference episodes (`AGENTS.md`, README "Replay parity") | Kaggriculture engine parity against kaggle-environments 1.32.7 fixtures; replay export must round-trip through the native engine | 5.2, 7.2 |
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:616:| I12 | Workflow: `just py-prepare`/`rs-prepare` after edits, `just prepare` before a commit/PR, dependencies via `uv add`/`cargo add`, tracked lockfiles, PR checklist, regular merge commits (`AGENTS.md`) | Same | all |
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:1296:- [ ] Update `docs/rules-parity-coverage.md` (and the native-semantics cookbook Reference) with the Kaggriculture parity actually tested (cases, fixtures, kaggle-environments 1.32.7) and the untested areas. No new claim beyond what the tests show.
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:1380:| C1 | Rules kernel: `engine_rs/src/lib.rs` (Game/Config/step), `py_random.rs`, `econ_attrib.rs` (economic counters used by rewards), plus the parity tests and fixtures they need | V | Must match Kaggle's Python engine exactly (targets `kaggle-environments==1.32.7`, Python engine SHA in `engine_rs/Cargo.toml` metadata); rewriting rules only adds risk | SHA-256 manifest shows the retained files byte-identical to the reference; the engine unit and replay-parity suites pass; `VENDORED_FROM.md` provenance carries over with a trim note |
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:1394:| C15 | Build/infra: Cargo workspace member, `pyproject.toml` reference extra with the `kaggle-environments` pin, `justfile`, `Dockerfile*` | P, minimal, via `cargo add` / `uv add` | Needed seams only | Isaiah's suites; Orbit fixture parity under 1.32.7 |
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:3031:cookbook/references/native-game-semantics-use-v3-owned-buffers.md:41:Adding the vendored crate unifies `serde_json/arbitrary_precision`, exposing a test-only float decode incompatibility in starter `src/rules_engine/generation.rs`. The fixture enum now reads `serde_json::Number` and checks conversion to finite f64; production game logic and oracle comparisons are unchanged. Missing official Orbit fixtures were regenerated with `kaggle-environments==1.32.7` and replays downloaded using `kaggle==2.1.0`; `docs/rules-engine.md` and `docs/rules-parity-coverage.md` record the retained coverage. This preserves starter regression discipline rather than claiming Kaggriculture parity. The retained final `rs-prepare` log reports 155 passed, zero failed, two ignored, with formatting, all-target Clippy and documentation freshness checks; intermediate missing-fixture, decode and stale-doc failures are retained in the final receipt.
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:5047:- `.gitignore` excludes run output, weights, traces and credentials. `pyproject.toml` moves `kaggle`/`kaggle-environments` into an optional `reference` extra with `kaggle-environments==1.32.7`; `justfile` test recipes request that extra. Orbit reference fixtures on this host were regenerated with 1.32.7. Native-build cache keys include `engine_rs/src/**/*.rs` and `engine_rs/Cargo.toml`, so vendored engine edits rebuild the extension.
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:5651:- `.gitignore` excludes run output, weights, traces and credentials. `pyproject.toml` moves `kaggle`/`kaggle-environments` into an optional `reference` extra with `kaggle-environments==1.32.7`; `justfile` test recipes request that extra. Orbit reference fixtures on this host were regenerated with 1.32.7. Native-build cache keys include `engine_rs/src/**/*.rs` and `engine_rs/Cargo.toml`, so vendored engine edits rebuild the extension.
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:6825:- `.gitignore` excludes run output, weights, traces and credentials. `pyproject.toml` moves `kaggle`/`kaggle-environments` into an optional `reference` extra with `kaggle-environments==1.32.7`; `justfile` test recipes request that extra. Orbit reference fixtures on this host were regenerated with 1.32.7. Native-build cache keys include `engine_rs/src/**/*.rs` and `engine_rs/Cargo.toml`, so vendored engine edits rebuild the extension.
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log:8453:- `.gitignore` excludes run output, weights, traces and credentials. `pyproject.toml` moves `kaggle`/`kaggle-environments` into an optional `reference` extra with `kaggle-environments==1.32.7`; `justfile` test recipes request that extra. Orbit reference fixtures on this host were regenerated with 1.32.7. Native-build cache keys include `engine_rs/src/**/*.rs` and `engine_rs/Cargo.toml`, so vendored engine edits rebuild the extension.
+AGENTS.md
+fb65e1f Pin kaggle-environments 1.32.7 (owner decision)
+2d9f1cd Add stream D prompt
+d8f91d6 Revise the Task 2.1 encoder brief after Codex review (v2)
+168a740 Record the torch 2.8 probe result; keep torch 2.9 per owner
+08b0092 Accept the Kaggriculture contract v4 and record GPU-fit decisions
+
+exec
+/bin/zsh -lc 'git diff fb65e1f''^ fb65e1f -- pyproject.toml docs/kaggriculture-contract.md cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md cookbook/log.md && git show kg/reference-2026-09-29:engine_rs/Cargo.toml && uv --version && uv lock --check' in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+diff --git a/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md b/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md
+index 27318d9..372f85e 100644
+--- a/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md
++++ b/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md
+@@ -6,7 +6,7 @@ tags: ["kaggriculture-v3", "decisions"]
+ status: "adopted"
+ generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+ decider: "Owner: restore kg/isaiah-gap-closure and main to 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again from a clean state with Codex, keeping a reference branch and carrying the cookbook with the .claude/.codex setup."
+-sources: [{"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}]
++sources: [{"resource": "user-directive:2026-09-29:update-kaggle-environments-1-32-7"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:uv.lock"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}]
+ ---
+ 
+ # Restart the port from Isaiah's clean base
+@@ -47,3 +47,11 @@ The owner asks to use the reference branch "properly, without blindly copying".
+ - **Reference only:** scripted bots until evaluation needs a few of them, the v2 experiments, and the run receipts.
+ 
+ Lessons from the reference (raw-bank winners, truncation reward, seed streams, the CUDA fault (since traced to a compiler GEMM overflow), cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
++
++## kaggle-environments 1.32.7 — owner, 2026-09-29
++
++> Found that Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture, while 1.32.7 (already cached locally) has it. this we will have to update it.
++
++Source: `user-directive:2026-09-29:update-kaggle-environments-1-32-7`. Isaiah's project took `kaggle-environments` from git HEAD, locked at 1.29.0, which has no Kaggriculture environment. It is now pinned to `==1.32.7` via `uv remove` + `uv add`, which also removes the git source override. 1.32.7's `envs/kaggriculture/kaggriculture.py` has SHA-256 `bc8a5487…`, the engine the vendored Rust kernel targets.
++
++Isaiah's critical pins are unchanged: torch 2.9.0, triton 3.5.0, flash-attn 2.8.3, numpy, pydantic, wandb, mypy. The other 50 lockfile changes are kaggle-environments' own dependency tree (e.g. jax 0.10 → 0.11.2). Checks with 1.32.7: `just prepare` passes, with Rust 155 passed / 2 ignored (Orbit replay and generation parity) and Python 722 passed / 3 skipped.
+diff --git a/cookbook/log.md b/cookbook/log.md
+index e144f36..5325d87 100644
+--- a/cookbook/log.md
++++ b/cookbook/log.md
+@@ -1,5 +1,9 @@
+ # Change log
+ 
++## 2026-09-29 — Pin kaggle-environments 1.32.7
++
++Owner: “Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture … we will have to update it.” The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records the pin: 1.32.7 via uv, the git source removed, its engine hash matching the Rust kernel, and Isaiah's torch/triton/flash-attn pins unchanged. `just prepare` passes: Rust 155/2 ignored, Python 722/3 skipped. A contract Markdown lint fix is included.
++
+ ## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
+ 
+ Owner decisions:
+diff --git a/docs/kaggriculture-contract.md b/docs/kaggriculture-contract.md
+index d4e4e6a..6808b23 100644
+--- a/docs/kaggriculture-contract.md
++++ b/docs/kaggriculture-contract.md
+@@ -170,6 +170,7 @@ Isaiah adds each player's summary to that player's learned token through `player
+ ### Token order (model)
+ 
+ Wiring: player tokens are `player_tokens + player_feature_proj(player_features)`, the global token is `global_proj(global_features)`, and the two seat rows are encoded independently. The sequence follows Isaiah's `[action entities][other entities][players][global][board scratch][actor plan][critic value]`:
++
+ - own actors (the acting entities, first)
+ - rival actors
+ - tiles
+diff --git a/pyproject.toml b/pyproject.toml
+index 16f63fe..0c88435 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -8,7 +8,7 @@ authors = [
+ ]
+ requires-python = ">=3.11"
+ dependencies = [
+-    "kaggle-environments>=1.28.0",
++    "kaggle-environments==1.32.7",
+     "numpy>=2.4.4",
+     "pydantic>=2.13.2",
+     "pyyaml>=6.0.3",
+@@ -56,7 +56,6 @@ torchvision = [
+   { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
+   { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+ ]
+-kaggle-environments = { git = "https://github.com/Kaggle/kaggle-environments" }
+ 
+ 
+ [[tool.uv.index]]
+[package]
+name = "kaggriculture-engine"
+version = "0.1.0"
+edition = "2024"
+description = "Replay-verified Rust parity kernel for Kaggriculture"
+license = "Apache-2.0"
+
+# Compatibility target for the transition kernel, distinct from this crate's version.
+[package.metadata.kaggriculture]
+kaggle-environments-version = "1.32.7"
+python-engine-sha256 = "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e"
+
+[lib]
+name = "kaggriculture_engine"
+path = "src/lib.rs"
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "re_engine"
+path = "src/main.rs"
+
+[dependencies]
+indexmap = { version = "2.11", features = ["serde"] }
+num-bigint = "0.4"
+num-rational = "0.4"
+num-traits = "0.2"
+rayon = "1.12.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["arbitrary_precision", "preserve_order"] }
+uv 0.10.9 (Homebrew 2026-03-06)
+Resolved 181 packages in 11ms
+
+codex
+The checkout is exactly `fb65e1f`, the dependency pin and source removal are correct, and `uv lock --check` passes. The contract diff adds one blank line. I’m now running the full suite and checking that the installed engine and Orbit fixtures support the recorded claims.
+exec
+/bin/zsh -lc 'mkdir -p ops/deps-independent-verification-fb65e1f && CARGO_BUILD_JOBS=3 uvx --from rust-just just prepare > ops/deps-independent-verification-fb65e1f/prepare.log 2>&1' in /Users/poonszesen/kg-v3-deps
+ succeeded in 10038ms:
+exec
+/bin/zsh -lc 'tail -n 35 ops/deps-independent-verification-fb65e1f/prepare.log && git diff --quiet && git diff --cached --quiet && git status --short && git check-ignore ops/deps-independent-verification-fb65e1f/prepare.log && git show fb65e1f --format=fuller --no-patch' in /Users/poonszesen/kg-v3-deps
+ exited 1 in 0ms:
+...............................                                          [ 34%]
+tests/owl/test_checkpoint_quantization.py .............................. [ 38%]
+..............                                                           [ 40%]
+tests/owl/test_config.py .........                                       [ 42%]
+tests/owl/test_int8_emulation.py ...s                                    [ 42%]
+tests/owl/test_replay.py ...                                             [ 43%]
+tests/owl/test_rl.py ................................................... [ 50%]
+...........................                                              [ 53%]
+tests/owl/train/test_advantages.py ..............                        [ 55%]
+tests/owl/train/test_config.py ......................................... [ 61%]
+........................                                                 [ 64%]
+tests/owl/train/test_distributed.py ...................                  [ 67%]
+tests/owl/train/test_logging.py ..                                       [ 67%]
+tests/owl/train/test_loss.py .............                               [ 69%]
+tests/owl/train/test_metrics.py ..                                       [ 69%]
+tests/owl/train/test_optimizer.py ...........                            [ 71%]
+tests/owl/train/test_ppo.py ............................................ [ 77%]
+..........                                                               [ 78%]
+tests/scripts/test_benchmark_checkpoints.py ............................ [ 82%]
+.........                                                                [ 83%]
+tests/scripts/test_download_replays.py ....                              [ 84%]
+tests/scripts/test_extract_model_weights.py .................            [ 86%]
+tests/scripts/test_roundtrip_checkpoint_quantization.py ................ [ 88%]
+..                                                                       [ 89%]
+tests/scripts/test_run_ppo.py .......................................... [ 94%]
+...................................                                      [ 99%]
+tests/tools/test_replay_viewer.py ..                                     [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/owl/model/test_attn.py:60: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/model/test_attn.py:80: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/test_int8_emulation.py:15: x86 torch quantized backend is unavailable: qnnpack
+======================== 722 passed, 3 skipped in 5.06s ========================
+uv run python scripts/check_doc_freshness.py
+No doc updates required
+?? .codex-tmp/
+?? ops/deps-independent-verification-fb65e1f/
+
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+import hashlib, importlib.metadata, json, os, pathlib, subprocess, tomllib
+root=pathlib.Path.cwd()
+dist=importlib.metadata.distribution('kaggle-environments')
+path=pathlib.Path(dist.locate_file('kaggle_environments/envs/kaggriculture/kaggriculture.py'))
+actual=hashlib.sha256(path.read_bytes()).hexdigest()
+ref=tomllib.loads(subprocess.check_output(['git','show','kg/reference-2026-09-29:engine_rs/Cargo.toml'],text=True))['package']['metadata']['kaggriculture']
+print(json.dumps({'version':dist.version,'installed_path':str(path),'actual_sha256':actual,'reference_metadata':ref,'match':actual==ref['python-engine-sha256'],'parity_env':{k:v for k,v in os.environ.items() if k.startswith(('REQUIRE_PARITY','ORBIT_WARS_PARITY'))}},indent=2))
+for p in sorted((root/'tests/fixtures').rglob('*.json*')):
+ data=p.read_bytes()
+ rows=data.splitlines()
+ print(p.relative_to(root),len(data),'bytes',len(rows),'lines',hashlib.sha256(data).hexdigest())
+ if p.suffix=='.json':
+  obj=json.loads(data)
+  print('generation keys:',list(obj))
+  for k,v in obj.items():
+   if k in ('source','source_path','reference','metadata'): print(k,v)
+print('installed Python',os.sys.version)
+PY
+rg --files --hidden --no-ignore ops .codex-tmp | rg '(deps|pin|prepare|transcript)' | head -n 70
+rg -n 'test|fixture|coverage|REQUIRE' src/rules_engine/replay_tests.rs src/rules_engine/generation.rs | tail -n 80" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+{
+  "version": "1.32.7",
+  "installed_path": "/Users/poonszesen/kg-v3-deps/.venv/lib/python3.12/site-packages/kaggle_environments/envs/kaggriculture/kaggriculture.py",
+  "actual_sha256": "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e",
+  "reference_metadata": {
+    "kaggle-environments-version": "1.32.7",
+    "python-engine-sha256": "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e"
+  },
+  "match": true,
+  "parity_env": {}
+}
+tests/fixtures/generation/reference_generation.json 2538545 bytes 1 lines 88527e74c066df09849fd9c84e541f581048683e12733ad37880dbf770e9c3ad
+generation keys: ['comet_path_cases', 'comet_path_generation', 'comet_ship_cases', 'planet_generation', 'reference', 'reference_file', 'reset_cases', 'terminal_cases']
+reference kaggle_environments.envs.orbit_wars.orbit_wars
+tests/fixtures/orbit_wars_replays/replay-75926553.jsonl 3256200 bytes 222 lines 8a50c788c1b311706dbd8b317666096a59a57f9926fa221c247098fcdfc696a9
+tests/fixtures/orbit_wars_replays/replay-75930761.jsonl 1176394 bytes 103 lines bd0c3acd906edcfc960145652c244493d755868cd7f33f118fc0a17e16b04d88
+installed Python 3.12.13 (main, Mar  3 2026, 15:35:03) [Clang 21.1.4 ]
+ops/rebuild-2026-09-29/0.3-prepare.log
+ops/rebuild-2026-09-29/0.3-py-prepare.log
+ops/rebuild-2026-09-29/codex/task-1.1-brief-transcript.log
+ops/rebuild-2026-09-29/codex/task-0.1-rereview-transcript.log
+ops/rebuild-2026-09-29/codex/task-0.1-review-transcript.log
+ops/rebuild-2026-09-29/codex/brief-2.1-review-transcript.log
+ops/rebuild-2026-09-29/codex/task-0.3-transcript.log
+ops/rebuild-2026-09-29/0.3-py-prepare-final.log
+ops/deps-independent-verification-fb65e1f/prepare.log
+src/rules_engine/generation.rs:760:        let mut rng = FixtureRandom::new(fixture.planet_generation.random_calls);
+src/rules_engine/generation.rs:765:        compare_planets(planets.iter(), &fixture.planet_generation.planets);
+src/rules_engine/generation.rs:769:    #[test]
+src/rules_engine/generation.rs:770:    fn generate_comet_paths_matches_python_reference_fixture(
+src/rules_engine/generation.rs:772:        let Some(fixture) = reference_fixture()? else {
+src/rules_engine/generation.rs:775:        check_comet_path_case(&fixture.comet_path_generation);
+src/rules_engine/generation.rs:779:    #[test]
+src/rules_engine/generation.rs:780:    fn reset_cases_match_python_reference_fixtures() -> Result<(), Box<dyn std::error::Error>> {
+src/rules_engine/generation.rs:781:        let Some(fixture) = reference_fixture()? else {
+src/rules_engine/generation.rs:785:        for case in fixture.reset_cases {
+src/rules_engine/generation.rs:804:    #[test]
+src/rules_engine/generation.rs:805:    fn comet_path_cases_match_python_reference_fixtures() -> Result<(), Box<dyn std::error::Error>>
+src/rules_engine/generation.rs:807:        let Some(fixture) = reference_fixture()? else {
+src/rules_engine/generation.rs:811:        for case in &fixture.comet_path_cases {
+src/rules_engine/generation.rs:817:    #[test]
+src/rules_engine/generation.rs:818:    fn comet_ship_sampling_matches_python_reference_fixtures(
+src/rules_engine/generation.rs:820:        let Some(fixture) = reference_fixture()? else {
+src/rules_engine/generation.rs:824:        for case in fixture.comet_ship_cases {
+src/rules_engine/generation.rs:834:    #[test]
+src/rules_engine/generation.rs:835:    fn no_op_terminal_tie_matches_python_reference_fixture(
+src/rules_engine/generation.rs:837:        let Some(fixture) = reference_fixture()? else {
+src/rules_engine/generation.rs:840:        let case = fixture.terminal_cases.no_op_tie;
+src/rules_engine/generation.rs:905:        .unwrap_or_else(|| panic!("{} fixture comet paths", case.name));
+src/rules_engine/generation.rs:911:    fn reference_fixture() -> Result<Option<GenerationFixture>, Box<dyn std::error::Error>> {
+src/rules_engine/generation.rs:915:                warn_or_fail_missing_generation_fixture()?;
+src/rules_engine/generation.rs:923:    fn warn_or_fail_missing_generation_fixture() -> Result<(), Box<dyn std::error::Error>> {
+src/rules_engine/generation.rs:924:        if require_parity_fixtures()? {
+src/rules_engine/generation.rs:926:                "No generation parity fixture found at {GENERATION_FIXTURE_PATH}. \
+src/rules_engine/generation.rs:927:                Run scripts/regenerate_test_fixtures.sh to enable generation parity, \
+src/rules_engine/generation.rs:928:                or set REQUIRE_PARITY_FIXTURES=0 to skip generation parity."
+src/rules_engine/generation.rs:936:    fn require_parity_fixtures() -> Result<bool, Box<dyn std::error::Error>> {
+src/rules_engine/generation.rs:937:        let Ok(value) = std::env::var("REQUIRE_PARITY_FIXTURES") else {
+src/rules_engine/generation.rs:944:                format!("REQUIRE_PARITY_FIXTURES must be 1/true or 0/false, got {value:?}").into(),
+src/rules_engine/replay_tests.rs:15:const DEFAULT_FIXTURE_DIR: &str = "tests/fixtures/orbit_wars_replays";
+src/rules_engine/replay_tests.rs:16:const REQUIRED_REPLAY_COVERAGE: [ReplayCoverageRequirement; 2] = [
+src/rules_engine/replay_tests.rs:86:        panic!("replay parity test unexpectedly requested an integer random value")
+src/rules_engine/replay_tests.rs:90:        panic!("replay parity test unexpectedly requested a float random value")
+src/rules_engine/replay_tests.rs:94:#[test]
+src/rules_engine/replay_tests.rs:95:fn replay_fixtures_match_reference_transitions() -> Result<(), Box<dyn Error>> {
+src/rules_engine/replay_tests.rs:96:    if !require_parity_fixtures()? {
+src/rules_engine/replay_tests.rs:100:    let fixture_dir = fixture_dir();
+src/rules_engine/replay_tests.rs:101:    let fixture_paths = fixture_paths(&fixture_dir)?;
+src/rules_engine/replay_tests.rs:102:    if fixture_paths.is_empty() {
+src/rules_engine/replay_tests.rs:103:        warn_or_fail_missing_fixtures(&fixture_dir)?;
+src/rules_engine/replay_tests.rs:107:    let mut coverage = REQUIRED_REPLAY_COVERAGE
+src/rules_engine/replay_tests.rs:112:    for fixture_path in fixture_paths {
+src/rules_engine/replay_tests.rs:113:        let file = File::open(&fixture_path)?;
+src/rules_engine/replay_tests.rs:132:            if let Some((rows, players)) = coverage.get_mut(&row.episode_id) {
+src/rules_engine/replay_tests.rs:138:                        "episode {} mixed player counts in replay fixture",
+src/rules_engine/replay_tests.rs:146:        validate_final_results(&fixture_path, final_results)?;
+src/rules_engine/replay_tests.rs:151:        "replay fixtures contained no transition rows"
+src/rules_engine/replay_tests.rs:153:    validate_required_coverage(&coverage)?;
+src/rules_engine/replay_tests.rs:158:    fixture_path: &Path,
+src/rules_engine/replay_tests.rs:162:        return Err(format!("{} contained no transition rows", fixture_path.display()).into());
+src/rules_engine/replay_tests.rs:170:            fixture_path.display(),
+src/rules_engine/replay_tests.rs:182:            fixture_path.display(),
+src/rules_engine/replay_tests.rs:190:fn validate_required_coverage(
+src/rules_engine/replay_tests.rs:191:    coverage: &std::collections::BTreeMap<u64, (usize, Option<usize>)>,
+src/rules_engine/replay_tests.rs:193:    for requirement in REQUIRED_REPLAY_COVERAGE {
+src/rules_engine/replay_tests.rs:194:        let Some((rows, players)) = coverage.get(&requirement.episode_id) else {
+src/rules_engine/replay_tests.rs:196:                "required replay fixture for episode {} is missing",
+src/rules_engine/replay_tests.rs:219:fn fixture_dir() -> PathBuf {
+src/rules_engine/replay_tests.rs:225:fn fixture_paths(fixture_dir: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>> {
+src/rules_engine/replay_tests.rs:226:    let Ok(entries) = std::fs::read_dir(fixture_dir) else {
+src/rules_engine/replay_tests.rs:230:    let mut fixture_paths = entries
+src/rules_engine/replay_tests.rs:241:    fixture_paths.sort();
+src/rules_engine/replay_tests.rs:243:    Ok(fixture_paths)
+src/rules_engine/replay_tests.rs:246:fn warn_or_fail_missing_fixtures(fixture_dir: &Path) -> Result<(), Box<dyn Error>> {
+src/rules_engine/replay_tests.rs:247:    if require_parity_fixtures()? {
+src/rules_engine/replay_tests.rs:249:            "No replay parity fixtures found in {}. \
+src/rules_engine/replay_tests.rs:250:            Run scripts/regenerate_test_fixtures.sh to enable replay parity, \
+src/rules_engine/replay_tests.rs:251:            or set REQUIRE_PARITY_FIXTURES=0 to skip replay parity.",
+src/rules_engine/replay_tests.rs:252:            fixture_dir.display()
+src/rules_engine/replay_tests.rs:260:fn require_parity_fixtures() -> Result<bool, Box<dyn Error>> {
+src/rules_engine/replay_tests.rs:261:    let Ok(value) = std::env::var("REQUIRE_PARITY_FIXTURES") else {
+src/rules_engine/replay_tests.rs:268:            Err(format!("REQUIRE_PARITY_FIXTURES must be 1/true or 0/false, got {value:?}").into())
+src/rules_engine/replay_tests.rs:313:        comets: row.before.comets.iter().map(comet_from_fixture).collect(),
+src/rules_engine/replay_tests.rs:346:fn comet_from_fixture(raw: &CometFixture) -> CometGroup {
+src/rules_engine/replay_tests.rs:408:#[test]
+src/rules_engine/replay_tests.rs:461:#[test]
+
+exec
+/bin/zsh -lc "sed -n '1,55p' ops/deps-independent-verification-fb65e1f/prepare.log; rg -n 'ignored|reference_fixture|reference_transitions|test result|Success|passed|error|warning' ops/deps-independent-verification-fb65e1f/prepare.log; git show fb65e1f --format=fuller --no-patch; ls /Users/poonszesen/.cache/uv/git-v0; sed -n '240,330p' scripts/generate_reference_fixtures.py; sed -n '1,110p' src/rules_engine/replay_tests.rs" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+uv run maturin develop
+📦 Including license file `LICENSE`
+🍹 Building a mixed python/rust project
+🔗 Found pyo3 bindings with abi3 support
+🐍 Found CPython 3.12 at /Users/poonszesen/kg-v3-deps/.venv/bin/python
+📡 Using build options features from pyproject.toml
+Audited 8 packages in 18ms
+Resolved 44 packages in 8ms
+Audited 44 packages in 0.54ms
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-deps)
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 12:38:23.806 xcodebuild[5313:9750059]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 12:38:23.965 xcodebuild[5313:9750058] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 12:38:24.289 xcodebuild[5314:9750064]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 12:38:24.405 xcodebuild[5314:9750063] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: `owl` (lib) generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.13s
+📦 Built wheel for abi3 Python ≥ 3.11 to /Users/poonszesen/kg-v3-deps/.codex-tmp/.tmpmVXOFF/owl-0.1.0-cp311-abi3-macosx_11_0_arm64.whl
+✏️ Setting installed package as editable
+🛠 Installed owl-0.1.0
+cargo fmt
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+79 files left unchanged
+cargo clippy --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s
+uv run python scripts/check_python_311_syntax.py
+Uninstalled 1 package in 0.51ms
+Installed 1 package in 1ms
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uvx pymarkdownlnt scan *.md
+uvx pymarkdownlnt scan --recurse python/ scripts/ tests/ src/ docs/
+uv run mypy python/ scripts/
+Success: no issues found in 48 source files
+cargo test
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/rs-70d11de31c3178d2)
+
+running 157 tests
+test rl::action_spec::tests::adversarial_selected_target_angle_search ... ignored, expensive adversarial selected-angle search; run with --ignored --nocapture
+test rl::action_spec::tests::audit_selected_target_angle_quality ... ignored, expensive selected-angle quality audit; run with --ignored --nocapture
+test rl::action_spec::tests::cached_orbit_path_matches_step_zero_swept_phase ... ok
+test rl::action_spec::tests::anything_goes_submits_sun_crossing_static_target ... ok
+test rl::action_spec::tests::discrete_comet_target_with_exhausted_path_is_no_op ... ok
+test rl::action_spec::tests::anything_goes_target_bins_submit_sun_crossing_static_target ... ok
+test rl::action_spec::tests::discrete_comet_target_without_intercept_is_no_op ... ok
+test rl::action_spec::tests::discrete_orbiting_target_hits_in_simulator ... ok
+test rl::action_spec::tests::discrete_static_target_arc_subtracts_dynamic_blocker ... ok
+test rl::action_spec::tests::discrete_comet_target_arc_subtracts_static_blocker ... ok
+test rl::action_spec::tests::discrete_comet_target_arc_subtracts_dynamic_blocker ... ok
+test rl::action_spec::tests::discrete_target_bins_decode_target_and_fleet_bin ... ok
+11:warning: output of `xcrun` while finding MacOSX.sdk
+14:          2026-09-29 12:38:23.965 xcodebuild[5313:9750058] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+16:          2026-09-29 12:38:24.405 xcodebuild[5314:9750063] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+18:warning: `owl` (lib) generated 1 warning
+25:All checks passed!
+28:cargo clippy --all-targets -- -D warnings
+34:All checks passed!
+38:Success: no issues found in 48 source files
+44:test rl::action_spec::tests::adversarial_selected_target_angle_search ... ignored, expensive adversarial selected-angle search; run with --ignored --nocapture
+45:test rl::action_spec::tests::audit_selected_target_angle_quality ... ignored, expensive selected-angle quality audit; run with --ignored --nocapture
+87:test rl::action_spec::tests::pure_launch_errors_when_cached_slot_planet_is_missing ... ok
+88:test rl::action_spec::tests::pure_launch_errors_when_angle_is_not_finite ... ok
+89:test rl::action_spec::tests::pure_launch_errors_when_ship_count_exceeds_i32 ... ok
+90:test rl::action_spec::tests::pure_launch_errors_when_ship_count_is_below_min_fleet_size ... ok
+91:test rl::action_spec::tests::pure_launch_errors_when_ship_count_is_zero ... ok
+96:test rl::action_spec::tests::pure_launch_errors_when_player_does_not_own_source ... ok
+97:test rl::action_spec::tests::pure_launch_errors_when_total_launches_exceed_source_ships ... ok
+193:test rules_engine::generation::tests::generate_comet_paths_matches_python_reference_fixture ... ok
+194:test rules_engine::generation::tests::no_op_terminal_tie_matches_python_reference_fixture ... ok
+195:test rules_engine::generation::tests::comet_ship_sampling_matches_python_reference_fixtures ... ok
+196:test rules_engine::generation::tests::generate_planets_matches_python_reference_fixture ... ok
+197:test rules_engine::generation::tests::reset_cases_match_python_reference_fixtures ... ok
+198:test rules_engine::generation::tests::comet_path_cases_match_python_reference_fixtures ... ok
+199:test rules_engine::replay_tests::replay_fixtures_match_reference_transitions ... ok
+202:test result: ok. 155 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.15s
+254:======================== 722 passed, 3 skipped in 5.06s ========================
+commit fb65e1fad5e0b772623eaf7e660cdc62cdfda02e
+Author:     Season <seasonluke@gmail.com>
+AuthorDate: Tue Sep 29 12:37:28 2026 +0800
+Commit:     Season <seasonluke@gmail.com>
+CommitDate: Tue Sep 29 12:37:28 2026 +0800
+
+    Pin kaggle-environments 1.32.7 (owner decision)
+    
+    Isaiah's lock took kaggle-environments from git HEAD at 1.29.0, which has
+    no Kaggriculture env. Pinned ==1.32.7 via uv remove + uv add (git source
+    removed); its envs/kaggriculture/kaggriculture.py hashes to bc8a5487..., the
+    engine the vendored Rust kernel targets. torch 2.9.0, triton 3.5.0 and
+    flash-attn 2.8.3 are unchanged. just prepare passes: Rust 155 passed /
+    2 ignored (Orbit parity), Python 722 passed / 3 skipped. Also fixes the
+    contract's Markdown list-spacing lint.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+checkouts
+db
+locks
+            "episodeSteps": 4,
+            "shipSpeed": 6.0,
+            "cometSpeed": 4.0,
+        },
+        "before": {
+            "angular_velocity": 0.0,
+            "planets": planets,
+            "initial_planets": [planet.copy() for planet in planets],
+            "fleets": [],
+            "next_fleet_id": 0,
+            "comets": [],
+            "comet_planet_ids": [],
+            "step": 2,
+        },
+        "rewards": [agent.reward for agent in state],
+        "statuses": [agent.status for agent in state],
+    }
+
+
+def main() -> None:
+    args = parse_args()
+    module = load_reference()
+
+    planets, planet_calls = run_with_recording_random(
+        module,
+        args.planet_seed,
+        module.generate_planets,
+    )
+    comet_paths, comet_calls = run_with_recording_random(
+        module,
+        args.comet_seed,
+        module.generate_comet_paths,
+        planets,
+        0.04,
+        50,
+        [],
+        4.0,
+    )
+    if comet_paths is None:
+        raise RuntimeError("chosen comet seed did not produce a valid comet path")
+
+    fixture = {
+        "reference": ORBIT_WARS_MODULE,
+        "reference_file": module.__file__,
+        "planet_generation": {
+            "seed": args.planet_seed,
+            "random_calls": planet_calls,
+            "planets": planets,
+        },
+        "comet_path_generation": {
+            "seed": args.comet_seed,
+            "inputs": {
+                "angular_velocity": 0.04,
+                "spawn_step": 50,
+                "comet_planet_ids": [],
+                "comet_speed": 4.0,
+            },
+            "initial_planets": planets,
+            "random_calls": comet_calls,
+            "paths": comet_paths,
+        },
+        "reset_cases": [
+            reset_case(module, seed=44, players=2),
+            reset_case(module, seed=45, players=4),
+        ],
+        "comet_path_cases": [
+            comet_path_case(module, planets, case) for case in COMET_CASES
+        ],
+        "comet_ship_cases": [
+            comet_ship_case(seed=46),
+        ],
+        "terminal_cases": {
+            "no_op_tie": no_op_terminal_case(module),
+        },
+    }
+
+    args.outfile.parent.mkdir(parents=True, exist_ok=True)
+    args.outfile.write_text(
+        json.dumps(fixture, separators=(",", ":"), sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Reference generation fixture written to: {args.outfile}")
+
+
+if __name__ == "__main__":
+    main()
+use std::error::Error;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::path::{Path, PathBuf};
+
+use serde::Deserialize;
+
+use super::env::{step_with_injections, PlayerAction};
+use super::generation::RandomSource;
+use super::state::{
+    CometGroup, CometSpawnInjection, Fleet, LaunchAction, Planet, PlanetVector, PlayerResult,
+    Point, SimConfig, State, StaticTargetCache, StepInjections, StepResult, COMET_SPAWN_STEPS,
+};
+
+const DEFAULT_FIXTURE_DIR: &str = "tests/fixtures/orbit_wars_replays";
+const REQUIRED_REPLAY_COVERAGE: [ReplayCoverageRequirement; 2] = [
+    ReplayCoverageRequirement {
+        episode_id: 75_930_761,
+        players: 2,
+        rows: 103,
+    },
+    ReplayCoverageRequirement {
+        episode_id: 75_926_553,
+        players: 4,
+        rows: 222,
+    },
+];
+
+struct ReplayCoverageRequirement {
+    episode_id: u64,
+    players: usize,
+    rows: usize,
+}
+
+#[derive(Debug, Deserialize)]
+struct FixtureRow {
+    episode_id: u64,
+    players: usize,
+    step: u32,
+    configuration: ConfigFixture,
+    before: ObservationFixture,
+    actions: Vec<Vec<[f64; 3]>>,
+    results: Vec<KagglePlayerResult>,
+    expected: ObservationFixture,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConfigFixture {
+    #[serde(rename = "episodeSteps")]
+    episode_steps: u32,
+    #[serde(rename = "shipSpeed")]
+    ship_speed: f64,
+    #[serde(rename = "cometSpeed")]
+    comet_speed: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct ObservationFixture {
+    planets: Vec<[f64; 7]>,
+    fleets: Vec<[f64; 7]>,
+    angular_velocity: f64,
+    initial_planets: Vec<[f64; 7]>,
+    next_fleet_id: u32,
+    comets: Vec<CometFixture>,
+    comet_planet_ids: Vec<u32>,
+    step: u32,
+}
+
+#[derive(Debug, Deserialize)]
+struct CometFixture {
+    planet_ids: Vec<u32>,
+    paths: Vec<Vec<[f64; 2]>>,
+    path_index: i32,
+}
+
+#[derive(Debug, Deserialize)]
+struct KagglePlayerResult {
+    status: String,
+    reward: Option<f64>,
+}
+
+struct PanicRandom;
+
+impl RandomSource for PanicRandom {
+    fn randint(&mut self, _low: i32, _high: i32) -> i32 {
+        panic!("replay parity test unexpectedly requested an integer random value")
+    }
+
+    fn uniform(&mut self, _low: f64, _high: f64) -> f64 {
+        panic!("replay parity test unexpectedly requested a float random value")
+    }
+}
+
+#[test]
+fn replay_fixtures_match_reference_transitions() -> Result<(), Box<dyn Error>> {
+    if !require_parity_fixtures()? {
+        return Ok(());
+    }
+
+    let fixture_dir = fixture_dir();
+    let fixture_paths = fixture_paths(&fixture_dir)?;
+    if fixture_paths.is_empty() {
+        warn_or_fail_missing_fixtures(&fixture_dir)?;
+        return Ok(());
+    }
+
+    let mut coverage = REQUIRED_REPLAY_COVERAGE
+        .iter()
+        .map(|requirement| (requirement.episode_id, (0_usize, None)))
+        .collect::<std::collections::BTreeMap<_, _>>();
+
+exec
+/bin/zsh -lc 'uv run --locked python scripts/generate_reference_fixtures.py --outfile ops/deps-independent-verification-fb65e1f/reference_generation.current.json > ops/deps-independent-verification-fb65e1f/generate-reference.log 2>&1' in /Users/poonszesen/kg-v3-deps
+ succeeded in 428ms:
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+import hashlib,json,pathlib,subprocess,tomllib
+out=pathlib.Path('ops/deps-independent-verification-fb65e1f')
+old=json.loads(pathlib.Path('tests/fixtures/generation/reference_generation.json').read_text())
+new=json.loads((out/'reference_generation.current.json').read_text())
+print('generation fixture paths:', old.pop('reference_file'), new.pop('reference_file'))
+print('generation fixture data identical:',old==new)
+assert old==new
+repro=out/'uv-reproduction'; repro.mkdir(exist_ok=True)
+for name in ('pyproject.toml','uv.lock'):
+ (repro/name).write_bytes(subprocess.check_output(['git','show',f'fb65e1f"'^:{name}'"']))
+old_lock=tomllib.loads((repro/'uv.lock').read_text())
+print('old kaggle source:',next(p['source'] for p in old_lock['package'] if p['name']=='kaggle-environments'))
+for p in pathlib.Path('/Users/poonszesen/.cache/uv/git-v0/checkouts').rglob('orbit_wars.py'):
+ print('cached orbit source:',p,hashlib.sha256(p.read_bytes()).hexdigest())
+PY
+uv remove --directory ops/deps-independent-verification-fb65e1f/uv-reproduction --offline --no-sync kaggle-environments > ops/deps-independent-verification-fb65e1f/uv-remove.log 2>&1" in /Users/poonszesen/kg-v3-deps
+ succeeded in 100ms:
+generation fixture paths: /tmp/kg-v3-check-venv/lib/python3.12/site-packages/kaggle_environments/envs/orbit_wars/orbit_wars.py /Users/poonszesen/kg-v3-deps/.venv/lib/python3.12/site-packages/kaggle_environments/envs/orbit_wars/orbit_wars.py
+generation fixture data identical: True
+old kaggle source: {'git': 'https://github.com/Kaggle/kaggle-environments#6458c3191c2c4b37b6ad7530bd027df4b35369e4'}
+cached orbit source: /Users/poonszesen/.cache/uv/git-v0/checkouts/dc6fb5a34bab66b5/6458c31/kaggle_environments/envs/orbit_wars/orbit_wars.py 3f78c1a9064644a7789d9aa464aa83770071d42023716213d223887b8ca267f4
+
+exec
+/bin/zsh -lc "uv add --directory ops/deps-independent-verification-fb65e1f/uv-reproduction --offline --no-sync 'kaggle-environments==1.32.7' > ops/deps-independent-verification-fb65e1f/uv-add.log 2>&1" in /Users/poonszesen/kg-v3-deps
+ succeeded in 31ms:
+exec
+/bin/zsh -lc 'git diff --exit-code && git diff --cached --exit-code && git status --short && git rev-parse HEAD' in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+?? .codex-tmp/
+?? ops/deps-independent-verification-fb65e1f/
+fb65e1fad5e0b772623eaf7e660cdc62cdfda02e
+
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+import hashlib,importlib.metadata,json,pathlib,tomllib
+out=pathlib.Path('ops/deps-independent-verification-fb65e1f')
+for name in ('pyproject.toml','uv.lock'):
+ expected=pathlib.Path(name).read_bytes(); actual=(out/'uv-reproduction'/name).read_bytes()
+ print(name,'byte identical uv remove/add:',expected==actual,'semantic TOML identical:',tomllib.loads(expected.decode())==tomllib.loads(actual.decode()))
+ if expected"'!=actual:
+  import difflib
+  print('"''.join(difflib.unified_diff(expected.decode().splitlines(True),actual.decode().splitlines(True)))[:6000])
+old=pathlib.Path('/Users/poonszesen/.cache/uv/git-v0/checkouts/dc6fb5a34bab66b5/6458c31/kaggle_environments')
+new=pathlib.Path(importlib.metadata.distribution('kaggle-environments').locate_file('kaggle_environments'))
+for part in ('envs/orbit_wars/orbit_wars.py','envs/orbit_wars/orbit_wars.json','core.py','utils.py'):
+ a=(old/part).read_bytes(); b=(new/part).read_bytes()
+ print(part,'byte identical',a==b,'old SHA',hashlib.sha256(a).hexdigest(),'new SHA',hashlib.sha256(b).hexdigest())
+ if a"'!=b:
+  import difflib
+  (out/(pathlib.Path(part).name+'"'.diff')).write_text(''.join(difflib.unified_diff(a.decode().splitlines(True),b.decode().splitlines(True),fromfile='old/'+part,tofile='new/'+part)))
+PY
+cat ops/deps-independent-verification-fb65e1f/uv-add.log" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+pyproject.toml byte identical uv remove/add: True semantic TOML identical: True
+uv.lock byte identical uv remove/add: True semantic TOML identical: True
+envs/orbit_wars/orbit_wars.py byte identical False old SHA 3f78c1a9064644a7789d9aa464aa83770071d42023716213d223887b8ca267f4 new SHA f60e06d325108cc35aca743dd565480bb86c468dee864dff10c12b80c6c64729
+envs/orbit_wars/orbit_wars.json byte identical True old SHA 8d8a2b6c0b092f40ea5f4c381328788a402dfcbd7a1bd8ed5f1c3e1eb5f079d1 new SHA 8d8a2b6c0b092f40ea5f4c381328788a402dfcbd7a1bd8ed5f1c3e1eb5f079d1
+core.py byte identical False old SHA bca816e2bf5f43e90cba36bd4be78de9eb9520af64840516033297dfee3a6037 new SHA 0922c4599a1b6e0d8c3dadf06ae5297f98138d859d686f00daee6f36e6d45d0e
+utils.py byte identical False old SHA b8dc80d5994818aed20a0dfcfaaa29ffe9a575e82ebdb97d722966dc06ea895d new SHA 537b627b11784d424147ef57ebb0369b039bf83c9f891e81f10486b1f552334b
+Using CPython 3.12.13
+Resolved 181 packages in 113ms
+
+codex
+The full preparation suite passed: Rust 155 passed / 2 ignored, Python 722 passed / 3 skipped, including Orbit replay and generation parity. The installed Kaggriculture engine hash matches the reference metadata exactly. Repeating `uv remove` and `uv add` in a temporary copy also reproduced both tracked dependency files byte-for-byte.
+
+The lock audit found more transitive changes than the cookbook reports, including `click`, which W&B also uses. I’m checking their scope and the upstream Orbit source diff before assigning severity.
+exec
+/bin/zsh -lc 'cat ops/deps-independent-verification-fb65e1f/orbit_wars.py.diff; cat ops/deps-independent-verification-fb65e1f/utils.py.diff; cat ops/deps-independent-verification-fb65e1f/core.py.diff; nl -ba cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md | tail -n 16; nl -ba pyproject.toml | head -n 65; cat cookbook/decisions/index.md | head -n 45' in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+--- old/envs/orbit_wars/orbit_wars.py
++++ new/envs/orbit_wars/orbit_wars.py
+@@ -3,6 +3,8 @@
+ from collections import namedtuple
+ from os import path
+ import random
++
++from kaggle_environments.utils import resolve_episode_seed
+ 
+ # Named tuples for agent convenience.
+ # Planets and fleets share a common [id, owner, x, y, ...] prefix.
+@@ -342,25 +344,10 @@
+     # the seed is scrubbed from configuration before the first agent.act()
+     # call — otherwise agents would see the seed on turn 0.
+     if not hasattr(obs0, "planets") or not obs0.planets:
+-        # Resolve episode seed and stash it on env.info so it persists into
+-        # the replay but stays out of `configuration`, which is visible to
+-        # agents. Agents must not be able to reconstruct the comet schedule.
+-        if not hasattr(env, "info") or env.info is None:
+-            env.info = {}
+-        # Reuse the previously-resolved seed if env.reset() runs twice
+-        # (e.g. make() + run() both trigger reset). Otherwise read from
+-        # configuration, then fall back to a random one.
+-        seed = env.info.get("seed")
+-        if seed is None:
+-            seed = get(configuration, "seed", None)
+-        if seed is None:
+-            seed = random.randrange(2**31)
+-        # Scrub seed from configuration so agents can't read it.
+-        try:
+-            configuration.seed = None
+-        except (AttributeError, TypeError):
+-            configuration["seed"] = None
+-        env.info["seed"] = seed
++        # Agents must not be able to reconstruct the comet schedule, so
++        # resolve_episode_seed scrubs the seed from configuration before the
++        # first agent.act() call and stashes it on env.info for the replay.
++        seed = resolve_episode_seed(env)
+         init_rng = random.Random(seed)
+ 
+         angular_velocity = init_rng.uniform(0.025, 0.05)
+--- old/utils.py
++++ new/utils.py
+@@ -13,9 +13,10 @@
+ # limitations under the License.
+ 
+ import json
++import random
+ from copy import deepcopy
+ from pathlib import Path
+-from typing import Any, Type
++from typing import Any, Callable, Type
+ 
+ import jsonschema
+ 
+@@ -194,6 +195,42 @@
+     return error, data
+ 
+ 
++# Seed utilities
++def resolve_episode_seed(
++    env: Any,
++    *,
++    config_key: str = "seed",
++    fallback: Callable[[], int] | None = None,
++) -> int:
++    """Resolve, scrub, and persist an episode seed for envs with hidden state.
++
++    Used by interpreters whose initial state depends on a seed that agents
++    must not be able to read (e.g. random maze layout, comet schedules,
++    weather rolls). The seed is taken from the first available source:
++    ``env.info["seed"]`` (preserved across re-initialization), then
++    ``configuration[config_key]``, then ``fallback()`` (defaulting to a random
++    31-bit int). The value is then cleared from ``configuration`` so agents
++    can't read it via the observation, and stored on ``env.info["seed"]`` so
++    it persists into the replay.
++    """
++    if not hasattr(env, "info") or env.info is None:
++        env.info = {}
++    seed = env.info.get("seed")
++    config = env.configuration
++    if seed is None:
++        seed = getattr(config, config_key, None)
++        if seed is None and isinstance(config, dict):
++            seed = config.get(config_key)
++    if seed is None:
++        seed = fallback() if fallback is not None else random.randrange(2**31)
++    try:
++        setattr(config, config_key, None)
++    except (AttributeError, TypeError):
++        config[config_key] = None
++    env.info["seed"] = seed
++    return seed
++
++
+ # Player utilities
+ def get_player(window_kaggle: dict[str, Any], renderer: tuple[str, str] | str) -> str:
+     # TODO: resolve type alert here. Renderer is clearly not a string, but gets .strip() called.
+@@ -204,6 +241,22 @@
+         """
+         return read_file(renderer[1]).replace(key, value)
+ 
++    # Vite-built visualizers return a self-contained HTML document. Inject the
++    # window.kaggle payload directly so the visualizer picks it up on load —
++    # notebook iframes are srcdoc'd with no parent to postMessage from.
++    if isinstance(renderer, str) and renderer.lstrip().startswith("<"):
++        snippet = f"<script>window.kaggle = {json.dumps(window_kaggle)};</script>"
++        lower = renderer.lower()
++        head_close = lower.find("</head>")
++        if head_close != -1:
++            return renderer[:head_close] + snippet + renderer[head_close:]
++        body_open = lower.find("<body")
++        if body_open != -1:
++            body_end = renderer.find(">", body_open)
++            if body_end != -1:
++                return renderer[: body_end + 1] + snippet + renderer[body_end + 1 :]
++        return snippet + renderer
++
+     key = "/*window.kaggle*/"
+     value = f"""
+ window.kaggle = {json.dumps(window_kaggle, indent=2)};\n\n
+--- old/core.py
++++ new/core.py
+@@ -35,6 +35,9 @@
+ # Registered Interactive Sessions.
+ interactives: dict[str, tuple[Any, Any]] = {}
+ 
++# Loaders for envs deferred until first make(name). See register_lazy.
++_lazy_environments: dict[str, Callable[[], None]] = {}
++
+ 
+ def register(name: str, environment: dict[str, Any]) -> None:
+     """
+@@ -45,7 +48,26 @@
+      * html_renderer - Function(environment) -> JavaScript HTML renderer function.
+      * agents(optional) - List of default agents [Function(observation, config) -> action]
+     """
++    _lazy_environments.pop(name, None)
+     environments[name] = environment
++
++
++def register_lazy(name: str, loader: Callable[[], None]) -> None:
++    """Register an environment whose module load is deferred until first use.
++
++    `loader` is a zero-arg callable that imports the env module and calls
++    `register(name, {...})`. It runs at most once per process.
++    """
++    _lazy_environments[name] = loader
++
++
++def _resolve_lazy(name: str) -> bool:
++    """Materialize a lazily-registered env if needed. Returns True if resolved."""
++    loader = _lazy_environments.pop(name, None)
++    if loader is None:
++        return name in environments
++    loader()
++    return name in environments
+ 
+ 
+ def evaluate(
+@@ -119,6 +141,8 @@
+     if logs is None:
+         logs = []
+ 
++    if has(environment, str) and environment in _lazy_environments:
++        _resolve_lazy(environment)
+     if has(environment, str) and has(environments, dict, path=[environment]):
+         return Environment(
+             **environments[environment],
+    42	
+    43	The owner asks to use the reference branch "properly, without blindly copying". The rebuild plan (`ops/rebuild-2026-09-29/plan.md`) gives every reference component exactly one disposition:
+    44	- **Vendor, trimmed and hash-pinned:** only the rules kernel (`lib.rs`, `py_random.rs`, `econ_attrib.rs`), because it must match Kaggle's Python engine exactly.
+    45	- **Port after review:** the native grammar, rewards, device mask tables and benchmark harness.
+    46	- **Rebuild, with the reference as test oracle:** the observation encoding (named per-entity tensors instead of the flat v2 vector sliced at fixed offsets), the environment bindings, the codec, the model, the trainer seams, the configs and BC training.
+    47	- **Reference only:** scripted bots until evaluation needs a few of them, the v2 experiments, and the run receipts.
+    48	
+    49	Lessons from the reference (raw-bank winners, truncation reward, seed streams, the CUDA fault (since traced to a compiler GEMM overflow), cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
+    50	
+    51	## kaggle-environments 1.32.7 — owner, 2026-09-29
+    52	
+    53	> Found that Isaiah's lockfile pins kaggle-environments 1.29.0, which lacks Kaggriculture, while 1.32.7 (already cached locally) has it. this we will have to update it.
+    54	
+    55	Source: `user-directive:2026-09-29:update-kaggle-environments-1-32-7`. Isaiah's project took `kaggle-environments` from git HEAD, locked at 1.29.0, which has no Kaggriculture environment. It is now pinned to `==1.32.7` via `uv remove` + `uv add`, which also removes the git source override. 1.32.7's `envs/kaggriculture/kaggriculture.py` has SHA-256 `bc8a5487…`, the engine the vendored Rust kernel targets.
+    56	
+    57	Isaiah's critical pins are unchanged: torch 2.9.0, triton 3.5.0, flash-attn 2.8.3, numpy, pydantic, wandb, mypy. The other 50 lockfile changes are kaggle-environments' own dependency tree (e.g. jax 0.10 → 0.11.2). Checks with 1.32.7: `just prepare` passes, with Rust 155 passed / 2 ignored (Orbit replay and generation parity) and Python 722 passed / 3 skipped.
+     1	[project]
+     2	name = "owl"
+     3	version = "0.1.0"
+     4	description = "An RL library for the Kaggle 2026 Orbit Wars competition"
+     5	readme = "README.md"
+     6	authors = [
+     7	    { name = "IsaiahPressman" }
+     8	]
+     9	requires-python = ">=3.11"
+    10	dependencies = [
+    11	    "kaggle-environments==1.32.7",
+    12	    "numpy>=2.4.4",
+    13	    "pydantic>=2.13.2",
+    14	    "pyyaml>=6.0.3",
+    15	    "torch==2.9.0",
+    16	    "tqdm>=4.67.3",
+    17	    "wandb>=0.26.0",
+    18	]
+    19	
+    20	[dependency-groups]
+    21	dev = [
+    22	    "kaggle>=2.1.0",
+    23	    "maturin>=1.13.1,<2.0",
+    24	    "mypy",
+    25	    "pytest>=9.0.3",
+    26	    "types-pyyaml>=6.0.12.20260408",
+    27	    "types-tqdm>=4.67.3.20260408",
+    28	]
+    29	
+    30	[project.optional-dependencies]
+    31	flash-attn = [
+    32	    "flash-attn>=2.8.3",
+    33	]
+    34	
+    35	[build-system]
+    36	requires = ["maturin>=1.0,<2.0"]
+    37	build-backend = "maturin"
+    38	
+    39	[tool.maturin]
+    40	module-name = "owl.rs"
+    41	python-packages = ["owl"]
+    42	python-source = "python"
+    43	features = ["extension-module"]
+    44	
+    45	[tool.uv]
+    46	cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.rs" }, { file = "Cargo.toml" }, { file = "Cargo.lock" }]
+    47	constraint-dependencies = ["protobuf<7"]
+    48	no-build-isolation-package = ["flash-attn"]
+    49	
+    50	[tool.uv.sources]
+    51	torch = [
+    52	  { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
+    53	  { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+    54	]
+    55	torchvision = [
+    56	  { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
+    57	  { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+    58	]
+    59	
+    60	
+    61	[[tool.uv.index]]
+    62	name = "pytorch-cpu"
+    63	url = "https://download.pytorch.org/whl/cpu"
+    64	explicit = true
+    65	
+# Decisions
+
+- [[restart-the-port-from-isaiahs-clean-base|Restart the port from Isaiah's clean base]] — Main and the working branch restart from Isaiah's 32b3ec9; the prior port is a reference branch for grammar, tokens and the Rust engine; the cookbook and Claude/Codex setup carry over; the model keeps Isaiah's layer topology; one BC rerun and RTX PRO 6000 verification follow.
+- [[v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|V3 reuses Isaiah infrastructure with Kaggriculture semantics]] — Deliver one complete final adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial mechanisms are not finished deliverables, and the rejected decoder remains historical.
+- [[diagnose-the-mechanism-before-spending-on-runs|Diagnose the mechanism before spending on runs]] — Keep decisions reproducible, map game capabilities to executable mechanisms, and distinguish four failure classes before repairing.
+- [[the-policy-is-stateless-and-observation-only|The policy is stateless and observation-only]] — Carry forward explicit current-observation tokens and the prohibition on opponent identity conditioning; Isaiah's StatelessTransformerV1, never his recurrent model, is the reference contract, with the same layer topology and only game I/O differing.
+- [[throughput-means-correct-complete-work|Throughput means correct complete work]] — High throughput is required; preserve semantic parity and measure equivalent work rather than inferring gains from language or kernels.
+- [[evaluation-preserves-generality-and-evidence|Evaluation preserves generality and evidence]] — Measure win rate and bank margin across opponents, retain source-bound evidence and telemetry, and keep submission authority with the owner.
+- [[start-multi-gpu-qualification-with-two-ranks|Start multi-GPU qualification with two ranks]] — Qualify on two GPUs before four; 2/4-rank RTX PRO 6000 verification is authorized; keep the pod running after bounded runs; host history lives in ops.
+- [[preserve-the-ppo-recipe-across-bc-bootstrap|Preserve the PPO recipe across BC bootstrap]] — The BC-period two-rank 4096-env fixed-minibatch recipe is preserved as a historical snapshot with separate checkpoint custody; later runs follow Isaiah alignment and teacher-adapter completion.
+- [[recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah without owner escalation]] — Optimizer-step cadence and critic/value-distillation semantics are implementer choices resolved toward Isaiah scaling_6m and its multi-GPU rule, not owner decisions; both are built into the rebuild from the start.
+
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+import json,pathlib,subprocess,tomllib
+for ref in ['fb65e1f"'^'"','fb65e1f']:
+ d=tomllib.loads(subprocess.check_output(['git','show',f'{ref}:uv.lock'],text=True))
+ print(ref, 'package records',len(d['package']),'package names',len({p['name'] for p in d['package']}))
+for p in pathlib.Path('tests/fixtures/orbit_wars_replays').glob('*.jsonl'):
+ rows=[json.loads(l) for l in p.read_text().splitlines()]
+ print(p.name,len(rows),'players',rows[0]['players'],'final results',rows[-1]['results'])
+PY" in /Users/poonszesen/kg-v3-deps
+ succeeded in 30ms:
+fb65e1f^ package records 176 package names 174
+fb65e1f package records 181 package names 173
+replay-75930761.jsonl 103 players 2 final results [{'status': 'DONE', 'reward': -1}, {'status': 'DONE', 'reward': 1}]
+replay-75926553.jsonl 222 players 4 final results [{'status': 'DONE', 'reward': -1}, {'status': 'DONE', 'reward': 1}, {'status': 'DONE', 'reward': -1}, {'status': 'DONE', 'reward': -1}]
+
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+import collections,json,pathlib,subprocess,tomllib
+out=pathlib.Path('ops/deps-independent-verification-fb65e1f')
+def lock(ref):return tomllib.loads(subprocess.check_output(['git','show',f'{ref}:uv.lock'],text=True))
+a=lock('fb65e1f"'^'"');b=lock('fb65e1f')
+def group(d):
+ r=collections.defaultdict(list)
+ for p in d['package']:r[p['name']].append(p)
+ return dict(r)
+x,y=group(a),group(b)
+changes={k:{'before':x.get(k,[]),'after':y.get(k,[])} for k in sorted(x.keys()|y.keys()) if x.get(k)"'!=y.get(k)}
+metadata={k:{'"'before':a.get(k),'after':b.get(k)} for k in sorted(a.keys()|b.keys()) if k"'!='"'package' and a.get(k)"'!=b.get(k)}
+(out/'"'lock-delta.json').write_text(json.dumps({'base':'fb65e1f"'^'"','target':'fb65e1fad5e0b772623eaf7e660cdc62cdfda02e','top_level':metadata,'packages':changes},indent=2)+'\\n')
+print('Full lock delta written:',out/'lock-delta.json')
+for k,v in metadata.items():print('metadata',k,json.dumps(v))
+print('Counts',len(changes),'changed package names',len(x.keys()-y.keys()),'removed',len(y.keys()-x.keys()),'added')
+for k in ['torch','triton','flash-attn','numpy','pydantic','wandb','maturin','mypy']:
+ print(k,sorted({p['version'] for p in x[k]}), 'entire records equal',x[k]==y[k])
+PY" in /Users/poonszesen/kg-v3-deps
+ succeeded in 18ms:
+Full lock delta written: ops/deps-independent-verification-fb65e1f/lock-delta.json
+Counts 57 changed package names 2 removed 1 added
+torch ['2.9.0', '2.9.0+cpu', '2.9.0+cu128'] entire records equal True
+triton ['3.5.0'] entire records equal True
+flash-attn ['2.8.3'] entire records equal True
+numpy ['2.4.4'] entire records equal True
+pydantic ['2.13.3'] entire records equal True
+wandb ['0.26.1'] entire records equal True
+maturin ['1.13.1'] entire records equal True
+mypy ['1.20.2'] entire records equal True
+
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+import json,pathlib
+x=json.loads(pathlib.Path('ops/deps-independent-verification-fb65e1f/lock-delta.json').read_text())
+for name,p in x['packages'].items():
+ old=p['before'];new=p['after']
+ ver=lambda a:', '.join(sorted({v['version'] for v in a})) or '—'
+ if len(old)==len(new)==1:
+  changed=[k for k in sorted(old[0].keys()|new[0].keys()) if old[0].get(k)"'!=new[0].get(k)]
+ else:changed=['"'record-set']
+ print(f'| {name} | {ver(old)} | {ver(new)} | {\", \".join(changed)} |')
+PY" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+| absl-py | 2.4.0 | 2.5.0 | sdist, version, wheels |
+| aiohappyeyeballs | 2.6.1 | 2.7.1 | sdist, version, wheels |
+| aiohttp | 3.13.5 | 3.14.3 | dependencies, sdist, version, wheels |
+| annotated-doc | 0.0.4 | 0.0.5 | sdist, version, wheels |
+| anyio | 4.13.0 | 4.14.2, 4.15.1 | record-set |
+| cffi | 2.0.0 | 2.1.1 | sdist, version, wheels |
+| chex | 0.1.91 | 0.1.92 | dependencies, sdist, version, wheels |
+| click | 8.3.3 | 8.5.0 | dependencies, sdist, version, wheels |
+| contourpy | 1.3.3 | 1.3.3, 1.4.0 | record-set |
+| cryptography | 48.0.0 | 50.0.1 | sdist, version, wheels |
+| flax | 0.12.7 | 0.12.10, 0.12.8 | record-set |
+| fonttools | 4.62.1 | 4.66.0 | sdist, version, wheels |
+| google-auth | 2.50.0 | 2.59.0 | sdist, version, wheels |
+| grpcio | 1.80.0 | — | record-set |
+| grpcio-tools | 1.80.0 | — | record-set |
+| gymnax | 0.0.8 | 0.0.8 | dependencies |
+| hf-xet | 1.4.3 | 1.6.0 | sdist, version, wheels |
+| httpx | 0.28.1 | 0.28.1 | dependencies |
+| huggingface-hub | 1.13.0 | 1.33.0 | dependencies, sdist, version, wheels |
+| humanize | 4.15.0 | 4.16.0 | sdist, version, wheels |
+| importlib-metadata | 9.0.0 | 8.9.0 | sdist, version, wheels |
+| jax | 0.10.0 | 0.10.2, 0.11.2 | record-set |
+| jaxlib | 0.10.0 | 0.10.2, 0.11.2 | record-set |
+| jiter | 0.14.0 | 0.17.0 | sdist, version, wheels |
+| kaggle-environments | 1.29.0 | 1.32.7 | dependencies, sdist, source, version, wheels |
+| kiwisolver | 1.5.0 | 1.5.1 | sdist, version, wheels |
+| litellm | 1.82.4 | 1.93.2 | sdist, version, wheels |
+| matplotlib | 3.10.9 | 3.11.2 | dependencies, sdist, version, wheels |
+| ml-dtypes | 0.5.4 | 0.6.0 | sdist, version, wheels |
+| msgpack | 1.1.2 | 1.2.3 | sdist, version, wheels |
+| multidict | 6.7.1 | 6.9.1 | sdist, version, wheels |
+| open-spiel | 1.6.13 | 2.0.1 | dependencies, sdist, version, wheels |
+| openai | 2.34.0 | 2.54.0 | dependencies, sdist, version, wheels |
+| optax | 0.2.8 | 0.2.8 | dependencies |
+| orbax-checkpoint | 0.11.37 | 0.12.6 | dependencies, sdist, version, wheels |
+| owl | 0.1.0 | 0.1.0 | metadata |
+| pandas | 3.0.2 | 3.0.6 | sdist, version, wheels |
+| pillow | 12.2.0 | 12.3.0 | sdist, version, wheels |
+| prometheus-client | — | 0.26.0 | record-set |
+| propcache | 0.4.1 | 0.5.4 | sdist, version, wheels |
+| pyasn1 | 0.6.3 | 0.6.4 | sdist, version, wheels |
+| pyjson5 | 2.0.0 | 2.0.1 | sdist, version, wheels |
+| pyparsing | 3.3.2 | 3.3.3 | sdist, version, wheels |
+| python-dotenv | 1.2.2 | 1.2.3 | sdist, version, wheels |
+| regex | 2026.4.4 | 2026.9.29 | sdist, version, wheels |
+| safetensors | 0.7.0 | 0.8.0 | sdist, version, wheels |
+| scipy | 1.17.1 | 1.17.1, 1.18.1 | record-set |
+| simplejson | 4.1.1 | 4.1.2 | sdist, version, wheels |
+| tensorstore | 0.1.82 | 0.1.85 | sdist, version, wheels |
+| tiktoken | 0.12.0 | 0.14.0 | sdist, version, wheels |
+| tokenizers | 0.22.2 | 0.23.2 | sdist, version, wheels |
+| transformers | 5.8.0 | 5.17.0 | sdist, version, wheels |
+| typer | 0.25.1 | 0.27.2 | dependencies, sdist, version, wheels |
+| tzdata | 2026.2 | 2026.4 | sdist, version, wheels |
+| werkzeug | 3.1.8 | 3.1.9 | sdist, version, wheels |
+| yarl | 1.23.0 | 1.25.1 | sdist, version, wheels |
+| zipp | 3.23.1 | 4.1.0 | sdist, version, wheels |
+
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+import json,pathlib
+x=json.loads(pathlib.Path('ops/deps-independent-verification-fb65e1f/lock-delta.json').read_text())['packages']
+for name in ['anyio','contourpy','flax','jax','jaxlib','scipy']:
+ print(name)
+ for side in ('before','after'):
+  for p in x[name][side]: print(side,p['version'],p.get('resolution-markers'))
+for name in ['gymnax','httpx','optax','owl','kaggle-environments','click']:
+ print(name)
+ for side in ['before','after']:
+  print(side,json.dumps([{k:v for k,v in p.items() if k in ['dependencies','optional-dependencies','metadata','source']} for p in x[name][side]],indent=2))
+PY" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+anyio
+before 4.13.0 None
+after 4.14.2 ["python_full_version == '3.14.*' and sys_platform == 'win32'", "python_full_version == '3.14.*' and sys_platform == 'emscripten'", "python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.13.*' and sys_platform == 'win32'", "python_full_version == '3.13.*' and sys_platform == 'emscripten'", "python_full_version == '3.13.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.12.*' and sys_platform == 'win32'", "python_full_version == '3.12.*' and sys_platform == 'emscripten'", "python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version < '3.12' and sys_platform == 'win32'", "python_full_version < '3.12' and sys_platform == 'emscripten'", "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.14.*' and sys_platform == 'darwin'", "python_full_version == '3.13.*' and sys_platform == 'darwin'", "python_full_version == '3.12.*' and sys_platform == 'darwin'", "python_full_version < '3.12' and sys_platform == 'darwin'", "python_full_version == '3.14.*' and sys_platform == 'linux'", "python_full_version == '3.13.*' and sys_platform == 'linux'", "python_full_version == '3.12.*' and sys_platform == 'linux'", "python_full_version < '3.12' and sys_platform == 'linux'"]
+after 4.15.1 ["python_full_version >= '3.15' and sys_platform == 'win32'", "python_full_version >= '3.15' and sys_platform == 'emscripten'", "python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version >= '3.15' and sys_platform == 'darwin'", "python_full_version >= '3.15' and sys_platform == 'linux'"]
+contourpy
+before 1.3.3 None
+after 1.3.3 ["python_full_version < '3.12' and sys_platform == 'win32'", "python_full_version < '3.12' and sys_platform == 'emscripten'", "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version < '3.12' and sys_platform == 'darwin'", "python_full_version < '3.12' and sys_platform == 'linux'"]
+after 1.4.0 ["python_full_version >= '3.15' and sys_platform == 'win32'", "python_full_version >= '3.15' and sys_platform == 'emscripten'", "python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.14.*' and sys_platform == 'win32'", "python_full_version == '3.14.*' and sys_platform == 'emscripten'", "python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.13.*' and sys_platform == 'win32'", "python_full_version == '3.13.*' and sys_platform == 'emscripten'", "python_full_version == '3.13.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.12.*' and sys_platform == 'win32'", "python_full_version == '3.12.*' and sys_platform == 'emscripten'", "python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version >= '3.15' and sys_platform == 'darwin'", "python_full_version == '3.14.*' and sys_platform == 'darwin'", "python_full_version == '3.13.*' and sys_platform == 'darwin'", "python_full_version == '3.12.*' and sys_platform == 'darwin'", "python_full_version >= '3.15' and sys_platform == 'linux'", "python_full_version == '3.14.*' and sys_platform == 'linux'", "python_full_version == '3.13.*' and sys_platform == 'linux'", "python_full_version == '3.12.*' and sys_platform == 'linux'"]
+flax
+before 0.12.7 None
+after 0.12.8 ["python_full_version < '3.12' and sys_platform == 'win32'", "python_full_version < '3.12' and sys_platform == 'emscripten'", "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version < '3.12' and sys_platform == 'darwin'", "python_full_version < '3.12' and sys_platform == 'linux'"]
+after 0.12.10 ["python_full_version >= '3.15' and sys_platform == 'win32'", "python_full_version >= '3.15' and sys_platform == 'emscripten'", "python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.14.*' and sys_platform == 'win32'", "python_full_version == '3.14.*' and sys_platform == 'emscripten'", "python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.13.*' and sys_platform == 'win32'", "python_full_version == '3.13.*' and sys_platform == 'emscripten'", "python_full_version == '3.13.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.12.*' and sys_platform == 'win32'", "python_full_version == '3.12.*' and sys_platform == 'emscripten'", "python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version >= '3.15' and sys_platform == 'darwin'", "python_full_version == '3.14.*' and sys_platform == 'darwin'", "python_full_version == '3.13.*' and sys_platform == 'darwin'", "python_full_version == '3.12.*' and sys_platform == 'darwin'", "python_full_version >= '3.15' and sys_platform == 'linux'", "python_full_version == '3.14.*' and sys_platform == 'linux'", "python_full_version == '3.13.*' and sys_platform == 'linux'", "python_full_version == '3.12.*' and sys_platform == 'linux'"]
+jax
+before 0.10.0 None
+after 0.10.2 ["python_full_version < '3.12' and sys_platform == 'win32'", "python_full_version < '3.12' and sys_platform == 'emscripten'", "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version < '3.12' and sys_platform == 'darwin'", "python_full_version < '3.12' and sys_platform == 'linux'"]
+after 0.11.2 ["python_full_version >= '3.15' and sys_platform == 'win32'", "python_full_version >= '3.15' and sys_platform == 'emscripten'", "python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.14.*' and sys_platform == 'win32'", "python_full_version == '3.14.*' and sys_platform == 'emscripten'", "python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.13.*' and sys_platform == 'win32'", "python_full_version == '3.13.*' and sys_platform == 'emscripten'", "python_full_version == '3.13.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.12.*' and sys_platform == 'win32'", "python_full_version == '3.12.*' and sys_platform == 'emscripten'", "python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version >= '3.15' and sys_platform == 'darwin'", "python_full_version == '3.14.*' and sys_platform == 'darwin'", "python_full_version == '3.13.*' and sys_platform == 'darwin'", "python_full_version == '3.12.*' and sys_platform == 'darwin'", "python_full_version >= '3.15' and sys_platform == 'linux'", "python_full_version == '3.14.*' and sys_platform == 'linux'", "python_full_version == '3.13.*' and sys_platform == 'linux'", "python_full_version == '3.12.*' and sys_platform == 'linux'"]
+jaxlib
+before 0.10.0 None
+after 0.10.2 ["python_full_version < '3.12' and sys_platform == 'win32'", "python_full_version < '3.12' and sys_platform == 'emscripten'", "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version < '3.12' and sys_platform == 'darwin'", "python_full_version < '3.12' and sys_platform == 'linux'"]
+after 0.11.2 ["python_full_version >= '3.15' and sys_platform == 'win32'", "python_full_version >= '3.15' and sys_platform == 'emscripten'", "python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.14.*' and sys_platform == 'win32'", "python_full_version == '3.14.*' and sys_platform == 'emscripten'", "python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.13.*' and sys_platform == 'win32'", "python_full_version == '3.13.*' and sys_platform == 'emscripten'", "python_full_version == '3.13.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.12.*' and sys_platform == 'win32'", "python_full_version == '3.12.*' and sys_platform == 'emscripten'", "python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version >= '3.15' and sys_platform == 'darwin'", "python_full_version == '3.14.*' and sys_platform == 'darwin'", "python_full_version == '3.13.*' and sys_platform == 'darwin'", "python_full_version == '3.12.*' and sys_platform == 'darwin'", "python_full_version >= '3.15' and sys_platform == 'linux'", "python_full_version == '3.14.*' and sys_platform == 'linux'", "python_full_version == '3.13.*' and sys_platform == 'linux'", "python_full_version == '3.12.*' and sys_platform == 'linux'"]
+scipy
+before 1.17.1 None
+after 1.17.1 ["python_full_version < '3.12' and sys_platform == 'win32'", "python_full_version < '3.12' and sys_platform == 'emscripten'", "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version < '3.12' and sys_platform == 'darwin'", "python_full_version < '3.12' and sys_platform == 'linux'"]
+after 1.18.1 ["python_full_version >= '3.15' and sys_platform == 'win32'", "python_full_version >= '3.15' and sys_platform == 'emscripten'", "python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.14.*' and sys_platform == 'win32'", "python_full_version == '3.14.*' and sys_platform == 'emscripten'", "python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.13.*' and sys_platform == 'win32'", "python_full_version == '3.13.*' and sys_platform == 'emscripten'", "python_full_version == '3.13.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version == '3.12.*' and sys_platform == 'win32'", "python_full_version == '3.12.*' and sys_platform == 'emscripten'", "python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'", "python_full_version >= '3.15' and sys_platform == 'darwin'", "python_full_version == '3.14.*' and sys_platform == 'darwin'", "python_full_version == '3.13.*' and sys_platform == 'darwin'", "python_full_version == '3.12.*' and sys_platform == 'darwin'", "python_full_version >= '3.15' and sys_platform == 'linux'", "python_full_version == '3.14.*' and sys_platform == 'linux'", "python_full_version == '3.13.*' and sys_platform == 'linux'", "python_full_version == '3.12.*' and sys_platform == 'linux'"]
+gymnax
+before [
+  {
+    "source": {
+      "registry": "https://pypi.org/simple"
+    },
+    "dependencies": [
+      {
+        "name": "chex"
+      },
+      {
+        "name": "flax"
+      },
+      {
+        "name": "gym"
+      },
+      {
+        "name": "gymnasium"
+      },
+      {
+        "name": "jax"
+      },
+      {
+        "name": "jaxlib"
+      },
+      {
+        "name": "matplotlib"
+      },
+      {
+        "name": "pyyaml"
+      },
+      {
+        "name": "seaborn"
+      }
+    ]
+  }
+]
+after [
+  {
+    "source": {
+      "registry": "https://pypi.org/simple"
+    },
+    "dependencies": [
+      {
+        "name": "chex"
+      },
+      {
+        "name": "flax",
+        "version": "0.12.8",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version < '3.12'"
+      },
+      {
+        "name": "flax",
+        "version": "0.12.10",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version >= '3.12'"
+      },
+      {
+        "name": "gym"
+      },
+      {
+        "name": "gymnasium"
+      },
+      {
+        "name": "jax",
+        "version": "0.10.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version < '3.12'"
+      },
+      {
+        "name": "jax",
+        "version": "0.11.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version >= '3.12'"
+      },
+      {
+        "name": "jaxlib",
+        "version": "0.10.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version < '3.12'"
+      },
+      {
+        "name": "jaxlib",
+        "version": "0.11.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version >= '3.12'"
+      },
+      {
+        "name": "matplotlib"
+      },
+      {
+        "name": "pyyaml"
+      },
+      {
+        "name": "seaborn"
+      }
+    ]
+  }
+]
+httpx
+before [
+  {
+    "source": {
+      "registry": "https://pypi.org/simple"
+    },
+    "dependencies": [
+      {
+        "name": "anyio"
+      },
+      {
+        "name": "certifi"
+      },
+      {
+        "name": "httpcore"
+      },
+      {
+        "name": "idna"
+      }
+    ]
+  }
+]
+after [
+  {
+    "source": {
+      "registry": "https://pypi.org/simple"
+    },
+    "dependencies": [
+      {
+        "name": "anyio",
+        "version": "4.14.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version < '3.15'"
+      },
+      {
+        "name": "anyio",
+        "version": "4.15.1",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version >= '3.15'"
+      },
+      {
+        "name": "certifi"
+      },
+      {
+        "name": "httpcore"
+      },
+      {
+        "name": "idna"
+      }
+    ]
+  }
+]
+optax
+before [
+  {
+    "source": {
+      "registry": "https://pypi.org/simple"
+    },
+    "dependencies": [
+      {
+        "name": "absl-py"
+      },
+      {
+        "name": "jax"
+      },
+      {
+        "name": "jaxlib"
+      },
+      {
+        "name": "numpy"
+      }
+    ]
+  }
+]
+after [
+  {
+    "source": {
+      "registry": "https://pypi.org/simple"
+    },
+    "dependencies": [
+      {
+        "name": "absl-py"
+      },
+      {
+        "name": "jax",
+        "version": "0.10.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version < '3.12'"
+      },
+      {
+        "name": "jax",
+        "version": "0.11.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version >= '3.12'"
+      },
+      {
+        "name": "jaxlib",
+        "version": "0.10.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version < '3.12'"
+      },
+      {
+        "name": "jaxlib",
+        "version": "0.11.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version >= '3.12'"
+      },
+      {
+        "name": "numpy"
+      }
+    ]
+  }
+]
+owl
+before [
+  {
+    "source": {
+      "editable": "."
+    },
+    "dependencies": [
+      {
+        "name": "kaggle-environments"
+      },
+      {
+        "name": "numpy"
+      },
+      {
+        "name": "pydantic"
+      },
+      {
+        "name": "pyyaml"
+      },
+      {
+        "name": "torch",
+        "version": "2.9.0",
+        "source": {
+          "registry": "https://download.pytorch.org/whl/cpu"
+        },
+        "marker": "python_full_version < '3.15' and sys_platform == 'darwin'"
+      },
+      {
+        "name": "torch",
+        "version": "2.9.0+cpu",
+        "source": {
+          "registry": "https://download.pytorch.org/whl/cpu"
+        },
+        "marker": "(python_full_version >= '3.15' and sys_platform == 'darwin') or (sys_platform != 'darwin' and sys_platform != 'linux')"
+      },
+      {
+        "name": "torch",
+        "version": "2.9.0+cu128",
+        "source": {
+          "registry": "https://download.pytorch.org/whl/cu128"
+        },
+        "marker": "sys_platform == 'linux'"
+      },
+      {
+        "name": "tqdm"
+      },
+      {
+        "name": "wandb"
+      }
+    ],
+    "optional-dependencies": {
+      "flash-attn": [
+        {
+          "name": "flash-attn"
+        }
+      ]
+    },
+    "metadata": {
+      "requires-dist": [
+        {
+          "name": "flash-attn",
+          "marker": "extra == 'flash-attn'",
+          "specifier": ">=2.8.3"
+        },
+        {
+          "name": "kaggle-environments",
+          "git": "https://github.com/Kaggle/kaggle-environments"
+        },
+        {
+          "name": "numpy",
+          "specifier": ">=2.4.4"
+        },
+        {
+          "name": "pydantic",
+          "specifier": ">=2.13.2"
+        },
+        {
+          "name": "pyyaml",
+          "specifier": ">=6.0.3"
+        },
+        {
+          "name": "torch",
+          "marker": "sys_platform != 'linux'",
+          "specifier": "==2.9.0",
+          "index": "https://download.pytorch.org/whl/cpu"
+        },
+        {
+          "name": "torch",
+          "marker": "sys_platform == 'linux'",
+          "specifier": "==2.9.0",
+          "index": "https://download.pytorch.org/whl/cu128"
+        },
+        {
+          "name": "tqdm",
+          "specifier": ">=4.67.3"
+        },
+        {
+          "name": "wandb",
+          "specifier": ">=0.26.0"
+        }
+      ],
+      "provides-extras": [
+        "flash-attn"
+      ],
+      "requires-dev": {
+        "dev": [
+          {
+            "name": "kaggle",
+            "specifier": ">=2.1.0"
+          },
+          {
+            "name": "maturin",
+            "specifier": ">=1.13.1,<2.0"
+          },
+          {
+            "name": "mypy"
+          },
+          {
+            "name": "pytest",
+            "specifier": ">=9.0.3"
+          },
+          {
+            "name": "types-pyyaml",
+            "specifier": ">=6.0.12.20260408"
+          },
+          {
+            "name": "types-tqdm",
+            "specifier": ">=4.67.3.20260408"
+          }
+        ]
+      }
+    }
+  }
+]
+after [
+  {
+    "source": {
+      "editable": "."
+    },
+    "dependencies": [
+      {
+        "name": "kaggle-environments"
+      },
+      {
+        "name": "numpy"
+      },
+      {
+        "name": "pydantic"
+      },
+      {
+        "name": "pyyaml"
+      },
+      {
+        "name": "torch",
+        "version": "2.9.0",
+        "source": {
+          "registry": "https://download.pytorch.org/whl/cpu"
+        },
+        "marker": "python_full_version < '3.15' and sys_platform == 'darwin'"
+      },
+      {
+        "name": "torch",
+        "version": "2.9.0+cpu",
+        "source": {
+          "registry": "https://download.pytorch.org/whl/cpu"
+        },
+        "marker": "(python_full_version >= '3.15' and sys_platform == 'darwin') or (sys_platform != 'darwin' and sys_platform != 'linux')"
+      },
+      {
+        "name": "torch",
+        "version": "2.9.0+cu128",
+        "source": {
+          "registry": "https://download.pytorch.org/whl/cu128"
+        },
+        "marker": "sys_platform == 'linux'"
+      },
+      {
+        "name": "tqdm"
+      },
+      {
+        "name": "wandb"
+      }
+    ],
+    "optional-dependencies": {
+      "flash-attn": [
+        {
+          "name": "flash-attn"
+        }
+      ]
+    },
+    "metadata": {
+      "requires-dist": [
+        {
+          "name": "flash-attn",
+          "marker": "extra == 'flash-attn'",
+          "specifier": ">=2.8.3"
+        },
+        {
+          "name": "kaggle-environments",
+          "specifier": "==1.32.7"
+        },
+        {
+          "name": "numpy",
+          "specifier": ">=2.4.4"
+        },
+        {
+          "name": "pydantic",
+          "specifier": ">=2.13.2"
+        },
+        {
+          "name": "pyyaml",
+          "specifier": ">=6.0.3"
+        },
+        {
+          "name": "torch",
+          "marker": "sys_platform != 'linux'",
+          "specifier": "==2.9.0",
+          "index": "https://download.pytorch.org/whl/cpu"
+        },
+        {
+          "name": "torch",
+          "marker": "sys_platform == 'linux'",
+          "specifier": "==2.9.0",
+          "index": "https://download.pytorch.org/whl/cu128"
+        },
+        {
+          "name": "tqdm",
+          "specifier": ">=4.67.3"
+        },
+        {
+          "name": "wandb",
+          "specifier": ">=0.26.0"
+        }
+      ],
+      "provides-extras": [
+        "flash-attn"
+      ],
+      "requires-dev": {
+        "dev": [
+          {
+            "name": "kaggle",
+            "specifier": ">=2.1.0"
+          },
+          {
+            "name": "maturin",
+            "specifier": ">=1.13.1,<2.0"
+          },
+          {
+            "name": "mypy"
+          },
+          {
+            "name": "pytest",
+            "specifier": ">=9.0.3"
+          },
+          {
+            "name": "types-pyyaml",
+            "specifier": ">=6.0.12.20260408"
+          },
+          {
+            "name": "types-tqdm",
+            "specifier": ">=4.67.3.20260408"
+          }
+        ]
+      }
+    }
+  }
+]
+kaggle-environments
+before [
+  {
+    "source": {
+      "git": "https://github.com/Kaggle/kaggle-environments#6458c3191c2c4b37b6ad7530bd027df4b35369e4"
+    },
+    "dependencies": [
+      {
+        "name": "flask"
+      },
+      {
+        "name": "google-auth"
+      },
+      {
+        "name": "gymnasium"
+      },
+      {
+        "name": "gymnax"
+      },
+      {
+        "name": "jax"
+      },
+      {
+        "name": "jsonschema"
+      },
+      {
+        "name": "litellm"
+      },
+      {
+        "name": "numpy"
+      },
+      {
+        "name": "open-spiel"
+      },
+      {
+        "name": "pettingzoo"
+      },
+      {
+        "name": "pokerkit"
+      },
+      {
+        "name": "pydantic"
+      },
+      {
+        "name": "pygame"
+      },
+      {
+        "name": "pyjson5"
+      },
+      {
+        "name": "requests"
+      },
+      {
+        "name": "shimmy"
+      },
+      {
+        "name": "tenacity"
+      },
+      {
+        "name": "termcolor"
+      },
+      {
+        "name": "transformers"
+      }
+    ]
+  }
+]
+after [
+  {
+    "source": {
+      "registry": "https://pypi.org/simple"
+    },
+    "dependencies": [
+      {
+        "name": "flask"
+      },
+      {
+        "name": "google-auth"
+      },
+      {
+        "name": "gymnasium"
+      },
+      {
+        "name": "gymnax"
+      },
+      {
+        "name": "jax",
+        "version": "0.10.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version < '3.12'"
+      },
+      {
+        "name": "jax",
+        "version": "0.11.2",
+        "source": {
+          "registry": "https://pypi.org/simple"
+        },
+        "marker": "python_full_version >= '3.12'"
+      },
+      {
+        "name": "jsonschema"
+      },
+      {
+        "name": "litellm"
+      },
+      {
+        "name": "numpy"
+      },
+      {
+        "name": "open-spiel"
+      },
+      {
+        "name": "pettingzoo"
+      },
+      {
+        "name": "pokerkit"
+      },
+      {
+        "name": "pydantic"
+      },
+      {
+        "name": "pygame"
+      },
+      {
+        "name": "pyjson5"
+      },
+      {
+        "name": "requests"
+      },
+      {
+        "name": "shimmy"
+      },
+      {
+        "name": "tenacity"
+      },
+      {
+        "name": "termcolor"
+      },
+      {
+        "name": "transformers"
+      }
+    ]
+  }
+]
+click
+before [
+  {
+    "source": {
+      "registry": "https://pypi.org/simple"
+    },
+    "dependencies": [
+      {
+        "name": "colorama",
+        "marker": "sys_platform == 'win32'"
+      }
+    ]
+  }
+]
+after [
+  {
+    "source": {
+      "registry": "https://pypi.org/simple"
+    }
+  }
+]
+
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+import json,pathlib
+x=json.loads(pathlib.Path('ops/deps-independent-verification-fb65e1f/lock-delta.json').read_text())['packages']
+for name in ['gymnax','httpx','optax']:
+ print(name)
+ a=x[name]['before'][0]['dependencies'];b=x[name]['after'][0]['dependencies']
+ print('removed', [p for p in a if p not in b])
+ print('added',[p for p in b if p not in a])
+PY" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+gymnax
+removed [{'name': 'flax'}, {'name': 'jax'}, {'name': 'jaxlib'}]
+added [{'name': 'flax', 'version': '0.12.8', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version < '3.12'"}, {'name': 'flax', 'version': '0.12.10', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version >= '3.12'"}, {'name': 'jax', 'version': '0.10.2', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version < '3.12'"}, {'name': 'jax', 'version': '0.11.2', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version >= '3.12'"}, {'name': 'jaxlib', 'version': '0.10.2', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version < '3.12'"}, {'name': 'jaxlib', 'version': '0.11.2', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version >= '3.12'"}]
+httpx
+removed [{'name': 'anyio'}]
+added [{'name': 'anyio', 'version': '4.14.2', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version < '3.15'"}, {'name': 'anyio', 'version': '4.15.1', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version >= '3.15'"}]
+optax
+removed [{'name': 'jax'}, {'name': 'jaxlib'}]
+added [{'name': 'jax', 'version': '0.10.2', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version < '3.12'"}, {'name': 'jax', 'version': '0.11.2', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version >= '3.12'"}, {'name': 'jaxlib', 'version': '0.10.2', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version < '3.12'"}, {'name': 'jaxlib', 'version': '0.11.2', 'source': {'registry': 'https://pypi.org/simple'}, 'marker': "python_full_version >= '3.12'"}]
+
+codex
+No test failures or critical-pin changes were found. Orbit’s Python diff extracts seed handling into a shared helper; freshly generated fixture data matches the supplied fixtures.
+
+One documentation correction remains: the cookbook says “other 50 lockfile changes,” but there are 55 other dependency names changed, plus the `owl` requirement metadata. All 55 are in Kaggle’s old or new dependency tree; `click` is also shared with W&B. I’ll reflect that in the verdict and leave the tracked files untouched.
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+import hashlib,json,pathlib,subprocess,tomllib
+out=pathlib.Path('ops/deps-independent-verification-fb65e1f')
+delta=json.loads((out/'lock-delta.json').read_text())
+lines=['# Independent verification of fb65e1f','',
+'Verdict: APPROVE WITH EDITS. Low-severity documentation correction only; no implementation/test blocker found. No tracked files modified.','',
+'## Finding','',
+'P3: cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:57 says “other 50 lockfile changes”. Exact inventory is 57 changed package names: kaggle-environments, owl metadata, and 55 other dependency names. The latter consist of 49 changed version sets, 3 dependency-only records, 1 added package and 2 removed packages. Some dependencies are shared: click also belongs to W&B. Correct the count and avoid implying isolation from training telemetry.','',
+'## Commands and evidence','',
+'- Checkout: kg/rebuild-deps at fb65e1fad5e0b772623eaf7e660cdc62cdfda02e.',
+'- uv 0.10.9; uv lock --check exited 0 (181 resolved packages).',
+'- Historical uv invocation is stated in the commit and cookbook. Independently replayed uv remove --offline --no-sync kaggle-environments then uv add --offline --no-sync kaggle-environments==1.32.7 on copied parent files: both pyproject.toml and uv.lock reproduce byte-for-byte. This corroborates, rather than proves, the historical command execution.',
+'- Installed kaggle-environments 1.32.7 Kaggriculture engine SHA-256: bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e, equal to kg/reference-2026-09-29:engine_rs/Cargo.toml package.metadata.kaggriculture.python-engine-sha256.',
+'- CARGO_BUILD_JOBS=3 uvx --from rust-just just prepare exited 0: Rust 155 passed / 2 ignored; Python 722 passed / 3 skipped. Mypy passed 48 source files; formatting, lint and doc freshness passed. See prepare.log.',
+'- Orbit replay parity passed: 75930761, 2 seats, 103 transitions; 75926553, 4 seats, 222 transitions (325 total). All six generation fixture tests passed. No parity bypass environment variables were set. Two ignored Rust cases are expensive action-angle audits, not parity tests.',
+'- Python skips: two FlashAttention CUDA tests and one unavailable x86 quantized-backend test on macOS ARM64/Python 3.12.13. No CUDA runtime qualification claim.',
+'- uv run --locked python scripts/generate_reference_fixtures.py --outfile ops/deps-independent-verification-fb65e1f/reference_generation.current.json exited 0. Parsed output matches provided generation fixture except absolute reference_file path.',
+'- docs/kaggriculture-contract.md diff is exactly one inserted blank line at 173; no wording change.',
+'- git diff --exit-code and git diff --cached --exit-code both exited 0. Pre-existing .codex-tmp/ remains untracked; this receipt directory is untracked.',
+'', '## Critical packages','',
+'Parent lock is byte-identical to Isaiah 32b3ec900ad406eedd965f53a1a0f4490d31c589. Complete critical package records remain unchanged: torch 2.9.0, 2.9.0+cpu, 2.9.0+cu128; triton 3.5.0; flash-attn 2.8.3; numpy 2.4.4; pydantic 2.13.3; wandb 0.26.1; maturin 1.13.1; mypy 1.20.2.','',
+'## Behavioral scope','',
+'- click 8.3.3 -> 8.5.0 is shared with W&B; possible training telemetry/CLI impact is not ruled out by unchanged wandb version. Live W&B was not exercised.',
+'- JAX/Flax/Optax/Orbax/SciPy, OpenSpiel, Transformers/Hugging Face and LLM SDK changes can affect Kaggle reference/agent tooling. No direct canonical PPO import of the other changed packages was identified; no numerical regression was observed in the requested local suite.',
+'- Installed Orbit source differs from old locked git source only by extracting episode-seed resolution into utils.resolve_episode_seed. Shared core adds lazy environment registration; utils also changes HTML payload insertion. Current generation fixtures match; supplied historical replay parity passes. See source diff artifacts. These checks do not exhaustively qualify all upstream environments or renderer behavior.',
+'', '## Exhaustive package delta','',
+'Old: 176 records / 174 names. New: 181 records / 173 names. Top-level lock metadata is unchanged. Registry source remains PyPI for all changed third-party records other than kaggle-environments, which changes from git commit 6458c3191c2c4b37b6ad7530bd027df4b35369e4 to PyPI. New-version records include their generated artifact URLs/hashes/sizes/timestamps; exact before/after data is in lock-delta.json.','',
+'| Package | Before | After | Changed fields |','|---|---|---|---|']
+for name,p in delta['packages'].items():
+ old=p['before'];new=p['after']
+ ver=lambda a:', '.join(sorted({v['version'] for v in a})) or 'absent'
+ if len(old)==len(new)==1:
+  fields=', '.join(k for k in sorted(old[0].keys()|new[0].keys()) if old[0].get(k)"'!=new[0].get(k))
+ else:fields='"'record set (see JSON)'
+ lines.append(f'| {name} | {ver(old)} | {ver(new)} | {fields} |')
+lines += ['', 'Marker splits: anyio uses 4.14.2 on Python <3.15 and 4.15.1 on >=3.15. On Python 3.11 / >=3.12 respectively: contourpy 1.3.3 / 1.4.0; flax 0.12.8 / 0.12.10; jax and jaxlib 0.10.2 / 0.11.2; scipy 1.17.1 / 1.18.1. gymnax and optax only gain the corresponding Flax/JAX dependency references; httpx only gains split anyio references; owl replaces git requirement metadata with ==1.32.7.', '']
+(out/'verification.md').write_text('\\n'.join(lines))
+print(out/'verification.md')
+PY
+uv lock --check && git diff --exit-code && git diff --cached --exit-code && git status --short" in /Users/poonszesen/kg-v3-deps
+ succeeded in 20ms:
+ops/deps-independent-verification-fb65e1f/verification.md
+Resolved 181 packages in 11ms
+?? .codex-tmp/
+?? ops/deps-independent-verification-fb65e1f/
+
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+from pathlib import Path
+p=Path('ops/deps-independent-verification-fb65e1f/verification.md')
+s=p.read_text()
+s += '''
+Dependency-edge details: aiohttp adds conditional typing-extensions; huggingface-hub replaces typer with click; click drops colorama; typer replaces click with Windows colorama; orbax-checkpoint replaces grpcio-tools with prometheus-client, removing the unused grpcio/grpcio-tools records. Remaining edge changes select the split Python-version records listed above. No hidden artifact-only package changes were found. Retained contourpy 1.3.3 and scipy 1.17.1 artifacts remain unchanged.
+
+Independent graph audit: W&B's dependency closure intersects the changed set at click; Torch's closure does not intersect it. Kaggle's environment registration imports many environment modules, so the changed numerical/LLM dependencies can affect Kaggle package startup even without direct imports from the PPO implementation.
+'''
+p.write_text(s)
+PY
+git diff --exit-code && git diff --cached --exit-code && git rev-parse HEAD" in /Users/poonszesen/kg-v3-deps
+ succeeded in 0ms:
+fb65e1fad5e0b772623eaf7e660cdc62cdfda02e
+
+codex
+**VERDICT: APPROVE WITH EDITS** — one documentation correction; no implementation or test blocker found.
+
+- **Low/P3:** [Cookbook line 57](/Users/poonszesen/kg-v3-deps/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:57) says “other 50 lockfile changes.” There are **55 other changed dependency names**, plus `kaggle-environments` and `owl` metadata. Correct this count.
+- **Informational:** `click` also serves W&B, so its upgrade could affect training telemetry. Numerical/LLM dependency upgrades can affect Kaggle imports and Python tooling. No regression was observed; live W&B and CUDA execution were not tested.
+
+Verification results:
+
+| Check | Result |
+|---|---|
+| Branch/commit | `kg/rebuild-deps`, `fb65e1fad5e0b772623eaf7e660cdc62cdfda02e` |
+| Pin/source | `kaggle-environments==1.32.7`; Git override removed |
+| `uv lock --check` | PASS, 181 package records |
+| uv provenance | Replaying the documented `uv remove` + `uv add` on copied parent files reproduced both files **byte-for-byte**; corroborates the recorded command history |
+| Requested `CARGO_BUILD_JOBS=3 uvx --from rust-just just prepare` | PASS: Rust **155 passed / 2 ignored**; Python **722 passed / 3 skipped** |
+| Orbit parity | Replay: **325 transitions**, episodes `75930761` (103, two players) and `75926553` (222, four players). All **six generation-fixture tests passed** |
+| Current generation fixture | Regenerated data matches supplied fixture except its absolute source path |
+| Contract change | Exactly **one blank line**, no wording changes |
+| Tracked modifications | **None**; staged and unstaged diffs empty |
+
+The two ignored Rust tests are expensive action-angle audits, **not parity tests**. Python skips cover two unavailable CUDA FlashAttention tests and one unavailable quantized backend.
+
+Installed Kaggriculture SHA-256 exactly matches the reference branch’s `engine_rs/Cargo.toml` metadata:
+
+```text
+bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e
+```
+
+Isaiah’s complete critical lock records remain unchanged: torch **2.9.0 / +cpu / +cu128**, triton **3.5.0**, flash-attn **2.8.3**, numpy **2.4.4**, pydantic **2.13.3**, wandb **0.26.1**, maturin **1.13.1**, mypy **1.20.2**.
+
+Every other dependency change follows. Paired versions marked † select Python **3.11 / ≥3.12**; ‡ selects **<3.15 / ≥3.15**.
+
+| Package | Before → after |
+|---|---|
+| absl-py | 2.4.0 → 2.5.0 |
+| aiohappyeyeballs | 2.6.1 → 2.7.1 |
+| aiohttp | 3.13.5 → 3.14.3 |
+| annotated-doc | 0.0.4 → 0.0.5 |
+| anyio | 4.13.0 → 4.14.2 / 4.15.1 ‡ |
+| cffi | 2.0.0 → 2.1.1 |
+| chex | 0.1.91 → 0.1.92 |
+| click | 8.3.3 → 8.5.0 |
+| contourpy | 1.3.3 → 1.3.3 / 1.4.0 † |
+| cryptography | 48.0.0 → 50.0.1 |
+| flax | 0.12.7 → 0.12.8 / 0.12.10 † |
+| fonttools | 4.62.1 → 4.66.0 |
+| google-auth | 2.50.0 → 2.59.0 |
+| grpcio | 1.80.0 → removed |
+| grpcio-tools | 1.80.0 → removed |
+| gymnax | 0.0.8 unchanged; dependency references split |
+| hf-xet | 1.4.3 → 1.6.0 |
+| httpx | 0.28.1 unchanged; anyio references split |
+| huggingface-hub | 1.13.0 → 1.33.0 |
+| humanize | 4.15.0 → 4.16.0 |
+| importlib-metadata | 9.0.0 → 8.9.0 |
+| jax | 0.10.0 → 0.10.2 / 0.11.2 † |
+| jaxlib | 0.10.0 → 0.10.2 / 0.11.2 † |
+| jiter | 0.14.0 → 0.17.0 |
+| kiwisolver | 1.5.0 → 1.5.1 |
+| litellm | 1.82.4 → 1.93.2 |
+| matplotlib | 3.10.9 → 3.11.2 |
+| ml-dtypes | 0.5.4 → 0.6.0 |
+| msgpack | 1.1.2 → 1.2.3 |
+| multidict | 6.7.1 → 6.9.1 |
+| open-spiel | 1.6.13 → 2.0.1 |
+| openai | 2.34.0 → 2.54.0 |
+| optax | 0.2.8 unchanged; JAX references split |
+| orbax-checkpoint | 0.11.37 → 0.12.6 |
+| pandas | 3.0.2 → 3.0.6 |
+| pillow | 12.2.0 → 12.3.0 |
+| prometheus-client | added 0.26.0 |
+| propcache | 0.4.1 → 0.5.4 |
+| pyasn1 | 0.6.3 → 0.6.4 |
+| pyjson5 | 2.0.0 → 2.0.1 |
+| pyparsing | 3.3.2 → 3.3.3 |
+| python-dotenv | 1.2.2 → 1.2.3 |
+| regex | 2026.4.4 → 2026.9.29 |
+| safetensors | 0.7.0 → 0.8.0 |
+| scipy | 1.17.1 → 1.17.1 / 1.18.1 † |
+| simplejson | 4.1.1 → 4.1.2 |
+| tensorstore | 0.1.82 → 0.1.85 |
+| tiktoken | 0.12.0 → 0.14.0 |
+| tokenizers | 0.22.2 → 0.23.2 |
+| transformers | 5.8.0 → 5.17.0 |
+| typer | 0.25.1 → 0.27.2 |
+| tzdata | 2026.2 → 2026.4 |
+| werkzeug | 3.1.8 → 3.1.9 |
+| yarl | 1.23.0 → 1.25.1 |
+| zipp | 3.23.1 → 4.1.0 |
+
+All belong to Kaggle’s old/new dependency closure. Additional structural changes: `owl` records the new exact requirement; artifact hashes follow upgraded versions; top-level lock metadata is unchanged. Dependency edges also change for aiohttp, huggingface-hub, click, typer and orbax-checkpoint; the [complete audit](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/verification.md) and [exact lock delta](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/lock-delta.json) enumerate these.
+
+Orbit’s upstream source extracts seed resolution into a shared helper; shared utilities also change registration/rendering. The passing parity checks support the tested rules surface. [Preparation log](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/prepare.log).
+hook: Stop
+hook: Stop Completed
+tokens used
+81,435
+**VERDICT: APPROVE WITH EDITS** — one documentation correction; no implementation or test blocker found.
+
+- **Low/P3:** [Cookbook line 57](/Users/poonszesen/kg-v3-deps/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md:57) says “other 50 lockfile changes.” There are **55 other changed dependency names**, plus `kaggle-environments` and `owl` metadata. Correct this count.
+- **Informational:** `click` also serves W&B, so its upgrade could affect training telemetry. Numerical/LLM dependency upgrades can affect Kaggle imports and Python tooling. No regression was observed; live W&B and CUDA execution were not tested.
+
+Verification results:
+
+| Check | Result |
+|---|---|
+| Branch/commit | `kg/rebuild-deps`, `fb65e1fad5e0b772623eaf7e660cdc62cdfda02e` |
+| Pin/source | `kaggle-environments==1.32.7`; Git override removed |
+| `uv lock --check` | PASS, 181 package records |
+| uv provenance | Replaying the documented `uv remove` + `uv add` on copied parent files reproduced both files **byte-for-byte**; corroborates the recorded command history |
+| Requested `CARGO_BUILD_JOBS=3 uvx --from rust-just just prepare` | PASS: Rust **155 passed / 2 ignored**; Python **722 passed / 3 skipped** |
+| Orbit parity | Replay: **325 transitions**, episodes `75930761` (103, two players) and `75926553` (222, four players). All **six generation-fixture tests passed** |
+| Current generation fixture | Regenerated data matches supplied fixture except its absolute source path |
+| Contract change | Exactly **one blank line**, no wording changes |
+| Tracked modifications | **None**; staged and unstaged diffs empty |
+
+The two ignored Rust tests are expensive action-angle audits, **not parity tests**. Python skips cover two unavailable CUDA FlashAttention tests and one unavailable quantized backend.
+
+Installed Kaggriculture SHA-256 exactly matches the reference branch’s `engine_rs/Cargo.toml` metadata:
+
+```text
+bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e
+```
+
+Isaiah’s complete critical lock records remain unchanged: torch **2.9.0 / +cpu / +cu128**, triton **3.5.0**, flash-attn **2.8.3**, numpy **2.4.4**, pydantic **2.13.3**, wandb **0.26.1**, maturin **1.13.1**, mypy **1.20.2**.
+
+Every other dependency change follows. Paired versions marked † select Python **3.11 / ≥3.12**; ‡ selects **<3.15 / ≥3.15**.
+
+| Package | Before → after |
+|---|---|
+| absl-py | 2.4.0 → 2.5.0 |
+| aiohappyeyeballs | 2.6.1 → 2.7.1 |
+| aiohttp | 3.13.5 → 3.14.3 |
+| annotated-doc | 0.0.4 → 0.0.5 |
+| anyio | 4.13.0 → 4.14.2 / 4.15.1 ‡ |
+| cffi | 2.0.0 → 2.1.1 |
+| chex | 0.1.91 → 0.1.92 |
+| click | 8.3.3 → 8.5.0 |
+| contourpy | 1.3.3 → 1.3.3 / 1.4.0 † |
+| cryptography | 48.0.0 → 50.0.1 |
+| flax | 0.12.7 → 0.12.8 / 0.12.10 † |
+| fonttools | 4.62.1 → 4.66.0 |
+| google-auth | 2.50.0 → 2.59.0 |
+| grpcio | 1.80.0 → removed |
+| grpcio-tools | 1.80.0 → removed |
+| gymnax | 0.0.8 unchanged; dependency references split |
+| hf-xet | 1.4.3 → 1.6.0 |
+| httpx | 0.28.1 unchanged; anyio references split |
+| huggingface-hub | 1.13.0 → 1.33.0 |
+| humanize | 4.15.0 → 4.16.0 |
+| importlib-metadata | 9.0.0 → 8.9.0 |
+| jax | 0.10.0 → 0.10.2 / 0.11.2 † |
+| jaxlib | 0.10.0 → 0.10.2 / 0.11.2 † |
+| jiter | 0.14.0 → 0.17.0 |
+| kiwisolver | 1.5.0 → 1.5.1 |
+| litellm | 1.82.4 → 1.93.2 |
+| matplotlib | 3.10.9 → 3.11.2 |
+| ml-dtypes | 0.5.4 → 0.6.0 |
+| msgpack | 1.1.2 → 1.2.3 |
+| multidict | 6.7.1 → 6.9.1 |
+| open-spiel | 1.6.13 → 2.0.1 |
+| openai | 2.34.0 → 2.54.0 |
+| optax | 0.2.8 unchanged; JAX references split |
+| orbax-checkpoint | 0.11.37 → 0.12.6 |
+| pandas | 3.0.2 → 3.0.6 |
+| pillow | 12.2.0 → 12.3.0 |
+| prometheus-client | added 0.26.0 |
+| propcache | 0.4.1 → 0.5.4 |
+| pyasn1 | 0.6.3 → 0.6.4 |
+| pyjson5 | 2.0.0 → 2.0.1 |
+| pyparsing | 3.3.2 → 3.3.3 |
+| python-dotenv | 1.2.2 → 1.2.3 |
+| regex | 2026.4.4 → 2026.9.29 |
+| safetensors | 0.7.0 → 0.8.0 |
+| scipy | 1.17.1 → 1.17.1 / 1.18.1 † |
+| simplejson | 4.1.1 → 4.1.2 |
+| tensorstore | 0.1.82 → 0.1.85 |
+| tiktoken | 0.12.0 → 0.14.0 |
+| tokenizers | 0.22.2 → 0.23.2 |
+| transformers | 5.8.0 → 5.17.0 |
+| typer | 0.25.1 → 0.27.2 |
+| tzdata | 2026.2 → 2026.4 |
+| werkzeug | 3.1.8 → 3.1.9 |
+| yarl | 1.23.0 → 1.25.1 |
+| zipp | 3.23.1 → 4.1.0 |
+
+All belong to Kaggle’s old/new dependency closure. Additional structural changes: `owl` records the new exact requirement; artifact hashes follow upgraded versions; top-level lock metadata is unchanged. Dependency edges also change for aiohttp, huggingface-hub, click, typer and orbax-checkpoint; the [complete audit](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/verification.md) and [exact lock delta](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/lock-delta.json) enumerate these.
+
+Orbit’s upstream source extracts seed resolution into a shared helper; shared utilities also change registration/rendering. The passing parity checks support the tested rules surface. [Preparation log](/Users/poonszesen/kg-v3-deps/ops/deps-independent-verification-fb65e1f/prepare.log).

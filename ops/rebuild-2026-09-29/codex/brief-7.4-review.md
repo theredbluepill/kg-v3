@@ -1,0 +1,23 @@
+Reviewed `eccdd123` on `kg/rebuild-7-4-brief`. The Rust approach is sound, but the brief needs these corrections before implementation.
+
+1. **P1 — Repair the retained Docker build.** [§6](/Users/poonszesen/kg-v3-t74/ops/rebuild-2026-09-29/briefs/7.4-packaging.md:215) overlooks a concrete blocker: `Dockerfile.kaggle:57` runs `cargo fetch --locked` before copying `engine_rs`, now a required path dependency. Explicitly include that repair in T5.
+
+2. **P2 — Test the tarball in an unmodified runtime image.** [Load check](/Users/poonszesen/kg-v3-t74/ops/rebuild-2026-09-29/briefs/7.4-packaging.md:231) can pass using the checkout and build environment. The Dockerfile creates a venv and runs dependency-synchronizing `uv run` commands; those dependencies are not shipped. Require a fresh container using the runtime interpreter, only extracted submission files, and assertions that `owl` and `owl.rs` resolve inside that extraction.
+
+3. **P2 — Replace “unknown” resource limits and correct the benchmark quota.** [§7](/Users/poonszesen/kg-v3-t74/ops/rebuild-2026-09-29/briefs/7.4-packaging.md:279) couples CPU allowance to thread count. The indexed official FAQ lists **1.6 vCPUs, 6.5 GiB RAM, 8 GiB disk and 100 MiB submission size**. Compare one and two threads under the same deployment CPU allowance; otherwise the two-thread result also receives extra hardware. Preserve a dated source receipt. [Official competition page](https://www.kaggle.com/competitions/kaggriculture/overview/citation)
+
+4. **P2 — Make latency qualification complete and externally bounded.** [Measurement plan](/Users/poonszesen/kg-v3-t74/ops/rebuild-2026-09-29/briefs/7.4-packaging.md:266) needs whole-call `Agent.act` duration, alongside component timings. Use fresh processes for each thread candidate and episode: a read-only probe confirmed that calling `torch.set_num_interop_threads(1)` twice raises. Add an external watchdog—Kaggle’s local deadlines are checked after calls return. Also reconcile the allowed 20-second first call with the stated ≤10-second whole-episode overage sum.
+
+5. **P2 — Correct F5 and strengthen output qualification.** [F5](/Users/poonszesen/kg-v3-t74/ops/rebuild-2026-09-29/briefs/7.4-packaging.md:109) is false for non-dict actions. Cached `utils.py:150–195` replaces values such as `None`, lists and strings with the schema’s default PASS action. Validate returned actions before Kaggle normalizes them. Inspect every step’s status and actual call counts: `kaggriculture.py:960–963` overwrites statuses with `DONE` at termination.
+
+6. **P2 — Define the single-seat admission contract.** [Proposed buffers](/Users/poonszesen/kg-v3-t74/ops/rebuild-2026-09-29/briefs/7.4-packaging.md:184) use `[1,1,…]`, but `KaggricultureObsBatch.check_contract()` currently requires `[E,2,…]`. Scope and test a single-seat inference validator while retaining strict two-seat environment validation. Replay comparisons must also distinguish acted-on states from the native lifecycle’s terminal autoreset row.
+
+7. **P2 — Make custody executable across the Docker boundary.** [§10](/Users/poonszesen/kg-v3-t74/ops/rebuild-2026-09-29/briefs/7.4-packaging.md:354) requires source commit and cleanliness inside a script whose image excludes `.git`. Specify host-side verification and how the verified source identity reaches the build. Require ignored output locations explicitly: root `submission.tar.gz` and arbitrary episode JSON under `ops/` are not currently ignored.
+
+Smaller corrections: derive `hire_limit` from checkpoint `action_spec`; compare post-call RNG states because reseeding before each call does not prove zero wrapper RNG consumption; narrow F2’s claim that all late imports fail. F9’s client-side JSON serialization does not independently establish production ordering preservation.
+
+All five listed source hashes match. The cached source supports the 1-second allowance, 60-second bank, lazy timed loading, `__raw_path__`, last-callable selection, sequential local execution and 719 transitions. Shared `write_seat` supports the proposed private-state isolation; a Python fallback would additionally need native decoder/table replacements and equivalent parity qualification. The deadline, self-play validation and latest-two rule are supported by the official page. No submission is presumed or authorized.
+
+No files changed, builds ran, or submissions occurred. Browser security policy denied access to forum topic 739874, so its staff comment remains independently unverified.
+
+**VERDICT: REVISE**

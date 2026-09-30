@@ -1,0 +1,2057 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ec59-2f9f-7121-959d-f2684755de49
+--------
+user
+You are Codex. READ-ONLY review of Claude's cookbook refresh on branch kg/rebuild-model in /Users/poonszesen/kg-v3: commits bcd9627 Record the pod's flash-attn 2.8.3 environment as a scoped Reference; 5247daa Record the model-only SPS ceiling and scope stale ops paths in two Decisions; 92e88e0 Correct the Task 0.3 Rust status and the root index's References scope; 9bfa0a0 Add the codex exec stdin, foreground and resume rules to the rebuild plan. Check each new or revised note against its cited evidence (ops/rebuild-2026-09-29/results.md sections, receipts, Codex reports) — no claim beyond evidence, component vs end-to-end SPS clearly separated, measured vs inferred labeled; frontmatter and repository: sources valid and existing; Decisions quote deciders without converting interpretation into owner adoption; index descriptions match notes; log entries prepended and accurate; any Lesson meets the >= 2 episode rule; stale statements the audit listed are fixed correctly; no file owned by in-flight lanes was edited (compiled-gemm Reference, 1.3/Phase 4 notes). Run node .claude/hooks/cookbook-lint.mjs on changed notes if runnable. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT, with findings.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll review the four commits against their cited evidence, check note metadata and lane boundaries, and run the cookbook lint if runnable. I’ll make no edits and finish with a verdict and specific findings.
+exec
+/bin/zsh -lc "cat cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md; cat .claude/hooks/cookbook-lint.mjs; rg --files -g 'AGENTS.md' -g '*audit*' -g '*cookbook*' ops .claude cookbook" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+#!/usr/bin/env node
+/**
+ * Cross-harness PostToolUse lint for cookbook notes — the universal subset.
+ *
+ * Validates frontmatter, the six required fields, known types, and provenance for a
+ * claimed Decision adoption. It handles single-file writes and every cookbook target in
+ * an apply_patch payload. Bundle-specific register checks stay in the bundle's own copy.
+ * Shape is not truth: a well-typed fabricated number still passes.
+ */
+import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { isAbsolute, relative, resolve, sep } from 'node:path'
+
+// Git supplies staged bytes; an unstaged repair cannot conceal a bad commit.
+if (process.argv.includes('--staged-sources')) {
+  try {
+    const git = (...args) => execFileSync('git', args, { encoding: 'utf8' })
+    const paths = git('diff', '--cached', '--name-only', '-z').split('\0')
+    const notes = git('diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z').split('\0').filter(isConcept)
+    const problems = notes.flatMap((path) =>
+      sourceProblems(git('show', `:${path}`)).map((problem) => `${path}: ${problem}`))
+    if (process.argv.includes('--require-log') && paths.some(isConcept) && !paths.includes('cookbook/log.md')) {
+      problems.unshift('cookbook notes staged without cookbook/log.md; record the change in the same commit')
+    }
+    if (problems.length) {
+      process.stderr.write(`cookbook source references:\n${problems.join('\n')}\n`)
+      process.exit(1)
+    }
+    process.exit(0)
+  } catch (error) {
+    process.stderr.write(`cookbook source references: ${error.message}\n`)
+    process.exit(1)
+  }
+}
+
+let payload
+try {
+  payload = JSON.parse(readFileSync(0, 'utf8'))
+} catch {
+  allow()
+}
+
+const root = resolve(
+  process.env.COOKBOOK_ROOT
+    ?? process.env.CLAUDE_PROJECT_DIR
+    ?? payload?.cwd
+    ?? process.cwd(),
+)
+const reports = editTargets(payload?.tool_name, payload?.tool_input)
+  .map(lintTarget)
+  .filter(Boolean)
+if (reports.length === 0) allow()
+
+const message = [
+  'cookbook-lint:',
+  ...reports.flatMap(({ target, problems }) => [
+    `- ${target}`,
+    ...problems.map((problem) => `  - ${problem}`),
+  ]),
+  'Fix the note now, in this turn — shape drift compounds silently.',
+].join('\n')
+output({
+  hookSpecificOutput: {
+    hookEventName: 'PostToolUse',
+    additionalContext: message,
+  },
+})
+
+function editTargets(toolName, toolInput) {
+  const name = String(toolName ?? '')
+  const serialized = JSON.stringify(toolInput ?? {})
+  const mutating = /(?:apply[_-]?patch|edit|write|multiedit)/iu.test(name)
+    || serialized.includes('*** Begin Patch')
+  if (!mutating) return []
+
+  const found = []
+  collectFilePaths(toolInput, found)
+  for (const match of serialized.matchAll(
+    /\*\*\* (?:Add|Update|Delete) File: ([^\\\n"]+)/gu,
+  )) {
+    found.push(match[1])
+  }
+  return [...new Set(found.map(normalizeTarget).filter(Boolean))]
+}
+
+function collectFilePaths(value, found) {
+  if (!value || typeof value !== 'object') return
+  if (typeof value.file_path === 'string') found.push(value.file_path)
+  for (const child of Object.values(value)) {
+    if (child && typeof child === 'object') collectFilePaths(child, found)
+  }
+}
+
+function normalizeTarget(path) {
+  const absolute = isAbsolute(path) ? resolve(path) : resolve(root, path)
+  const target = relative(root, absolute).split(sep).join('/')
+  if (target === '' || target.startsWith('../')) return ''
+  return target
+}
+
+function isConcept(target) {
+  if (!target.startsWith('cookbook/') || !target.endsWith('.md')) return false
+  const basename = target.split('/').pop().replace(/\.md$/u, '')
+  return basename !== 'index' && basename !== 'log'
+}
+
+// Inspect declared sources only, not prose, examples or unrelated metadata.
+// Block and flow lists use single-line resource scalars; aliases/multiline
+// resources receive a diagnostic rather than an inferred value.
+function sourceProblems(text) {
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(text)?.[1]
+  if (!frontmatter) return []
+  const startsOfSources = [...frontmatter.matchAll(/^(?:sources|"sources"|'sources'):[ \t]*/gmu)]
+  if (startsOfSources.length > 1) return ['sources: duplicate declarations; keep one explicit source list']
+  const start = startsOfSources[0]
+  if (!start) return []
+  let block = frontmatter.slice(start.index + start[0].length)
+  const end = block.search(/\n(?:[A-Za-z_][\w-]*|"[^"\n]+"|'[^'\n]+'):[ \t]*/u)
+  if (end >= 0) block = block.slice(0, end)
+  block = block.replace(/^(?:\s*#[^\n]*(?:\n|$))+/u, '')
+  if (/^\s*[&*!|>]/u.test(block)) return ['sources: use an explicit block or flow list; source-list aliases/anchors are unsupported']
+  const resources = []
+  const problems = []
+  if (/^\s*[\[{]/u.test(block)) {
+    resources.push(...flowResources(block))
+  } else {
+    const lines = block.split(/\r?\n/u)
+    const entries = lines.map((line, index) => ({ index, match: /^( *)-(?:([ \t]+)(.*))?$/u.exec(line) }))
+      .filter(({ match }) => match)
+    const indent = Math.min(...entries.map(({ match }) => match[1].length))
+    const starts = entries.filter(({ match }) => match[1].length === indent)
+    starts.forEach(({ index, match }, entry) => {
+      const rest = lines.slice(index + 1, starts[entry + 1]?.index ?? lines.length)
+      const first = match[3] ?? ''
+      if (/^[&*!|>]/u.test(first)) {
+        problems.push('sources: use explicit source entries; source-entry aliases/anchors are unsupported')
+        return
+      }
+      if (first.startsWith('{')) {
+        resources.push(...flowResources([first, ...rest].join('\n')))
+        return
+      }
+      const content = rest.filter((line) => line.trim() && !line.trimStart().startsWith('#'))
+      const width = !first.trim() || first.trimStart().startsWith('#')
+        ? Math.min(...content.map((line) => /^ */u.exec(line)[0].length))
+        : indent + 1 + (match[2]?.length ?? 1)
+      const direct = [first, ...rest.filter((line) =>
+        Number.isFinite(width) && line.startsWith(' '.repeat(width)) && !/^\s/u.test(line.slice(width)))
+        .map((line) => line.slice(width))]
+      for (const line of direct) {
+        if (/^(?:<<|"<<"|'<<'):[ \t]*/u.test(line)) problems.push('sources: merge keys are unsupported; use explicit source entries')
+        const field = /^(?:resource|"resource"|'resource'):[ \t]*(.*)$/u.exec(line)
+        if (field) resources.push(field[1])
+      }
+    })
+  }
+  return [...problems, ...resources.flatMap((raw) => {
+    const { value, error } = sourceScalar(raw)
+    const problem = error ?? resourceProblem(value, raw)
+    return problem ? [`sources[].resource ${JSON.stringify(value ?? raw)}: ${problem}`] : []
+  })]
+}
+
+function quotedEnd(text, start) {
+  const quote = text[start]
+  for (let index = start + 1; index < text.length; index++) {
+    if (quote === '"' && text[index] === '\\') { index++; continue }
+    if (text[index] !== quote) continue
+    if (quote === "'" && text[index + 1] === "'") { index++; continue }
+    return index + 1
+  }
+  return text.length
+}
+
+function flowResources(text) {
+  const resources = []
+  const keys = []
+  const objectArrays = []
+  const directArray = text.trimStart().startsWith('[') ? 1 : 0
+  let arrays = 0
+  for (let index = 0; index < text.length;) {
+    const char = text[index]
+    if (/\s/u.test(char)) { index++; continue }
+    if (char === '#') {
+      const newline = text.indexOf('\n', index)
+      index = newline < 0 ? text.length : newline + 1
+      continue
+    }
+    if (char === '{') { keys.push(true); objectArrays.push(arrays); index++; continue }
+    if (char === '}') { keys.pop(); objectArrays.pop(); index++; continue }
+    if (char === ',') {
+      if (keys.length && arrays === objectArrays.at(-1)) keys[keys.length - 1] = true
+      index++; continue
+    }
+    if (char === ':') { if (keys.length) keys[keys.length - 1] = false; index++; continue }
+    if (char === '[') { arrays++; index++; continue }
+    if (char === ']') { arrays--; index++; continue }
+    const end = char === '"' || char === "'" ? quotedEnd(text, index)
+      : index + (/^[^\s{}\[\],:]+/u.exec(text.slice(index))?.[0].length ?? 1)
+    const key = text.slice(index, end).replace(/^["']|["']$/gu, '')
+    const after = /^\s*:\s*/u.exec(text.slice(end))
+    if (arrays === directArray && ((keys.length === 0 && after)
+        || (keys.length <= 1 && /^[&*!]/u.test(char) && (keys.length === 0 || keys[0]))
+        || (keys.length === 1 && keys[0] && key === '<<' && after))) {
+      resources.push('*unsupported-source-entry')
+    }
+    if (keys.length === 1 && arrays === directArray && keys[0] && key === 'resource' && after) {
+      const begin = end + after[0].length
+      const finish = text[begin] === '"' || text[begin] === "'" ? quotedEnd(text, begin)
+        : begin + (/^[^,}\r\n]*/u.exec(text.slice(begin))?.[0].length ?? 0)
+      resources.push(text.slice(begin, finish))
+      keys[0] = false
+      index = finish
+    } else index = end
+  }
+  return resources
+}
+
+function sourceScalar(raw) {
+  const text = raw.trim()
+  if (!text || /[\r\n]/u.test(text) || /^[|>*&!{\[]/u.test(text)) return { error: 'use a single-line source string (repository:PATH for a repository source)' }
+  try {
+    if (text.startsWith('"')) {
+      const end = quotedEnd(text, 0)
+      if (!/^\s*(?:#.*)?$/u.test(text.slice(end))) throw new Error('trailing scalar text')
+      return { value: JSON.parse(text.slice(0, end)) }
+    }
+    if (text.startsWith("'")) {
+      const end = quotedEnd(text, 0)
+      if (text[end - 1] !== "'" || end < 2 || !/^\s*(?:#.*)?$/u.test(text.slice(end))) throw new Error('invalid scalar')
+      return { value: text.slice(1, end - 1).replace(/''/gu, "'") }
+    }
+    return { value: text.replace(/\s+#.*$/u, '').trimEnd() }
+  } catch {
+    return { error: 'use a well-formed single-line source string (repository:PATH for a repository source)' }
+  }
+}
+
+function repositoryTypo(prefix) {
+  const expected = 'repository'
+  if (['repo', 'repos'].includes(prefix)) return true
+  if (prefix.length !== expected.length) {
+    const [longer, shorter] = prefix.length > expected.length ? [prefix, expected] : [expected, prefix]
+    return longer.length === shorter.length + 1
+      && [...longer].some((_, i) => longer.slice(0, i) + longer.slice(i + 1) === shorter)
+  }
+  const changed = [...prefix].flatMap((c, i) => c === expected[i] ? [] : [i])
+  return changed.length <= 1 || (changed.length === 2 && changed[1] === changed[0] + 1
+    && prefix[changed[0]] === expected[changed[1]] && prefix[changed[1]] === expected[changed[0]])
+}
+
+function resourceProblem(value, raw) {
+  const scheme = /^([A-Za-z][A-Za-z0-9+.-]*):/u.exec(value)?.[1]
+  if (!scheme || /^[A-Za-z]:[\\/]/u.test(value)) return 'missing source namespace; use repository:PATH for a repository source'
+  if (scheme !== 'repository' && repositoryTypo(scheme.toLowerCase())) return 'repository source prefix must be exactly repository:'
+  if (scheme !== 'repository') return null
+  const path = value.slice('repository:'.length).split('#', 1)[0]
+  const parts = path.replace(/\/$/u, '').split('/')
+  if (!path || path !== path.trim() || /^[~/]/u.test(path) || /[\\:\u0000-\u001f\u007f]/u.test(path)
+      || parts.some((part) => !part || part === '.' || part === '..')) {
+    return 'repository:PATH must use a canonical repo-relative path with forward slashes'
+  }
+  if (!raw.includes(value)) return 'write the repository:PATH literally; encoded escapes do not match the read-first gate'
+  return null
+}
+
+function lintTarget(target) {
+  if (!isConcept(target)) return null
+
+  let text
+  try {
+    text = readFileSync(resolve(root, target), 'utf8')
+  } catch {
+    return null
+  }
+
+  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---/u)
+  const problems = sourceProblems(text)
+  const standingBoard = /^cookbook\/decisions\/the-.+-board\.md$/u.test(target)
+  if (standingBoard && text.length > 12_000) {
+    problems.push('standing-board maintenance: exceeds the 12,000-character budget. '
+      + 'Keep current position, ranked options and tombstones; preserve history in linked '
+      + 'notes/log before shortening. Do not auto-truncate or change decisions to fit.')
+  }
+  if (standingBoard && hasLeadingProseTab(text)) {
+    problems.push('standing-board maintenance: leading tab indentation outside fenced code '
+      + 'can turn prose into a code block. Use consistent spaces for prose/list continuation.')
+  }
+  if (!match) {
+    problems.push('note has no frontmatter block')
+  } else {
+    const frontmatter = match[1]
+    const has = (field) => new RegExp(`^${field}:`, 'mu').test(frontmatter)
+    for (const field of ['type', 'title', 'description', 'tags', 'status', 'generated']) {
+      if (!has(field)) problems.push(`missing required field \`${field}\``)
+    }
+    const type = (frontmatter.match(/^type:\s*"?([A-Za-z-]+)"?/mu) ?? [])[1]
+    const known = [
+      'Experiment',
+      'Episode',
+      'Decision',
+      'Reference',
+      'Workflow',
+      'Lesson',
+      'Observation',
+      'Register',
+    ]
+    if (type && !known.includes(type)) {
+      problems.push(`type "${type}" is not one of ${known.join('/')}`)
+    }
+    if (type === 'Decision') {
+      const quoted = /^(decider|ratified|adopted_by):/mu.test(frontmatter)
+        || /^>/mu.test(text.slice(match[0].length))
+      if (!quoted && /adopted by|approved by|owner('s)? (?:call|directive)/iu.test(text)) {
+        problems.push('Decision note claims an adoption/directive but has no `decider:`/'
+          + '`ratified:` field and no blockquote of the decider\'s words — a decision quotes '
+          + 'its decider')
+      }
+    }
+  }
+  return problems.length > 0 ? { target, problems } : null
+}
+
+function hasLeadingProseTab(text) {
+  let fence = ''
+  for (const line of text.split('\n')) {
+    const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/u.exec(line)
+    if (fence) {
+      if (marker && marker[1][0] === fence[0] && marker[1].length >= fence.length
+        && marker[2].trim() === '') fence = ''
+      continue
+    }
+    if (marker && (marker[1][0] === '~' || !marker[2].includes('`'))) {
+      fence = marker[1]
+      continue
+    }
+    if (/^[ \t]*\t/u.test(line)) return true
+  }
+  return false
+}
+
+function allow() {
+  output({})
+}
+
+function output(value) {
+  process.stdout.write(JSON.stringify(value))
+  process.exit(0)
+}
+.claude/hooks/cookbook-lint.mjs
+.claude/hooks/cookbook-gate.mjs
+.claude/hooks/cookbook-correction-check.mjs
+ops/cookbook-setup-checks.md
+ops/rebuild-2026-09-29/codex/verify-cookbook-refresh-r1-prompt.md
+ops/rebuild-2026-09-29/codex/verify-cookbook-refresh-r1-transcript.log
+.claude/worktrees/agent-a6b402c3efeaea928/AGENTS.md
+.claude/worktrees/agent-a6b402c3efeaea928/ops/cookbook-setup-checks.md
+
+exec
+/bin/zsh -lc 'git show --stat --oneline bcd9627 5247daa 92e88e0 9bfa0a0' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+bcd9627 Record the pod's flash-attn 2.8.3 environment as a scoped Reference
+ cookbook/log.md                                    |  4 ++
+ cookbook/references/index.md                       |  1 +
+ ...nment-runs-flash-attn-2-8-3-forward-on-sm120.md | 55 ++++++++++++++++++++++
+ 3 files changed, 60 insertions(+)
+5247daa Record the model-only SPS ceiling and scope stale ops paths in two Decisions
+ ...start-multi-gpu-qualification-with-two-ranks.md |  6 +--
+ .../throughput-means-correct-complete-work.md      |  4 +-
+ cookbook/log.md                                    |  6 +++
+ cookbook/references/index.md                       |  1 +
+ ...-only-sps-ceiling-bounds-per-rank-throughput.md | 61 ++++++++++++++++++++++
+ 5 files changed, 73 insertions(+), 5 deletions(-)
+92e88e0 Correct the Task 0.3 Rust status and the root index's References scope
+ cookbook/index.md                                        |  2 +-
+ cookbook/log.md                                          |  4 ++++
+ ...training-reports-status-before-distributed-cleanup.md | 16 +++++++++++-----
+ cookbook/references/index.md                             |  2 +-
+ 4 files changed, 17 insertions(+), 7 deletions(-)
+9bfa0a0 Add the codex exec stdin, foreground and resume rules to the rebuild plan
+ ops/rebuild-2026-09-29/plan.md | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+exec
+/bin/zsh -lc 'git status --short; git branch --show-current; git log -8 --oneline' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+?? .claude/worktrees/
+?? ops/rebuild-2026-09-29/codex/brief-4-review-prompt.md
+?? ops/rebuild-2026-09-29/codex/brief-4-review-transcript.log
+?? ops/rebuild-2026-09-29/codex/brief-4-review.md
+?? ops/rebuild-2026-09-29/codex/briefs-1.4-1.5-prompt.md
+?? ops/rebuild-2026-09-29/codex/briefs-1.4-1.5-report.md
+?? ops/rebuild-2026-09-29/codex/briefs-1.4-1.5-rereview-prompt.md
+?? ops/rebuild-2026-09-29/codex/briefs-1.4-1.5-rereview-transcript.log
+?? ops/rebuild-2026-09-29/codex/briefs-1.4-1.5-rereview.md
+?? ops/rebuild-2026-09-29/codex/briefs-1.4-1.5-transcript.log
+?? ops/rebuild-2026-09-29/codex/confirm-3.4-prompt.md
+?? ops/rebuild-2026-09-29/codex/confirm-3.4-transcript.log
+?? ops/rebuild-2026-09-29/codex/confirm-3.4.md
+?? ops/rebuild-2026-09-29/codex/confirm-briefs-1.4-1.5-prompt.md
+?? ops/rebuild-2026-09-29/codex/confirm-briefs-1.4-1.5-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/confirm-briefs-1.4-1.5-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/confirm-briefs-1.4-1.5-r2.md
+?? ops/rebuild-2026-09-29/codex/confirm-briefs-1.4-1.5-transcript.log
+?? ops/rebuild-2026-09-29/codex/confirm-briefs-1.4-1.5.md
+?? ops/rebuild-2026-09-29/codex/stream-d-report.md
+?? ops/rebuild-2026-09-29/codex/stream-d-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.1-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-resume-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-resume-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt1-usage-limit-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt2-killed-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-receipt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.3-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.3-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.3-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.3-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.3-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-attempt1-killed-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-3.1-rest-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-3.2-3.3-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.2-3.3-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-3.2-3.3-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-3.2-3.3-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.2-3.3-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-3.2-3.3-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-4-teacher-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-4-teacher-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-4-teacher-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-4-teacher-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-4-teacher-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-aten-ab-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-cookbook-refresh-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-cookbook-refresh-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-trainer-lanes-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-trainer-lanes-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-trainer-lanes-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-trainer-lanes-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-trainer-lanes-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-trainer-lanes-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-stream-b-2.1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-c-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-stream-c-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-c.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1.md
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+kg/rebuild-model
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+9bfa0a0 Add the codex exec stdin, foreground and resume rules to the rebuild plan
+92e88e0 Correct the Task 0.3 Rust status and the root index's References scope
+5247daa Record the model-only SPS ceiling and scope stale ops paths in two Decisions
+bcd9627 Record the pod's flash-attn 2.8.3 environment as a scoped Reference
+9bdd82d Apply Codex's edits to the ATEN-only GEMM A/B receipts
+8fcfada Record the ATEN-only GEMM backend A/B with pod receipts
+9904121 Add pre-run statement and scripts for the ATEN-only GEMM backend A/B
+ddf1fb2 Apply Codex r1 edits to the model-only SPS ceiling receipts
+
+exec
+/bin/zsh -lc 'cat cookbook/references/failed-training-reports-status-before-distributed-cleanup.md; cat ops/rebuild-2026-09-29/0.3-results.md; cat cookbook/references/index.md; cat cookbook/decisions/index.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+---
+type: "Reference"
+title: "Failed training reports status before distributed cleanup"
+description: "The rebuilt runner forwards failure exit codes to W&B and flushes rank-tagged tracebacks before process-group destruction; offline unit tests establish the local exception contract."
+tags: ["kaggriculture-v3", "adaptation", "diagnostics"]
+status: "verified-scoped"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+sources:
+  - resource: "repository:python/owl/train/logging.py"
+  - resource: "repository:python/owl/train/distributed.py"
+  - resource: "repository:scripts/run_ppo.py"
+  - resource: "repository:tests/owl/train/test_logging.py"
+  - resource: "repository:tests/owl/train/test_distributed.py"
+  - resource: "repository:tests/scripts/test_run_ppo.py"
+  - resource: "repository:README.md"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/0.3.md"
+  - resource: "repository:ops/rebuild-2026-09-29/0.3-results.md"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"
+---
+
+# Failed training reports status before distributed cleanup
+
+This is rebuild Task 0.3 on Isaiah's clean base, serving the
+[[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]].
+The reference plan's Task 1.1 supplies the implementation; the historical
+[[shared-ppo-adapts-game-batches-without-a-second-loop|shared PPO Reference]]
+records the upstream failure-status defect. Searches for failed runs, tracebacks,
+cleanup and exit codes found that existing historical concept, but no current
+rebuild contract. This separate Reference keeps the new contract distinct from
+the earlier port's training and performance claims.
+
+## Contract and adaptation inventory
+
+- `python/owl/train/logging.py`: `MetricLogger.close` accepts keyword-only
+  `exit_code: int = 0`. `WandbLogger` forwards it to `Run.finish`; `DebugLogger`
+  accepts it without side effects.
+- `scripts/run_ppo.py`: `_logger_session` replaces `closing` around the existing
+  main-rank logger. Normal completion closes with 0; any escaping `BaseException`
+  closes with 1 and is re-raised. The PPO loop and worker path are unchanged.
+- `python/owl/train/distributed.py`: exceptions from context construction or
+  the yielded body print `[rank{RANK}] training failed:` and the traceback to
+  stderr, flush, then propagate through the existing destruction in `finally`.
+- The three source-matched test files cover W&B forwarding, DebugLogger,
+  runner wiring, RuntimeError/KeyboardInterrupt/SystemExit propagation, exact
+  close/cleanup counts and stderr availability at cleanup entry. README documents
+  the behavior; the task brief and result receipt retain the local evidence.
+
+Future runner changes must preserve both exit status and traceback ordering;
+logger finalization success alone does not establish successful training.
+
+## Verification and limits
+
+TDD on this version produced **9 expected failures and 2 passing controls**, then
+**11 passes** after implementation. The required Python regression command and
+the final `py-prepare` each pass **722 tests**, with **3 hardware/backend skips**.
+Python preparation also passes formatting, lint, 3.11 syntax, mypy over 48 source
+files and documentation freshness. A separate native Codex review finds no
+task-scope blocker, and Claude's cross-review of the production diff found no
+blocking finding (`0.3-results.md`, "Claude review").
+
+In the fresh worktree, `cargo test` and the full `prepare` attempt each reported
+**148 passes, 7 failures, 2 ignored**: the 7 failures were the git-ignored
+generated Orbit parity fixtures missing from that checkout, not a code defect.
+With `tests/fixtures/generation` and `tests/fixtures/orbit_wars_replays` copied
+from the main checkout, Claude's rerun of `cargo test` gave **155 passed, 0
+failed, 2 ignored**; the receipt records only that `cargo test` rerun, not a
+repeated `prepare`. No Rust source changed, no fixture download ran, and parity
+requirements were not disabled. The receipt records the initial test-style lint
+failure and its repair.
+
+W&B is a local test double and CUDA/NCCL entry points are mocked. This does not
+qualify live telemetry, multi-rank execution, CUDA fault recovery, performance or
+playing strength. The report precedes process-group destruction, but follows
+logger finalization. Failures in logger finalization or distributed cleanup can
+supersede the original exception while retaining its Python exception chain.
+Hard kills and distributed startup failures before the existing `try` remain
+outside the contract. Reopen if live evidence shows failure information is lost
+at one of those boundaries; no training run is needed for this code change.
+# Task 0.3 result receipt
+
+Date: 2026-09-29. Checkout: `/Users/poonszesen/kg-v3-codex`.
+Branch: `kg/rebuild-codex`. Starting commit:
+`559a3956b769200ed183ee7d42fa40f59b79b7f9`; initial worktree was clean.
+Scope and stopping condition: [brief](briefs/0.3.md). No training/evaluation,
+model-scale run, remote telemetry session or network request was performed.
+
+## Change inventory
+
+- `python/owl/train/logging.py`: keyword-only close exit code, W&B forwarding.
+- `python/owl/train/distributed.py`: rank-tagged, flushed traceback before teardown.
+- `scripts/run_ppo.py`: failure-aware logger context replaces unconditional closing.
+- `tests/owl/train/test_logging.py`: new offline logger interface regressions.
+- `tests/owl/train/test_distributed.py`: exception/interrupt ordering and cleanup.
+- `tests/scripts/test_run_ppo.py`: logger helper and actual runner exit codes.
+- `README.md`: mapped training behavior documentation.
+- Cookbook Reference `failed-training-reports-status-before-distributed-cleanup`,
+  references index and prepended log: current rebuild contract and evidence limits.
+- This receipt, brief, command inventory and adjacent logs: working evidence.
+
+## Checks
+
+All uv invocations use `UV_OFFLINE=1`; Cargo uses `CARGO_NET_OFFLINE=true`.
+Test stdout/stderr is preserved with `set -o pipefail` and `tee`.
+
+| Command / phase | Outcome | Evidence |
+| --- | --- | --- |
+| Focused pytest before production edits | Expected failure: 9 failed, 2 passed | `0.3-red.log` |
+| Identical focused pytest after implementation | 11 passed | `0.3-green.log` |
+| `uv run pytest tests/owl tests/scripts tests/tools -m "not slow" -q` | 722 passed, 3 skipped | `0.3-python-suite.log` |
+| `cargo test` | 148 passed, 7 failed, 2 ignored | `0.3-cargo-test.log` |
+| First `uvx --from rust-just just py-prepare` | Lint failed: 2 SIM117, 1 PT012; tests not reached | `0.3-py-prepare.log` |
+| Final `uvx --from rust-just just py-prepare` | Formatting/lint/syntax pass; mypy 48 files pass; 722 tests pass, 3 skip; docs-fresh pass | `0.3-py-prepare-final.log` |
+| `uvx --from rust-just just prepare` with `PYTEST_ADDOPTS='-m "not slow"'` | Build, Rust/Python formatting, Clippy, Python/Markdown lint and mypy pass; stops at same 7 Rust failures (148 pass, 2 ignored) | `0.3-prepare.log` |
+
+The focused command selects `tests/owl/train/test_logging.py`, plus
+`test_logger_session_marks_failed_runs`,
+`test_run_training_session_sets_trainable_parameter_summary`, and
+`test_run_training_session_closes_logger_and_skips_final_checkpoint_on_error`
+from `tests/scripts/test_run_ppo.py`, and
+`test_failed_session_prints_rank_traceback_before_cleanup` and
+`test_distributed_session_initializes_and_destroys_process_group`
+from `tests/owl/train/test_distributed.py`, with `-q`.
+
+The three Python skips are two FlashAttention CUDA checks and one unavailable
+x86 quantized backend check. All seven Rust failures explicitly report missing
+fixtures: six need `tests/fixtures/generation/reference_generation.json`; one
+needs `tests/fixtures/orbit_wars_replays`. No fixtures exist in this checkout.
+`REQUIRE_PARITY_FIXTURES` was not disabled. This is an unmet fixture prerequisite,
+not evidence that logging changed engine behavior. Full prepare did not reach
+its Python test or final docs-fresh stages; final py-prepare verified both.
+
+## Plan adaptations and review
+
+Production behavior matches old Task 1.1. The clean base lacks its
+`OWL_ALLOW_CPU_DDP` hook, so the failure test mocks existing CUDA/NCCL entry
+points. `--extra reference` is absent from the base manifest, so the explicit
+owner-provided `uv run pytest` command is used. Tests add DebugLogger coverage,
+interrupts/SystemExit, exception identity, exact cleanup counts and assertions
+through actual runner wiring. Lint required combined `with` statements and a
+single raise inside `pytest.raises`; no production change was needed.
+
+README was updated rather than acknowledging unchanged docs. This is a material
+reusable diagnostics contract, so cookbook note/index/log were added together.
+The referenced superpowers skills are unavailable in this Codex session; a
+native read-only subagent reviewed the plan and diff with no blockers. Claude's
+cross-review is still required before merge. No other worktree or branch was
+modified, and no push or merge is part of this task.
+
+## Limits and review questions
+
+Live W&B/NCCL is untested by design. Traceback output precedes process-group
+teardown but follows W&B finalization; failures in either cleanup can supersede
+the original raised exception (the chain remains). Hard kills and failures
+before the distributed `try` are not covered. No CUDA root cause is inferred.
+
+Claude: restore the missing parity fixtures in an authorized verification
+environment and rerun Cargo/full prepare before integration. Confirm the
+documented failure boundary matches Task 0.3's intended scope. No unresolved
+production-code blocker was found in local review.
+
+## Commit handoff — sandbox blocked
+
+`git add` failed with exit 128 before staging any path:
+
+```text
+fatal: Unable to create '/Users/poonszesen/kg-v3/.git/worktrees/kg-v3-codex/index.lock': Operation not permitted
+```
+
+This worktree's `.git` points to shared metadata outside this session's writable
+roots. Approval escalation is unavailable. No commit was created; HEAD remains
+`559a3956b769200ed183ee7d42fa40f59b79b7f9`. The changes, logs and cookbook record
+remain in this checkout for Claude's review. No alternative Git directory or
+other worktree was modified to bypass this restriction.
+
+After reviewing from an environment authorized to write the worktree metadata,
+stage the inventory above plus `ops/rebuild-2026-09-29/0.3-*` and the task brief.
+Intended commit command (not executed because staging failed):
+
+```sh
+git commit -m "Report failed training runs to W&B and print rank tracebacks before cleanup"
+```
+
+The code/test/README and test-log SHA-256 manifest is `0.3-sha256.txt`.
+
+## Claude review (2026-09-29)
+
+- Production diff (`logging.py`, `distributed.py`, `run_ppo.py`) reviewed line by line: minimal, correct, and matching plan Task 0.3; no blocking finding.
+- The 7 Rust failures were missing generated Orbit parity fixtures in this fresh worktree (Git ignores them). After copying `tests/fixtures/generation` and `tests/fixtures/orbit_wars_replays` from the main checkout, `cargo test`: **155 passed, 0 failed, 2 ignored**.
+- The commit is made by Claude because Codex's sandbox could not write the worktree's Git metadata. Future Codex runs get `--add-dir` for it.
+# References
+
+## Current rebuild
+
+- [[model-only-sps-ceiling-bounds-per-rank-throughput|Model-only SPS ceiling bounds per-rank throughput]] — Conditional component estimate, not end-to-end SPS: 2,085 / 1,757 / 957 model-only env steps/s per rank (sparse / mid / dense) on a synthetic update schedule at `e1458d2`; engine budget 53–116 µs per env step for ≤ 10 % loss; allocated peak 40.3 GiB, reserved 85.0 GiB unexplained. Not rankable. Codex-approved.
+- [[pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|Pod v3 environment runs flash-attn 2.8.3 forward on sm_120]] — Phase 6.0 venv `/workspace/kg-v3-rebuild` (torch 2.9.0, triton 3.5.0, flash-attn 2.8.3 prebuilt wheel with sm_120 cubins); varlen kernel matches SDPA within BF16 spacing and the packed flash path runs in eager and compiled trunk forwards. Forward only, trunk numerics unqualified; wheel digest outside `uv.lock` and hard-linked venvs are hazards. Codex-approved.
+- [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope; Rust `cargo test` passed 155 with 2 ignored once the git-ignored Orbit fixtures were copied in.
+
+## Reference branch
+
+Since the [[../decisions/restart-the-port-from-isaiahs-clean-base|restart]], the following References describe the implementation on branch `kg/reference-2026-09-29` (tag `kg-reference-2026-09-29`), not the current tree. Use them as reference for the rebuild.
+
+- [[full-turn-intentions-coordinate-batched-action-heads|Full-turn intentions coordinate batched action heads]] — Optional U/A hypothesis; Isaiah and the current model already retain shared scratch/plan context. No demonstrated need or cost-benefit for a dedicated coordinator.
+- [[native-game-semantics-use-v3-owned-buffers|Native game semantics use v3-owned buffers]] — Preserve native semantics with checked compact masks and a fused transactional lifecycle, backed by CPU parity and bounded two-GPU PPO measurements. Explicit-state replay encoding also passes evolved-state feature parity for offline BC.
+- [[starter-history-and-knowledge-remain-retrievable|Starter history and knowledge remain retrievable]] — The Isaiah source history/license, redirected remotes and selective cookbook lifecycle are retained with explicit verification limits.
+- [[shared-ppo-adapts-game-batches-without-a-second-loop|Shared PPO adapts game batches without a second loop]] — One shared Isaiah PPO trainer carries Kaggriculture batches; its core is upstream-equivalent, the recipe is partially aligned, and teacher, cadence, CUDA-fault and GPU-qualification gaps are tracked in ops. Historical SPS measurements link to their receipts.
+- [[explicit-game-tokens-and-grammar-replace-orbit-heads|Explicit game tokens and grammar replace Orbit heads]] — Restored player token and entity/player/plan batched heads pass local checks; checkpoint schema changes explicitly, while prior GPU results retain their old-model scope.
+- [[reward-reuse-preserves-objective-and-critic-semantics|Reward reuse preserves objective and critic semantics]] — Current GPU econ coefficient0.2, observed nonzero reward with no claimed learning benefit, and exact v2 W/L/D, bank-margin and capped-economic formulas with v3 critic/bootstrap compatibility limits.
+- [[bc-bootstrap-uses-native-replay-features-and-current-heads|Native replay BC bootstrap]] — Market-disabled controls preserve3000 bank; exact admitted replay actions and Rust features support separate current-model BC, with episode holdout, two-rank smoke, observed overfitting and incomplete quality validation; automatic PPO disabled; BC stopped early for a separately requested PPO experiment, which then failed with a CUDA illegal memory access later traced to a compiler GEMM overflow; the planned architecture alignment schedules one BC rerun.
+- [[compiled-gemm-template-overflows-above-2-21-rows|Compiled GEMM template overflows above 2^21 rows]] — Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × input width exceeds 2^31 with an int32 size argument (measured at widths 4096/768/512, silent in the real trunk; output-wide GEMMs stayed correct to 2^32); design bound M × max(in, out) for training; trunk guard correct at L−1 and rejects L; production compliance unproven.
+- [[kaggriculture-encoder-reuses-isaiah-stateless-layers|Kaggriculture encoder reuses Isaiah's stateless layers]] — The rebuilt encoder uses Isaiah's StatelessTransformerV1 classes, token roles, packing, compile hook and initialization; only stem input widths are game-specific, and a guard chunks compiled GEMMs below 2^31. Describes the current tree.
+# Decisions
+
+- [[restart-the-port-from-isaiahs-clean-base|Restart the port from Isaiah's clean base]] — Main and the working branch restart from Isaiah's 32b3ec9; the prior port is a reference branch for grammar, tokens and the Rust engine; the cookbook and Claude/Codex setup carry over; the model keeps Isaiah's layer topology; one BC rerun and RTX PRO 6000 verification follow.
+- [[v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|V3 reuses Isaiah infrastructure with Kaggriculture semantics]] — Deliver one complete final adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial mechanisms are not finished deliverables, and the rejected decoder remains historical.
+- [[diagnose-the-mechanism-before-spending-on-runs|Diagnose the mechanism before spending on runs]] — Keep decisions reproducible, map game capabilities to executable mechanisms, and distinguish four failure classes before repairing.
+- [[the-policy-is-stateless-and-observation-only|The policy is stateless and observation-only]] — Carry forward explicit current-observation tokens and the prohibition on opponent identity conditioning; Isaiah's StatelessTransformerV1, never his recurrent model, is the reference contract, with the same layer topology and only game I/O differing.
+- [[throughput-means-correct-complete-work|Throughput means correct complete work]] — High throughput is required; preserve semantic parity and measure equivalent work rather than inferring gains from language or kernels.
+- [[evaluation-preserves-generality-and-evidence|Evaluation preserves generality and evidence]] — Measure win rate and bank margin across opponents, retain source-bound evidence and telemetry, and keep submission authority with the owner.
+- [[start-multi-gpu-qualification-with-two-ranks|Start multi-GPU qualification with two ranks]] — Qualify on two GPUs before four; 2/4-rank RTX PRO 6000 verification is authorized; keep the pod running after bounded runs; host history lives in ops.
+- [[preserve-the-ppo-recipe-across-bc-bootstrap|Preserve the PPO recipe across BC bootstrap]] — The BC-period two-rank 4096-env fixed-minibatch recipe is preserved as a historical snapshot with separate checkpoint custody; later runs follow Isaiah alignment and teacher-adapter completion.
+- [[recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah without owner escalation]] — Optimizer-step cadence and critic/value-distillation semantics are implementer choices resolved toward Isaiah scaling_6m and its multi-GPU rule, not owner decisions; both are built into the rebuild from the start.
+
+exec
+/bin/zsh -lc 'git diff bcd9627''^ 9bfa0a0 -- cookbook ops/rebuild-2026-09-29/plan.md' in /Users/poonszesen/kg-v3
+exec
+/bin/zsh -lc "rg -n -i 'cookbook|stale|audit|refresh|no flash|pending|148|155 passed|1\\.3|Phase 4' ops/rebuild-2026-09-29/results.md ops/rebuild-2026-09-29/codex/verify-cookbook-refresh-r1-prompt.md; rg --files -g 'AGENTS.md' cookbook ops .claude/hooks; cat /Users/poonszesen/.codex/skills/.system/openai-docs/SKILL.md" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+ops/rebuild-2026-09-29/codex/verify-cookbook-refresh-r1-prompt.md:1:You are Codex. READ-ONLY review of Claude's cookbook refresh on branch kg/rebuild-model in /Users/poonszesen/kg-v3: commits bcd9627 Record the pod's flash-attn 2.8.3 environment as a scoped Reference; 5247daa Record the model-only SPS ceiling and scope stale ops paths in two Decisions; 92e88e0 Correct the Task 0.3 Rust status and the root index's References scope; 9bfa0a0 Add the codex exec stdin, foreground and resume rules to the rebuild plan. Check each new or revised note against its cited evidence (ops/rebuild-2026-09-29/results.md sections, receipts, Codex reports) — no claim beyond evidence, component vs end-to-end SPS clearly separated, measured vs inferred labeled; frontmatter and repository: sources valid and existing; Decisions quote deciders without converting interpretation into owner adoption; index descriptions match notes; log entries prepended and accurate; any Lesson meets the >= 2 episode rule; stale statements the audit listed are fixed correctly; no file owned by in-flight lanes was edited (compiled-gemm Reference, 1.3/Phase 4 notes). Run node .claude/hooks/cookbook-lint.mjs on changed notes if runnable. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT, with findings.
+ops/rebuild-2026-09-29/results.md:3:Working evidence for `ops/rebuild-2026-09-29/plan.md`. Durable conclusions move to the cookbook when a task closes.
+ops/rebuild-2026-09-29/results.md:45:**Anomaly: no FlashAttention on the pod.** The pod venv has **no `flash-attn` package**, and the pod's run config had `force_flash_attn: false`. That config lives on the pod and was not copied here. The model preset (`configs/model/kaggriculture.yaml`) and Isaiah's recipe (plan I8) require `force_flash_attn: true` with flash-attn 2.8.3. Consequences:
+ops/rebuild-2026-09-29/results.md:104:3. **Single GEMMs:** input-wide GEMMs (4096→16, 768→256) were correct at L_in and failed at L_in+1. Output-wide GEMMs (16→4096, 256→512, 256→256) stayed correct up to M·N = 2³² or 2·L. **The measured overflow at these shapes is input-side: the A-load, M·K.** The audit's universal "overflow iff M·max(K, N) > 2³¹" rule is **withdrawn**.
+ops/rebuild-2026-09-29/results.md:136:  - The audit's 371/376 figures are conditional stride bounds, not observed kernel limits: ⌊2³¹/371⌋ = 5,788,365, and ⌊2³¹/376⌋ = **5,711,392**, if BF16 alignment padding rounds 371 to 376 (`fx_passes/pad_mm.py:69–71,121–130`). That padding is conditional (line 728). No 376 stride was generated for these eager stems.
+ops/rebuild-2026-09-29/results.md:157:- Flash differs from BF16 SDPA by at most 0.00390625 = 2⁻⁸. Near |ref| ≈ 1.38, the largest reference magnitude, BF16 spacing is 2⁻⁷ = 0.0078125, so this is half a spacing there. It would be one spacing for values in [0.5, 1). The magnitude of the element with the largest error was not retained.
+ops/rebuild-2026-09-29/results.md:187:- Control: the padded path (dispatch patched off) made no pack calls and launched no flash kernel. It used PyTorch's mem-efficient `fmha_cutlassF_bf16…sm80` kernel. The JSON field `eager_padded_use_flash_attn_x: true` reports the unpatched `owl.model.attn.use_flash_attn`, not the patched dispatch.
+ops/rebuild-2026-09-29/results.md:229:- Variability: p90/median ≤ +0.14 % everywhere except sparse B (p90 148.678 ms vs 147.472 ms median, **+0.818 %**). Dense B has one tail sample of **545.106 ms** vs a 326.579 ms median (cause unknown; p90 327.007 ms). The weighted sum of component p90s is not a measured whole-update p90; no whole update was timed.
+---
+name: "openai-docs"
+description: "Use for Codex models/pricing, scheduled tasks, skills, settings, setup, troubleshooting, customization, automations, and self-knowledge—including 'you,' 'your,' 'this app,' or 'this coding agent' when they refer to Codex—and for OpenAI APIs/products and ChatGPT Work. Also use for model choice/migration, prompting, SDKs, Responses, Realtime, agents, evals, and Chat/Work/Codex comparisons. Do not use for generic app/software tasks that merely mention Codex."
+metadata:
+  short-description: "Codex models/pricing, scheduled tasks, skills, settings, setup, troubleshooting, and self-knowledge; OpenAI APIs and ChatGPT Work. 'You'/'this app' means Codex only."
+---
+
+# OpenAI Docs
+
+Provide current, cited OpenAI product, API, model, and Codex guidance. Read zero or one primary reference.
+
+**First substantive action:** Search the user's exact requested official OpenAI documentation topic and any explicitly named model using a concise, topic-specific query of 2-6 essential terms. When an already-available direct official documentation search and page-retrieval capability is present, use it first: search, then fetch or open the matching official page before general web search. Otherwise, immediately use official-domain web search, then actually open or fetch the relevant official page. Complete this source order before reading a reference, inspecting local or repository files, running a Codex manual or model resolver, drafting a plan, or answering from memory. Use the actual fetched page, not a search snippet or an unopened link. If one official search or page does not establish the answer, search another appropriate official domain and actually open or fetch the result. Preserve the exact requested model; never substitute a newer model.
+
+**Only exception:** An explicitly requested, genuinely broad, cross-topic Codex setup, orientation, or system-map synthesis may use the manual first when shell execution and an allowed temporary cache are available. A specific Codex feature, setting, command, error, model, or requested citation remains docs-first. Mixed Chat/Work/Codex comparisons are official documentation questions, not manual-first Codex requests.
+
+For generic software tasks, answer the software task directly. OpenAI implementation, debugging, SDK, API, prompting, agent, and eval requests are not generic.
+
+For a straightforward factual or citation-only request, follow the source order and do not read a route reference. This includes straightforward API facts, ChatGPT Work or mixed Chat/Work/Codex comparisons, model tiers, aliases, Pro mode, reasoning settings, factual migration baselines, and narrow Codex facts. Prioritize `learn.chatgpt.com` for ChatGPT Work.
+
+## Choose one primary route
+
+Use the first matching route, and read its reference only when the requested task needs that specialized workflow:
+
+- **Explicitly requested local documentation integration:** Read [integration guidance](references/mcp-diagnostics.md) only when the user explicitly requests that local integration.
+- **Model migration, upgrades, or model-specific prompting:** Read [model-migration.md](references/model-migration.md) for actual migration planning, implementation, dynamic target resolution, or prompt changes. Preserve an explicitly requested target.
+- **Model selection and comparisons:** Read [model-selection.md](references/model-selection.md) only when nuanced current, latest, default, cost, latency, quality, or modality tradeoffs need more guidance. Do not run a migration resolver for selection alone.
+- **Product, API, ChatGPT Work, and mixed Chat/Work/Codex documentation:** Read [official-docs.md](references/official-docs.md) only when fetched official pages leave source selection, API schemas, or the requested implementation unresolved. This route is not manual-first.
+- **Explicitly broad Codex setup, orientation, or cross-topic synthesis:** Read [codex-self-knowledge.md](references/codex-self-knowledge.md) when the eligible Codex manual or deeper Codex procedures are needed.
+
+Read at most one primary reference. Do not open every route, bundled model guide, or helper script. Read a supporting reference or run a helper only when the chosen workflow demonstrably needs it.
+
+## Source and execution boundaries
+
+- Search, open, fetch, and cite only `developers.openai.com`, `platform.openai.com`, and `learn.chatgpt.com`. Cite the page that supports the claim. State uncertainty when official sources do not establish pricing, availability, account access, limits, or behavior.
+- Preserve an explicitly requested model for selection, migration, and prompting. Resolve an unspecified latest or current migration target only after searching and fetching current official guidance.
+- Use `references/latest-model.md` only as a disclosed fallback after current official model guidance does not answer the question. Read `references/upgrading-to-gpt-6-astra.md` only for an actual, requested GPT-6 migration; read `references/prompting-guide.md` only for requested prompting work.
+- Before building, running, editing, debugging, or testing an API-backed app or tool, use `openai-platform-api-key` first when available. Documentation, conceptual examples, model selection, and read-only guidance do not require an API key.
+- Say "OpenAI Docs" or "official OpenAI documentation" in user-facing answers. Keep exact official citations and examples concise.
+
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+diff --git a/cookbook/decisions/start-multi-gpu-qualification-with-two-ranks.md b/cookbook/decisions/start-multi-gpu-qualification-with-two-ranks.md
+index d93313d..70085e9 100644
+--- a/cookbook/decisions/start-multi-gpu-qualification-with-two-ranks.md
++++ b/cookbook/decisions/start-multi-gpu-qualification-with-two-ranks.md
+@@ -6,7 +6,7 @@ tags: ["kaggriculture-v3", "compute"]
+ status: "stable"
+ generated: {"by": "openai/codex", "at": "2026-09-28"}
+ decider: "Owner, later two-GPU-first directive on 2026-09-28 supersedes the initial four-rank preference."
+-sources: [{"resource": "user-directive:2026-09-29:fit-rtx6000-resources"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/cookbook-cleanup-2026-09-29/host-history.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/plan.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/host-replacement.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:four-rank-first"}, {"resource": "user-directive:2026-09-28:two-gpu-sps-first"}, {"resource": "repository:ops/cookbook-setup-checks.md"}]
++sources: [{"resource": "user-directive:2026-09-29:fit-rtx6000-resources"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/cookbook-cleanup-2026-09-29/host-history.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/plan.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/host-replacement.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:four-rank-first"}, {"resource": "user-directive:2026-09-28:two-gpu-sps-first"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "repository:ops/rebuild-2026-09-29/results.md"}]
+ ---
+ 
+ # Start multi-GPU qualification with two ranks
+@@ -23,7 +23,7 @@ Pod retention: the owner directive “不用關pod” means bounded runs stop tr
+ 
+ W&B authentication is configured locally in `~/.netrc` with mode `0600` (key never printed or recorded). That setup does not prove remote upload; verify live synchronization during each authorized run and use project `kg-v3`.
+ 
+-Host, stock and pod history (IDs, regions, prices, download probes) is operational evidence, kept in `ops/cookbook-cleanup-2026-09-29/host-history.md` and `ops/gpu-sps-2026-09-29/results.md`.
++Host, stock and pod history (IDs, regions, prices, download probes) is operational evidence, kept on branch `kg/reference-2026-09-29` in `ops/cookbook-cleanup-2026-09-29/host-history.md` and `ops/gpu-sps-2026-09-29/results.md`; neither file is in the current tree. Rebuild pod runs keep their receipts under `ops/rebuild-2026-09-29/`.
+ 
+ ## Fit Isaiah's recipe to our GPUs — owner, 2026-09-29
+ 
+@@ -31,4 +31,4 @@ Host, stock and pod history (IDs, regions, prices, download probes) is operation
+ 
+ > let's stick with 2.9 then.
+ 
+-Sources: `user-directive:2026-09-29:fit-rtx6000-resources`, `user-directive:2026-09-29:stay-on-torch-2-9`. Keep Isaiah's global configuration and fit only the per-rank shapes and the spm/accumulation split, as his own `winner_ce_6m_4x5090` does for 32 GB RTX 5090s. The target peak is ≤ 85% of 97,887 MiB per rank, measured at the densest states. Throughput is measured, not assumed from B200 results. Torch stays at Isaiah's pinned 2.9.0; the compiler overflow is handled by the batch cadence, trunk chunking and a first-minibatch log-ratio alarm ([[../references/compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]]). The resource-fit rules are in `ops/rebuild-2026-09-29/plan.md`.
++Sources: `user-directive:2026-09-29:fit-rtx6000-resources`, `user-directive:2026-09-29:stay-on-torch-2-9`. Keep Isaiah's global configuration and fit only the per-rank shapes and the spm/accumulation split, as his own `winner_ce_6m_4x5090` does for 32 GB RTX 5090s. The target peak is ≤ 85% of 97,887 MiB per rank, measured at the densest states. The rebuild plan (`ops/rebuild-2026-09-29/plan.md`, "Resource fit") defines that peak as `torch.cuda.max_memory_allocated`; the owner's words above name no metric. Caching-allocator reserved memory is a separate risk: the [[../references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]] probe saw 40.3 GiB allocated but 85.0 GiB reserved, and its percentages use torch's 94.97 GiB total rather than 97,887 MiB (95.59 GiB). Throughput is measured, not assumed from B200 results. Torch stays at Isaiah's pinned 2.9.0; the compiler overflow is handled by the batch cadence, trunk chunking and a first-minibatch log-ratio alarm ([[../references/compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]]). The resource-fit rules are in `ops/rebuild-2026-09-29/plan.md`.
+diff --git a/cookbook/decisions/throughput-means-correct-complete-work.md b/cookbook/decisions/throughput-means-correct-complete-work.md
+index d85e939..afbcf77 100644
+--- a/cookbook/decisions/throughput-means-correct-complete-work.md
++++ b/cookbook/decisions/throughput-means-correct-complete-work.md
+@@ -6,7 +6,7 @@ tags: ["kaggriculture-v3", "decisions"]
+ status: "stable"
+ generated: {"by": "openai/codex", "at": "2026-09-28"}
+ decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+-sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/high-throughput-is-mandatory.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/myolie-native-sampling-grammar.md"}]
++sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/high-throughput-is-mandatory.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/myolie-native-sampling-grammar.md"}]
+ ---
+ 
+ # Throughput means correct complete work
+@@ -21,4 +21,4 @@ Rust preparation must actually execute in the path being measured. Preserve game
+ 
+ The v2 native-sampler Reference is useful contrary evidence: its saved shared-host run lowered sampler CPU time while complete collection elapsed time increased. That is a scoped counterexample to extrapolating component gains, not a ban on native sampling and not a v3 benchmark. Reducing environments, histories or data volume is a workload change unless comparable end-to-end measurements show an optimization.
+ 
+-Use [[../workflows/profile-cuda-bottlenecks-with-nsight-systems|Nsight Systems]] for NVIDIA timeline attribution. Temporary downscaling can diagnose a fault but does not close the throughput requirement. Measured scopes so far (the rejected old decoder and the historical fixed-minibatch sweep) live in `ops/gpu-sps-2026-09-29/results.md`. None of them establishes playing strength, dense-game capacity or an owner-specified performance floor, and each recipe change, including the Isaiah-aligned cadence, needs its own complete-work qualification.
++Use [[../workflows/profile-cuda-bottlenecks-with-nsight-systems|Nsight Systems]] for NVIDIA timeline attribution. Temporary downscaling can diagnose a fault but does not close the throughput requirement. Historical measured scopes (the rejected old decoder and the fixed-minibatch sweep) live on branch `kg/reference-2026-09-29` at `ops/gpu-sps-2026-09-29/results.md`, not in the current tree. The rebuild so far has only component measurements, recorded as the [[../references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]], an upper bound rather than a throughput result. None of them establishes playing strength, dense-game capacity or an owner-specified performance floor, and each recipe change, including the Isaiah-aligned cadence, needs its own complete-work qualification.
+diff --git a/cookbook/index.md b/cookbook/index.md
+index a66ce59..92a477f 100644
+--- a/cookbook/index.md
++++ b/cookbook/index.md
+@@ -4,7 +4,7 @@ The repository's cookbook records reusable decisions and knowledge across bounde
+ 
+ # Start here
+ 
+-- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References describe branch `kg/reference-2026-09-29`)
++- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References are not all reference-branch notes: the References index's sections and entries state whether each describes the current tree or branch `kg/reference-2026-09-29`)
+ - [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+ - [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+ - [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+diff --git a/cookbook/log.md b/cookbook/log.md
+index e69197f..226e232 100644
+--- a/cookbook/log.md
++++ b/cookbook/log.md
+@@ -1,5 +1,19 @@
+ # Change log
+ 
++## 2026-09-29 — Correct the Task 0.3 Rust status and the root index's References scope
++
++The [[references/failed-training-reports-status-before-distributed-cleanup|failure-reporting Reference]] and its index line still said Claude's cross-review was pending and Rust parity was blocked (148 passed, 7 failed). Both contradicted the Task 0.3 receipt (`ops/rebuild-2026-09-29/0.3-results.md`, "Claude review") and the earlier log entry: the review found no blocker, and with the git-ignored Orbit fixtures copied in, `cargo test` gave 155 passed, 2 ignored. The [[index|root index]] no longer says every Reference describes `kg/reference-2026-09-29`; the References index states each note's scope. Moving current-tree notes out of that index's "Reference branch" section is left until the in-flight lanes land.
++
++## 2026-09-29 — Record the model-only SPS ceiling and fix non-resolving ops paths
++
++The new [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling Reference]] promotes the component probe (`cb4af49`, `ddf1fb2`; Codex `verify-sps-ceiling` r1 APPROVE WITH EDITS, r2 APPROVE; the ATEN A/B's default arm reproduced its update walls). It is a scoped upper bound with an engine budget of 53–116 µs per env step, not a throughput result, and it is not rankable.
++- The [[decisions/throughput-means-correct-complete-work|throughput Decision]] cited `ops/gpu-sps-2026-09-29/results.md` as if it were in the current tree; it exists only on `kg/reference-2026-09-29`. It now says so and names the rebuild's component Reference.
++- The [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] scopes its host-history paths the same way. It now names the memory metric as the plan's `max_memory_allocated` (not the owner's words), and records that reserved memory and torch's 94.97 GiB denominator differ from that target.
++
++## 2026-09-29 — Record the pod's flash-attn 2.8.3 environment (Phase 6.0)
++
++The new [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment Reference]] promotes the Phase 6.0 receipts (`4fd40c7`, `78df33c`; Codex `verify-flash-attn` r1 APPROVE WITH EDITS, r2 APPROVE). It records the separate venv and its versions, the forward-only flash evidence, and three hazards: the torch 2.9 wheel is a mutable release asset that `uv.lock` does not pin, the old and new venvs share hard-linked files, and two custody claims are operator-reported. Trunk numerics stay unqualified. The compiled-GEMM Reference's "no flash-attn" limit is now stale; its revision is left to the ATEN lane. Evidence: `ops/rebuild-2026-09-29/results.md`, "Phase 6.0".
++
+ ## 2026-09-29 — Tighten the compiled-GEMM Reference after Codex's second review
+ 
+ Codex re-verified the GEMM-limit evidence (APPROVE WITH EDITS, no blocking findings; `ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md`). The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] and `results.md` now:
+diff --git a/cookbook/references/failed-training-reports-status-before-distributed-cleanup.md b/cookbook/references/failed-training-reports-status-before-distributed-cleanup.md
+index fb11524..81477db 100644
+--- a/cookbook/references/failed-training-reports-status-before-distributed-cleanup.md
++++ b/cookbook/references/failed-training-reports-status-before-distributed-cleanup.md
+@@ -55,12 +55,18 @@ TDD on this version produced **9 expected failures and 2 passing controls**, the
+ the final `py-prepare` each pass **722 tests**, with **3 hardware/backend skips**.
+ Python preparation also passes formatting, lint, 3.11 syntax, mypy over 48 source
+ files and documentation freshness. A separate native Codex review finds no
+-task-scope blocker; Claude's cross-review remains pending.
++task-scope blocker, and Claude's cross-review of the production diff found no
++blocking finding (`0.3-results.md`, "Claude review").
+ 
+-`cargo test` and the full `prepare` attempt each report **148 passes, 7 failures,
+-2 ignored** because this checkout lacks the generation and replay parity fixtures.
+-No Rust source changed, no fixture download ran, and parity requirements were not
+-disabled. The receipt records the initial test-style lint failure and its repair.
++In the fresh worktree, `cargo test` and the full `prepare` attempt each reported
++**148 passes, 7 failures, 2 ignored**: the 7 failures were the git-ignored
++generated Orbit parity fixtures missing from that checkout, not a code defect.
++With `tests/fixtures/generation` and `tests/fixtures/orbit_wars_replays` copied
++from the main checkout, Claude's rerun of `cargo test` gave **155 passed, 0
++failed, 2 ignored**; the receipt records only that `cargo test` rerun, not a
++repeated `prepare`. No Rust source changed, no fixture download ran, and parity
++requirements were not disabled. The receipt records the initial test-style lint
++failure and its repair.
+ 
+ W&B is a local test double and CUDA/NCCL entry points are mocked. This does not
+ qualify live telemetry, multi-rank execution, CUDA fault recovery, performance or
+diff --git a/cookbook/references/index.md b/cookbook/references/index.md
+index f546a9c..956e21c 100644
+--- a/cookbook/references/index.md
++++ b/cookbook/references/index.md
+@@ -2,7 +2,9 @@
+ 
+ ## Current rebuild
+ 
+-- [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope and Rust parity blocked by missing fixtures.
++- [[model-only-sps-ceiling-bounds-per-rank-throughput|Model-only SPS ceiling bounds per-rank throughput]] — Conditional component estimate, not end-to-end SPS: 2,085 / 1,757 / 957 model-only env steps/s per rank (sparse / mid / dense) on a synthetic update schedule at `e1458d2`; engine budget 53–116 µs per env step for ≤ 10 % loss; allocated peak 40.3 GiB, reserved 85.0 GiB unexplained. Not rankable. Codex-approved.
++- [[pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|Pod v3 environment runs flash-attn 2.8.3 forward on sm_120]] — Phase 6.0 venv `/workspace/kg-v3-rebuild` (torch 2.9.0, triton 3.5.0, flash-attn 2.8.3 prebuilt wheel with sm_120 cubins); varlen kernel matches SDPA within BF16 spacing and the packed flash path runs in eager and compiled trunk forwards. Forward only, trunk numerics unqualified; wheel digest outside `uv.lock` and hard-linked venvs are hazards. Codex-approved.
++- [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope; Rust `cargo test` passed 155 with 2 ignored once the git-ignored Orbit fixtures were copied in.
+ 
+ ## Reference branch
+ 
+diff --git a/cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md b/cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md
+new file mode 100644
+index 0000000..a791729
+--- /dev/null
++++ b/cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md
+@@ -0,0 +1,61 @@
++---
++type: "Reference"
++title: "Model-only SPS ceiling bounds per-rank throughput"
++description: "A conditional component estimate, not end-to-end SPS: at e1458d2 the preset 6,252,223-parameter model gives model-only ceilings of 2,085 / 1,757 / 957 env steps/s per rank (sparse / mid / dense) on a synthetic update schedule where training takes about 60% of the wall. The engine gets at most 53 / 63 / 116 us per env step to lose no more than 10%. Allocated peak 40.3 GiB; reserved peak 85.0 GiB is unexplained."
++tags: ["kaggriculture-v3", "throughput", "cuda"]
++status: "verified-scoped"
++generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
++sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/bench_model_sps.py"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_sparse.json"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_mid.json"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_dense.json"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/MANIFEST.sha256"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/"}]
++---
++
++# Model-only SPS ceiling bounds per-rank throughput
++
++**This is a conditional component estimate, not a throughput result.** It answers one question: how many env steps per second per rank could the model alone sustain if the engine, host copies, GAE, logging and the DDP all-reduce cost nothing? The [[../decisions/throughput-means-correct-complete-work|throughput Decision]] forbids reading component speed as end-to-end speed, so this note is an upper-bound yardstick. It must not be ranked on a board.
++
++## Setup
++
++- Source `e1458d2` (full model with heads), preset `configs/model/kaggriculture.yaml`, 6,252,223 parameters.
++- fp32 params under bf16 autocast, TF32, flash forced ([[pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment]]), trunk compiled with `max-autotune-no-cudagraphs` (dynamic), heads eager.
++- One RTX PRO 6000 Blackwell (GPU 0 of pod `w7ia3zvxqsvs3g`), synthetic `make_obs` observations at uniform densities, synthetic grammar tables.
++- Synthetic schedule per update (128 envs × horizon 64 = 8,192 env steps):
++  - 64 rollout forwards of 256 rows (A);
++  - 16 PPO-shaped train steps of 1,024 rows (B);
++  - one teacher-proxy pass over 16,384 rows (C);
++  - one value pass of 256 rows (D).
++  - update wall = 64·A + C + 16·B + D, from CUDA-event medians over 20 iterations.
++
++## Result
++
++| density (tokens/row) | update wall | ceiling SPS/rank | engine budget for ≤ 10 % loss |
++|---|---|---|---|
++| sparse (222) | 3.93 s | 2,085 | 53 µs per env step |
++| mid (303) | 4.66 s | 1,757 | 63 µs per env step |
++| dense (709) | 8.56 s | 957 | 116 µs per env step |
++
++- **Share of the synthetic update:** the 16 train steps take about 60 %, the teacher proxy 20–22 % and rollout sampling 18–19 % at every density. This does not attribute B's cost to heads backward, Muon or any other sub-phase.
++- **Engine budget:** to lose at most 10 % of the ceiling, engine time E per update must satisfy E ≤ M/9, where M is the model's update wall. The 64 rollout steps run serially with the engine, so each batched 128-env engine step competes with an 11–25 ms sampling forward.
++- **Memory:** peak `max_memory_allocated` is 40.275 GiB (dense B), 42.4 % of the 94.97 GiB torch reports. The caching allocator's **reserved** peak reached 84.994 GiB (89.5 %) during dense C. The explanation that C reused B's cached blocks is an untested hypothesis.
++- **Chunks:** the teacher proxy's trunk ran in 1, 2 and 3 chunks for sparse, mid and dense at 16,384 rows, as predicted by the guard. This counts chunks on the GPU; it was timing only, with no correctness comparison.
++
++## Limits
++
++- **Not end-to-end.** Engine stepping, host↔device copies, GAE, logging, W&B, the DDP all-reduce and the rollout's Python loop are excluded. "≈ 2× on two ranks" assumes a small all-reduce that was not measured.
++- **Surrogates.** B is PPO-shaped (joint-ratio clipping, Muon, no teacher KL), not the `run_ppo` loss. C is `evaluate_actions` under `no_grad`, not the real teacher path. Their costs are not proven bounds on the eventual trainer.
++- **Timing only.** No finite-loss or gradient check and no sampling-versus-replay equality check were retained.
++- **Compile path.** At `e1458d2`, `configure_model_compile` still rejected the Kaggriculture model; the probe called the trunk compile directly.
++- **No timeline.** `nsys` absence on the pod is operator-reported. In-step phase attribution is unresolved.
++- **Workload shape.** Densities are uniform within a batch; real rollouts mix them.
++
++## Consequences
++
++- The Task 1.4 and Phase 6 native engine has an explicit per-step budget: about 53–116 µs per env step to cost no more than 10 % of the model-only ceiling.
++- Complete-work SPS in 6.3 is compared against this ceiling to show what the engine, host work and all-reduce cost. Because B and C are surrogates, a trainer above the ceiling is possible only if its real loss or teacher path is cheaper than the surrogate, and that would need its own evidence.
++- The 6.1 memory smoke must resolve the reserved-memory observation (allocator snapshot or phase-order control). The multi-GPU Decision's 85 % target is defined on allocated memory, so reserved memory near 90 % is a separate risk.
++
++## Verification
++
++- Codex reviewed the receipts twice: `verify-sps-ceiling-r1` (APPROVE WITH EDITS, edits applied in `ddf1fb2`) and `verify-sps-ceiling-r2` (APPROVE, 21 of 21 manifest entries byte-identical). The reports are local working transcripts in `ops/rebuild-2026-09-29/codex/`, not committed.
++- On this checkout, `shasum -a 256 -c MANIFEST.sha256` in `model-sps-ceiling-2026-09-29/` reports 21 of 21 files OK (2026-09-29).
++- A second measurement episode reproduced the schedule: the default-backend arm of the ATEN-only GEMM A/B gave update walls of 4.667 s (mid) and 8.561 s (dense), against 4.662 s and 8.564 s here (`results.md`, "ATEN-only GEMM A/B").
++
++Concept search before writing: the [[../decisions/throughput-means-correct-complete-work|throughput Decision]] (measured scopes), the historical [[shared-ppo-adapts-game-batches-without-a-second-loop|shared-PPO Reference]] (reference-branch SPS) and the [[../decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] (85 % memory target). None bounds the rebuilt model's throughput. Full evidence: `ops/rebuild-2026-09-29/results.md`, "Model-only SPS ceiling (component)".
+diff --git a/cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md b/cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md
+new file mode 100644
+index 0000000..9ceb9ed
+--- /dev/null
++++ b/cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md
+@@ -0,0 +1,55 @@
++---
++type: "Reference"
++title: "Pod v3 environment runs flash-attn 2.8.3 forward on sm_120"
++description: "Phase 6.0 installed flash-attn 2.8.3 (prebuilt torch 2.9 wheel, 72 sm_120 cubins) in a separate pod venv; the varlen kernel matches SDPA to within BF16 spacing and the forced packed flash path runs in eager and compiled trunk forwards. Forward only, trunk numerics unqualified; the wheel is a mutable release asset outside uv.lock and the old and new venvs share hard-linked files."
++tags: ["kaggriculture-v3", "cuda", "environment"]
++status: "verified-scoped"
++generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
++sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/smoke_flash.py"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/versions.json"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/cuobjdump_list_elf.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/07_pytest_test_attn.log"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/MANIFEST.sha256"}, {"resource": "repository:uv.lock"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3-rebuild/.venv"}, {"resource": "external-url:https://github.com/Dao-AILab/flash-attention/releases/tag/v2.8.3"}]
++---
++
++# Pod v3 environment runs flash-attn 2.8.3 forward on sm_120
++
++Phase 6.0 of the rebuild set up a **separate v3 environment** on pod `w7ia3zvxqsvs3g`, and the model's forced packed FlashAttention path **runs forward on sm_120**. This clears the "no flash-attn on the pod" blocker for the forward path only. Trunk numerics, backward, rollout, PPO and evaluation are not qualified here.
++
++## Environment
++
++- Checkout: `/workspace/kg-v3-rebuild`, from `kg/isaiah-gap-closure` @ `69397da` via a git bundle, detached and clean (post-run receipt).
++- Venv: `/workspace/kg-v3-rebuild/.venv`, built with `uv sync --frozen --group dev --extra flash-attn`.
++- Installed: torch 2.9.0+cu128, triton 3.5.0, flash-attn 2.8.3 (`pod/versions.json`).
++- flash-attn came from a **prebuilt release wheel**, `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl`, which the lock's sdist downloads with `FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE`. No compile ran. The installed `.so` holds 72 sm_120 cubins alongside sm_80/90/100 (`cuobjdump --list-elf`).
++- The Rust extension is a **dev-profile** (unoptimized) `maturin develop` build. Build `--release` before any environment-throughput measurement.
++
++## What ran
++
++- **Kernel against SDPA.** `flash_attn_varlen_func` on BF16 packed q/k/v (8 heads × 32, 256 sequences, 173,518 tokens) matches an fp32 per-sequence SDPA reference as closely as BF16 SDPA does (max |Δ| 0.00359 for both). Flash and BF16 SDPA differ by at most 2⁻⁸, within BF16 spacing at the observed magnitudes. No element falls outside `0.02 + 0.02|ref|`.
++- **Model trunk.** With the preset `configs/model/kaggriculture.yaml` (`force_flash_attn: true`) under bf16 autocast, the packed flash path ran in both the **eager** and the **compiled** (`max-autotune-no-cudagraphs`, dynamic) trunk forward. The profiler records `flash::flash_fwd_kernel` in both, with one `pack_sequence` call per forward.
++- **Tests on the pod.** `tests/owl/model/test_attn.py` passed 7 of 7, including the flash-backend test that skips on the Mac; `tests/kaggriculture` passed 161 of 161.
++
++## Limits
++
++- **Forward only.** The flash backward kernels and compiled backward through the packed trunk were not exercised. At `69397da` the heads did not exist and the model was not wired into `run_ppo`.
++- **Trunk numerics are not qualified.** In every trunk comparison (compiled vs eager flash, flash vs padded SDPA), 0.017–0.021 % of present-token elements fall outside `0.02 + 0.02|ref|`, with max |Δ| up to 0.087. BF16 rounding over 8 layers is a plausible explanation, not a proven one. The discriminating check, an fp32 reference with autocast and TF32 off that retains outlier magnitudes and locations, has not run.
++- The timings in the smoke are single profiled forwards, not throughput evidence.
++
++## Hazards
++
++- **Wheel custody.** The torch 2.9 wheel is a release asset added on 2025-12-17, after the v2.8.3 tag. `setup.py` resolves it by URL, and `uv.lock` pins only the sdist hash. A rebuilt pod could therefore resolve a different kernel **without any lock change**. Recheck both digests after any rebuild:
++  - wheel sha256 `4e2f9e39313266b1544b68138b15b91ee6221eccf14f7902b7c6620351340810` (equals the GitHub release digest at install time);
++  - installed `flash_attn_2_cuda` `.so` sha256 `8ca052bf2d3f53baa629e22749b9622a95273c5bffb5f06cd24768ef63f65807`, byte-identical to the wheel member (`cmp` exit 0).
++- **Hard-linked venvs.** 19,796 files in `/workspace/kg-v3/.venv` share inodes with the new venv through the uv cache. An in-place edit of a file in either venv changes the other. Avoid in-place edits of installed files, or create venvs with `uv --link-mode=copy`.
++- **Operator-reported custody.** "No credentials copied" and "nothing pushed" have no retained receipt. The only evidence is the clone's remote list, which shows just the bundle path.
++
++## Consequences
++
++- Phases 6.1–6.4 use this venv or reproduce both digests above. Any pod rebuild verifies the release-asset digest before trusting the kernel.
++- 6.1 must still cover flash backward, rollout, the PPO update and evaluation, and should run the fp32 discriminating trunk check.
++- Earlier "no flash-attn on the pod" statements, including the FlashAttention limit in the [[compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]], predate this setup. That note's revision belongs to the ATEN implementation lane.
++
++## Verification
++
++- Codex reviewed the receipts twice: `verify-flash-attn-r1` (APPROVE WITH EDITS, edits applied in `78df33c`) and `verify-flash-attn-r2` (APPROVE). The reports are local working transcripts in `ops/rebuild-2026-09-29/codex/`, not committed.
++- On this checkout, `shasum -a 256 -c MANIFEST.sha256` in `flash-attn-setup-2026-09-29/pod/` reports 30 of 30 files OK (2026-09-29). This checks local custody of the receipts, not the pod's live venv.
++- The wheel-member receipt (`pod/wheel_member_compare.txt`) and the cubin listing are the retained evidence for the digest and sm_120 claims.
++
++Concept search before writing: the [[compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] (FlashAttention limit), the [[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] (flash-attn pin unchanged), the historical [[shared-ppo-adapts-game-batches-without-a-second-loop|shared-PPO Reference]] (reference-branch FlashAttention use) and the [[../decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] (host facts live in ops). None records a current-tree flash-attn environment. The [[kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] leaves CUDA flash execution to Phase 6; this note is that first, forward-only step. Full evidence: `ops/rebuild-2026-09-29/results.md`, "Phase 6.0 — flash-attn on the pod".
+diff --git a/ops/rebuild-2026-09-29/plan.md b/ops/rebuild-2026-09-29/plan.md
+index c0fbc51..34bc5b9 100644
+--- a/ops/rebuild-2026-09-29/plan.md
++++ b/ops/rebuild-2026-09-29/plan.md
+@@ -120,9 +120,15 @@ Read reference files with `git show kg/reference-2026-09-29:<path>` (the tag `kg
+ git worktree add ../kg-v3-codex -b kg/rebuild-codex kg/isaiah-gap-closure
+ (cd ../kg-v3-codex && uv sync --extra reference && cargo fetch)
+ codex exec -C ../kg-v3-codex -s workspace-write \
+-  -o ops/rebuild-2026-09-29/codex/<task>.md "<task prompt>"
++  -o ops/rebuild-2026-09-29/codex/<task>.md "<task prompt>" \
++  </dev/null 2>&1 | tee ops/rebuild-2026-09-29/codex/<task>-transcript.log
+ ```
+ 
++- **Running `codex exec` (rules adopted after episodes in this rebuild):**
++  - **Close stdin** (`</dev/null`). With an open non-tty stdin, `codex exec` prints "Reading additional input from stdin..." and waits (for example `codex/brief-2.3-r3-transcript.log`).
++  - **Run it in the foreground, or poll until it exits.** A verifier or orchestrator agent must not return while `codex exec` is still running: its return killed the child in Task 1.1b r2 (`verify-1.1b-r2-attempt2-killed-transcript.log`) and Task 2.3 r2 (`verify-2.3-r2-attempt1-killed-transcript.log`). Check that the `-o` report exists and ends with a verdict before treating a run as complete.
++  - **After a usage limit**, keep the failed attempt's transcript under an `-attemptN-<reason>-transcript.log` name, then resume from the partial commit with a separate resume prompt (`<task>-resume-prompt.md`) rather than rerunning from scratch (`task-1.2-impl-resume-*`, `verify-1.1b-r2-attempt1-usage-limit-transcript.log`).
++
+ - **Task prompt contents:** the plan path and task id; the Global Constraints (quote the Mac and pod rules); the task's reference files with their dispositions; required tests; and "report changed files, commands run with their results, and open questions".
+ - **Contract first:** Task 0.1 fixes the observation, action and env contract before the streams diverge. Changing it later needs both agents to agree, recorded in the contract doc.
+ - **Streams:**
+
+codex
+The four commits are the current branch tip. Their diffs leave the compiled-GEMM Reference and the 1.3/Phase 4 files untouched. I’ve split the evidence review across independent reviewers and am using the OpenAI Docs skill for the Codex command rules; I’m checking metadata, lint, and the Task 0.3 correction locally.
+exec
+/bin/zsh -lc 'nl -ba cookbook/references/failed-training-reports-status-before-distributed-cleanup.md; nl -ba ops/rebuild-2026-09-29/0.3-results.md; git diff bcd9627''^ 9bfa0a0 -- ops/rebuild-2026-09-29/plan.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+     1	---
+     2	type: "Reference"
+     3	title: "Failed training reports status before distributed cleanup"
+     4	description: "The rebuilt runner forwards failure exit codes to W&B and flushes rank-tagged tracebacks before process-group destruction; offline unit tests establish the local exception contract."
+     5	tags: ["kaggriculture-v3", "adaptation", "diagnostics"]
+     6	status: "verified-scoped"
+     7	generated: {"by": "openai/codex", "at": "2026-09-29"}
+     8	sources:
+     9	  - resource: "repository:python/owl/train/logging.py"
+    10	  - resource: "repository:python/owl/train/distributed.py"
+    11	  - resource: "repository:scripts/run_ppo.py"
+    12	  - resource: "repository:tests/owl/train/test_logging.py"
+    13	  - resource: "repository:tests/owl/train/test_distributed.py"
+    14	  - resource: "repository:tests/scripts/test_run_ppo.py"
+    15	  - resource: "repository:README.md"
+    16	  - resource: "repository:ops/rebuild-2026-09-29/briefs/0.3.md"
+    17	  - resource: "repository:ops/rebuild-2026-09-29/0.3-results.md"
+    18	  - resource: "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"
+    19	---
+    20	
+    21	# Failed training reports status before distributed cleanup
+    22	
+    23	This is rebuild Task 0.3 on Isaiah's clean base, serving the
+    24	[[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]].
+    25	The reference plan's Task 1.1 supplies the implementation; the historical
+    26	[[shared-ppo-adapts-game-batches-without-a-second-loop|shared PPO Reference]]
+    27	records the upstream failure-status defect. Searches for failed runs, tracebacks,
+    28	cleanup and exit codes found that existing historical concept, but no current
+    29	rebuild contract. This separate Reference keeps the new contract distinct from
+    30	the earlier port's training and performance claims.
+    31	
+    32	## Contract and adaptation inventory
+    33	
+    34	- `python/owl/train/logging.py`: `MetricLogger.close` accepts keyword-only
+    35	  `exit_code: int = 0`. `WandbLogger` forwards it to `Run.finish`; `DebugLogger`
+    36	  accepts it without side effects.
+    37	- `scripts/run_ppo.py`: `_logger_session` replaces `closing` around the existing
+    38	  main-rank logger. Normal completion closes with 0; any escaping `BaseException`
+    39	  closes with 1 and is re-raised. The PPO loop and worker path are unchanged.
+    40	- `python/owl/train/distributed.py`: exceptions from context construction or
+    41	  the yielded body print `[rank{RANK}] training failed:` and the traceback to
+    42	  stderr, flush, then propagate through the existing destruction in `finally`.
+    43	- The three source-matched test files cover W&B forwarding, DebugLogger,
+    44	  runner wiring, RuntimeError/KeyboardInterrupt/SystemExit propagation, exact
+    45	  close/cleanup counts and stderr availability at cleanup entry. README documents
+    46	  the behavior; the task brief and result receipt retain the local evidence.
+    47	
+    48	Future runner changes must preserve both exit status and traceback ordering;
+    49	logger finalization success alone does not establish successful training.
+    50	
+    51	## Verification and limits
+    52	
+    53	TDD on this version produced **9 expected failures and 2 passing controls**, then
+    54	**11 passes** after implementation. The required Python regression command and
+    55	the final `py-prepare` each pass **722 tests**, with **3 hardware/backend skips**.
+    56	Python preparation also passes formatting, lint, 3.11 syntax, mypy over 48 source
+    57	files and documentation freshness. A separate native Codex review finds no
+    58	task-scope blocker, and Claude's cross-review of the production diff found no
+    59	blocking finding (`0.3-results.md`, "Claude review").
+    60	
+    61	In the fresh worktree, `cargo test` and the full `prepare` attempt each reported
+    62	**148 passes, 7 failures, 2 ignored**: the 7 failures were the git-ignored
+    63	generated Orbit parity fixtures missing from that checkout, not a code defect.
+    64	With `tests/fixtures/generation` and `tests/fixtures/orbit_wars_replays` copied
+    65	from the main checkout, Claude's rerun of `cargo test` gave **155 passed, 0
+    66	failed, 2 ignored**; the receipt records only that `cargo test` rerun, not a
+    67	repeated `prepare`. No Rust source changed, no fixture download ran, and parity
+    68	requirements were not disabled. The receipt records the initial test-style lint
+    69	failure and its repair.
+    70	
+    71	W&B is a local test double and CUDA/NCCL entry points are mocked. This does not
+    72	qualify live telemetry, multi-rank execution, CUDA fault recovery, performance or
+    73	playing strength. The report precedes process-group destruction, but follows
+    74	logger finalization. Failures in logger finalization or distributed cleanup can
+    75	supersede the original exception while retaining its Python exception chain.
+    76	Hard kills and distributed startup failures before the existing `try` remain
+    77	outside the contract. Reopen if live evidence shows failure information is lost
+    78	at one of those boundaries; no training run is needed for this code change.
+     1	# Task 0.3 result receipt
+     2	
+     3	Date: 2026-09-29. Checkout: `/Users/poonszesen/kg-v3-codex`.
+     4	Branch: `kg/rebuild-codex`. Starting commit:
+     5	`559a3956b769200ed183ee7d42fa40f59b79b7f9`; initial worktree was clean.
+     6	Scope and stopping condition: [brief](briefs/0.3.md). No training/evaluation,
+     7	model-scale run, remote telemetry session or network request was performed.
+     8	
+     9	## Change inventory
+    10	
+    11	- `python/owl/train/logging.py`: keyword-only close exit code, W&B forwarding.
+    12	- `python/owl/train/distributed.py`: rank-tagged, flushed traceback before teardown.
+    13	- `scripts/run_ppo.py`: failure-aware logger context replaces unconditional closing.
+    14	- `tests/owl/train/test_logging.py`: new offline logger interface regressions.
+    15	- `tests/owl/train/test_distributed.py`: exception/interrupt ordering and cleanup.
+    16	- `tests/scripts/test_run_ppo.py`: logger helper and actual runner exit codes.
+    17	- `README.md`: mapped training behavior documentation.
+    18	- Cookbook Reference `failed-training-reports-status-before-distributed-cleanup`,
+    19	  references index and prepended log: current rebuild contract and evidence limits.
+    20	- This receipt, brief, command inventory and adjacent logs: working evidence.
+    21	
+    22	## Checks
+    23	
+    24	All uv invocations use `UV_OFFLINE=1`; Cargo uses `CARGO_NET_OFFLINE=true`.
+    25	Test stdout/stderr is preserved with `set -o pipefail` and `tee`.
+    26	
+    27	| Command / phase | Outcome | Evidence |
+    28	| --- | --- | --- |
+    29	| Focused pytest before production edits | Expected failure: 9 failed, 2 passed | `0.3-red.log` |
+    30	| Identical focused pytest after implementation | 11 passed | `0.3-green.log` |
+    31	| `uv run pytest tests/owl tests/scripts tests/tools -m "not slow" -q` | 722 passed, 3 skipped | `0.3-python-suite.log` |
+    32	| `cargo test` | 148 passed, 7 failed, 2 ignored | `0.3-cargo-test.log` |
+    33	| First `uvx --from rust-just just py-prepare` | Lint failed: 2 SIM117, 1 PT012; tests not reached | `0.3-py-prepare.log` |
+    34	| Final `uvx --from rust-just just py-prepare` | Formatting/lint/syntax pass; mypy 48 files pass; 722 tests pass, 3 skip; docs-fresh pass | `0.3-py-prepare-final.log` |
+    35	| `uvx --from rust-just just prepare` with `PYTEST_ADDOPTS='-m "not slow"'` | Build, Rust/Python formatting, Clippy, Python/Markdown lint and mypy pass; stops at same 7 Rust failures (148 pass, 2 ignored) | `0.3-prepare.log` |
+    36	
+    37	The focused command selects `tests/owl/train/test_logging.py`, plus
+    38	`test_logger_session_marks_failed_runs`,
+    39	`test_run_training_session_sets_trainable_parameter_summary`, and
+    40	`test_run_training_session_closes_logger_and_skips_final_checkpoint_on_error`
+    41	from `tests/scripts/test_run_ppo.py`, and
+    42	`test_failed_session_prints_rank_traceback_before_cleanup` and
+    43	`test_distributed_session_initializes_and_destroys_process_group`
+    44	from `tests/owl/train/test_distributed.py`, with `-q`.
+    45	
+    46	The three Python skips are two FlashAttention CUDA checks and one unavailable
+    47	x86 quantized backend check. All seven Rust failures explicitly report missing
+    48	fixtures: six need `tests/fixtures/generation/reference_generation.json`; one
+    49	needs `tests/fixtures/orbit_wars_replays`. No fixtures exist in this checkout.
+    50	`REQUIRE_PARITY_FIXTURES` was not disabled. This is an unmet fixture prerequisite,
+    51	not evidence that logging changed engine behavior. Full prepare did not reach
+    52	its Python test or final docs-fresh stages; final py-prepare verified both.
+    53	
+    54	## Plan adaptations and review
+    55	
+    56	Production behavior matches old Task 1.1. The clean base lacks its
+    57	`OWL_ALLOW_CPU_DDP` hook, so the failure test mocks existing CUDA/NCCL entry
+    58	points. `--extra reference` is absent from the base manifest, so the explicit
+    59	owner-provided `uv run pytest` command is used. Tests add DebugLogger coverage,
+    60	interrupts/SystemExit, exception identity, exact cleanup counts and assertions
+    61	through actual runner wiring. Lint required combined `with` statements and a
+    62	single raise inside `pytest.raises`; no production change was needed.
+    63	
+    64	README was updated rather than acknowledging unchanged docs. This is a material
+    65	reusable diagnostics contract, so cookbook note/index/log were added together.
+    66	The referenced superpowers skills are unavailable in this Codex session; a
+    67	native read-only subagent reviewed the plan and diff with no blockers. Claude's
+    68	cross-review is still required before merge. No other worktree or branch was
+    69	modified, and no push or merge is part of this task.
+    70	
+    71	## Limits and review questions
+    72	
+    73	Live W&B/NCCL is untested by design. Traceback output precedes process-group
+    74	teardown but follows W&B finalization; failures in either cleanup can supersede
+    75	the original raised exception (the chain remains). Hard kills and failures
+    76	before the distributed `try` are not covered. No CUDA root cause is inferred.
+    77	
+    78	Claude: restore the missing parity fixtures in an authorized verification
+    79	environment and rerun Cargo/full prepare before integration. Confirm the
+    80	documented failure boundary matches Task 0.3's intended scope. No unresolved
+    81	production-code blocker was found in local review.
+    82	
+    83	## Commit handoff — sandbox blocked
+    84	
+    85	`git add` failed with exit 128 before staging any path:
+    86	
+    87	```text
+    88	fatal: Unable to create '/Users/poonszesen/kg-v3/.git/worktrees/kg-v3-codex/index.lock': Operation not permitted
+    89	```
+    90	
+    91	This worktree's `.git` points to shared metadata outside this session's writable
+    92	roots. Approval escalation is unavailable. No commit was created; HEAD remains
+    93	`559a3956b769200ed183ee7d42fa40f59b79b7f9`. The changes, logs and cookbook record
+    94	remain in this checkout for Claude's review. No alternative Git directory or
+    95	other worktree was modified to bypass this restriction.
+    96	
+    97	After reviewing from an environment authorized to write the worktree metadata,
+    98	stage the inventory above plus `ops/rebuild-2026-09-29/0.3-*` and the task brief.
+    99	Intended commit command (not executed because staging failed):
+   100	
+   101	```sh
+   102	git commit -m "Report failed training runs to W&B and print rank tracebacks before cleanup"
+   103	```
+   104	
+   105	The code/test/README and test-log SHA-256 manifest is `0.3-sha256.txt`.
+   106	
+   107	## Claude review (2026-09-29)
+   108	
+   109	- Production diff (`logging.py`, `distributed.py`, `run_ppo.py`) reviewed line by line: minimal, correct, and matching plan Task 0.3; no blocking finding.
+   110	- The 7 Rust failures were missing generated Orbit parity fixtures in this fresh worktree (Git ignores them). After copying `tests/fixtures/generation` and `tests/fixtures/orbit_wars_replays` from the main checkout, `cargo test`: **155 passed, 0 failed, 2 ignored**.
+   111	- The commit is made by Claude because Codex's sandbox could not write the worktree's Git metadata. Future Codex runs get `--add-dir` for it.
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+diff --git a/ops/rebuild-2026-09-29/plan.md b/ops/rebuild-2026-09-29/plan.md
+index c0fbc51..34bc5b9 100644
+--- a/ops/rebuild-2026-09-29/plan.md
++++ b/ops/rebuild-2026-09-29/plan.md
+@@ -120,9 +120,15 @@ Read reference files with `git show kg/reference-2026-09-29:<path>` (the tag `kg
+ git worktree add ../kg-v3-codex -b kg/rebuild-codex kg/isaiah-gap-closure
+ (cd ../kg-v3-codex && uv sync --extra reference && cargo fetch)
+ codex exec -C ../kg-v3-codex -s workspace-write \
+-  -o ops/rebuild-2026-09-29/codex/<task>.md "<task prompt>"
++  -o ops/rebuild-2026-09-29/codex/<task>.md "<task prompt>" \
++  </dev/null 2>&1 | tee ops/rebuild-2026-09-29/codex/<task>-transcript.log
+ ```
+ 
++- **Running `codex exec` (rules adopted after episodes in this rebuild):**
++  - **Close stdin** (`</dev/null`). With an open non-tty stdin, `codex exec` prints "Reading additional input from stdin..." and waits (for example `codex/brief-2.3-r3-transcript.log`).
++  - **Run it in the foreground, or poll until it exits.** A verifier or orchestrator agent must not return while `codex exec` is still running: its return killed the child in Task 1.1b r2 (`verify-1.1b-r2-attempt2-killed-transcript.log`) and Task 2.3 r2 (`verify-2.3-r2-attempt1-killed-transcript.log`). Check that the `-o` report exists and ends with a verdict before treating a run as complete.
++  - **After a usage limit**, keep the failed attempt's transcript under an `-attemptN-<reason>-transcript.log` name, then resume from the partial commit with a separate resume prompt (`<task>-resume-prompt.md`) rather than rerunning from scratch (`task-1.2-impl-resume-*`, `verify-1.1b-r2-attempt1-usage-limit-transcript.log`).
++
+ - **Task prompt contents:** the plan path and task id; the Global Constraints (quote the Mac and pod rules); the task's reference files with their dispositions; required tests; and "report changed files, commands run with their results, and open questions".
+ - **Contract first:** Task 0.1 fixes the observation, action and env contract before the streams diverge. Changing it later needs both agents to agree, recorded in the contract doc.
+ - **Streams:**
+
+exec
+/bin/zsh -lc "node --input-type=module -e '
+import fs from '\\''node:fs'\\'';
+import path from '\\''node:path'\\'';
+import {execFileSync, spawnSync} from '\\''node:child_process'\\'';
+const git=(...args)=>execFileSync('\\''git'\\'',args,{encoding:'\\''utf8'\\'',stdio:['\\''ignore'\\'','\\''pipe'\\'','\\''pipe'\\'']}).trimEnd();
+const changed=git('\\''diff'\\'','\\''--name-only'\\'','\\''bcd9627"'^'"'\\'','\\''9bfa0a0'\\'').split('\\''\\n'\\'');
+const notes=changed.filter(p=>p.startsWith('\\''cookbook/'\\'') && p.endsWith('\\''.md'\\'') && "'!/'"\\/(index|log)\\.md"'$/.test(p));
+console.log('"'\\''Changed paths: '\\''+JSON.stringify(changed));
+let totalSources=0;
+for(const file of notes){
+  const text=fs.readFileSync(file,'\\''utf8'\\'');
+  const fm=/"'^---'"\\n([\\s\\S]*?)\\n---/.exec(text)?.[1];
+  const fields=Object.fromEntries([...fm.matchAll(/"'^('"\\w+):\\s*(["'^'"\\n]*)/gm)].map(m=>[m[1],m[2]]));
+  const required=['\\''type'\\'','\\''title'\\'','\\''description'\\'','\\''tags'\\'','\\''status'\\'','\\''generated'\\''];
+  const problems=required.filter(k=>"'!fields[k]).map(k=>'"'\\''missing '\\''+k);
+  const tags=JSON.parse(fields.tags);
+  if(tags[0]"'!=='"'\\''kaggriculture-v3'\\'') problems.push('\\''wrong first tag'\\'');
+  JSON.parse(fields.generated);
+  const sources=[...fm.matchAll(/(?:\"?resource\"?):\\s*\"(["'^"'"\\n]*)\"/g)].map(m=>m[1]);
+  let repoCount=0;
+  for(const resource of sources){
+    if(resource.startsWith('\\''repository:'\\'')){
+      repoCount++; totalSources++;
+      const p=resource.slice(11).split('\\''#'\\'')[0];
+      if(path.isAbsolute(p)||p.split('\\''/'\\'').some(x=>"'!x||x==='"'\\''.'\\''||x==='\\''..'\\'')||p.includes('\\''\\\\'\\''))problems.push('\\''invalid source '\\''+resource);
+      if("'!fs.existsSync(p))problems.push('"'\\''missing source '\\''+p);
+      try{git('\\''cat-file'\\'','\\''-e'\\'','\\''9bfa0a0:'\\''+p);}catch{problems.push('\\''source absent in reviewed commit '\\''+p);}
+    }
+    if(resource.startsWith('\\''reference-branch:kg/reference-2026-09-29/'\\'')){
+      const p=resource.slice('\\''reference-branch:kg/reference-2026-09-29/'\\''.length);
+      try{git('\\''cat-file'\\'','\\''-e'\\'','\\''kg/reference-2026-09-29:'\\''+p);}catch{problems.push('\\''missing reference-branch source '\\''+p);}
+    }
+  }
+  console.log(JSON.stringify({file,type:fields.type,repoCount,problems}));
+}
+const input={cwd:process.cwd(),tool_name:'\\''MultiEdit'\\'',tool_input:{edits:notes.map(file_path=>({file_path}))}};
+const lint=spawnSync('\\''node'\\'',['\\''.claude/hooks/cookbook-lint.mjs'\\''],{input:JSON.stringify(input),encoding:'\\''utf8'\\''});
+console.log(JSON.stringify({lintCommand:'\\''node .claude/hooks/cookbook-lint.mjs'\\'',notes:notes.length,repositorySources:totalSources,status:lint.status,stdout:lint.stdout,stderr:lint.stderr}));
+for(const commit of ['\\''bcd9627'\\'','\\''5247daa'\\'','\\''92e88e0'\\'']){
+ const before=git('\\''show'\\'',commit+'\\''"'^:cookbook/log.md'"'\\'');
+ const after=git('\\''show'\\'',commit+'\\'':cookbook/log.md'\\'');
+ console.log(JSON.stringify({commit,logPrependedAfterTitle:after.startsWith('\\''# Change log\\n\\n'\\'') && after.endsWith(before.slice('\\''# Change log\\n\\n'\\''.length))}));
+}
+console.log('\\''Tracked worktree diff: '\\''+git('\\''diff'\\'','\\''--stat'\\''));
+console.log('\\''Staged diff: '\\''+git('\\''diff'\\'','\\''--cached'\\'','\\''--stat'\\''));
+'" in /Users/poonszesen/kg-v3
+ succeeded in 452ms:
+Changed paths: ["cookbook/decisions/start-multi-gpu-qualification-with-two-ranks.md","cookbook/decisions/throughput-means-correct-complete-work.md","cookbook/index.md","cookbook/log.md","cookbook/references/failed-training-reports-status-before-distributed-cleanup.md","cookbook/references/index.md","cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md","cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md","ops/rebuild-2026-09-29/plan.md"]
+{"file":"cookbook/decisions/start-multi-gpu-qualification-with-two-ranks.md","type":"\"Decision\"","repoCount":3,"problems":[]}
+{"file":"cookbook/decisions/throughput-means-correct-complete-work.md","type":"\"Decision\"","repoCount":2,"problems":[]}
+{"file":"cookbook/references/failed-training-reports-status-before-distributed-cleanup.md","type":"\"Reference\"","repoCount":9,"problems":[]}
+{"file":"cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md","type":"\"Reference\"","repoCount":9,"problems":[]}
+{"file":"cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md","type":"\"Reference\"","repoCount":11,"problems":[]}
+{"lintCommand":"node .claude/hooks/cookbook-lint.mjs","notes":5,"repositorySources":34,"status":0,"stdout":"{}","stderr":""}
+{"commit":"bcd9627","logPrependedAfterTitle":true}
+{"commit":"5247daa","logPrependedAfterTitle":true}
+{"commit":"92e88e0","logPrependedAfterTitle":true}
+Tracked worktree diff: 
+Staged diff: 
+
+codex
+The lint passed for all five changed concept notes, and all 34 `repository:` sources exist in the reviewed commit. The Task 0.3 correction matches its receipt and correctly distinguishes the passing Cargo rerun from a full `prepare` rerun. The evidence review has found wording that overstates numerical agreement, filesystem custody, and process-kill attribution; I’m checking the exact passages before finalizing findings.
+exec
+/bin/zsh -lc 'nl -ba cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md; nl -ba cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+     1	---
+     2	type: "Reference"
+     3	title: "Pod v3 environment runs flash-attn 2.8.3 forward on sm_120"
+     4	description: "Phase 6.0 installed flash-attn 2.8.3 (prebuilt torch 2.9 wheel, 72 sm_120 cubins) in a separate pod venv; the varlen kernel matches SDPA to within BF16 spacing and the forced packed flash path runs in eager and compiled trunk forwards. Forward only, trunk numerics unqualified; the wheel is a mutable release asset outside uv.lock and the old and new venvs share hard-linked files."
+     5	tags: ["kaggriculture-v3", "cuda", "environment"]
+     6	status: "verified-scoped"
+     7	generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+     8	sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/smoke_flash.py"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/versions.json"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/cuobjdump_list_elf.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/07_pytest_test_attn.log"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run.txt"}, {"resource": "repository:ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/MANIFEST.sha256"}, {"resource": "repository:uv.lock"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3-rebuild/.venv"}, {"resource": "external-url:https://github.com/Dao-AILab/flash-attention/releases/tag/v2.8.3"}]
+     9	---
+    10	
+    11	# Pod v3 environment runs flash-attn 2.8.3 forward on sm_120
+    12	
+    13	Phase 6.0 of the rebuild set up a **separate v3 environment** on pod `w7ia3zvxqsvs3g`, and the model's forced packed FlashAttention path **runs forward on sm_120**. This clears the "no flash-attn on the pod" blocker for the forward path only. Trunk numerics, backward, rollout, PPO and evaluation are not qualified here.
+    14	
+    15	## Environment
+    16	
+    17	- Checkout: `/workspace/kg-v3-rebuild`, from `kg/isaiah-gap-closure` @ `69397da` via a git bundle, detached and clean (post-run receipt).
+    18	- Venv: `/workspace/kg-v3-rebuild/.venv`, built with `uv sync --frozen --group dev --extra flash-attn`.
+    19	- Installed: torch 2.9.0+cu128, triton 3.5.0, flash-attn 2.8.3 (`pod/versions.json`).
+    20	- flash-attn came from a **prebuilt release wheel**, `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl`, which the lock's sdist downloads with `FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE`. No compile ran. The installed `.so` holds 72 sm_120 cubins alongside sm_80/90/100 (`cuobjdump --list-elf`).
+    21	- The Rust extension is a **dev-profile** (unoptimized) `maturin develop` build. Build `--release` before any environment-throughput measurement.
+    22	
+    23	## What ran
+    24	
+    25	- **Kernel against SDPA.** `flash_attn_varlen_func` on BF16 packed q/k/v (8 heads × 32, 256 sequences, 173,518 tokens) matches an fp32 per-sequence SDPA reference as closely as BF16 SDPA does (max |Δ| 0.00359 for both). Flash and BF16 SDPA differ by at most 2⁻⁸, within BF16 spacing at the observed magnitudes. No element falls outside `0.02 + 0.02|ref|`.
+    26	- **Model trunk.** With the preset `configs/model/kaggriculture.yaml` (`force_flash_attn: true`) under bf16 autocast, the packed flash path ran in both the **eager** and the **compiled** (`max-autotune-no-cudagraphs`, dynamic) trunk forward. The profiler records `flash::flash_fwd_kernel` in both, with one `pack_sequence` call per forward.
+    27	- **Tests on the pod.** `tests/owl/model/test_attn.py` passed 7 of 7, including the flash-backend test that skips on the Mac; `tests/kaggriculture` passed 161 of 161.
+    28	
+    29	## Limits
+    30	
+    31	- **Forward only.** The flash backward kernels and compiled backward through the packed trunk were not exercised. At `69397da` the heads did not exist and the model was not wired into `run_ppo`.
+    32	- **Trunk numerics are not qualified.** In every trunk comparison (compiled vs eager flash, flash vs padded SDPA), 0.017–0.021 % of present-token elements fall outside `0.02 + 0.02|ref|`, with max |Δ| up to 0.087. BF16 rounding over 8 layers is a plausible explanation, not a proven one. The discriminating check, an fp32 reference with autocast and TF32 off that retains outlier magnitudes and locations, has not run.
+    33	- The timings in the smoke are single profiled forwards, not throughput evidence.
+    34	
+    35	## Hazards
+    36	
+    37	- **Wheel custody.** The torch 2.9 wheel is a release asset added on 2025-12-17, after the v2.8.3 tag. `setup.py` resolves it by URL, and `uv.lock` pins only the sdist hash. A rebuilt pod could therefore resolve a different kernel **without any lock change**. Recheck both digests after any rebuild:
+    38	  - wheel sha256 `4e2f9e39313266b1544b68138b15b91ee6221eccf14f7902b7c6620351340810` (equals the GitHub release digest at install time);
+    39	  - installed `flash_attn_2_cuda` `.so` sha256 `8ca052bf2d3f53baa629e22749b9622a95273c5bffb5f06cd24768ef63f65807`, byte-identical to the wheel member (`cmp` exit 0).
+    40	- **Hard-linked venvs.** 19,796 files in `/workspace/kg-v3/.venv` share inodes with the new venv through the uv cache. An in-place edit of a file in either venv changes the other. Avoid in-place edits of installed files, or create venvs with `uv --link-mode=copy`.
+    41	- **Operator-reported custody.** "No credentials copied" and "nothing pushed" have no retained receipt. The only evidence is the clone's remote list, which shows just the bundle path.
+    42	
+    43	## Consequences
+    44	
+    45	- Phases 6.1–6.4 use this venv or reproduce both digests above. Any pod rebuild verifies the release-asset digest before trusting the kernel.
+    46	- 6.1 must still cover flash backward, rollout, the PPO update and evaluation, and should run the fp32 discriminating trunk check.
+    47	- Earlier "no flash-attn on the pod" statements, including the FlashAttention limit in the [[compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]], predate this setup. That note's revision belongs to the ATEN implementation lane.
+    48	
+    49	## Verification
+    50	
+    51	- Codex reviewed the receipts twice: `verify-flash-attn-r1` (APPROVE WITH EDITS, edits applied in `78df33c`) and `verify-flash-attn-r2` (APPROVE). The reports are local working transcripts in `ops/rebuild-2026-09-29/codex/`, not committed.
+    52	- On this checkout, `shasum -a 256 -c MANIFEST.sha256` in `flash-attn-setup-2026-09-29/pod/` reports 30 of 30 files OK (2026-09-29). This checks local custody of the receipts, not the pod's live venv.
+    53	- The wheel-member receipt (`pod/wheel_member_compare.txt`) and the cubin listing are the retained evidence for the digest and sm_120 claims.
+    54	
+    55	Concept search before writing: the [[compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] (FlashAttention limit), the [[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] (flash-attn pin unchanged), the historical [[shared-ppo-adapts-game-batches-without-a-second-loop|shared-PPO Reference]] (reference-branch FlashAttention use) and the [[../decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] (host facts live in ops). None records a current-tree flash-attn environment. The [[kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] leaves CUDA flash execution to Phase 6; this note is that first, forward-only step. Full evidence: `ops/rebuild-2026-09-29/results.md`, "Phase 6.0 — flash-attn on the pod".
+     1	---
+     2	type: "Reference"
+     3	title: "Model-only SPS ceiling bounds per-rank throughput"
+     4	description: "A conditional component estimate, not end-to-end SPS: at e1458d2 the preset 6,252,223-parameter model gives model-only ceilings of 2,085 / 1,757 / 957 env steps/s per rank (sparse / mid / dense) on a synthetic update schedule where training takes about 60% of the wall. The engine gets at most 53 / 63 / 116 us per env step to lose no more than 10%. Allocated peak 40.3 GiB; reserved peak 85.0 GiB is unexplained."
+     5	tags: ["kaggriculture-v3", "throughput", "cuda"]
+     6	status: "verified-scoped"
+     7	generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+     8	sources: [{"resource": "repository:ops/rebuild-2026-09-29/results.md"}, {"resource": "repository:ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/bench_model_sps.py"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_sparse.json"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_mid.json"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_dense.json"}, {"resource": "repository:ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/MANIFEST.sha256"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "pod-artifact:w7ia3zvxqsvs3g:/workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/"}]
+     9	---
+    10	
+    11	# Model-only SPS ceiling bounds per-rank throughput
+    12	
+    13	**This is a conditional component estimate, not a throughput result.** It answers one question: how many env steps per second per rank could the model alone sustain if the engine, host copies, GAE, logging and the DDP all-reduce cost nothing? The [[../decisions/throughput-means-correct-complete-work|throughput Decision]] forbids reading component speed as end-to-end speed, so this note is an upper-bound yardstick. It must not be ranked on a board.
+    14	
+    15	## Setup
+    16	
+    17	- Source `e1458d2` (full model with heads), preset `configs/model/kaggriculture.yaml`, 6,252,223 parameters.
+    18	- fp32 params under bf16 autocast, TF32, flash forced ([[pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod environment]]), trunk compiled with `max-autotune-no-cudagraphs` (dynamic), heads eager.
+    19	- One RTX PRO 6000 Blackwell (GPU 0 of pod `w7ia3zvxqsvs3g`), synthetic `make_obs` observations at uniform densities, synthetic grammar tables.
+    20	- Synthetic schedule per update (128 envs × horizon 64 = 8,192 env steps):
+    21	  - 64 rollout forwards of 256 rows (A);
+    22	  - 16 PPO-shaped train steps of 1,024 rows (B);
+    23	  - one teacher-proxy pass over 16,384 rows (C);
+    24	  - one value pass of 256 rows (D).
+    25	  - update wall = 64·A + C + 16·B + D, from CUDA-event medians over 20 iterations.
+    26	
+    27	## Result
+    28	
+    29	| density (tokens/row) | update wall | ceiling SPS/rank | engine budget for ≤ 10 % loss |
+    30	|---|---|---|---|
+    31	| sparse (222) | 3.93 s | 2,085 | 53 µs per env step |
+    32	| mid (303) | 4.66 s | 1,757 | 63 µs per env step |
+    33	| dense (709) | 8.56 s | 957 | 116 µs per env step |
+    34	
+    35	- **Share of the synthetic update:** the 16 train steps take about 60 %, the teacher proxy 20–22 % and rollout sampling 18–19 % at every density. This does not attribute B's cost to heads backward, Muon or any other sub-phase.
+    36	- **Engine budget:** to lose at most 10 % of the ceiling, engine time E per update must satisfy E ≤ M/9, where M is the model's update wall. The 64 rollout steps run serially with the engine, so each batched 128-env engine step competes with an 11–25 ms sampling forward.
+    37	- **Memory:** peak `max_memory_allocated` is 40.275 GiB (dense B), 42.4 % of the 94.97 GiB torch reports. The caching allocator's **reserved** peak reached 84.994 GiB (89.5 %) during dense C. The explanation that C reused B's cached blocks is an untested hypothesis.
+    38	- **Chunks:** the teacher proxy's trunk ran in 1, 2 and 3 chunks for sparse, mid and dense at 16,384 rows, as predicted by the guard. This counts chunks on the GPU; it was timing only, with no correctness comparison.
+    39	
+    40	## Limits
+    41	
+    42	- **Not end-to-end.** Engine stepping, host↔device copies, GAE, logging, W&B, the DDP all-reduce and the rollout's Python loop are excluded. "≈ 2× on two ranks" assumes a small all-reduce that was not measured.
+    43	- **Surrogates.** B is PPO-shaped (joint-ratio clipping, Muon, no teacher KL), not the `run_ppo` loss. C is `evaluate_actions` under `no_grad`, not the real teacher path. Their costs are not proven bounds on the eventual trainer.
+    44	- **Timing only.** No finite-loss or gradient check and no sampling-versus-replay equality check were retained.
+    45	- **Compile path.** At `e1458d2`, `configure_model_compile` still rejected the Kaggriculture model; the probe called the trunk compile directly.
+    46	- **No timeline.** `nsys` absence on the pod is operator-reported. In-step phase attribution is unresolved.
+    47	- **Workload shape.** Densities are uniform within a batch; real rollouts mix them.
+    48	
+    49	## Consequences
+    50	
+    51	- The Task 1.4 and Phase 6 native engine has an explicit per-step budget: about 53–116 µs per env step to cost no more than 10 % of the model-only ceiling.
+    52	- Complete-work SPS in 6.3 is compared against this ceiling to show what the engine, host work and all-reduce cost. Because B and C are surrogates, a trainer above the ceiling is possible only if its real loss or teacher path is cheaper than the surrogate, and that would need its own evidence.
+    53	- The 6.1 memory smoke must resolve the reserved-memory observation (allocator snapshot or phase-order control). The multi-GPU Decision's 85 % target is defined on allocated memory, so reserved memory near 90 % is a separate risk.
+    54	
+    55	## Verification
+    56	
+    57	- Codex reviewed the receipts twice: `verify-sps-ceiling-r1` (APPROVE WITH EDITS, edits applied in `ddf1fb2`) and `verify-sps-ceiling-r2` (APPROVE, 21 of 21 manifest entries byte-identical). The reports are local working transcripts in `ops/rebuild-2026-09-29/codex/`, not committed.
+    58	- On this checkout, `shasum -a 256 -c MANIFEST.sha256` in `model-sps-ceiling-2026-09-29/` reports 21 of 21 files OK (2026-09-29).
+    59	- A second measurement episode reproduced the schedule: the default-backend arm of the ATEN-only GEMM A/B gave update walls of 4.667 s (mid) and 8.561 s (dense), against 4.662 s and 8.564 s here (`results.md`, "ATEN-only GEMM A/B").
+    60	
+    61	Concept search before writing: the [[../decisions/throughput-means-correct-complete-work|throughput Decision]] (measured scopes), the historical [[shared-ppo-adapts-game-batches-without-a-second-loop|shared-PPO Reference]] (reference-branch SPS) and the [[../decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] (85 % memory target). None bounds the rebuilt model's throughput. Full evidence: `ops/rebuild-2026-09-29/results.md`, "Model-only SPS ceiling (component)".
+
+exec
+/bin/zsh -lc "nl -ba ops/rebuild-2026-09-29/results.md | sed -n '142,242p'; cat ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r2.md; sed -n '1,105p' ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1.md" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+   142	- **For Task 2.3:** the comment at `python/owl/model/kaggriculture.py:53` should distinguish the observed overflow *above* the bound from the conservative rejection *at* equality. It is part of the docstring correction in brief §9 item 1 and out of scope for this evidence commit.
+   143	
+   144	## Phase 6.0 — flash-attn on the pod (2026-09-29, 06:16–06:27Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+   145	
+   146	Run statement: `run-statements/pod-flash-attn-setup.md`, which now has a post-run addendum on custody and corrections. Receipts are in `flash-attn-setup-2026-09-29/`; the README has identities and hashes. Codex reviewed them in `codex/verify-flash-attn-r1.md` (APPROVE WITH EDITS), and this section applies those edits.
+   147	
+   148	Wall time was about 11 min of the 90-min budget, roughly $0.8 at $4.18/h, with no new billable resource. The operator transcript's first and last pod commands are at 06:16:21Z and 06:28:14Z, so the wall time and cost are estimates. The pod was left running and idle: idle checks are retained at 06:16:25, 06:24:26, 06:26:39 and 06:28:14Z (`flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`) and at 06:36:54Z (`flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`).
+   149	
+   150	**Outcome: the blocker is cleared for the forward path. The trunk numerics are not qualified (see (b)).** A separate v3 environment, `/workspace/kg-v3-rebuild` (`kg/isaiah-gap-closure` @ `69397da`, via git bundle; `.venv` from `uv sync --frozen --group dev --extra flash-attn`), has torch 2.9.0+cu128, triton 3.5.0 and flash-attn 2.8.3, and the model's forced packed FlashAttention path runs on sm_120.
+   151	- **Install:** the extra's sdist build (`FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE`, no build isolation) downloaded the prebuilt release wheel `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` in 7.5 s. No compile, so no `MAX_JOBS`/arch settings were needed. Wheel sha256 `4e2f9e39…0810` equals the GitHub release digest. The installed `flash_attn_2_cuda` `.so` (sha256 `8ca052bf…5807`) is byte-identical to the wheel's member: the member was extracted from the retained wheel, both files have the same sha256, and `cmp` exits 0. That receipt was produced post-run at 06:37Z and is kept as `flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt`, locally and on the pod.
+   152	- **sm_120 support:** flash-attn 2.8.3's `setup.py` includes `120` in its default arch list (CUDA ≥ 12.8). The installed `.so` carries 72 sm_120 cubins, alongside sm_80/90/100 (`cuobjdump --list-elf`). Not a blocker.
+   153	- **Rust extension:** `maturin develop` (justfile `build`, dev profile) → `owl.rs` sha256 `35239d1b…93b8`. `owl` and `owl.model.kaggriculture` import from the new checkout, and `flash_attn_available()` is True.
+   154	
+   155	**(a) Kernel vs SDPA.** `flash_attn_varlen_func` ran on BF16 packed q/k/v with 8 heads × head_dim 32, 256 sequences of 214–709 tokens, 173,518 tokens in total. The reference is per-sequence `F.scaled_dot_product_attention` on fp32 inputs, with the backend chosen automatically. The math backend was not selected explicitly, and the backend actually used was not profiled.
+   156	- Against that reference, flash has max |Δ| 0.00359 and mean |Δ| 1.07e-4. BF16 SDPA against the same reference gives the same max |Δ| (0.00359, mean 1.06e-4). BF16 output rounding is a plausible explanation that fits this. Equal maxima do not prove it.
+   157	- Flash differs from BF16 SDPA by at most 0.00390625 = 2⁻⁸. Near |ref| ≈ 1.38, the largest reference magnitude, BF16 spacing is 2⁻⁷ = 0.0078125, so this is half a spacing there. It would be one spacing for values in [0.5, 1). The magnitude of the element with the largest error was not retained.
+   158	- No element falls outside `0.02 + 0.02|ref|`. The profiler records `flash::flash_fwd_kernel<…bfloat16…>`.
+   159	
+   160	**(b) Model trunk.** Setup: preset `configs/model/kaggriculture.yaml` (width 256, depth 8, 8 heads, `force_flash_attn: true`), fp32 params, `autocast(bfloat16)`, TF32 via `configure_torch()`. Batch: `make_obs` with 128 envs = 256 rows, 173,108 present tokens, lengths 221–709, padded length 709.
+   161	
+   162	**The trunk smoke completed with outliers.** In every comparison, 0.017–0.021 % of present-token elements fall outside `0.02 + 0.02|ref|`. The script reports these differences but asserts no numerical acceptance, so this run does not claim trunk numerical agreement.
+   163	
+   164	| Comparison (present tokens) | elements | max \|Δ\| | mean \|Δ\| | outside tol |
+   165	|---|---|---|---|---|
+   166	| compiled flash vs eager flash | 44.3M | 0.0872 | 0.00542 | 0.018 % |
+   167	| eager flash vs eager padded SDPA | 44.3M | 0.0805 | 0.00498 | 0.021 % |
+   168	| compiled flash vs eager padded SDPA | 44.3M | 0.0775 | 0.00546 | 0.019 % |
+   169	| compiled vs eager, second shape (64 rows) | 10.9M | 0.0872 | 0.00542 | 0.017 % |
+   170	
+   171	Reference output magnitudes reach 4.03, or 3.86 for the 64-row shape. BF16 spacing is 0.03125 in [4, 8) and 0.015625 in [2, 4). The magnitudes of the elements with the largest errors, and the locations of the outliers, were not retained.
+   172	
+   173	The three paths differ from one another by similar amounts. BF16 rounding accumulated over 8 layers is a plausible explanation. It is not proven: similar pairwise differences do not rule out an error specific to one path.
+   174	
+   175	**What would discriminate (future Phase 6 work, not run now):** run the same weights and batch through an fp32 reference with autocast off and TF32 off (padded SDPA). Compare both BF16 paths (flash and padded) against it, and retain the magnitudes and locations of the largest-error elements and of the outliers.
+   176	- If both paths show similar error distributions against fp32, and their outliers sit on large-magnitude or long-sequence elements, that supports rounding.
+   177	- If flash errors are larger, or cluster at pack boundaries or particular sequences, that indicates a path-specific error.
+   178	
+   179	All outputs are finite, masked positions are exactly zero, and repeated compiled calls agree exactly (Δ = 0).
+   180	
+   181	Evidence that the flash path ran:
+   182	- `use_flash_attn(x)` is True with x in bfloat16.
+   183	- `pack_sequence` was called exactly once per forward, as (173,108 tokens, max_seqlen 709), in both eager and compiled.
+   184	- In eager mode, the Python-level `varlen_attention` ran 8 times, one per block.
+   185	- The CUDA profiler shows `flash::flash_fwd_kernel` in both the eager and the compiled forward. The compiled forward also shows 12 Triton kernels.
+   186	- Compile: `compile_transformer_trunk("max-autotune-no-cudagraphs")`, dynamic. The first call took 20.6 s, including autotune. Autotune picked Triton templates for the 173,108-row mms.
+   187	- Control: the padded path (dispatch patched off) made no pack calls and launched no flash kernel. It used PyTorch's mem-efficient `fmha_cutlassF_bf16…sm80` kernel. The JSON field `eager_padded_use_flash_attn_x: true` reports the unpatched `owl.model.attn.use_flash_attn`, not the patched dispatch.
+   188	- Peak allocated memory was 1.72 GiB.
+   189	
+   190	**(c) Tests.** On the pod, `uv run --frozen pytest tests/owl/model/test_attn.py` passed 7 of 7 with 0 skipped. That includes `test_varlen_attention_flash_backend` and `test_varlen_attention_matches_torch_sdpa_per_sequence`, which skip on the Mac. `tests/kaggriculture` passed 161 of 161.
+   191	
+   192	**Limits and handoffs:**
+   193	- **Forward only.** The flash backward kernels, and compiled backward through the packed trunk, were not exercised. The actor heads don't exist yet (Task 2.3), and the model is not yet wired into `run_ppo`. So 6.1 still has to confirm flash in rollout, PPO update and evaluation, with backward included.
+   194	- The timings above are single profiled forwards. They are not throughput evidence.
+   195	- The Rust extension is a dev-profile (unoptimized) build. Build `--release` before any env-throughput measurement.
+   196	- **Custody:** the torch 2.9 wheel is a release asset added on 2025-12-17, after the v2.8.3 tag. `setup.py` resolves it by URL, and `uv.lock` pins only the sdist hash. Record the asset digest above. A rebuilt pod that resolves a different asset would change the kernel without changing the lock.
+   197	- **Pod state:**
+   198	  - The new venv and cache take about 3 GB; disk is at 20 GB free (62 %).
+   199	  - `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` also holds the 243 MB wheel re-download and a 55 MB Inductor cache.
+   200	  - `/workspace/transfer-flash-attn-2026-09-29/v3.bundle` is kept for custody.
+   201	  - A post-run read-only check at 06:38Z (`flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found:
+   202	    - `/workspace/kg-v3`: no mtime changes.
+   203	    - `/workspace/gemm-limits-src-1ddc71d`: no mtime or ctime changes.
+   204	    - `/workspace/kg-v3/.venv`: 19,796 entries have a new ctime. All are hard-linked regular files, and the sampled ones share an inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, so no content write is recorded, but the two venvs now **share inodes**. An in-place edit of a file in either venv would change the other.
+   205	  - Source state:
+   206	    - Detached HEAD at `69397da` with a clean checkout: `git checkout` output at 06:18:38Z (transcript excerpts).
+   207	    - Zero tracked-file changes at 06:26:39Z.
+   208	    - Fresh post-run receipt at 06:36:54Z: HEAD `69397da`, detached, `git status --porcelain` empty, `runs/` gitignored.
+   209	  - Still **operator-reported**, with no retained receipt: "no credentials copied" and "nothing pushed". The only evidence is the clone's remote list, which shows just the bundle path.
+   210	
+   211	## Model-only SPS ceiling (component) (2026-09-29, 06:45–06:49Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+   212	
+   213	**Component measurement, not end-to-end SPS.** These numbers are **conditional estimates for the specified A/B/C/D synthetic schedule**: model-only env steps/s if the engine, host copies, GAE, logging and DDP cost nothing. B (PPO-shaped loss) and C (teacher proxy) are surrogates, so their costs are not proven bounds on the eventual trainer. **Timing evidence only:** no finite-loss/gradient check and no sampling-versus-replay equality check were retained. At `e1458d2`, `configure_model_compile` (`model_compile="trunk"`) still rejects the Kaggriculture model; the probe compiled the trunk directly. (Revised after Codex review `codex/verify-sps-ceiling-r1.md`, APPROVE WITH EDITS.)
+   214	
+   215	- Pre-run statement: `run-statements/model-sps-ceiling.md`, committed in `ed61770` at 06:44:12Z. Launch was at 06:45:05Z.
+   216	- Source: `e1458d2` (full model with heads).
+   217	- Settings: preset config, bf16 autocast over fp32 params, TF32, trunk compiled with `max-autotune-no-cudagraphs` (dynamic), heads eager, flash forced.
+   218	- Inputs: synthetic `make_obs` observations and synthetic grammar tables.
+   219	- Evidence and limits: `model-sps-ceiling-2026-09-29/README.md`.
+   220	
+   221	| density (tokens/row) | t_A fwd 256 | t_B train 1,024 | t_C teacher-proxy 16,384 | t_D value 256 | update wall | ceiling SPS/rank | ≈2 ranks |
+   222	|---|---|---|---|---|---|---|---|
+   223	| sparse (222) | 11.09 ms | 147.5 ms | 852.0 ms | 7.48 ms | 3.93 s | 2,085 | ~4,170 |
+   224	| mid (303) | 12.87 ms | 177.6 ms | 987.7 ms | 9.50 ms | 4.66 s | 1,757 | ~3,514 |
+   225	| dense (709) | 25.41 ms | 326.6 ms | 1,690.6 ms | 22.04 ms | 8.56 s | 957 | ~1,913 |
+   226	
+   227	**Formulas.**
+   228	- update wall = 64·t_A + t_C + 16·t_B + t_D, using medians over 20 CUDA-event iterations.
+   229	- Variability: p90/median ≤ +0.14 % everywhere except sparse B (p90 148.678 ms vs 147.472 ms median, **+0.818 %**). Dense B has one tail sample of **545.106 ms** vs a 326.579 ms median (cause unknown; p90 327.007 ms). The weighted sum of component p90s is not a measured whole-update p90; no whole update was timed.
+   230	- ceiling = 8,192 / update wall.
+   231	- Two ranks give about 2× that, assuming the all-reduce is small. The all-reduce was not measured.
+   232	
+   233	**What dominates.**
+   234	- The 16 train steps take about 60 % of the synthetic schedule's update wall at every density.
+   235	- Teacher-proxy precompute takes 20–22 % and rollout sampling takes 18–19 %.
+   236	- This is a share of the schedule only. It does not attribute B's cost to heads backward, Muon or any other sub-phase, and A − D is the incremental sampling-path cost, not isolated head kernels.
+   237	
+   238	**Engine budget.**
+   239	- For the engine to cost no more than the model, which halves the ceiling, it must step 8,192 env steps in at most 3.9 s (sparse) to 8.6 s (dense) per rank. That is about 0.48–1.05 ms per env step.
+   240	- To lose at most 10 % of the ceiling SPS, engine time E must satisfy 8,192/(M + E) ≥ 0.9 · 8,192/M, i.e. E ≤ M/9: 0.437 s (sparse), 0.518 s (mid), 0.952 s (dense) per update, or 53 / 63 / 116 µs per env step. (The earlier 0.1 × M figures, 0.39–0.86 s and 48–105 µs, are conservative.)
+   241	- The 64 rollout steps run serially with the engine. Each batched engine step of 128 envs therefore competes with an 11–25 ms sampling forward.
+   242	
+Checked `ddf1fb2` against r1, including the [README](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md), [run statement addendum](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:27), and [results.md](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:211).
+
+1. **RESOLVED — Ceiling qualification.** Results are conditional estimates for the synthetic A/B/C/D schedule. Surrogate workloads, unavailable trainer compile integration, and missing numerical checks are explicitly disclosed.
+
+2. **RESOLVED — Synchronization and attribution.** The documents acknowledge the timer’s explicit synchronization, describe A−D as incremental sampling-path cost, and withdraw heads/Muon attribution. `nsys` absence is correctly labeled operator-reported without a retained receipt.
+
+3. **RESOLVED — Prelaunch and stopping claims.** The 563 MiB prelaunch reading, launch without the prescribed wait, and unenforced first-failure/aggregate limits are documented accurately. Logs confirm three successful exits over 227 seconds. These are corrected historical disclosures; the driver remains unchanged. The original pre-run text is byte-identical to `ed61770`.
+
+4. **RESOLVED — Memory interpretation.** Allocated peak **40.275 GiB** is distinguished from reserved peak **84.994 GiB**. The allocation target is scoped to these components; carryover/fragmentation remains an untested hypothesis, and complete-trainer memory fit remains unqualified.
+
+5. **RESOLVED — Variability.** Recalculation confirms sparse B’s **+0.818%** p90 difference and dense B’s **545.106 ms** tail sample. Both are disclosed. The weighted component-p90 sum is explicitly distinguished from a measured whole-update p90.
+
+6. **RESOLVED — Method descriptions.** Counted trunk chunks versus calculated head chunks, the packed-token bound, and per-player joint clipping are corrected. The exact engine allowance **E ≤ M/9** and reported budgets reproduce.
+
+**Raw evidence unchanged:** all 20 non-README artifacts—3 result JSONs, 4 logs, 10 receipts, and 3 scripts—are byte-identical across `cb4af49`, `ddf1fb2`, current HEAD, and the worktree. All **21/21 manifest entries** verify in each state; only the README’s manifest entry changed.
+
+Read-only verification; no files edited or GPU workloads rerun. Approval covers the corrected component-timing receipts.
+
+**VERDICT: APPROVE**The retained timings are usable as a **synthetic component benchmark**, with the following corrections. No files were changed or GPU workloads rerun.
+
+1. **P2 — Qualify the “ceiling” claim.** B and C are surrogate workloads whose costs are not proven bounds on the eventual trainer. At `e1458d2`, `configure_model_compile` still rejects Kaggriculture; the probe invokes compilation directly. Describe the numbers as **conditional estimates for the specified A/B/C/D schedule**. The script also retains no finite-loss/gradient checks or sampling-versus-replay equality check, so this is timing evidence, not numerical qualification. [Results](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:213)
+
+2. **P2 — Remove unsupported synchronization and bottleneck attribution.** The timer explicitly calls `end.synchronize()` before stopping the host clock. Host/event agreement therefore cannot establish intrinsically “fully synchronous” model calls. A−D measures incremental sampling-path cost, not isolated head kernels. B’s dominance does not isolate heads backward or Muon. No Nsight timeline exists; the reported `nsys` absence lacks a retained command-output receipt. [Timing harness](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/bench_model_sps.py:109)
+
+3. **P2 — Correct the prelaunch and stopping claims.** The prelaunch receipt shows **563 MiB on both GPUs**, zero utilization and no visible compute processes—not zero memory. Launch followed one second later despite the statement’s memory-in-use rule. Also, the driver continues after failures and allows three separate 25-minute timeouts; it does not enforce first-failure stopping or a 45-minute aggregate limit. Actual execution succeeded in **227 seconds**, so these discrepancies do not invalidate the timings. [Receipt](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/idle_nvidia_smi_prelaunch.txt:11), [driver](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/run_all.sh:2)
+
+4. **P2 — Separate memory observations from causal explanations.** Allocated peak **40.275 GiB** satisfies the component’s allocation target; the [plan explicitly defines 85% using `max_memory_allocated`](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/plan.md:31). Reserved peak **84.994 GiB / 89.5%** is a separate observation. Attribution to fragmentation and B carryover remains a hypothesis without allocator evidence or a phase-order control. Complete-trainer memory fit remains unqualified. [Memory explanation](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md:55)
+
+5. **P3 — Correct variability reporting.** Sparse B’s p90 is **148.678 ms versus 147.472 ms median: +0.818%**, contradicting “within 0.5% everywhere.” Dense B includes a **545.106 ms** sample versus **326.579 ms** median; disclose that tail. The weighted sum of component p90s is not a measured whole-update p90. [Sparse samples](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_sparse.json:180), [dense outlier](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_dense.json:169)
+
+6. **P3 — Tighten method descriptions.** C’s trunk chunks were counted; its two head chunks were **calculated from source**. Sparse C is below the **packed**, not padded, bound. B’s scalar ratio is per-player joint clipping because each row represents one seat; the README’s “not per_player” wording is incorrect. The engine’s `0.1 × model time` allowance is conservative: exact 10% SPS loss permits `model time / 9`. [Method and limits](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md:35)
+
+Verified: all **21 manifest entries** match; statement commit `ed61770` at **06:44:12Z** precedes launch at **06:45:05Z**; pod/source hashes match integration commit `e1458d2`; Rust and dependency inputs are unchanged. First-call separation, five warmups, 20 timed samples, BF16/TF32, dynamic trunk compilation, forced packed FlashAttention and planned shapes are supported. The arithmetic reproduces **3.928788 / 4.661861 / 8.564337 seconds** and **2085.121 / 1757.238 / 956.525 SPS per rank**. Component-only and unmeasured two-rank caveats are present.
+
+**VERDICT: APPROVE WITH EDITS**
+exec
+/bin/zsh -lc "rg -n -i 'codex exec|stdin|foreground|resume|usage limit|killed|21 of|21/21|19796|19,796' cookbook ops/rebuild-2026-09-29/codex/verify-flash-attn-r2.md ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run_followup.txt; nl -ba ops/rebuild-2026-09-29/plan.md | sed -n '103,142p'; nl -ba cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md | sed -n '1,110p'" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+cookbook/log.md:149:The resumed4,096-game root-only evaluation exceeds rank1’s600-second NCCL broadcast timeout. The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO Reference]] records optional `rl.eval_n_games`, with128 selected in both GPU recipes while training stays4,096 env/rank. Unset preserves starter behavior; raw-bank70% promotion remains intact. Smaller selection samples change variance. The failed attempt, source change and bounded repair verification are kept separately in the run receipt.
+cookbook/log.md:153:The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO Reference]] records the agent’s premature stall inference during4,096-game root-only evaluation. A full524,288-step PPO update and checkpoint succeeded; the interruption traceback shows native env.step and no OOM. Sparse progress output did not prove a hang. Resume uses the same current/optimizer/incumbent pair and W&B ID with approximately18 minutes remaining; no production code or promotion criterion is changed.
+cookbook/log.md:169:The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO Reference]] records bank snapshots/terminal aliases, candidate-relative evaluation banks and promotion/game-count telemetry without adding per-turn transport work. The latest8,353,727-parameter model passes a two-PRO6000 canonical DDP contract probe: reject69.9%, promote70%, synchronized incumbent/candidate weights, separate best checkpoint and exact model/optimizer resume. Injected scores are isolated test evidence. Full Python preparation passes811 with three hardware/backend skips. The genuine compiled W&B run `spoon/kg-v3/vw4ohx4a` finishes13 updates/13,312 game transitions including same-ID resume. API read-back verifies bank metrics and three50% evaluations without promotion; incumbent remainsstep0. Direct run navigation loads the dashboard after the initial home/project date-parser error. Final/current-best artifacts are hash-verified locally and the owned GPU pod is confirmed EXITED.
+cookbook/log.md:241:The later owner directive changes the [[decisions/start-multi-gpu-qualification-with-two-ranks|compute preference]] to two RTX 5090/RTX PRO 6000 GPUs first; two allocation attempts failed and no pod was created. The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO record]] names unchanged incumbent/resume function bodies, three real-native regression tests, the initial checkpoint cadence, engine cache keys and opt-in CPU DDP diagnostic boundary. The [[references/native-game-semantics-use-v3-owned-buffers|native record]] adds reusable-buffer optimization, bounded paired CPU adapter evidence and the retained starter fixture/parser repair. Final shared receipt reconciliation remains pending; no CUDA SPS, learning or general scaling claim follows.
+cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md:57:- Codex reviewed the receipts twice: `verify-sps-ceiling-r1` (APPROVE WITH EDITS, edits applied in `ddf1fb2`) and `verify-sps-ceiling-r2` (APPROVE, 21 of 21 manifest entries byte-identical). The reports are local working transcripts in `ops/rebuild-2026-09-29/codex/`, not committed.
+cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md:58:- On this checkout, `shasum -a 256 -c MANIFEST.sha256` in `model-sps-ceiling-2026-09-29/` reports 21 of 21 files OK (2026-09-29).
+cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md:40:- **Hard-linked venvs.** 19,796 files in `/workspace/kg-v3/.venv` share inodes with the new venv through the uv cache. An in-place edit of a file in either venv changes the other. Avoid in-place edits of installed files, or create venvs with `uv --link-mode=copy`.
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:48:## Incumbent selection, resume and execution controls
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:50:The previous-best logic stays intact: evaluate against last best, promote at win rate **>= .7**, keep separate current/best checkpoints, and resume the current model/optimizer separately from the last-best opponent. The only runner change moves evaluation logging after the promotion write/barrier and adds `eval/promoted`, `eval/promotion_threshold` and `eval/games`. `tests/kaggriculture/test_last_best.py` exercises native evaluation, the .699/.7 branches and current/incumbent resume pairing. Periodic evaluation now follows upstream's 20M-step `checkpoint_freq`; short diagnostics need an explicit override. `OWL_ALLOW_CPU_DDP=1` enables Gloo/CPU diagnostics only; normal multi-rank runs require CUDA.
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:63:- Two-rank promotion/resume contract probe and online run `spoon/kg-v3/vw4ohx4a` (`ops/ppo-promotions-2026-09-29/results.md`).
+   103	| I2 | The same global config on any hardware: divide per-rank `n_envs` and spm by world size | 2 × 128, 4 × 64 envs | 3.4 |
+   104	| I3 | The LR schedule is defined over env steps; a batch change rescales warmup and decay | Any forced deviation rescales them in the YAML | 3.4, 6.1 |
+   105	| I4 | Model ladder: GELU, `mlp_ratio 2.0`, `head_dim 32`, scale width×depth; 6m = 256×6 (5,679,118 params in Orbit) | Our trunk sits on the ladder | 2.4 |
+   106	| I5 | Winner-distribution critic (value 2p − 1, gamma 1), value distillation on winner probabilities | Per-seat (self, opponent) softmax from the seat's own observation | 2.2 |
+   107	| I6 | Last-best teacher: KL(teacher ‖ student), small coefficients, the teacher shares the student's architecture and is refreshed in place, cached path bit-for-bit equal to the combined path | Per-slot categorical KL over the grammar heads | Phase 4 |
+   108	| I7 | Eval against last best, 70% promotion, separate current/best checkpoints, 8 replays exported | Raw-bank winners; Kaggriculture replay format | 3.3, 7.3 |
+   109	| I8 | Throughput defaults: compiled GAE/loss, trunk `max-autotune-no-cudagraphs`, BF16, TF32, forced FlashAttention | Verified active in Phase 6 | 3.4, 6.x |
+   110	| I9 | Parity-first engine; `docs/rules-parity-coverage.md` is the source of truth | Kaggriculture parity documented the same way | 1.1, 7.5 |
+   111	| I10 | Docs are contracts: read the mapped doc first, update it with the change, `just docs-fresh` | Same | all |
+   112	| I11 | Refactor rather than add compatibility shims; fail fast; strict persisted schemas; `isinstance` narrowing instead of `getattr` | Same | all |
+   113	| I12 | `just py-prepare` / `rs-prepare` / `prepare`, `uv add` / `cargo add`, tracked lockfiles, PR checklist, merge commits | Same | all |
+   114	
+   115	## Working with Codex
+   116	
+   117	- **Worktrees:** Codex works in its own worktree and branch, so the two agents never share a checkout. Before launch, Claude runs `uv sync` and `cargo fetch` there, so Codex needs no network for dependencies.
+   118	
+   119	```bash
+   120	git worktree add ../kg-v3-codex -b kg/rebuild-codex kg/isaiah-gap-closure
+   121	(cd ../kg-v3-codex && uv sync --extra reference && cargo fetch)
+   122	codex exec -C ../kg-v3-codex -s workspace-write \
+   123	  -o ops/rebuild-2026-09-29/codex/<task>.md "<task prompt>" \
+   124	  </dev/null 2>&1 | tee ops/rebuild-2026-09-29/codex/<task>-transcript.log
+   125	```
+   126	
+   127	- **Running `codex exec` (rules adopted after episodes in this rebuild):**
+   128	  - **Close stdin** (`</dev/null`). With an open non-tty stdin, `codex exec` prints "Reading additional input from stdin..." and waits (for example `codex/brief-2.3-r3-transcript.log`).
+   129	  - **Run it in the foreground, or poll until it exits.** A verifier or orchestrator agent must not return while `codex exec` is still running: its return killed the child in Task 1.1b r2 (`verify-1.1b-r2-attempt2-killed-transcript.log`) and Task 2.3 r2 (`verify-2.3-r2-attempt1-killed-transcript.log`). Check that the `-o` report exists and ends with a verdict before treating a run as complete.
+   130	  - **After a usage limit**, keep the failed attempt's transcript under an `-attemptN-<reason>-transcript.log` name, then resume from the partial commit with a separate resume prompt (`<task>-resume-prompt.md`) rather than rerunning from scratch (`task-1.2-impl-resume-*`, `verify-1.1b-r2-attempt1-usage-limit-transcript.log`).
+   131	
+   132	- **Task prompt contents:** the plan path and task id; the Global Constraints (quote the Mac and pod rules); the task's reference files with their dispositions; required tests; and "report changed files, commands run with their results, and open questions".
+   133	- **Contract first:** Task 0.1 fixes the observation, action and env contract before the streams diverge. Changing it later needs both agents to agree, recorded in the contract doc.
+   134	- **Streams:**
+   135	
+   136	| Stream | Owner | Tasks |
+   137	|---|---|---|
+   138	| Engine and native env | Codex | 0.3, 1.1–1.5, 5.1, 7.1, 7.3, 7.5 |
+   139	| Model, trainer, teacher, configs | Claude | 0.1, 2.x, 3.x, Phase 4, 5.2, 7.2, 7.4, Phase 8 |
+   140	| Pod operation | Claude (Codex writes scripts and reviews receipts) | 0.2, 5.2, Phase 6 |
+   141	
+   142	- **Cross-review:** every task is reviewed by the other agent before it merges into `kg/isaiah-gap-closure` with a regular merge commit. Claude reviews with superpowers:requesting-code-review; Codex reviews with `codex exec -C <worktree> -s read-only "Review <base>..<head> against rebuild plan task <id>: correctness, contract, tests, Isaiah topology"`. Findings are fixed before the merge.
+     1	---
+     2	type: "Decision"
+     3	title: "Restart the port from Isaiah's clean base"
+     4	description: "Main and the working branch restart from Isaiah's 32b3ec9; the prior port is a reference branch for grammar, tokens and the Rust engine; the cookbook and Claude/Codex setup carry over; the model keeps Isaiah's layer topology; one BC rerun and RTX PRO 6000 verification follow."
+     5	tags: ["kaggriculture-v3", "decisions"]
+     6	status: "adopted"
+     7	generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+     8	decider: "Owner: restore kg/isaiah-gap-closure and main to 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again from a clean state with Codex, keeping a reference branch and carrying the cookbook with the .claude/.codex setup."
+     9	sources: [{"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}]
+    10	---
+    11	
+    12	# Restart the port from Isaiah's clean base
+    13	
+    14	The owner directs, on 2026-09-29:
+    15	
+    16	> also for kg/isaiah gap closeure and main branch can you restore to starting points 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again? For grammar/tokens/game rust engine, you can have a reference branch from this current branch snapshot to refer on, I want you & codex started from a clean state. Carry the cookbooks with you with .claude/.codex setup.
+    17	
+    18	and, just before it:
+    19	
+    20	> Yes, we have different games, so we had different action heads, etc., these kind of things, but the model layers/ topologies should remain. We are just playign different games.
+    21	
+    22	> Also an extra BC is for sure required. Yo ucan use 2/4-rank RTX 6000 to verify your work. Work with codex as well.
+    23	
+    24	## What was done
+    25	
+    26	- Local `main` and `kg/isaiah-gap-closure` were reset to Isaiah's `32b3ec9`. The remote was not changed: `origin/main` is still `0d01234`, and nothing was pushed.
+    27	- Branch `kg/reference-2026-09-29` and annotated tag `kg-reference-2026-09-29` (both at `65f0eac`) hold the whole prior port: the initial adaptation `0d01234`, `a2bf23c`, and the cookbook cleanup `65f0eac`. Consult it for the grammar and action codec, observation tokens, the vendored Rust engine (`engine_rs/`), native bindings (`src/kaggriculture.rs`), rewards, BC data preparation, and run evidence under `ops/`.
+    28	- Carried onto the working branch: `cookbook/`, `.claude/`, `.codex/`, `AGENTS.md` (with the `CLAUDE.md` symlink), `kaggriculture-v3.base`, `ops/pre-commit` (Git uses `core.hooksPath=ops`), `ops/cookbook-setup-checks.md`, and `.gitignore` (the starter's rules plus bulk and credential exclusions).
+    29	- Local run artifacts under `ops/` and `runs/`, which Git ignores, stay on disk; nothing was deleted.
+    30	
+    31	## Consequences
+    32	
+    33	- **References describe the reference branch, not the current tree.** Sources whose files no longer exist are re-pointed as `reference-branch:kg/reference-2026-09-29/<path>`. Sources for files that still exist (Isaiah's own files) stay `repository:` so the first-edit gate still surfaces them. Until the rebuild, those notes describe the reference branch's adapted versions of those files.
+    34	- Owner Decisions remain in force.
+    35	- **Same layer topology:** the rebuilt model uses Isaiah's `StatelessTransformerV1` layer classes, arrangement and roles: observation stems, learned per-role tokens, trunk blocks, critic head and actor input projection. Only the game I/O differs: input channel widths, categorical encodings fed to the stems, and the action heads. See the [[the-policy-is-stateless-and-observation-only|stateless Decision]].
+    36	- **One BC rerun is required** on the rebuilt model, using the reference branch's BC data pipeline.
+    37	- **Verification hardware:** 2- and 4-rank RTX PRO 6000 runs are authorized for verification. Read the live price first and write a run statement before each run; see the [[start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]].
+    38	- **Codex collaboration:** Claude and Codex both start from this clean state and work in separate worktrees, cross-reviewing each other's changes.
+    39	- The previous gap-closure plan (`reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md`) feeds a rebuild plan. Its principles table and task designs stay valid; its file-level steps assumed the old code.
+    40	
+    41	## Using the reference branch — implementation interpretation
+    42	
+    43	The owner asks to use the reference branch "properly, without blindly copying". The rebuild plan (`ops/rebuild-2026-09-29/plan.md`) gives every reference component exactly one disposition:
+    44	- **Vendor, trimmed and hash-pinned:** only the rules kernel (`lib.rs`, `py_random.rs`, `econ_attrib.rs`), because it must match Kaggle's Python engine exactly.
+    45	- **Port after review:** the native grammar, rewards, device mask tables and benchmark harness.
+    46	- **Rebuild, with the reference as test oracle:** the observation encoding (named per-entity tensors instead of the flat v2 vector sliced at fixed offsets), the environment bindings, the codec, the model, the trainer seams, the configs and BC training.
+    47	- **Reference only:** scripted bots until evaluation needs a few of them, the v2 experiments, and the run receipts.
+    48	
+    49	Lessons from the reference (raw-bank winners, truncation reward, seed streams, the CUDA fault (since traced to a compiler GEMM overflow), cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
+
+exec
+/bin/zsh -lc "cat ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r2.md; sed -n '188,208p' ops/rebuild-2026-09-29/results.md; cat ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run_followup.txt; tail -n 12 ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt2-killed-transcript.log; tail -n 12 ops/rebuild-2026-09-29/codex/verify-2.3-r2-attempt1-killed-transcript.log" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+Checked `ddf1fb2` against r1, including the [README](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md), [run statement addendum](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:27), and [results.md](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:211).
+
+1. **RESOLVED — Ceiling qualification.** Results are conditional estimates for the synthetic A/B/C/D schedule. Surrogate workloads, unavailable trainer compile integration, and missing numerical checks are explicitly disclosed.
+
+2. **RESOLVED — Synchronization and attribution.** The documents acknowledge the timer’s explicit synchronization, describe A−D as incremental sampling-path cost, and withdraw heads/Muon attribution. `nsys` absence is correctly labeled operator-reported without a retained receipt.
+
+3. **RESOLVED — Prelaunch and stopping claims.** The 563 MiB prelaunch reading, launch without the prescribed wait, and unenforced first-failure/aggregate limits are documented accurately. Logs confirm three successful exits over 227 seconds. These are corrected historical disclosures; the driver remains unchanged. The original pre-run text is byte-identical to `ed61770`.
+
+4. **RESOLVED — Memory interpretation.** Allocated peak **40.275 GiB** is distinguished from reserved peak **84.994 GiB**. The allocation target is scoped to these components; carryover/fragmentation remains an untested hypothesis, and complete-trainer memory fit remains unqualified.
+
+5. **RESOLVED — Variability.** Recalculation confirms sparse B’s **+0.818%** p90 difference and dense B’s **545.106 ms** tail sample. Both are disclosed. The weighted component-p90 sum is explicitly distinguished from a measured whole-update p90.
+
+6. **RESOLVED — Method descriptions.** Counted trunk chunks versus calculated head chunks, the packed-token bound, and per-player joint clipping are corrected. The exact engine allowance **E ≤ M/9** and reported budgets reproduce.
+
+**Raw evidence unchanged:** all 20 non-README artifacts—3 result JSONs, 4 logs, 10 receipts, and 3 scripts—are byte-identical across `cb4af49`, `ddf1fb2`, current HEAD, and the worktree. All **21/21 manifest entries** verify in each state; only the README’s manifest entry changed.
+
+Read-only verification; no files edited or GPU workloads rerun. Approval covers the corrected component-timing receipts.
+
+**VERDICT: APPROVE**- Peak allocated memory was 1.72 GiB.
+
+**(c) Tests.** On the pod, `uv run --frozen pytest tests/owl/model/test_attn.py` passed 7 of 7 with 0 skipped. That includes `test_varlen_attention_flash_backend` and `test_varlen_attention_matches_torch_sdpa_per_sequence`, which skip on the Mac. `tests/kaggriculture` passed 161 of 161.
+
+**Limits and handoffs:**
+- **Forward only.** The flash backward kernels, and compiled backward through the packed trunk, were not exercised. The actor heads don't exist yet (Task 2.3), and the model is not yet wired into `run_ppo`. So 6.1 still has to confirm flash in rollout, PPO update and evaluation, with backward included.
+- The timings above are single profiled forwards. They are not throughput evidence.
+- The Rust extension is a dev-profile (unoptimized) build. Build `--release` before any env-throughput measurement.
+- **Custody:** the torch 2.9 wheel is a release asset added on 2025-12-17, after the v2.8.3 tag. `setup.py` resolves it by URL, and `uv.lock` pins only the sdist hash. Record the asset digest above. A rebuilt pod that resolves a different asset would change the kernel without changing the lock.
+- **Pod state:**
+  - The new venv and cache take about 3 GB; disk is at 20 GB free (62 %).
+  - `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` also holds the 243 MB wheel re-download and a 55 MB Inductor cache.
+  - `/workspace/transfer-flash-attn-2026-09-29/v3.bundle` is kept for custody.
+  - A post-run read-only check at 06:38Z (`flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found:
+    - `/workspace/kg-v3`: no mtime changes.
+    - `/workspace/gemm-limits-src-1ddc71d`: no mtime or ctime changes.
+    - `/workspace/kg-v3/.venv`: 19,796 entries have a new ctime. All are hard-linked regular files, and the sampled ones share an inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, so no content write is recorded, but the two venvs now **share inodes**. An in-place edit of a file in either venv would change the other.
+  - Source state:
+    - Detached HEAD at `69397da` with a clean checkout: `git checkout` output at 06:18:38Z (transcript excerpts).
+    - Zero tracked-file changes at 06:26:39Z.
+    - Fresh post-run receipt at 06:36:54Z: HEAD `69397da`, detached, `git status --porcelain` empty, `runs/` gitignored.
+# follow-up (read-only): split the /workspace/kg-v3 hits into mtime vs ctime-only, and check hard-link sharing with the new venv
+date_utc: 2026-09-29T06:38:37Z
+$ find /workspace/kg-v3 -xdev -newermt "2026-09-29 06:16:00Z" | wc -l   # content/mtime changes
+0
+$ find /workspace/kg-v3 -xdev -newerct "2026-09-29 06:16:00Z" -not -path "/workspace/kg-v3/.venv/*" | wc -l   # ctime hits outside .venv
+0
+$ find /workspace/kg-v3/.venv -xdev -newerct "2026-09-29 06:16:00Z" -type f -links 1 | wc -l   # ctime-changed regular files NOT hard-linked
+0
+$ find /workspace/kg-v3/.venv -xdev -newerct "2026-09-29 06:16:00Z" -not -type f | wc -l   # ctime-changed non-regular entries
+0
+$ stat -c "%i %h %y %z %n" /workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/buf.py /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/smmap/buf.py
+13074928871 3 2026-09-28 18:33:22.718836837 +0000 2026-09-29 06:20:31.943238055 +0000 /workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/buf.py
+13074928871 3 2026-09-28 18:33:22.718836837 +0000 2026-09-29 06:20:31.943238055 +0000 /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/smmap/buf.py
+$ stat -c "%i %h %y %z %n" /workspace/kg-v3/.venv/bin/maturin /workspace/kg-v3-rebuild/.venv/bin/maturin
+27978772823 3 2026-09-28 18:33:24.733847737 +0000 2026-09-29 06:20:31.895237790 +0000 /workspace/kg-v3/.venv/bin/maturin
+27978772823 3 2026-09-28 18:33:24.733847737 +0000 2026-09-29 06:20:31.895237790 +0000 /workspace/kg-v3-rebuild/.venv/bin/maturin
+$ uv cache dir; UV_LINK_MODE=unset
+/root/.cache/uv
+UV_LINK_MODE=unset
+ops/rebuild-2026-09-29/1.1b/verify-r1/sweep-summary.json
+ops/rebuild-2026-09-29/1.1b/verify-r1/sweep.log
+ops/rebuild-2026-09-29/1.1b/verify-r1/with-known-divergences.log
+ops/rebuild-2026-09-29/1.1b/verify-r1/with-known-divergences/sweep-summary.json
+ops/rebuild-2026-09-29/1.1b/with-known-divergences.log
+ops/rebuild-2026-09-29/1.1b/with-known-divergences/sweep-summary.json
+scripts/check_engine_trim.py
+scripts/kaggriculture_parity/generate_traces.py
+scripts/kaggriculture_parity/sweep.py
+tests/scripts/test_kaggriculture_parity.py
+tests/tools/test_check_engine_trim.py
+
+ .../codex/verify-2.3-heads/restoration-final.json  |    6 +
+ .../codex/verify-2.3-heads/tracked-before.json     |  288 ++++++
+ .../codex/verify-2.3-r1-prompt.md                  |    1 +
+ ops/rebuild-2026-09-29/codex/verify-2.3-r1.md      |   15 +
+ python/owl/kaggriculture/gpu_grammar.py            |  244 +++++
+ python/owl/model/kaggriculture.py                  |  353 ++++++-
+ python/owl/model/kaggriculture_actor.py            |  482 ++++++++++
+ tests/kaggriculture/test_gpu_grammar.py            |  174 ++++
+ tests/kaggriculture/test_model_encoder.py          |  157 ++-
+ tests/kaggriculture/test_model_heads.py            | 1017 ++++++++++++++++++++
+ 32 files changed, 3525 insertions(+), 76 deletions(-)
+
+
+exec
+/bin/zsh -lc 'shasum -a 256 -c MANIFEST.sha256' in /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29
+ succeeded in 0ms:
+./bench_model_sps.py: OK
+./pod/bench_model_sps.py: OK
+./pod/driver.log: OK
+./pod/log_dense.txt: OK
+./pod/log_mid.txt: OK
+./pod/log_sparse.txt: OK
+./pod/receipts/compile_caches.sha256: OK
+./pod/receipts/git_checkout.txt: OK
+./pod/receipts/git_post.txt: OK
+./pod/receipts/idle_nvidia_smi_post.txt: OK
+./pod/receipts/idle_nvidia_smi_pre.txt: OK
+./pod/receipts/idle_nvidia_smi_prelaunch.txt: OK
+./pod/receipts/idle_ps_post.txt: OK
+./pod/receipts/idle_ps_pre.txt: OK
+./pod/receipts/idle_ps_prelaunch.txt: OK
+./pod/receipts/import_paths.txt: OK
+./pod/results_dense.json: OK
+./pod/results_mid.json: OK
+./pod/results_sparse.json: OK
+./pod/run_all.sh: OK
+./README.md: OK
+
+exec
+/bin/zsh -lc "rg -n '9 failed|11 passed|722 passed|148 passed|7 failed|155 passed|test result:|missing|not found|No such file' ops/rebuild-2026-09-29/0.3-red.log ops/rebuild-2026-09-29/0.3-green.log ops/rebuild-2026-09-29/0.3-python-suite.log ops/rebuild-2026-09-29/0.3-cargo-test.log ops/rebuild-2026-09-29/0.3-prepare.log ops/rebuild-2026-09-29/0.3-py-prepare-final.log; nl -ba AGENTS.md | sed -n '124,148p'; git show 69397da:python/owl/model/kaggriculture.py | rg -n 'critic_head|actor_head'; git diff --quiet; git diff --cached --quiet" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+ops/rebuild-2026-09-29/0.3-red.log:300:9 failed, 2 passed in 9.80s
+ops/rebuild-2026-09-29/0.3-green.log:2:11 passed in 1.14s
+ops/rebuild-2026-09-29/0.3-cargo-test.log:91:test rl::action_spec::tests::pure_launch_errors_when_cached_slot_planet_is_missing ... ok
+ops/rebuild-2026-09-29/0.3-cargo-test.log:237:test result: FAILED. 148 passed; 7 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.13s
+ops/rebuild-2026-09-29/0.3-prepare.log:143:test rl::action_spec::tests::pure_launch_errors_when_cached_slot_planet_is_missing ... ok
+ops/rebuild-2026-09-29/0.3-prepare.log:290:test result: FAILED. 148 passed; 7 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.13s
+ops/rebuild-2026-09-29/0.3-python-suite.log:16:722 passed, 3 skipped in 17.15s
+ops/rebuild-2026-09-29/0.3-py-prepare-final.log:60:======================== 722 passed, 3 skipped in 4.97s ========================
+   124	presents one, read it and explicitly retry the intended edit.
+   125	
+   126	**Work in bounded changes.** State a target and observable completion/stopping
+   127	condition. Keep change/run artifacts in `ops/`; git preserves implementation
+   128	history. Report checks and unknowns without inventing thresholds or results.
+   129	
+   130	**Record every adaptation.** Owner: “every adaption you made to this repo, please
+   131	add a cookbook record.” Every material repository adaptation must have an
+   132	identified cookbook record linking changed paths, reason, actual checks and
+   133	remaining gaps. Coherent adaptations may share a contract record with an explicit
+   134	inventory. This overrides the generic progress-only exemption for adaptations;
+   135	routine monitoring still belongs in working artifacts.
+   136	
+   137	**Record before finishing.** Material decisions, corrections and reusable
+   138	findings require three edits together: note, its folder `index.md`, and a
+   139	prepended `cookbook/log.md` entry.
+   140	
+   141	- Keep routine launch, build, checkpoint and monitor output in the change's
+   142	  working artifacts. Close result episodes with outcomes, denominators and gaps;
+   143	  freeze completed evidence. Progress alone earns no new durable note.
+   144	- Revise an existing durable concept when its reusable claim, evidence,
+   145	  consequence or limits change. Reconcile its opening, conclusion, metadata and
+   146	  index description together. Replace superseded current prose and link history;
+   147	  do not append dated operational progress to References.
+   148	- Split independent claims when needed. Preserve unique dirty history and incoming
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+176:        self.critic_head = OutputProjectionMLP(trunk, 1)
+197:        _init_linear(self.critic_head.out, gain=_CRITIC_HEAD_INIT_GAIN)
+215:        return (self.critic_head.out,)
+454:        logits = self.critic_head(encoded.critic_value_hidden).float().squeeze(-1)
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+
+codex
+Seven edits are needed:
+
+1. **P2 — SPS comparison cannot establish overhead attribution.** [SPS Reference:52](/Users/poonszesen/kg-v3/cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md:52) claims comparison with complete-work SPS reveals engine/host/all-reduce cost. Surrogate losses and uniform densities prevent that attribution without matched trainer phase measurements. Remove the exclusive “only if” explanation for exceeding the ceiling.
+
+2. **P2 — BF16 spacing claim exceeds evidence.** [Flash Reference:25](/Users/poonszesen/kg-v3/cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md:25), its description, and the index say agreement is within BF16 spacing. [Results:157](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:157) explicitly says the maximum-error element’s magnitude was not retained. Keep the measured maximum difference and tolerance results; remove the spacing claim.
+
+3. **P2 — Qualify process-termination causality.** [Plan:129](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/plan.md:129) says the parent agent’s return killed the child. The cited transcripts establish incomplete reviews, without termination or parent-lifecycle evidence. Label the cause operator-reported/inferred, or cite an orchestration receipt.
+
+4. **P2 — Record the execution-rule adaptation.** Commit `9bfa0a0` changes only the plan. Its reusable stdin, foreground and recovery rules lack the cookbook note/index/log record required by [AGENTS.md:130](/Users/poonszesen/kg-v3/AGENTS.md:130).
+
+5. **P3 — Preserve sampled custody scope.** [Flash Reference:40](/Users/poonszesen/kg-v3/cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md:40) says all 19,796 files share inodes with the new venv through uv’s cache. Evidence establishes hard-linked files, but cross-venv identity was checked for two samples; cache causation remains inferred.
+
+6. **P3 — Correct manifest wording.** [SPS Reference:57](/Users/poonszesen/kg-v3/cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md:57) should say **21/21 checksums verified; 20 non-README artifacts unchanged**. The README and its checksum changed.
+
+7. **P3 — Specify actor heads.** [Flash Reference:31](/Users/poonszesen/kg-v3/cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md:31) says “the heads did not exist.” The critic head existed at `69397da`; only actor heads were absent.
+
+Checks passed: cookbook lint on all five changed concept notes; required metadata and all 34 `repository:` sources; manifests **30/30** and **21/21**; SPS arithmetic; prepended log preservation. Task 0.3 and historical-path corrections match receipts. Decision edits distinguish implementation metrics from owner wording. No Lesson was introduced, and no specified in-flight lane file was touched. Review remained read-only.
+
+**VERDICT: APPROVE WITH EDITS**
+hook: Stop
+hook: Stop Completed
+tokens used
+71,683
+Seven edits are needed:
+
+1. **P2 — SPS comparison cannot establish overhead attribution.** [SPS Reference:52](/Users/poonszesen/kg-v3/cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md:52) claims comparison with complete-work SPS reveals engine/host/all-reduce cost. Surrogate losses and uniform densities prevent that attribution without matched trainer phase measurements. Remove the exclusive “only if” explanation for exceeding the ceiling.
+
+2. **P2 — BF16 spacing claim exceeds evidence.** [Flash Reference:25](/Users/poonszesen/kg-v3/cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md:25), its description, and the index say agreement is within BF16 spacing. [Results:157](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:157) explicitly says the maximum-error element’s magnitude was not retained. Keep the measured maximum difference and tolerance results; remove the spacing claim.
+
+3. **P2 — Qualify process-termination causality.** [Plan:129](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/plan.md:129) says the parent agent’s return killed the child. The cited transcripts establish incomplete reviews, without termination or parent-lifecycle evidence. Label the cause operator-reported/inferred, or cite an orchestration receipt.
+
+4. **P2 — Record the execution-rule adaptation.** Commit `9bfa0a0` changes only the plan. Its reusable stdin, foreground and recovery rules lack the cookbook note/index/log record required by [AGENTS.md:130](/Users/poonszesen/kg-v3/AGENTS.md:130).
+
+5. **P3 — Preserve sampled custody scope.** [Flash Reference:40](/Users/poonszesen/kg-v3/cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md:40) says all 19,796 files share inodes with the new venv through uv’s cache. Evidence establishes hard-linked files, but cross-venv identity was checked for two samples; cache causation remains inferred.
+
+6. **P3 — Correct manifest wording.** [SPS Reference:57](/Users/poonszesen/kg-v3/cookbook/references/model-only-sps-ceiling-bounds-per-rank-throughput.md:57) should say **21/21 checksums verified; 20 non-README artifacts unchanged**. The README and its checksum changed.
+
+7. **P3 — Specify actor heads.** [Flash Reference:31](/Users/poonszesen/kg-v3/cookbook/references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120.md:31) says “the heads did not exist.” The critic head existed at `69397da`; only actor heads were absent.
+
+Checks passed: cookbook lint on all five changed concept notes; required metadata and all 34 `repository:` sources; manifests **30/30** and **21/21**; SPS arithmetic; prepended log preservation. Task 0.3 and historical-path corrections match receipts. Decision edits distinguish implementation metrics from owner wording. No Lesson was introduced, and no specified in-flight lane file was touched. Review remained read-only.
+
+**VERDICT: APPROVE WITH EDITS**

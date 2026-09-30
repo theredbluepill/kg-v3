@@ -1,0 +1,362 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-bcbrief
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ed14-dafd-7983-83d3-2abc39830045
+--------
+user
+You are Codex. READ-ONLY confirmation on branch kg/rebuild-bc-brief. Your r3 report (ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r3.md in /Users/poonszesen/kg-v3) had one P3: cookbook/references/index.md:12 still described the Rust transition check without its specified/unexecuted status. Verify commit 74428e8 fixes it consistently with the Reference and log, and nothing else changed. End with VERDICT: APPROVE / APPROVE WITH EDITS / REVISE.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll check commit `74428e8` against the r3 finding, confirm the wording matches the Reference and log, and verify the change is limited to that fix.
+exec
+/bin/zsh -lc 'cat ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r3.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+Both r2 corrections are resolved, but the matching index still needs one edit.
+
+- **P2 resolved:** [Q1](/Users/poonszesen/kg-v3-bcbrief/ops/rebuild-2026-09-29/briefs/5.1-bc-data.md:558) specifies a separate normalization mode, its own pair count, and direct raw-versus-normalized snapshot comparison.
+- **P3 resolved in Reference:** [Description](/Users/poonszesen/kg-v3-bcbrief/cookbook/references/rebuild-data-preparation-preserves-replay-identity.md:4) now says “specifies” and identifies Python as the executed evidence. The new log entry agrees.
+- **P3 remaining — index reconciliation:** [Index line](/Users/poonszesen/kg-v3-bcbrief/cookbook/references/index.md:12) is unchanged and still says “a step+1 transition check run by an offline Rust binary.” Make its specified/unexecuted status explicit, matching the Reference and the cookbook’s required note/index/log update.
+
+`4fdd61e` changes only the brief, Reference description, and log entry; no unrelated changes. Branch and HEAD match, worktree is clean, and `git diff --check` passes. No files changed or builds run.
+
+VERDICT: APPROVE WITH EDITS
+exec
+/bin/zsh -lc "sed -n '1,90p' cookbook/index.md && sed -n '1,60p' cookbook/log.md && nl -ba cookbook/references/index.md | head -45 && cat cookbook/references/rebuild-data-preparation-preserves-replay-identity.md" in /Users/poonszesen/kg-v3-bcbrief
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References describe branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]]
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Separate the 5.1 normalization probe and narrow the pairing claim
+
+Codex's confirmation (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r2.md`) asked for two edits:
+- The 5.1 brief's Q1 now specifies a separate normalization probe that compares raw and normalized snapshots directly.
+- The [[references/rebuild-data-preparation-preserves-replay-identity|data-preparation Reference]] now says the Rust transition check is specified, not yet executed. The executed evidence is Codex's Python-engine measurement. Its index line says the same.
+
+## 2026-09-29 — Apply Codex's review of the Task 5.1 owner-direction edits
+
+Codex reviewed the 5.1 BC data brief after the owner's two directions ("kaggle
+obs shd be step+1"; "you can use current pod to do the BC") and returned
+REVISE (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md`). All
+findings are applied to `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md`. The
+step+1 transition check now builds its header with the recorded `info.seed`:
+on local episode 114406062 the pinned Python engine matched 719/719
+transitions with it, 704/719 with placeholder 0 and 0/719 with the shifted
+pairing, so a placeholder would reject valid demonstrations. The seed stays
+out of encoding, model inputs and shards. The check is an offline root-crate
+Rust binary whose per-turn results go into the manifest, leaving 1.4's
+production API unchanged. The pod run uses a fresh copy-linked venv because
+the existing venvs share hard-linked files. Custody text now cites the
+reference `source.json` archive hash and the ZIP found on the current pod;
+no volume access is needed for the pinned slice. Brief only, no code; the
+Rust harness has not run. The
+[[references/rebuild-data-preparation-preserves-replay-identity|replay identity Reference]]
+records the seed finding and the custody correction.
+
+## 2026-09-29 — Apply Codex's rereview to the Task 5.1 BC data brief
+
+Codex reread `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` at `bcefd02`
+(APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/brief-5.1-rereview.md`).
+All findings are applied. The reference's `raw.get(k) or []` normalized every
+falsy `hands`/`market` value, not only absent or `null`; preparation now
+reproduces that rule so admission stays comparable, counts it by field and
+kind, and tests the eight `false`/`0`/`""`/`{}` combinations. A HEAD plus
+dirty flag could not identify modified preparation or oracle code, so runs
+now require a clean immutable checkout on both routes, record per-file source
+hashes, and recheck them before publishing the manifest. A compact per-shard
+path/bytes/SHA-256 inventory is committed while NPZ bulk stays external, as
+the custody Decision requires. The differential oracle evaluates both
+reference seats before deriving the first rejection. Brief only, no code;
+slice incidence of the normalized kinds remains unknown. The
+[[references/rebuild-data-preparation-preserves-replay-identity|replay identity Reference]]
+records the corrected claim.
+
+## 2026-09-29 — Refresh the Task 5.1 BC data brief against the merged encoder and grammar
+
+Stream D wrote `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` before Tasks 1.3
+and 1.4 existed. The refresh binds preparation to the APIs that now exist:
+per-turn explicit `TraceHeader`s go through the merged
+`owl.rs.encode_kaggriculture_headers_into` for both seats; recorded actions go
+through 1.4's approved `kaggriculture_encode` and `kaggriculture_decode`, which
+are absent from the partial `kg/rebuild-env`. Per-seat strict admission is
+counted and reported as a reference-comparable first rejection. The brief also
+defines shard schema `kaggriculture-bc-shard-v1`, a custody manifest,
+acceptance through a per-turn differential oracle against the reference
+receipt (158,772 admitted / 22,416 rejected), and placement on a data pod in
+EU-RO-1. Only the token half and the full-slice run wait on 1.4. Findings: the
+Rust `Config` defaults missing keys, the reference normalized absent `hands`
+     1	# References
+     2	
+     3	## Current rebuild
+     4	
+     5	- [[kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|Kaggriculture teacher distills per-slot KL and per-seat winner CE]]: Phases 4.1–4.3 on CPU. The grammar core gives replay-conditioned per-slot masked logits and a liveness-weighted KL(teacher ‖ student), cached as `KaggricultureTeacherTargets` (102,208 B per seat row) with a grammar signature. The cached path is bit-for-bit the combined path. The model owns a live-seat-mean winner CE, PPO dispatches teacher calls statelessly and logs `teacher/cache_bytes`. Eleven killed mutations. Phase 4 is not complete: the trainer and run_ppo launch/resume tests are written but skipped (the launch/resume pair dry-run with config validation bypassed). After the integration merge an unskipped probe still fails all four on the missing trainer observation mapping and run_ppo's no-env stop (configs and value-mode guards have landed), and 4.4 is not done though its configs prerequisite has merged.
+     6	- [[structured-observations-preserve-legal-state-and-order|Structured observation rebuild]] — Native fields and caller buffers match the frozen 512-state pinned-reference oracle bitwise over 8,176 offsets and pass the real Task 2.1 schema. Seeded states use Claude's R1 policy correction, v2. Verification round 1 fixes retire the grammar bridge to root and CUDA-guard pinned cases; branch `just prepare`: 254 Rust, 69 engine, 1,437 Python passed; merged with the trainer lanes: 254, 69, 1,618; merge verification r1 adds every engine build input to oracle source custody. Optimized timing is a pod handoff.
+     7	- [[kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|Kaggriculture configs follow Isaiah's scaling_6m recipe]] — Task 3.4: 2-rank 128/8 and 4-rank 64/4 configs deliberately keep scaling_6m's global batch, optimizer, PPO, teacher and compile settings; they load through the real FullConfig with a typed KaggricultureEnvConfig; run_ppo startup checks every forward against the model's GEMM chunking before allocation, prints bounded headroom, then stops explicitly because no Kaggriculture env is wired yet.
+     8	- [[kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|Kaggriculture model joins Isaiah's factory, trunk compile and masked critic]]: Task 3.1 model side puts the model in `ModelConfig` and `create_model` with game-checked specs. It dispatches trunk compile through a nominal `TrunkCompileAPI`, which compiles only the blocks behind `_run_trunk`'s guard, and it masks the winner softmax as Isaiah does. CPU tests only, Codex r1 found no functional defect; `FullConfig` now pairs it with the Task 3.4 `KaggricultureEnvConfig`.
+     9	- [[evaluation-and-truncation-follow-the-kaggriculture-objective|Evaluation and truncation follow the Kaggriculture objective]] — Tasks 3.2/3.3: raw-bank evaluation winners, economic reward kept on truncation, joint per-player clipping and value-mode guards, a per-evaluation seed in a checked int64 band (distinct per step within a run, not a global stream separator) and promotion telemetry logged after promotion completes; proven on the trainer seam (CPU TDD, fake env, 1,344 Python passes); since the Task 3.4 merge the guards run through the registered Kaggriculture env config and every `configs/kaggriculture*.yaml`; native env and a real Kaggriculture run pending.
+    10	- [[live-differential-parity-checks-the-rust-kernel|Live differential parity checks the Rust kernel]] — Task 1.1b generates traces from Kaggle's hash-pinned engine; 8 committed games and a 40-game sweep agree with Rust; 303 probes find two malformed-input divergence classes (Unicode digits, unhashable items), kept as minimal expected failures and classified only from their observed mismatch.
+    11	- [[ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|PPO trainer seams and replay-drift alarm]] — Tasks 3.1/3.6 and Phase 4 prep: schema-generic observation mapping, a default-on 0.05-nat first-minibatch log-ratio alarm and a `TeacherTargets` protocol, proven on Orbit types with CPU TDD and 941 Python passes (the replay-alarm error lists action-mask shapes too). Since Phase 4 the trainer is typed by the protocol, and Orbit alone keeps the asymmetric `concat`. GPU noise and multi-rank use are unverified.
+    12	- [[rebuild-data-preparation-preserves-replay-identity|Replay identity and data/evaluation preparation]] — Typed engine-independent selector preserves all 252 historical episode IDs and splits; the refreshed, Codex-reviewed BC data brief binds preparation to the merged encoder/grammar with falsy-envelope normalization counted, clean-checkout source identity, a tracked shard inventory, a specified (not yet executed) step+1 transition check in an offline Rust binary, with the executed evidence so far a Python-engine measurement with the recorded episode seed, and execution on the current GPU pod holding the hash-matched ZIP (tokens wait on the 1.4 codec binding); seed replay export and four compact opponent recommendations carry explicit native/runtime gaps.
+    13	- [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope and Rust parity blocked by missing fixtures.
+    14	
+    15	## Reference branch
+    16	
+    17	Since the [[../decisions/restart-the-port-from-isaiahs-clean-base|restart]], the following References describe the implementation on branch `kg/reference-2026-09-29` (tag `kg-reference-2026-09-29`), not the current tree. Use them as reference for the rebuild.
+    18	
+    19	- [[full-turn-intentions-coordinate-batched-action-heads|Full-turn intentions coordinate batched action heads]] — Optional U/A hypothesis; Isaiah and the current model already retain shared scratch/plan context. No demonstrated need or cost-benefit for a dedicated coordinator.
+    20	- [[native-game-semantics-use-v3-owned-buffers|Native game semantics use v3-owned buffers]] — Task 1.2 typed grammar/strict codec, independent 320-program oracle and dense/selected-replay kernel checks, with Claude's per-oracle mutation review; Task 1.3 moved the kernel tests to root integration and repaired L4, GPU limits remain. Historical adapter evidence stays on the reference branch.
+    21	- [[starter-history-and-knowledge-remain-retrievable|Starter history and knowledge remain retrievable]] — The Isaiah source history/license, redirected remotes and selective cookbook lifecycle are retained with explicit verification limits.
+    22	- [[shared-ppo-adapts-game-batches-without-a-second-loop|Shared PPO adapts game batches without a second loop]] — One shared Isaiah PPO trainer carries Kaggriculture batches; its core is upstream-equivalent, the recipe is partially aligned, and teacher, cadence, CUDA-fault and GPU-qualification gaps are tracked in ops. Historical SPS measurements link to their receipts.
+    23	- [[explicit-game-tokens-and-grammar-replace-orbit-heads|Explicit game tokens and grammar replace Orbit heads]] — Restored player token and entity/player/plan batched heads pass local checks; checkpoint schema changes explicitly, while prior GPU results retain their old-model scope.
+    24	- [[reward-reuse-preserves-objective-and-critic-semantics|Reward reuse preserves objective and critic semantics]] — Current GPU econ coefficient0.2, observed nonzero reward with no claimed learning benefit, and exact v2 W/L/D, bank-margin and capped-economic formulas with v3 critic/bootstrap compatibility limits.
+    25	- [[bc-bootstrap-uses-native-replay-features-and-current-heads|Native replay BC bootstrap]] — Market-disabled controls preserve3000 bank; exact admitted replay actions and Rust features support separate current-model BC, with episode holdout, two-rank smoke, observed overfitting and incomplete quality validation; automatic PPO disabled; BC stopped early for a separately requested PPO experiment, which then failed with a CUDA illegal memory access later traced to a compiler GEMM overflow; the planned architecture alignment schedules one BC rerun. Source review corrects omitted-unit handling: Python None is rejected, not encoded as NONE.
+    26	- [[compiled-gemm-template-overflows-above-2-21-rows|Compiled GEMM template overflows above 2^21 rows]] — Torch 2.9 Inductor max-autotune Triton GEMM templates wrap the 32-bit A-load offset once rows × input width exceeds 2^31 with an int32 size argument (measured at widths 4096/768/512, silent in the real trunk; output-wide GEMMs stayed correct to 2^32); design bound M × max(in, out) for training; trunk guard measured correct at L−1 and rejecting L at `1ddc71d` (the packed path now chunks, CPU-tested); Task 3.1 registration and guarded trunk compile dispatch are CPU-tested; an A/B found ATEN-only (cuBLAS) GEMMs correct above the bound at +4.5–6.5 % model-only update wall, now required for Kaggriculture compiles (CPU-tested) with the guards kept; production compliance unproven.
+    27	- [[kaggriculture-encoder-reuses-isaiah-stateless-layers|Kaggriculture encoder reuses Isaiah's stateless layers]] — The rebuilt encoder uses Isaiah's StatelessTransformerV1 classes, token roles, packing, compile hook and initialization; only stem input widths are game-specific, and guards chunk both the padded and packed compiled GEMMs below 2^31. Describes the current tree; registration and the masked critic are in the Task 3.1 model-side Reference.
+    28	- [[kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|Kaggriculture grammar heads sit behind Isaiah's actor projection]] — Task 2.3 adds the 3D→D actor projection and batched grammar heads with exact coupled-Gumbel HIRE sampling, same-path replay with support/length/canonical flags and one host check, head GEMM-extent chunking, and a 6,252,223-parameter preset; synthetic grammar tables stand in until the Task 1.4 binding exposes the Task 1.2 native tables (which exist and match the stand-in bit-for-bit). Describes the current tree.
+---
+type: "Reference"
+title: "Rebuild data preparation preserves replay identity"
+description: "The engine-independent selector reproduces the historical 252-episode split; the BC data brief binds preparation to the merged encoder and grammar, specifies an offline Rust transition check for the step+1 pairing (the executed evidence so far is a Python-engine measurement) that needs the recorded episode seed, and runs on the current GPU pod that holds the hash-matched selected ZIP; only the 1.4 codec binding blocks tokens; replay/opponent briefs bound the remaining evaluation work."
+tags: ["kaggriculture-v3", "adaptation", "replays", "evaluation"]
+status: "verified-scoped"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+sources:
+  - resource: "repository:scripts/kaggriculture_bc/select_replays.py"
+  - resource: "repository:tests/scripts/test_kaggriculture_select_replays.py"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/5.1-bc-data.md"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/7.1-opponents.md"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/7.3-replay-export.md"
+  - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-source-audit.json"
+  - resource: "repository:ops/rebuild-2026-09-29/checks/stream-d-results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/checks/5.1-brief-refresh/ref-admission-probe.log"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/brief-5.1-rereview.md"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md"
+  - resource: "repository:engine_rs/src/lib.rs"
+  - resource: "repository:src/kaggriculture/mod.rs"
+  - resource: "repository:src/kaggriculture/grammar.rs"
+  - resource: "repository:docs/kaggriculture-contract.md"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/select_replays.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/prepare.py"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/data-manifest.json"
+  - resource: "reference-branch:kg/reference-2026-09-29/ops/bc-bootstrap-2026-09-29/source.json"
+  - resource: "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/actor_codec.py"
+  - resource: "external-repository:/Users/poonszesen/kaggriculture-v2/ops/kaggle-public-episodes-2026-09-28/manifest.json"
+---
+
+# Rebuild data preparation preserves replay identity
+
+The [[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]]
+classifies replay selection as reviewed porting and preparation as a rebuild.
+Searches for replay selection, split leakage, source volume, seed export and
+native opponents found the historical [[bc-bootstrap-uses-native-replay-features-and-current-heads|BC]]
+and [[shared-ppo-adapts-game-batches-without-a-second-loop|PPO]] References, not a
+current-tree data pipeline. This record covers stream D's bounded preparation
+work; it does not promote the old model, admission run or evaluation results.
+
+## Adaptation inventory and consequence
+
+- `scripts/kaggriculture_bc/select_replays.py` ports the standard-library
+  selection recipe with types and an explicit source-root argument. It retains
+  sorted JSON names, `20260929 + day` RNG seeds, September 21–27, first four
+  validation and next 32 train episodes per day, payload hashes and manifest
+  fields. Episode basename duplication is rejected before export; this guard
+  previously lived in preparation. Short days and duplicate ZIP entries now
+  fail explicitly. Existing outputs are not replaced. No v2 implementation
+  names, absolute legacy paths or engine imports remain in the selector.
+- `tests/scripts/test_kaggriculture_select_replays.py` supplies synthetic ZIPs
+  and manifests, golden shuffled IDs, leakage/count/hash checks, isolated CLI
+  execution, no-overwrite and interrupted-copy cleanup. Tests require no corpus
+  or native engine. Future selection changes must retain the audited identity
+  or explain the resulting dataset change.
+- `ops/rebuild-2026-09-29/briefs/5.1-bc-data.md` records source volume custody
+  and the preparation data flow against the merged APIs (Claude refresh at
+  `2390c8e`). Explicit per-turn `TraceHeader`s are encoded for both seats
+  through the merged `owl.rs.encode_kaggriculture_headers_into`. Recorded
+  actions are admitted per seat through 1.4's planned `kaggriculture_encode`
+  and `kaggriculture_decode`, which are the only blocked step. The brief also
+  sets shard schema `kaggriculture-bc-shard-v1` and a custody manifest, and
+  runs on the current GPU pod (owner direction, below). Three findings bind future preparation. First, the Rust
+  `Config` is `serde(default)`, so the full configuration key set must be
+  checked before encoding. Second, the reference's `raw.get(k) or []`
+  silently normalized every falsy `hands`/`market` value (absent, `null`,
+  `false`, zero, `""`, `{}`) to `[]`, while the grammar requires the exact
+  keys, so that rule is replicated and counted by kind; Codex's rereview
+  corrected the earlier absent-or-null-only claim with an in-memory probe of
+  the pinned reference codec. Third, the new grammar checks in a different
+  order, which can move first-rejection categories but not admission. The
+  old flat features/context arrays cannot be loaded as the new schema. After
+  that rereview, a run must come from a clean immutable checkout with
+  per-file source hashes rechecked before the manifest is published, and a
+  compact per-shard path/bytes/SHA-256 inventory is committed while NPZ bulk
+  stays external. A fourth finding binds any replay-based transition check:
+  the owner restated that the action answering `steps[t]` is recorded at
+  `steps[t+1]`, and a check that steps the engine from an explicit
+  `steps[t]` header must use the episode's **recorded** `info.seed`, because
+  Kaggle and the Rust engine seed daily weeds and shop unlocks from it
+  (`engine_rs/src/lib.rs:4448`). Codex's in-memory probe of the pinned Python
+  engine on local episode 114406062 matched 719/719 transitions with the
+  recorded seed, 704/719 with placeholder 0, and 0/719 with the shifted
+  `steps[t]` pairing (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md`).
+  Observation encoding keeps the placeholder seed; the recorded seed stays
+  out of model inputs and shards. The brief names an offline root-crate Rust
+  binary for the check, so 1.4's production API gains no load-state binding,
+  and requires a fresh copy-linked venv on the pod because the existing
+  venvs share hard-linked installed files.
+- `ops/rebuild-2026-09-29/briefs/7.3-replay-export.md` distinguishes Kaggle
+  episode JSON from native JSONL oracles. Export must retain the resolved seed,
+  full config, action timing/order and completed state before auto-reset; seed
+  replay must not load expected snapshots or diagnostic RNG schedules as truth.
+- `ops/rebuild-2026-09-29/briefs/7.1-opponents.md` recommends starter, R04,
+  EcoBot and E776 by source behavior and dependency footprint, with hashes and
+  explicit lifecycle/parity gaps. The four source modules plus E776's policy
+  tape total 335,571 bytes before shared support. This is a recommendation,
+  not an adopted or qualified panel; no bot code is imported.
+- The companion source audit, fixture custody and result receipt under
+  `ops/rebuild-2026-09-29/checks/stream-d-*` bind checks to source and disclose
+  missing live evidence. The historical BC note corrects the false claim that
+  omitted units become NONE: preparation inserts `None`, which the codec rejects.
+- `docs/kaggriculture-contract.md` gains the missing blank line before its token
+  list so repository Markdown lint passes. No v4 contract semantics change.
+
+## Independent checks and limits
+
+The synced source corpus inventory, separate from the reference selection
+receipt, reproduces all **252 ordered episode IDs, split assignments and byte
+lengths** through the ported selector: 224 train / 28 validation. No raw payload
+was opened or rehashed. The receipt's 158,772 admitted / 22,416 rejected
+paired turns are historical arithmetic, not new admission evidence.
+
+The provenance source is network volume **4llk4uaf20, EU-RO-1**. A historical
+reader mounted it at `/data`, copied the selected ZIP to GPU pod
+`w7ia3zvxqsvs3g`, then terminated. The reference `source.json` records the
+archive hash (`data_archive_sha256 = 619ca7a8…81433c9dd0`). On 2026-09-29 the
+operator found the ZIP at `/workspace/kg-v3/replays/bc-bootstrap/selected.zip`
+(519,191,507 bytes, 253 entries, the same SHA-256); that read has no
+committed receipt, so the pod run re-hashes it before use. The owner directed
+that the current pod does the BC ("you can use current pod to do the BC"), so
+the pinned slice needs no volume access; the volume, via a data pod or S3,
+matters only for data beyond the slice. The old prepared arrays at
+`/workspace/kg-v3/replays/bc-bootstrap/arrays` are schema-incompatible and
+never loaded.
+
+Four pinned native fixtures were structurally inspected: **2,876 transitions**,
+with consecutive steps and matching final banks/statuses. Archived official
+engine source hashes match their engine pin. This is not engine execution or an
+export/import round trip. Opponent source sizes/dependencies and policy JSON were
+inspected, without playing games or inheriting strength claims.
+
+The final `py-prepare` and `prepare` each pass **739 Python tests / 3 backend
+skips**, including **17 selector cases**; `prepare` also passes **155 Rust tests /
+2 ignored**. The result receipt retains commands, logs and the initial Markdown
+failure. Rust checks concern the retained Orbit starter, not the absent
+Kaggriculture engine.
+The refreshed brief's per-turn differential oracle loads the stdlib-only
+reference `actor_codec.py` by path. Run on one local episode outside the slice
+(114406062), it admitted 719 of 719 paired turns in 0.2 s
+(`ops/rebuild-2026-09-29/checks/5.1-brief-refresh/ref-admission-probe.log`).
+That shows the oracle is cheap and runnable. It is not evidence about the
+slice.
+Preparation, native replay export, opponent import and full-payload admission
+remain deferred until their native seams exist. Reopen when the engine lands or
+custody changes; qualify these interfaces before BC or panel results can claim
+current-tree parity.
+
+exec
+/bin/zsh -lc 'git status --short --branch && git show --format=fuller --stat --oneline 74428e8 && git show --format= --no-ext-diff 74428e8' in /Users/poonszesen/kg-v3-bcbrief
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+## kg/rebuild-bc-brief
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+74428e8 Mark the Rust transition check as specified in the References index
+ cookbook/log.md              | 2 +-
+ cookbook/references/index.md | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+diff --git a/cookbook/log.md b/cookbook/log.md
+index 0daeabb..7558534 100644
+--- a/cookbook/log.md
++++ b/cookbook/log.md
+@@ -4,7 +4,7 @@
+ 
+ Codex's confirmation (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r2.md`) asked for two edits:
+ - The 5.1 brief's Q1 now specifies a separate normalization probe that compares raw and normalized snapshots directly.
+-- The [[references/rebuild-data-preparation-preserves-replay-identity|data-preparation Reference]] now says the Rust transition check is specified, not yet executed. The executed evidence is Codex's Python-engine measurement.
++- The [[references/rebuild-data-preparation-preserves-replay-identity|data-preparation Reference]] now says the Rust transition check is specified, not yet executed. The executed evidence is Codex's Python-engine measurement. Its index line says the same.
+ 
+ ## 2026-09-29 — Apply Codex's review of the Task 5.1 owner-direction edits
+ 
+diff --git a/cookbook/references/index.md b/cookbook/references/index.md
+index fbf3aee..00ea05a 100644
+--- a/cookbook/references/index.md
++++ b/cookbook/references/index.md
+@@ -9,7 +9,7 @@
+ - [[evaluation-and-truncation-follow-the-kaggriculture-objective|Evaluation and truncation follow the Kaggriculture objective]] — Tasks 3.2/3.3: raw-bank evaluation winners, economic reward kept on truncation, joint per-player clipping and value-mode guards, a per-evaluation seed in a checked int64 band (distinct per step within a run, not a global stream separator) and promotion telemetry logged after promotion completes; proven on the trainer seam (CPU TDD, fake env, 1,344 Python passes); since the Task 3.4 merge the guards run through the registered Kaggriculture env config and every `configs/kaggriculture*.yaml`; native env and a real Kaggriculture run pending.
+ - [[live-differential-parity-checks-the-rust-kernel|Live differential parity checks the Rust kernel]] — Task 1.1b generates traces from Kaggle's hash-pinned engine; 8 committed games and a 40-game sweep agree with Rust; 303 probes find two malformed-input divergence classes (Unicode digits, unhashable items), kept as minimal expected failures and classified only from their observed mismatch.
+ - [[ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|PPO trainer seams and replay-drift alarm]] — Tasks 3.1/3.6 and Phase 4 prep: schema-generic observation mapping, a default-on 0.05-nat first-minibatch log-ratio alarm and a `TeacherTargets` protocol, proven on Orbit types with CPU TDD and 941 Python passes (the replay-alarm error lists action-mask shapes too). Since Phase 4 the trainer is typed by the protocol, and Orbit alone keeps the asymmetric `concat`. GPU noise and multi-rank use are unverified.
+-- [[rebuild-data-preparation-preserves-replay-identity|Replay identity and data/evaluation preparation]] — Typed engine-independent selector preserves all 252 historical episode IDs and splits; the refreshed, Codex-reviewed BC data brief binds preparation to the merged encoder/grammar with falsy-envelope normalization counted, clean-checkout source identity, a tracked shard inventory, a step+1 transition check run by an offline Rust binary with the recorded episode seed, and execution on the current GPU pod holding the hash-matched ZIP (tokens wait on the 1.4 codec binding); seed replay export and four compact opponent recommendations carry explicit native/runtime gaps.
++- [[rebuild-data-preparation-preserves-replay-identity|Replay identity and data/evaluation preparation]] — Typed engine-independent selector preserves all 252 historical episode IDs and splits; the refreshed, Codex-reviewed BC data brief binds preparation to the merged encoder/grammar with falsy-envelope normalization counted, clean-checkout source identity, a tracked shard inventory, a specified (not yet executed) step+1 transition check in an offline Rust binary, with the executed evidence so far a Python-engine measurement with the recorded episode seed, and execution on the current GPU pod holding the hash-matched ZIP (tokens wait on the 1.4 codec binding); seed replay export and four compact opponent recommendations carry explicit native/runtime gaps.
+ - [[failed-training-reports-status-before-distributed-cleanup|Failed training status and traceback ordering]] — Task 0.3 forwards W&B failure codes and flushes rank-tagged tracebacks before distributed teardown; offline TDD and 722 Python passes, with live telemetry/distributed verification outside scope and Rust parity blocked by missing fixtures.
+ 
+ ## Reference branch
+
+exec
+/bin/zsh -lc 'git rev-parse HEAD 74428e8 74428e8''^ && git diff --check 74428e8''^ 74428e8 && git diff --exit-code 74428e8 HEAD && git diff --exit-code 4fdd61e 74428e8 -- . '"':(exclude)cookbook/references/index.md' ':(exclude)cookbook/log.md' && git status --porcelain=v1 --untracked-files=all" in /Users/poonszesen/kg-v3-bcbrief
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+74428e815e8edb01c1a575e84f809d4d3c42bf32
+74428e815e8edb01c1a575e84f809d4d3c42bf32
+4fdd61e7f978af5b94b82407c5e12e3786c522c9
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+
+codex
+Confirmed: `74428e8` resolves the r3 P3. [Index line 12](/Users/poonszesen/kg-v3-bcbrief/cookbook/references/index.md:12) explicitly says “specified (not yet executed)” and identifies Python-engine measurement as the executed evidence, consistent with the Reference and log.
+
+Only the index wording and matching log sentence changed from `4fdd61e`. Branch is `kg/rebuild-bc-brief`, HEAD is `74428e8`, worktree is clean, and `git diff --check` passes. No files modified or builds run.
+
+VERDICT: APPROVE
+hook: Stop
+hook: Stop Completed
+tokens used
+21,729
+Confirmed: `74428e8` resolves the r3 P3. [Index line 12](/Users/poonszesen/kg-v3-bcbrief/cookbook/references/index.md:12) explicitly says “specified (not yet executed)” and identifies Python-engine measurement as the executed evidence, consistent with the Reference and log.
+
+Only the index wording and matching log sentence changed from `4fdd61e`. Branch is `kg/rebuild-bc-brief`, HEAD is `74428e8`, worktree is clean, and `git diff --check` passes. No files modified or builds run.
+
+VERDICT: APPROVE

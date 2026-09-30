@@ -1,0 +1,1934 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-8rank
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /Users/poonszesen/.cache/uv, /Users/poonszesen/.local/share/uv, /Users/poonszesen/kg-v3-8rank/.codex-tmp]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ec98-536f-72c0-a321-3a88caff667a
+--------
+user
+You are Codex, INDEPENDENT VERIFIER of branch kg/rebuild-8rank (this worktree) vs its base (see first commit 'base='). Leave no tracked modification. Check: configs/kaggriculture_8rank.yaml follows Isaiah's multi-GPU rule exactly (per-rank division of scaling_6m; all divisible), the workload test covers it and would fail on a wrong value (try one mutation, restore), the startup assertion passes at 8-rank shapes; plan Phase 6.3b and the 1.4 seed-test note are correct and do not presume unmeasured results; the Decision quotes the owner exactly, keeps 'likely', does not convert interpretation into owner adoption, and cites evidence correctly (component vs end-to-end). Run uv run pytest tests/kaggriculture tests/owl tests/scripts tests/tools -m 'not slow' -q and uv run mypy python/owl scripts; report counts. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll compare the branch with its declared base, check the config and evidence claims, then run the requested tests and a restored mutation check. I’ll report the results and verdict without leaving tracked changes.
+exec
+/bin/zsh -lc 'cat cookbook/index.md; head -75 cookbook/log.md; cat cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md; cat cookbook/decisions/start-multi-gpu-qualification-with-two-ranks.md' in /Users/poonszesen/kg-v3-8rank
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References describe branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]]
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Add the Isaiah-divided 8-rank config for the likely main run
+
+The owner said: "we'd likely use 8Xrtx 6000 in main run, 2 rank for diagonose/building." Recorded as stated ("likely"), not as a final adoption. `configs/kaggriculture_8rank.yaml` applies Isaiah's multi-GPU rule at world size 8 (32 envs/rank, spm 2, accumulation 1, teacher chunk 128 kept), so the global workload equals `scaling_6m`. `tests/kaggriculture/test_configs.py` now derives every ranked config's per-rank shapes from `scaling_6m` and fails loudly on a non-whole division; the startup workload tests cover 8 ranks. `ops/rebuild-2026-09-29/plan.md` keeps 2 ranks for smoke and diagnostics, adds Task 6.3b (8-rank qualification after the owner approves the 8-GPU pod's price), a world-size-8 L3 seed test in Task 1.4, and the measured `winner_ce_6m` batch-shape option. The [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] records the roles, shape, CPU checks, the model-only 8-rank component estimate (ops evidence on `kg/rebuild-gpu-checks`, pending merge) and the open measurements; the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]] lists the new config.
+
+## 2026-09-29 — Serialize the GEMM-backend claim and scope old probe limits
+
+Codex verification r2 of the cuBLAS-only wiring
+(`ops/rebuild-2026-09-29/codex/verify-aten-r2.md`, APPROVE WITH EDITS) found
+two P3s. A concurrent Orbit claim could land while a Kaggriculture claim read
+its stack and then be silently overwritten; `claim_gemm_backends` in
+`python/owl/model/compile_gemm.py` now holds a lock around check and write, and
+a new test in `tests/kaggriculture/test_compile_gemm_backends.py` reproduces
+the race (it failed before the lock). The
+[[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]
+Limits now scope "triton not captured" and "real flash-attn untested" to the
+earlier overflow probe and credit the A/B's triton 3.5.0 and flash-attn 2.8.3;
+the backward-above-bound and GPU-wiring gaps stay. The
+[[decisions/kaggriculture-compiles-gemms-with-cublas-only|Decision]] records
+the lock and the r2 check.
+
+## 2026-09-29 — Claim cuBLAS-only GEMMs at every public compile entry
+
+Codex verification r1 of the cuBLAS-only wiring
+(`ops/rebuild-2026-09-29/codex/verify-aten-r1.md`, REJECT) found that a direct
+`compile_transformer_trunk` call bypassed the claim: a Kaggriculture compile
+with `"ATEN"` preset skipped the stack check, and a direct Orbit compile let a
+later Kaggriculture compile change Orbit's backends. The claim and stack check
+moved to `python/owl/model/compile_gemm.py`; both models'
+`compile_transformer_trunk` now claim their game, and `configure_model_compile`
+claims for `mlp`. New tests cover both orders across every pair of entry points.
+The [[decisions/kaggriculture-compiles-gemms-with-cublas-only|Decision]],
+README and run_ppo docstring also now say an installed triton is checked even
+without CUDA; only a missing triton is skipped there.
+
+## 2026-09-29 — Require cuBLAS-only GEMMs for compiled Kaggriculture regions
+
+The owner asked that the compiled-GEMM CUDA crash never recur in v3. The
+Codex-approved ATEN-only A/B (branch `kg/rebuild-model` at `9bdd82d`,
+`ops/rebuild-2026-09-29/results.md` lines 259–303) found cuBLAS-only GEMM
+backends correct above the int32 bound at +4.5–6.5 % model-only update wall.
+`configure_model_compile` now checks the probed torch/triton/driver stack and
+sets `max_autotune_gemm_backends = "ATEN"` before any Kaggriculture compile.
+The model refuses other values at compile time and on every compiled trunk
+call. Orbit keeps its backends, a process never compiles both games, and
+`run_ppo` checks the stack at startup and records the claim in W&B
+summaries. The overflow guards stay. New
+[[decisions/kaggriculture-compiles-gemms-with-cublas-only|Decision]]; the
+[[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]
+Consequences carry the measured A/B.
+
+## 2026-09-29 — Close the startup-assertion gap in the grammar-heads Reference
+
+Codex's merge verification (`ops/rebuild-2026-09-29/codex/verify-merge-trainer-lanes-r1.md`,
+P3) found the [[references/kaggriculture-grammar-heads-sit-behind-isaiahs-actor-projection|grammar-heads Reference]]
+still listing the Task 3.4 startup workload assertion as open after the merge.
+It now links that completed check to the
+[[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]]
+and keeps trainer integration (Task 3.1) as the open gap.
+
+## 2026-09-29 — Record the merged trainer-lane check counts
+
+After merging Tasks 3.1, 3.2/3.3, 3.4 and the 1.4/1.5 briefs onto the Task 1.2
+integration, full `just prepare` passed: engine 87, root Rust 164 with two
+ignored, Python 1,458 passed with five skips (two FlashAttention/CUDA, one
+quantized backend, the native grammar binding, and the native Kaggriculture
+evaluation env). `docs/rules-parity-coverage.md` now states these counts beside
+the Task 1.2 merge counts; receipt
+`ops/rebuild-2026-09-29/merge-trainer-lanes/prepare.log`.
+
+## 2026-09-29 — Merge Task 3.4 configs and the startup workload check onto Tasks 3.1–3.3
+
+Task 3.4 (Codex APPROVE at `71cebdb`, which already contains Task 3.1 at
+`4cac1a1`) conflicted with Tasks 3.2/3.3 in `FullConfig`, `run_ppo.py` and the
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+---
+type: "Decision"
+title: "Start multi-GPU qualification with two ranks"
+description: "Qualify on two RTX 5090/RTX PRO 6000 GPUs before four; keep the pod running after bounded runs at the owner’s request; host history lives in ops. Owner 2026-09-29: eight RTX PRO 6000 likely for the main run, two ranks for diagnosis and building; the Isaiah-divided 8-rank config (32 envs/rank, spm 2) is CPU-tested and its 8-GPU qualification (Task 6.3b, owner-approved pod) is open."
+tags: ["kaggriculture-v3", "compute"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner, later two-GPU-first directive on 2026-09-28 supersedes the initial four-rank preference."
+sources: [{"resource": "user-directive:2026-09-29:fit-rtx6000-resources"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/cookbook-cleanup-2026-09-29/host-history.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/plan.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/default4096-2026-09-29/host-replacement.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:four-rank-first"}, {"resource": "user-directive:2026-09-28:two-gpu-sps-first"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "user-directive:2026-09-29:eight-rank-main-run-two-rank-diagnostics"}, {"resource": "repository:configs/kaggriculture_8rank.yaml"}, {"resource": "repository:tests/kaggriculture/test_configs.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "repository:ops/rebuild-2026-09-29/8rank/py-prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/8rank/mutation-spm4.log"}, {"resource": "pending-merge-branch:kg/rebuild-gpu-checks/ops/rebuild-2026-09-29/results.md"}]
+---
+
+# Start multi-GPU qualification with two ranks
+
+The original owner directive was:
+
+> you can use Nx5090 / RTx pro 6000 for 4rank/8rank, recommended 4 rank first
+
+The owner later preferred **two RTX 5090 or two RTX PRO 6000 GPUs first** for qualification; that supersedes the four-rank-first preference. Four and eight ranks are later scales. This sets a resource direction, not a demonstrated scaling benefit or optimal recipe. Under Isaiah's multi-GPU rule the global configuration stays identical across rank counts (see the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]]); qualify correctness, memory and complete-update throughput on two ranks before scaling to four.
+
+On 2026-09-29 the owner authorizes verification runs: “Yo ucan use 2/4-rank RTX 6000 to verify your work.” Two- and four-rank RTX PRO 6000 runs may verify the rebuilt port; read live price and state before creating or reusing a pod, and write a run statement first.
+
+Pod retention: the owner directive “不用關pod” means bounded runs stop training and save checkpoints while the pod keeps running. The owner also authorizes “換主機，訓練後保留新 pod” to replace an unusably slow host. Read live state and price before any billable creation or replacement, and do not silently leave several preparation hosts running.
+
+W&B authentication is configured locally in `~/.netrc` with mode `0600` (key never printed or recorded). That setup does not prove remote upload; verify live synchronization during each authorized run and use project `kg-v3`.
+
+Host, stock and pod history (IDs, regions, prices, download probes) is operational evidence, kept in `ops/cookbook-cleanup-2026-09-29/host-history.md` and `ops/gpu-sps-2026-09-29/results.md`.
+
+## Fit Isaiah's recipe to our GPUs — owner, 2026-09-29
+
+> when fitting in GPUs, make sure we fits the GPU resource, since we are doing on RTX 6000 while Isaiah is doing in Tufa's B200 clusters
+
+> let's stick with 2.9 then.
+
+Sources: `user-directive:2026-09-29:fit-rtx6000-resources`, `user-directive:2026-09-29:stay-on-torch-2-9`. Keep Isaiah's global configuration and fit only the per-rank shapes and the spm/accumulation split, as his own `winner_ce_6m_4x5090` does for 32 GB RTX 5090s. The target peak is ≤ 85% of 97,887 MiB per rank, measured at the densest states. Throughput is measured, not assumed from B200 results. Torch stays at Isaiah's pinned 2.9.0; the compiler overflow is handled by the batch cadence, trunk chunking and a first-minibatch log-ratio alarm ([[../references/compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]]). The resource-fit rules are in `ops/rebuild-2026-09-29/plan.md`.
+
+## Eight ranks likely for the main run — owner, 2026-09-29
+
+> we'd likely use 8Xrtx 6000 in main run, 2 rank for diagonose/building.
+
+Source: `user-directive:2026-09-29:eight-rank-main-run-two-rank-diagnostics`. The owner said "likely"; this records a stated expectation, **not** a final adoption of eight ranks, of an 8-GPU pod or of any run.
+
+- **Roles.** The current two-rank RTX PRO 6000 pod stays the host for smoke, diagnostics and building (plan Tasks 6.1–6.2). Eight RTX PRO 6000 GPUs are the likely main-run hardware, qualified in plan Task 6.3b. The four-rank step (6.3) stays optional between them.
+- **Shape.** `configs/kaggriculture_8rank.yaml` applies Isaiah's multi-GPU rule (`winner_ce_6m_4x5090.yaml`): 32 envs/rank, `segments_per_minibatch` 2, accumulation 1, so the global batch (256 envs), optimizer steps per iteration (16), global segments per step (16) and transitions per iteration (16,384) equal `scaling_6m`. The optimizer, schedule, PPO coefficients, compile settings and teacher settings are unchanged. `teacher_segments_per_minibatch` stays 128 as in Isaiah's per-rank configs; it is a precompute chunk size, so each rank precomputes its 32 envs in one chunk.
+- **Checks on this version (CPU only).** `tests/kaggriculture/test_configs.py` derives every per-rank shape from `scaling_6m` divided by the world size and fails loudly when a global quantity, a per-rank minibatch or a teacher chunk is not a whole division (world sizes 3 and 32, accumulation 3 and teacher chunk 24 are rejected). It asserts the 8-rank global workload equals `scaling_6m`, and that the startup GEMM check sees 64 rollout, 256 minibatch, 4,096 teacher-chunk and 64 evaluation rows, one trunk and one head call each. `tests/scripts/test_run_ppo.py` drives `run_ppo.main` from the 8-rank YAML to the headroom lines and the explicit not-wired stop. Changing the YAML to spm 4 turned four config tests red and restoring it byte-for-byte turned them green (`ops/rebuild-2026-09-29/8rank/mutation-spm4.log`). `OMP_NUM_THREADS=2 uvx --from rust-just just py-prepare` passed: ruff, format, mypy (62 files), 1,534 passed and 5 skipped (native grammar binding, two FlashAttention/CUDA, quantized backend, native Kaggriculture env), docs-fresh (`ops/rebuild-2026-09-29/8rank/py-prepare.log`). No GPU, Rust or training check ran.
+- **Component estimate, not end-to-end.** The GPU checks bundle ("GPU checks bundle (component)" in `ops/rebuild-2026-09-29/results.md` on branch `kg/rebuild-gpu-checks`, ops evidence pending merge into this branch) timed the model alone at the 8-rank per-rank shape: 1.389 s (mid) and 2.372 s (dense) per update, or 11,796 and 6,906 global env steps/s if ranks scaled perfectly. That is 0.90 (mid) and 0.95 (dense) of four times the 2-rank rate; the loss is mostly the smaller train step. It excludes the engine, host copies, GAE, logging and all-reduce, and it ran on 2 GPUs of a 2-GPU pod with synthetic observations and fresh weights. It predicts no end-to-end SPS.
+- **Open measurements (Task 6.3b).** The 8-GPU pod is a new billable resource: read and state its live price and get the owner's approval before creating it. Then measure, at 8-rank shapes: dense-state memory against the 85% target; complete-work SPS in env steps and learner turns, with phase costs; gradient all-reduce cost on the pod's actual interconnect (RTX PRO 6000 has no NVLink; read the topology rather than assume PCIe behavior); vCPUs per GPU against the Rust engine's step time and `native_threads`; the first-minibatch log-ratio alarm on every rank; W&B live sync; and seed-stream disjointness at world size 8 (the Task 1.4 L3 test includes world size 8).
+- **Batch-size option.** If 32 envs/rank underutilizes the GPUs, the measured alternative within Isaiah's recipes is `winner_ce_6m`'s global batch shape (512 envs × horizon 128; `configs/winner_ce_6m_4x5090.yaml` is the per-rank precedent), without its `winner_ce` value loss, which the Kaggriculture reward rejects. That choice follows measurement and is recorded in the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]]; it is not adopted here.
+
+exec
+/bin/zsh -lc "rg --files -g AGENTS.md -g '*8rank*' -g '*scaling_6m*'; rg -n 'multi.GPU|multi-gpu|6\\.3b|1\\.4|base=' ops/rebuild-2026-09-29/plan.md configs/scaling_6m.yaml tests/kaggriculture/test_configs.py tests/scripts README.md" in /Users/poonszesen/kg-v3-8rank
+ succeeded in 0ms:
+AGENTS.md
+configs/scaling_6m_halfbatch.yaml
+configs/kaggriculture_8rank.yaml
+configs/scaling_6m.yaml
+configs/scaling_6m_halfdecay.yaml
+configs/scaling_6m_quarterdecay.yaml
+README.md:398:`[2**62, 2**62 + 2**61)`; the native evaluation env that consumes it is pending rebuild Tasks 1.4/1.5, so a
+tests/kaggriculture/test_configs.py:3:The ranked configs (2, 4 and 8 ranks) apply Isaiah's multi-GPU rule
+tests/kaggriculture/test_configs.py:84:    """Isaiah's multi-GPU rule: divide the global shapes by the world size.
+ops/rebuild-2026-09-29/plan.md:11:**Spec (owner decisions, in `cookbook/decisions/`):** `restart-the-port-from-isaiahs-clean-base`, `the-policy-is-stateless-and-observation-only` (Isaiah's stateless model is the reference, with the same layer topology), `recipe-choices-align-to-isaiah-without-owner-escalation`, `v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics` (Isaiah's principles, one trainer, v3 Rust I/O, no v2 model), `start-multi-gpu-qualification-with-two-ranks`, `throughput-means-correct-complete-work`, `evaluation-preserves-generality-and-evidence`, `diagnose-the-mechanism-before-spending-on-runs`. The previous plan, `kg/reference-2026-09-29:ops/gap-closure-2026-09-29/plan.md`, supplies task designs where they still apply.
+ops/rebuild-2026-09-29/plan.md:23:- **8 ranks (owner, 2026-09-29):** "we'd likely use 8Xrtx 6000 in main run, 2 rank for diagonose/building." The 2-rank pod stays the smoke, diagnostics and building host; 8× RTX PRO 6000 is the likely main-run hardware ("likely", not a final adoption). `configs/kaggriculture_8rank.yaml` is Isaiah's divided shape (32 envs/rank, spm 2, accum 1). An 8-GPU pod is a new billable resource: state its live hourly price and get the owner's approval before creating it (6.3b).
+ops/rebuild-2026-09-29/plan.md:72:| C14 | `configs/kaggriculture*.yaml`, `configs/model/kaggriculture.yaml` | R from Isaiah's `scaling_6m` plus his multi-GPU rule | Alignment Decision | Workload test against `configs/scaling_6m.yaml` |
+ops/rebuild-2026-09-29/plan.md:83:| L3 | Rank seed streams use `seed+rank` with stride `world_size` on every reset (a `rank*n_envs` offset collided) | 1.4 |
+ops/rebuild-2026-09-29/plan.md:150:| 6 GPU verification | 6.1–6.4 (6.3b at 8 ranks after owner pod approval) | Claude | 4, 5.2 |
+ops/rebuild-2026-09-29/plan.md:174:- [ ] Record the root cause (or "not reproduced", with the conditions tried) in `ops/rebuild-2026-09-29/results.md`, and turn it into a design requirement for 1.4 (buffers) and 2.3 (index validation).
+ops/rebuild-2026-09-29/plan.md:195:- [ ] At the first production root → engine edge (1.3/1.4), move kernel acceptance/replay-state tests into a root integration test, delete `engine_rs/tests/grammar_kernel.rs` and its allowlist/manifest registration, and reopen L4 with the test-only float-fixture repair. Keep one integration route.
+ops/rebuild-2026-09-29/plan.md:204:### Task 1.4: Native environment lifecycle (C5)
+ops/rebuild-2026-09-29/plan.md:295:- [ ] **6.3b 8-rank qualification (main-run hardware):** owner, 2026-09-29: "we'd likely use 8Xrtx 6000 in main run, 2 rank for diagonose/building." Keep the current 2-rank pod for 6.1/6.2 smoke and diagnostics; 6.3b qualifies `configs/kaggriculture_8rank.yaml` (32 envs/rank, spm 2, accum 1; global shapes equal `scaling_6m`). **The 8-GPU pod is a new billable resource: read and state its live hourly price and get the owner's approval before creating it**; write a run statement first.
+ops/rebuild-2026-09-29/plan.md:302:  - Seed-stream disjointness at world size 8 (L3, Task 1.4 test) confirmed from the run's recorded per-rank seeds.
+ops/rebuild-2026-09-29/plan.md:325:- **Owner directives covered:** clean base and reference branch (C1–C17, dispositions); same layer topology (I0b, 2.1–2.3); extra BC (Phase 5); 2/4-rank RTX PRO 6000 (Phase 6) and the likely 8-rank main run (6.3b, owner approval before the pod); Codex (Working with Codex, streams); Isaiah's principles and stateless model (I0–I12).
+tests/scripts/test_run_ppo.py:285:        roundtrip_lora_base=False,
+tests/scripts/test_run_ppo.py:3047:        "(rebuild Tasks 1.4/1.5)."
+
+exec
+/bin/zsh -lc "git status --short && git branch --show-current && git log -8 --format='%h %s%n%b'" in /Users/poonszesen/kg-v3-8rank
+ succeeded in 770ms:
+kg/rebuild-8rank
+939d5ea Add the Isaiah-divided 8-rank config and plan its qualification (base=b51b0c0382a13a72854860ae17d7798f0875e4ee)
+Owner, 2026-09-29: "we'd likely use 8Xrtx 6000 in main run, 2 rank for
+diagonose/building." Recorded as likely, not a final adoption.
+
+- configs/kaggriculture_8rank.yaml: 32 envs/rank, spm 2, accum 1; global
+  workload equals scaling_6m; teacher chunk kept at Isaiah's 128.
+- tests: per-rank shapes derived from scaling_6m / world size, failing loudly
+  on a non-whole division; 8-rank global workload, headroom and run_ppo
+  startup cases.
+- plan: 2 ranks stay for smoke/diagnostics; Task 6.3b 8-rank qualification
+  (owner-approved pod price first); world-size-8 L3 seed test in Task 1.4;
+  measured winner_ce_6m batch-shape option.
+- cookbook: multi-GPU Decision dated section, configs Reference, indexes, log.
+
+Checks: just py-prepare passed (1,534 passed, 5 skipped; mypy 62 files;
+docs-fresh). No GPU, Rust or training run.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+b51b0c0 Serialize the GEMM-backend claim and scope old probe limits
+Codex verification r2 (verify-aten-r2.md, APPROVE WITH EDITS):
+- claim_gemm_backends now holds a lock around its check and write, so a
+  concurrent Orbit claim during a Kaggriculture stack read raises instead of
+  being silently overwritten; a new test reproduces the race and failed
+  before the lock.
+- The compiled-GEMM Reference's triton-capture and real-flash-attn limits are
+  scoped to the earlier overflow probe and credit the A/B's triton 3.5.0 and
+  flash-attn 2.8.3; backward-above-bound and GPU-wiring gaps stay.
+
+py-prepare: 1,517 passed, 5 skipped; mypy clean (62 files); docs fresh.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+3b735c0 Claim cuBLAS-only GEMMs at every public compile entry
+Codex verification r1 (verify-aten-r1.md, REJECT) found direct
+compile_transformer_trunk calls bypassed the GEMM-backend claim: a
+Kaggriculture compile with "ATEN" preset skipped the stack check and the
+game claim, and a direct Orbit compile let a later configured Kaggriculture
+compile silently change Orbit's process-global backends.
+
+- Move the probed-stack check and the one-game-per-process claim to
+  owl.model.compile_gemm (claim_gemm_backends(game)), so model code can
+  use it without importing the trainer.
+- KaggricultureTransformer.compile_transformer_trunk claims "kaggriculture"
+  and StatelessTransformerV1.compile_transformer_trunk claims "orbit"
+  before torch.compile; configure_model_compile claims for mlp and lets
+  the trunk implementations claim themselves (TrunkCompileAPI contract).
+- Tests: direct Kaggriculture compile claims ATEN with the checked stack;
+  ATEN preset plus unprobed torch raises before compiling; direct Orbit
+  compile claims Orbit; both cross-game orders raise across all 9 pairs of
+  entry points (configured trunk, configured mlp, direct trunk). Mutations
+  dropping either model claim fail 21 and 16 of 54 tests.
+- P3: README, Decision and run_ppo docstring now state that an installed
+  triton is checked without CUDA; only a missing triton is skipped.
+- py-prepare: ruff, mypy (62 files), 1,516 passed / 5 skipped, docs fresh
+  (ops/rebuild-2026-09-29/aten-wiring/py-prepare-r1.log).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+b2ef2bd Require cuBLAS-only GEMMs for compiled Kaggriculture regions
+The owner asked that the compiled-GEMM CUDA crash never recur in v3. The
+Codex-approved ATEN-only A/B (kg/rebuild-model 9bdd82d, results.md lines
+259-303) found cuBLAS-only GEMM backends correct above the int32 bound at
++4.5-6.5% model-only update wall.
+
+- configure_model_compile checks the probed stack (torch 2.9.0, triton
+  3.5.0, NVIDIA driver 595.91.07 in KAGGRICULTURE_PROBED_COMPILE_STACK;
+  triton/driver skipped with a reason without CUDA), then sets
+  torch._inductor.config.max_autotune_gemm_backends = "ATEN" before any
+  Kaggriculture compile (trunk or mlp, every mode).
+- The model refuses to compile its trunk under other backends and
+  re-checks before every compiled trunk call (lazy compile/recompile).
+- Orbit keeps its backends; the first compile claims the process-global
+  setting and compiling the other game in the same process raises.
+- run_ppo checks the stack before the run dir, prints the claim, and
+  records compile_gemm_* / compile_stack_* W&B summaries.
+- Overflow guards in _run_trunk and the heads are kept.
+- Cookbook: new cuBLAS-only Decision, compiled-GEMM Reference
+  Consequences revised with the A/B, indexes and log.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+f4ecd90 Mark the Task 3.4 startup assertion done in the grammar-heads Reference (merge verify r1 P3)
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+7306bd6 Record the merged trainer-lane check counts
+Full just prepare after the Task 3.1, 3.2/3.3, 3.4 and 1.4/1.5-brief merges:
+engine 87, root Rust 164 (two ignored), Python 1,458 passed with five skips.
+The coverage document states them beside the Task 1.2 merge counts.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+60d5cdd Merge Tasks 1.4/1.5 briefs: native env binding and game seam briefs (Codex APPROVE at bb0f7e4)
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+e7ce331 Merge Task 3.4: Kaggriculture configs and run_ppo startup workload check (Codex APPROVE at 71cebdb)
+Conflicts, resolved semantically:
+- python/owl/train/config.py: Task 3.4's GameEnvConfig/KaggricultureEnvConfig
+  structure; a Kaggriculture env runs _validate_kaggriculture_rl (3.4) and then
+  _validate_kaggriculture_training (3.2/3.3: mse, per_player). Orbit keeps
+  Isaiah's checks in _validate_orbit_constraints. The 3.2 branch keyed on an
+  Orbit EnvConfig carrying KaggricultureObsConfig is unreachable for validated
+  configs and was dropped.
+- scripts/run_ppo.py: _evaluate_games keeps 3.2's _create_eval_env; that helper
+  rejects Kaggriculture first, then narrows with 3.4's require_orbit_env.
+- tests/scripts/test_run_ppo.py: both sides' new tests kept; 3.2's
+  _kaggriculture_eval_config now loads configs/kaggriculture.yaml, and the
+  Orbit eval-env test narrows cfg.env to EnvConfig.
+- tests/kaggriculture/test_training_semantics.py: the full-config guard test uses
+  the shipped config; the skipped YAML guard test now runs over every
+  configs/kaggriculture*.yaml (gamma, winner_ce, win_only, per_entity).
+- Cookbook: index lists 3.4, 3.1 (3.4's wording) and an updated 3.2/3.3 line;
+  the 3.2/3.3 and 3.4 References record the combined guards; log keeps both
+  sides newest-first with a merge entry. README names all Kaggriculture guards.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+
+exec
+/bin/zsh -lc 'cat AGENTS.md cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md cookbook/references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe.md cookbook/decisions/throughput-means-correct-complete-work.md' in /Users/poonszesen/kg-v3-8rank
+ succeeded in 0ms:
+<!-- pyml disable first-line-heading -->
+<!-- AUTONOMY DIRECTIVE — DO NOT REMOVE -->
+YOU ARE AN AUTONOMOUS CODING AGENT. EXECUTE TASKS TO COMPLETION WITHOUT ASKING FOR PERMISSION.
+DO NOT STOP TO ASK "SHOULD I PROCEED?" — PROCEED. DO NOT WAIT FOR CONFIRMATION ON OBVIOUS NEXT STEPS.
+IF BLOCKED, TRY AN ALTERNATIVE APPROACH. ONLY ASK WHEN TRULY AMBIGUOUS OR DESTRUCTIVE.
+USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES THROUGHPUT.
+<!-- END AUTONOMY DIRECTIVE -->
+
+# Kaggriculture v3
+
+Use this repository as the Isaiah starter adapted to Kaggriculture. Preserve its
+license, useful training infrastructure and development workflow. Read the
+[cookbook scope](cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md).
+Historical Orbit Wars docs describe the retained starter; they do not establish
+Kaggriculture rules or port completion. Keep `scripts/run_ppo.py` the canonical
+trainer and extend its shared path instead of creating a second trainer. The
+owner explicitly requires the current v3 data pipeline (Rust I/O and PPO): keep
+the starter's Rust/PyO3 caller-owned buffers and existing PPO loop canonical;
+reuse v2 engine semantics behind the v3 adapter, not its collector/trainer.
+**Do not take the v2 model implementation.** Reuse starter transformer blocks and
+new game stems/heads. V2 reward shaping (economic penalties, bank difference,
+win/loss/draw) may be adapted with explicit coefficients, critic-range and
+bootstrap semantics; no unmeasured reward recipe is presumed optimal.
+
+**Architecture and debugging.** Map investment payback, labor allocation, sale
+timing and market adaptation through legal observation, representation, choice
+and executable action. Make behavior reproducible and localizable. Before a run,
+state its supported mechanism or diagnostic question, inputs/code path, expected
+discriminating observation and stopping condition. Diagnose information,
+decision, execution and architecture errors separately; name unresolved
+attribution. When repairs stall, inspect the engine and relevant primary sources
+before spending again; record supported limits and reopening conditions. No blind
+experiments or uninspectable systems; this is reasoning, not an approval gate.
+
+**Stateless observation-only policy.** Actions use explicit current-observation
+tokens. No between-turn hidden state, temporal memory training or new history
+tokens. Within-turn autoregressive prefix state resets on each observation.
+Opponent identity may not condition actor/critic inputs, embeddings, heads,
+losses, rewards, normalization or checkpoint selection. Collection mixes and
+panel labels are allowed without exposing identity to the model. Reject
+prohibited checkpoint state. Follow the [adopted constraints](cookbook/decisions/the-policy-is-stateless-and-observation-only.md).
+
+**Correct high throughput is required.** Measure equivalent complete work,
+including valid learner turns per full update and phase costs; distinguish
+startup, hardware, precision and workload changes. Component speed does not
+prove end-to-end speed. For NVIDIA CUDA bottlenecks, **Nsight Systems (`nsys`)
+is the canonical timeline profiler**; reuse representative captures or profile
+a bounded relevant phase. Preserve versions, source/config identity, trace paths,
+overhead and limits. Do not disrupt a learner, upgrade drivers or weaken security
+for profiling. Missing tools limit performance claims and add no mandatory run
+or admission gate. See the [profiling workflow](cookbook/workflows/profile-cuda-bottlenecks-with-nsight-systems.md).
+
+**Evaluate generality and keep custody.** Report win rate and bank margin across
+different opponents with version, seed, seat, denominator, legality, completion
+and runtime. Distinguish selection from held-out qualification. Preserve stable
+experiment identity with separate attempt/checkpoint metadata, compact local
+source-bound evidence and W&B telemetry using v3 identifiers. Telemetry outages
+remain visible. Keep credentials, bulk weights/corpora and local state out of
+git with custody manifests; preserve source and lockfiles. The owner decides
+submission. No old v2 score, ranking, lane mandate or pod allocation transfers.
+
+## Retained starter engineering workflow
+
+## Repository Map
+
+- Start with `README.md` for setup, fixture regeneration, and the current
+  reference episode IDs.
+- Use `docs/rules-engine.md` for rules-engine architecture, current status,
+  and known rule risks before changing `src/rules_engine/`.
+- Use `docs/rules-parity-coverage.md` as the parity coverage source of truth.
+  Update it whenever rules behavior, fixtures, or coverage changes.
+- Reference `docs/rl-api-specs.md` before changing `python/owl/rl.py`, `src/rl/`, or
+  public RL tensor shapes.
+- Reference `docs/model-architecture.md` before changing `python/owl/model/` or model
+  config, tensor ordering, actor, critic, or initialization behavior.
+- Reference `README.md` and the training config tests before changing
+  `python/owl/train/`, `scripts/run_ppo.py`, or `configs/train/`.
+- Reference `docs/pr-checklist.md` before creating, recommending, or merging a PR.
+
+## Development Workflow
+
+- Run `just py-prepare` / `just rs-prepare` after any `python` / `rust` code edits, respectively. This handles formatting, linting, static type-checking, and tests.
+- Run `just prepare` before creating or recommending a commit or PR.
+- Leave touched code in better shape than you found it, while keeping cleanup
+  scoped to the task at hand.
+- Add dependencies with `uv add` / `cargo add`; don't edit `.toml` or `.lock` files directly when adding dependencies.
+- Keep `Cargo.lock` and `uv.lock` tracked. Update lockfiles with package-manager
+  commands, not manual edits.
+- Avoid jumping through hoops for backwards compatibility - don't be afraid of
+  refactoring and breaking old APIs in order to improve them.
+- Before creating or recommending a PR, complete `docs/pr-checklist.md` and summarize any residual risks.
+- Merge PRs with a regular merge commit by default. Do not squash-merge unless
+  the user explicitly requests it.
+- For retained Orbit Wars rules changes, keep `docs/rules-engine.md` and
+  `docs/rules-parity-coverage.md` current with implementation state, test
+  surface, and known gaps.
+- `just docs-fresh` requires mapped code changes to update their mapped docs.
+  If docs are already current for a small change, rerun the check with
+  `DOCS_CURRENT=1` to indicate that the mapped docs were reviewed and are
+  still current.
+
+## Error Handling
+
+- Fail fast with explicit, informative errors instead of silent fallbacks.
+- When user input is invalid, raise clear exceptions.
+- For persisted data schemas owned by this repo, prefer strict key access and explicit validation over backward-compatibility fallbacks.
+
+## Attribute Access
+
+- Avoid `getattr`, `setattr`, and `__dict__` in first-class code paths. They
+  undermine the repo's mypy-forward pseudo-typed style; prefer direct attribute
+  access and explicit union narrowing with `isinstance`.
+- Use dynamic attribute access only for narrow, deliberate cases such as
+  iterating over known schema/dataclass fields (`ObsBatch.model_fields`,
+  `_OBS_TENSOR_FIELDS`) or test monkeypatching. If backwards compatibility
+  seems to require dynamic access, prefer explicit schema migration and record the reason.
+
+## Cookbook contract
+
+**Read first.** Read `cookbook/index.md`, the newest `cookbook/log.md`, and
+relevant notes at the start of work. Search concepts, synonyms and negative
+evidence before creating knowledge or repeating an approach. Read governing
+notes citing an edited file as a `repository:` source; if a first-edit hook
+presents one, read it and explicitly retry the intended edit.
+
+**Work in bounded changes.** State a target and observable completion/stopping
+condition. Keep change/run artifacts in `ops/`; git preserves implementation
+history. Report checks and unknowns without inventing thresholds or results.
+
+**Record every adaptation.** Owner: “every adaption you made to this repo, please
+add a cookbook record.” Every material repository adaptation must have an
+identified cookbook record linking changed paths, reason, actual checks and
+remaining gaps. Coherent adaptations may share a contract record with an explicit
+inventory. This overrides the generic progress-only exemption for adaptations;
+routine monitoring still belongs in working artifacts.
+
+**Record before finishing.** Material decisions, corrections and reusable
+findings require three edits together: note, its folder `index.md`, and a
+prepended `cookbook/log.md` entry.
+
+- Keep routine launch, build, checkpoint and monitor output in the change's
+  working artifacts. Close result episodes with outcomes, denominators and gaps;
+  freeze completed evidence. Progress alone earns no new durable note.
+- Revise an existing durable concept when its reusable claim, evidence,
+  consequence or limits change. Reconcile its opening, conclusion, metadata and
+  index description together. Replace superseded current prose and link history;
+  do not append dated operational progress to References.
+- Split independent claims when needed. Preserve unique dirty history and incoming
+  links before moving it. Keep indexes to links/descriptions and logs to what
+  changed, why and a link.
+
+**Declare provenance.** Every concept requires `type`, `title`, `description`,
+`tags`, `status`, `generated`; first tag `kaggriculture-v3`. Reserved index/log
+files are exempt; a register declaring fields is not. A Decision quotes its
+decider and identifies the source. Never make an interpretation into owner
+adoption. Verification names an actual check of this version; status alone proves
+nothing. Repository sources are literal single-line
+`repository:<repo-root-relative-path>` values with forward slashes and no `.`
+or `..` segments. Keep external sources in their own namespace. Shape/source
+lint cannot establish truth, completeness or applicability.
+
+**Promote supported knowledge.** Name an independent source/check, future
+consequence and existing-concept search before promotion. Unsupported findings
+stay in working evidence. A Lesson needs at least two supporting episodes.
+Review after each episode or monthly, whichever is rarer; repair retrieval and
+contradicted claims in place. Add a typed folder only with its first real note.
+
+**One current board, when warranted.** Once there are two results to rank, keep
+one living Decision `cookbook/decisions/the-kaggriculture-v3-board.md`: dated
+position, ranked options with evidence and loss conditions, scoped tombstones.
+Read the full board before opening an episode and say which option is pulled and
+why. Changes to its facts require four edits together: note, index, log, board.
+Keep the whole board within 12,000 JavaScript UTF-16 code units, replacing current
+state and linking history. Preserve byte-exact dirty history and checksums before
+removal. No empty day-one board or imported v2 ranking.
+
+**Keep the view derived.** Root `kaggriculture-v3.base` sits beside `cookbook/`;
+the vault symlinks them as `cookbook/kaggriculture-v3.base` and
+`cookbook/kaggriculture-v3`. Scope by folder and exclude index/log basenames.
+
+Claude/Codex hooks restore context, gate the first governed edit, lint writes and
+check corrections; Git pre-commit checks staged note sources plus staged log.
+Direct script checks are distinct from harness discovery and trust. See
+[setup receipt](ops/cookbook-setup-checks.md) for exact verification limits.
+---
+type: "Decision"
+title: "Recipe choices align to Isaiah without owner escalation"
+description: "Optimizer-step cadence and critic/value-distillation semantics are implementer choices resolved toward Isaiah scaling_6m and its own multi-GPU rule, not owner decisions; both are encoded in the rebuilt configs and model and pass CPU config/startup checks, while trainer integration and GPU qualification remain pending."
+tags: ["kaggriculture-v3", "training", "decisions"]
+status: "adopted"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+decider: "Owner: these are NOT my decisions please patch the cookbook or whatever, and align to Isaiah later on in the list."
+sources: [{"resource": "user-directive:2026-09-29:recipe-choices-align-to-isaiah"}, {"resource": "user-directive:2026-09-29:diagnose-bc-and-preserve-training-config"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/isaiah-alignment-2026-09-29/upstream-scaling_6m.yaml"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/isaiah-alignment-2026-09-29/semantic-audit.json"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/isaiah-alignment-2026-09-29/results.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank.yaml"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_4rank.yaml"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/model/kaggriculture.yaml"}, {"resource": "repository:python/owl/train/config.py"}, {"resource": "repository:configs/kaggriculture_2rank.yaml"}, {"resource": "repository:configs/kaggriculture_4rank.yaml"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-3.4-r3/report.md"}, {"resource": "external-repository:https://github.com/IsaiahPressman/kaggle-orbit-wars/blob/32b3ec900ad406eedd965f53a1a0f4490d31c589/configs/winner_ce_6m_4x5090.yaml"}, {"resource": "external-repository:https://github.com/IsaiahPressman/kaggle-orbit-wars/blob/32b3ec900ad406eedd965f53a1a0f4490d31c589/python/owl/model/stateless_transformer_v1.py"}]
+---
+
+# Recipe choices align to Isaiah without owner escalation
+
+Earlier the same day the owner directed: “你可以對齊全部參數吧 基本建設都在了isaiah, 我們盡量對齊”. An alignment review then listed two items as the owner's to decide: the optimizer-step cadence (batch options A/B plus `target_kl`) and the critic/value-distillation semantics. The owner replied:
+
+> these are NOT my decisions please patch the cookbook or whatever, and align to Isaiah later on in the list.
+
+Source: `user-directive:2026-09-29:recipe-choices-align-to-isaiah`, the owner's direct reply in the Claude Code alignment review.
+
+## Rule
+
+Differences between the v3 training recipe and pinned upstream `scaling_6m` are implementation choices, not owner decisions. Resolve each toward Isaiah and record any residual difference. Where literal alignment would contradict an adopted owner constraint (stateless observation-only policy, no opponent-identity conditioning, v3 Rust I/O with one trainer, no v2 model), use the nearest upstream-supported semantics and name the gap. Do not present alignment alternatives to the owner as a menu.
+
+## Superseded framing
+
+The owner directives “4096吧，default.” and “can you keep the original PPO minibatch, and scale the environments only? is it better?” governed the environment-scaling and capacity experiments. Those receipts remain valid history. Records that described 4,096 environments/rank, one segment per minibatch and accumulation 2 as owner-retained constraints on the Isaiah-aligned recipe are withdrawn. Implementation interpretation: the new directive governs future aligned runs; historical configs, snapshots and receipts stay unchanged.
+
+## Alignment targets — encoded in configs and model; trainer and GPU qualification pending
+
+Implementation interpretation of “align to Isaiah” for the two items:
+
+1. **Optimizer-step cadence.** Apply Isaiah's own multi-GPU rule from `winner_ce_6m_4x5090.yaml`: divide `n_envs` and `segments_per_minibatch` by world size, keeping the global batch, 16 optimizer steps/iteration and env steps/iteration of the single-GPU run. For `scaling_6m` (256 envs, spm 16, accumulation 1) this gives 128 envs/rank, spm 8, accumulation 1 on two ranks, and 64/4/1 on four ranks. `target_kl` stays null as upstream. Each iteration then collects 16,384 game transitions and takes 16 optimizer steps of 1,024 global transitions, matching upstream warm-up/cosine data exposure. Residual differences: two-player games only, and dense-game memory is unmeasured, so a memory smoke precedes any long run. Earlier 4,096-env SPS figures do not qualify this cadence.
+2. **Critic and value distillation.** Upstream `scaling_6m` uses the default softmax winner-distribution critic (value 2p−1, MSE value loss, gamma 1) with a last-best teacher (policy KL 0.005, winner-probability value distillation 0.005). Upstream itself rejects `critic_mode='independent'` with value distillation, so alignment means implementing winner-distribution semantics rather than relaxing that guard. V3 runs one forward per seat-private observation; a critic that combines both seats' private inputs is neither Isaiah's architecture nor required. The nearest analog follows Isaiah's stateless critic: per-player critic value tokens (self and opponent) inside each seat's own observation feed a shared head, giving one logit per player, a softmax and value 2p − 1 (plan Task 3.1). That admits upstream's value distillation without reading the rival's private state. The range check is settled by source: `terminal_scale = 1 - caps` keeps shaped returns in [-1, 1].
+
+After the restart, both targets are built in from the start of the rebuild rather than applied as later fixes; the rebuild plan orders the work.
+
+Current state (implementation status, not owner adoption): target 1 is encoded in the Task 3.4 ranked configs, which load through the real `FullConfig`, and target 2's per-player winner softmax is in the Task 3.1 model ([[../references/kaggriculture-model-joins-isaiahs-factory-compile-and-masked-critic|model-side Reference]]). Native environment and trainer integration, teacher and value-distillation execution, and GPU qualification remain pending, so neither target is yet exercised in training.
+
+## Limits
+
+This record changes no training config and starts no run. The historical 4,096/spm 1/accumulation 2 cadence with teachers disabled lives only on the reference branch. After the [[restart-the-port-from-isaiahs-clean-base|restart]], the rebuilt configs must adopt these targets from the start, and alignment is complete only after GPU qualification. Rebuild Task 3.4 encodes target 1 in `configs/kaggriculture_2rank.yaml` and `configs/kaggriculture_4rank.yaml` ([[../references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]]). At `kg/rebuild-configs` `99e5124`, independent verification (`ops/rebuild-2026-09-29/codex/verify-3.4-r3/report.md`) found that all three Kaggriculture YAMLs load through `FullConfig` with the Task 3.1 model registration, the factory constructs their models (meta-device loader probe), and `scripts/run_ppo.py` checks every forward workload against the model's GEMM chunking at startup through the real loader. Its CPU checks: `pytest tests/kaggriculture tests/owl tests/scripts tests/tools -m 'not slow'` 1,373 passed, 4 skipped (none of them config-integration cases); `mypy python/owl scripts` no issues in 59 files; `cargo test --locked --offline` 155 passed, 2 ignored; removing the startup `_check_model_workload` call took the four startup cases from 4 passed to 4 failed and back to 4 passed on restoration. These checks cover config semantics and startup checking only. `run_ppo` still stops explicitly after the workload check because native environment and trainer integration are pending; teacher and replay execution, dense-state memory, real Inductor/FlashAttention compilation, GPU throughput and competitive strength remain unqualified, and no training or GPU run has been performed.
+---
+type: "Reference"
+title: "Kaggriculture configs follow Isaiah's scaling_6m recipe"
+description: "Task 3.4 configs deliberately align to Isaiah: 2-rank 128 envs/spm 8, 4-rank 64/spm 4 and 8-rank 32/spm 2 keep scaling_6m's global batch, 16 optimizer steps and 16,384 env steps per iteration, with its optimizer, PPO, teacher and compile settings; the configs load through the real FullConfig with a typed KaggricultureEnvConfig, and run_ppo startup checks every forward against the model's GEMM chunking before allocation, prints bounded headroom, then stops explicitly because no Kaggriculture env is wired yet. CPU tested only."
+tags: ["kaggriculture-v3", "training", "adaptation"]
+status: "verified-scoped"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources: [{"resource": "repository:configs/kaggriculture_2rank.yaml"}, {"resource": "repository:configs/kaggriculture_4rank.yaml"}, {"resource": "repository:configs/kaggriculture_8rank.yaml"}, {"resource": "repository:configs/kaggriculture.yaml"}, {"resource": "repository:configs/model/kaggriculture_cpu.yaml"}, {"resource": "repository:configs/model/kaggriculture.yaml"}, {"resource": "repository:configs/scaling_6m.yaml"}, {"resource": "repository:configs/scaling_6m_halfbatch.yaml"}, {"resource": "repository:configs/winner_ce_6m_4x5090.yaml"}, {"resource": "repository:python/owl/model/kaggriculture_workload.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:python/owl/kaggriculture/config.py"}, {"resource": "repository:python/owl/train/config.py"}, {"resource": "repository:scripts/benchmark_checkpoints.py"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/codex/verify-3.4-r2.md"}, {"resource": "repository:ops/rebuild-2026-09-29/configs-r2/py-prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/configs-r2/mutation-no-check.log"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:python/owl/model/kaggriculture.py"}, {"resource": "repository:tests/kaggriculture/test_configs.py"}, {"resource": "repository:tests/owl/train/test_config.py"}, {"resource": "repository:docs/model-architecture.md"}, {"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank.yaml"}, {"resource": "reference-branch:kg/reference-2026-09-29/python/owl/kaggriculture/rewards.py"}]
+---
+
+# Kaggriculture configs follow Isaiah's scaling_6m recipe
+
+These configs **deliberately align to Isaiah**, as the [[../decisions/recipe-choices-align-to-isaiah-without-owner-escalation|recipe Decision]] requires: every recipe choice resolves toward upstream `scaling_6m`, and only per-rank shapes change with the world size.
+
+## What changed (rebuild Task 3.4)
+
+- **`configs/kaggriculture_2rank.yaml`** (128 envs/rank, `segments_per_minibatch` 8, accumulation 1) **`configs/kaggriculture_4rank.yaml`** (64/4/1) and **`configs/kaggriculture_8rank.yaml`** (32/2/1, added 2026-09-29 for the owner's likely 8-rank main run; see the [[../decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]]). This is Isaiah's own multi-GPU rule from `winner_ce_6m_4x5090.yaml`: divide `n_envs` and `segments_per_minibatch` by the world size and keep the global batch. Everything else is `scaling_6m`'s:
+  - the Muon optimizer and the linear-warmup cosine schedule (1,000 / 400,000 steps; the global batch is unchanged, so nothing is rescaled);
+  - the PPO coefficients (gamma 1, λ 0.9, clip 0.2, no value clip, `vf_coef` 2, `ent_coef` 1e-6, grad norm 10, `target_kl: null`, `per_player`, normalized advantages);
+  - the last-best teacher (0.005 / 0.005, `teacher_segments_per_minibatch` 128, not divided, as in Isaiah's per-rank configs), 8 evaluation replays, `compile_mode: default`, BF16, the trunk-compile defaults and the 20M checkpoint cadence.
+- **Kaggriculture-only settings:** the env section (`obs_spec` schema 3, `hire_limit` 241, `reward_mode: win_loss`, and a provisional `native_threads: 2` that Task 6.1 measures) and the owner's economic shaping 0.2. The other reward coefficients are the reference branch's defaults, named as in its `rewards.py`, which plan C8 ports. The model is the existing `configs/model/kaggriculture.yaml`, which already forces FlashAttention. It is not renamed to the plan's `kaggriculture_gpu.yaml`, because model tests and docs cite that path.
+- **Local CPU configs:** `configs/kaggriculture.yaml` (2 envs, spm 1, FP32, no compilation, no replays) and the tiny `configs/model/kaggriculture_cpu.yaml` (width 16, depth 1, FlashAttention off) are for Task 3.5. They use the same optimizer and PPO coefficients.
+- **Startup workload check** (`python/owl/model/kaggriculture_workload.py`, from the GEMM-limit audit in the [[compiled-gemm-template-overflows-above-2-21-rows|overflow Reference]]):
+  - `ppo_forward_workloads` derives each forward's per-rank seat rows: rollout `n_envs × 2`, minibatch `spm × horizon × 2`, teacher chunk `min(teacher_spm, n_envs) × horizon × 2`, and evaluation `n_envs × 2`. A BC caller adds its own `ForwardWorkload`.
+  - `check_workload_headroom` divides these by the model's own `rows_per_chunk` (709 padded tokens × width 512, giving 5,915 rows) and `head_rows_per_chunk` (11,096). It raises when one row cannot fit either limit or a workload is empty. Head calls are exact. Trunk figures assume full padding, so trunk calls are an **upper bound** and trunk headroom a **lower bound**: the packed path plans chunks from actual token counts (16,384 rows of 300 tokens need 2 packed chunks, not 3).
+  - **At startup:** `scripts/run_ppo.py` calls `_check_model_workload` once the per-rank shapes are final (after runtime-GPU adaptation, fresh or resume) and before the run directory, env or model exist. The teacher chunk is omitted when `teacher_mode` is unset. The main process prints one `GEMM workload headroom …` line per workload. Isaiah's Orbit models do not chunk, so they are skipped.
+- **Kaggriculture env in `FullConfig`** (Codex r2 P1):
+  - `python/owl/kaggriculture/config.py` adds `KaggricultureEnvConfig` (`n_envs`, the Kaggriculture obs/action specs, `reward_mode: win_loss` only, `reward_shaping`, `pin_memory`, `native_threads ≥ 1`; Isaiah's `two_player_weight` is an unknown key) and `KaggricultureRewardConfig`. The reward config keeps the reference branch's field names and defaults (including `econ_ineffective_cap` 0.1), its `terminal_scale`, and both of its budget checks: the active caps must sum below one, and positive `econ_shaping` needs a positive starvation or drought weight.
+  - `python/owl/train/config.py`: `FullConfig.env` is `GameEnvConfig`, Isaiah's `EnvConfig` or `KaggricultureEnvConfig`, chosen by a callable discriminator on `env.obs_spec.obs_spec` (absent means Orbit, since Isaiah's `EnvConfig` has no game tag). The validator pairs the Kaggriculture env and model in both directions, requires `rl.gamma=1.0` and rejects `value_loss: winner_ce` for Kaggriculture (after the integration merge it then applies Tasks 3.2/3.3's `_validate_kaggriculture_training`, which adds `value_loss: mse` and `ppo_clip_mode: per_player`; see the [[evaluation-and-truncation-follow-the-kaggriculture-objective|evaluation and truncation Reference]]), and runs Isaiah's Orbit cross-checks unchanged in `_validate_orbit_constraints`. This replaces the Task 3.1 model-side rejection.
+  - `require_orbit_env(env, context=...)` narrows to `EnvConfig` and raises an explicit `RuntimeError` for Kaggriculture. `scripts/run_ppo.py` calls it right after the workload check (so a Kaggriculture launch stops before the run directory exists) and at its other Orbit-only sites (model build, teacher specs, evaluation env); `scripts/benchmark_checkpoints.py` uses it through a `LoadedCheckpoint.env` property and at checkpoint load.
+- **Tests:** `tests/scripts/test_run_ppo.py` drives `run_ppo.main` from the shipped YAML through the real `FullConfig.from_file`; only the release-build check, torch setup and the distributed session are stubbed, and the run-dir, env and model steps are fail-if-reached sentinels. A `-o model.embed_dim=2097152 model.n_heads=65536` override fails the check with no headroom lines and no run directory. The 2-, 4- and 8-rank configs print the headroom lines and then stop with the explicit not-wired error, with no run directory. A real resume directory saved at 2 ranks and resumed on 1 checks the adapted 512 rollout rows. `tests/owl/train/test_config.py` again loads every `configs/*.yaml`, as in Isaiah's tree.
+
+| Workload (preset) | 2 ranks: rows, max trunk / exact head calls | 4 ranks | 8 ranks |
+|---|---|---|---|
+| rollout | 256, 1/1 (≥ 23.1× trunk headroom) | 128, 1/1 | 64, 1/1 |
+| minibatch | 1,024, 1/1 (≥ 5.78×) | 512, 1/1 | 256, 1/1 |
+| teacher chunk | 16,384, ≤ 3/2 | 8,192, ≤ 2/1 | 4,096, 1/1 |
+| evaluation | 256, 1/1 | 128, 1/1 | 64, 1/1 |
+
+## Checks
+
+- The first version was rejected by Codex (`ops/rebuild-2026-09-29/codex/verify-3.4-r1.md`): the check had no startup caller, the calls were called exact, and the log overstated schema coverage. The startup wiring, bound labels and narrowed claims answer it. Removing the `run_ppo` call fails the four `main` tests.
+- The second version was rejected too (`ops/rebuild-2026-09-29/codex/verify-3.4-r2.md`): all three configs failed the real loader with five schema errors each, the startup tests bypassed it, and the ranked configs called `native_threads` measured. This version merges the Task 3.1 model registration (`kg/rebuild-trainer-model` at `4cac1a1`), adds the Kaggriculture env schema above and relabels `native_threads` provisional. Before the schema, the three `configs/kaggriculture*.yaml` cases of Isaiah's loader glob fail (`ops/rebuild-2026-09-29/configs-r2/config-red.log`). Removing the `_check_model_workload` call fails all four `main` tests; the file was restored byte-for-byte (`mutation-no-check.log`).
+- `tests/kaggriculture/test_configs.py`: every config loads through `FullConfig.from_file` and `create_model` builds the Kaggriculture model from each (no skips). The tests cover:
+  - global envs, optimizer steps per iteration (counted through Isaiah's `_minibatch_indices`), global segments per step and env steps per iteration, which equal `scaling_6m` (256, 16, 16, 16,384) at every world size (2, 4, 8);
+  - an optimizer config equal to `scaling_6m`'s, and `PPOConfig` equal except `segments_per_minibatch`;
+  - env sections that differ only in `n_envs`;
+  - the exact rows and calls in the table, the exact log lines, and packed chunk counts that never exceed the padded bound;
+  - fail-fast cases: a model too wide for one row, empty shapes and empty workloads;
+  - the typed env round trip, Orbit configs still selecting Isaiah's `EnvConfig`, both game-pairing rejections, Orbit specs or unknown keys in the Kaggriculture env, `gamma != 1`, `winner_ce`, the reward budget checks and `require_orbit_env`.
+- **8-rank addition (2026-09-29):** `_isaiah_per_rank_shape` in `tests/kaggriculture/test_configs.py` derives each ranked config's per-rank `n_envs`, `segments_per_minibatch` and teacher chunk from `scaling_6m` divided by the world size and raises when a global quantity, a per-rank minibatch or a teacher chunk does not divide whole (world sizes 3 and 32, accumulation 3 and a 24-segment teacher chunk are rejected). The 8-rank config passes the same global-workload, PPO-equality, headroom and `run_ppo.main` startup tests as the others; changing its spm to 4 failed four config tests. `py-prepare` for this change is recorded in the [[../decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]]'s log entry.
+- `OMP_NUM_THREADS=2 uvx --from rust-just just py-prepare` passed: 1,373 passed and 4 skipped (two FlashAttention/CUDA, one quantized backend, one unavailable native grammar binding); ruff, format, mypy (60 files) and docs-fresh passed (`ops/rebuild-2026-09-29/configs-r2/py-prepare.log`). The six config-integration skips are gone. No GPU, training or Rust check ran.
+
+## Limits and handoffs
+
+- **Launch stops after the check.** The configs load and pass the workload check, but `run_ppo` has no Kaggriculture environment until the native env binding (Task 1.4) and the trainer game seam (rollout storage and observation mapping, Task 3.1) land. Replace `require_orbit_env` at those sites with the game's env and model paths then. The env and reward schema is validated, not executed: no reward is computed from it yet.
+- **BC is not checked.** The BC trainer (Task 5.2) does not exist yet; it must add its batch as a `ForwardWorkload` through the same check.
+- **The trunk bounds are conservative.** Trunk headroom is a lower bound and trunk calls an upper bound, from full padding. Evaluation uses the `n_envs × 2` upper bound.
+- **Chunking is only CPU-tested.** Teacher chunks rely on the model's chunking, which has not been measured on the GPU.
+- **Pending dependencies:** `eval_replay_games: 8` needs Task 7.3's Kaggriculture replay export, and the last-best teacher needs Phase 4.
+- **Memory is unmeasured.** The spm 8 / accumulation 1 split holds only if the Task 6.1 memory smoke confirms it; otherwise the plan moves to 4 / 2 with the same product. The 8-rank shape (32 envs, spm 2) is qualified only by Task 6.3b on an owner-approved 8-GPU pod.
+---
+type: "Decision"
+title: "Throughput means correct complete work"
+description: "High throughput is required; preserve semantic parity and measure equivalent work rather than inferring gains from language or kernels."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/high-throughput-is-mandatory.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/myolie-native-sampling-grammar.md"}]
+---
+
+# Throughput means correct complete work
+
+Original v2 owner directive:
+
+> cookbook decision 下一個-高吞吐量是必須不是選擇
+
+Under today's instruction to reuse useful discipline, high throughput is a requirement for the v3 collection, model and training design. Preserve correctness while reporting collection rate, valid learner turns through a full update, phase timings and the total workflow cost. Separate startup/compilation from steady state. State hardware, precision, batch/rollout work, recording settings, transfer and evaluation boundaries. No absolute SPS floor or allowed regression percentage has been supplied.
+
+Rust preparation must actually execute in the path being measured. Preserve game ordering, no-op/STOP distinctions, conditional legality, masks, sampled behavior density and feature semantics; pin source/lockfile/binary and inputs/outputs. Compare equivalent work with an independent oracle where applicable. A faster parser or sampler does not establish a full-training speedup.
+
+The v2 native-sampler Reference is useful contrary evidence: its saved shared-host run lowered sampler CPU time while complete collection elapsed time increased. That is a scoped counterexample to extrapolating component gains, not a ban on native sampling and not a v3 benchmark. Reducing environments, histories or data volume is a workload change unless comparable end-to-end measurements show an optimization.
+
+Use [[../workflows/profile-cuda-bottlenecks-with-nsight-systems|Nsight Systems]] for NVIDIA timeline attribution. Temporary downscaling can diagnose a fault but does not close the throughput requirement. Measured scopes so far (the rejected old decoder and the historical fixed-minibatch sweep) live in `ops/gpu-sps-2026-09-29/results.md`. None of them establishes playing strength, dense-game capacity or an owner-specified performance floor, and each recipe change, including the Isaiah-aligned cadence, needs its own complete-work qualification.
+
+exec
+/bin/zsh -lc "cat configs/scaling_6m.yaml configs/winner_ce_6m_4x5090.yaml configs/kaggriculture_8rank.yaml; sed -n '1,270p' tests/kaggriculture/test_configs.py; sed -n '2940,3110p' tests/scripts/test_run_ppo.py" in /Users/poonszesen/kg-v3-8rank
+ succeeded in 0ms:
+# Scaling-law sweep: stateless_transformer_6m @ 1xB200 for 500M env steps.
+# seg_per_minibatch * grad_accum is kept at 16 (16 optimizer steps/iter); the
+# split is set from the pre-launch memory smoke (grad_accum only as needed).
+env:
+  n_envs: 256
+  obs_spec:
+    obs_spec: entity_based_ext_v2
+    max_entities: 320
+  action_spec:
+    action_spec: discrete_targets
+    min_fleet_size: 3
+    targeting_mode: anything_goes
+  two_player_weight: 0.75
+  pin_memory: true
+
+model: stateless_transformer_6m
+
+optimizer:
+  optimizer: muon
+  adamw_lr: 0.0001
+  adamw_eps: 1.0e-05
+  weight_decay: 0.0
+  muon_lr: 0.002
+  muon_weight_decay: 0.01
+  muon_momentum: 0.95
+  lr_schedule:
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 1000
+    decay_steps: 400_000
+    lr_min_ratio: 0.01
+
+rl:
+  horizon: 64
+  checkpoint_freq: 20_000_000
+  ppo_epochs: 1
+  segments_per_minibatch: 16
+  gradient_accumulation_steps: 1
+  # gamma=1.0 keeps the critic softmax well-defined
+  gamma: 1.0
+  gae_lambda: 0.9
+  clip_coef: 0.2
+  vf_clip_coef: null
+  vf_coef: 2.0
+  ent_coef: 1e-6
+  max_grad_norm: 10.0
+  target_kl: null
+  ppo_clip_mode: per_player
+  normalize_advantages: true
+  eval_replay_games: 8
+  teacher_mode: last_best
+  teacher_kl_coef: 0.005
+  teacher_value_coef: 0.005
+  teacher_segments_per_minibatch: 128
+  compile_mode: default
+  dtype: bfloat16
+# winner_ce on 4 GPUs: n_envs and segments_per_minibatch divided by 4 vs
+# winner_ce_6m.yaml so the GLOBAL batch, optimizer steps/iter (16), and env
+# steps/iter (65536) are identical (4 ranks x 128 envs = 512 global). Effective
+# config matches the 1xB200 winner_ce_6m run exactly; only the hardware differs.
+env:
+  n_envs: 128
+  obs_spec:
+    obs_spec: entity_based_ext_v2
+    max_entities: 256
+  action_spec:
+    action_spec: discrete_targets
+    min_fleet_size: 3
+    targeting_mode: anything_goes
+  two_player_weight: 0.5
+  reward_mode: win_only
+  pin_memory: true
+
+model: stateless_transformer_6m_win_only
+
+optimizer:
+  optimizer: muon
+  adamw_lr: 0.0001
+  adamw_eps: 1.0e-05
+  weight_decay: 0.0
+  muon_lr: 0.002
+  muon_weight_decay: 0.05
+  muon_momentum: 0.95
+  lr_schedule:
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 200
+    decay_steps: 150_000
+    lr_min_ratio: 0.02
+
+rl:
+  horizon: 128
+  checkpoint_freq: 20_000_000
+  ppo_epochs: 1
+  segments_per_minibatch: 8
+  gradient_accumulation_steps: 1
+  gamma: 1.0
+  gae_lambda: 0.9
+  clip_coef: 0.2
+  vf_clip_coef: null
+  vf_coef: 2.0
+  value_loss: winner_ce
+  ent_coef: 1e-6
+  max_grad_norm: 10.0
+  target_kl: null
+  ppo_clip_mode: per_player
+  normalize_advantages: true
+  eval_replay_games: 8
+  teacher_mode: last_best
+  teacher_kl_coef: 0.005
+  teacher_value_coef: 0.005
+  teacher_segments_per_minibatch: 256
+  compile_mode: default
+  dtype: bfloat16
+# Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 8 ranks
+# (8x RTX PRO 6000, the owner's likely main-run hardware; 2 ranks stay the
+# diagnostics/building pod). Isaiah's multi-GPU rule (winner_ce_6m_4x5090.yaml):
+# n_envs and segments_per_minibatch are divided by the world size, so the GLOBAL
+# batch (8 x 32 = 256 envs), optimizer steps/iter (16), global segments per
+# optimizer step (8 x 2 = 16) and env steps/iter (16,384) equal scaling_6m; the
+# optimizer, LR schedule, PPO coefficients, compile settings, teacher and
+# checkpoint cadence are unchanged. seg_per_minibatch * grad_accum stays 2 per
+# rank (accum 1, as Isaiah's per-rank configs); plan Task 6.3b qualifies it.
+# See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
+# Loads through FullConfig; run_ppo checks its GEMM workload, then stops until the
+# Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.
+env:
+  n_envs: 32
+  obs_spec:
+    obs_spec: kaggriculture
+    schema_version: 3
+  action_spec:
+    action_spec: kaggriculture
+    hire_limit: 241
+  reward_mode: win_loss
+  # Economic shaping 0.2 is the owner's choice; the other coefficients are the
+  # reference branch's audited reward defaults (plan C8).
+  reward_shaping:
+    econ_shaping: 0.2
+    econ_starvation_weight: 4.0
+    econ_drought_weight: 1.0
+    econ_cap: 0.25
+    econ_ineffective_weight: 0.0
+  pin_memory: true
+  # Provisional: Task 6.1 measures the native step time and verifies or resets it.
+  native_threads: 2
+
+model: kaggriculture
+
+optimizer:
+  optimizer: muon
+  adamw_lr: 0.0001
+  adamw_eps: 1.0e-05
+  weight_decay: 0.0
+  muon_lr: 0.002
+  muon_weight_decay: 0.01
+  muon_momentum: 0.95
+  lr_schedule:
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 1000
+    decay_steps: 400_000
+    lr_min_ratio: 0.01
+
+rl:
+  horizon: 64
+  checkpoint_freq: 20_000_000
+  ppo_epochs: 1
+  segments_per_minibatch: 2
+  gradient_accumulation_steps: 1
+  # gamma=1.0 keeps the critic softmax well-defined
+  gamma: 1.0
+  gae_lambda: 0.9
+  clip_coef: 0.2
+  vf_clip_coef: null
+  vf_coef: 2.0
+  ent_coef: 1e-6
+  max_grad_norm: 10.0
+  target_kl: null
+  ppo_clip_mode: per_player
+  normalize_advantages: true
+  # Kaggriculture replay export is Task 7.3.
+  eval_replay_games: 8
+  teacher_mode: last_best
+  teacher_kl_coef: 0.005
+  teacher_value_coef: 0.005
+  # A chunk size of the teacher precompute, not a batch: kept, as in Isaiah's
+  # per-rank configs (scaling_6m_halfbatch, winner_ce_6m_4x5090). Per rank the
+  # chunk is min(128, 32) = 32 envs, one whole chunk; the teacher coefficients
+  # are scaling_6m's, so the global teacher targets are unchanged.
+  teacher_segments_per_minibatch: 128
+  compile_mode: default
+  dtype: bfloat16
+"""Task 3.4: Kaggriculture configs follow Isaiah's scaling_6m recipe.
+
+The ranked configs (2, 4 and 8 ranks) apply Isaiah's multi-GPU rule
+(``winner_ce_6m_4x5090.yaml``): per-rank ``n_envs`` and
+``segments_per_minibatch`` are divided by the world size, everything else is
+scaling_6m's. Every config loads through the real
+``FullConfig.from_file``, so each section, the Kaggriculture env and reward
+schema and the cross-section rules are validated by the trainer's own loader.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import pytest
+import torch
+from owl.kaggriculture import types as kt
+from owl.kaggriculture.config import KaggricultureEnvConfig, KaggricultureRewardConfig
+from owl.model import create_model
+from owl.model import kaggriculture as km
+from owl.model.kaggriculture_workload import (
+    ForwardWorkload,
+    check_workload_headroom,
+    headroom_log_lines,
+    ppo_forward_workloads,
+)
+from owl.train import FullConfig, OptimizerConfig, PPOConfig, require_orbit_env
+from owl.train.ppo import _minibatch_indices
+from pydantic import ValidationError
+
+ROOT = Path(__file__).parents[2]
+_RANKED = {
+    "kaggriculture_2rank.yaml": 2,
+    "kaggriculture_4rank.yaml": 4,
+    "kaggriculture_8rank.yaml": 8,
+}
+_ALL = (*_RANKED, "kaggriculture.yaml")
+_REWARD_SHAPING = KaggricultureRewardConfig(
+    econ_shaping=0.2,
+    econ_starvation_weight=4.0,
+    econ_drought_weight=1.0,
+    econ_cap=0.25,
+    econ_ineffective_weight=0.0,
+)
+
+
+@dataclass(frozen=True)
+class _Sections:
+    env: KaggricultureEnvConfig
+    model: km.KaggricultureTransformerConfig
+    optimizer: OptimizerConfig
+    rl: PPOConfig
+
+
+@dataclass(frozen=True)
+class _PerRankShape:
+    n_envs: int
+    segments_per_minibatch: int
+    teacher_chunk_segments: int
+
+
+@dataclass(frozen=True)
+class _GlobalWorkload:
+    global_envs: int
+    optimizer_steps_per_iteration: int
+    global_segments_per_step: int
+    transitions_per_iteration: int
+
+
+def _sections(name: str) -> _Sections:
+    cfg = FullConfig.from_file(ROOT / "configs" / name)
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert isinstance(cfg.model, km.KaggricultureTransformerConfig)
+    return _Sections(env=cfg.env, model=cfg.model, optimizer=cfg.optimizer, rl=cfg.rl)
+
+
+def _scaling_6m() -> FullConfig:
+    return FullConfig.from_file(ROOT / "configs" / "scaling_6m.yaml")
+
+
+def _isaiah_per_rank_shape(scaling: FullConfig, world_size: int) -> _PerRankShape:
+    """Isaiah's multi-GPU rule: divide the global shapes by the world size.
+
+    Fails loudly when a global quantity does not divide into whole per-rank
+    shapes, or when the per-rank envs do not split into whole minibatches or
+    whole teacher-precompute chunks.
+    """
+    rl = scaling.rl
+    for name, value in (
+        ("n_envs", scaling.env.n_envs),
+        ("segments_per_minibatch", rl.segments_per_minibatch),
+    ):
+        if value % world_size != 0:
+            raise ValueError(
+                f"scaling_6m {name}={value} is not divisible by world size {world_size}"
+            )
+    n_envs = scaling.env.n_envs // world_size
+    spm = rl.segments_per_minibatch // world_size
+    per_step = spm * rl.gradient_accumulation_steps
+    if n_envs % per_step != 0:
+        raise ValueError(
+            f"per-rank n_envs={n_envs} is not divisible by segments_per_minibatch "
+            f"* gradient_accumulation_steps={per_step}"
+        )
+    # The teacher chunk is a precompute slice, kept at Isaiah's value (his
+    # per-rank configs keep it) and clamped to the rank's envs by the trainer.
+    teacher_chunk = min(rl.teacher_segments_per_minibatch, n_envs)
+    if n_envs % teacher_chunk != 0:
+        raise ValueError(
+            f"per-rank n_envs={n_envs} is not divisible by the teacher chunk "
+            f"min(teacher_segments_per_minibatch, n_envs)={teacher_chunk}"
+        )
+    return _PerRankShape(n_envs, spm, teacher_chunk)
+
+
+def _global_workload(n_envs: int, rl: PPOConfig, world_size: int) -> _GlobalWorkload:
+    per_step = rl.segments_per_minibatch * rl.gradient_accumulation_steps
+    minibatches = _minibatch_indices(
+        config=rl, n_segments=n_envs, device=torch.device("cpu")
+    )
+    assert len(minibatches) % rl.gradient_accumulation_steps == 0
+    return _GlobalWorkload(
+        global_envs=n_envs * world_size,
+        optimizer_steps_per_iteration=len(minibatches)
+        // rl.gradient_accumulation_steps,
+        global_segments_per_step=per_step * world_size,
+        transitions_per_iteration=rl.horizon * n_envs * world_size,
+    )
+
+
+@pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+def test_ranked_config_global_workload_equals_scaling_6m(
+    name: str, world_size: int
+) -> None:
+    scaling = _scaling_6m()
+    ours = _sections(name)
+    expected = _global_workload(scaling.env.n_envs, scaling.rl, 1)
+    assert expected == _GlobalWorkload(256, 16, 16, 16_384)
+    assert _global_workload(ours.env.n_envs, ours.rl, world_size) == expected
+
+
+@pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+def test_ranked_config_per_rank_shapes_are_scaling_6m_divided(
+    name: str, world_size: int
+) -> None:
+    ours = _sections(name)
+    teacher_chunk = min(ours.rl.teacher_segments_per_minibatch, ours.env.n_envs)
+    assert _PerRankShape(
+        ours.env.n_envs, ours.rl.segments_per_minibatch, teacher_chunk
+    ) == _isaiah_per_rank_shape(_scaling_6m(), world_size)
+    assert ours.rl.teacher_segments_per_minibatch == 128
+
+
+@pytest.mark.parametrize(
+    ("world_size", "match"),
+    [
+        (3, "n_envs=256 is not divisible by world size 3"),
+        (32, "segments_per_minibatch=16 is not divisible by world size 32"),
+    ],
+)
+def test_isaiah_per_rank_shape_fails_loudly_when_not_divisible(
+    world_size: int, match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        _isaiah_per_rank_shape(_scaling_6m(), world_size)
+
+
+def test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks() -> None:
+    scaling = _scaling_6m()
+    accum = scaling.model_copy(
+        update={"rl": scaling.rl.model_copy(update={"gradient_accumulation_steps": 3})}
+    )
+    with pytest.raises(ValueError, match="segments_per_minibatch \\* gradient"):
+        _isaiah_per_rank_shape(accum, 2)
+    teacher = scaling.model_copy(
+        update={
+            "rl": scaling.rl.model_copy(update={"teacher_segments_per_minibatch": 24})
+        }
+    )
+    with pytest.raises(ValueError, match="teacher chunk"):
+        _isaiah_per_rank_shape(teacher, 8)
+
+
+@pytest.mark.parametrize("name", _RANKED)
+def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
+    scaling = _scaling_6m()
+    ours = _sections(name)
+    assert ours.optimizer == scaling.optimizer
+    # Only the per-rank minibatch differs; target_kl, teacher, compile, dtype
+    # and checkpoint cadence are scaling_6m's.
+    assert ours.rl.gradient_accumulation_steps == 1
+    assert ours.rl.target_kl is None
+    assert (
+        ours.rl.model_copy(
+            update={"segments_per_minibatch": scaling.rl.segments_per_minibatch}
+        )
+        == scaling.rl
+    )
+
+
+def test_ranked_configs_differ_only_in_per_rank_shapes() -> None:
+    two, four, eight = (_sections(name) for name in _RANKED)
+    assert (two.env.n_envs, two.rl.segments_per_minibatch) == (128, 8)
+    assert (four.env.n_envs, four.rl.segments_per_minibatch) == (64, 4)
+    assert (eight.env.n_envs, eight.rl.segments_per_minibatch) == (32, 2)
+    assert two.model.force_flash_attn
+    assert (two.env.native_threads, two.env.pin_memory) == (2, True)
+    for other in (four, eight):
+        assert two.env.model_copy(update={"n_envs": 0}) == other.env.model_copy(
+            update={"n_envs": 0}
+        )
+        assert two.model == other.model
+        assert two.optimizer == other.optimizer
+        assert two.rl.model_copy(
+            update={"segments_per_minibatch": 0}
+        ) == other.rl.model_copy(update={"segments_per_minibatch": 0})
+
+
+@pytest.mark.parametrize("name", _ALL)
+def test_config_env_and_cross_section_rules(name: str) -> None:
+    ours = _sections(name)
+    assert ours.env.obs_spec == kt.KaggricultureObsConfig(schema_version=3)
+    assert ours.env.action_spec == kt.KaggricultureActionConfig(hire_limit=241)
+    assert ours.env.reward_mode == "win_loss"
+    assert ours.env.reward_shaping == _REWARD_SHAPING
+    assert ours.env.reward_shaping.terminal_scale == 0.75
+    assert ours.rl.gamma == 1.0
+    divisor = ours.rl.segments_per_minibatch * ours.rl.gradient_accumulation_steps
+    assert ours.env.n_envs % divisor == 0
+    assert ours.rl.eval_replay_games <= ours.env.n_envs
+
+
+def test_local_config_is_the_recipe_on_a_tiny_cpu_model() -> None:
+    scaling = _scaling_6m()
+    ours = _sections("kaggriculture.yaml")
+    assert ours.optimizer == scaling.optimizer
+    assert (ours.env.n_envs, ours.env.native_threads) == (2, 1)
+    assert not ours.env.pin_memory
+    assert not ours.model.force_flash_attn
+    assert ours.rl.model_compile == "none"
+    assert ours.rl.dtype == "float32"
+    cpu_only = {
+        "segments_per_minibatch",
+        "checkpoint_freq",
+        "eval_replay_games",
+        "compile_mode",
+        "model_compile",
+        "dtype",
+    }
+    shared = set(PPOConfig.model_fields) - cpu_only
+    assert {k: getattr(ours.rl, k) for k in shared} == {
+        k: getattr(scaling.rl, k) for k in shared
+    }
+
+
+# --- startup workload assertion (plan Task 3.4, GEMM-limit audit) -------------
+
+
+def _headroom(name: str) -> dict[str, tuple[int, int, int]]:
+    ours = _sections(name)
+    reports = check_workload_headroom(
+        ours.model,
+        ppo_forward_workloads(
+            n_envs=ours.env.n_envs,
+            horizon=ours.rl.horizon,
+            segments_per_minibatch=ours.rl.segments_per_minibatch,
+            teacher_segments_per_minibatch=ours.rl.teacher_segments_per_minibatch,
+        ),
+
+
+# Rebuild Task 3.3 (L12): fresh reproducible seed per evaluation --------------------
+
+
+def test_evaluation_seed_is_reproducible_and_changes_per_evaluation() -> None:
+    first = run_ppo._evaluation_seed(base_seed=7, env_steps=20_000_000)
+
+    assert first == run_ppo._evaluation_seed(base_seed=7, env_steps=20_000_000)
+    assert first != run_ppo._evaluation_seed(base_seed=7, env_steps=40_000_000)
+    assert first != run_ppo._evaluation_seed(base_seed=8, env_steps=20_000_000)
+    checkpoints = [
+        run_ppo._evaluation_seed(base_seed=7, env_steps=step)
+        for step in range(0, 20_000_000 * 1_000, 20_000_000)
+    ]
+    assert len(set(checkpoints)) == len(checkpoints)
+    adjacent = [
+        run_ppo._evaluation_seed(base_seed=base, env_steps=steps)
+        for base in range(4)
+        for steps in range(1_000, 1_256)
+    ]
+    assert len(set(adjacent)) == len(adjacent)
+
+
+def test_evaluation_seed_fits_the_native_seed_with_headroom() -> None:
+    # engine_rs `Game::new` takes an i64 seed and contract v4 requires seed >= 0;
+    # one evaluation env consumes one seed per construction and per auto-reset.
+    native_limit = 2**63
+    band_floor = 2**62
+    extremes = [
+        run_ppo._evaluation_seed(base_seed=base, env_steps=steps)
+        for base in (0, 1, 2**61 - 1)
+        for steps in (0, 1, 20_000_000, 2**61 - 1)
+    ]
+    for seed in extremes:
+        assert band_floor <= seed < band_floor + 2**61
+        assert seed + 2**61 <= native_limit
+
+
+def test_evaluation_seed_distinguishes_one_input_at_a_time_not_pairs() -> None:
+    # Pins the documented limit: the mix is a bijection in each input while the
+    # other is fixed, not an injection over (base_seed, env_steps) pairs, and it
+    # does not keep consecutive seed ranges apart. Counterexamples from Codex's
+    # 3.2/3.3 verification (verify-3.2-3.3-r1).
+    same = run_ppo._evaluation_seed(base_seed=0, env_steps=0)
+    other_run = run_ppo._evaluation_seed(
+        base_seed=1, env_steps=2_131_737_497_183_550_101
+    )
+    same_run_later = run_ppo._evaluation_seed(
+        base_seed=0, env_steps=787_325_655_728_545_358
+    )
+
+    assert other_run == same
+    assert same_run_later == same + 1
+
+
+@pytest.mark.parametrize(
+    ("base_seed", "env_steps"),
+    [(-1, 0), (2**61, 0), (0, -1), (0, 2**61)],
+)
+def test_evaluation_seed_rejects_values_outside_the_seed_band(
+    base_seed: int, env_steps: int
+) -> None:
+    with pytest.raises(ValueError, match=r"must be in \[0, 2\*\*61\)"):
+        run_ppo._evaluation_seed(base_seed=base_seed, env_steps=env_steps)
+
+
+def test_create_eval_env_keeps_orbit_env_and_rejects_kaggriculture_until_native(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    built: list[dict[str, object]] = []
+
+    def fake_vectorized_env(**kwargs: object) -> str:
+        built.append(kwargs)
+        return "orbit-env"
+
+    monkeypatch.setattr(run_ppo, "VectorizedEnv", fake_vectorized_env)
+    cfg = _config_with_envs(2)
+    assert isinstance(cfg.env, EnvConfig)
+
+    env = run_ppo._create_eval_env(
+        cfg, n_envs=4, device=torch.device("cpu"), env_steps=1000
+    )
+
+    assert env == "orbit-env"
+    assert built == [
+        {
+            "n_envs": 4,
+            "obs_spec": cfg.env.obs_spec,
+            "action_spec": cfg.env.action_spec,
+            "two_player_weight": cfg.env.two_player_weight,
+            "reward_mode": cfg.env.reward_mode,
+            "pin_memory": False,
+        }
+    ]
+    with pytest.raises(NotImplementedError, match=r"Tasks 1\.4/1\.5"):
+        run_ppo._create_eval_env(
+            _kaggriculture_eval_config(),
+            n_envs=4,
+            device=torch.device("cpu"),
+            env_steps=1000,
+        )
+
+
+@pytest.mark.skip(
+    reason=(
+        "Needs the native Kaggriculture environment and its EnvConfig seed "
+        "(rebuild Tasks 1.4/1.5)."
+    )
+)
+def test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds() -> None:
+    pytest.fail(
+        "Unskip when owl.game.create_env builds KaggricultureEnv: two evaluations "
+        "at different env_steps must start different games, and repeating one "
+        "evaluation must reproduce its games and final banks exactly."
+    )
+
+
+# Rebuild Task 3.3: promotion telemetry ----------------------------------------------
+
+
+@pytest.mark.parametrize(("win_rate", "promoted"), [(0.7, 1.0), (0.69, 0.0)])
+def test_run_training_loop_logs_promotion_telemetry_and_evaluation_steps(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    win_rate: float,
+    promoted: float,
+) -> None:
+    cfg = _full_config(checkpoint_freq=1000)
+    trainer = _FakeTrainer()
+    logger = _FakeLogger()
+    _patch_eval_model_from_weights(monkeypatch)
+    evaluated_at: list[object] = []
+
+    def fake_evaluate_against_last_best(**kwargs: object) -> dict[str, float]:
+        evaluated_at.append(kwargs["env_steps"])
+        return {"eval/win_rate_against_last_best": win_rate, "eval/games": 2.0}
+
+    monkeypatch.setattr(
+        run_ppo, "_evaluate_against_last_best", fake_evaluate_against_last_best
+    )
+
+    run_ppo._run_training_loop(
+        trainer=trainer,
+        logger=logger,
+        run_dir=tmp_path,
+        cfg=cfg,
+        env_steps_per_iteration=1000,
+        max_env_steps=2000,
+        max_runtime_seconds=None,
+        dist_ctx=DistributedContext.single_process_cpu(),
+    )
+
+    assert evaluated_at == [1000, 2000]
+    eval_logs = [
+        (metrics, step) for metrics, step in logger.logged if "eval/games" in metrics
+    ]
+    assert [step for _metrics, step in eval_logs] == [1000, 2000]
+    for metrics, _step in eval_logs:
+        assert metrics["eval/promoted"] == promoted
+        assert metrics["eval/promotion_threshold"] == pytest.approx(0.7)
+        assert metrics["eval/win_rate_against_last_best"] == win_rate
+    promotions = [
+        checkpoint
+        for checkpoint in trainer.checkpoints
+        if checkpoint[0].name == "checkpoint_last_best.pt" and checkpoint[1] > 0
+    ]
+    assert len(promotions) == (2 if promoted else 0)
+
+
+class _FailingLastBestWriteTrainer(_FakeTrainer):
+
+exec
+/bin/zsh -lc 'git diff b51b0c0382a13a72854860ae17d7798f0875e4ee..HEAD --stat && git diff b51b0c0382a13a72854860ae17d7798f0875e4ee..HEAD -- configs tests' in /Users/poonszesen/kg-v3-8rank
+ succeeded in 0ms:
+ README.md                                          |   6 +-
+ configs/kaggriculture_8rank.yaml                   |  78 +++++++++++++
+ cookbook/decisions/index.md                        |   2 +-
+ ...start-multi-gpu-qualification-with-two-ranks.md |  17 ++-
+ cookbook/log.md                                    |   4 +
+ cookbook/references/index.md                       |   2 +-
+ ...ure-configs-follow-isaiahs-scaling-6m-recipe.md |  25 ++--
+ docs/model-architecture.md                         |   2 +-
+ ops/rebuild-2026-09-29/8rank/mutation-spm4.log     |   9 ++
+ ops/rebuild-2026-09-29/8rank/py-prepare.log        |  92 +++++++++++++++
+ ops/rebuild-2026-09-29/plan.md                     |  15 ++-
+ tests/kaggriculture/test_configs.py                | 126 +++++++++++++++++++--
+ tests/scripts/test_run_ppo.py                      |   1 +
+ 13 files changed, 346 insertions(+), 33 deletions(-)
+diff --git a/configs/kaggriculture_8rank.yaml b/configs/kaggriculture_8rank.yaml
+new file mode 100644
+index 0000000..536f002
+--- /dev/null
++++ b/configs/kaggriculture_8rank.yaml
+@@ -0,0 +1,78 @@
++# Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 8 ranks
++# (8x RTX PRO 6000, the owner's likely main-run hardware; 2 ranks stay the
++# diagnostics/building pod). Isaiah's multi-GPU rule (winner_ce_6m_4x5090.yaml):
++# n_envs and segments_per_minibatch are divided by the world size, so the GLOBAL
++# batch (8 x 32 = 256 envs), optimizer steps/iter (16), global segments per
++# optimizer step (8 x 2 = 16) and env steps/iter (16,384) equal scaling_6m; the
++# optimizer, LR schedule, PPO coefficients, compile settings, teacher and
++# checkpoint cadence are unchanged. seg_per_minibatch * grad_accum stays 2 per
++# rank (accum 1, as Isaiah's per-rank configs); plan Task 6.3b qualifies it.
++# See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
++# Loads through FullConfig; run_ppo checks its GEMM workload, then stops until the
++# Kaggriculture env binding (Task 1.4) and trainer game seam (Task 3.1) land.
++env:
++  n_envs: 32
++  obs_spec:
++    obs_spec: kaggriculture
++    schema_version: 3
++  action_spec:
++    action_spec: kaggriculture
++    hire_limit: 241
++  reward_mode: win_loss
++  # Economic shaping 0.2 is the owner's choice; the other coefficients are the
++  # reference branch's audited reward defaults (plan C8).
++  reward_shaping:
++    econ_shaping: 0.2
++    econ_starvation_weight: 4.0
++    econ_drought_weight: 1.0
++    econ_cap: 0.25
++    econ_ineffective_weight: 0.0
++  pin_memory: true
++  # Provisional: Task 6.1 measures the native step time and verifies or resets it.
++  native_threads: 2
++
++model: kaggriculture
++
++optimizer:
++  optimizer: muon
++  adamw_lr: 0.0001
++  adamw_eps: 1.0e-05
++  weight_decay: 0.0
++  muon_lr: 0.002
++  muon_weight_decay: 0.01
++  muon_momentum: 0.95
++  lr_schedule:
++    schedule: linear_warmup_cosine_decay
++    warmup_steps: 1000
++    decay_steps: 400_000
++    lr_min_ratio: 0.01
++
++rl:
++  horizon: 64
++  checkpoint_freq: 20_000_000
++  ppo_epochs: 1
++  segments_per_minibatch: 2
++  gradient_accumulation_steps: 1
++  # gamma=1.0 keeps the critic softmax well-defined
++  gamma: 1.0
++  gae_lambda: 0.9
++  clip_coef: 0.2
++  vf_clip_coef: null
++  vf_coef: 2.0
++  ent_coef: 1e-6
++  max_grad_norm: 10.0
++  target_kl: null
++  ppo_clip_mode: per_player
++  normalize_advantages: true
++  # Kaggriculture replay export is Task 7.3.
++  eval_replay_games: 8
++  teacher_mode: last_best
++  teacher_kl_coef: 0.005
++  teacher_value_coef: 0.005
++  # A chunk size of the teacher precompute, not a batch: kept, as in Isaiah's
++  # per-rank configs (scaling_6m_halfbatch, winner_ce_6m_4x5090). Per rank the
++  # chunk is min(128, 32) = 32 envs, one whole chunk; the teacher coefficients
++  # are scaling_6m's, so the global teacher targets are unchanged.
++  teacher_segments_per_minibatch: 128
++  compile_mode: default
++  dtype: bfloat16
+diff --git a/tests/kaggriculture/test_configs.py b/tests/kaggriculture/test_configs.py
+index adab224..9c7b2b4 100644
+--- a/tests/kaggriculture/test_configs.py
++++ b/tests/kaggriculture/test_configs.py
+@@ -1,8 +1,9 @@
+ """Task 3.4: Kaggriculture configs follow Isaiah's scaling_6m recipe.
+ 
+-The ranked configs apply Isaiah's multi-GPU rule (``winner_ce_6m_4x5090.yaml``):
+-per-rank ``n_envs`` and ``segments_per_minibatch`` are divided by the world
+-size, everything else is scaling_6m's. Every config loads through the real
++The ranked configs (2, 4 and 8 ranks) apply Isaiah's multi-GPU rule
++(``winner_ce_6m_4x5090.yaml``): per-rank ``n_envs`` and
++``segments_per_minibatch`` are divided by the world size, everything else is
++scaling_6m's. Every config loads through the real
+ ``FullConfig.from_file``, so each section, the Kaggriculture env and reward
+ schema and the cross-section rules are validated by the trainer's own loader.
+ """
+@@ -30,7 +31,11 @@ from owl.train.ppo import _minibatch_indices
+ from pydantic import ValidationError
+ 
+ ROOT = Path(__file__).parents[2]
+-_RANKED = {"kaggriculture_2rank.yaml": 2, "kaggriculture_4rank.yaml": 4}
++_RANKED = {
++    "kaggriculture_2rank.yaml": 2,
++    "kaggriculture_4rank.yaml": 4,
++    "kaggriculture_8rank.yaml": 8,
++}
+ _ALL = (*_RANKED, "kaggriculture.yaml")
+ _REWARD_SHAPING = KaggricultureRewardConfig(
+     econ_shaping=0.2,
+@@ -49,6 +54,13 @@ class _Sections:
+     rl: PPOConfig
+ 
+ 
++@dataclass(frozen=True)
++class _PerRankShape:
++    n_envs: int
++    segments_per_minibatch: int
++    teacher_chunk_segments: int
++
++
+ @dataclass(frozen=True)
+ class _GlobalWorkload:
+     global_envs: int
+@@ -68,6 +80,41 @@ def _scaling_6m() -> FullConfig:
+     return FullConfig.from_file(ROOT / "configs" / "scaling_6m.yaml")
+ 
+ 
++def _isaiah_per_rank_shape(scaling: FullConfig, world_size: int) -> _PerRankShape:
++    """Isaiah's multi-GPU rule: divide the global shapes by the world size.
++
++    Fails loudly when a global quantity does not divide into whole per-rank
++    shapes, or when the per-rank envs do not split into whole minibatches or
++    whole teacher-precompute chunks.
++    """
++    rl = scaling.rl
++    for name, value in (
++        ("n_envs", scaling.env.n_envs),
++        ("segments_per_minibatch", rl.segments_per_minibatch),
++    ):
++        if value % world_size != 0:
++            raise ValueError(
++                f"scaling_6m {name}={value} is not divisible by world size {world_size}"
++            )
++    n_envs = scaling.env.n_envs // world_size
++    spm = rl.segments_per_minibatch // world_size
++    per_step = spm * rl.gradient_accumulation_steps
++    if n_envs % per_step != 0:
++        raise ValueError(
++            f"per-rank n_envs={n_envs} is not divisible by segments_per_minibatch "
++            f"* gradient_accumulation_steps={per_step}"
++        )
++    # The teacher chunk is a precompute slice, kept at Isaiah's value (his
++    # per-rank configs keep it) and clamped to the rank's envs by the trainer.
++    teacher_chunk = min(rl.teacher_segments_per_minibatch, n_envs)
++    if n_envs % teacher_chunk != 0:
++        raise ValueError(
++            f"per-rank n_envs={n_envs} is not divisible by the teacher chunk "
++            f"min(teacher_segments_per_minibatch, n_envs)={teacher_chunk}"
++        )
++    return _PerRankShape(n_envs, spm, teacher_chunk)
++
++
+ def _global_workload(n_envs: int, rl: PPOConfig, world_size: int) -> _GlobalWorkload:
+     per_step = rl.segments_per_minibatch * rl.gradient_accumulation_steps
+     minibatches = _minibatch_indices(
+@@ -94,6 +141,48 @@ def test_ranked_config_global_workload_equals_scaling_6m(
+     assert _global_workload(ours.env.n_envs, ours.rl, world_size) == expected
+ 
+ 
++@pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
++def test_ranked_config_per_rank_shapes_are_scaling_6m_divided(
++    name: str, world_size: int
++) -> None:
++    ours = _sections(name)
++    teacher_chunk = min(ours.rl.teacher_segments_per_minibatch, ours.env.n_envs)
++    assert _PerRankShape(
++        ours.env.n_envs, ours.rl.segments_per_minibatch, teacher_chunk
++    ) == _isaiah_per_rank_shape(_scaling_6m(), world_size)
++    assert ours.rl.teacher_segments_per_minibatch == 128
++
++
++@pytest.mark.parametrize(
++    ("world_size", "match"),
++    [
++        (3, "n_envs=256 is not divisible by world size 3"),
++        (32, "segments_per_minibatch=16 is not divisible by world size 32"),
++    ],
++)
++def test_isaiah_per_rank_shape_fails_loudly_when_not_divisible(
++    world_size: int, match: str
++) -> None:
++    with pytest.raises(ValueError, match=match):
++        _isaiah_per_rank_shape(_scaling_6m(), world_size)
++
++
++def test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks() -> None:
++    scaling = _scaling_6m()
++    accum = scaling.model_copy(
++        update={"rl": scaling.rl.model_copy(update={"gradient_accumulation_steps": 3})}
++    )
++    with pytest.raises(ValueError, match="segments_per_minibatch \\* gradient"):
++        _isaiah_per_rank_shape(accum, 2)
++    teacher = scaling.model_copy(
++        update={
++            "rl": scaling.rl.model_copy(update={"teacher_segments_per_minibatch": 24})
++        }
++    )
++    with pytest.raises(ValueError, match="teacher chunk"):
++        _isaiah_per_rank_shape(teacher, 8)
++
++
+ @pytest.mark.parametrize("name", _RANKED)
+ def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
+     scaling = _scaling_6m()
+@@ -112,18 +201,21 @@ def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
+ 
+ 
+ def test_ranked_configs_differ_only_in_per_rank_shapes() -> None:
+-    two, four = (_sections(name) for name in _RANKED)
++    two, four, eight = (_sections(name) for name in _RANKED)
+     assert (two.env.n_envs, two.rl.segments_per_minibatch) == (128, 8)
+     assert (four.env.n_envs, four.rl.segments_per_minibatch) == (64, 4)
+-    assert two.env.model_copy(update={"n_envs": 0}) == four.env.model_copy(
+-        update={"n_envs": 0}
+-    )
+-    assert two.model == four.model
++    assert (eight.env.n_envs, eight.rl.segments_per_minibatch) == (32, 2)
+     assert two.model.force_flash_attn
+     assert (two.env.native_threads, two.env.pin_memory) == (2, True)
+-    assert two.rl.model_copy(
+-        update={"segments_per_minibatch": 0}
+-    ) == four.rl.model_copy(update={"segments_per_minibatch": 0})
++    for other in (four, eight):
++        assert two.env.model_copy(update={"n_envs": 0}) == other.env.model_copy(
++            update={"n_envs": 0}
++        )
++        assert two.model == other.model
++        assert two.optimizer == other.optimizer
++        assert two.rl.model_copy(
++            update={"segments_per_minibatch": 0}
++        ) == other.rl.model_copy(update={"segments_per_minibatch": 0})
+ 
+ 
+ @pytest.mark.parametrize("name", _ALL)
+@@ -205,6 +297,16 @@ def test_four_rank_workloads_fit_the_model_chunking() -> None:
+     }
+ 
+ 
++def test_eight_rank_workloads_fit_the_model_chunking() -> None:
++    # teacher_chunk = min(128, 32) x 64 x 2 rows: one trunk and one head call.
++    assert _headroom("kaggriculture_8rank.yaml") == {
++        "rollout": (64, 1, 1),
++        "minibatch": (256, 1, 1),
++        "teacher_chunk": (4_096, 1, 1),
++        "evaluation": (64, 1, 1),
++    }
++
++
+ def test_headroom_lines_label_the_padded_trunk_bounds() -> None:
+     ours = _sections("kaggriculture_2rank.yaml")
+     reports = check_workload_headroom(
+diff --git a/tests/scripts/test_run_ppo.py b/tests/scripts/test_run_ppo.py
+index 5001a03..0d35666 100644
+--- a/tests/scripts/test_run_ppo.py
++++ b/tests/scripts/test_run_ppo.py
+@@ -3326,6 +3326,7 @@ def test_main_rejects_unserviceable_kaggriculture_workload_before_allocation(
+     [
+         ("kaggriculture_2rank.yaml", 256, 16_384, 3),
+         ("kaggriculture_4rank.yaml", 128, 8_192, 2),
++        ("kaggriculture_8rank.yaml", 64, 4_096, 1),
+     ],
+ )
+ def test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation(
+
+exec
+/bin/zsh -lc "sed -n '1,140p' README.md; rg -n 'workload|headroom|kaggriculture|pytest|mypy|pythonpath' pyproject.toml scripts/run_ppo.py python/owl/train/config.py python/owl/model/kaggriculture.py .gitignore; git status --porcelain=v1 -uall" in /Users/poonszesen/kg-v3-8rank
+ succeeded in 0ms:
+# OWL: Orbit Wars (reinforcement) Learning
+
+## Setup instructions
+
+1. Install prerequisites:
+   - [Rust](https://www.rust-lang.org/tools/install)
+   - [uv](https://docs.astral.sh/uv/getting-started/installation/)
+   - [just](https://github.com/casey/just)
+2. Install the repository's pinned Rust toolchain and `rustfmt` component:
+
+```sh
+rustup toolchain install nightly-2026-04-18 --component rustfmt
+```
+
+3. Generate replay fixtures:
+
+```sh
+scripts/regenerate_test_fixtures.sh
+```
+
+4. `just prepare` should run without errors. If mapped docs are genuinely still
+   current after a small code change, rerun it as `DOCS_CURRENT=1 just prepare`
+   to acknowledge that review.
+
+## Containerized builds
+
+See `docs/containerization.md` for building a Docker image with the locked Python
+dependencies, Rust toolchain, compiled extension module, and example Slurm launch
+patterns.
+
+## Kaggle submission build
+
+Build a Kaggle-compatible image from the current worktree and create
+`artifacts/submission.tar.gz` with:
+
+```sh
+just kaggle-submission runs/20260505-120000/checkpoint_last_best.pt
+```
+
+Pass a submission name to write `artifacts/<name>.tar.gz` instead:
+
+```sh
+just kaggle-submission runs/20260505-120000/checkpoint_last_best.pt my-run
+```
+
+Pass a quantization format as the third argument to quantize the packaged
+model weights during submission generation:
+
+```sh
+just kaggle-submission runs/20260505-120000/checkpoint_last_best.pt my-run fp4
+```
+
+Pass an optional fallback checkpoint after the existing arguments to package a
+second, faster model:
+
+```sh
+just kaggle-submission runs/20260505-120000/checkpoint_last_best.pt my-run fp4 \
+  --fallback-checkpoint runs/20260501-090000/checkpoint_last_best.pt
+```
+
+The submission recipe runs `just prepare`, rebuilds the `orbit-wars:kaggle`
+image with Buildx zstd layer compression, compiles the Rust extension inside
+Kaggle's Python image, and packages `python/owl`, `python/main.py` or `main.py`,
+the requested model bundle, and its adjacent `config.yaml` under
+`models/primary/`. If a fallback checkpoint is provided, its model bundle and
+adjacent `config.yaml` are packaged under `models/fallback/`.
+Rebuilding the image during submission generation keeps the packaged Python code
+aligned with the current checkout. The packaged checkpoint keeps the original
+checkpoint contents only for validated model state-dict tensor weights needed by
+the Kaggle agent; malformed model entries fail during packaging rather than at
+agent startup. To store packaged models below fp32 precision, pass a
+quantization format such as
+`fp8_e4m3fn`, `fp4_e2m1fn_x2_scaled_block16`, or
+`nf5_g128_lsq_policy_last_fp8`. Lower-bit normal-float formats `nf4_g128_lsq`,
+`nf3_nf4_structured_3p5`, and `nf3_g128_lsq` are also supported; unique prefixes
+such as `fp4` are accepted.
+The default `fp32` leaves checkpoint weights unchanged. The Kaggle agent
+loads quantized slim checkpoints by dequantizing and copying one tensor at a
+time into the model, avoiding a full fp32 state-dict copy during startup.
+The checked-in `python/owl/agent/agent_config.yaml`
+sets `int8_quantization: always`, which converts loaded `nn.Linear` layers to
+PyTorch dynamic int8 CPU inference while keeping final actor/critic output heads
+in fp32. Set it to `2p` or `4p` to use int8 only for that game size, or `never`
+to disable serving-time quantization and use fp32 CPU inference. The packaged
+Kaggle agent is CPU-only; model serving, action expansion, and Kaggle action
+conversion all keep tensors on CPU. Set
+`lora_mode` to control whether LoRA adapters are dequantized and folded into
+regular `nn.Linear` weights for every game (`always`) or only for two-player or
+four-player games (`2p` / `4p`); folding happens before int8 inference
+quantization. Set
+`fallback_min_overage_time` in `python/owl/agent/agent_config.yaml` to switch to
+the fallback model when remaining overage time drops below that threshold;
+`null` disables fallback routing even if the fallback model is packaged. A
+packaged fallback config is validated during startup, but the fallback model
+weights are loaded on the second observed turn rather than during initial agent
+construction. The delayed load still happens even if remaining overage time has
+already fallen below the fallback threshold, preferring to risk that one timeout
+over giving up fallback for the rest of the game.
+
+The Kaggle observation encoder filters fleets smaller than the configured
+`min_fleet_size` while encoding observations. This intentionally trades a small
+amount of board-state detail for lower inference latency, because many tiny
+fleets can increase entity count enough to trigger fallback routing. To avoid
+marking a still-alive player as gone, if a player has no current planets and
+all of their fleets are below that threshold, the encoder keeps that player's
+single largest fleet in the encoded observation.
+
+## Orbit Wars reference
+
+The Rust rules engine targets the installed `kaggle-environments` Orbit Wars
+implementation. Resolve the local module and gameplay prose paths with:
+
+```sh
+uv run python -c 'from importlib import import_module; from pathlib import Path; m = import_module("kaggle_environments.envs.orbit_wars.orbit_wars"); print(Path(m.__file__).resolve()); print(Path(m.__file__).with_name("README.md").resolve())'
+```
+
+## PPO training configs
+
+Training presets live in `configs/`:
+
+- `baseline.yaml`: PPO with last-best teacher stabilization and the 6m GELU
+  stateless transformer preset,
+  discrete-target actions, `max_entities=256`, one PPO epoch per rollout,
+  larger rollout/minibatch sizing, Muon/AdamW optimizer rates, periodic
+  checkpoints every 20M environment steps, `torch.compile` default mode for PPO
+  tensor helpers, compiled transformer trunk with
+  `max-autotune-no-cudagraphs`, and bfloat16 autocast by default.
+- `baseline_adam.yaml`: Adam optimizer variant with explicit optimizer
+  settings, including `1e-4` learning rate, `(0.9, 0.999)` betas, `1e-5`
+  epsilon, no weight decay, and the same warmup/cosine scheduler shape.
+- `baseline_adamw.yaml`: AdamW optimizer variant matching `baseline_adam.yaml`
+  except for decoupled `0.01` weight decay.
+- `model/stateless_transformer_21m_swiglu.yaml`: larger SwiGLU stateless
+  transformer config with an inline discrete-target actor override using eight
+  action mixtures.
+- `model/stateless_transformer_6m.yaml`, `model/stateless_transformer_11m.yaml`,
+  and `model/stateless_transformer_21m_gelu.yaml`: GELU variants of the
+  stateless transformer presets.
+- `model/stateless_transformer_28m.yaml`: larger SwiGLU stateless transformer
+  preset with a discrete-target actor.
+.gitignore:39:.pytest_cache/
+.gitignore:40:.mypy_cache/
+pyproject.toml:25:    "mypy",
+pyproject.toml:26:    "pytest>=9.0.3",
+pyproject.toml:110:[tool.mypy]
+pyproject.toml:111:plugins = ["pydantic.mypy"]
+pyproject.toml:119:[[tool.mypy.overrides]]
+pyproject.toml:123:[[tool.mypy.overrides]]
+pyproject.toml:130:[tool.pytest.ini_options]
+python/owl/train/config.py:6:from owl.kaggriculture.config import KaggricultureEnvConfig
+python/owl/train/config.py:7:from owl.kaggriculture.types import KaggricultureObsConfig
+python/owl/train/config.py:10:from owl.model.kaggriculture import KaggricultureTransformerConfig
+python/owl/train/config.py:26:        return "kaggriculture"
+python/owl/train/config.py:35:            return "kaggriculture"
+python/owl/train/config.py:41:    | Annotated[KaggricultureEnvConfig, Tag("kaggriculture")],
+python/owl/train/config.py:51:    Kaggriculture configs load, validate and pass run_ppo's workload check, but
+python/owl/train/config.py:65:def _validate_kaggriculture_training(*, reward_mode: RewardMode, rl: PPOConfig) -> None:
+python/owl/train/config.py:71:    (``docs/kaggriculture-contract.md``, "Rewards"), and truncation bootstraps
+python/owl/train/config.py:115:                    "model.model_arch='kaggriculture_transformer', got "
+python/owl/train/config.py:118:            _validate_kaggriculture_rl(self.rl)
+python/owl/train/config.py:119:            _validate_kaggriculture_training(reward_mode=env.reward_mode, rl=self.rl)
+python/owl/train/config.py:122:                "model.model_arch='kaggriculture_transformer' requires a "
+python/owl/train/config.py:123:                "Kaggriculture env config (env.obs_spec.obs_spec='kaggriculture'), got "
+python/owl/train/config.py:143:def _validate_kaggriculture_rl(rl: PPOConfig) -> None:
+python/owl/model/kaggriculture.py:7:categorical fields from ``docs/kaggriculture-contract.md``) and the grammar
+python/owl/model/kaggriculture.py:8:action heads (``owl.model.kaggriculture_actor``) behind Isaiah's ``3D -> D``
+python/owl/model/kaggriculture.py:25:from owl.kaggriculture import types as kt
+python/owl/model/kaggriculture.py:26:from owl.kaggriculture.gpu_grammar import GrammarTables, expected_grammar_tables
+python/owl/model/kaggriculture.py:43:from owl.model.kaggriculture_actor import (
+python/owl/model/kaggriculture.py:66:KAGGRICULTURE_TRANSFORMER: Literal["kaggriculture_transformer"] = (
+python/owl/model/kaggriculture.py:67:    "kaggriculture_transformer"
+python/owl/model/kaggriculture.py:84:# kaggriculture-compiles-gemms-with-cublas-only).
+python/owl/model/kaggriculture.py:103:    model_arch: Literal["kaggriculture_transformer"] = KAGGRICULTURE_TRANSFORMER
+python/owl/model/kaggriculture.py:236:        native binding (Task 1.2/1.4) exists; see ``owl.kaggriculture.gpu_grammar``.
+python/owl/model/kaggriculture.py:532:        claim_gemm_backends("kaggriculture")
+scripts/run_ppo.py:17:from owl.kaggriculture.evaluation import terminal_seat_banks
+scripts/run_ppo.py:18:from owl.kaggriculture.types import KaggricultureObsConfig
+scripts/run_ppo.py:38:from owl.model.kaggriculture import KaggricultureTransformerConfig
+scripts/run_ppo.py:39:from owl.model.kaggriculture_workload import (
+scripts/run_ppo.py:41:    check_workload_headroom,
+scripts/run_ppo.py:42:    headroom_log_lines,
+scripts/run_ppo.py:43:    ppo_forward_workloads,
+scripts/run_ppo.py:96:# seeds start in the band [2**62, 2**62 + 2**61), leaving 2**61 seeds of headroom
+scripts/run_ppo.py:174:        _check_model_workload(
+scripts/run_ppo.py:774:def _check_model_workload(
+scripts/run_ppo.py:781:    """Fail fast when a forward exceeds the model's GEMM chunking; print headroom.
+scripts/run_ppo.py:789:    reports = check_workload_headroom(
+scripts/run_ppo.py:791:        ppo_forward_workloads(
+scripts/run_ppo.py:801:        for line in headroom_log_lines(reports):
+scripts/run_ppo.py:1615:    shaped training return; see ``owl.kaggriculture.evaluation``. Orbit keeps
+
+codex
+The branch has one commit above its declared base, and the worktree is clean. The 8-rank shape is 32 environments and 2 segments per minibatch per rank, preserving 16 optimizer steps and 16,384 global transitions per iteration. I’ll change the minibatch value from 2 to 4 to check that the workload tests reject it, then restore the exact bytes before the full suite.
+exec
+/bin/zsh -lc "python3 - <<'PY'
+from pathlib import Path
+import hashlib
+import subprocess
+
+config = Path('configs/kaggriculture_8rank.yaml')
+original = config.read_bytes()
+old = b'  segments_per_minibatch: 2\\n'
+assert original.count(old) == 1
+logs = Path('ops/rebuild-2026-09-29/8rank/independent-verify')
+logs.mkdir(exist_ok=True)
+try:
+    config.write_bytes(original.replace(old, b'  segments_per_minibatch: 4\\n'))
+    result = subprocess.run(['uv', 'run', 'pytest', 'tests/kaggriculture/test_configs.py', '-q'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    (logs / 'mutation-spm4.log').write_text(result.stdout)
+    print(result.stdout[-12000:])
+    print(f'MUTATION_EXIT={result.returncode}')
+finally:
+    config.write_bytes(original)
+    assert config.read_bytes() == original
+    print('RESTORED_SHA256=' + hashlib.sha256(config.read_bytes()).hexdigest())
+assert result.returncode == 1, 'Expected pytest assertion failure from wrong workload'
+PY" in /Users/poonszesen/kg-v3-8rank
+ succeeded in 2619ms:
+..F..F......F.......F.............................                       [100%]
+=================================== FAILURES ===================================
+_ test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_8rank.yaml-8] _
+
+name = 'kaggriculture_8rank.yaml', world_size = 8
+
+    @pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+    def test_ranked_config_global_workload_equals_scaling_6m(
+        name: str, world_size: int
+    ) -> None:
+        scaling = _scaling_6m()
+        ours = _sections(name)
+        expected = _global_workload(scaling.env.n_envs, scaling.rl, 1)
+        assert expected == _GlobalWorkload(256, 16, 16, 16_384)
+>       assert _global_workload(ours.env.n_envs, ours.rl, world_size) == expected
+E       AssertionError: assert _GlobalWorklo...eration=16384) == _GlobalWorklo...eration=16384)
+E         
+E         Omitting 2 identical items, use -vv to show
+E         Differing attributes:
+E         ['optimizer_steps_per_iteration', 'global_segments_per_step']
+E         
+E         Drill down into differing attribute optimizer_steps_per_iteration:
+E           optimizer_steps_per_iteration: 8 != 16...
+E         
+E         ...Full output truncated (3 lines hidden), use '-vv' to show
+
+tests/kaggriculture/test_configs.py:141: AssertionError
+_ test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8] _
+
+name = 'kaggriculture_8rank.yaml', world_size = 8
+
+    @pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+    def test_ranked_config_per_rank_shapes_are_scaling_6m_divided(
+        name: str, world_size: int
+    ) -> None:
+        ours = _sections(name)
+        teacher_chunk = min(ours.rl.teacher_segments_per_minibatch, ours.env.n_envs)
+>       assert _PerRankShape(
+            ours.env.n_envs, ours.rl.segments_per_minibatch, teacher_chunk
+        ) == _isaiah_per_rank_shape(_scaling_6m(), world_size)
+E       AssertionError: assert _PerRankShape...k_segments=32) == _PerRankShape...k_segments=32)
+E         
+E         Omitting 2 identical items, use -vv to show
+E         Differing attributes:
+E         ['segments_per_minibatch']
+E         
+E         Drill down into differing attribute segments_per_minibatch:
+E           segments_per_minibatch: 4 != 2
+
+tests/kaggriculture/test_configs.py:150: AssertionError
+______________ test_ranked_configs_differ_only_in_per_rank_shapes ______________
+
+    def test_ranked_configs_differ_only_in_per_rank_shapes() -> None:
+        two, four, eight = (_sections(name) for name in _RANKED)
+        assert (two.env.n_envs, two.rl.segments_per_minibatch) == (128, 8)
+        assert (four.env.n_envs, four.rl.segments_per_minibatch) == (64, 4)
+>       assert (eight.env.n_envs, eight.rl.segments_per_minibatch) == (32, 2)
+E       assert (32, 4) == (32, 2)
+E         
+E         At index 1 diff: 4 != 2
+E         Use -v to get more diff
+
+tests/kaggriculture/test_configs.py:207: AssertionError
+_______________ test_eight_rank_workloads_fit_the_model_chunking _______________
+
+    def test_eight_rank_workloads_fit_the_model_chunking() -> None:
+        # teacher_chunk = min(128, 32) x 64 x 2 rows: one trunk and one head call.
+>       assert _headroom("kaggriculture_8rank.yaml") == {
+            "rollout": (64, 1, 1),
+            "minibatch": (256, 1, 1),
+            "teacher_chunk": (4_096, 1, 1),
+            "evaluation": (64, 1, 1),
+        }
+E       AssertionError: assert {'evaluation'... (4096, 1, 1)} == {'evaluation'... (4096, 1, 1)}
+E         
+E         Omitting 3 identical items, use -vv to show
+E         Differing items:
+E         {'minibatch': (512, 1, 1)} != {'minibatch': (256, 1, 1)}
+E         Use -v to get more diff
+
+tests/kaggriculture/test_configs.py:302: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_global_workload_equals_scaling_6m[kaggriculture_8rank.yaml-8]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]
+FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes
+FAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking
+4 failed, 46 passed in 0.64s
+
+MUTATION_EXIT=1
+RESTORED_SHA256=fc015d7fe0301a81ce76bc5dda40dbb2cfb8ab9f93e65aa5cea823b4a992e26c
+

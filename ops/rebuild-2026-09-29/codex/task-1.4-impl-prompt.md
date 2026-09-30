@@ -1,0 +1,47 @@
+You are Codex, stream E (native environment lifecycle). Worktree: this checkout (`/Users/poonszesen/kg-v3-env`), branch `kg/rebuild-env`, base `e197528` (= `kg/merge-1-3`: integration `b51b0c0` + Task 1.2 grammar + Task 1.3 structured encoder, all merged). IMPLEMENT Task 1.4 exactly as specified in the reviewed and approved brief `ops/rebuild-2026-09-29/briefs/1.4.md`, including every Claude review edit (R1-R3), the answers to Q1-Q4, and the Codex rereview/confirmation edits recorded at the end of the brief. Where the brief body and its review sections differ, the review sections win. Do not redesign, widen scope, or add adapter/model/PPO/trainer code: the Python adapter `KaggricultureVectorizedEnv`, `rewards.py`, the Python codec and `native_grammar_tables(device)` are Task 1.5 and must NOT be written here.
+
+Read first: the whole brief 1.4 and its companion `ops/rebuild-2026-09-29/briefs/1.5.md` (for the shared ABI only); `docs/kaggriculture-contract.md` (v4); `docs/rl-api-specs.md`; `ops/rebuild-2026-09-29/plan.md` Task 1.4 / C5 / L2 / L3 / L4 / L6 / I0-I12; `CLAUDE.md`; `cookbook/index.md` and the newest `cookbook/log.md` entries; the merged 1.2/1.3 code under `src/kaggriculture/` (`mod.rs`, `grammar.rs`, `observe.rs`, `buffers.rs`, `config.rs`, `grammar_kernel_tests.rs`). The reference branch `kg/reference-2026-09-29` (`65f0eac5`) is a design and test oracle only: read it with `git show kg/reference-2026-09-29:<path>` or export it with `git archive` to a temp dir under `.codex-tmp/`; never write to it or to its worktree.
+
+FACTS ABOUT THIS BASE THAT REFINE THE BRIEF'S PLACEMENT TEXT (verify each; report if wrong):
+- The merged Kaggriculture module root is `src/kaggriculture/mod.rs` (not `src/kaggriculture.rs`). Extend `mod.rs`; do not create a second module root. `src/lib.rs` already calls `kaggriculture::add_to_module(m)?`; register the new class and the four functions through that function and keep 1.3's `encode_kaggriculture_headers_into`.
+- The 1.2 R2 retirement appears already done by 1.3: `src/kaggriculture/grammar_kernel_tests.rs` exists and `engine_rs/tests/grammar_kernel.rs` is absent. For brief Task A, verify this with source-bound evidence (file listing, `scripts/check_engine_trim.py` pass, manifest has no authored grammar exception), add the brief's regression test `test_no_authored_grammar_path_include_after_root_engine_edge` only if it does not already exist in equivalent form, record Task A as satisfied, and do not duplicate the moved tests. The brief names `src/kaggriculture/kernel_integration_tests.rs`; the existing `grammar_kernel_tests.rs` satisfies that role, so do not create a duplicate file.
+- The 1.3 staging API is `ObsStaging::{new, buffers_mut, publish}`, `ValidatedObsBuffersMut::{envs_mut, par_envs_mut}`, `ObservationGame::{from_seed, from_header, game, step_with_market_metrics, prepare}`, `write_env`. Use these real merged interfaces; if one differs from the brief's description, adapt to the merged signature and record the difference in the report.
+
+WORK TEST-FIRST, task by task (A through G), in the brief's order. For each step, write the test, run it and observe the stated red (the red must be attributable to the missing behavior, not to a malformed test), then implement, then run green. Perform the brief's mutation checks (temporarily break, observe failure, restore, rerun) and leave no mutation in production code. At minimum perform and record these mutation checks: (1) the seeded 16-game trajectory oracle against the reference TrainingBatch fails when the native reward rounding or a done bit is perturbed; (2) the L3 seed-partition test fails when mutated to the old `(base+rank*n_envs)+k` formula; (3) `truncate_commits_only_selected_rows` fails when step 8b is replaced by `ObsStaging::publish`; (4) `batch_failure_preserves_every_published_byte` and `reset_and_truncate_failures_preserve_every_published_byte` fail when a live write is moved before the commit point. Record concise red/green receipts and timing under `ops/rebuild-2026-09-29/1.4/`, keeping planned expectations separate from actual results.
+
+MAC RULES (owner's Mac, CPU-light, non-negotiable):
+- No training, no GPU, no model runs. Tiny checks only: at most 2 live environments per diagnostic, under 1 GB RAM and 2 minutes of execution per bounded diagnostic (the brief's recorder uses `--max-live-envs 1 --max-seconds 115 --max-rss-mib 960`).
+- Export in every shell before building or testing: `CARGO_BUILD_JOBS=2 CARGO_NET_OFFLINE=true UV_OFFLINE=true RAYON_NUM_THREADS=2 OMP_NUM_THREADS=2 MKL_NUM_THREADS=1 TMPDIR=/Users/poonszesen/kg-v3-env/.codex-tmp`. Use `--locked` and offline flags for cargo; `--offline` for uv/uvx. Invoke just as `uvx --offline --from rust-just just`.
+- Optimized builds: the release-profile checks (`cargo test --release --locked --lib release_dependency_overflow_is_caught`, the `measure_lifecycle` timing test) may be attempted once each; if a release (especially fat-LTO) build exceeds 10 minutes or 1 GB at `CARGO_BUILD_JOBS=2`, stop that step, keep the test code, and put the exact command in your report as PENDING (pod). Never substitute a debug-profile number for a release measurement.
+- The reference recorder and the full 16-game replay: implement the recorder, policy, custody tests and replay test in full. Run the recording once under the brief's watchdog. If building the exported reference crate or recording cannot fit the bound, stop it, publish no partial fixture, and report the exact command as PENDING (pod). Never reduce 16 games, never report partial evidence as acceptance, never weaken coverage assertions. If the fixture is recorded, run the replay test; if it is not, the replay test must fail loudly on the missing fixture (no skip).
+
+VENDORED KERNEL: never edit vendored kernel bytes under `engine_rs/` (including `lib.rs` `mod` lines, `Cargo.toml`, `Cargo.lock`). All new code belongs in the root crate (`src/kaggriculture/`), `scripts/`, `tests/`, `ops/`. The root-profile `[profile.release.package.kaggriculture-engine] overflow-checks = true` goes in the ROOT `Cargo.toml` (the brief's build-policy edit; this is not a kernel byte). If you nonetheless must add an authored file under `engine_rs/`, register it through the existing trim tooling (`scripts/check_engine_trim.py` and `engine_rs/TRIM_MANIFEST.json` format; never a hand-invented format) and report why. `uv run --offline python scripts/check_engine_trim.py` must pass at the end.
+
+DEPENDENCIES: add crate dependencies only with `cargo add` (offline; crates should be cached), Python dependencies only with `uv add`. Editing a `[profile...]` table is not a dependency change and is allowed in the root `Cargo.toml`. If a crate is not cached offline, stop and report; do not go online.
+
+GIT: your sandbox cannot write `.git`. Do NOT commit, stage, branch, push or merge. Leave all changes in the working tree. Use `.codex-tmp/` only as a temp dir. Do not touch other worktrees or branches.
+
+DOCS AND COOKBOOK (brief Task G): update `docs/rl-api-specs.md` (exact ABI, lifetimes, seed range, rewards, truncate) and `docs/rules-parity-coverage.md`; revise the existing cookbook concept `cookbook/references/native-game-semantics-use-v3-owned-buffers.md` (search first; changed-path inventory, reasons, actual checks, gaps and PENDING pod items), its folder `index.md` entry and a prepended `cookbook/log.md` entry together, following the CLAUDE.md cookbook contract (provenance fields, first tag `kaggriculture-v3`, literal `repository:` sources). Record the constructor refinement (pinning in Python) as the brief's Q1 says, but do not edit `docs/kaggriculture-contract.md` unilaterally: list the proposed contract wording in your report for Claude.
+
+RUN AT THE END and report actual results (pass/fail/ignored counts; never predicted counts):
+```
+cargo test --locked --lib
+cargo test --locked --manifest-path engine_rs/Cargo.toml
+uv run --offline python scripts/check_engine_trim.py
+uv run --offline maturin develop --locked
+uv run --offline pytest tests/kaggriculture/test_native_env.py tests/kaggriculture/test_native_grammar_bindings.py tests/kaggriculture/test_env_reference.py tests/tools/test_record_kaggriculture_env_reference.py tests/tools/test_check_engine_trim.py -q
+uvx --offline --from rust-just just rs-prepare
+uvx --offline --from rust-just just py-prepare
+uvx --offline --from rust-just just prepare
+git diff --check
+```
+Any failure must be fixed or reported with its exact cause and error text. For docs-fresh, review mapped docs before any `DOCS_CURRENT=1`.
+
+FINAL REPORT (this is what Claude reads; be precise and brief):
+1. Files changed or added, one line each, with purpose.
+2. Every command run at the end, with its actual pass/fail/ignored counts or exit status; plus the red/green evidence per task (A-G) and each mutation check performed with its observed failure.
+3. Oracle results: games/transitions compared, first divergence (if any), coverage assertions (starvation/drought/ineffective counters, hires, animal placement, sales), fixture compressed/expanded sizes vs 8 MiB/256 MiB, fixture SHA-256s; or the PENDING (pod) command.
+4. Cast audit summary (count reachable-unbounded casts; admission checks added or none).
+5. Timing: profile, build time, phase costs from `ops/rebuild-2026-09-29/1.4/timing.json`, or the PENDING (pod) command.
+6. Any deviation from the brief, with its reason.
+7. Open questions and unresolved items, each as one line.

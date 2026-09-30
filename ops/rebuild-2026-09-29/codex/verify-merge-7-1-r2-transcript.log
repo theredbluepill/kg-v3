@@ -1,0 +1,2548 @@
+Reading additional input from stdin...
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-m-7-1
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /Users/poonszesen/.cache/uv, /Users/poonszesen/.local/share/uv, /Users/poonszesen/.cargo, /tmp, /private/tmp]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0edc3-c801-7e82-b987-79e3cd89efaa
+--------
+user
+You are Codex, INDEPENDENT VERIFIER, re-verify round 2 of the staging branch kg/merge-7-1 (this worktree, /Users/poonszesen/kg-v3-m-7-1, HEAD cb7006b) against BASE faed717 (kg/isaiah-gap-closure). Leave no tracked modification in any worktree: scratch only under /tmp or /private/tmp, restore anything you touch byte-for-byte. Do not modify /Users/poonszesen/kg-v3, /Users/poonszesen/kg-v3-t71 or any other worktree. No training or GPU work; tiny CPU checks only (OMP_NUM_THREADS=2, CARGO_BUILD_JOBS=2).
+
+Round 1 (/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-merge-7-1-r1.md, full report verify-merge-7-1-r1-full.md beside it) returned REQUEST CHANGES with one P2: ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json was listed as committed in evidence-custody.json but was absent from HEAD because .gitignore:15 (replay-*.json) ignored it. The fix commit cb7006b force-adds that file.
+
+Check:
+1. Mark the r1 finding RESOLVED / PARTIAL / UNRESOLVED with evidence: every path in evidence-custody.json committed.landed_with_task_7_1 (promoted_from_defer and post_inventory_copies) exists in HEAD (git cat-file -e HEAD:<path>) and its blob SHA-256 equals the recorded sha256; the committed counts and bytes equal evidence-custody.md's "Task 7.1 landing" section (46 / 115,127 post-inventory; 11 / 677,342 promoted). Also check no other file under ops/ that the landing meant to commit is still ignored (git status --ignored, git check-ignore).
+2. Review the delta 3895180..cb7006b for anything else, and confirm nothing from either parent (faed717, 908c73f) was lost relative to r1's state (the delta adds one file only).
+3. Guard mutation: on a scratch copy (not this worktree), delete or alter the added replay-summary.json and show your custody hash check detects it, then restore and show it passes.
+4. Run the relevant checks in a scratch copy or non-rewriting components here: uv run pytest -q tests/tools/test_check_opponent_import.py tests/scripts/test_kaggriculture_parity.py, uv run python scripts/check_engine_trim.py, uv run --offline python scripts/check_opponent_import.py, uv run python scripts/check_doc_freshness.py; report counts. Confirm `git status --short` here is empty afterwards.
+
+End with findings (severity P0-P3, file:line, fix), prior-finding status, a checks table with counts, and exactly one final line:
+VERDICT: APPROVE / APPROVE WITH EDITS / REQUEST CHANGES
+(APPROVE WITH EDITS only when every finding is P3.)
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll verify the custody hashes and one-file delta, then run the requested CPU checks and mutation probe in scratch space. Completion means a verdict backed by those checks and an empty `git status --short` in this worktree.
+
+exec
+/bin/zsh -lc 'cat /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-merge-7-1-r1.md && cat /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-merge-7-1-r1-full.md' in /Users/poonszesen/kg-v3-m-7-1
+exec
+/bin/zsh -lc "cat cookbook/index.md && sed -n '1,40p' cookbook/log.md && cat cookbook/references/snapshot-view-isolates-byte-exact-evaluation-opponents.md" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 0ms:
+**P2 — A receipt declared committed is absent from HEAD.** [evidence-custody.json:424](/Users/poonszesen/kg-v3-m-7-1/ops/rebuild-2026-09-29/evidence-custody.json:424) lists `ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json` as committed. Its 273 local bytes match the source and recorded hash, but `git cat-file -e HEAD:<path>` fails. `git check-ignore -v` identifies `.gitignore:15`, `replay-*.json`.
+
+Consequently, **45 compact copies / 114,854 bytes** are committed, versus the claimed **46 / 115,127**. Fix by force-adding that exact receipt, or reclassifying it as local and correcting the counts. No other actionable findings.
+
+Counts below use **BASE / opponent parent / HEAD**.
+
+| Check and command | Result |
+|---|---|
+| `uv run pytest tests --collect-only -q` | **1,701 / 1,724 / 1,793**; HEAD exactly equals both parents’ union |
+| Root-wide collection with `--import-mode=importlib` and updater directory on `PYTHONPATH` | **1,934 / 1,732 / 2,034**; exact union, zero lost IDs |
+| `cargo test --offline --locked --manifest-path … -- --list` | Engine **69/69/69**; root **258/258/258**; opponents **absent/22/22**; zero lost names |
+| Parent diffs and cookbook sections | **33/30/34** concepts; none lost. All **28** recipes retained. **22** References indexed once; **130** unique log headings, newest-first |
+| Trim updater and both custody checkers | Pass; regenerated manifest byte-identical |
+| Custody source/hash audit | All **56 actual committed copies** match source, manifest and Git blobs. **12/12** new left-local files and both oversized transcripts match |
+| Independent secret scan | **186 files**, including **9 decompressed fixtures**; no secret or pod-host findings. **51/51** synthetic detection controls pass |
+| Size/extensions | No additions over **512 KiB**; no weights/array extensions. Eight oracle `.jsonl.gz` fixtures and one replay `.json.gz`, individually listed in the report |
+| Cookbook lint and ancestry | Required metadata valid; **40/40** tracked sources resolve. **42** phase rows / **116** cited commit occurrences checked; no false merged claims |
+| Scratch guard mutations | Controller and oracle byte mutations both fail; both pass after restoration. Updater tests: **8 passed, 12 subtests passed** |
+| `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 uvx --from rust-just just prepare` in scratch | **PASS**: engine **69**; root **254**, four ignored; opponents **22**; Python **1,771**, 22 skipped. Formatting, lint, typing and docs checks pass |
+| Owner constraints | No learned identity connection, v2 model import or second trainer introduced |
+| Final staging `git status --short` | **Empty**; HEAD unchanged |
+
+The literal root-wide pytest collection encounters the same six pre-existing module-name collisions at BASE and HEAD; the successful collections above resolve that ambiguity. The optional original-source reread could not run because `/Users/poonszesen/kaggriculture` is absent. Default custody and native parity tests passed.
+
+[Full report, commands, exact fixture list and receipts](/tmp/verify-merge-7-1-UGqrrq/REPORT.md). All scratch work stayed under `/tmp`; no original worktree was modified.
+
+VERDICT: REQUEST CHANGESIndependent verification of `kg/merge-7-1` HEAD `3895180d47cd0848a24b6a76daa7a67db90eff3b`, BASE `faed71773fa9f6414e4379ace904780349979cd8`, opponent parent `908c73fce0be298f81e229b08bf0ca082ad2e075`.
+
+## Findings
+
+**P2 — A receipt declared committed is absent from Git.** `ops/rebuild-2026-09-29/evidence-custody.json:424` lists `ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json` under `committed.landed_with_task_7_1.post_inventory_copies`. The file exists locally, is 273 bytes, and its SHA-256 matches the stated source and manifest. However, `git ls-files --error-unmatch PATH` and `git cat-file -e HEAD:PATH` fail; `git check-ignore -v PATH` identifies `.gitignore:15` (`replay-*.json`). A clean clone therefore lacks it. `evidence-custody.md:73` claims 46 compact files / 115,127 bytes committed, while only 45 / 114,854 bytes are committed. All 11 DEFER copies are committed; two new prepare logs make 58 actual ops additions in 3895180.
+
+Concrete fix: force-add this exact receipt (`git add -f ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json`) after verifying its hash, or explicitly reclassify it as local and correct the counts and landing claim. No fix was applied by this verifier.
+
+## Checks and commands
+
+All writes and executions that could format/build files occurred in independent clones beneath `/tmp/verify-merge-7-1-UGqrrq`. All CPU commands used `OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2`. Venvs/build caches were copied with copy-on-write (not shared writable links to source); editable imports were retargeted and checked. No training or GPU work ran.
+
+| Check / command | Results |
+|---|---|
+| `git show -s --format=%P b6cd4f2` | Exactly faed717 and 908c73f; both ancestors of HEAD. |
+| `uv run pytest tests --collect-only -q` at BASE / opponent / HEAD | 1,701 / 1,724 / 1,793 IDs. HEAD exactly equals parent union, zero lost. |
+| Literal `uv run pytest --collect-only -q` | BASE: 1,830 collected plus 6 errors; opponent: 1,732/pass; HEAD: 1,930 plus the same 6 errors. Existing ops/test module-name collisions, not a merge regression. |
+| Root-wide `uv run pytest --collect-only -q --import-mode=importlib`, with `PYTHONPATH=<scratch>/ops/rebuild-2026-09-29/7.1` | 1,934 / 1,732 / 2,034 IDs; exact union, zero lost. Importlib alone needs the updater's local import directory on opponent/HEAD. |
+| `cargo test --offline --locked --manifest-path <crate>/Cargo.toml -- --list` | Engine: 69 / 69 / 69; root: 258 / 258 / 258 (four ignored); opponent: absent / 22 / 22. Exact union, zero lost names. |
+| `git diff faed717 HEAD`, `git diff 908c73f HEAD`, cookbook section/name comparison | All conflicted and auto-merged sections accounted for. 33 / 30 / 34 concepts; zero lost. Manifest, justfile, generator, parity tests match opponent parent exactly and had no intervening integration edits. |
+| References / cookbook log / just recipes | 22 References indexed once each; 130 unique log headings, dated newest-first with landing on top; all 125 BASE and 104 opponent-parent sections preserved; all 28 recipes retained. |
+| `python ops/rebuild-2026-09-29/7.1/update_trim_manifest.py` on guard clone | Byte-identical 61,282-byte manifest, SHA-256 `e460abbb56e4c25239ad3e4b2b2d0f69ac1f2f0c904314c64c9d75f366323927`. |
+| `python scripts/check_engine_trim.py`; `python scripts/check_opponent_import.py` | Both pass. |
+| Two guard-input mutations in scratch | One byte changed independently in Starter source and oracle-00 gzip; each checker exits 1 with import-hash/trace-hash diagnostic. Byte restoration then checker exits 0; scratch Git status empty. Merge landing introduces no new guard. |
+| `uv run pytest -q ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py` | 8 passed, 12 subtests passed. |
+| `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 UV_NO_SYNC=1 UV_OFFLINE=1 uvx --from rust-just just prepare` | Exit 0. Root 254 passed/4 ignored; engine 69 passed; opponents 22 passed; Python 1,771 passed/22 skipped. Formatting, Clippy, Ruff, docs lint, mypy (65 files), docs-fresh pass. Matches committed prepare log and coverage doc. |
+| Cookbook hook via stdin JSON with `tool_name: Write` and absolute `tool_input.file_path` | `{}`/exit 0 for the single added/changed concept. All six fields present, first tag correct; all 40 repository sources tracked/resolvable. A file_path-only payload would not invoke lint; hook validates neither source existence nor first tag, so checked separately. |
+| `git merge-base --is-ancestor` for phase tracker/plan | 42 phase rows / 116 cited commit occurrences; zero falsely merged claims. Task 7.1 tick and r2 approval match Git/reports. |
+| Custody hashes/source existence | All 57 copy records match source/local bytes; 56 tracked, one absent (finding). 12 new left-local files (2,287,580 bytes) and two large Task 7.1 transcripts match. MANIFEST: 261 regular files match +1 symlink; DEFER: 89/90 match. The one stale verify-7.3-r2 transcript is already explicitly disclosed as changed after the inventory. Counts/bytes in Markdown and JSON agree arithmetically; actual committed count differs as above. |
+| Independent secret scan | 186 changed tracked files (175 added, 11 modified), 4,581,566 raw bytes; nine gzip files expanded, 91,639,967 decoded bytes scanned. Zero credentials/private keys/provider keys/Bearer/SSH-public/Fernet/IPv4/pod-redaction-map hits. 335 host:port candidates are source-file:line references. Positive-control pattern checks 51/51 pass (43 main and eight quoted-provider supplements). No added file exceeds 512 KiB; no weights/array extensions. |
+| Owner boundaries | Model, PPO trainer, run_ppo, root Rust/Cargo unchanged. Opponent identity/state stays in standalone scripted evaluator; no learned-input/loss/reward/normalization/selection connection introduced. No v2 neural model or second trainer. Future learned-seat integration remains explicitly unqualified. |
+| Final `git status --short`, `git diff --quiet`, `git diff --cached --quiet` in staging | Empty / exit 0. HEAD unchanged. No original worktree modified. |
+
+## Corpus-extension additions
+
+No weights/array files were added. The eight `.jsonl.gz` files total 1,779,187 bytes; the replay `.json.gz` is also listed below. These are committed parity fixtures, not learned weights or a training corpus.
+
+| File | Bytes |
+|---|---:|
+| `opponents_rs/fixtures/oracle/oracle-00-starter-vs-r04.jsonl.gz` | 178,455 |
+| `opponents_rs/fixtures/oracle/oracle-01-r04-vs-ecobot.jsonl.gz` | 265,001 |
+| `opponents_rs/fixtures/oracle/oracle-02-ecobot-vs-e776.jsonl.gz` | 268,960 |
+| `opponents_rs/fixtures/oracle/oracle-03-e776-vs-starter.jsonl.gz` | 185,228 |
+| `opponents_rs/fixtures/oracle/oracle-04-starter-vs-r04.jsonl.gz` | 178,049 |
+| `opponents_rs/fixtures/oracle/oracle-05-r04-vs-ecobot.jsonl.gz` | 256,224 |
+| `opponents_rs/fixtures/oracle/oracle-06-ecobot-vs-e776.jsonl.gz` | 263,133 |
+| `opponents_rs/fixtures/oracle/oracle-07-e776-vs-starter.jsonl.gz` | 184,137 |
+| `opponents_rs/fixtures/replay/REPLAY.json.gz` | 23,323 |
+
+## Limits and receipts
+
+An extra `check_opponent_import.py --original-sources` attempt could not re-read `/Users/poonszesen/kaggriculture`, which is absent on this host. The required default custody check and native original-oracle comparisons passed. Fresh original-Python generation was not claimed; the prior r2 reports and their committed evidence were inspected. The 22 Python skips retain the documented unavailable bindings/CUDA/backend/source and bounded-Mac limits.
+
+- Full executed prepare: [prepare.log](prepare.log).
+- Parent IDs/names and exact commands: [inventory/REPORT.md](inventory/REPORT.md), [pytest comparison](inventory/pytest-comparison.json), [wide comparison](inventory/pytest-wide-comparison.json), [Rust comparison](inventory/rust-comparison.json).
+- Merge sections, note/source checks and ancestry: [docs/report.md](docs/report.md).
+- Custody detailed report: [custody/report.md](custody/report.md).
+- Custody details and scanner: [custody/custody_summary.json](custody/custody_summary.json), [scan summary](custody/secret_scan_summary.json), [positive controls](custody/secret_scan_positive_controls.json).
+- Guard commands/mutations/restoration: [guards-results.json](guards-results.json); updater tests: [updater-tests.log](updater-tests.log).
+- Final status: [final-status.json](final-status.json).
+
+VERDICT: REQUEST CHANGES
+
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References are not all reference-branch notes: the References index's sections and entries state whether each describes the current tree or branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]], grouped by rebuild phase
+- Phase tracker (working artifact, task state per phase): `ops/rebuild-2026-09-29/phase-status.md`
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Merge Task 7.1's native opponents onto the integration
+
+`kg/merge-7-1` merges `kg/rebuild-7-1` (`908c73f`, Codex `verify-7.1-r2` APPROVE) onto the integration at `faed717`. Two cookbook files conflicted. This log keeps both sides, integration first; the [[references/index|References index]] places the [[references/snapshot-view-isolates-byte-exact-evaluation-opponents|opponent Reference]] under "Phase 5 and 7". `engine_rs/TRIM_MANIFEST.json` auto-merged to the branch's bytes, and rerunning `ops/rebuild-2026-09-29/7.1/update_trim_manifest.py` left it unchanged. The Task 7.1 Codex prompts, reports, view-probe source and the two verification transcripts, deferred by the custody sweep, are committed, along with the compact files from Codex's `verify-7.1-r2/` evidence directory. Two implementation transcripts over 512 KiB, two tracked-file inventories and the verifier's regenerated fixture copies stay local; `ops/rebuild-2026-09-29/evidence-custody.md` and `.json` list each one with its SHA-256. The opponent Reference now cites the committed prompt and probe as repository sources and records the r2 verification. `plan.md` ticks 7.1, and `phase-status.md` marks it merged. Checks: full `just prepare` passed: engine 69, root Rust 254 with four ignored, opponents 22, Python 1,771 passed with 22 skipped (`ops/rebuild-2026-09-29/merge-7.1/prepare.log`, recorded in `docs/rules-parity-coverage.md`). Gaps are unchanged from the Reference: default config and CPython 3.11 only, learned-seat binding waits on Task 1.4, and the replay prefixes come only from the controllers' own play.
+
+## 2026-09-29 — Apply the value-gap r1 edits and a custody-manifest schema fix on the custody branch
+
+`verify-merge-custody-r1` (Codex, REQUEST CHANGES on `kg/merge-custody` `5ee1188`) independently confirmed the value-gap diagnostic's unapplied `verify-value-gap-r1` edits, so they are applied here. In `ops/rebuild-2026-09-29/results.md`, "bit-identical within a grad mode" is scoped to the measured Kaggriculture comparisons, and Isaiah's measured 1.19e-7–2.38e-7 same-mode differences are reported. The gain-1.0 actor case is described as a reinitialization with a new seed and resampled actions, which does not isolate gain, and the claim that Isaiah's actor fails to suppress noise is withdrawn as not established. The two numerical summaries are given per backend (relative mean about 0.0061 ATEN and 0.0066 default; baseline log-prob gap 3.59e-4–3.72e-4). The run statement's post-run addendum (`ops/rebuild-2026-09-29/run-statements/value-gap-diagnostic.md`) now marks the rerun's identical-input claim as operator-reported. `value-gap-2026-09-29/README.md` locates `pod/large_files.sha256` and attributes its lines 13–14 to the rerun; the pod receipt itself is kept as copied, and `MANIFEST.sha256` is refreshed for the README. The three EXCLUDE entries in `ops/rebuild-2026-09-29/evidence-custody.json` now carry only path and reason. `ops/rebuild-2026-09-29/phase-status.md` records the edits as applied. No cookbook note claims the value-gap attribution, so no note changed. Checks: `uvx --from rust-just just py-prepare` passed without `DOCS_CURRENT` (1,690 passed, 11 skipped; `ops/rebuild-2026-09-29/merge-custody/py-prepare-r1-fixes.log`), the value-gap `MANIFEST.sha256` verifies, and `verify-merge-custody-r2` returned APPROVE WITH EDITS on `3642a25` (r1 findings 1, 2, 4, 5 and 6 resolved; 3 partial). Its two P3 edits are applied: the results "Attempts" bullet also marks the rerun's states as operator-reported, and the 1.4 row of `phase-status.md` says that only `kg/rebuild-adapter` merged `b6b722f`, while `kg/rebuild-bc-now` and `kg/rebuild-7-3` merged the earlier `1e63597` (checked with `git merge-base --is-ancestor`). Gaps: gain-only causality and the rerun's input identity stay unverified.
+
+## 2026-09-29 — Commit the rebuild's compact local evidence and refresh the phase tracker
+
+Evidence for merged work was scattered as untracked files across the main checkout and nine worktrees, and cookbook notes cited 66 `ops/` paths that the integration lacked. On `kg/merge-custody` (BASE `666deec`) this sweep copied, without moving anything, the custody inventory's 1,537 COMMIT-class files (Codex reports, prompts and 62 transcripts of 512 KiB or less, the Task 1.3 verifier trees and the pause checkpoint). It also copied nine `verify-gpu-bundle-r1..r3` files, promoted from DEFER because the GPU receipts had landed. Every copy was re-hashed against the inventory and passed a copy-time credential, Fernet-blob and pod-host scan; 41 of the 66 missing citations now resolve (22 exist only on `kg/reference-2026-09-29`, 3 wait for in-progress merges). `ops/rebuild-2026-09-29/evidence-custody.md` and `.json` record the 261 files that stay local (bulky, binary or reconstructible, with path, bytes, SHA-256 and location), 75 still deferred to in-progress merges, and 3 transcripts excluded after secret triage (path and reason only). `ops/rebuild-2026-09-29/phase-status.md` now shows the integration at `666deec` plus this branch: 4.1–4.3 and 6.0 merged, 1.4, 5.2 and 7.1 approved but unmerged, 1.5 stage 2, the 5.1 preparer and 7.3 in progress or review, and the value-gap r1 edits unapplied. Three notes had called their cited Codex files local and uncommitted; they now say those files are committed. The [[workflows/run-codex-exec-with-closed-stdin-and-wait-for-its-verdict|codex exec Workflow]] declares the four transcripts and prompt as repository sources. The [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod flash-attn Reference]] notes that its r2 transcript stays excluded. The [[references/model-only-sps-ceiling-bounds-per-rank-throughput|SPS ceiling Reference]] is updated too. Their index descriptions do not mention custody and are unchanged. Checks: `uvx --from rust-just just py-prepare` passed, with 1,690 passed and 11 skipped, and docs-fresh passed with and without `DOCS_CURRENT` (`ops/rebuild-2026-09-29/merge-custody/py-prepare.log`); the cookbook lint and pre-commit source check passed. No Python or Rust changed. Gaps: MANIFEST and DEFER files exist only in local worktrees, and anything written after the 13:48Z inventory is unclassified.
+
+## 2026-09-29 — Illustrate the v3 model and target training pipeline
+
+The owner requested an ImageGen architecture diagram. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now links the PNG, exact prompt and source/visual-check receipt in `ops/v3-architecture-image-2026-09-29/`. The image is pinned to `kg/rebuild-model` at `8093d51`: implemented schema/encoder/critic are distinct from actor heads and target training integration. No code or training result changed. This record was written in the main checkout on top of `8093d51` and is applied here onto the integration, where the Task 2.3 actor heads and Task 3.1 registration have since merged; the Reference says so and keeps the pinned-snapshot wording, and the image's status must be regenerated before it is reused as current status. The [[references/index|References index]] line follows. The PNG (1,361,061 B, SHA-256 `6f789aad…`, matching its receipt) is committed because the Reference cites it as a repository source.
+
+## 2026-09-29 — Merge the value-gap evidence and the phase-grouped References index onto the integration
+
+Two Codex-reviewed branches landed on the integration at `666deec` (after the GPU checks receipts): `kg/rebuild-value-gap` (`bd31cb6`, ops only) and `kg/rebuild-phase-map` (`b1ef31d`; `verify-phase-map-r2` APPROVE at `adcb4e7`, after which `b1ef31d` added only the owner's Phase 8 plan line). The value-gap diagnostic's `verify-value-gap-r1` reviewed `bd31cb6` and returned APPROVE WITH EDITS; its three P2 and two P3 edits (actor-gain attribution, "bit-identical" scope, rerun observation custody, large-file manifest paths, two numerical summaries) are not applied yet and are tracked in `ops/rebuild-2026-09-29/phase-status.md`. `results.md` keeps both the GPU bundle and value-gap sections in run order, and the bundle's "value gap is unattributed" bullet points at the later attribution. The [[references/index|References index]] takes the phase-map grouping with the integration's current entry text for every note. The three References that merged after the phase map forked go in their phases: the [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]] replaces the "no Phase 4 Reference" placeholder, and the [[references/pod-v3-environment-runs-flash-attn-2-8-3-forward-on-sm120|pod flash-attn]] and [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]] References join Phase 6. All 21 References are listed once. `plan.md` now marks 4.1–4.3 merged (the 4.x box stays open for 4.4) and ticks 6.0, both checked with `git merge-base --is-ancestor`. This log keeps both sides, integration first. The phase tracker arrives as the branch wrote it at `b8747b6` and is refreshed in a separate commit.
+
+## 2026-09-29 — Fix the GPU bundle's launcher idle gate and C2 reference non-finite check
+
+Codex verification r2 of the GPU checks receipts branch (`3f26e49`, REJECT, `ops/rebuild-2026-09-29/codex/verify-merge-gpu-receipts-r2.md`; prompt, transcript and evidence directory committed beside it) resolved all five r1 findings and found one P2 and one P3. Code (post-run revisions under `ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/`; the as-run `pod/attempt*/` scripts and records are unchanged): `launch.sh`'s `gpu_idle` now returns non-idle when either `nvidia-smi` query fails, where a failed compute-apps query beside 0 % utilization passed the gate; `c2_trunk_bwd.py` counts non-finite values in the eager reference as well as the compiled side in all three comparators, where a reference NaN read `nonfinite=0` and could hide a 10 % gradient error in its 512-row chunk. `test_driver_guards.py` adds `launcher_idle` and `c2_nonfinite` (513 rows, spanning `ROW_CHUNK`); both fail against the previous scripts and pass after the fix, and the six earlier checks still pass (receipts in `post-run/`, README fourth-revision section). Neither defect fired in the recorded attempts, so the GPU evidence credited in the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]], the [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]] and the [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] stands unchanged. No GPU run.
+
+## 2026-09-29 — Fix the GPU bundle's stage-error, C3 and C1 guards and credit its evidence in the notes
+
+Codex verification r1 of the GPU checks receipts merge (`d793d16`, REJECT, `ops/rebuild-2026-09-29/codex/verify-merge-gpu-receipts-r1.md`; prompt, transcript and evidence directory committed beside it) found one P2 and four P3s. Code (post-run revisions under `ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/`; the as-run `pod/attempt*/` scripts and records are unchanged): `driver.py` now catches a stage exception at the stream boundary, logs `driver_error`, exits 5 and runs its bounded cleanup, where a malformed backend record or failed launch had let Phase 2 start and returned 0; `judge_c3` checks student values on all four teacher paths (it checked two); `c1_fp32_ref.py`'s `> 2×` median rule also applies at median 0. The new `test_driver_guards.py` failed on all five fault checks against the previous scripts and passes after the fix; `test_driver_cleanup.py` still passes 6/6 (receipts in `post-run/`). None of these fired in the recorded attempts. Notes: the [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] cites the merged bundle instead of a pending-merge branch; the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] credits the depth-1 ATEN-only real-trunk backward above the bound and keeps the depth-8, production backend-claim wiring and guard-retirement gaps; the [[references/kaggriculture-teacher-distills-per-slot-kl-and-per-seat-winner-ce|teacher Reference]] scopes its CPU-only limit and records the C3/C4 GPU evidence, keeping cross-chunk/minibatch equality, multi-rank and trainer integration open. The [[references/index|References index]] lines follow. No GPU run. `just py-prepare`: 1,690 passed, 11 skipped, docs-fresh passes (`ops/rebuild-2026-09-29/merge-gpu-receipts-r1-fixes/py-prepare.log`); no Rust changed.
+
+## 2026-09-29 — Credit the GPU chunk timing in the configs Reference
+
+Codex verification r1 of the 8-rank merge (`a3a5cb8`, APPROVE WITH EDITS, `ops/rebuild-2026-09-29/codex/verify-merge-8rank-r1.md`) found one P3: the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]] kept the branch's "chunking has not been measured on the GPU" limit, which the merged [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]] evidence contradicts (1/2/3 teacher-proxy trunk chunks counted at `e1458d2`). The limit and the description now credit that timing-only measurement and keep the numerical-correctness, production teacher-integration and config-level CPU-only gaps, matching the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]. The verdict, prompt, transcript and evidence directory are committed beside it. Documentation only.
+
+## 2026-09-29 — Merge the 8-rank config and Phase 6.3b plan onto the integration
+
+The Codex-approved `kg/rebuild-8rank` (`939d5ea`..`7ad45fc`: `configs/kaggriculture_8rank.yaml`, the divided-shape config tests, plan Task 6.3b and the corrected `winner_ce_6m` option) forked from `b51b0c0`, before the Task 1.3, Phase 4 and evidence merges. Three cookbook files conflicted. This log keeps both sides, integration first. The [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]] keeps the integration's resource-fit paragraph (allocated versus reserved memory, the [[references/model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]] link) and adds the branch's eight-rank section; its sources are the union of both sides. The [[references/index|References index]] keeps every integration line and takes the branch's configs line naming the 8-rank 32/2 shape. The GPU checks bundle is still unmerged here, so the Decision's "pending merge" wording stays accurate. No Rust changed; `docs/rules-parity-coverage.md` records the merged counts. Full `just prepare`: engine 69, root Rust 254 with four ignored, Python 1,690 passed with 11 skips; receipt `ops/rebuild-2026-09-29/merge-8rank/prepare.log`.
+
+## 2026-09-29 — Credit the SPS run's GPU chunk counts in the compiled-GEMM Reference
+
+---
+type: "Reference"
+title: "Snapshot view isolates byte-exact evaluation opponents"
+description: "Task 7.1 runs four byte-exact controllers behind a v3-owned snapshot view; all match their original Python submissions on eight CPython 3.11 oracle games (11,504 actions, both seats) and after mid-episode reconstruction (1,152 resumed actions). CPython 3.12 changes R04 through compensated float sum()."
+tags: ["kaggriculture-v3", "adaptation", "opponents", "parity"]
+status: "implemented"
+generated: {"by": "openai/codex; revised by anthropic/claude", "at": "2026-09-29"}
+sources:
+  - resource: "repository:ops/rebuild-2026-09-29/codex/task-7.1-impl-prompt.md"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/task-7.1-claude-view-probe-lib.rs"
+  - resource: "repository:opponents_rs/src/lib.rs"
+  - resource: "repository:opponents_rs/src/native_agents.rs"
+  - resource: "repository:opponents_rs/src/registry.rs"
+  - resource: "repository:opponents_rs/src/runner.rs"
+  - resource: "repository:opponents_rs/src/view_tests.rs"
+  - resource: "repository:opponents_rs/tests/lifecycle.rs"
+  - resource: "repository:opponents_rs/tests/oracle_parity.rs"
+  - resource: "repository:opponents_rs/OPPONENT_MANIFEST.json"
+  - resource: "repository:opponents_rs/fixtures/oracle/MANIFEST.json"
+  - resource: "repository:scripts/check_opponent_import.py"
+  - resource: "repository:tests/tools/test_check_opponent_import.py"
+  - resource: "repository:scripts/kaggriculture_parity/generate_traces.py"
+  - resource: "repository:tests/scripts/test_kaggriculture_parity.py"
+  - resource: "repository:tests/owl/kaggriculture/test_opponents.py"
+  - resource: "repository:justfile"
+  - resource: "repository:engine_rs/TRIM_MANIFEST.json"
+  - resource: "repository:ops/rebuild-2026-09-29/briefs/7.1-opponents.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/native-api-probe.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/native-api-probe-red.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/run2/r04-mismatch.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/run2/coverage.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/run2/oracle-parity.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/run2/updater-green-final.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/run2/opponents-test.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/run2/closure.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/plan.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/update_trim_manifest.py"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/test_update_trim_manifest.py"
+  - resource: "repository:docs/rules-parity-coverage.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/review/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/review/oracle-parity.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/review/mutations.log"
+  - resource: "repository:opponents_rs/fixtures/replay/REPLAY.json.gz"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/verify-r1/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/verify-r1/parity-replay.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.1/verify-r1/replay-controller-mutation.log"
+  - resource: "repository:ops/rebuild-2026-09-29/codex/verify-7.1-r2/report.md"
+  - resource: "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/kaggle-simulation-container.md"
+---
+
+# Snapshot view isolates byte-exact evaluation opponents
+
+Task 7.1 imports Starter, R04, EcoBot and E776, plus E776's executable policy
+tape, byte-exact from `65f0eac5bb00b18a9d3acce319c2a231cbd5dff0` into the
+standalone edition-2024 `opponents_rs` crate. The frozen engine stays unchanged;
+no `policy_rows`, all-controller dispatcher or root-crate dependency is added.
+The controllers remain external scripted opponents. Their state and identity
+belong only to evaluator bookkeeping, never the learned actor/critic, rewards,
+normalization or checkpoint selection.
+
+## Information and lifecycle boundary
+
+The authored crate-root `Game` owns the native engine through an opaque sibling
+module and exposes a current `StepSnapshot`, refreshed at construction and after
+each successful step. The opaque module is necessary because Rust child modules
+can access their parent's private fields. No controller can obtain the engine
+reference, RNG, seed or hidden counters through this view. Final review caught
+a derived-`Debug` leak through formatting: the holder no longer implements
+`Debug`, and `Game` formats only snapshot/config. A regression fails before
+that correction and passes afterward; `run2/closure.log` preserves both. The only extra
+configuration is Starter's hire-cost multiplier, converted through serde with
+explicit failure, plus an authored BigInt `fib` helper. `from_engine` requires
+the caller to provide that engine's original configuration because the frozen
+engine exposes no configuration getter.
+
+The snapshot includes public state, both seats' private state, statuses and
+rewards. It is not a redacted per-seat tensor observation. Rival-private
+perturbations therefore test the actual imported controller paths; own-private
+or public-state perturbations supply a positive control. Hidden engine fields
+cannot be perturbed through this interface and are excluded by construction.
+The full snapshot is cloned on refresh. This is an evaluation path, with no
+Mac throughput measurement or training-path claim.
+
+The registry admits exactly `starter`, `r04`, `ecobot`, `e776`. The seat wrapper
+owns a controller per environment, seat and episode, requires exactly one call
+per step, and rejects a wrong seat, repeated/skipped step or mismatched episode.
+An explicit reset requires a fresh episode and creates fresh state. `play_match` accepts only the pinned
+default game configuration, submits the official JSON without grammar
+truncation or reinterpretation, and records actions, engine acceptance, controller
+errors, raw banks and winner. Acceptance is the engine's joint transaction
+outcome recorded for each seat; available market metrics are joint rather than
+seat-attributed. It is not a claim that every requested command executes.
+
+## Verification and limits
+
+**Original-submission parity (Claude review).** Eight oracle games were
+generated from Kaggle 1.32.7's own Python engine with the original submissions
+(Kaggle Starter; sibling R04, EcoBot and E776 at `e8884aae`, hash-verified, a
+fresh module per seat and game) on CPython 3.11.15, default configuration,
+seeds 20260929–20260936. The pairs rotate so every bot plays both seats twice.
+Native controllers, fed the native engine state rebuilt from configuration and
+seed, match every recorded Python action on both seats: 8 × 2 × 719 = 11,504
+actions, with public/private state, statuses, rewards and terminal banks equal
+after all 5,752 transitions. Traces total 1,779,187 of 4,000,000 bytes.
+A tampered first action fails for each seat of each trace.
+
+**Why CPython 3.11.** Codex's first oracle ran on CPython 3.12.13 and failed at
+R04 step 12 (native `WEST`, Python `NORTH`); its localization
+(`run2/r04-mismatch.md`) traced this to `sum()` of 25 weights of 0.35: 3.12's
+compensated float `sum()` gives 8.75, sequential accumulation 8.749999999999996.
+CPython 3.12 changed `sum()`; the native port reproduces sequential summation.
+Kaggle's simulation image `gcr.io/kaggle-images/python:v163`, read directly in
+v2, runs CPython 3.11.13, so 3.11 is the competition runtime. The generator,
+custody checker and Rust oracle test now refuse oracles from any other
+interpreter. The 3.12 trace remains in history at `7ae9bbf` as a negative
+control: the comparator does detect a one-hand decision difference. Limit: the
+simulation build may use another image tag; the v2 reading is the evidence.
+
+**Mid-episode replay against Python (verify r1).** Codex's verification
+rejected the first qualification because replay was checked only natively and
+stopped at the reconstruction boundary. The generator now rebuilds fresh
+original controllers in both seats from each oracle's recorded prefix at steps
+37 (mid-day), 360 (day reset) and 695 (whole final day follows): each prefix
+observation must yield the recorded action and the rebuilt state must equal the
+trace. The controllers then resume for 24 steps. The 24 frozen cases
+(`fixtures/replay/REPLAY.json.gz`, CPython 3.11.15, bound to the oracle
+manifest hash, regenerated byte-identically) cover every bot in both seats at
+every point. Fresh native controllers rebuilt through the step-zero lifecycle
+match 1,152 / 1,152 resumed actions and all 24 final states. Tampered resumed
+actions (first action per seat, a last action) and a tampered final state fail
+at the exact case, step and seat; a restored step-700 controller mutation fails
+all eight step-695 cases on resume. Limit: prefixes are the controllers' own
+play, so resumed actions equal the contiguous traces; foreign-prefix states are
+untested.
+
+**Other checks.** 22 opponent-crate tests pass: Starter's five pinned inline
+cases, view/visibility, lifecycle, determinism and the five-test oracle suite. Rival
+private perturbations never change an action at seven checkpoints per seat;
+own-state perturbations do (positive control). Mutations in `review/mutations.log`
+(dropping the step guard, a stale snapshot, a wrong `fib`) each fail tests.
+Codex's independent verification r2 approved `908c73f`: it reran the checks,
+regenerated all eight oracles, their manifest and the replay fixture
+byte-for-byte, and detected 36 injected changes in 13 scratch trials, all
+restored (`ops/rebuild-2026-09-29/codex/verify-7.1-r2/report.md`).
+
+**Coverage gaps.** The oracles exercise openings, 29 day resets per seat, weeds,
+hires (R04, EcoBot, E776) and final-day sells. No trace has a rejected step, a
+buy above the market inventory index. Explicit fresh-controller reset is
+checked natively only (lifecycle test); mid-episode replay has the Python
+oracle above. Starter never hires in these games.
+
+Default-config-only support is deliberate: the controllers hardcode calendar
+and rule constants. Custom configs accepted by the general v4.1 environment
+contract are not thereby supported by these opponents. Task 1.4 still gates
+learned-seat binding checks; explicit skipped tests describe that future API.
+No playing-strength, held-out panel or generality result follows from bounded
+CPU qualification.
+
+Original-submission provenance is separate from byte equality. EcoBot and E776
+explicitly declare no software license and must not be redistributed; the
+reference engine's license does not resolve that gap. R04 has no agent-level
+`PROVENANCE.md`. The source audit at
+`ops/rebuild-2026-09-29/7.1/python-oracle-source-audit.json` preserves the original
+notice text and hashes; no Python submission source is copied into this repo.
+
+## Adaptation custody and history
+
+The dedicated opponent manifest/checker owns imported bytes, authored support,
+Python source identities and oracle trace inventory/hash/size/budget. Its
+default mode pins original entry hashes without the sibling repository, so
+`just prepare` stays portable to pods and containers; `--original-sources`
+re-reads every original file on the owner's machine. The engine trim updater accepts the exact `b8747b6` integration input, committed
+`21d0f45` run-1 manifest, committed `7ae9bbf` run-2 output, or its exact final
+output. It preserves retained and
+authored engine entries, updates exactly five excluded reasons to identify their
+new `opponents_rs` copies, and registers this task's non-engine paths. Updater
+checks first failed against the old signature; six tests then passed, including
+12 unexpected-input mutations and the real committed input, with red/green
+receipts under `run2/`.
+
+Run 1 stopped because Claude's original placement prompt explicitly required
+stopping on private engine items: `fib`, `Game.config` and five missing
+accessors. This was Claude's design instruction, not an owner directive. Commit
+`21d0f45` preserves that compiler finding and its original receipts. Claude's
+revised snapshot-view design resolves the placement boundary without changing
+engine bytes. This current Reference replaces the stop-only note and removes
+its unsupported `user-directive` attribution; the original failure remains
+historical evidence, not a current implementation blocker.
+
+The coherent adaptation inventory is `opponents_rs/`, the import checker and
+its tests, original-Python trace generator/tests, binding-dependent skipped
+tests, `justfile`, coverage docs, this note/index/log, the trim manifest/updater
+and compact Task 7.1 receipts. Exact paths are enumerated by the updater.
+Existing-concept search covered opponent import, snapshot/accessors, private
+engine fields, parity, custody and negative evidence; this revises the existing
+concept rather than creating a parallel claim. Independent checks are the
+pinned Git blobs, original Python submissions, compiler and mutation tests.
+Future integration must preserve these boundaries and re-open any uncovered
+behavior before claiming broader qualification. Reopen parity if Kaggle's simulation runtime moves to CPython 3.12 or later:
+R04's decisions then follow compensated float summation, which the byte-exact
+native port does not reproduce. No result board is warranted.
+
+exec
+/bin/zsh -lc "git status --short && git rev-parse HEAD && git log -3 --format='%h %p %s' && git diff --stat 3895180..cb7006b && git diff --name-status 3895180..cb7006b" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 0ms:
+cb7006b49d72aa2de39ecda28818e476e3c25446
+cb7006b 3895180 Force-add the ignored verify-7.1-r2 replay-summary receipt (verify-merge-7-1 r1)
+3895180 b6cd4f2 Record the Task 7.1 landing: evidence custody, tracker, plan and cookbook
+b6cd4f2 faed717 908c73f Merge kg/rebuild-7-1 (Task 7.1 native opponents, Codex APPROVE r2 at 908c73f)
+ .../codex/verify-7.1-r2/regeneration/replay-summary.json         | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+A	ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json
+
+exec
+/bin/zsh -lc "sed -n '1,220p' tests/tools/test_check_opponent_import.py && sed -n '1,230p' tests/scripts/test_kaggriculture_parity.py && cat scripts/check_doc_freshness.py && sed -n '1,110p' pyproject.toml" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 0ms:
+from __future__ import annotations
+
+import copy
+import gzip
+import importlib.util
+import json
+import subprocess
+from functools import lru_cache
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+_SPEC = importlib.util.spec_from_file_location(
+    "check_opponent_import", ROOT / "scripts/check_opponent_import.py"
+)
+assert _SPEC is not None
+assert _SPEC.loader is not None
+checker = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(checker)
+
+
+@lru_cache(maxsize=1)
+def original_fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, bytes]]:
+    originals = checker.reference_files(ROOT)
+    current = {
+        path.replace("engine_rs/", "opponents_rs/", 1): data
+        for path, data in originals.items()
+    }
+    current["opponents_rs/src/lib.rs"] = b"// authored registry\n"
+    with gzip.open(
+        ROOT / "engine_rs/fixtures/generated/gen-starter-vs-random.jsonl.gz", "rt"
+    ) as stream:
+        records = [json.loads(stream.readline()) for _ in range(2)]
+    records[0]["source"]["policies"] = ["builtin:starter", "sibling:r04"]
+    records[0]["transitions"] = 1
+    path = "opponents_rs/fixtures/oracle/test.jsonl.gz"
+    current[path] = encode(records)
+    trace = {
+        "path": path,
+        "sha256": checker.sha(current[path]),
+        "bytes": len(current[path]),
+        "seed": records[0]["seed"],
+        "policies": records[0]["source"]["policies"],
+        "transitions": 1,
+        "compared_actions": [1, 1],
+    }
+    generated = {
+        "schema_version": 1,
+        "format": checker.TRACE_FORMAT,
+        "generator": checker.GENERATOR,
+        "kaggle_environments_version": checker.KAGGLE_VERSION,
+        "python_engine_sha256": checker.PYTHON_ENGINE_SHA256,
+        "byte_budget": checker.TRACE_BUDGET,
+        "traces": [
+            {
+                **{
+                    key: value
+                    for key, value in trace.items()
+                    if key != "compared_actions"
+                },
+                "available_actions": [1, 1],
+                "path": "test.jsonl.gz",
+                "policy_seed": records[0]["source"]["policy_seed"],
+                "config_variant": "default",
+                "python_runtime": "3.11.15",
+                "rejected": 0,
+                "coverage": [
+                    {**dict.fromkeys(checker.COVERAGE_KEYS, 0), "openings": 1}
+                    for _ in range(2)
+                ],
+            }
+        ],
+    }
+    current[checker.ORACLE_MANIFEST] = json.dumps(generated).encode()
+    manifest = {
+        "schema_version": 1,
+        "reference_commit": checker.PIN,
+        "imported": [
+            {
+                "path": path.replace("engine_rs/", "opponents_rs/", 1),
+                "reference_path": path,
+                "reference_sha256": checker.sha(data),
+                "sha256": checker.sha(data),
+            }
+            for path, data in originals.items()
+        ],
+        "authored": [
+            {"path": path, "sha256": checker.sha(current[path]), "reason": "test"}
+            for path in ["opponents_rs/src/lib.rs", checker.ORACLE_MANIFEST]
+        ],
+        # Committed receipts: the default check must not need the sibling repo.
+        "python_oracles": json.loads((ROOT / checker.MANIFEST).read_bytes())[
+            "python_oracles"
+        ],
+        "oracle_traces": [trace],
+        "trace_budget_bytes": checker.TRACE_BUDGET,
+    }
+    return manifest, originals, current
+
+
+def fixture() -> tuple[dict[str, Any], dict[str, bytes], dict[str, bytes]]:
+    return copy.deepcopy(original_fixture())
+
+
+def encode(records: list[dict[str, Any]]) -> bytes:
+    return gzip.compress(
+        ("\n".join(json.dumps(record) for record in records) + "\n").encode(), mtime=0
+    )
+
+
+def test_valid_inventory_and_trace_content_pass() -> None:
+    checker.verify(*fixture())
+
+
+@pytest.mark.parametrize(
+    ("attack", "message"),
+    [
+        ("reference_drift", "reference hash"),
+        ("extra_file", "current inventory"),
+        ("missing_file", "current inventory"),
+        ("edited_import", "import hash"),
+        ("edited_import_and_hash", "byte-exact"),
+        ("authored_hash", "authored hash"),
+        ("trace_hash", "trace hash"),
+        ("trace_size", "trace size"),
+        ("budget_override", "budget must remain"),
+        ("over_budget", "budget"),
+        ("pin_drift", "reference_commit"),
+        ("unknown_key", "schema keys"),
+        ("duplicate", "duplicate"),
+        ("extra_import", "import inventory"),
+        ("python_hash", "Python source hash"),
+        ("python_missing", "Python source inventory"),
+        ("python_pin", "source_commit"),
+        ("python_repo", "source_repo"),
+        ("no_provenance", "provenance"),
+        ("trace_seed", "seed"),
+        ("trace_policies", "policies"),
+        ("trace_count", "transitions"),
+        ("compared_count", "compared_actions"),
+        ("bool_count", "integer"),
+    ],
+)
+def test_custody_mutations_fail(attack: str, message: str) -> None:
+    manifest, originals, current = fixture()
+    imported = manifest["imported"][0]
+    trace = manifest["oracle_traces"][0]
+    if attack == "reference_drift":
+        originals[imported["reference_path"]] += b"edited"
+    elif attack == "extra_file":
+        current["opponents_rs/surprise.txt"] = b"surprise"
+    elif attack == "missing_file":
+        del current[imported["path"]]
+    elif attack in {"edited_import", "edited_import_and_hash"}:
+        current[imported["path"]] += b"edited"
+        if attack == "edited_import_and_hash":
+            imported["sha256"] = checker.sha(current[imported["path"]])
+    elif attack == "authored_hash":
+        current["opponents_rs/src/lib.rs"] += b"edited"
+    elif attack == "trace_hash":
+        current[trace["path"]] += b"edited"
+    elif attack == "trace_size":
+        trace["bytes"] += 1
+    elif attack == "budget_override":
+        manifest["trace_budget_bytes"] += 1
+    elif attack == "over_budget":
+        current[trace["path"]] += b"x" * checker.TRACE_BUDGET
+        trace["sha256"] = checker.sha(current[trace["path"]])
+        trace["bytes"] = len(current[trace["path"]])
+    elif attack == "pin_drift":
+        manifest["reference_commit"] = "0" * 40
+    elif attack == "unknown_key":
+        manifest["unknown"] = True
+    elif attack == "duplicate":
+        manifest["authored"].append(manifest["authored"][0])
+    elif attack == "extra_import":
+        imported["reference_path"] = "engine_rs/src/native_agents/mod.rs"
+    elif attack == "python_hash":
+        manifest["python_oracles"][1]["files"][0]["sha256"] = "0" * 64
+    elif attack == "python_missing":
+        manifest["python_oracles"][1]["files"].pop()
+    elif attack == "python_pin":
+        manifest["python_oracles"][1]["source_commit"] = "0" * 40
+    elif attack == "python_repo":
+        manifest["python_oracles"][1]["source_repo"] = "/other"
+    elif attack == "no_provenance":
+        manifest["python_oracles"][2]["provenance"] = ""
+    elif attack == "trace_seed":
+        trace["seed"] += 1
+    elif attack == "trace_policies":
+        trace["policies"].reverse()
+    elif attack == "trace_count":
+        trace["transitions"] += 1
+    elif attack == "compared_count":
+        trace["compared_actions"][0] += 1
+    elif attack == "bool_count":
+        trace["transitions"] = True
+    with pytest.raises(ValueError, match=message):
+        checker.verify(manifest, originals, current)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/tmp/x",
+        "../x",
+        "opponents_rs/../x",
+        "opponents_rs//x",
+        "opponents_rs/./x",
+        "opponents_rs\\x",
+        "opponents_rs/.git/x",
+        "opponents_rs/target/x",
+    ],
+)
+def test_unsafe_inventory_paths_fail(path: str) -> None:
+    manifest, originals, current = fixture()
+    manifest["authored"][0]["path"] = path
+    with pytest.raises(ValueError, match="path"):
+from __future__ import annotations
+
+import gzip
+import hashlib
+import importlib.util
+import json
+import os
+import random
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from types import ModuleType
+from typing import Any
+
+import pytest
+
+REPO_ROOT = Path(__file__).parents[2]
+FIXTURES = REPO_ROOT / "engine_rs/fixtures"
+GENERATED = FIXTURES / "generated"
+OFFICIAL = FIXTURES / "episode-95324500.jsonl.gz"
+FULL_ENGINE_SHA = "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e"
+
+
+def _load(name: str) -> ModuleType:
+    path = REPO_ROOT / f"scripts/kaggriculture_parity/{name}.py"
+    spec = importlib.util.spec_from_file_location(f"kaggriculture_parity_{name}", path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+generator = _load("generate_traces")
+sweep = _load("sweep")
+
+
+def _records(path: Path) -> list[dict[str, Any]]:
+    with gzip.open(path, "rt", encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle]
+
+
+def _manifest() -> dict[str, Any]:
+    return dict(json.loads((GENERATED / "MANIFEST.json").read_text(encoding="utf-8")))
+
+
+# ------------------------------------------------------------------ hash guard
+
+
+def test_pin_is_read_from_cargo_metadata() -> None:
+    pin = generator.pinned_engine()
+    assert pin.version == "1.32.7"
+    assert pin.sha256 == FULL_ENGINE_SHA
+
+
+def test_hash_guard_accepts_only_the_pinned_engine(tmp_path: Path) -> None:
+    engine = tmp_path / "kaggriculture.py"
+    engine.write_bytes(b"pinned engine bytes\n")
+    digest = hashlib.sha256(engine.read_bytes()).hexdigest()
+    pin = generator.EnginePin(version="1.32.7", sha256=digest)
+    assert generator.verify_engine(engine, "1.32.7", pin) == digest
+
+    engine.write_bytes(b"pinned engine bytes, edited\n")
+    with pytest.raises(generator.ParityGeneratorError, match="Refusing to generate"):
+        generator.verify_engine(engine, "1.32.7", pin)
+
+
+def test_hash_guard_rejects_another_package_version(tmp_path: Path) -> None:
+    engine = tmp_path / "kaggriculture.py"
+    engine.write_bytes(b"x")
+    pin = generator.EnginePin("1.32.7", hashlib.sha256(b"x").hexdigest())
+    with pytest.raises(generator.ParityGeneratorError, match=r"1\.29\.0 is installed"):
+        generator.verify_engine(engine, "1.29.0", pin)
+
+
+def test_generator_refuses_before_writing_when_the_pin_differs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """main() exits 2 and writes nothing when the installed engine misses the pin."""
+    other = generator.EnginePin(version="0.0.0", sha256=FULL_ENGINE_SHA)
+    monkeypatch.setattr(generator, "pinned_engine", lambda: other)
+    out = tmp_path / "out"
+    assert generator.main(["--preset", "committed", "--out", str(out)]) == 2
+    assert not out.exists()
+
+
+def test_project_environment_satisfies_the_engine_pin() -> None:
+    """The project lock pins kaggle-environments 1.32.7, whose engine is the pin."""
+    _, _, digest = generator.load_pinned_kaggle(generator.pinned_engine())
+    assert digest == FULL_ENGINE_SHA
+
+
+def test_cargo_pin_must_be_hex(tmp_path: Path) -> None:
+    cargo = tmp_path / "Cargo.toml"
+    cargo.write_text(
+        '[package.metadata.kaggriculture]\nkaggle-environments-version = "1.32.7"\n'
+        'python-engine-sha256 = "not-a-digest"\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(generator.ParityGeneratorError, match="not hex"):
+        generator.pinned_engine(cargo)
+
+
+# --------------------------------------------------------- format round trip
+
+
+def test_generated_traces_use_the_official_trace_schema() -> None:
+    official = _records(OFFICIAL)
+    header, transition = official[0], official[1]
+    manifest = _manifest()
+    assert manifest["python_engine_sha256"] == FULL_ENGINE_SHA
+    kinds = set()
+    for entry in manifest["traces"]:
+        records = _records(GENERATED / entry["path"])
+        generated_header = records[0]
+        assert list(generated_header) == list(header)
+        assert generated_header["format"] == header["format"]
+        assert set(generated_header["configuration"]) == set(header["configuration"])
+        assert list(generated_header["initial"]) == list(header["initial"])
+        assert list(generated_header["initial"]["public"]) == list(
+            header["initial"]["public"]
+        )
+        source = generated_header["source"]
+        assert source["module_version"] == header["source"]["module_version"]
+        assert source["engine_sha256"] == header["source"]["engine_sha256"]
+        for day in generated_header["rng_schedule"]:
+            assert set(day) == set(header["rng_schedule"][0])
+        assert generated_header["transitions"] == entry["transitions"]
+        for record in records[1:]:
+            kinds.add(record["type"])
+            if record["type"] == "transition":
+                assert list(record) == list(transition)
+                assert list(record["expected"]) == list(transition["expected"])
+            else:
+                assert list(record) == ["type", "from_step", "actions", "python_error"]
+    assert kinds == {"transition", "rejected"}
+
+
+def test_trace_encoding_round_trips_committed_bytes() -> None:
+    for entry in _manifest()["traces"]:
+        path = GENERATED / entry["path"]
+        data = path.read_bytes()
+        assert hashlib.sha256(data).hexdigest() == entry["sha256"]
+        assert generator.encode_trace(_records(path)) == data, entry["path"]
+
+
+def test_committed_set_covers_policies_seeds_and_edge_cases() -> None:
+    traces = _manifest()["traces"]
+    games = [t for t in traces if "expected_divergence" not in t]
+    assert 6 <= len(games) <= 8
+    policies = {policy for t in games for policy in t["policies"]}
+    assert {"random", "edge", "builtin:starter", "builtin:random"} <= policies
+    assert any(len(set(t["policies"])) == 2 for t in games), "mixed seats"
+    assert len({t["seed"] for t in games}) == len(games)
+    assert {t["config_variant"] for t in games} >= {"default", "free-hire", "rich"}
+    assert sum(t["rejected"] for t in games) > 0, "Python-rejected inputs"
+    free_hire = next(t for t in games if t["config_variant"] == "free-hire")
+    records = _records(GENERATED / free_hire["path"])
+    actors = max(
+        1 + len(farm["hands"])
+        for record in records[1:]
+        if record["type"] == "transition"
+        for farm in record["expected"]["farms"]
+    )
+    assert actors > 241, "HIRE until and past the 241-actor capacity"
+
+
+def test_known_divergences_are_recorded_expected_failures() -> None:
+    by_name = {Path(t["path"]).name: t for t in _manifest()["traces"]}
+    for name, action, kind, field, reason in generator.KNOWN_DIVERGENCES:
+        entry = by_name[f"{name}.jsonl.gz"]
+        assert json.loads(entry["probe"]) == action
+        # Minimal repros: the divergent action is the first step of a one-step game.
+        assert entry["expected_divergence"] == {
+            "line": 1,
+            "from_step": 0,
+            "kind": kind,
+            "field": field,
+            "reason": reason,
+        }
+        assert entry["transitions"] == 1
+        records = _records(GENERATED / entry["path"])
+        assert records[1]["from_step"] == 0
+        assert records[1]["actions"] == [action, generator.PASS_ACTION]
+        assert sweep.input_classes([action, generator.PASS_ACTION])
+
+
+def test_known_divergence_actions_carry_no_unused_fields() -> None:
+    for name, action, *_ in generator.KNOWN_DIVERGENCES:
+        assert len(action) == 1, name
+        assert "PASS" not in json.dumps(action), name
+
+
+def test_scripted_null_action_is_submitted_not_replaced() -> None:
+    """A probe of a null whole action must submit null, not PASS."""
+    spec = generator._probe_spec("probe-null", None)
+    choices = generator.scripted_choices(spec, len(generator.PROBE_PREAMBLE))
+    assert [choice.action for choice in choices] == [None, generator.PASS_ACTION]
+    assert all(choice.fallback == generator.PASS_ACTION for choice in choices)
+    after = generator.scripted_choices(spec, len(generator.PROBE_PREAMBLE) + 1)
+    assert [choice.action for choice in after] == [generator.PASS_ACTION] * 2
+    labels = dict(generator.probe_cases())
+    assert any(action is None for kind, action in generator.probe_cases()), labels
+
+
+def test_edge_policy_excludes_known_divergent_inputs_by_default() -> None:
+    obs = _records(GENERATED / "gen-edge-vs-edge.jsonl.gz")[0]["initial"]
+    observation = {
+        "player": 0,
+        **obs["public"],
+        "private": obs["privates"][0],
+    }
+    config = {"boardSize": 10, "maxMarketOrdersPerTurn": 10, "farmHandCostMult": 1}
+    for include in (False, True):
+        policy = generator.make_edge_policy(include)
+        rng = random.Random(3)
+        classes = {
+            cls
+            for _ in range(3000)
+            for cls in sweep.input_classes([policy(observation, config, rng).action])
+        }
+        assert classes == ({"D1", "D2"} if include else set())
+
+
+def _summary_case(
+    tmp_path: Path,
+    record: dict[str, Any],
+    divergence: dict[str, Any],
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+from collections.abc import Iterable
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DOCS_CURRENT_ENV = "DOCS_CURRENT"
+
+DOC_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
+    (
+        "rules-engine",
+        (
+            "src/rules_engine/",
+            "scripts/download_replays.py",
+            "scripts/regenerate_test_fixtures.sh",
+            "tests/fixtures/generation/",
+        ),
+        ("docs/rules-engine.md", "docs/rules-parity-coverage.md"),
+    ),
+    (
+        "rl-api",
+        ("python/owl/rl.py", "src/rl/"),
+        ("docs/rl-api-specs.md",),
+    ),
+    (
+        "model-architecture",
+        ("python/owl/model/",),
+        ("docs/model-architecture.md",),
+    ),
+    (
+        "training",
+        ("python/owl/train/", "scripts/run_ppo.py"),
+        ("README.md",),
+    ),
+    (
+        "kaggle-packaging",
+        (
+            "Dockerfile.kaggle",
+            "python/main.py",
+            "python/owl/agent/",
+            "scripts/build_kaggle_submission.sh",
+        ),
+        ("README.md", "docs/containerization.md"),
+    ),
+    (
+        "checkpoint-quantization",
+        (
+            "python/owl/checkpoint_quantization.py",
+            "python/owl/quantization_formats.py",
+            "scripts/extract_model_weights.py",
+            "scripts/roundtrip_checkpoint_quantization.py",
+        ),
+        ("docs/containerization.md", "docs/quantization-optimizations.md"),
+    ),
+)
+
+
+def main() -> int:
+    changed_paths = _changed_paths()
+    if not changed_paths:
+        return 0
+
+    failures: list[str] = []
+    changed_existing_set = {
+        path for path in changed_paths if (REPO_ROOT / path).exists()
+    }
+    for rule_name, code_prefixes, required_docs in DOC_RULES:
+        touched_code = [
+            path for path in changed_paths if _matches_any(path, code_prefixes)
+        ]
+        if not touched_code:
+            continue
+
+        touched_docs = [doc for doc in required_docs if doc in changed_existing_set]
+        if touched_docs:
+            continue
+
+        code_list = ", ".join(touched_code)
+        docs_list = ", ".join(required_docs)
+        failures.append(
+            f"{rule_name}: changed {code_list}; update {docs_list} if necessary"
+        )
+
+    if failures:
+        if os.environ.get(DOCS_CURRENT_ENV) == "1":
+            print(
+                f"Doc freshness acknowledged: {DOCS_CURRENT_ENV}=1 confirms the "
+                f"mapped docs were reviewed and are still current."
+            )
+            return 0
+        print("Doc freshness check failed:", file=sys.stderr)
+        for failure in failures:
+            print(f"- {failure}", file=sys.stderr)
+        print(
+            f"If the mapped docs are genuinely still current, rerun with "
+            f"{DOCS_CURRENT_ENV}=1 to acknowledge that review.",
+            file=sys.stderr,
+        )
+        return 1
+
+    print("No doc updates required")
+    return 0
+
+
+def _changed_paths() -> list[str]:
+    tracked = _git_lines("diff", "--name-only", "HEAD")
+    untracked = _git_lines("ls-files", "--others", "--exclude-standard")
+    return sorted({*tracked, *untracked})
+
+
+def _git_lines(*args: str) -> list[str]:
+    result = subprocess.run(
+        ("git", *args),
+        cwd=REPO_ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    return [line for line in result.stdout.splitlines() if line]
+
+
+def _matches_any(path: str, prefixes: Iterable[str]) -> bool:
+    return any(path == prefix or path.startswith(prefix) for prefix in prefixes)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+[project]
+name = "owl"
+version = "0.1.0"
+description = "An RL library for the Kaggle 2026 Orbit Wars competition"
+readme = "README.md"
+authors = [
+    { name = "IsaiahPressman" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "kaggle-environments==1.32.7",
+    "numpy>=2.4.4",
+    "pydantic>=2.13.2",
+    "pyyaml>=6.0.3",
+    "torch==2.9.0",
+    "tqdm>=4.67.3",
+    "typing-extensions>=4.15.0",
+    "wandb>=0.26.0",
+]
+
+[dependency-groups]
+dev = [
+    "kaggle>=2.1.0",
+    "maturin>=1.13.1,<2.0",
+    "mypy",
+    "pytest>=9.0.3",
+    "types-pyyaml>=6.0.12.20260408",
+    "types-tqdm>=4.67.3.20260408",
+]
+
+[project.optional-dependencies]
+flash-attn = [
+    "flash-attn>=2.8.3",
+]
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+module-name = "owl.rs"
+python-packages = ["owl"]
+python-source = "python"
+features = ["extension-module"]
+
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.rs" }, { file = "Cargo.toml" }, { file = "Cargo.lock" }]
+constraint-dependencies = ["protobuf<7"]
+no-build-isolation-package = ["flash-attn"]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+torchvision = [
+  { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.extra-build-variables]
+flash-attn = { FLASH_ATTENTION_SKIP_CUDA_BUILD = "TRUE" }
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "A",
+    "B",
+    "D",
+    "E",
+    "F",
+    "G",
+    "I",
+    "PT",
+    "UP",
+    "ARG",
+    "ERA",
+    "PIE",
+    "RET",
+    "RSE",
+    "RUF",
+    "SIM",
+]
+ignore = [
+    "D1",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pymarkdown]
+mode.strict-config = true
+plugins.MD013.enabled = false
+plugins.MD029.enabled = false
+
+[tool.mypy]
+
+exec
+/bin/zsh -lc "rg --files -g AGENTS.md -g conftest.py -g .python-version -g '*pth' -g '*direct_url*' . && ls -ld .venv && command -v uv && cat cookbook/decisions/evaluation-preserves-generality-and-evidence.md" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 0ms:
+./.python-version
+./AGENTS.md
+./tests/conftest.py
+./tests/kaggriculture/conftest.py
+drwxr-xr-x@ 11 poonszesen  staff  352 Sep 29 23:04 .venv
+/opt/homebrew/bin/uv
+---
+type: "Decision"
+title: "Evaluation preserves generality and evidence"
+description: "Measure win rate and bank margin across opponents, retain source-bound evidence and telemetry, and keep submission authority with the owner."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:.gitignore"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/candidates-are-measured-by-win-rate-and-margin.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/no-candidate-agent-overfits-to-a-single-opponent.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/myolie-uses-wandb-for-telemetry-and-monitoring.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/repository-tracking-preserves-evidence-and-excludes-local-state.md"}]
+---
+
+# Evaluation preserves generality and evidence
+
+The owner's current reuse instruction carries forward v2's documented evaluation and custody discipline. Candidates are judged on win rate plus final-bank margin across differently playing opponents. Record versions, seeds, both seats, denominators, legality, completion and runtime. Keep diagnostic margin distinct from official win/loss/tie outcome. A gain against one opponent is scoped evidence; use fresh seeds and held-out opponents for generalization, and distinguish selection panels from final qualification. Local gate success does not establish public-ladder robustness.
+
+Keep experiment identity stable through retries, using separate attempt/checkpoint metadata. Select a v3 name when an experiment exists; do not import the v2 prefix or conceal continuation by renaming. The owner decides which artifact is submitted; development authorization alone is not a submission decision.
+
+Original v2 telemetry directive:
+
+> 你幫忙下一個cookbook record 去用wandb做telemetry做監控
+
+Use W&B for training/evaluation telemetry alongside durable local evidence, with explicit run identity, phase, source/checkpoint hashes and completed-work denominators. Configure v3 identifiers; do not publish into v2's project/group. Telemetry implementation, authentication and live readback need their own verification. Record outages and pending synchronization honestly; a dashboard is not an independent causal check.
+
+Original bulk-artifact directive:
+
+> why are we pushing the training artifacts as well? They should be gitignored.
+
+Track source, lockfiles, compact results, receipts and hash manifests. Exclude credentials, environments, caches, bulk weights/optimizer state and generated corpora; retain path, bytes and SHA-256 custody manifests for local artifacts. Ignoring is not deletion. No competitive result, cloud connection or submission is established here.
+
+exec
+/bin/zsh -lc "sed -n '1,150p' ops/rebuild-2026-09-29/evidence-custody.md && sed -n '1,90p' ops/rebuild-2026-09-29/evidence-custody.json && sed -n '340,470p' ops/rebuild-2026-09-29/evidence-custody.json && git status --short --ignored --untracked-files=all -- ops/" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 0ms:
+# Evidence custody sweep — 2026-09-29
+
+This is a working record of which local rebuild evidence was committed and which stays outside git. The machine-readable manifest is [`evidence-custody.json`](evidence-custody.json). It lists every MANIFEST and DEFER entry with its path, bytes, SHA-256, location and reason, and every EXCLUDE entry with its path and reason only.
+
+- **Branch:** `kg/merge-custody`, worktree `/Users/poonszesen/kg-v3-m-custody`.
+- **BASE:** `kg/isaiah-gap-closure` at `666deec`, after `kg/merge-gpu-receipts` landed.
+- **Inventory:** `/Users/poonszesen/kg-v3-m-custody-inventory/inventory.json`, SHA-256 `a53fb12b…79ac`, generated at 2026-09-29T13:48:20Z against integration `ca37089`. It covers 1,916 entries from ten sources (the main checkout and nine worktrees). The scripts that produced it are in `/Users/poonszesen/kg-v3-m-custody-inventory/tools/`. Neither the inventory nor its scripts are committed.
+- **Sources were only read.** Nothing in the main checkout or any other worktree was modified, moved or deleted, and the main checkout's uncommitted cookbook edits are still in place.
+
+## What was committed
+
+| Item | Files | Bytes |
+|---|---:|---:|
+| COMMIT-class copies to the same repo-relative path | 1,537 | 27,521,530 |
+| DEFER entries promoted because gpu-receipts has landed | 9 | 830,834 |
+| Architecture PNG (MANIFEST override, see below) | 1 | 1,361,061 |
+| Main-checkout cookbook edits applied by hand | 3 | — |
+
+- **Where the copies went:** `ops/rebuild-2026-09-29/codex/` (581), `verify-b8747b6-independent/` (333), `verify-e197528-independent/` (277), `1.3/` (208), `verify-merge-1.3/` (135), the pause checkpoint and the architecture image receipt and prompt.
+- **Transcripts:** 62 Codex transcripts of 512 KiB or less are included (16,001,189 B). Larger transcripts stay in MANIFEST.
+- **Copy-time checks:** every source was re-hashed against the inventory, and all 1,546 matched. Every file is 512 KiB or less and none has a weights, array or corpus extension (`npz`, `pt`, `ckpt`, `pth`, `safetensors`, `bin`, `npy`, `parquet`). Each was scanned with strict credential patterns (private-key blocks, W&B, Kaggle, GitHub, OpenAI/Anthropic, Hugging Face, AWS and RunPod keys, Bearer tokens, password and secret assignments, SSH public keys), plus Fernet blobs and the pod's SSH host and port (taken from the tracked redaction map and not repeated here). Nothing matched.
+- **Broad keyword pass on the copies:** the only hits were `wandb_run_id` identifiers, test names, prose ("Kaggle framework keys") and one Codex system-prompt line naming an API-key skill. No IP-like strings appeared apart from package version numbers.
+- **Promoted from DEFER:** `codex/verify-gpu-bundle-r1..r3` (prompt, report, transcript). The inventory deferred them to the gpu-receipts landing. That work has since merged, and the merged `gpu-checks-2026-09-29/README.md` cites these reviews. The same checks passed.
+- **Architecture PNG:** `ops/v3-architecture-image-2026-09-29/v3-agent-architecture.png` is 1,361,061 B, above the inventory's 512 KiB text cap. It is committed because the encoder Reference cites it as a repository source. Its SHA-256 matches its receipt. It is an image, not weights or a corpus.
+- **Two copies were already in place:** the image receipt and prompt were added by the architecture-image commit, so the copy step found them identical.
+
+## What stays out of git
+
+| Class | Files | Bytes | Why |
+|---|---:|---:|---|
+| MANIFEST | 262 (261 still local) | 67,738,146 | Bulky or reconstructible; kept at the listed local path |
+| DEFER | 90 (62 still deferred) | 16,890,641 | Evidence for in-progress work; lands with its own merge. Task 7.1 landed: 11 committed, 2 transcripts above 512 KiB stay local |
+| EXCLUDE | 3 | not recorded | Failed secret triage; only path and reason are recorded |
+| SKIP | 21 | 1,375,311 | Already tracked on integration with identical content |
+
+**MANIFEST by reason**
+
+| Reason | Files | Bytes |
+|---|---:|---:|
+| Non-transcript file > 512 KiB (includes the committed PNG, a 15 MB `rs.abi3.so` build product and two verifier `inventory.json` files) | 12 | 39,587,072 |
+| Codex transcript > 512 KiB (largest: `task-1.3-impl-resume-transcript.log`, 8,757,062 B) | 14 | 23,887,837 |
+| Verifier scratch source copies (reconstructible from git) | 144 | 1,883,013 |
+| Binary (`.jsonl.gz` engine fixtures copied by a verifier) | 5 | 1,301,683 |
+| Copies of tracked files at a named commit | 13 | 414,248 |
+| Integration files collected by a verifier | 63 | 224,217 |
+| Reconstructed copies of tracked files | 4 | 222,372 |
+| Mutation or superseded copies (`*.original*`, `*.stale`) | 6 | 217,704 |
+| Symlink to a worktree's `scripts/` | 1 | 0 |
+
+**DEFER by task**
+
+| Task | Files | Status |
+|---|---:|---|
+| 5.x BC | 30 | Deferred |
+| Phase 7 (7.3, 7.4) | 11 | Deferred |
+| Phase 7 (7.1) | 11 | Committed with `kg/merge-7-1` (see "Task 7.1 landing") |
+| Phase 7 (7.1) | 2 | Local: `task-7.1-impl-transcript.log` and `task-7.1-impl-r2-transcript.log` exceed 512 KiB |
+| 1.4 native env | 18 | Deferred |
+| 1.5 Python adapter | 3 | Deferred |
+| GPU checks (gpu-receipts) | 6 | Already tracked on BASE, identical (landed with `kg/merge-gpu-receipts`) |
+| GPU checks (gpu-receipts) | 9 | Committed in this sweep (see above) |
+
+**EXCLUDE.** All three are Codex transcripts in the main checkout's `ops/rebuild-2026-09-29/codex/`:
+
+- `verify-flash-attn-r2-transcript.log` and `verify-merge-evidence-r2-transcript.log` contain the pod's unredacted SSH host and port, which the tracked flash-attn evidence deliberately redacts.
+- `verify-merge-1.1b-r2-transcript.log` contains opaque Fernet-style encrypted blobs from Codex session records, which cannot be shown to be non-secret.
+
+## Task 7.1 landing
+
+`kg/merge-7-1` merged `kg/rebuild-7-1` (Codex `verify-7.1-r2` APPROVE at `908c73f`) and committed its compact evidence. The JSON's `committed.landed_with_task_7_1` lists every file with source, bytes and SHA-256.
+
+- **Promoted from DEFER:** 11 of the 13 Task 7.1 entries (677,342 B): the implementation and verification prompts and reports, the view-probe source and the two verification transcripts (431,881 B and 217,598 B, under the 512 KiB cap). Each source re-hashed equal to this manifest. The two implementation transcripts (1,140,805 B and 1,197,029 B) stay local in the main checkout; their entries now say so.
+- **Written after the inventory:** Codex's `verify-7.1-r2/` evidence directory in `/Users/poonszesen/kg-v3-t71` was unclassified. 46 compact files (115,127 B) are committed at the same paths. 12 files (2,287,580 B) stay local: the two tracked-file inventories (reconstructible from git) and the regenerated oracle, oracle manifest and replay copies, which `regeneration/byte-comparison.json` records as byte-equal to the committed fixtures.
+- **Copy-time checks:** every copy hashed equal to its source; the strict credential patterns, Fernet blobs and the pod SSH host and port matched nothing.
+
+## Custody gaps
+
+- **Local-only copies.** MANIFEST and DEFER files exist only in the listed worktrees. Removing a worktree before its evidence lands (DEFER) or is archived elsewhere (MANIFEST) loses it. The JSON keeps SHA-256 values so that a later copy can be checked.
+- **Coverage cutoff.** The inventory is a snapshot from 13:48:20Z. Files created or changed after that are not classified here. One example is `verify-7.3-r2-transcript.log`, a DEFER entry whose source changed after the inventory; later Codex reports in the main checkout are others.
+- **Integration-side finding.** The inventory found that the integration already tracks `flash-attn-setup-2026-09-29/post-run/extract_operator_transcript.py`, whose redaction map contains the pod's literal public SSH host. That host is not a credential. This sweep does not change it.
+- **Missing citations.** Of 66 `ops/` paths that integration cookbook notes cite but the integration lacks, 41 now resolve in this tree: 40 from the COMMIT copies and `codex/verify-gpu-bundle-r3.md` from the promoted DEFER files. 22 exist only on `kg/reference-2026-09-29` and 3 waited for their in-progress landings: `brief-7.4-review.md`, `task-1.5-s1-report.md` and `task-7.1-impl-report.md`. The inventory's `cited_but_missing` lists them all; this was rechecked against this tree. `task-7.1-impl-report.md` resolves since the Task 7.1 landing; the other two still wait.
+{
+ "schema": "kg-v3 evidence custody v1",
+ "generated": {
+  "by": "anthropic/claude-opus-5-5",
+  "at": "2026-09-29"
+ },
+ "base": {
+  "branch": "kg/isaiah-gap-closure",
+  "commit": "666deec789b2e75f56afb6dbb7b7acd40171c6b1"
+ },
+ "sweep_branch": "kg/merge-custody",
+ "inventory": {
+  "path": "/Users/poonszesen/kg-v3-m-custody-inventory/inventory.json",
+  "sha256": "a53fb12b2392f2147e8125128967c3e5dc8d81eeb1c1a699f4a061a38b7979ac",
+  "generated_at": "2026-09-29T13:48:20Z",
+  "integration_head_at_inventory": "ca370893eff25f98a1a00a0bbcde82750eff1c4c",
+  "tools_dir": "/Users/poonszesen/kg-v3-m-custody-inventory/tools/",
+  "totals": {
+   "COMMIT": {
+    "files": 1540,
+    "bytes": 27579305
+   },
+   "SKIP": {
+    "files": 21,
+    "bytes": 1375311
+   },
+   "MANIFEST": {
+    "files": 262,
+    "bytes": 67738146
+   },
+   "DEFER": {
+    "files": 90,
+    "bytes": 16890641
+   },
+   "EXCLUDE": {
+    "files": 3,
+    "bytes": 0
+   }
+  },
+  "rules": {
+   "size_cap_bytes": 524288,
+   "COMMIT": "compact text <= 512 KiB, strict secret scan clean and broad-keyword hits triaged, work merged into integration or on kg/rebuild-phase-map / kg/rebuild-value-gap; transcripts <= 512 KiB are included (the only stated size threshold)",
+   "SKIP": "COMMIT candidate already tracked on integration at the same path with identical content, or an identical duplicate from another source",
+   "MANIFEST": "> 512 KiB, binary, verifier source copies (scratch/, source-scratch/, merge-audit integration-collection and ancestor/branch/integration file copies, *.reconstructed.txt), mutation or superseded copies (*.original*, *.stale), symlinks",
+   "DEFER": "evidence for in-progress work: 1.4 env, 1.5 adapter, 5.x BC, Phase 7, gpu-receipts/gpu-bundle",
+   "EXCLUDE": "failed secret-scan triage; path and reason only",
+   "secret_scan": "broad: api[_-]?key|token|secret|password|BEGIN (OPENSSH|RSA)|wandb_|kaggle.*key (every text file); strict credential-value patterns (private-key blocks, W&B 40-hex keys, kaggle.json, KAGGLE_KEY, gh*_/sk-/hf_/AKIA/rpa_ keys, Bearer, password=, secret/token/api_key literal assignments, ssh public keys); plus triage of high-entropy strings, Codex auth/session material, public IPs and SSH logins. Strict patterns matched nothing; broad hits were identifiers (observation tokens, wandb_run_id, 'Kaggle framework keys', prose about credentials).",
+   "collisions": "same repo-relative target path; compared by git blob id against kg/isaiah-gap-closure; differing content would be renamed <name>.from-<worktree>.<ext> (none found)"
+  }
+ },
+ "committed": {
+  "copies_from_inventory_commit_class": {
+   "files": 1537,
+   "bytes": 27521530
+  },
+  "copies_already_added_by_the_architecture_image_commit": [
+   "ops/v3-architecture-image-2026-09-29/README.md",
+   "ops/v3-architecture-image-2026-09-29/prompt.txt"
+  ],
+  "promoted_from_defer": {
+   "reason": "kg/merge-gpu-receipts landed on the integration (666deec) after the inventory; the landed gpu-checks README cites these Codex reviews",
+   "files": [
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r1-prompt.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r1-prompt.md",
+     "bytes": 6086,
+     "sha256": "693fccc49fcf597ff85a199bb8a8a302d07317092c426b9361a7e44f1f52c146"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r1-transcript.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r1-transcript.log",
+     "bytes": 273172,
+     "sha256": "0772cb4ba19a194f2027efd4ba3001aef4c563060fd3af5a5a977ea1e5c12254"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r1.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r1.md",
+     "bytes": 3541,
+     "sha256": "d82b1256cb3667f7c1cef6e74d347500780335e77bfa76b52d699bed40d3b9cc"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r2-prompt.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r2-prompt.md",
+     "bytes": 672,
+     "sha256": "01badee95eaf13eb288c349e817ad8e33bba8f01346ce23e63a94c484a3e66df"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r2-transcript.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r2-transcript.log",
+     "bytes": 279703,
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/parity.json",
+     "bytes": 2419,
+     "sha256": "9dd9f28b7e28c208599adc3988765fa3a5aa6a0728a64d89fc7addd3279cfc9a"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/plan.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/plan.md",
+     "bytes": 2324,
+     "sha256": "74d15c652c3bb34adc6618fcd48a33486e39d595c3415893bce85b2c68c4dbf3"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/prior-findings.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/prior-findings.md",
+     "bytes": 1846,
+     "sha256": "f043d9ade7680ecf2d8a7a9362240b7e1ceb8b5296966ee4cde46ef9b225ea60"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/python.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/python.log",
+     "bytes": 1344,
+     "sha256": "54386c048eaacd7d36a1f4927b7e2a03ca308d606c181caa541f639d3d81f7d5"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regenerate.py",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regenerate.py",
+     "bytes": 1679,
+     "sha256": "716199fece63264c2f0d44eea9843de3a6626614de16a2486f85db09c0cb87f3"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/byte-comparison.json",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/byte-comparison.json",
+     "bytes": 2041,
+     "sha256": "4ec5e6837e0b7f80fb4b461c4254c327f383e4709219ac9292a3f77c8187f1d8"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-0.json",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-0.json",
+     "bytes": 831,
+     "sha256": "a2510d46a2e25ed5fb37dab66214b59b0d0547db784cb84d229ae1cf0504582e"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-0.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-0.log",
+     "bytes": 159,
+     "sha256": "007156b364b3640a0fee0dcb3fb9b2629236bf721a582a3a123ce6f27b41f1e8"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-2.json",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-2.json",
+     "bytes": 835,
+     "sha256": "9a9b865972317447e5c84798f2e3c7fe2e0970fc6b2f781291e1a9c0bf97cc29"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-2.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-2.log",
+     "bytes": 161,
+     "sha256": "67d13894ca39c98bd3db57af1ce5f9b068d7e2522b52c992275bd1d233a18cc3"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-4.json",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-4.json",
+     "bytes": 831,
+     "sha256": "ab644dab03f1ecdd06551e674e56fc7f608c15b0c6cdfec7ddfb4fc0aa43d309"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-4.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-4.log",
+     "bytes": 159,
+     "sha256": "45d9027f897501dea0ae4ffb59d16959b1ede28675e41abdbf046cf90fcdc547"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-6.json",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-6.json",
+     "bytes": 835,
+     "sha256": "5d645b599ec8ab4bfd6ffb2417ba26a020da3357459c0e26bdf914716fef7bf5"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-6.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/games-6.log",
+     "bytes": 161,
+     "sha256": "85bc247b904b2100ffeca5a8eebc1601e9370b7094f14eaba4332dbee8e8f4a3"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json",
+     "bytes": 273,
+     "sha256": "a796a5a8c4e100479da399cd93091b48a13461c70d86da4f90a2c8fe376ffcc7"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay.log",
+     "bytes": 257,
+     "sha256": "504a74bd585aed663b78c2aa22c3fcf1f7fa4d9c95fa8bb636f286878c983285"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration.log",
+     "bytes": 150,
+     "sha256": "b7c073a2b21e5ad957a8257b675ae079f5a049fee8ffb46e7bea0c1f1a018357"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/replay.json",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/replay.json",
+     "bytes": 82,
+     "sha256": "323f3365ab72135cd85e23e9689aaad8ec223ba78cfa37cf18290be1da5180c7"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/report.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/report.md",
+     "bytes": 7080,
+     "sha256": "66c470fba64bfd8811e06bc81a6487b42f03576d9c0179483936d6319614556d"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/root.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/root.log",
+     "bytes": 24451,
+     "sha256": "e9acea8b7f5bf37068fc6b0ab5ec4336757b03b8694b64bae4ac421a27b5fad2"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/run_mutations.py",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/run_mutations.py",
+     "bytes": 6658,
+     "sha256": "2321a520cbefb762e96bebc19523b7b856833f08261083e7d0b0573d717189ef"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/scarcity-census.json",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/scarcity-census.json",
+     "bytes": 1455,
+     "sha256": "6860f53d5595efdc778e6a985726741a0b6defb28c3835e3e30557966bbebd96"
+    },
+    {
+!! ops/rebuild-2026-09-29/1.2/oracle/__pycache__/record_reference.cpython-312.pyc
+
+exec
+/bin/zsh -lc "sed -n '1,100p' scripts/check_engine_trim.py && sed -n '1,80p' scripts/check_opponent_import.py && rg -n 'subprocess|write_|unlink|mkdir|remove|fixture|def test' tests/scripts/test_kaggriculture_parity.py && ls .venv/lib && rg -n 'kg-v3|owl' .venv/lib/python*/site-packages/*.pth .venv/lib/python*/site-packages/*owl*.dist-info/direct_url.json && ls -l python/owl/rs*" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 0ms:
+"""Verify the pinned rules-kernel inventory and every declared byte-level edit.
+
+Generated parity traces under ``engine_rs/fixtures/generated`` are pinned
+transitively: TRIM_MANIFEST.json pins the bytes of their MANIFEST.json, which pins
+each trace's SHA-256, size and generation inputs.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import subprocess
+import sys
+import tomllib
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import TypedDict, cast
+
+PIN = "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0"
+LIB_SHA256 = "c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd"
+# Only these retained files may carry declared edits; every other retained file
+# (LICENSE, RNG/attribution sources, RNG tests, fixtures) stays byte-identical.
+EDITABLE = frozenset(
+    {
+        "engine_rs/Cargo.lock",
+        "engine_rs/Cargo.toml",
+        "engine_rs/VENDORED_FROM.md",
+        "engine_rs/src/lib.rs",
+    }
+)
+# Packages that `cargo remove rayon` prunes from the pinned lockfile.
+RAYON_CLOSURE = frozenset(
+    {
+        "crossbeam-deque",
+        "crossbeam-epoch",
+        "crossbeam-utils",
+        "either",
+        "rayon",
+        "rayon-core",
+    }
+)
+TRIM_APPENDIX_HEADING = "\n## Task 1.1 rules-only trim \u2014 2026-09-29\n".encode()
+# SHA-256 of the Task 1.1 appendix section, from its heading up to the next
+# `## ` section (later provenance may be appended after it, never inside it).
+TRIM_APPENDIX_SHA256 = (
+    "1d089760261e8fef7ed0fddcaaa1a60776cb9abbb65386ef08d529f863d76c93"
+)
+GENERATED_DIR = "engine_rs/fixtures/generated"
+GENERATED_MANIFEST = f"{GENERATED_DIR}/MANIFEST.json"
+GENERATED_BUDGET_BYTES = 4_000_000
+TRACE_FORMAT = "kaggriculture-re-parity-v1"
+TRACE_KEYS = (
+    "path",
+    "sha256",
+    "bytes",
+    "seed",
+    "policies",
+    "policy_seed",
+    "config_variant",
+    "transitions",
+    "rejected",
+)
+DIVERGENCE_KEYS = ("line", "from_step", "kind", "field", "reason")
+
+
+class Edit(TypedDict):
+    start_line: int
+    delete_lines: int
+    insert: str
+    reason: str
+
+
+class Retained(TypedDict):
+    path: str
+    reference_sha256: str
+    sha256: str
+    edits: list[Edit]
+
+
+class Excluded(TypedDict):
+    path: str
+    reference_sha256: str
+    reason: str
+
+
+class Authored(TypedDict):
+    path: str
+    sha256: str
+    reason: str
+
+
+class NonEngineChange(TypedDict):
+    path: str
+    reason: str
+
+
+class Manifest(TypedDict):
+    schema_version: int
+"""Verify byte-exact opponent imports, authored inventory and Python oracle custody.
+
+The manifest records actual comparison counts separately from the available actions
+in generated traces. A successful custody check does not establish action parity.
+Original Python submissions are never copied into this repository. The default
+check pins their recorded entry hashes structurally, so it runs anywhere (pods,
+containers). ``--original-sources`` additionally re-reads every original file from
+its pinned Git object store in the owner's sibling repository and the Starter
+source from the installed pinned package, without importing or executing Kaggle
+or any controller.
+"""
+
+from __future__ import annotations
+
+import argparse
+import gzip
+import hashlib
+import importlib.metadata
+import io
+import json
+import re
+import subprocess
+import sys
+from collections.abc import Mapping, Sequence
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, cast
+
+PIN = "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0"
+PYTHON_REPO = "/Users/poonszesen/kaggriculture"
+PYTHON_PIN = "e8884aae82eddeb7a1aeae99ecceeca7c830d67e"
+KAGGLE_VERSION = "1.32.7"
+PYTHON_ENGINE_SHA256 = (
+    "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e"
+)
+STARTER_PATH = "envs/kaggriculture/kaggriculture.py"
+E776_MANIFEST_SHA256 = (
+    "55dcc45b4c56324599d7832dfbc53ce6f1ce86aa44524fcb5a59a3c694857d58"
+)
+MANIFEST = "opponents_rs/OPPONENT_MANIFEST.json"
+ORACLE_DIR = "opponents_rs/fixtures/oracle"
+ORACLE_MANIFEST = f"{ORACLE_DIR}/MANIFEST.json"
+TRACE_FORMAT = "kaggriculture-re-parity-v1"
+GENERATOR = "scripts/kaggriculture_parity/generate_traces.py"
+TRACE_BUDGET = 4_000_000
+MAX_TRACE_EXPANSION = 128_000_000
+BOTS = ("starter", "r04", "ecobot", "e776")
+POLICIES = ("builtin:starter", "sibling:r04", "sibling:ecobot", "sibling:e776")
+COVERAGE_KEYS = (
+    "openings",
+    "day_resets",
+    "weed_presence",
+    "buy_quantity_above_inventory_index",
+    "rejected_steps",
+    "hires",
+    "final_day_sell_orders",
+    "mid_episode_replay",
+)
+IMPORT_HASHES = {
+    "engine_rs/src/native_agents/starter.rs": (
+        "01b4de943e7ea9df425b97355f8451ce48547b3666cc1c3aa3faa5649eda22e0"
+    ),
+    "engine_rs/src/native_agents/r04.rs": (
+        "a80f130c636fc9def610027b6a5593c67db3a4ddb5d63ac972d80c4d2ba31431"
+    ),
+    "engine_rs/src/native_agents/ecobot.rs": (
+        "8794e7cf57ef6663c1578464d8e5a1d2749736bc21ba52d45a2301a58e338ce8"
+    ),
+    "engine_rs/src/native_agents/e776.rs": (
+        "02166970e2fc8345178d29ea863fe8532c9a4fa7d227651d0ebc57b0df82b9fe"
+    ),
+    "engine_rs/fixtures/e776-kenjo-trace.json": (
+        "da0d5d1bd326cb5bf068c2065ba1fe8f7e644107db806d7f9a1eae4dafd89692"
+    ),
+}
+PYTHON_MAIN_HASHES = {
+    "r04": "22d074391822206872448a6114a37ba2a4a39eda2ddbbcdc0bc8aa8cc6a64188",
+    "ecobot": "0dc02e03c94ef60c06b5093efc2e2fd0530aa6eea20df507a90b90d6651bd067",
+    "e776": "0cc2a88594f82b6c8d3cb15fcd4aa2df2bdd2a0a7fb0133d95a3204dd2d6ba38",
+}
+10:import subprocess
+19:FIXTURES = REPO_ROOT / "engine_rs/fixtures"
+52:def test_pin_is_read_from_cargo_metadata() -> None:
+58:def test_hash_guard_accepts_only_the_pinned_engine(tmp_path: Path) -> None:
+60:    engine.write_bytes(b"pinned engine bytes\n")
+65:    engine.write_bytes(b"pinned engine bytes, edited\n")
+70:def test_hash_guard_rejects_another_package_version(tmp_path: Path) -> None:
+72:    engine.write_bytes(b"x")
+78:def test_generator_refuses_before_writing_when_the_pin_differs(
+89:def test_project_environment_satisfies_the_engine_pin() -> None:
+95:def test_cargo_pin_must_be_hex(tmp_path: Path) -> None:
+97:    cargo.write_text(
+109:def test_generated_traces_use_the_official_trace_schema() -> None:
+141:def test_trace_encoding_round_trips_committed_bytes() -> None:
+149:def test_committed_set_covers_policies_seeds_and_edge_cases() -> None:
+170:def test_known_divergences_are_recorded_expected_failures() -> None:
+190:def test_known_divergence_actions_carry_no_unused_fields() -> None:
+196:def test_scripted_null_action_is_submitted_not_replaced() -> None:
+208:def test_edge_policy_excludes_known_divergent_inputs_by_default() -> None:
+234:    trace.write_bytes(generator.encode_trace([{"type": "header"}, record]))
+265:def test_sweep_summary_reports_first_divergence(tmp_path: Path) -> None:
+276:def test_d2_class_requires_its_observed_signature(tmp_path: Path) -> None:
+288:        case.mkdir()
+295:def test_d1_class_requires_the_ascii_recheck_to_pass_the_line(tmp_path: Path) -> None:
+304:        case.mkdir()
+316:        case.mkdir()
+322:def test_d1_recheck_rewrites_only_the_divergent_line(tmp_path: Path) -> None:
+329:    traces.mkdir()
+330:    (traces / "t.jsonl.gz").write_bytes(generator.encode_trace(records))
+339:    assert sweep.write_d1_rechecks(report, traces, recheck) == ["t.jsonl.gz"]
+352:    probe = subprocess.run(
+368:def test_live_kaggle_engine_regenerates_committed_traces(tmp_path: Path) -> None:
+377:    subprocess.run(
+404:def test_sibling_oracle_rejects_changed_source(monkeypatch: pytest.MonkeyPatch) -> None:
+410:def test_sibling_oracle_rejects_unknown_bot() -> None:
+415:def test_sibling_oracle_instances_have_fresh_module_state(
+447:def test_opponent_specs_cover_both_seats_and_enforce_live_batch_bound() -> None:
+464:def test_opponent_coverage_counts_actual_events() -> None:
+500:def test_e776_package_modules_are_independent_per_seat(
+527:def test_opponent_deadline_cannot_be_swallowed_by_original_agent() -> None:
+541:def test_opponent_custody_failure_preserves_existing_manifest(tmp_path: Path) -> None:
+547:    path.write_text(frozen)
+549:        generator.write_opponent_manifest(tmp_path, [], generator.pinned_engine())
+553:def test_opponent_oracle_requires_the_competition_python_runtime() -> None:
+561:def test_opponent_preset_refuses_other_runtimes_before_playing(
+575:@pytest.fixture(scope="module")
+592:def test_replay_resumes_fresh_controllers_after_the_recorded_prefix(
+609:def test_replay_refuses_a_prefix_the_fresh_controller_did_not_choose(
+619:def test_replay_refuses_a_prefix_the_engine_does_not_reproduce(
+629:def test_replay_window_must_resume_inside_the_recorded_episode() -> None:
+636:def test_replay_points_cover_mid_day_day_reset_and_final_day() -> None:
+645:def test_replay_fixture_refuses_changed_oracle_custody(tmp_path: Path) -> None:
+647:    oracle.mkdir()
+648:    (oracle / "a.jsonl.gz").write_bytes(b"changed")
+650:    (oracle / "MANIFEST.json").write_text(json.dumps(manifest))
+655:def test_replay_fixture_refuses_to_overwrite_a_different_frozen_file(
+659:    path.write_bytes(b"frozen")
+661:        generator.write_replay_fixture(tmp_path, {"cases": []})
+665:def test_replay_preset_refuses_other_runtimes_before_playing(
+python3.12
+.venv/lib/python3.12/site-packages/owl-0.1.0.dist-info/direct_url.json:1:{"url":"file:///Users/poonszesen/kg-v3-m-7-1","dir_info":{"editable":true}}
+.venv/lib/python3.12/site-packages/owl.pth:1:/Users/poonszesen/kg-v3-m-7-1/python
+-rwxr-xr-x@ 1 poonszesen  staff  15073296 Sep 29 23:06 python/owl/rs.abi3.so
+-rw-r--r--@ 1 poonszesen  staff     13273 Sep 29 23:02 python/owl/rs.pyi
+
+exec
+/bin/zsh -lc "git status --short --ignored --untracked-files=all -- ops/ && git ls-files --others --ignored --exclude-standard -- ops/ && sed -n '115,215p' ops/rebuild-2026-09-29/evidence-custody.json && cat tests/conftest.py" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 0ms:
+!! ops/rebuild-2026-09-29/1.2/oracle/__pycache__/record_reference.cpython-312.pyc
+ops/rebuild-2026-09-29/1.2/oracle/__pycache__/record_reference.cpython-312.pyc
+     "sha256": "00b35e6b5d03cc5f82b0f0b01472d3b6c5ae9d1f39a22af9a8ad85e943e304a5"
+    }
+   ]
+  },
+  "cookbook_edits_applied": [
+   "cookbook/log.md",
+   "cookbook/references/index.md",
+   "cookbook/references/kaggriculture-encoder-reuses-isaiah-stateless-layers.md"
+  ],
+  "manifest_override": [
+   "ops/v3-architecture-image-2026-09-29/v3-agent-architecture.png"
+  ],
+  "copy_time_checks": "each source re-hashed against the inventory sha256 (all matched); size <= 512 KiB; banned extensions (npz/pt/ckpt/pth/safetensors/bin/npy/parquet) absent; strict credential patterns plus Fernet blobs and the pod SSH host/port (value taken from the tracked redaction map, not repeated here) found nothing",
+  "landed_with_task_7_1": {
+   "branch": "kg/merge-7-1",
+   "reason": "kg/rebuild-7-1 (Codex APPROVE r2 at 908c73f) landed; its DEFER reports of 512 KiB or less and the compact verify-7.1-r2 evidence are committed at their repo-relative paths",
+   "promoted_from_defer": [
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/task-7.1-claude-view-probe-lib.rs",
+     "target_path": "ops/rebuild-2026-09-29/codex/task-7.1-claude-view-probe-lib.rs",
+     "bytes": 1903,
+     "sha256": "06be3489441b84923f95ddd48cde0f798d334ceb9fe01b274b45de9e4d86bed9"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/task-7.1-impl-prompt.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/task-7.1-impl-prompt.md",
+     "bytes": 13413,
+     "sha256": "4b481383c908afae8d28c0070c15a3228193c64eae16847cb9212dfd82df2eba"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/task-7.1-impl-r2-prompt.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/task-7.1-impl-r2-prompt.md",
+     "bytes": 5475,
+     "sha256": "08a827224c2c78abc913012273ddc63f34135af3fcde034419682a5832d767d4"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/task-7.1-impl-r2-report.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/task-7.1-impl-r2-report.md",
+     "bytes": 226,
+     "sha256": "7ab3ea9b53769b60d6b97dba41044047a20d66d14f03527a4659eb7ba588808a"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/task-7.1-impl-report.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/task-7.1-impl-report.md",
+     "bytes": 2214,
+     "sha256": "98270841e0dbde5fceca9b2bf342ca181e96cfc84bc0803d3a54019a2afb283b"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-7.1-r1-prompt.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r1-prompt.md",
+     "bytes": 832,
+     "sha256": "ea35a6ef0f32c81e5a2e2fbe78ad886e5ad76be80665605e9434c056847c2dc5"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-7.1-r1-transcript.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r1-transcript.log",
+     "bytes": 431881,
+     "sha256": "4daf94f9bff69c417393956153c7e7de5ab0a424477d2e8fff8895121d4156c6"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-7.1-r1.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r1.md",
+     "bytes": 1801,
+     "sha256": "4e4422f8b57b7bfbdd6d5b9f320bea4ea4cacc2668708e668007b80aa1f7cfa5"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-7.1-r2-prompt.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2-prompt.md",
+     "bytes": 911,
+     "sha256": "f48d89bb3c4641b9e4f3ddf13911549ee744dddb31bdaa760bf1018de1616c11"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-7.1-r2-transcript.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2-transcript.log",
+     "bytes": 217598,
+     "sha256": "af9f2f75b10a9396859b043e5e2d3ac469f57d44d213db09dba6befc246ad8af"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-7.1-r2.md",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2.md",
+     "bytes": 1088,
+     "sha256": "db571069bfbb0f70e6137984062b7a950580405d78c32dba8085f45ad3d27aed"
+    }
+   ],
+   "post_inventory_copies": [
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/clippy.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/clippy.log",
+     "bytes": 72,
+     "sha256": "ee1d3fffa2022e962e63e0dbe4d35c9c198450a20c29fc09030f635dbb38bfcd"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/custody.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/custody.log",
+     "bytes": 100,
+     "sha256": "510b9eabbf6dbbad1fb4b4f0b56b22bed4a145951894ec71e6f323f5934ff045"
+    },
+    {
+     "source_path": "/Users/poonszesen/kg-v3-t71/ops/rebuild-2026-09-29/codex/verify-7.1-r2/diff-check.log",
+     "target_path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/diff-check.log",
+     "bytes": 2177,
+"""Isolate the process-global compile state that every model compile claims.
+
+``configure_model_compile`` and each ``compile_transformer_trunk`` claim
+``torch._inductor.config.max_autotune_gemm_backends`` for one game per process
+(``owl.model.compile_gemm``). The test session compiles both games' models, so
+every test starts unclaimed with the backends it found and restores both
+afterwards.
+"""
+
+from __future__ import annotations
+
+import pytest
+import torch._inductor.config as inductor_config
+from owl.model import compile_gemm
+
+
+@pytest.fixture(autouse=True)
+def _isolate_compile_gemm_backend_claim(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(compile_gemm, "_GEMM_BACKEND_CLAIM", None)
+    monkeypatch.setattr(
+        inductor_config,
+        "max_autotune_gemm_backends",
+        inductor_config.max_autotune_gemm_backends,
+    )
+
+exec
+/bin/zsh -lc 'mktemp -d /private/tmp/verify-merge-7-1-r2-XXXXXX' in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 0ms:
+/private/tmp/verify-merge-7-1-r2-uaIEBC
+
+codex
+The fix adds only the 273-byte replay summary. The ignored-file scan under `ops/` shows one pre-existing Python cache file and no remaining receipt. I’m checking all 57 custody entries against Git blobs and using a scratch checkout with its own copied Python environment for the tests.
+
+exec
+/bin/zsh -lc 'git -c core.hooksPath=/dev/null clone --shared --no-hardlinks --no-checkout /Users/poonszesen/kg-v3-m-7-1 /private/tmp/verify-merge-7-1-r2-uaIEBC/repo && git -c core.hooksPath=/dev/null -C /private/tmp/verify-merge-7-1-r2-uaIEBC/repo checkout --detach cb7006b && cp -cR .venv /private/tmp/verify-merge-7-1-r2-uaIEBC/repo/.venv && cp -c python/owl/rs.abi3.so /private/tmp/verify-merge-7-1-r2-uaIEBC/repo/python/owl/rs.abi3.so' in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 8436ms:
+Cloning into '/private/tmp/verify-merge-7-1-r2-uaIEBC/repo'...
+done.
+HEAD is now at cb7006b Force-add the ignored verify-7.1-r2 replay-summary receipt (verify-merge-7-1 r1)
+
+exec
+/bin/zsh -lc "cat > /private/tmp/verify-merge-7-1-r2-uaIEBC/check_landing_custody.py <<'PY'
+import argparse
+import hashlib
+import json
+import subprocess
+from pathlib import Path
+
+MANIFEST = 'ops/rebuild-2026-09-29/evidence-custody.json'
+DOC = 'ops/rebuild-2026-09-29/evidence-custody.md'
+EXPECTED = {'promoted_from_defer': (11, 677342), 'post_inventory_copies': (46, 115127)}
+
+
+def run(root, *args):
+    return subprocess.run(['git', '-C', str(root), *args], capture_output=True)
+
+
+def check(root, mode, revision):
+    def read(path):
+        if mode == 'git':
+            exists = run(root, 'cat-file', '-e', f'{revision}:{path}')
+            if exists.returncode:
+                raise FileNotFoundError(path)
+            result = run(root, 'cat-file', 'blob', f'{revision}:{path}')
+            result.check_returncode()
+            return result.stdout
+        return (root / path).read_bytes()
+
+    manifest = json.loads(read(MANIFEST))['committed']['landed_with_task_7_1']
+    doc = read(DOC).decode().split('## Task 7.1 landing\\n', 1)[1].split('\\n## ', 1)[0]
+    assert '11 of the 13 Task 7.1 entries (677,342 B)' in doc
+    assert '46 compact files (115,127 B)' in doc
+    output = {'root': str(root), 'mode': mode, 'revision': revision if mode == 'git' else None,
+              'markdown_counts_match': True, 'groups': {}, 'errors': []}
+    seen = set()
+    for key, (count, size) in EXPECTED.items():
+        entries = manifest[key]
+        actual_bytes = 0
+        present = 0
+        matching = 0
+        rows = []
+        for entry in entries:
+            path = entry['target_path']
+            assert path not in seen, path
+            seen.add(path)
+            assert path.startswith('ops/') and all(p not in ('', '.', '..') for p in path.split('/'))
+            row = {'path': path, 'expected_bytes': entry['bytes'], 'expected_sha256': entry['sha256']}
+            try:
+                data = read(path)
+            except FileNotFoundError:
+                row['status'] = 'missing'
+                output['errors'].append({'path': path, 'kind': 'missing'})
+            else:
+                digest = hashlib.sha256(data).hexdigest()
+                present += 1
+                actual_bytes += len(data)
+                row.update(bytes=len(data), sha256=digest)
+                if digest == entry['sha256'] and len(data) == entry['bytes']:
+                    matching += 1
+                    row['status'] = 'match'
+                else:
+                    row['status'] = 'mismatch'
+                    output['errors'].append({'path': path, 'kind': 'hash_or_size_mismatch',
+                                             'bytes': len(data), 'sha256': digest})
+            rows.append(row)
+        recorded_bytes = sum(e['bytes'] for e in entries)
+        assert len(entries) == count and recorded_bytes == size, (key, len(entries), recorded_bytes)
+        output['groups'][key] = {'recorded_count': count, 'recorded_bytes': size,
+                                'present_count': present, 'actual_bytes': actual_bytes,
+                                'matching_count': matching, 'entries': rows}
+    output['passed'] = not output['errors']
+    return output
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('root', type=Path)
+    parser.add_argument('--mode', choices=('git', 'files'), default='git')
+    parser.add_argument('--revision', default='HEAD')
+    parser.add_argument('--output', type=Path, required=True)
+    args = parser.parse_args()
+    result = check(args.root, args.mode, args.revision)
+    args.output.write_text(json.dumps(result, indent=2) + '\\n')
+    print(json.dumps({**{k:v for k,v in result.items() if k "'!= '"'groups'},
+                      'groups': {k: {n:v for n,v in g.items() if n "'!= '"'entries'} for k,g in result['groups'].items()}}, indent=2))
+    raise SystemExit(0 if result['passed'] else 1)
+PY
+OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 python3 /private/tmp/verify-merge-7-1-r2-uaIEBC/check_landing_custody.py /Users/poonszesen/kg-v3-m-7-1 --output /private/tmp/verify-merge-7-1-r2-uaIEBC/custody-head.json" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 941ms:
+{
+  "root": "/Users/poonszesen/kg-v3-m-7-1",
+  "mode": "git",
+  "revision": "HEAD",
+  "markdown_counts_match": true,
+  "errors": [],
+  "passed": true,
+  "groups": {
+    "promoted_from_defer": {
+      "recorded_count": 11,
+      "recorded_bytes": 677342,
+      "present_count": 11,
+      "actual_bytes": 677342,
+      "matching_count": 11
+    },
+    "post_inventory_copies": {
+      "recorded_count": 46,
+      "recorded_bytes": 115127,
+      "present_count": 46,
+      "actual_bytes": 115127,
+      "matching_count": 46
+    }
+  }
+}
+
+exec
+/bin/zsh -lc "python3 - <<'PY'
+import json
+from pathlib import Path
+source = Path('/Users/poonszesen/kg-v3-m-7-1')
+repo = Path('/private/tmp/verify-merge-7-1-r2-uaIEBC/repo')
+site = repo / '.venv/lib/python3.12/site-packages'
+(site / 'owl.pth').write_text(str(repo / 'python') + '\\n')
+metadata = site / 'owl-0.1.0.dist-info/direct_url.json'
+metadata.write_text(json.dumps({'url': repo.as_uri(), 'dir_info': {'editable': True}}))
+count = 0
+for path in (repo / '.venv/bin').iterdir():
+    if path.is_symlink() or not path.is_file():
+        continue
+    data = path.read_bytes()
+    if str(source).encode() in data:
+        path.write_bytes(data.replace(str(source).encode(), str(repo).encode()))
+        count += 1
+print(f'Retargeted scratch owl.pth, editable metadata, and {count} entrypoint/config files.')
+PY
+OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 UV_NO_SYNC=1 UV_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 uv run --project /private/tmp/verify-merge-7-1-r2-uaIEBC/repo python -c 'import sys,owl,owl.rs; print(sys.executable); print(owl.__file__); print(owl.rs.__file__)'" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 640ms:
+Retargeted scratch owl.pth, editable metadata, and 50 entrypoint/config files.
+/private/tmp/verify-merge-7-1-r2-uaIEBC/repo/.venv/bin/python3
+/private/tmp/verify-merge-7-1-r2-uaIEBC/repo/python/owl/__init__.py
+/private/tmp/verify-merge-7-1-r2-uaIEBC/repo/python/owl/rs.abi3.so
+
+exec
+/bin/zsh -lc 'OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 UV_NO_SYNC=1 UV_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 uv run pytest -q tests/tools/test_check_opponent_import.py tests/scripts/test_kaggriculture_parity.py > /private/tmp/verify-merge-7-1-r2-uaIEBC/pytest.log 2>&1' in /private/tmp/verify-merge-7-1-r2-uaIEBC/repo
+ succeeded in 14112ms:
+exec
+/bin/zsh -lc 'OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 UV_NO_SYNC=1 UV_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 uv run python scripts/check_engine_trim.py > /private/tmp/verify-merge-7-1-r2-uaIEBC/engine-trim.log 2>&1' in /private/tmp/verify-merge-7-1-r2-uaIEBC/repo
+exec
+/bin/zsh -lc 'OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 UV_NO_SYNC=1 UV_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 uv run --offline python scripts/check_opponent_import.py > /private/tmp/verify-merge-7-1-r2-uaIEBC/opponent-import.log 2>&1' in /private/tmp/verify-merge-7-1-r2-uaIEBC/repo
+exec
+/bin/zsh -lc 'OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 UV_NO_SYNC=1 UV_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 uv run python scripts/check_doc_freshness.py > /private/tmp/verify-merge-7-1-r2-uaIEBC/doc-freshness.log 2>&1' in /private/tmp/verify-merge-7-1-r2-uaIEBC/repo
+ succeeded in 54ms:
+ succeeded in 707ms:
+exec
+/bin/zsh -lc "python3 - <<'PY'
+import json
+import subprocess
+from pathlib import Path
+root = Path('/Users/poonszesen/kg-v3-m-7-1')
+out = Path('/private/tmp/verify-merge-7-1-r2-uaIEBC')
+manifest = json.loads((root / 'ops/rebuild-2026-09-29/evidence-custody.json').read_text())['committed']['landed_with_task_7_1']
+paths = [e['target_path'] for group in ('promoted_from_defer', 'post_inventory_copies') for e in manifest[group]]
+commands = {
+    'ignored_status': ['git', 'status', '--short', '--ignored', '--untracked-files=all', '--', 'ops/'],
+    'ignored_files': ['git', 'ls-files', '--others', '--ignored', '--exclude-standard', '--', 'ops/'],
+    'expected_effectively_ignored': ['git', 'check-ignore', '-v', '--stdin'],
+    'expected_matching_ignore_rules': ['git', 'check-ignore', '-v', '--no-index', '--stdin'],
+}
+result = {'root': str(root), 'custody_paths': len(paths)}
+for name, cmd in commands.items():
+    run = subprocess.run(cmd, cwd=root, text=True, input='\\n'.join(paths)+'\\n' if '--stdin' in cmd else None, capture_output=True)
+    result[name] = {'command': cmd, 'returncode': run.returncode, 'stdout': run.stdout, 'stderr': run.stderr}
+ignored = result['ignored_files']['stdout'].splitlines()
+run = subprocess.run(['git','check-ignore','-v','--stdin'], cwd=root, input='\\n'.join(ignored)+'\\n', capture_output=True, text=True)
+result['ignored_file_rules'] = {'returncode': run.returncode, 'stdout':run.stdout, 'stderr':run.stderr}
+assert result['expected_effectively_ignored']['returncode'] == 1 and not result['expected_effectively_ignored']['stdout']
+assert not set(ignored).intersection(paths)
+(out / 'ignore-audit.json').write_text(json.dumps(result, indent=2)+'\\n')
+print(json.dumps(result, indent=2))
+PY" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 184ms:
+{
+  "root": "/Users/poonszesen/kg-v3-m-7-1",
+  "custody_paths": 57,
+  "ignored_status": {
+    "command": [
+      "git",
+      "status",
+      "--short",
+      "--ignored",
+      "--untracked-files=all",
+      "--",
+      "ops/"
+    ],
+    "returncode": 0,
+    "stdout": "!! ops/rebuild-2026-09-29/1.2/oracle/__pycache__/record_reference.cpython-312.pyc\n",
+    "stderr": ""
+  },
+  "ignored_files": {
+    "command": [
+      "git",
+      "ls-files",
+      "--others",
+      "--ignored",
+      "--exclude-standard",
+      "--",
+      "ops/"
+    ],
+    "returncode": 0,
+    "stdout": "ops/rebuild-2026-09-29/1.2/oracle/__pycache__/record_reference.cpython-312.pyc\n",
+    "stderr": ""
+  },
+  "expected_effectively_ignored": {
+    "command": [
+      "git",
+      "check-ignore",
+      "-v",
+      "--stdin"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  "expected_matching_ignore_rules": {
+    "command": [
+      "git",
+      "check-ignore",
+      "-v",
+      "--no-index",
+      "--stdin"
+    ],
+    "returncode": 0,
+    "stdout": ".gitignore:15:replay-*.json\tops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json\n",
+    "stderr": ""
+  },
+  "ignored_file_rules": {
+    "returncode": 0,
+    "stdout": ".gitignore:6:__pycache__/\tops/rebuild-2026-09-29/1.2/oracle/__pycache__/record_reference.cpython-312.pyc\n",
+    "stderr": ""
+  }
+}
+
+ succeeded in 1515ms:
+exec
+/bin/zsh -lc "cat > /private/tmp/verify-merge-7-1-r2-uaIEBC/run_guard_mutations.py <<'PY'
+import hashlib
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+out = Path(__file__).parent
+source = out / 'repo'
+guard = out / 'guard-copy'
+manifest_path = 'ops/rebuild-2026-09-29/evidence-custody.json'
+manifest = json.loads((source / manifest_path).read_text())['committed']['landed_with_task_7_1']
+paths = [e['target_path'] for group in ('promoted_from_defer', 'post_inventory_copies') for e in manifest[group]]
+paths += [manifest_path, 'ops/rebuild-2026-09-29/evidence-custody.md']
+for relative in paths:
+    target = guard / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes((source / relative).read_bytes())
+receipt = guard / 'ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json'
+original = receipt.read_bytes()
+trials = []
+
+
+def run(label, expected):
+    command = [sys.executable, str(out / 'check_landing_custody.py'), str(guard), '--mode', 'files', '--output', str(out / f'guard-{label}.json')]
+    result = subprocess.run(command, capture_output=True, text=True,
+                            env={**os.environ, 'OMP_NUM_THREADS': '2', 'CARGO_BUILD_JOBS': '2'})
+    (out / f'guard-{label}.log').write_text(result.stdout + result.stderr)
+    data = json.loads((out / f'guard-{label}.json').read_text())
+    trials.append({'label': label, 'command': command, 'returncode': result.returncode, 'errors': data['errors'],
+                   'matched': sum(g['matching_count'] for g in data['groups'].values())})
+    assert result.returncode == expected, (label, result.stdout, result.stderr)
+    if expected:
+        assert len(data['errors']) == 1
+        assert data['errors'][0]['path'] == receipt.relative_to(guard).as_posix()
+    return data
+
+
+run('baseline', 0)
+try:
+    receipt.unlink()
+    deleted = run('deleted', 1)
+    assert deleted['errors'][0]['kind'] == 'missing'
+    receipt.write_bytes(original)
+    run('restored-after-delete', 0)
+    changed = original.replace(b'\"cases\": 24', b'\"cases\": 25')
+    assert changed "'!= original and len(changed) == len(original)
+    receipt.write_bytes(changed)
+    altered = run('"'altered', 1)
+    assert altered['errors'][0]['kind'] == 'hash_or_size_mismatch'
+finally:
+    receipt.write_bytes(original)
+run('restored-after-alter', 0)
+assert all((guard / p).read_bytes() == (source / p).read_bytes() for p in paths)
+summary = {'trials': trials, 'restored_files': len(paths), 'restored_sha256': hashlib.sha256(receipt.read_bytes()).hexdigest()}
+(out / 'guard-summary.json').write_text(json.dumps(summary, indent=2) + '\\n')
+print(json.dumps(summary, indent=2))
+PY
+OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 python3 /private/tmp/verify-merge-7-1-r2-uaIEBC/run_guard_mutations.py" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 339ms:
+{
+  "trials": [
+    {
+      "label": "baseline",
+      "command": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/check_landing_custody.py",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/guard-copy",
+        "--mode",
+        "files",
+        "--output",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/guard-baseline.json"
+      ],
+      "returncode": 0,
+      "errors": [],
+      "matched": 57
+    },
+    {
+      "label": "deleted",
+      "command": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/check_landing_custody.py",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/guard-copy",
+        "--mode",
+        "files",
+        "--output",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/guard-deleted.json"
+      ],
+      "returncode": 1,
+      "errors": [
+        {
+          "path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json",
+          "kind": "missing"
+        }
+      ],
+      "matched": 56
+    },
+    {
+      "label": "restored-after-delete",
+      "command": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/check_landing_custody.py",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/guard-copy",
+        "--mode",
+        "files",
+        "--output",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/guard-restored-after-delete.json"
+      ],
+      "returncode": 0,
+      "errors": [],
+      "matched": 57
+    },
+    {
+      "label": "altered",
+      "command": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/check_landing_custody.py",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/guard-copy",
+        "--mode",
+        "files",
+        "--output",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/guard-altered.json"
+      ],
+      "returncode": 1,
+      "errors": [
+        {
+          "path": "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json",
+          "kind": "hash_or_size_mismatch",
+          "bytes": 273,
+          "sha256": "5dd4a13961028281c84aab6dcdc669dfa427d84f86ca7040c2de251da0e49955"
+        }
+      ],
+      "matched": 56
+    },
+    {
+      "label": "restored-after-alter",
+      "command": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/check_landing_custody.py",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/guard-copy",
+        "--mode",
+        "files",
+        "--output",
+        "/private/tmp/verify-merge-7-1-r2-uaIEBC/guard-restored-after-alter.json"
+      ],
+      "returncode": 0,
+      "errors": [],
+      "matched": 57
+    }
+  ],
+  "restored_files": 59,
+  "restored_sha256": "a796a5a8c4e100479da399cd93091b48a13461c70d86da4f90a2c8fe376ffcc7"
+}
+
+exec
+/bin/zsh -lc 'cat /private/tmp/verify-merge-7-1-r2-uaIEBC/pytest.log /private/tmp/verify-merge-7-1-r2-uaIEBC/engine-trim.log /private/tmp/verify-merge-7-1-r2-uaIEBC/opponent-import.log /private/tmp/verify-merge-7-1-r2-uaIEBC/doc-freshness.log' in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 0ms:
+...............................................................s........ [ 71%]
+..........s..................                                            [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/tools/test_check_opponent_import.py:396: original sources live in the sibling repo
+SKIPPED [1] tests/scripts/test_kaggriculture_parity.py:371: Mac bound: committed regeneration exceeds two live games; run on pod
+99 passed, 2 skipped in 4.23s
+engine trim manifest: OK
+opponent import check passed (entry pins; custody only; parity is checked separately)
+
+codex
+All 57 custody entries now exist in HEAD and match their recorded hashes; both file and byte totals agree with the landing record. The scratch checker detected deletion and a same-size content change, then passed after each restoration. The requested tests passed with 99 passed and 2 skipped; the trim, opponent-custody and docs-freshness checks also passed.
+
+exec
+/bin/zsh -lc "python3 - <<'PY'
+import gzip
+import hashlib
+import json
+import subprocess
+from pathlib import Path
+root = Path('/Users/poonszesen/kg-v3-m-7-1')
+out = Path('/private/tmp/verify-merge-7-1-r2-uaIEBC')
+
+def git(*args):
+    return subprocess.check_output(['git', '-C', str(root), *args])
+
+def tree(rev):
+    entries = {}
+    for line in git('ls-tree', '-r', '-z', rev).split(b'\\0'):
+        if line:
+            metadata, path = line.split(b'\\t', 1)
+            entries[path.decode()] = metadata.decode()
+    return entries
+
+receipt = 'ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json'
+old, new = tree('3895180'), tree('HEAD')
+added = sorted(new.keys() - old.keys())
+deleted = sorted(old.keys() - new.keys())
+modified = sorted(p for p in old.keys() & new.keys() if old[p] "'!= new[p])
+assert added == [receipt] and not deleted and not modified
+ancestry = {}
+parents = {}
+for ref in ('"'faed717', '908c73f', '3895180'):
+    ancestry[ref] = subprocess.run(['git','-C',str(root),'merge-base','--is-ancestor',ref,'HEAD']).returncode == 0
+    assert ancestry[ref]
+for ref in ('faed717', '908c73f'):
+    entries = tree(ref)
+    assert not entries.keys() - old.keys()
+    lost = sorted(p for p in entries if p not in new or new[p] "'!= old[p])
+    assert not lost
+    parents[ref] = {'"'entries':len(entries), 'absent_at_r1':0, 'lost_or_changed_since_r1':lost}
+blob = git('cat-file','blob',f'HEAD:{receipt}')
+summary = json.loads(blob)
+log_summary = json.loads(git('cat-file','blob','HEAD:ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay.log'))
+assert summary == log_summary
+fixture = git('cat-file','blob','HEAD:opponents_rs/fixtures/replay/REPLAY.json.gz')
+print(blob.decode())
+result = {'head':git('rev-parse','HEAD').decode().strip(), 'base':git('rev-parse','faed717').decode().strip(),
+          'r1':git('rev-parse','3895180').decode().strip(), 'branch':git('branch','--show-current').decode().strip(),
+          'r1_tree_entries':len(old), 'head_tree_entries':len(new), 'added':added, 'deleted':deleted,'modified':modified,
+          'ancestry':ancestry, 'parents_relative_to_r1':parents,
+          'receipt_bytes':len(blob), 'receipt_sha256':hashlib.sha256(blob).hexdigest(), 'receipt':summary,
+          'replay_log_equal':True, 'fixture_bytes':len(fixture),'fixture_sha256':hashlib.sha256(fixture).hexdigest(),
+          'fixture_cases':len(json.loads(gzip.decompress(fixture))['cases'])}
+(out / 'delta-audit.json').write_text(json.dumps(result,indent=2)+'\\n')
+print(json.dumps(result, indent=2))
+PY
+ git diff --check 3895180..cb7006b" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 54ms:
+{
+  "path": "REPLAY.json.gz",
+  "sha256": "0d6fee093244de7e9b89757c9a2594fc16cc8392f5f12ff523d4e96a07987391",
+  "bytes": 23323,
+  "cases": 24,
+  "seconds": 23.726,
+  "peak_rss_bytes": 772734976,
+  "python_version": "3.11.15 (main, Mar  3 2026, 15:47:15) [Clang 21.1.4 ]"
+}
+
+{
+  "head": "cb7006b49d72aa2de39ecda28818e476e3c25446",
+  "base": "faed71773fa9f6414e4379ace904780349979cd8",
+  "r1": "3895180d47cd0848a24b6a76daa7a67db90eff3b",
+  "branch": "kg/merge-7-1",
+  "r1_tree_entries": 4132,
+  "head_tree_entries": 4133,
+  "added": [
+    "ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json"
+  ],
+  "deleted": [],
+  "modified": [],
+  "ancestry": {
+    "faed717": true,
+    "908c73f": true,
+    "3895180": true
+  },
+  "parents_relative_to_r1": {
+    "faed717": {
+      "entries": 3957,
+      "absent_at_r1": 0,
+      "lost_or_changed_since_r1": []
+    },
+    "908c73f": {
+      "entries": 1750,
+      "absent_at_r1": 0,
+      "lost_or_changed_since_r1": []
+    }
+  },
+  "receipt_bytes": 273,
+  "receipt_sha256": "a796a5a8c4e100479da399cd93091b48a13461c70d86da4f90a2c8fe376ffcc7",
+  "receipt": {
+    "path": "REPLAY.json.gz",
+    "sha256": "0d6fee093244de7e9b89757c9a2594fc16cc8392f5f12ff523d4e96a07987391",
+    "bytes": 23323,
+    "cases": 24,
+    "seconds": 23.726,
+    "peak_rss_bytes": 772734976,
+    "python_version": "3.11.15 (main, Mar  3 2026, 15:47:15) [Clang 21.1.4 ]"
+  },
+  "replay_log_equal": true,
+  "fixture_bytes": 23323,
+  "fixture_sha256": "0d6fee093244de7e9b89757c9a2594fc16cc8392f5f12ff523d4e96a07987391",
+  "fixture_cases": 24
+}
+
+exec
+/bin/zsh -lc "python3 - <<'PY'
+import json
+import subprocess
+from pathlib import Path
+out = Path('/private/tmp/verify-merge-7-1-r2-uaIEBC')
+roots = {'staging':'/Users/poonszesen/kg-v3-m-7-1', 'scratch':str(out / 'repo')}
+results = {}
+for label, root in roots.items():
+    result = {}
+    for name, args in [('status', ['status','--short']), ('worktree_diff',['diff','--quiet']), ('index_diff',['diff','--cached','--quiet']), ('head',['rev-parse','HEAD'])]:
+        run = subprocess.run(['git','-C',root,*args],capture_output=True,text=True)
+        result[name] = {'returncode':run.returncode,'stdout':run.stdout,'stderr':run.stderr}
+        assert run.returncode == 0
+        if name "'!= '"'head':
+            assert run.stdout == ''
+    assert result['head']['stdout'].strip() == 'cb7006b49d72aa2de39ecda28818e476e3c25446'
+    results[label] = result
+(out / 'final-status.json').write_text(json.dumps(results,indent=2)+'\\n')
+print(json.dumps(results,indent=2))
+PY" in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 117ms:
+{
+  "staging": {
+    "status": {
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "worktree_diff": {
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "index_diff": {
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "head": {
+      "returncode": 0,
+      "stdout": "cb7006b49d72aa2de39ecda28818e476e3c25446\n",
+      "stderr": ""
+    }
+  },
+  "scratch": {
+    "status": {
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "worktree_diff": {
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "index_diff": {
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "head": {
+      "returncode": 0,
+      "stdout": "cb7006b49d72aa2de39ecda28818e476e3c25446\n",
+      "stderr": ""
+    }
+  }
+}
+
+exec
+/bin/zsh -lc "cat > /private/tmp/verify-merge-7-1-r2-uaIEBC/REPORT.md <<'MD'
+Independent verification, round 2: "'`kg/merge-7-1` at `cb7006b49d72aa2de39ecda28818e476e3c25446`, against BASE `faed71773fa9f6414e4379ace904780349979cd8`. Round 1 state: `3895180d47cd0848a24b6a76daa7a67db90eff3b`; opponent parent: `908c73fce0be298f81e229b08bf0ca082ad2e075`.
+
+## Findings
+
+No new P0–P3 findings. No fix required.
+
+## Prior finding
+
+**RESOLVED — r1 P2**, `ops/rebuild-2026-09-29/evidence-custody.json:424`: the receipt declared committed but previously absent is now in HEAD at `ops/rebuild-2026-09-29/codex/verify-7.1-r2/regeneration/replay-summary.json`. It is 273 bytes; SHA-256 `a796a5a8c4e100479da399cd93091b48a13461c70d86da4f90a2c8fe376ffcc7`, matching the manifest. The applied fix is the force-add in cb7006b.
+
+For each of all 57 landing records, the verifier ran `git cat-file -e HEAD:<target_path>`, read its Git blob with `git cat-file blob HEAD:<target_path>`, and compared its byte count and SHA-256 to the manifest. All 57 match. The post-inventory records total 46 files / 115,127 bytes; promoted records total 11 / 677,342. Both equal the Markdown landing section. The checker rejects duplicate paths as well.
+
+`git status --short --ignored --untracked-files=all -- ops/` and `git ls-files --others --ignored --exclude-standard -- ops/` show only one pre-existing `__pycache__/record_reference.cpython-312.pyc`, unrelated to the landing. `git check-ignore -v --stdin` over all 57 targets yields no ignored paths (exit 1). With `--no-index`, only the now-tracked receipt matches `.gitignore:15:replay-*.json`. Thus the existing ignore rule still matches the name, but it no longer prevents this receipt from being committed. No other intended landing receipt remains ignored.
+
+## Delta and parent preservation
+
+Tree comparison of 3895180 and cb7006b shows 4,132 to 4,133 entries: exactly one addition (the receipt, mode 100644), zero deletions, and zero changes to any pre-existing mode/type/blob tuple. Both parents and r1 are ancestors of HEAD. All 3,957 BASE paths and all 1,750 opponent-parent paths occur in r1; every one retains its r1 entry in HEAD. No parent content was lost relative to r1. This is incremental preservation, not a claim that the merge had no intentional differences from its parents.
+
+The added JSON parses and equals the already committed `regeneration/replay.log` JSON. Its referenced fixture independently matches the committed replay fixture: SHA-256 `0d6fee093244de7e9b89757c9a2594fc16cc8392f5f12ff523d4e96a07987391`, 23,323 bytes, 24 cases. Recorded generation time, RSS and Python version remain historical receipt data; they were not re-measured here. `git diff --check 3895180..cb7006b` passes.
+
+## Executed checks
+
+All execution used `OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2`. The four requested commands ran in an independent scratch checkout of cb7006b with a copied, retargeted Python environment and copied native extension. `UV_NO_SYNC=1 UV_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1` prevented dependency synchronization, network access through uv and bytecode writes. Python, owl and owl.rs import paths were checked to resolve to scratch. The Git clone reads the source object store through an alternate; writes stay in the scratch clone. No training, GPU work, broad rebuild, formatter, source regeneration or original-worktree mutation ran.
+
+| Check / command | Result |
+|---|---|
+| Landing custody Git blob audit | 57/57 existence, size and SHA-256 matches; promoted 11 / 677,342 bytes; post-inventory 46 / 115,127 bytes |
+| Ignored-file scan and `git check-ignore` | 0 missing/ignored intended landing files; only 1 unrelated pre-existing Python cache ignored |
+| `3895180..cb7006b` tree audit | 1 addition, 0 deletions, 0 existing entry changes; all 4,132 r1 entries retained |
+| Scratch guard baseline | 57/57 matches, exit 0 |
+| Scratch receipt deletion | Exit 1; exactly the missing receipt reported; 56/57 match |
+| Restore after deletion | 57/57 matches, exit 0 |
+| Scratch same-size alteration (`cases: 24` to `25`) | Exit 1; exactly the receipt hash mismatch reported, still 273 bytes; 56/57 match |
+| Restore after alteration | 57/57 matches, exit 0; all 59 copied files (57 receipts + custody JSON/Markdown) equal their originals |
+| `uv run pytest -q tests/tools/test_check_opponent_import.py tests/scripts/test_kaggriculture_parity.py` | 99 passed, 2 skipped in 4.23s, exit 0 |
+| `uv run python scripts/check_engine_trim.py` | 1/1 invocation passed, exit 0; `engine trim manifest: OK` |
+| `uv run --offline python scripts/check_opponent_import.py` | 1/1 invocation passed, exit 0; entry pins/custody only |
+| `uv run python scripts/check_doc_freshness.py` | 1/1 invocation passed, exit 0; no pending changed/untracked paths, no DOCS_CURRENT override |
+| Final staging and scratch status | Both `git status --short` empty; unstaged/staged diffs exit 0; HEAD unchanged |
+
+Pytest skips: original-submission sources live in the sibling repository (`tests/tools/test_check_opponent_import.py:396`); full committed-trace regeneration exceeds the Mac two-live-game bound (`tests/scripts/test_kaggriculture_parity.py:371`). No new action-parity or fresh original-Python regeneration claim is made. Docs freshness examines pending changes, so its clean-tree pass does not independently review the committed merge'"'s documentation.
+
+## Receipts
+
+- [Custody checker source](check_landing_custody.py), [all HEAD path/hash results](custody-head.json).
+- [Ignored-file commands and outputs](ignore-audit.json).
+- [Delta and parent tree audit](delta-audit.json).
+- [Mutation driver](run_guard_mutations.py), [five guard trials and restoration](guard-summary.json); each trial also has a detailed JSON/log beside it.
+- [Pytest output](pytest.log), [trim output](engine-trim.log), [opponent import output](opponent-import.log), [docs freshness output](doc-freshness.log) (empty output, exit 0).
+- [Final source/scratch status](final-status.json).
+
+All generated artifacts stay beneath "'`/private/tmp/verify-merge-7-1-r2-uaIEBC`. No original worktree was modified.
+
+VERDICT: APPROVE
+MD
+ git status --short' in /Users/poonszesen/kg-v3-m-7-1
+ succeeded in 0ms:
+codex
+No new P0–P3 findings. No further fix required.
+
+**Prior P2: RESOLVED.** The receipt listed at [evidence-custody.json:424](/Users/poonszesen/kg-v3-m-7-1/ops/rebuild-2026-09-29/evidence-custody.json:424) now exists in HEAD. Its 273 bytes and SHA-256 match the manifest. Commit `cb7006b` applies the required force-add.
+
+| Check | Result |
+|---|---|
+| HEAD custody existence, size and SHA-256 | **57/57 match** |
+| Post-inventory committed totals | **46 files / 115,127 bytes**, matching Markdown |
+| Promoted committed totals | **11 files / 677,342 bytes**, matching Markdown |
+| Ignored-file audit | **0 intended receipts missing/ignored**; only one unrelated Python cache |
+| `3895180..cb7006b` | **1 addition; 0 deletions or modifications**; all 4,132 prior entries preserved |
+| Parent preservation relative to r1 | All **3,957 BASE paths / 1,750 opponent-parent paths** retained unchanged |
+| Scratch custody mutations | Deletion and same-size alteration both detected; **57/57 pass after each restoration** |
+| Requested pytest pair | **99 passed, 2 skipped** |
+| `check_engine_trim.py` | **Passed**, exit 0 |
+| Offline `check_opponent_import.py` | **Passed**, exit 0 |
+| `check_doc_freshness.py` | **Passed**, exit 0; clean-tree check |
+| Final staging `git status --short` | **Empty**, HEAD unchanged |
+
+The two skips concern sibling original sources and full regeneration exceeding the Mac check bound. All executions used `OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2`. No original worktree was modified; no training or GPU work ran.
+
+[Full report and receipts](/private/tmp/verify-merge-7-1-r2-uaIEBC/REPORT.md).
+
+VERDICT: APPROVE
+hook: Stop
+hook: Stop Completed
+tokens used
+76,039
+No new P0–P3 findings. No further fix required.
+
+**Prior P2: RESOLVED.** The receipt listed at [evidence-custody.json:424](/Users/poonszesen/kg-v3-m-7-1/ops/rebuild-2026-09-29/evidence-custody.json:424) now exists in HEAD. Its 273 bytes and SHA-256 match the manifest. Commit `cb7006b` applies the required force-add.
+
+| Check | Result |
+|---|---|
+| HEAD custody existence, size and SHA-256 | **57/57 match** |
+| Post-inventory committed totals | **46 files / 115,127 bytes**, matching Markdown |
+| Promoted committed totals | **11 files / 677,342 bytes**, matching Markdown |
+| Ignored-file audit | **0 intended receipts missing/ignored**; only one unrelated Python cache |
+| `3895180..cb7006b` | **1 addition; 0 deletions or modifications**; all 4,132 prior entries preserved |
+| Parent preservation relative to r1 | All **3,957 BASE paths / 1,750 opponent-parent paths** retained unchanged |
+| Scratch custody mutations | Deletion and same-size alteration both detected; **57/57 pass after each restoration** |
+| Requested pytest pair | **99 passed, 2 skipped** |
+| `check_engine_trim.py` | **Passed**, exit 0 |
+| Offline `check_opponent_import.py` | **Passed**, exit 0 |
+| `check_doc_freshness.py` | **Passed**, exit 0; clean-tree check |
+| Final staging `git status --short` | **Empty**, HEAD unchanged |
+
+The two skips concern sibling original sources and full regeneration exceeding the Mac check bound. All executions used `OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2`. No original worktree was modified; no training or GPU work ran.
+
+[Full report and receipts](/private/tmp/verify-merge-7-1-r2-uaIEBC/REPORT.md).
+
+VERDICT: APPROVE

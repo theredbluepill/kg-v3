@@ -1,0 +1,46 @@
+You are Codex, INDEPENDENT VERIFIER of the staging branch kg/merge-custody (this worktree, /Users/poonszesen/kg-v3-m-custody, HEAD 3642a25) against BASE 666deec (kg/isaiah-gap-closure after kg/merge-gpu-receipts landed). Leave no tracked modification in any worktree: write scratch files only under /tmp or /private/tmp, and restore anything you touch byte-for-byte. Do not modify, move or delete anything in /Users/poonszesen/kg-v3 (main checkout, which has uncommitted cookbook edits that must stay) or any other worktree. Do not launch training or GPU work.
+
+## What the branch claims
+
+Staging summary from the orchestrator:
+- 2f535ea merges kg/rebuild-value-gap (bd31cb6). One conflict in ops/rebuild-2026-09-29/results.md, resolved by keeping both sections in run order (GPU bundle 09:15Z, then value gap 10:47Z); the bundle's "value gap is unattributed" bullet now points to the later section that attributes it. The value-gap branch's own Codex r1 edits were applied later, in 3642a25 (see Round 2).
+- 2ebf538 merges kg/rebuild-phase-map (b1ef31d). Conflicts: cookbook/references/index.md (phase grouping with the integration's current entry text; the teacher Reference replaces the "no Phase 4 Reference" placeholder; the pod flash-attn and model-only SPS References go under Phase 6; all 21 notes listed once); cookbook/log.md (both sides, integration first, plus a merge entry); plan.md auto-merged (4.1-4.3 marked merged with the box open for 4.4; 6.0 ticked; both checked with git merge-base --is-ancestor).
+- 1df17dd records the v3 architecture image in the encoder Reference.
+- c8aaaac, 470b527 copy COMMIT-class evidence from the main checkout and worktrees (1.3/, codex/, verify-*-independent/, verify-merge-1.3/ ...).
+- 7911b16 adds ops/rebuild-2026-09-29/evidence-custody.{md,json} and the pause checkpoint.
+- 5c05d0a refreshes ops/rebuild-2026-09-29/phase-status.md to integration 666deec plus this sweep.
+- 5ee1188 records the custody sweep in the cookbook and corrects three custody statements.
+- The inventory is /Users/poonszesen/kg-v3-m-custody-inventory/inventory.json (generated 13:48:20Z against integration ca37089; scripts in ../tools/). It is not committed. ops/rebuild-2026-09-29/merge-custody/py-prepare.log records a passing py-prepare.
+
+## Check each of these and report evidence (commands + counts)
+
+(a) **Nothing lost.** Nothing from BASE 666deec, kg/rebuild-value-gap bd31cb6 or kg/rebuild-phase-map b1ef31d was lost. Compare collected pytest test names (and Rust test names if any Rust changed) between each parent and HEAD; compare cookbook note sets and every conflict-resolved file (results.md, cookbook/references/index.md, cookbook/log.md, plan.md) section by section against each parent. Confirm every References note appears exactly once in the index and every cookbook concept file is listed in its folder index. Confirm the merge resolutions are semantically right.
+
+(b) **Evidence matches the inventory.** For every file this branch added under ops/ that the inventory classifies (COMMIT, and the DEFER entries promoted per evidence-custody.md), confirm the committed blob's sha256 equals the inventory's source sha256 and the committed path equals the stated destination. Report any committed ops/ file that has no inventory entry and is not explained by evidence-custody.md or by a merge parent.
+
+(c) **Independent secret and bulk scan** of every file added or modified in 666deec..HEAD (git diff --name-only --diff-filter=AM 666deec HEAD). Use your own patterns, at least: private key blocks (BEGIN .*PRIVATE KEY, OPENSSH, RSA), api[_-]?key, token, secret, password, bearer, wandb_ / W&B 40-hex keys, kaggle key / kaggle.json contents, ghp_/gho_/github_pat_, sk-/sk-ant-, hf_, AKIA, RunPod keys (rpa_ etc.), ssh-ed25519/ssh-rsa public keys, Fernet-style gAAAA blobs, IPv4 addresses and host:port pairs other than version numbers/localhost. Triage every hit (true positive vs identifier/prose). Also confirm no file has a weights/array/corpus extension (npz, pt, pth, ckpt, safetensors, bin, npy, parquet, gz archives of corpora) and list every added file > 512 KiB with a justification check. The pod's SSH host/port must not appear in any added file; the tracked redaction map in flash-attn-setup-2026-09-29/post-run/extract_operator_transcript.py is pre-existing on BASE and is out of scope except to confirm this branch did not add new copies of that host.
+
+(d) **Custody manifest completeness.** evidence-custody.json must list every inventory entry in the MANIFEST, DEFER and EXCLUDE classes (compare against inventory.json), with path, bytes, sha256 (not for EXCLUDE), location and reason; EXCLUDE entries carry only path and reason and no content. Totals and per-reason / per-task tables in evidence-custody.md must match the JSON. Check the "promoted from DEFER" and "already tracked on BASE" counts against git. Report missing, extra or mismatched entries.
+
+(e) **phase-status.md vs git.** Every claim in ops/rebuild-2026-09-29/phase-status.md that a task/branch is merged, pending, or at a commit must match git (git merge-base --is-ancestor against 666deec / HEAD, branch tips from git worktree list / git rev-parse) and the cited reports (the report file must exist at the cited path and say what is claimed, e.g. its VERDICT). Same for the plan.md checkboxes changed on this branch.
+
+(f) **Cookbook contract** (CLAUDE.md "Cookbook contract"): every changed/added cookbook note has type, title, description, tags (first tag kaggriculture-v3), status, generated; repository sources are literal single-line repository:<path> values that resolve in this tree; each changed note is in its folder index.md; cookbook/log.md has a prepended entry for each material change on this branch. Run the lint hook on every changed note (e.g. `echo '{"tool_input":{"file_path":"<abs path>"}}' | node .claude/hooks/cookbook-lint.mjs`, and read the script for its real input contract) and the pre-commit logic over the branch's cookbook changes (you may stage in a throwaway clone under /tmp, not in this worktree). Run `just py-prepare` (or, if it would rewrite files, its component checks: uv run ruff check, uv run ruff format --check, uv run mypy python/owl scripts, uv run pytest -m 'not slow' -q with shards if a resource guard trips, uv run python scripts/check_doc_freshness.py) and report counts. Confirm git status is clean afterwards.
+
+## Output
+
+Findings list: each with severity (P0 blocker / P1 must fix / P2 should fix / P3 nit), file:line, the evidence, and a concrete fix. Then a checks table with counts. End the report with exactly one final line:
+VERDICT: APPROVE / APPROVE WITH EDITS / REQUEST CHANGES
+(APPROVE WITH EDITS only when every finding is P3.)
+
+## Round 2
+
+This is round 2. The r1 report is /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-merge-custody-r1.md (reviewed 5ee1188; REQUEST CHANGES, three P2 and three P3). Commit 3642a25 on top of 5ee1188 addresses them. Review 3642a25 in full (all of (a)-(f) still apply to 666deec..HEAD), and additionally mark EVERY r1 finding RESOLVED / PARTIAL / UNRESOLVED with evidence.
+
+Orchestrator notes on the fixes (verify, do not trust):
+- r1 #1-#3 and #5 are applied as prose edits in results.md "Value gap diagnostic", a new bullet in the run statement's "Post-run addendum (nothing above is changed)" (the pre-registered Amendment 3 text is deliberately left unchanged; the addendum qualifies it), and the value-gap README.
+- r1 #4: the fix keeps pod/large_files.sha256 byte-for-byte as copied from the pod (it is a pod-side receipt, and rewriting it would falsify what was captured) and instead documents in README.md that its lines 13-14 are the rerun's frerun/receipts/caches_and_obs.sha256, citing ordering and the 11:06 timestamp vs pod/frerun/launch.out. README now names pod/large_files.sha256; MANIFEST.sha256 is refreshed for README.md only. Judge whether this resolves the ambiguity.
+- r1 #6: the three EXCLUDE objects in evidence-custody.json now have only path and reason; evidence-custody.md line 3 describes that schema.
+- r1's check (b) accounting exception: merge-custody/py-prepare.log (and now merge-custody/py-prepare-r1-fixes.log) are this branch's own verification receipts, cited by cookbook/log.md.
+- r1's pytest temp-path failure came from your scratch dir name containing "R1" (test_observation_oracle_custody.py rejects that substring); choose a neutral --basetemp name.
+
+IMPORTANT for output: only your LAST message is saved as the report. Make your final message the complete report (findings with severity, file:line, evidence and fix; the r1 finding status list; the checks table with counts), ending with exactly one VERDICT line. Do not end with a short follow-up message.

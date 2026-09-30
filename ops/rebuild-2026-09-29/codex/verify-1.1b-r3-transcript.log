@@ -1,0 +1,1551 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3-parity
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ebc0-edd9-7ed2-92ed-59b4db6c37f1
+--------
+user
+You are Codex. READ-ONLY confirmation on branch kg/rebuild-parity. Your r2 report (ops/rebuild-2026-09-29/codex/verify-1.1b-r2.md in the main repo) was APPROVE WITH EDITS with one non-blocking finding: stale test totals (16 replay / 66 engine) in docs/rules-parity-coverage.md:167, :199 and cookbook/references/live-differential-parity-checks-the-rust-kernel.md:92; HEAD has 19 replay / 69 total. Verify commit 16e56b6 corrects them accurately, that the compact evidence copy under ops/rebuild-2026-09-29/1.1b/verify-r2/ is truthful, and that nothing else changed. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll compare `16e56b6` with its parent, check the corrected totals against the test inventory, and verify the compact evidence against the original r2 report. This will remain read-only; completion is a verdict on accuracy and scope.
+
+exec
+/bin/zsh -lc "rg --files -g 'AGENTS.md' -g 'verify-1.1b-r2.md' -g '*verify-r2*' -g '*live-differential*' -g '*restart-the-port*' -g '*v3-reuses*' -g 'README.md'" in /Users/poonszesen/kg-v3-parity
+ succeeded in 0ms:
+AGENTS.md
+ops/rebuild-2026-09-29/1.1/before/cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md
+README.md
+cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md
+cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md
+cookbook/references/live-differential-parity-checks-the-rust-kernel.md
+
+exec
+/bin/zsh -lc 'git show --stat --oneline 16e56b6 && git show --format=fuller --no-ext-diff 16e56b6 -- docs/rules-parity-coverage.md cookbook/references/live-differential-parity-checks-the-rust-kernel.md cookbook/references/index.md cookbook/log.md' in /Users/poonszesen/kg-v3-parity
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+16e56b6 Correct Task 1.1b test totals after Codex re-verification
+ cookbook/log.md                                    |   4 +
+ ...e-differential-parity-checks-the-rust-kernel.md |   2 +-
+ docs/rules-parity-coverage.md                      |   4 +-
+ ops/rebuild-2026-09-29/1.1b/verify-r2/cargo.log    |  94 +++
+ .../1.1b/verify-r2/check_live_guard.py             |  18 +
+ .../verify-r2/classification-ascii-report.json     |  14 +
+ .../1.1b/verify-r2/classification-ascii.log        |  20 +
+ .../verify-r2/classification-corrupt-report.json   |  14 +
+ .../1.1b/verify-r2/classification-corrupt.log      |  20 +
+ .../1.1b/verify-r2/classification-summary.json     |  55 ++
+ .../1.1b/verify-r2/controls-replay.log             |   9 +
+ .../1.1b/verify-r2/controls-report.json            |  44 ++
+ .../1.1b/verify-r2/divergences-report.json         |  86 +++
+ .../1.1b/verify-r2/divergences.log                 |  26 +
+ .../1.1b/verify-r2/experiments.log                 |   4 +
+ .../1.1b/verify-r2/experiments.py                  |  84 +++
+ .../1.1b/verify-r2/hash-refusal.log                |   3 +
+ .../1.1b/verify-r2/perturb-summary.json            |  32 +
+ .../1.1b/verify-r2/perturbed-report.json           |  14 +
+ .../1.1b/verify-r2/perturbed.log                   |  20 +
+ ops/rebuild-2026-09-29/1.1b/verify-r2/pytest.log   |   3 +
+ ops/rebuild-2026-09-29/1.1b/verify-r2/report.md    |  78 ++
+ .../1.1b/verify-r2/restored-report.json            |   8 +
+ ops/rebuild-2026-09-29/1.1b/verify-r2/restored.log |   9 +
+ ops/rebuild-2026-09-29/1.1b/verify-r2/sweep.log    | 383 ++++++++++
+ .../1.1b/verify-r2/sweep/sweep-summary.json        | 829 +++++++++++++++++++++
+ ops/rebuild-2026-09-29/1.1b/verify-r2/verdict.md   |  79 ++
+ 27 files changed, 1953 insertions(+), 3 deletions(-)
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+commit 16e56b60c4bd11da3bdacdd6a7e45e5637654ad6
+Author:     Season <seasonluke@gmail.com>
+AuthorDate: Tue Sep 29 14:01:24 2026 +0800
+Commit:     Season <seasonluke@gmail.com>
+CommitDate: Tue Sep 29 14:01:24 2026 +0800
+
+    Correct Task 1.1b test totals after Codex re-verification
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+diff --git a/cookbook/log.md b/cookbook/log.md
+index eee2dda..84e8154 100644
+--- a/cookbook/log.md
++++ b/cookbook/log.md
+@@ -1,5 +1,9 @@
+ # Change log
+ 
++## 2026-09-29 — Correct live-parity test totals after Codex re-verification
++
++Codex re-verified Task 1.1b at `25ec814` (APPROVE WITH EDITS, no blocking findings; every round-one finding resolved). The [[references/live-differential-parity-checks-the-rust-kernel|live parity Reference]] and `docs/rules-parity-coverage.md` now state the current totals, 69 engine tests including 19 replay-parity tests, rather than 66 and 16. The compact verification evidence is in `ops/rebuild-2026-09-29/1.1b/verify-r2/`.
++
+ ## 2026-09-29 — Close Codex verification of the live parity check
+ 
+ Codex approved Task 1.1b with edits; commit `6217868` fixes them test-first. The
+diff --git a/cookbook/references/live-differential-parity-checks-the-rust-kernel.md b/cookbook/references/live-differential-parity-checks-the-rust-kernel.md
+index e72bad2..2928322 100644
+--- a/cookbook/references/live-differential-parity-checks-the-rust-kernel.md
++++ b/cookbook/references/live-differential-parity-checks-the-rust-kernel.md
+@@ -89,7 +89,7 @@ accepts external actions would need explicit handling.
+ ## Verification and limits
+ 
+ Checks run on this branch are recorded in `ops/rebuild-2026-09-29/1.1b/results.md`:
+-66/66 engine tests, the trim checker, the Python tests (including live
++69/69 engine tests (19 replay-parity), the trim checker, the Python tests (including live
+ byte-identical regeneration of the committed set), perturbation tests, and
+ `just prepare`. Codex verification (`verify-1.1b-r1`) approved with edits; the
+ fixes (confirmed classification, exact null probe, full-state rollback check,
+diff --git a/docs/rules-parity-coverage.md b/docs/rules-parity-coverage.md
+index 0f37a5a..0ca5ea4 100644
+--- a/docs/rules-parity-coverage.md
++++ b/docs/rules-parity-coverage.md
+@@ -164,7 +164,7 @@ Nine RNG integration tests use embedded CPython vectors, including large and
+ negative seeds, rollover and long streams. These 50 tests do not read episodes.
+ 
+ Task 1.1 added nine `tests/replay_parity.rs` tests: four replay tests, a public
+-API test, and four comparator regressions. Task 1.1b extends the file to 16
++API test, and four comparator regressions. Task 1.1b extends the file to 19
+ (see [live differential parity](#kaggriculture-live-differential-parity)). The API test covers decoded PASS
+ commands, public state, terminal banks, and economic/attribution counters.
+ Comparator tests reject private inventory and private field insertion-order
+@@ -196,7 +196,7 @@ selected opponent coverage returns when those opponents are imported.
+ 
+ ### Kaggriculture Verification and Limits
+ 
+-Task 1.1's offline engine tests passed **59/59 with none ignored** (66/66 after
++Task 1.1's offline engine tests passed **59/59 with none ignored** (69/69 after
+ Task 1.1b); the retained root suite
+ passes **155 with two ignored**. Receipts in `ops/rebuild-2026-09-29/1.1/` show the
+ private-order regression fail with plain JSON equality, then pass with explicit
+
+exec
+/bin/zsh -lc 'git status --short --branch && git log -3 --oneline && git worktree list --porcelain' in /Users/poonszesen/kg-v3-parity
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+## kg/rebuild-parity
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+16e56b6 Correct Task 1.1b test totals after Codex re-verification
+25ec814 Record Task 1.1b verification fixes, rerun sweep and cookbook update
+6217868 Close Codex Task 1.1b verification findings (verify-1.1b-r1)
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+worktree /Users/poonszesen/kg-v3
+HEAD 59b5eca12b58eee28e98aaf61794c441cb12525a
+branch refs/heads/kg/rebuild-model
+
+worktree /Users/poonszesen/kg-v3-codex
+HEAD 5378763f69c9d39be0d6a0423efe33b2e615d44e
+branch refs/heads/kg/rebuild-codex
+
+worktree /Users/poonszesen/kg-v3-codex-data
+HEAD 9d54a8b3f6dac6f52fb399c1089dfa436bbd18ff
+branch refs/heads/kg/rebuild-codex-data
+
+worktree /Users/poonszesen/kg-v3-deps
+HEAD c452f66b87af209ada5ef3e01a878168274351fd
+branch refs/heads/kg/rebuild-deps
+
+worktree /Users/poonszesen/kg-v3-grammar
+HEAD cdd26170ec476c836a0015dda31ac080eaf5aa28
+branch refs/heads/kg/rebuild-grammar
+
+worktree /Users/poonszesen/kg-v3-grammar/.codex-tmp/grammar-reference-1.2
+HEAD 65f0eac5bb00b18a9d3acce319c2a231cbd5dff0
+detached
+
+worktree /Users/poonszesen/kg-v3-heads
+HEAD 5ec3af1e7b2f13f1884079bfaa990b016812c47b
+branch refs/heads/kg/rebuild-heads
+
+worktree /Users/poonszesen/kg-v3-int
+HEAD 69397da3d1559be4fbb525636122d8a9bc614a49
+branch refs/heads/kg/isaiah-gap-closure
+
+worktree /Users/poonszesen/kg-v3-observe
+HEAD 32e2cdd6e2bbbddb6a847bc0c12b39b2d8a66a90
+branch refs/heads/kg/rebuild-observe
+
+worktree /Users/poonszesen/kg-v3-parity
+HEAD 16e56b60c4bd11da3bdacdd6a7e45e5637654ad6
+branch refs/heads/kg/rebuild-parity
+
+worktree /Users/poonszesen/kg-v3-verify-b
+HEAD 94f778dc867e5402c5cd37fc3b117f7928870ab7
+detached
+
+worktree /Users/poonszesen/kg-v3/.claude/worktrees/agent-a6b402c3efeaea928
+HEAD 62899dedffc8ed89224f5d2b97d1279209b63a44
+branch refs/heads/worktree-agent-a6b402c3efeaea928
+
+
+exec
+/bin/zsh -lc 'cat AGENTS.md cookbook/references/live-differential-parity-checks-the-rust-kernel.md cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md' in /Users/poonszesen/kg-v3-parity
+ succeeded in 0ms:
+<!-- pyml disable first-line-heading -->
+<!-- AUTONOMY DIRECTIVE — DO NOT REMOVE -->
+YOU ARE AN AUTONOMOUS CODING AGENT. EXECUTE TASKS TO COMPLETION WITHOUT ASKING FOR PERMISSION.
+DO NOT STOP TO ASK "SHOULD I PROCEED?" — PROCEED. DO NOT WAIT FOR CONFIRMATION ON OBVIOUS NEXT STEPS.
+IF BLOCKED, TRY AN ALTERNATIVE APPROACH. ONLY ASK WHEN TRULY AMBIGUOUS OR DESTRUCTIVE.
+USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES THROUGHPUT.
+<!-- END AUTONOMY DIRECTIVE -->
+
+# Kaggriculture v3
+
+Use this repository as the Isaiah starter adapted to Kaggriculture. Preserve its
+license, useful training infrastructure and development workflow. Read the
+[cookbook scope](cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md).
+Historical Orbit Wars docs describe the retained starter; they do not establish
+Kaggriculture rules or port completion. Keep `scripts/run_ppo.py` the canonical
+trainer and extend its shared path instead of creating a second trainer. The
+owner explicitly requires the current v3 data pipeline (Rust I/O and PPO): keep
+the starter's Rust/PyO3 caller-owned buffers and existing PPO loop canonical;
+reuse v2 engine semantics behind the v3 adapter, not its collector/trainer.
+**Do not take the v2 model implementation.** Reuse starter transformer blocks and
+new game stems/heads. V2 reward shaping (economic penalties, bank difference,
+win/loss/draw) may be adapted with explicit coefficients, critic-range and
+bootstrap semantics; no unmeasured reward recipe is presumed optimal.
+
+**Architecture and debugging.** Map investment payback, labor allocation, sale
+timing and market adaptation through legal observation, representation, choice
+and executable action. Make behavior reproducible and localizable. Before a run,
+state its supported mechanism or diagnostic question, inputs/code path, expected
+discriminating observation and stopping condition. Diagnose information,
+decision, execution and architecture errors separately; name unresolved
+attribution. When repairs stall, inspect the engine and relevant primary sources
+before spending again; record supported limits and reopening conditions. No blind
+experiments or uninspectable systems; this is reasoning, not an approval gate.
+
+**Stateless observation-only policy.** Actions use explicit current-observation
+tokens. No between-turn hidden state, temporal memory training or new history
+tokens. Within-turn autoregressive prefix state resets on each observation.
+Opponent identity may not condition actor/critic inputs, embeddings, heads,
+losses, rewards, normalization or checkpoint selection. Collection mixes and
+panel labels are allowed without exposing identity to the model. Reject
+prohibited checkpoint state. Follow the [adopted constraints](cookbook/decisions/the-policy-is-stateless-and-observation-only.md).
+
+**Correct high throughput is required.** Measure equivalent complete work,
+including valid learner turns per full update and phase costs; distinguish
+startup, hardware, precision and workload changes. Component speed does not
+prove end-to-end speed. For NVIDIA CUDA bottlenecks, **Nsight Systems (`nsys`)
+is the canonical timeline profiler**; reuse representative captures or profile
+a bounded relevant phase. Preserve versions, source/config identity, trace paths,
+overhead and limits. Do not disrupt a learner, upgrade drivers or weaken security
+for profiling. Missing tools limit performance claims and add no mandatory run
+or admission gate. See the [profiling workflow](cookbook/workflows/profile-cuda-bottlenecks-with-nsight-systems.md).
+
+**Evaluate generality and keep custody.** Report win rate and bank margin across
+different opponents with version, seed, seat, denominator, legality, completion
+and runtime. Distinguish selection from held-out qualification. Preserve stable
+experiment identity with separate attempt/checkpoint metadata, compact local
+source-bound evidence and W&B telemetry using v3 identifiers. Telemetry outages
+remain visible. Keep credentials, bulk weights/corpora and local state out of
+git with custody manifests; preserve source and lockfiles. The owner decides
+submission. No old v2 score, ranking, lane mandate or pod allocation transfers.
+
+## Retained starter engineering workflow
+
+## Repository Map
+
+- Start with `README.md` for setup, fixture regeneration, and the current
+  reference episode IDs.
+- Use `docs/rules-engine.md` for rules-engine architecture, current status,
+  and known rule risks before changing `src/rules_engine/`.
+- Use `docs/rules-parity-coverage.md` as the parity coverage source of truth.
+  Update it whenever rules behavior, fixtures, or coverage changes.
+- Reference `docs/rl-api-specs.md` before changing `python/owl/rl.py`, `src/rl/`, or
+  public RL tensor shapes.
+- Reference `docs/model-architecture.md` before changing `python/owl/model/` or model
+  config, tensor ordering, actor, critic, or initialization behavior.
+- Reference `README.md` and the training config tests before changing
+  `python/owl/train/`, `scripts/run_ppo.py`, or `configs/train/`.
+- Reference `docs/pr-checklist.md` before creating, recommending, or merging a PR.
+
+## Development Workflow
+
+- Run `just py-prepare` / `just rs-prepare` after any `python` / `rust` code edits, respectively. This handles formatting, linting, static type-checking, and tests.
+- Run `just prepare` before creating or recommending a commit or PR.
+- Leave touched code in better shape than you found it, while keeping cleanup
+  scoped to the task at hand.
+- Add dependencies with `uv add` / `cargo add`; don't edit `.toml` or `.lock` files directly when adding dependencies.
+- Keep `Cargo.lock` and `uv.lock` tracked. Update lockfiles with package-manager
+  commands, not manual edits.
+- Avoid jumping through hoops for backwards compatibility - don't be afraid of
+  refactoring and breaking old APIs in order to improve them.
+- Before creating or recommending a PR, complete `docs/pr-checklist.md` and summarize any residual risks.
+- Merge PRs with a regular merge commit by default. Do not squash-merge unless
+  the user explicitly requests it.
+- For retained Orbit Wars rules changes, keep `docs/rules-engine.md` and
+  `docs/rules-parity-coverage.md` current with implementation state, test
+  surface, and known gaps.
+- `just docs-fresh` requires mapped code changes to update their mapped docs.
+  If docs are already current for a small change, rerun the check with
+  `DOCS_CURRENT=1` to indicate that the mapped docs were reviewed and are
+  still current.
+
+## Error Handling
+
+- Fail fast with explicit, informative errors instead of silent fallbacks.
+- When user input is invalid, raise clear exceptions.
+- For persisted data schemas owned by this repo, prefer strict key access and explicit validation over backward-compatibility fallbacks.
+
+## Attribute Access
+
+- Avoid `getattr`, `setattr`, and `__dict__` in first-class code paths. They
+  undermine the repo's mypy-forward pseudo-typed style; prefer direct attribute
+  access and explicit union narrowing with `isinstance`.
+- Use dynamic attribute access only for narrow, deliberate cases such as
+  iterating over known schema/dataclass fields (`ObsBatch.model_fields`,
+  `_OBS_TENSOR_FIELDS`) or test monkeypatching. If backwards compatibility
+  seems to require dynamic access, prefer explicit schema migration and record the reason.
+
+## Cookbook contract
+
+**Read first.** Read `cookbook/index.md`, the newest `cookbook/log.md`, and
+relevant notes at the start of work. Search concepts, synonyms and negative
+evidence before creating knowledge or repeating an approach. Read governing
+notes citing an edited file as a `repository:` source; if a first-edit hook
+presents one, read it and explicitly retry the intended edit.
+
+**Work in bounded changes.** State a target and observable completion/stopping
+condition. Keep change/run artifacts in `ops/`; git preserves implementation
+history. Report checks and unknowns without inventing thresholds or results.
+
+**Record every adaptation.** Owner: “every adaption you made to this repo, please
+add a cookbook record.” Every material repository adaptation must have an
+identified cookbook record linking changed paths, reason, actual checks and
+remaining gaps. Coherent adaptations may share a contract record with an explicit
+inventory. This overrides the generic progress-only exemption for adaptations;
+routine monitoring still belongs in working artifacts.
+
+**Record before finishing.** Material decisions, corrections and reusable
+findings require three edits together: note, its folder `index.md`, and a
+prepended `cookbook/log.md` entry.
+
+- Keep routine launch, build, checkpoint and monitor output in the change's
+  working artifacts. Close result episodes with outcomes, denominators and gaps;
+  freeze completed evidence. Progress alone earns no new durable note.
+- Revise an existing durable concept when its reusable claim, evidence,
+  consequence or limits change. Reconcile its opening, conclusion, metadata and
+  index description together. Replace superseded current prose and link history;
+  do not append dated operational progress to References.
+- Split independent claims when needed. Preserve unique dirty history and incoming
+  links before moving it. Keep indexes to links/descriptions and logs to what
+  changed, why and a link.
+
+**Declare provenance.** Every concept requires `type`, `title`, `description`,
+`tags`, `status`, `generated`; first tag `kaggriculture-v3`. Reserved index/log
+files are exempt; a register declaring fields is not. A Decision quotes its
+decider and identifies the source. Never make an interpretation into owner
+adoption. Verification names an actual check of this version; status alone proves
+nothing. Repository sources are literal single-line
+`repository:<repo-root-relative-path>` values with forward slashes and no `.`
+or `..` segments. Keep external sources in their own namespace. Shape/source
+lint cannot establish truth, completeness or applicability.
+
+**Promote supported knowledge.** Name an independent source/check, future
+consequence and existing-concept search before promotion. Unsupported findings
+stay in working evidence. A Lesson needs at least two supporting episodes.
+Review after each episode or monthly, whichever is rarer; repair retrieval and
+contradicted claims in place. Add a typed folder only with its first real note.
+
+**One current board, when warranted.** Once there are two results to rank, keep
+one living Decision `cookbook/decisions/the-kaggriculture-v3-board.md`: dated
+position, ranked options with evidence and loss conditions, scoped tombstones.
+Read the full board before opening an episode and say which option is pulled and
+why. Changes to its facts require four edits together: note, index, log, board.
+Keep the whole board within 12,000 JavaScript UTF-16 code units, replacing current
+state and linking history. Preserve byte-exact dirty history and checksums before
+removal. No empty day-one board or imported v2 ranking.
+
+**Keep the view derived.** Root `kaggriculture-v3.base` sits beside `cookbook/`;
+the vault symlinks them as `cookbook/kaggriculture-v3.base` and
+`cookbook/kaggriculture-v3`. Scope by folder and exclude index/log basenames.
+
+Claude/Codex hooks restore context, gate the first governed edit, lint writes and
+check corrections; Git pre-commit checks staged note sources plus staged log.
+Direct script checks are distinct from harness discovery and trust. See
+[setup receipt](ops/cookbook-setup-checks.md) for exact verification limits.
+---
+type: "Reference"
+title: "Live differential parity checks the Rust kernel"
+description: "Task 1.1b replays traces generated live from Kaggle's hash-pinned kaggriculture engine through the vendored Rust kernel: 8 committed games and a 40-game local sweep agree; 303 input probes find two malformed-input divergence classes (Unicode digits, unhashable items), kept as minimal expected failures and classified only from their observed mismatch."
+tags: ["kaggriculture-v3", "adaptation", "parity", "rules-engine"]
+status: "verified-scoped"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+sources:
+  - resource: "user-directive:2026-09-29:add-a-parity-check-with-kaggle-environments"
+  - resource: "external:pypi:kaggle-environments==1.32.7"
+  - resource: "repository:scripts/kaggriculture_parity/generate_traces.py"
+  - resource: "repository:scripts/kaggriculture_parity/sweep.py"
+  - resource: "repository:engine_rs/tests/replay_parity.rs"
+  - resource: "repository:engine_rs/fixtures/generated/MANIFEST.json"
+  - resource: "repository:engine_rs/TRIM_MANIFEST.json"
+  - resource: "repository:scripts/check_engine_trim.py"
+  - resource: "repository:tests/scripts/test_kaggriculture_parity.py"
+  - resource: "repository:tests/tools/test_check_engine_trim.py"
+  - resource: "repository:docs/rules-parity-coverage.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.1b/results.md"
+  - resource: "repository:ops/rebuild-2026-09-29/1.1b/sweep-summary.json"
+  - resource: "repository:ops/rebuild-2026-09-29/1.1b/verify-r1/sweep-summary.json"
+---
+
+# Live differential parity checks the Rust kernel
+
+The owner asked, on 2026-09-29: “can you add a parity check after your rust
+engine, with kaggle envcironments? thanks a lot”. Task 1.1 had replayed only
+four recorded official episodes; its limits named “a fresh differential run
+against Python” as missing. This Reference records the check that fills it and
+what it found. It serves the
+[[../decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]],
+whose Task 1.1 rules kernel it exercises. Searches for parity, differential,
+kaggle_environments, generated traces and malformed input found no existing
+concept beyond that Decision and the coverage document.
+
+## Mechanism
+
+- **Oracle.** `generate_traces.py` runs `kaggle_environments.make("kaggriculture")`
+  itself, only when the installed package is 1.32.7 and the engine file's
+  SHA-256 equals the `engine_rs/Cargo.toml` pin. The project lock keeps
+  kaggle-environments 1.29.0, which has no Kaggriculture environment. The
+  generator runs in `uv run --isolated --no-project --with
+  kaggle-environments==1.32.7`, and the project manifest and lock stay unchanged.
+- **Format.** Traces use the official `kaggriculture-re-parity-v1` records. They
+  add a `rejected` record for steps on which Python's interpreter raises, where
+  Kaggle's `env.step` keeps its state. Rust must error without mutating state:
+  public and private values and key order, statuses, rewards and completion.
+- **Inputs.** The inputs come from seeded random, edge-case, Kaggle built-in and
+  mixed-seat policies across default, free-hire (250 actors), rich (market-loop
+  escape) and custom configurations. There are also 303 one-command probes;
+  scripted actions, including a `null` whole action, are submitted exactly.
+- **Comparator.** `replay_parity.rs` compares official, committed-generated and
+  `KAGG_PARITY_TRACES` traces using the same code. It reports the first line,
+  step, kind and field path, with expected and actual values.
+- **Classification.** The sweep names a known class only when the observed
+  mismatch has that class's signature: D2 needs Python's unhashable
+  `TypeError` and Rust acceptance on that line; D1 needs a Rust recheck, with
+  that line's Unicode digits spelled in ASCII, to pass the line. Otherwise the
+  divergence is new and the sweep exits 1.
+- **Custody.** `engine_rs/fixtures/generated/MANIFEST.json` pins 15 traces
+  (665,021 bytes); `check_engine_trim.py` validates it, and `TRIM_MANIFEST.json`
+  pins the manifest.
+
+## Findings
+
+On this version (commits `33e1428`, `8ca378b`), 8 committed games (3,960
+transitions) and a 40-game sweep (21,824 transitions) agree completely. That
+includes 180 steps Python rejects and Rust also rejects without state change.
+Of the 303 probes, 266 agree. The other 37 divergences fall into two classes, both
+on malformed input:
+
+- **D1:** Python `int()` accepts non-ASCII decimal digit strings (`"٣"`,
+  `"３"`); Rust errors on them as unit counts and drops them as market
+  quantities.
+- **D2:** Python raises `TypeError` when an array or object reaches a dict
+  lookup: a unit verb, a PLANT crop (also for missing hands), a PICKUP/PLACE
+  item, or a BUY_SEED/BUY_ANIMAL item. Rust treats these as no-ops.
+
+The vendored kernel bytes are pinned, so nothing was repaired. Seven minimal
+repros, one-step games whose first action carries only the divergent field, are
+expected-failure fixtures with explicit reasons. Rust asserts the
+exact divergence, so a change in either engine fails the test. Full-game
+policies exclude D1/D2 inputs by default; with them restored, 8 of 12 games
+diverge, all classified D1/D2. The model's grammar emits only ASCII names and
+integers, so neither class is reachable from policy actions. An adapter that
+accepts external actions would need explicit handling.
+
+## Verification and limits
+
+Checks run on this branch are recorded in `ops/rebuild-2026-09-29/1.1b/results.md`:
+69/69 engine tests (19 replay-parity), the trim checker, the Python tests (including live
+byte-identical regeneration of the committed set), perturbation tests, and
+`just prepare`. Codex verification (`verify-1.1b-r1`) approved with edits; the
+fixes (confirmed classification, exact null probe, full-state rollback check,
+minimal repros, corrected wording) and their checks are recorded in the same
+receipt, with the rerun sweep in `ops/rebuild-2026-09-29/1.1b/verify-r1/`.
+Generated games use weak policies (most random seats go
+bankrupt); only the four official episodes are competitive worlds. Kaggle
+framework behavior outside the interpreter is not modeled. The 40-game, 303-probe
+sweep is a bounded sample, and a pod-scale sweep remains open. Reopen D1/D2 if
+the adapter must accept untrusted actions or if the pinned engine changes.
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+---
+type: "Decision"
+title: "Restart the port from Isaiah's clean base"
+description: "Restart from Isaiah's 32b3ec9 with the prior port as a reviewed reference; preserve layer topology, rerun BC and verify RTX PRO 6000. Task 1.1 rebuilds the isolated, hash-pinned rules kernel with 59 passing engine tests and four native-reset replays; explicit tooling exceptions preserve vendored bytes."
+tags: ["kaggriculture-v3", "decisions"]
+status: "adopted"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+decider: "Owner: restore kg/isaiah-gap-closure and main to 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again from a clean state with Codex, keeping a reference branch and carrying the cookbook with the .claude/.codex setup."
+sources: [{"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.1-brief-prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.1-review-claude.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.1/results.md"}, {"resource": "repository:engine_rs/TRIM_MANIFEST.json"}, {"resource": "repository:engine_rs/tests/replay_parity.rs"}, {"resource": "repository:scripts/check_engine_trim.py"}, {"resource": "repository:tests/tools/test_check_engine_trim.py"}, {"resource": "repository:justfile"}, {"resource": "repository:rustfmt.toml"}, {"resource": "repository:docs/rules-parity-coverage.md"}]
+---
+
+# Restart the port from Isaiah's clean base
+
+The owner directs, on 2026-09-29:
+
+> also for kg/isaiah gap closeure and main branch can you restore to starting points 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again? For grammar/tokens/game rust engine, you can have a reference branch from this current branch snapshot to refer on, I want you & codex started from a clean state. Carry the cookbooks with you with .claude/.codex setup.
+
+and, just before it:
+
+> Yes, we have different games, so we had different action heads, etc., these kind of things, but the model layers/ topologies should remain. We are just playign different games.
+
+> Also an extra BC is for sure required. Yo ucan use 2/4-rank RTX 6000 to verify your work. Work with codex as well.
+
+## What was done
+
+- Local `main` and `kg/isaiah-gap-closure` were reset to Isaiah's `32b3ec9`. The remote was not changed: `origin/main` is still `0d01234`, and nothing was pushed.
+- Branch `kg/reference-2026-09-29` and annotated tag `kg-reference-2026-09-29` (both at `65f0eac`) hold the whole prior port: the initial adaptation `0d01234`, `a2bf23c`, and the cookbook cleanup `65f0eac`. Consult it for the grammar and action codec, observation tokens, the vendored Rust engine (`engine_rs/`), native bindings (`src/kaggriculture.rs`), rewards, BC data preparation, and run evidence under `ops/`.
+- Carried onto the working branch: `cookbook/`, `.claude/`, `.codex/`, `AGENTS.md` (with the `CLAUDE.md` symlink), `kaggriculture-v3.base`, `ops/pre-commit` (Git uses `core.hooksPath=ops`), `ops/cookbook-setup-checks.md`, and `.gitignore` (the starter's rules plus bulk and credential exclusions).
+- Local run artifacts under `ops/` and `runs/`, which Git ignores, stay on disk; nothing was deleted.
+
+## Consequences
+
+- **References describe the reference branch, not the current tree.** Sources whose files no longer exist are re-pointed as `reference-branch:kg/reference-2026-09-29/<path>`. Sources for files that still exist (Isaiah's own files) stay `repository:` so the first-edit gate still surfaces them. Until the rebuild, those notes describe the reference branch's adapted versions of those files.
+- Owner Decisions remain in force.
+- **Same layer topology:** the rebuilt model uses Isaiah's `StatelessTransformerV1` layer classes, arrangement and roles: observation stems, learned per-role tokens, trunk blocks, critic head and actor input projection. Only the game I/O differs: input channel widths, categorical encodings fed to the stems, and the action heads. See the [[the-policy-is-stateless-and-observation-only|stateless Decision]].
+- **One BC rerun is required** on the rebuilt model, using the reference branch's BC data pipeline.
+- **Verification hardware:** 2- and 4-rank RTX PRO 6000 runs are authorized for verification. Read the live price first and write a run statement before each run; see the [[start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]].
+- **Codex collaboration:** Claude and Codex both start from this clean state and work in separate worktrees, cross-reviewing each other's changes.
+- The previous gap-closure plan (`reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md`) feeds a rebuild plan. Its principles table and task designs stay valid; its file-level steps assumed the old code.
+
+## Using the reference branch — implementation interpretation
+
+The owner asks to use the reference branch "properly, without blindly copying". The rebuild plan (`ops/rebuild-2026-09-29/plan.md`) gives every reference component exactly one disposition:
+- **Vendor, trimmed and hash-pinned:** only the rules kernel (`lib.rs`, `py_random.rs`, `econ_attrib.rs`), because it must match Kaggle's Python engine exactly.
+- **Port after review:** the native grammar, rewards, device mask tables and benchmark harness.
+- **Rebuild, with the reference as test oracle:** the observation encoding (named per-entity tensors instead of the flat v2 vector sliced at fixed offsets), the environment bindings, the codec, the model, the trainer seams, the configs and BC training.
+- **Reference only:** scripted bots until evaluation needs a few of them, the v2 experiments, and the run receipts.
+
+Lessons from the reference (raw-bank winners, truncation reward, seed streams, the CUDA fault (since traced to a compiler GEMM overflow), cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
+
+## Task 1.1 — rebuilt rules kernel
+
+Claude's brief review approved the standalone package and required the Python
+checker/pytest and separate engine preparation invocations; the owner requested
+implementation. This is scoped to Task 1.1. The reviewed brief remains at
+`ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md`; the review and actual command
+receipts are linked in the sources and `ops/rebuild-2026-09-29/1.1/results.md`.
+
+The source audit pins `65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`. The manifest
+accounts for all 125 reference paths, retaining 12 including licensing,
+append-only provenance and four traces, and excluding 113 with per-file reasons.
+Exactly seven module declarations are removed from `lib.rs`, producing SHA-256
+`c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd`.
+`py_random.rs`, `econ_attrib.rs` and the RNG tests retain their original bytes.
+Cargo alone removes Rayon and its unused lockfile closure; target cleanup removes
+the excluded binary and cdylib. No model, bot, collector or trainer is imported.
+
+The retained 41 unit and nine RNG tests pass. Nine new integration tests pass:
+one API test, four comparator regressions and four native-reset replays totaling
+2,876 transitions and 2,880 snapshots. State, numeric representation, object key
+insertion order at every depth of public and private state, statuses, typed
+rewards and terminal banks match the pinned 1.32.7 official-engine traces. The
+plain-equality private comparator fails its regression before repair; Claude's
+implementation review extended the order check from three private fields to all
+objects (including public market maps), test-first. A deliberately corrupted
+initial state also fails the first episode before restoration. All 59 engine
+tests pass with none ignored. Final offline `just prepare` also
+passes 769 Python tests (three platform skips), including 47 checker regressions;
+build, formatting, lint, typing and documentation checks pass.
+
+The package stays standalone, with its own lockfile and no root dependency or
+shared workspace. This is Claude's accepted refinement of the parent plan's
+workspace wording. Root Cargo files and Rust sources stay byte-identical and
+the root suite remains 155 passed/two ignored. Keep the engine's numeric features
+and reopen L4's test-only `fixture_float` repair at the first compiled root
+consumer (potentially Task 1.3, certainly needed by Task 1.4).
+
+Adaptation inventory: the 12 retained engine paths plus manifest/replay test;
+`scripts/check_engine_trim.py`, `tests/tools/test_check_engine_trim.py`, `justfile`,
+`rustfmt.toml`, `docs/rules-parity-coverage.md`, this Decision/index/log, and receipts
+under `ops/rebuild-2026-09-29/1.1/`. The manifest records non-engine change reasons.
+Both preparation entry points run the checker and separate engine fmt/Clippy/test
+commands. Raw checks exposed inherited formatting drift and six style-only Clippy
+findings. Preserve the byte contract with two exact formatter ignores (`lib.rs`,
+`econ_attrib.rs`) and three engine-only Clippy allowances (`too_many_arguments`,
+`collapsible_if`, `needless_range_loop`), re-denied for authored replay code.
+These are explicit implementer deviations supported by failed-check receipts,
+not an owner policy to weaken linting. Independent Codex review checked this
+boundary; Claude's implementation review confirmed it and committed the task.
+Engine Cargo invocations in `justfile` use `--locked` without `--offline`, so a
+fresh machine can fetch crates; offline hosts set `CARGO_NET_OFFLINE=true`.
+
+Existing-concept search covered this restart Decision, native-buffer and shared-PPO
+records, including negative evidence from the earlier `arbitrary_precision`
+failure. Independent sources/checks are the pinned Git tree, official trace
+headers, test-first failures, source/hash verification and the actual test suites.
+Future changes must preserve that custody, exercise new rules against real oracles,
+and revisit feature unification at integration. These checks qualify only this
+kernel on four recorded worlds plus unit/RNG cases. They establish neither
+exhaustive malformed-input parity, fresh Python differential testing, game adapter
+completion, playing strength nor GPU throughput. No training or network operation
+ran. Pre-existing dirty cookbook bytes and checksums are preserved in the receipt.
+
+exec
+/bin/zsh -lc 'cat /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-1.1b-r2.md && cat ops/rebuild-2026-09-29/1.1b/verify-r2/report.md ops/rebuild-2026-09-29/1.1b/verify-r2/verdict.md' in /Users/poonszesen/kg-v3-parity
+ succeeded in 0ms:
+Verified **`kg/rebuild-parity` at `25ec814768d35f4ee1f89678485cc9099e27019b`**, reviewing `0dc9bdd..HEAD` and refixes `9ee7fb8..25ec814`. All execution was offline with the requested `TMPDIR`.
+
+[Full report and command details](/Users/poonszesen/kg-v3-parity/.codex-tmp/verify-1.1b-r2/report.md).
+
+**Blocking findings:** None.
+
+**Non-blocking finding:** Documentation retains stale test totals. [Coverage:167](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:167) says 16 replay tests; [coverage:199](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:199) and [cookbook:92](/Users/poonszesen/kg-v3-parity/cookbook/references/live-differential-parity-checks-the-rust-kernel.md:92) say 66 engine tests. HEAD has **19 replay / 69 total**. Update these totals or explicitly label them historical.
+
+**Every round-one finding:** R1 had no blocking findings. All requested fixes are resolved.
+
+| R1 finding | Status | Independent evidence |
+|---|---|---|
+| Overbroad divergence classification | **RESOLVED** | [sweep.py:136](/Users/poonszesen/kg-v3-parity/scripts/kaggriculture_parity/sweep.py:136) requires observed D2 rejection/acceptance or a successful D1 ASCII recheck. Repeated state corruption reports **unclassified: 1, new: 1**. |
+| Null probe substituted with PASS | **RESOLVED** | [generator:729](/Users/poonszesen/kg-v3-parity/scripts/kaggriculture_parity/generate_traces.py:729) preserves scripted values. All **303/303** live probe labels match submitted actions; probe 296 submits `null`. |
+| Incomplete rejection rollback comparison | **RESOLVED** | [replay:413](/Users/poonszesen/kg-v3-parity/engine_rs/tests/replay_parity.rs:413) checks public/private values and recursive key order, statuses, rewards and completion. Three added regressions pass. |
+| Nonminimal divergence repros | **RESOLVED** | Seven fixtures now diverge at **line 1, step 0**, without a preamble. All reproduce; **7/7** live argument-deletion controls agree with Rust. |
+| “Million-unit” wording | **RESOLVED** | [Coverage:275](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:275) correctly states **10¹²**, matching fixture actions. |
+| Quantity probes described as covering every market verb | **RESOLVED** | [Coverage:282](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:282) names the four quantity-taking verbs. Null and minimization wording are also corrected. |
+
+Implementation changes are in `6217868`; `25ec814` updates documentation and receipts.
+
+| Required check | Result | Evidence |
+|---|---|---|
+| **1. Real Kaggle engine and hash guard** | **PASS** | [Generator:103](/Users/poonszesen/kg-v3-parity/scripts/kaggriculture_parity/generate_traces.py:103) computes/checks SHA-256; `:143` checks the installed engine; `:754/:778` call Kaggle `make`/`step`. Installed **1.32.7** matches pin `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`. Incorrect-pin injection makes `main` return **2**, without creating output. |
+| **2. Official trace format** | **PASS** | Inspected all **15 fixtures / 4,012 records**. Header, transition and state structures match official fixtures; provenance differs and `rejected` is the documented extension. Schema tests and byte-identical live regeneration pass. |
+| **3. Complete shared comparator** | **PASS** | Official, generated and external callers at [replay:590](/Users/poonszesen/kg-v3-parity/engine_rs/tests/replay_parity.rs:590), `:645`, `:817` all call `replay_text`. Complete public/private trees, key order, statuses, rewards, step/completion and terminal banks are compared. No weaker generated path. |
+| **4. Actual edge coverage** | **PASS** | Counts below come from fixture actions. Independently reconstructed **3,113** seeded edge-policy decisions and matched their outputs. |
+| **5. Perturbation/restoration** | **PASS** | Changed a scratch fixture copy’s step-100 money **0.0→1.0**. Replay exits **101**, reporting `line 103 … public.farms[0].money: expected 1.0 actual 0.0`. Exact-byte restoration passes **719 transitions / 10 rejections**. |
+| **6. Manifest hashes and sizes** | **PASS** | **15/15** current hashes/sizes, the manifest’s trim pin, and all **eight historical** manifest entries match. Size details below. |
+| **7. Documentation matches evidence** | **PARTIAL** | Fixture/sweep counts and corrected coverage claims agree with evidence. Only the stale test totals identified above need editing. |
+| **8. Dependencies untouched** | **PASS** | `git diff 0dc9bdd..HEAD -- pyproject.toml uv.lock` is empty. Neither file was modified during verification. |
+| **9. Divergence reproduction/minimization** | **PASS** | All seven live-regenerated repros reproduce at step 0. D1 market expects money **2699.0**, Rust produces **3000.0**; D1 unit errors; five D2 cases show Python’s unhashable `TypeError` versus Rust acceptance. Removing each offending argument eliminates its divergence. |
+
+**Edge-action counts:** **3,148** edge-seat submissions, including rejected pairs and fallbacks. Categories overlap; submission does not imply execution. Malformed counts use exact JSON membership in the generator’s case sets.
+
+| Case | Occurrences |
+|---|---:|
+| HIRE orders / over-limit queues | 11,060 / 947 |
+| Zero / 1023 / negative quantities | 178 / 180 / 293 |
+| Float / string / boolean quantities | 439 / 701 / 273 |
+| Null / array / object / ≥10¹² quantities | 157 / 163 / 119 / 132 |
+| Empty orders / empty dictionary-action markets | 510 / 309 |
+| Duplicate / reversed queues | 1,510 / 287 |
+| BUY_LAND orders / queues containing ≥4 | 1,169 / 272 |
+| Unknown uppercase / lowercase verbs | 145 / 81 |
+| Malformed orders / unit commands / whole actions | 1,079 / 534 / 93 |
+| Missing-hand commands / affected actions | 1,081 / 425 |
+| Oversubscribed PLANT actions | 476 |
+| Uncaught-int candidates / actual rejected pairs | 69 / 25 |
+
+Execution reaches **250 actors**, includes **two hiring transitions above 241 actors**, **30 in-limit BUY_LAND orders after all quadrants unlock**, and the rich-game market escape limit. [Detailed audit and definitions](/Users/poonszesen/kg-v3-parity/.codex-tmp/r2-coverage/result.json).
+
+**Compressed fixture sizes**, bytes; abbreviated filenames:
+
+| Fixture | Bytes |
+|---|---:|
+| random-vs-random | 105,461 |
+| edge-vs-edge | 117,171 |
+| starter-vs-random | 85,670 |
+| random-vs-edge | 111,741 |
+| edge-free-hire | 49,255 |
+| edge-vs-random-rich | 21,607 |
+| random-vs-starter-custom | 70,921 |
+| pass-vs-edge-negative-seed | 95,654 |
+| D1 unit / market | 1,043 / 1,077 |
+| D2 plant / unit / shed / missing-hand / market | 1,079 / 1,071 / 1,090 / 1,092 / 1,089 |
+
+Total **665,021 bytes**, below the 4 MB budget and reasonable for Git. Archived failing fixtures add **386,227 bytes**.
+
+**Command results:**
+
+- `cargo test --manifest-path engine_rs/Cargo.toml --locked --offline`: **69 passed, 0 failed, 0 ignored**—41 library, nine RNG, 19 replay.
+- `UV_OFFLINE=1 uv run python scripts/check_engine_trim.py`: **`engine trim manifest: OK`**, including final recheck.
+- Targeted Python suites: **78 passed, 0 skipped**, including live byte-identical regeneration.
+- `UV_OFFLINE=1 uv run python scripts/kaggriculture_parity/sweep.py --games 8 --traces .codex-tmp/verify-1.1b-r2/sweep-traces --out .codex-tmp/verify-1.1b-r2/sweep`: **8/8 games match**, **5,752 game transitions**. Including probes: **311 traces / 7,267 transitions, 274 matches, 37 divergences—D1 12/D2 25, zero new**. All 12 ASCII rechecks pass. Runtime **15.49 seconds across timed phases**. Sweep exits **0**; initial inner replay exits **101** for known probe divergences. [Receipt](/Users/poonszesen/kg-v3-parity/.codex-tmp/verify-1.1b-r2/sweep/sweep-summary.json).
+
+Final **`git status --porcelain` is empty**. No commits or tracked modifications were made; scratch artifacts are ignored.
+
+VERDICT: APPROVE WITH EDITSVerified `kg/rebuild-parity` at **25ec814768d35f4ee1f89678485cc9099e27019b**, reviewing `0dc9bdd..HEAD` and independently checking refixes `9ee7fb8..25ec814`. All executions were offline, using the requested TMPDIR. Scratch evidence is under `.codex-tmp/verify-1.1b-r2/`, with coverage in `.codex-tmp/r2-coverage/` and deletion controls in `.codex-tmp/r2-refix-controls/`.
+
+**Blocking findings:** None.
+
+**Non-blocking finding:** Current test totals are stale: `docs/rules-parity-coverage.md:167` says 16 replay tests and `:199` says 66 engine tests; `cookbook/references/live-differential-parity-checks-the-rust-kernel.md:92` also says 66. HEAD has **19 replay / 69 total**. Update these or explicitly scope them to the pre-refix revision. The updated receipt at `ops/rebuild-2026-09-29/1.1b/results.md:129` is correct.
+
+**Every round-one finding:** R1 reported no blocking findings. All its requested edits are resolved:
+
+| R1 finding | Status | Independent evidence in the refixes |
+|---|---|---|
+| Input-only known-divergence classification | RESOLVED | `sweep.py:136-173,378-387` checks D2's observed exception/acceptance or runs D1 ASCII rechecks. Repeating the corrupted `public.day` experiment yields `unclassified: 1`, `new_divergences: 1` (`classification-summary.json`). |
+| Null probe replaced by PASS | RESOLVED | `generate_traces.py:729-735,767-778` submits scripted values exactly. All 303 live probe labels match submitted actions; probe 296 submits null. |
+| Incomplete/order-insensitive rejection rollback | RESOLVED | `replay_parity.rs:399-452,516-522` checks both trees, recursive key order, statuses, rewards and done. Three added rollback regressions pass. |
+| Seven repros not minimized | RESOLVED | `generate_traces.py:473-523` and actual fixtures have no preamble, one divergent field, and first mismatch at line 1/step 0. All seven reproduce; all seven live argument-deletion controls pass Rust replay. |
+| “Million-unit” wording | RESOLVED | `docs/rules-parity-coverage.md:275` now says 10^12, matching actual actions. |
+| Quantity coverage says every market verb | RESOLVED | `docs/rules-parity-coverage.md:282` names the four quantity-taking verbs. Null and minimization wording are also corrected. |
+
+Code/fixtures changed in `6217868`; `25ec814` supplies updated documentation and receipts. The stale test totals above are a remaining documentation issue introduced by the expanded test surface.
+
+| Check | Result | Evidence |
+|---|---|---|
+| 1. Real Kaggle engine/hash refusal | PASS | Generator `:99-117` computes/checks SHA-256; `:120-149` resolves the installed module; `:754,778` invokes Kaggle make/step. Installed version 1.32.7 hashes to `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`. Injecting a wrong expected hash into main returns 2 before creating output (`hash-refusal.log`). Hash tests pass. |
+| 2. Official fixture format | PASS | Independently inspected all 15 fixtures/4,012 records. Header, transition and state structures match official fixtures; provenance differs and rejected records are the documented extension. `tests/scripts/test_kaggriculture_parity.py:98` passes. Live regeneration reproduces all fixture and manifest bytes. |
+| 3. Complete shared comparison | PASS | Official, generated and sweep callers at `replay_parity.rs:590,645,817` all use `replay_text`. `:35-91,490-575` checks entire public/private trees and object order, statuses, rewards, step/done and terminal banks. Rejection rollback is now equally comprehensive. No weaker generated path. RNG/shop schedules remain metadata, with effects checked through state, as documented. |
+| 4. Actual edge coverage | PASS | Counts below come from decoded fixture actions; 3,113 seeded edge-policy decisions were independently reconstructed and matched. All 303 live probe labels match submitted actions. |
+| 5. Perturbation/restoration | PASS | A scratch copy of gen-edge-vs-edge was changed at step 100, money 0.0→1.0. Replay exits 101: line 103, public.farms[0].money, expected 1.0 actual 0.0. Exact-byte restoration passes: one test, 719 transitions/10 rejections (`perturb-summary.json`). Tracked fixtures were never altered. |
+| 6. Hashes/sizes | PASS | All 15 current manifest hashes/sizes and the manifest's trim pin match. All eight historical manifest entries also match (five archived files plus three unchanged current files). Sizes below are reasonable for Git. |
+| 7. Documentation/evidence | PARTIAL | Coverage and recorded sweep counts agree: 8 committed games/3,960 transitions/25 rejections; refix sweep 40 games/21,824 game transitions plus 303 probes/1,515 transitions, 37 known divergences, 0 new, 46.68 phase-seconds. Only the stale current test totals above need editing. |
+| 8. Dependency files untouched | PASS | `git diff 0dc9bdd..HEAD -- pyproject.toml uv.lock` is empty; neither file was changed during verification. |
+| 9. Divergences/minimization | PASS | All seven live-regenerated repros diverge at line 1/step 0. D1 market: expected money 2699.0, actual 3000.0; D1 unit: cannot parse Arabic digit; five D2 cases: Python unhashable TypeError versus Rust acceptance. Removing the offending argument eliminates each divergence: 7/7 live controls agree (`divergences-report.json`, `controls-report.json`). |
+
+**Edge-action counts:** 3,148 edge-seat submissions, including rejected pairs and fallback actions. Categories overlap; submission does not imply execution. Malformed cases use exact JSON membership in the generator's named case sets; empty markets count dictionary actions with empty/default market, not malformed non-dictionary actions. Detailed definitions and source-bound audit: `.codex-tmp/r2-coverage/audit.py` and `result.json`.
+
+| Claimed case | Occurrences |
+|---|---:|
+| HIRE orders / over-limit queues | 11,060 / 947 |
+| Zero / 1023 / negative quantities | 178 / 180 / 293 |
+| Float / string / boolean quantities | 439 / 701 / 273 |
+| Null / array / object / ≥10^12 quantities | 157 / 163 / 119 / 132 |
+| Empty orders / empty markets | 510 / 309 |
+| Duplicate / reversed queues | 1,510 / 287 |
+| BUY_LAND orders / queues with ≥4 | 1,169 / 272 |
+| Unknown uppercase / lowercase verbs | 145 / 81 |
+| Malformed orders / unit commands / whole actions | 1,079 / 534 / 93 |
+| Missing-hand commands / affected actions | 1,081 / 425 |
+| Oversubscribed PLANT actions | 476 |
+| Uncaught-int candidates / actual rejected pairs | 69 / 25 |
+
+Execution reaches **250 actors**, includes **two hiring transitions above 241 actors**, **30 in-limit BUY_LAND orders after all quadrants unlock**, and the rich game's **99,999-unit market escape limit** (step 4: 10^12 TOMATO order plus separate four-unit order yields 100,003 seeds).
+
+**Compressed fixture sizes**, bytes; filenames abbreviated:
+
+| Fixture | Bytes |
+|---|---:|
+| random-vs-random | 105,461 |
+| edge-vs-edge | 117,171 |
+| starter-vs-random | 85,670 |
+| random-vs-edge | 111,741 |
+| edge-free-hire | 49,255 |
+| edge-vs-random-rich | 21,607 |
+| random-vs-starter-custom | 70,921 |
+| pass-vs-edge-negative-seed | 95,654 |
+| D1 unit / market | 1,043 / 1,077 |
+| D2 plant / unit / shed / missing-hand / market | 1,079 / 1,071 / 1,090 / 1,092 / 1,089 |
+
+Total **665,021 bytes**, below the 4,000,000-byte budget. Archived failing traces add **386,227 bytes**.
+
+**Command results** (all with requested TMPDIR and UV_OFFLINE=1 where relevant):
+
+- `cargo test --manifest-path engine_rs/Cargo.toml --locked --offline`: **69 passed, 0 failed, 0 ignored** (41 library + 9 RNG + 19 replay). The external-directory test is a no-op when unset; the sweep below exercises it.
+- `uv run python scripts/check_engine_trim.py`: **engine trim manifest: OK**, including final recheck.
+- `uv run pytest tests/scripts/test_kaggriculture_parity.py tests/tools/test_check_engine_trim.py --basetemp .codex-tmp/verify-1.1b-r2/pytest -q`: **78 passed, 0 skipped**, including live byte-identical regeneration.
+- `uv run python scripts/kaggriculture_parity/sweep.py --games 8 --traces .codex-tmp/verify-1.1b-r2/sweep-traces --out .codex-tmp/verify-1.1b-r2/sweep`: **8/8 games match**, 5,752 game transitions; with 303 probes, **311 traces/7,267 transitions, 274 matches, 37 divergences (D1 12/D2 25), 0 new**. All 12 D1 rechecks pass. Runtime **15.49 seconds across timed phases** (4.77 generation + 3.71 probes + 6.89 replay + 0.12 recheck). Sweep exits 0; initial inner replay exits 101 for the known probe divergences.
+- Perturbed fixture: **0 passed/1 failed**, restored: **1 passed/0 failed**. Seven deletion controls: **1 test passed, 7/7 traces agree**.
+
+Final `git status --porcelain` is **empty**. Tracked tree and index are clean; no commits or tracked modifications were made. Scratch artifacts are ignored.
+
+VERDICT: APPROVE WITH EDITS
+Verified **`kg/rebuild-parity` at `25ec814768d35f4ee1f89678485cc9099e27019b`**, reviewing `0dc9bdd..HEAD` and refixes `9ee7fb8..25ec814`. All execution was offline with the requested `TMPDIR`.
+
+[Full report and command details](/Users/poonszesen/kg-v3-parity/.codex-tmp/verify-1.1b-r2/report.md).
+
+**Blocking findings:** None.
+
+**Non-blocking finding:** Documentation retains stale test totals. [Coverage:167](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:167) says 16 replay tests; [coverage:199](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:199) and [cookbook:92](/Users/poonszesen/kg-v3-parity/cookbook/references/live-differential-parity-checks-the-rust-kernel.md:92) say 66 engine tests. HEAD has **19 replay / 69 total**. Update these totals or explicitly label them historical.
+
+**Every round-one finding:** R1 had no blocking findings. All requested fixes are resolved.
+
+| R1 finding | Status | Independent evidence |
+|---|---|---|
+| Overbroad divergence classification | **RESOLVED** | [sweep.py:136](/Users/poonszesen/kg-v3-parity/scripts/kaggriculture_parity/sweep.py:136) requires observed D2 rejection/acceptance or a successful D1 ASCII recheck. Repeated state corruption reports **unclassified: 1, new: 1**. |
+| Null probe substituted with PASS | **RESOLVED** | [generator:729](/Users/poonszesen/kg-v3-parity/scripts/kaggriculture_parity/generate_traces.py:729) preserves scripted values. All **303/303** live probe labels match submitted actions; probe 296 submits `null`. |
+| Incomplete rejection rollback comparison | **RESOLVED** | [replay:413](/Users/poonszesen/kg-v3-parity/engine_rs/tests/replay_parity.rs:413) checks public/private values and recursive key order, statuses, rewards and completion. Three added regressions pass. |
+| Nonminimal divergence repros | **RESOLVED** | Seven fixtures now diverge at **line 1, step 0**, without a preamble. All reproduce; **7/7** live argument-deletion controls agree with Rust. |
+| “Million-unit” wording | **RESOLVED** | [Coverage:275](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:275) correctly states **10¹²**, matching fixture actions. |
+| Quantity probes described as covering every market verb | **RESOLVED** | [Coverage:282](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:282) names the four quantity-taking verbs. Null and minimization wording are also corrected. |
+
+Implementation changes are in `6217868`; `25ec814` updates documentation and receipts.
+
+| Required check | Result | Evidence |
+|---|---|---|
+| **1. Real Kaggle engine and hash guard** | **PASS** | [Generator:103](/Users/poonszesen/kg-v3-parity/scripts/kaggriculture_parity/generate_traces.py:103) computes/checks SHA-256; `:143` checks the installed engine; `:754/:778` call Kaggle `make`/`step`. Installed **1.32.7** matches pin `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`. Incorrect-pin injection makes `main` return **2**, without creating output. |
+| **2. Official trace format** | **PASS** | Inspected all **15 fixtures / 4,012 records**. Header, transition and state structures match official fixtures; provenance differs and `rejected` is the documented extension. Schema tests and byte-identical live regeneration pass. |
+| **3. Complete shared comparator** | **PASS** | Official, generated and external callers at [replay:590](/Users/poonszesen/kg-v3-parity/engine_rs/tests/replay_parity.rs:590), `:645`, `:817` all call `replay_text`. Complete public/private trees, key order, statuses, rewards, step/completion and terminal banks are compared. No weaker generated path. |
+| **4. Actual edge coverage** | **PASS** | Counts below come from fixture actions. Independently reconstructed **3,113** seeded edge-policy decisions and matched their outputs. |
+| **5. Perturbation/restoration** | **PASS** | Changed a scratch fixture copy’s step-100 money **0.0→1.0**. Replay exits **101**, reporting `line 103 … public.farms[0].money: expected 1.0 actual 0.0`. Exact-byte restoration passes **719 transitions / 10 rejections**. |
+| **6. Manifest hashes and sizes** | **PASS** | **15/15** current hashes/sizes, the manifest’s trim pin, and all **eight historical** manifest entries match. Size details below. |
+| **7. Documentation matches evidence** | **PARTIAL** | Fixture/sweep counts and corrected coverage claims agree with evidence. Only the stale test totals identified above need editing. |
+| **8. Dependencies untouched** | **PASS** | `git diff 0dc9bdd..HEAD -- pyproject.toml uv.lock` is empty. Neither file was modified during verification. |
+| **9. Divergence reproduction/minimization** | **PASS** | All seven live-regenerated repros reproduce at step 0. D1 market expects money **2699.0**, Rust produces **3000.0**; D1 unit errors; five D2 cases show Python’s unhashable `TypeError` versus Rust acceptance. Removing each offending argument eliminates its divergence. |
+
+**Edge-action counts:** **3,148** edge-seat submissions, including rejected pairs and fallbacks. Categories overlap; submission does not imply execution. Malformed counts use exact JSON membership in the generator’s case sets.
+
+| Case | Occurrences |
+|---|---:|
+| HIRE orders / over-limit queues | 11,060 / 947 |
+| Zero / 1023 / negative quantities | 178 / 180 / 293 |
+| Float / string / boolean quantities | 439 / 701 / 273 |
+| Null / array / object / ≥10¹² quantities | 157 / 163 / 119 / 132 |
+| Empty orders / empty dictionary-action markets | 510 / 309 |
+| Duplicate / reversed queues | 1,510 / 287 |
+| BUY_LAND orders / queues containing ≥4 | 1,169 / 272 |
+| Unknown uppercase / lowercase verbs | 145 / 81 |
+| Malformed orders / unit commands / whole actions | 1,079 / 534 / 93 |
+| Missing-hand commands / affected actions | 1,081 / 425 |
+| Oversubscribed PLANT actions | 476 |
+| Uncaught-int candidates / actual rejected pairs | 69 / 25 |
+
+Execution reaches **250 actors**, includes **two hiring transitions above 241 actors**, **30 in-limit BUY_LAND orders after all quadrants unlock**, and the rich-game market escape limit. [Detailed audit and definitions](/Users/poonszesen/kg-v3-parity/.codex-tmp/r2-coverage/result.json).
+
+**Compressed fixture sizes**, bytes; abbreviated filenames:
+
+| Fixture | Bytes |
+|---|---:|
+| random-vs-random | 105,461 |
+| edge-vs-edge | 117,171 |
+| starter-vs-random | 85,670 |
+| random-vs-edge | 111,741 |
+| edge-free-hire | 49,255 |
+| edge-vs-random-rich | 21,607 |
+| random-vs-starter-custom | 70,921 |
+| pass-vs-edge-negative-seed | 95,654 |
+| D1 unit / market | 1,043 / 1,077 |
+| D2 plant / unit / shed / missing-hand / market | 1,079 / 1,071 / 1,090 / 1,092 / 1,089 |
+
+Total **665,021 bytes**, below the 4 MB budget and reasonable for Git. Archived failing fixtures add **386,227 bytes**.
+
+**Command results:**
+
+- `cargo test --manifest-path engine_rs/Cargo.toml --locked --offline`: **69 passed, 0 failed, 0 ignored**—41 library, nine RNG, 19 replay.
+- `UV_OFFLINE=1 uv run python scripts/check_engine_trim.py`: **`engine trim manifest: OK`**, including final recheck.
+- Targeted Python suites: **78 passed, 0 skipped**, including live byte-identical regeneration.
+- `UV_OFFLINE=1 uv run python scripts/kaggriculture_parity/sweep.py --games 8 --traces .codex-tmp/verify-1.1b-r2/sweep-traces --out .codex-tmp/verify-1.1b-r2/sweep`: **8/8 games match**, **5,752 game transitions**. Including probes: **311 traces / 7,267 transitions, 274 matches, 37 divergences—D1 12/D2 25, zero new**. All 12 ASCII rechecks pass. Runtime **15.49 seconds across timed phases**. Sweep exits **0**; initial inner replay exits **101** for known probe divergences. [Receipt](/Users/poonszesen/kg-v3-parity/.codex-tmp/verify-1.1b-r2/sweep/sweep-summary.json).
+
+Final **`git status --porcelain` is empty**. No commits or tracked modifications were made; scratch artifacts are ignored.
+
+VERDICT: APPROVE WITH EDITS
+exec
+/bin/zsh -lc "rg -n 'live-differential|1\\.1b|69/69|66/66|19 replay|16 replay|verify-r2' cookbook/references/index.md ops/rebuild-2026-09-29/1.1b/results.md docs/rules-parity-coverage.md && rg -n '"'^#'"\\[test\\]|"'^fn |''^    #'"\\[test\\]' crates/kg-engine 2>/dev/null" in /Users/poonszesen/kg-v3-parity
+ exited 2 in 0ms:
+cookbook/references/index.md:5:- [[live-differential-parity-checks-the-rust-kernel|Live differential parity checks the Rust kernel]] — Task 1.1b generates traces from Kaggle's hash-pinned engine; 8 committed games and a 40-game sweep agree with Rust; 303 probes find two malformed-input divergence classes (Unicode digits, unhashable items), kept as minimal expected failures and classified only from their observed mismatch.
+ops/rebuild-2026-09-29/1.1b/results.md:1:# Task 1.1b results — live differential parity against Kaggle's engine
+ops/rebuild-2026-09-29/1.1b/results.md:42:| `CARGO_BUILD_JOBS=3 cargo test --manifest-path engine_rs/Cargo.toml --locked --offline` | 66 passed: 41 lib, 9 RNG and 16 replay; 0 ignored |
+ops/rebuild-2026-09-29/1.1b/results.md:93:## Verification fixes (verify-1.1b-r1)
+ops/rebuild-2026-09-29/1.1b/results.md:96:`/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-1.1b-r1.md`):
+ops/rebuild-2026-09-29/1.1b/results.md:129:| `uvx --offline --from rust-just just prepare` (before commit, same tree) | exit 0; root Rust 155 passed/2 ignored; engine 41 + 9 + 19 replay; Python 800 passed, 3 platform skips; docs fresh (`verify-r1/prepare.log`) |
+docs/rules-parity-coverage.md:167:API test, and four comparator regressions. Task 1.1b extends the file to 19
+docs/rules-parity-coverage.md:168:(see [live differential parity](#kaggriculture-live-differential-parity)). The API test covers decoded PASS
+docs/rules-parity-coverage.md:199:Task 1.1's offline engine tests passed **59/59 with none ignored** (69/69 after
+docs/rules-parity-coverage.md:200:Task 1.1b); the retained root suite
+docs/rules-parity-coverage.md:230:private state. Task 1.1b adds a live differential check against Kaggle's own
+docs/rules-parity-coverage.md:238:Task 1.1b answers the owner request "add a parity check after your rust engine,
+docs/rules-parity-coverage.md:285:including `null`. Scripted actions are submitted exactly; before the Task 1.1b
+docs/rules-parity-coverage.md:322:first divergence, is `ops/rebuild-2026-09-29/1.1b/verify-r1/sweep-summary.json`;
+docs/rules-parity-coverage.md:324:submitted as PASS) is kept at `ops/rebuild-2026-09-29/1.1b/sweep-summary.json`.
+docs/rules-parity-coverage.md:368:`ops/rebuild-2026-09-29/1.1b/evidence/first-failing-games/`.
+
+exec
+/bin/zsh -lc 'git diff-tree --no-commit-id --name-status -r 16e56b6 && rg --files engine | sort && cat ops/rebuild-2026-09-29/1.1b/verify-r2/cargo.log' in /Users/poonszesen/kg-v3-parity
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+M	cookbook/log.md
+M	cookbook/references/live-differential-parity-checks-the-rust-kernel.md
+M	docs/rules-parity-coverage.md
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/cargo.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/check_live_guard.py
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/classification-ascii-report.json
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/classification-ascii.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/classification-corrupt-report.json
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/classification-corrupt.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/classification-summary.json
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/controls-replay.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/controls-report.json
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/divergences-report.json
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/divergences.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/experiments.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/experiments.py
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/hash-refusal.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/perturb-summary.json
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/perturbed-report.json
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/perturbed.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/pytest.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/report.md
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/restored-report.json
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/restored.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/sweep.log
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/sweep/sweep-summary.json
+A	ops/rebuild-2026-09-29/1.1b/verify-r2/verdict.md
+rg: engine: IO error for operation on engine: No such file or directory (os error 2)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running unittests src/lib.rs (engine_rs/target/debug/deps/kaggriculture_engine-defe974ba3c431db)
+
+running 41 tests
+test tests::boolean_weed_probability_is_not_a_schema_number ... ok
+test tests::concurrent_sellers_receive_the_same_precommit_quote ... ok
+test tests::econ_telemetry_counts_commands_pass_commits_and_sales ... ok
+test tests::econ_v4_death_clipping_and_missed_growth ... ok
+test tests::econ_v4_market_failures_and_reference_prices ... ok
+test tests::econ_v4_terminal_provenance_and_flags ... ok
+test tests::attrib_ledger_exact_small_cases ... ok
+test tests::econ_v4_labor_and_malformed_commands ... ok
+test tests::integral_float_and_boolean_horizons_keep_their_python_numeric_kinds ... ok
+test tests::econ_v4_loss_counters ... ok
+test tests::float_seed_is_accepted_at_reset_but_fails_at_the_first_daily_mix ... ok
+test tests::failed_action_is_transactional ... ok
+test tests::exact_linear_amplitude_does_not_eagerly_float_wide_horizon ... ok
+test tests::mixed_float_division_rejects_an_exact_square_beyond_f64 ... ok
+test tests::mixed_float_numerator_squares_integer_t_before_float_conversion ... ok
+test tests::native_reset_rejects_non_two_player_cardinality ... ok
+test tests::mixed_integer_float_market_comparison_is_exact_before_arithmetic ... ok
+test tests::econ_v4_unit_losses ... ok
+test tests::mixed_float_numerator_does_not_eagerly_convert_a_wide_hinge_t ... ok
+test tests::normalized_integral_float_configuration_and_unknown_keys_are_retained ... ok
+test tests::schema_integer_configuration_does_not_apply_python_action_coercions ... ok
+test tests::python_ties_to_even_price_boundary_is_preserved ... ok
+test tests::shed_overflow_keeps_inventory_in_insertion_order ... ok
+test tests::seat_wealth_marks_liquid_holdings_to_market_and_productive_assets_at_book ... ok
+test tests::squared_integer_market_distance_is_shaped_before_float_conversion ... ok
+test tests::nested_market_horizon_does_not_coerce_strings ... ok
+test tests::python_action_integer_requires_valid_decimal_underscore_grammar ... ok
+test tests::step_zero_town_tick_and_terminal_lifecycle_match_python ... ok
+test tests::upstream_deaths_are_exact_disjoint_removal_events ... ok
+test tests::upstream_plant_overcommit_and_missing_hand_are_not_commits ... ok
+test tests::upstream_ready_stock_uses_harvest_age_post_close_and_includes_terminal ... ok
+test tests::upstream_verbs_preserve_coarse_family_accounting ... ok
+test tests::upstream_schema_is_numeric_complete_and_accumulates_all_paths ... ok
+test tests::upstream_harvest_counts_success_not_unripe_request ... ok
+test tests::wide_integer_hinge_uses_exact_t_over_t_and_distance_ratio ... ok
+test tests::zero_market_horizon_fails_when_python_first_prices_the_market ... ok
+test tests::zero_count_pickup_is_a_pass ... ok
+test tests::ineffective_commands_equal_the_per_verb_upstream_sums ... ok
+test tests::market_escape_guard_matches_pythons_99_999_unit_limit ... ok
+test tests::econ_v4_counting_is_state_neutral ... ok
+test tests::attrib_ledger_reconciles_with_econ_counters ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/py_random.rs (engine_rs/target/debug/deps/py_random-4fe19bb9f2a1d8df)
+
+running 9 tests
+test python_domain_edges_are_explicit_and_zero_bit_draws_consume_nothing ... ok
+test random_53_bit_fractions_match_cpython_bit_for_bit ... ok
+test integer_seed_and_mt19937_state_match_cpython ... ok
+test primitive_and_word_seed_adapters_use_the_same_python_integer_path ... ok
+test randrange_rejection_sampling_matches_cpython ... ok
+test getrandbits_matches_cpython_across_word_boundaries ... ok
+test choice_and_two_successive_shuffles_match_cpython ... ok
+test mt19937_twists_match_cpython_across_multiple_state_rollovers ... ok
+test first_ten_thousand_tempered_words_match_cpython_stream_hashes ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/replay_parity.rs (engine_rs/target/debug/deps/replay_parity-c38030bb30dd03b7)
+
+running 19 tests
+test env_directory_traces ... ok
+test comparator_names_first_differing_field ... ok
+test kernel_public_api ... ok
+test nested_private_order_mismatch_is_rejected - should panic ... ok
+test private_order_mismatch_is_rejected - should panic ... ok
+test public_number_mismatch_is_rejected - should panic ... ok
+test public_order_mismatch_is_rejected - should panic ... ok
+test rollback_check_accepts_an_untouched_state ... ok
+test rollback_check_rejects_a_key_order_only_mutation ... ok
+test rollback_check_rejects_status_reward_and_done_mutations ... ok
+test generated_trace_perturbed_action_is_rejected ... ok
+test generated_trace_perturbed_private_order_is_rejected ... ok
+test generated_trace_rejection_claims_are_checked ... ok
+test generated_trace_perturbed_state_is_rejected ... ok
+test episode_95324500 ... ok
+test episode_95921764 ... ok
+test episode_95990191 ... ok
+test episode_95901360 ... ok
+test generated_fixtures_replay ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.52s
+
+   Doc-tests kaggriculture_engine
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+exec
+/bin/zsh -lc "sed -n '1,150p' /Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-1.1b-r2.md" in /Users/poonszesen/kg-v3-parity
+ succeeded in 0ms:
+Verified **`kg/rebuild-parity` at `25ec814768d35f4ee1f89678485cc9099e27019b`**, reviewing `0dc9bdd..HEAD` and refixes `9ee7fb8..25ec814`. All execution was offline with the requested `TMPDIR`.
+
+[Full report and command details](/Users/poonszesen/kg-v3-parity/.codex-tmp/verify-1.1b-r2/report.md).
+
+**Blocking findings:** None.
+
+**Non-blocking finding:** Documentation retains stale test totals. [Coverage:167](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:167) says 16 replay tests; [coverage:199](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:199) and [cookbook:92](/Users/poonszesen/kg-v3-parity/cookbook/references/live-differential-parity-checks-the-rust-kernel.md:92) say 66 engine tests. HEAD has **19 replay / 69 total**. Update these totals or explicitly label them historical.
+
+**Every round-one finding:** R1 had no blocking findings. All requested fixes are resolved.
+
+| R1 finding | Status | Independent evidence |
+|---|---|---|
+| Overbroad divergence classification | **RESOLVED** | [sweep.py:136](/Users/poonszesen/kg-v3-parity/scripts/kaggriculture_parity/sweep.py:136) requires observed D2 rejection/acceptance or a successful D1 ASCII recheck. Repeated state corruption reports **unclassified: 1, new: 1**. |
+| Null probe substituted with PASS | **RESOLVED** | [generator:729](/Users/poonszesen/kg-v3-parity/scripts/kaggriculture_parity/generate_traces.py:729) preserves scripted values. All **303/303** live probe labels match submitted actions; probe 296 submits `null`. |
+| Incomplete rejection rollback comparison | **RESOLVED** | [replay:413](/Users/poonszesen/kg-v3-parity/engine_rs/tests/replay_parity.rs:413) checks public/private values and recursive key order, statuses, rewards and completion. Three added regressions pass. |
+| Nonminimal divergence repros | **RESOLVED** | Seven fixtures now diverge at **line 1, step 0**, without a preamble. All reproduce; **7/7** live argument-deletion controls agree with Rust. |
+| “Million-unit” wording | **RESOLVED** | [Coverage:275](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:275) correctly states **10¹²**, matching fixture actions. |
+| Quantity probes described as covering every market verb | **RESOLVED** | [Coverage:282](/Users/poonszesen/kg-v3-parity/docs/rules-parity-coverage.md:282) names the four quantity-taking verbs. Null and minimization wording are also corrected. |
+
+Implementation changes are in `6217868`; `25ec814` updates documentation and receipts.
+
+| Required check | Result | Evidence |
+|---|---|---|
+| **1. Real Kaggle engine and hash guard** | **PASS** | [Generator:103](/Users/poonszesen/kg-v3-parity/scripts/kaggriculture_parity/generate_traces.py:103) computes/checks SHA-256; `:143` checks the installed engine; `:754/:778` call Kaggle `make`/`step`. Installed **1.32.7** matches pin `bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e`. Incorrect-pin injection makes `main` return **2**, without creating output. |
+| **2. Official trace format** | **PASS** | Inspected all **15 fixtures / 4,012 records**. Header, transition and state structures match official fixtures; provenance differs and `rejected` is the documented extension. Schema tests and byte-identical live regeneration pass. |
+| **3. Complete shared comparator** | **PASS** | Official, generated and external callers at [replay:590](/Users/poonszesen/kg-v3-parity/engine_rs/tests/replay_parity.rs:590), `:645`, `:817` all call `replay_text`. Complete public/private trees, key order, statuses, rewards, step/completion and terminal banks are compared. No weaker generated path. |
+| **4. Actual edge coverage** | **PASS** | Counts below come from fixture actions. Independently reconstructed **3,113** seeded edge-policy decisions and matched their outputs. |
+| **5. Perturbation/restoration** | **PASS** | Changed a scratch fixture copy’s step-100 money **0.0→1.0**. Replay exits **101**, reporting `line 103 … public.farms[0].money: expected 1.0 actual 0.0`. Exact-byte restoration passes **719 transitions / 10 rejections**. |
+| **6. Manifest hashes and sizes** | **PASS** | **15/15** current hashes/sizes, the manifest’s trim pin, and all **eight historical** manifest entries match. Size details below. |
+| **7. Documentation matches evidence** | **PARTIAL** | Fixture/sweep counts and corrected coverage claims agree with evidence. Only the stale test totals identified above need editing. |
+| **8. Dependencies untouched** | **PASS** | `git diff 0dc9bdd..HEAD -- pyproject.toml uv.lock` is empty. Neither file was modified during verification. |
+| **9. Divergence reproduction/minimization** | **PASS** | All seven live-regenerated repros reproduce at step 0. D1 market expects money **2699.0**, Rust produces **3000.0**; D1 unit errors; five D2 cases show Python’s unhashable `TypeError` versus Rust acceptance. Removing each offending argument eliminates its divergence. |
+
+**Edge-action counts:** **3,148** edge-seat submissions, including rejected pairs and fallbacks. Categories overlap; submission does not imply execution. Malformed counts use exact JSON membership in the generator’s case sets.
+
+| Case | Occurrences |
+|---|---:|
+| HIRE orders / over-limit queues | 11,060 / 947 |
+| Zero / 1023 / negative quantities | 178 / 180 / 293 |
+| Float / string / boolean quantities | 439 / 701 / 273 |
+| Null / array / object / ≥10¹² quantities | 157 / 163 / 119 / 132 |
+| Empty orders / empty dictionary-action markets | 510 / 309 |
+| Duplicate / reversed queues | 1,510 / 287 |
+| BUY_LAND orders / queues containing ≥4 | 1,169 / 272 |
+| Unknown uppercase / lowercase verbs | 145 / 81 |
+| Malformed orders / unit commands / whole actions | 1,079 / 534 / 93 |
+| Missing-hand commands / affected actions | 1,081 / 425 |
+| Oversubscribed PLANT actions | 476 |
+| Uncaught-int candidates / actual rejected pairs | 69 / 25 |
+
+Execution reaches **250 actors**, includes **two hiring transitions above 241 actors**, **30 in-limit BUY_LAND orders after all quadrants unlock**, and the rich-game market escape limit. [Detailed audit and definitions](/Users/poonszesen/kg-v3-parity/.codex-tmp/r2-coverage/result.json).
+
+**Compressed fixture sizes**, bytes; abbreviated filenames:
+
+| Fixture | Bytes |
+|---|---:|
+| random-vs-random | 105,461 |
+| edge-vs-edge | 117,171 |
+| starter-vs-random | 85,670 |
+| random-vs-edge | 111,741 |
+| edge-free-hire | 49,255 |
+| edge-vs-random-rich | 21,607 |
+| random-vs-starter-custom | 70,921 |
+| pass-vs-edge-negative-seed | 95,654 |
+| D1 unit / market | 1,043 / 1,077 |
+| D2 plant / unit / shed / missing-hand / market | 1,079 / 1,071 / 1,090 / 1,092 / 1,089 |
+
+Total **665,021 bytes**, below the 4 MB budget and reasonable for Git. Archived failing fixtures add **386,227 bytes**.
+
+**Command results:**
+
+- `cargo test --manifest-path engine_rs/Cargo.toml --locked --offline`: **69 passed, 0 failed, 0 ignored**—41 library, nine RNG, 19 replay.
+- `UV_OFFLINE=1 uv run python scripts/check_engine_trim.py`: **`engine trim manifest: OK`**, including final recheck.
+- Targeted Python suites: **78 passed, 0 skipped**, including live byte-identical regeneration.
+- `UV_OFFLINE=1 uv run python scripts/kaggriculture_parity/sweep.py --games 8 --traces .codex-tmp/verify-1.1b-r2/sweep-traces --out .codex-tmp/verify-1.1b-r2/sweep`: **8/8 games match**, **5,752 game transitions**. Including probes: **311 traces / 7,267 transitions, 274 matches, 37 divergences—D1 12/D2 25, zero new**. All 12 ASCII rechecks pass. Runtime **15.49 seconds across timed phases**. Sweep exits **0**; initial inner replay exits **101** for known probe divergences. [Receipt](/Users/poonszesen/kg-v3-parity/.codex-tmp/verify-1.1b-r2/sweep/sweep-summary.json).
+
+Final **`git status --porcelain` is empty**. No commits or tracked modifications were made; scratch artifacts are ignored.
+
+VERDICT: APPROVE WITH EDITS
+exec
+/bin/zsh -lc "cat cookbook/decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics.md && sed -n '1,170p' cookbook/decisions/restart-the-port-from-isaiahs-clean-base.md && sed -n '85,150p' ops/rebuild-2026-09-29/1.1b/results.md" in /Users/poonszesen/kg-v3-parity
+ succeeded in 0ms:
+---
+type: "Decision"
+title: "V3 reuses Isaiah infrastructure with Kaggriculture semantics"
+description: "Deliver one complete final Kaggriculture adaptation of the efficient Isaiah pipeline that respects Isaiah's own principles in their game form; partial resource mechanisms are not finished deliverables."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-29"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-29:respect-isaiah-principles"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:scale-environments-keep-ppo-minibatch"}, {"resource": "reference-branch:kg/reference-2026-09-29/configs/kaggriculture_2rank_32env_fixedppo.yaml"}, {"resource": "user-directive:2026-09-29:complete-final-delivery"}, {"resource": "user-directive:2026-09-29:reject-python-autoregressive-pipeline"}, {"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:AGENTS.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/one-trainer-extend-selfplay-never-fork.md"}]
+---
+
+# V3 reuses Isaiah infrastructure with Kaggriculture semantics
+
+The owner requests: “Reuse everything you can in here, the training infra etc., adapt the model as well, but replace the rust data pipeline, action heads, etc., for ~/kaggriculture-v2.” The owner also requests “Copy useful cookbook decisions and discipline from v2 cookbook as well,” confirms the Isaiah starter, and directs “just clone the repo in and start adapting”.
+
+This repository is Kaggriculture v3. Preserve the imported starter's history and license. Adapt its training infrastructure and model to Kaggriculture's actual observation, action and engine semantics using the qualified v2 Rust implementation as source material. The owner subsequently specifies: “note that it must follow the current v3 data pipeline (RUST I/O, Training PPO, etc.)”. **The v3 starter's Rust/PyO3 caller-owned buffer I/O and existing PPO loop are canonical.** Reuse v2 engine semantics behind the v3 adapter; do not transplant its collector or training loop. Keep one canonical trainer, `scripts/run_ppo.py`; extend its shared training path instead of copying a second PPO loop. Diagnostics may remain separate when they do not train a deployment policy.
+
+The one-trainer discipline comes from v2's owner quote: “禁止另起訓練器 沿用現在訓練（沒有feature就加進去) 器保證訓練質素/效率.” Mapping that discipline to the starter trainer is the implementation interpretation of today's reuse instruction; v2's old `selfplay.py` path is not imported as a constraint.
+
+## Model and reward boundary — owner clarification
+
+The owner subsequently directs:
+
+> dont take model implementation v2, but you can take away the reward shaping from v2, such as econ shaping, our-opp bank, win/less/draw
+
+Reuse the **starter transformer infrastructure with newly written Kaggriculture stems and action heads**. Do not import v2's model implementation, encoder, attention stack or trainer. V2 game-engine semantics, feature coordinate meanings, action grammar/codec contracts and selected reward formulas are permitted source material. The [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] names the implementation boundary; the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward record]] distinguishes exact v2 formulas from a newly selected v3 recipe. No v2 reward coefficient becomes an optimal v3 default merely because the formula can be reused. The owner reiterates that most of the model architecture should come from Isaiah and that training performance problems must be addressed. Accordingly retain the starter transformer/attention/training mechanisms, justify game-specific replacements, and measure actual bottlenecks rather than claiming performance from ancestry. This does not import the v2 neural implementation.
+
+## Entire-pipeline correction — 2026-09-29
+
+The owner rejects the Python-driven autoregressive decoder and mere PyO3 interface alignment as fulfillment of Isaiah reuse. Preserve Isaiah's efficient complete data/model/PPO path. The implementation lead acknowledges that the initial decoder design missed this requirement; CPU correctness and transformer ancestry do not override that correction. The replacement work and rejected-source custody are recorded in the [[../references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] and `ops/gpu-sps-2026-09-29/results.md`. Batched heads and native masks are now the implemented path; their qualification scope lives in the model and [[../references/native-game-semantics-use-v3-owned-buffers|native]] References.
+
+## Complete final delivery — owner correction, 2026-09-29
+
+After the assistant proposed a seed-only allocator as a first version with other coordination problems left for later, the owner states:
+
+> 這裏沒有第一版，第二版，只有最終版
+
+Source: `user-directive:2026-09-29:complete-final-delivery`, the owner's direct reply in the architecture discussion. Deliver one complete final adaptation within the agreed task scope. A seed-budget mechanism alone cannot stand in for the full game policy and training integration. Withdraw the proposed partial-delivery framing; this directive does not adopt the discussed seed allocator or any other unimplemented architecture.
+
+Implementation interpretation: internal bounded checks, profiling and revisions remain ways to finish the work, not separate incomplete deliverables. The complete design must account for labor/resource allocation, tile and within-turn action interactions, investment payback, sale timing and market adaptation through legal observation, representation, choice and executable action. Its sampling/replay probabilities, native execution, canonical PPO and complete-work performance must be checked together. Name unresolved attribution and implementation gaps rather than deferring required behavior to a later version or declaring completion from component tests. This instruction supplies no numerical performance floor, win-rate target or proof of optimality; reported qualification must still match actual evidence.
+
+## Knowledge boundaries
+
+Subject: **kaggriculture-v3**. A bounded piece of repository work is a **change**. Keep durable knowledge in tracked `cookbook/`; use `ops/` for change/run artifacts and git for implementation history. The vault exposes the bundle by symlink and a sibling Base. These are inherited working conventions chosen to carry out the instruction, not fabricated interview answers. Comparable results later need dated outcomes, denominators, seeds/seats/opponents, configuration and status; there are no v3 result entries, rankings or empirical lessons at setup.
+
+Prior-project results remain scoped to their source version, inputs and host. Do not transfer v2 lane names, Myolie's fixed experiment ID, Dream-RSI mandates, pod allocation, retired checkpoints, rankings or numerical gains. A replaced game interface needs its own meaningful parity checks; passing software checks alone establishes neither GPU throughput nor competitive strength.
+
+
+## Isaiah's principles on a different game — owner directive, 2026-09-29
+
+> The plan must respect Isaiah principals while on different game (Kaggriculture)
+
+Source: `user-directive:2026-09-29:respect-isaiah-principles`, the owner's instruction during gap-closure planning. Isaiah's principles come from his own sources at `32b3ec9` (`AGENTS.md`, `README.md`, config headers, `docs/model-architecture.md`), not from our paraphrase. They cover the stateless transformer contract; 16 optimizer steps/iteration with the split set by a memory smoke; the same global config on any hardware; an LR schedule defined over env steps; his model-size ladder; the winner-distribution critic; last-best teacher stabilization; docs as contracts; refactoring over compatibility shims; parity-first engine testing. Where Kaggriculture differs (two players, seat-private observations, grammar heads, owner econ shaping, native engine), the principle stays and only its game form changes. The principle-by-principle mapping and the tasks that satisfy it are in `ops/gap-closure-2026-09-29/plan.md`; recipe choices resolve toward Isaiah under the [[recipe-choices-align-to-isaiah-without-owner-escalation|alignment Decision]].
+
+## Historical: fixed PPO minibatch during environment scaling
+
+On 2026-09-29 the owner asked: “can you keep the original PPO minibatch, and scale the environments only? is it better?” That governed the environment-scaling experiment (one segment/minibatch, accumulation 2); its results are in `ops/gpu-sps-2026-09-29/results.md`. The later alignment Decision withdraws that fixed minibatch as a constraint on the Isaiah-aligned recipe.
+---
+type: "Decision"
+title: "Restart the port from Isaiah's clean base"
+description: "Restart from Isaiah's 32b3ec9 with the prior port as a reviewed reference; preserve layer topology, rerun BC and verify RTX PRO 6000. Task 1.1 rebuilds the isolated, hash-pinned rules kernel with 59 passing engine tests and four native-reset replays; explicit tooling exceptions preserve vendored bytes."
+tags: ["kaggriculture-v3", "decisions"]
+status: "adopted"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
+decider: "Owner: restore kg/isaiah-gap-closure and main to 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again from a clean state with Codex, keeping a reference branch and carrying the cookbook with the .claude/.codex setup."
+sources: [{"resource": "repository:ops/rebuild-2026-09-29/plan.md"}, {"resource": "user-directive:2026-09-29:restart-from-isaiah-clean-base"}, {"resource": "user-directive:2026-09-29:same-layer-topology"}, {"resource": "user-directive:2026-09-29:extra-bc-rtx6000-codex"}, {"resource": "reference-branch:kg/reference-2026-09-29"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:ops/pre-commit"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.1-brief-prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/briefs/1.1-review-claude.md"}, {"resource": "repository:ops/rebuild-2026-09-29/1.1/results.md"}, {"resource": "repository:engine_rs/TRIM_MANIFEST.json"}, {"resource": "repository:engine_rs/tests/replay_parity.rs"}, {"resource": "repository:scripts/check_engine_trim.py"}, {"resource": "repository:tests/tools/test_check_engine_trim.py"}, {"resource": "repository:justfile"}, {"resource": "repository:rustfmt.toml"}, {"resource": "repository:docs/rules-parity-coverage.md"}]
+---
+
+# Restart the port from Isaiah's clean base
+
+The owner directs, on 2026-09-29:
+
+> also for kg/isaiah gap closeure and main branch can you restore to starting points 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again? For grammar/tokens/game rust engine, you can have a reference branch from this current branch snapshot to refer on, I want you & codex started from a clean state. Carry the cookbooks with you with .claude/.codex setup.
+
+and, just before it:
+
+> Yes, we have different games, so we had different action heads, etc., these kind of things, but the model layers/ topologies should remain. We are just playign different games.
+
+> Also an extra BC is for sure required. Yo ucan use 2/4-rank RTX 6000 to verify your work. Work with codex as well.
+
+## What was done
+
+- Local `main` and `kg/isaiah-gap-closure` were reset to Isaiah's `32b3ec9`. The remote was not changed: `origin/main` is still `0d01234`, and nothing was pushed.
+- Branch `kg/reference-2026-09-29` and annotated tag `kg-reference-2026-09-29` (both at `65f0eac`) hold the whole prior port: the initial adaptation `0d01234`, `a2bf23c`, and the cookbook cleanup `65f0eac`. Consult it for the grammar and action codec, observation tokens, the vendored Rust engine (`engine_rs/`), native bindings (`src/kaggriculture.rs`), rewards, BC data preparation, and run evidence under `ops/`.
+- Carried onto the working branch: `cookbook/`, `.claude/`, `.codex/`, `AGENTS.md` (with the `CLAUDE.md` symlink), `kaggriculture-v3.base`, `ops/pre-commit` (Git uses `core.hooksPath=ops`), `ops/cookbook-setup-checks.md`, and `.gitignore` (the starter's rules plus bulk and credential exclusions).
+- Local run artifacts under `ops/` and `runs/`, which Git ignores, stay on disk; nothing was deleted.
+
+## Consequences
+
+- **References describe the reference branch, not the current tree.** Sources whose files no longer exist are re-pointed as `reference-branch:kg/reference-2026-09-29/<path>`. Sources for files that still exist (Isaiah's own files) stay `repository:` so the first-edit gate still surfaces them. Until the rebuild, those notes describe the reference branch's adapted versions of those files.
+- Owner Decisions remain in force.
+- **Same layer topology:** the rebuilt model uses Isaiah's `StatelessTransformerV1` layer classes, arrangement and roles: observation stems, learned per-role tokens, trunk blocks, critic head and actor input projection. Only the game I/O differs: input channel widths, categorical encodings fed to the stems, and the action heads. See the [[the-policy-is-stateless-and-observation-only|stateless Decision]].
+- **One BC rerun is required** on the rebuilt model, using the reference branch's BC data pipeline.
+- **Verification hardware:** 2- and 4-rank RTX PRO 6000 runs are authorized for verification. Read the live price first and write a run statement before each run; see the [[start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]].
+- **Codex collaboration:** Claude and Codex both start from this clean state and work in separate worktrees, cross-reviewing each other's changes.
+- The previous gap-closure plan (`reference-branch:kg/reference-2026-09-29/ops/gap-closure-2026-09-29/plan.md`) feeds a rebuild plan. Its principles table and task designs stay valid; its file-level steps assumed the old code.
+
+## Using the reference branch — implementation interpretation
+
+The owner asks to use the reference branch "properly, without blindly copying". The rebuild plan (`ops/rebuild-2026-09-29/plan.md`) gives every reference component exactly one disposition:
+- **Vendor, trimmed and hash-pinned:** only the rules kernel (`lib.rs`, `py_random.rs`, `econ_attrib.rs`), because it must match Kaggle's Python engine exactly.
+- **Port after review:** the native grammar, rewards, device mask tables and benchmark harness.
+- **Rebuild, with the reference as test oracle:** the observation encoding (named per-entity tensors instead of the flat v2 vector sliced at fixed offsets), the environment bindings, the codec, the model, the trainer seams, the configs and BC training.
+- **Reference only:** scripted bots until evaluation needs a few of them, the v2 experiments, and the run receipts.
+
+Lessons from the reference (raw-bank winners, truncation reward, seed streams, the CUDA fault (since traced to a compiler GEMM overflow), cadence, evaluation seed, lost observation facts) are requirements mapped to tasks. This is the implementer's interpretation of the directive, not an owner adoption of the specific table.
+
+## Task 1.1 — rebuilt rules kernel
+
+Claude's brief review approved the standalone package and required the Python
+checker/pytest and separate engine preparation invocations; the owner requested
+implementation. This is scoped to Task 1.1. The reviewed brief remains at
+`ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md`; the review and actual command
+receipts are linked in the sources and `ops/rebuild-2026-09-29/1.1/results.md`.
+
+The source audit pins `65f0eac5bb00b18a9d3acce319c2a231cbd5dff0`. The manifest
+accounts for all 125 reference paths, retaining 12 including licensing,
+append-only provenance and four traces, and excluding 113 with per-file reasons.
+Exactly seven module declarations are removed from `lib.rs`, producing SHA-256
+`c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd`.
+`py_random.rs`, `econ_attrib.rs` and the RNG tests retain their original bytes.
+Cargo alone removes Rayon and its unused lockfile closure; target cleanup removes
+the excluded binary and cdylib. No model, bot, collector or trainer is imported.
+
+The retained 41 unit and nine RNG tests pass. Nine new integration tests pass:
+one API test, four comparator regressions and four native-reset replays totaling
+2,876 transitions and 2,880 snapshots. State, numeric representation, object key
+insertion order at every depth of public and private state, statuses, typed
+rewards and terminal banks match the pinned 1.32.7 official-engine traces. The
+plain-equality private comparator fails its regression before repair; Claude's
+implementation review extended the order check from three private fields to all
+objects (including public market maps), test-first. A deliberately corrupted
+initial state also fails the first episode before restoration. All 59 engine
+tests pass with none ignored. Final offline `just prepare` also
+passes 769 Python tests (three platform skips), including 47 checker regressions;
+build, formatting, lint, typing and documentation checks pass.
+
+The package stays standalone, with its own lockfile and no root dependency or
+shared workspace. This is Claude's accepted refinement of the parent plan's
+workspace wording. Root Cargo files and Rust sources stay byte-identical and
+the root suite remains 155 passed/two ignored. Keep the engine's numeric features
+and reopen L4's test-only `fixture_float` repair at the first compiled root
+consumer (potentially Task 1.3, certainly needed by Task 1.4).
+
+Adaptation inventory: the 12 retained engine paths plus manifest/replay test;
+`scripts/check_engine_trim.py`, `tests/tools/test_check_engine_trim.py`, `justfile`,
+`rustfmt.toml`, `docs/rules-parity-coverage.md`, this Decision/index/log, and receipts
+under `ops/rebuild-2026-09-29/1.1/`. The manifest records non-engine change reasons.
+Both preparation entry points run the checker and separate engine fmt/Clippy/test
+commands. Raw checks exposed inherited formatting drift and six style-only Clippy
+findings. Preserve the byte contract with two exact formatter ignores (`lib.rs`,
+`econ_attrib.rs`) and three engine-only Clippy allowances (`too_many_arguments`,
+`collapsible_if`, `needless_range_loop`), re-denied for authored replay code.
+These are explicit implementer deviations supported by failed-check receipts,
+not an owner policy to weaken linting. Independent Codex review checked this
+boundary; Claude's implementation review confirmed it and committed the task.
+Engine Cargo invocations in `justfile` use `--locked` without `--offline`, so a
+fresh machine can fetch crates; offline hosts set `CARGO_NET_OFFLINE=true`.
+
+Existing-concept search covered this restart Decision, native-buffer and shared-PPO
+records, including negative evidence from the earlier `arbitrary_precision`
+failure. Independent sources/checks are the pinned Git tree, official trace
+headers, test-first failures, source/hash verification and the actual test suites.
+Future changes must preserve that custody, exercise new rules against real oracles,
+and revisit feature unification at integration. These checks qualify only this
+kernel on four recorded worlds plus unit/RNG cases. They establish neither
+exhaustive malformed-input parity, fresh Python differential testing, game adapter
+completion, playing strength nor GPU throughput. No training or network operation
+ran. Pre-existing dirty cookbook bytes and checksums are preserved in the receipt.
+Evidence is kept in `evidence/first-failing-games/`: the first five failing
+full-game traces, with `rust-report.json` giving each first divergence (steps
+13, 14, 15, 30 and 45).
+
+`with-known-divergences/` contains 12 games generated with
+`--include-known-divergences` (at `33e1428` plus the uncommitted path fix, seed
+777). Eight diverge; D1 accounts for 2 and D2 for 6, and 0 are unclassified.
+
+## Verification fixes (verify-1.1b-r1)
+
+Codex verified `9ee7fb8` (report
+`/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/codex/verify-1.1b-r1.md`):
+APPROVE WITH EDITS, no blocking findings. Commit `6217868` fixes each edit.
+Tests were written before the fixes; the Rust rollback tests (unresolved names)
+and the repro manifest test were observed failing first:
+
+- **Sweep classification.** `classify` matched inputs only, so a trace corrupted
+  at `public.day` on a D1 line was reported as D1 with `new_divergences: 0`.
+  `confirmed_class` now requires the observed signature: D2 needs a `rejected`
+  record, `TypeError: unhashable type` and Rust `rust_accepted`; D1 needs a
+  Python-accepted transition and a Rust recheck, with only that line's Unicode
+  digits spelled in ASCII, that passes the line. Receipt:
+  `verify-r1/negative-classification.log` (the reviewer's corruption,
+  `{'unclassified': 1}`, new 1).
+- **Null probe.** `None` was the no-script sentinel, so probe 296 (`null` whole
+  action) submitted PASS. `scripted_choices` submits scripted actions exactly;
+  probe 296 now records `null`, Python accepts it and Rust agrees.
+- **Rollback check.** Rejected steps compared order-insensitive `Value`s and
+  skipped statuses/rewards/done. `rollback_difference` compares public and
+  private values and key order, statuses, rewards and completion; three Rust
+  tests cover key-order-only, private-order and scalar mutations.
+- **Minimal repros.** The seven divergence fixtures are one-step games
+  (`episodeSteps` 2) whose first seat-0 action carries only the divergent
+  field; they diverge at line 1, step 0 with the recorded kinds and fields.
+  They were regenerated live; the eight game traces are byte-identical. The 15
+  committed files now total 665,021 bytes.
+- **Wording.** Rich orders are 10^12 units; quantity probes cover the four
+  quantity-taking market verbs; the null probe and minimal repros are described
+  as above.
+
+Checks at `6217868` (Mac, offline):
+
+| Check | Result |
+| --- | --- |
+| `uvx --offline --from rust-just just prepare` (before commit, same tree) | exit 0; root Rust 155 passed/2 ignored; engine 41 + 9 + 19 replay; Python 800 passed, 3 platform skips; docs fresh (`verify-r1/prepare.log`) |
+| `sweep.py --games 40` | 343 traces, 23,339 transitions, 306 agree, 37 diverge (D1 12, D2 25), 0 new; 12/12 D1 rechecks pass; 46.8 s (`verify-r1/sweep-summary.json`, `sweep.log`) |
+| `sweep.py --games 12 --base-seed 777 --no-probes --include-known-divergences` | 8/12 diverge, D1 2, D2 6, 0 new (`verify-r1/with-known-divergences/`) |
+| Corrupted D1 line | unclassified, new 1 (`verify-r1/negative-classification.log`) |
+
+Residual: D1 confirmation depends on the ASCII recheck replay, so a defect that
+coincides with a D1 input and disappears under ASCII spelling would still be
+classified D1.
+
+## Limits
+
+- The generated policies are weak, and the official episodes remain the only
+  competitive worlds.
+- Kaggle framework behavior outside the interpreter, such as timeouts, agent
+  errors and `INVALID` statuses, is not modeled.
+- The sweep is a bounded sample.
+- A pod-scale sweep is still open.
+- No training, GPU work or network access occurred. The isolated environment
+  used the offline uv cache.
+
+exec
+/bin/zsh -lc "rg --files engine_rs && rg -n '#\\[test\\]|#\\[ignore\\]|"'^fn |''^    fn '"' engine_rs/tests/replay_parity.rs engine_rs/tests/py_random.rs engine_rs/src/tests.rs" in /Users/poonszesen/kg-v3-parity
+ exited 2 in 0ms:
+engine_rs/src/econ_attrib.rs
+engine_rs/src/lib.rs
+engine_rs/src/py_random.rs
+engine_rs/TRIM_MANIFEST.json
+engine_rs/fixtures/episode-95901360.jsonl.gz
+engine_rs/fixtures/episode-95324500.jsonl.gz
+engine_rs/fixtures/episode-95921764.jsonl.gz
+engine_rs/fixtures/episode-95990191.jsonl.gz
+engine_rs/fixtures/generated/gen-starter-vs-random.jsonl.gz
+engine_rs/fixtures/generated/divergence-d1-unicode-digit-unit-count.jsonl.gz
+engine_rs/fixtures/generated/divergence-d2-unhashable-shed-item.jsonl.gz
+engine_rs/fixtures/generated/gen-edge-vs-random-rich.jsonl.gz
+engine_rs/fixtures/generated/divergence-d2-unhashable-plant-in-missing-hand.jsonl.gz
+engine_rs/fixtures/generated/MANIFEST.json
+engine_rs/fixtures/generated/divergence-d2-unhashable-unit-verb.jsonl.gz
+engine_rs/fixtures/generated/divergence-d1-unicode-digit-market-quantity.jsonl.gz
+engine_rs/fixtures/generated/gen-edge-vs-edge.jsonl.gz
+engine_rs/fixtures/generated/gen-random-vs-edge.jsonl.gz
+engine_rs/fixtures/generated/gen-pass-vs-edge-negative-seed.jsonl.gz
+engine_rs/fixtures/generated/gen-random-vs-starter-custom.jsonl.gz
+engine_rs/fixtures/generated/divergence-d2-unhashable-plant-crop.jsonl.gz
+engine_rs/fixtures/generated/gen-random-vs-random.jsonl.gz
+engine_rs/fixtures/generated/divergence-d2-unhashable-market-item.jsonl.gz
+engine_rs/fixtures/generated/gen-edge-free-hire.jsonl.gz
+engine_rs/Cargo.lock
+engine_rs/tests/replay_parity.rs
+engine_rs/tests/py_random.rs
+engine_rs/LICENSE
+engine_rs/VENDORED_FROM.md
+engine_rs/Cargo.toml
+rg: engine_rs/src/tests.rs: No such file or directory (os error 2)
+engine_rs/tests/py_random.rs:571:#[test]
+engine_rs/tests/py_random.rs:572:fn integer_seed_and_mt19937_state_match_cpython() {
+engine_rs/tests/py_random.rs:582:#[test]
+engine_rs/tests/py_random.rs:583:fn mt19937_twists_match_cpython_across_multiple_state_rollovers() {
+engine_rs/tests/py_random.rs:598:#[test]
+engine_rs/tests/py_random.rs:599:fn first_ten_thousand_tempered_words_match_cpython_stream_hashes() {
+engine_rs/tests/py_random.rs:614:#[test]
+engine_rs/tests/py_random.rs:615:fn random_53_bit_fractions_match_cpython_bit_for_bit() {
+engine_rs/tests/py_random.rs:625:#[test]
+engine_rs/tests/py_random.rs:626:fn getrandbits_matches_cpython_across_word_boundaries() {
+engine_rs/tests/py_random.rs:637:#[test]
+engine_rs/tests/py_random.rs:639:fn randrange_rejection_sampling_matches_cpython() {
+engine_rs/tests/py_random.rs:650:#[test]
+engine_rs/tests/py_random.rs:651:fn choice_and_two_successive_shuffles_match_cpython() {
+engine_rs/tests/py_random.rs:680:#[test]
+engine_rs/tests/py_random.rs:681:fn primitive_and_word_seed_adapters_use_the_same_python_integer_path() {
+engine_rs/tests/py_random.rs:712:#[test]
+engine_rs/tests/py_random.rs:713:fn python_domain_edges_are_explicit_and_zero_bit_draws_consume_nothing() {
+engine_rs/tests/replay_parity.rs:35:fn first_difference(actual: &Value, expected: &Value, path: &str) -> Option<(DiffKind, String)> {
+engine_rs/tests/replay_parity.rs:41:fn value_difference(actual: &Value, expected: &Value, path: &str) -> Option<String> {
+engine_rs/tests/replay_parity.rs:73:fn order_difference(actual: &Value, expected: &Value, path: &str) -> Option<String> {
+engine_rs/tests/replay_parity.rs:96:fn lookup<'a>(root: &'a Value, label: &str, path: &str) -> Option<&'a Value> {
+engine_rs/tests/replay_parity.rs:122:fn excerpt(value: Option<&Value>) -> String {
+engine_rs/tests/replay_parity.rs:144:    fn new(line: usize, from_step: Option<usize>, kind: &str, field: &str) -> Self {
+engine_rs/tests/replay_parity.rs:155:    fn values(mut self, expected: impl ToString, actual: impl ToString) -> Self {
+engine_rs/tests/replay_parity.rs:161:    fn to_json(&self) -> Value {
+engine_rs/tests/replay_parity.rs:174:    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+engine_rs/tests/replay_parity.rs:183:fn compare_tree(
+engine_rs/tests/replay_parity.rs:205:fn assert_public(actual: &Value, expected: &Value, context: &str) {
+engine_rs/tests/replay_parity.rs:211:fn assert_private(actual: &Value, expected: &Value, context: &str) {
+engine_rs/tests/replay_parity.rs:217:#[test]
+engine_rs/tests/replay_parity.rs:219:fn private_order_mismatch_is_rejected() {
+engine_rs/tests/replay_parity.rs:229:#[test]
+engine_rs/tests/replay_parity.rs:231:fn public_order_mismatch_is_rejected() {
+engine_rs/tests/replay_parity.rs:239:#[test]
+engine_rs/tests/replay_parity.rs:241:fn nested_private_order_mismatch_is_rejected() {
+engine_rs/tests/replay_parity.rs:247:#[test]
+engine_rs/tests/replay_parity.rs:249:fn public_number_mismatch_is_rejected() {
+engine_rs/tests/replay_parity.rs:255:#[test]
+engine_rs/tests/replay_parity.rs:256:fn comparator_names_first_differing_field() {
+engine_rs/tests/replay_parity.rs:268:fn view(public: &str, statuses: [&str; 2], rewards: [f64; 2], done: bool) -> StateView {
+engine_rs/tests/replay_parity.rs:278:#[test]
+engine_rs/tests/replay_parity.rs:279:fn rollback_check_accepts_an_untouched_state() {
+engine_rs/tests/replay_parity.rs:284:#[test]
+engine_rs/tests/replay_parity.rs:285:fn rollback_check_rejects_a_key_order_only_mutation() {
+engine_rs/tests/replay_parity.rs:302:#[test]
+engine_rs/tests/replay_parity.rs:303:fn rollback_check_rejects_status_reward_and_done_mutations() {
+engine_rs/tests/replay_parity.rs:329:#[test]
+engine_rs/tests/replay_parity.rs:330:fn kernel_public_api() {
+engine_rs/tests/replay_parity.rs:360:fn read_trace(path: &Path) -> String {
+engine_rs/tests/replay_parity.rs:379:fn parse_line(line: &str, index: usize) -> Result<Value, Divergence> {
+engine_rs/tests/replay_parity.rs:384:fn snapshot_values(game: &Game) -> (Value, Value) {
+engine_rs/tests/replay_parity.rs:399:fn state_view(game: &Game) -> StateView {
+engine_rs/tests/replay_parity.rs:413:fn rollback_difference(
+engine_rs/tests/replay_parity.rs:457:fn replay_text(text: &str) -> Result<ReplayStats, Divergence> {
+engine_rs/tests/replay_parity.rs:581:fn engine_path(relative: &str) -> PathBuf {
+engine_rs/tests/replay_parity.rs:585:fn replay(file: &str, episode_id: u64) {
+engine_rs/tests/replay_parity.rs:600:#[test]
+engine_rs/tests/replay_parity.rs:601:fn episode_95324500() {
+engine_rs/tests/replay_parity.rs:604:#[test]
+engine_rs/tests/replay_parity.rs:605:fn episode_95901360() {
+engine_rs/tests/replay_parity.rs:608:#[test]
+engine_rs/tests/replay_parity.rs:609:fn episode_95921764() {
+engine_rs/tests/replay_parity.rs:612:#[test]
+engine_rs/tests/replay_parity.rs:613:fn episode_95990191() {
+engine_rs/tests/replay_parity.rs:617:fn generated_manifest() -> Vec<Value> {
+engine_rs/tests/replay_parity.rs:625:fn generated_trace(name: &str) -> String {
+engine_rs/tests/replay_parity.rs:637:#[test]
+engine_rs/tests/replay_parity.rs:638:fn generated_fixtures_replay() {
+engine_rs/tests/replay_parity.rs:698:fn edit_line(text: &str, line: usize, edit: impl FnOnce(&mut Value)) -> String {
+engine_rs/tests/replay_parity.rs:706:fn line_for_step(text: &str, record_type: &str, from_step: u64) -> usize {
+engine_rs/tests/replay_parity.rs:717:#[test]
+engine_rs/tests/replay_parity.rs:718:fn generated_trace_perturbed_state_is_rejected() {
+engine_rs/tests/replay_parity.rs:732:#[test]
+engine_rs/tests/replay_parity.rs:733:fn generated_trace_perturbed_private_order_is_rejected() {
+engine_rs/tests/replay_parity.rs:748:#[test]
+engine_rs/tests/replay_parity.rs:749:fn generated_trace_perturbed_action_is_rejected() {
+engine_rs/tests/replay_parity.rs:763:#[test]
+engine_rs/tests/replay_parity.rs:764:fn generated_trace_rejection_claims_are_checked() {
+engine_rs/tests/replay_parity.rs:792:#[test]
+engine_rs/tests/replay_parity.rs:793:fn env_directory_traces() {
+
+codex
+The diff contains the three count corrections, a cookbook log entry, and 24 archived evidence files. The archived test log reports 41 library + 9 RNG + 19 replay tests = 69; I’m cross-checking those names against source and checking the evidence copies against their originals.
+
+exec
+/bin/zsh -lc 'git diff --check 16e56b6''^ 16e56b6 && git status --porcelain=v1 && git diff --exit-code 16e56b6''^ 16e56b6 -- pyproject.toml uv.lock Cargo.toml Cargo.lock justfile rustfmt.toml' in /Users/poonszesen/kg-v3-parity
+ exited 2 in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+ops/rebuild-2026-09-29/1.1b/verify-r2/cargo.log:94: new blank line at EOF.
+ops/rebuild-2026-09-29/1.1b/verify-r2/controls-replay.log:9: new blank line at EOF.
+
+exec
+/bin/zsh -lc 'git status --porcelain=v1 && git diff --exit-code 16e56b6''^ 16e56b6 -- pyproject.toml uv.lock Cargo.toml Cargo.lock justfile rustfmt.toml' in /Users/poonszesen/kg-v3-parity
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+
+exec
+/bin/zsh -lc "python3 -B -c '
+from pathlib import Path
+import re, subprocess, json
+files = ['\\''engine_rs/src/lib.rs'\\'', '\\''engine_rs/tests/py_random.rs'\\'', '\\''engine_rs/tests/replay_parity.rs'\\'']
+log = Path('\\''ops/rebuild-2026-09-29/1.1b/verify-r2/cargo.log'\\'').read_text()
+logged = re.findall(r'\\''"'^test ('"\\S+?)(?: - should panic)? \\.\\.\\. ok"'$'"'\\'', log, re.M)
+expected = []
+for file in files:
+    source = Path(file).read_text()
+    names = re.findall(r'\\''#\\[test\\]\\s*(?:#\\[["'^'"\\n]*\\]\\s*)*fn\\s+(\\w+)'\\'', source)
+    prefix = '\\''tests::'\\'' if file.endswith('\\''/lib.rs'\\'') else '\\'''\\''
+    expected.extend(prefix + name for name in names)
+    print(json.dumps({'\\''file'\\'': file, '\\''tests'\\'': len(names), '\\''ignore_attributes'\\'': len(re.findall(r'\\''#\\[ignore'\\'', source))}))
+print(json.dumps({'\\''source_test_count'\\'': len(expected), '\\''log_test_count'\\'': len(logged), '\\''missing_from_log'\\'': sorted(set(expected) - set(logged)), '\\''extra_in_log'\\'': sorted(set(logged) - set(expected))}))
+changed = subprocess.check_output(['\\''git'\\'','\\''diff-tree'\\'','\\''--no-commit-id'\\'','\\''--name-only'\\'','\\''-r'\\'','\\''16e56b6'\\''], text=True).splitlines()
+allowed_docs = {'\\''docs/rules-parity-coverage.md'\\'','\\''cookbook/references/live-differential-parity-checks-the-rust-kernel.md'\\'','\\''cookbook/log.md'\\''}
+evidence = [p for p in changed if p.startswith('\\''ops/rebuild-2026-09-29/1.1b/verify-r2/'\\'')]
+print(json.dumps({'\\''changed_paths'\\'':len(changed), '\\''doc_paths'\\'':sorted(set(changed)&allowed_docs), '\\''evidence_paths'\\'':len(evidence), '\\''unexpected_paths'\\'': [p for p in changed if p not in allowed_docs and p not in evidence]}))
+for subtree in ['\\''engine_rs'\\'','\\''scripts'\\'','\\''tests'\\'','\\''src'\\'','\\''python'\\'','\\''configs'\\'']:
+    trees = [subprocess.check_output(['\\''git'\\'','\\''rev-parse'\\'', f'\\''{rev}:{subtree}'\\''], text=True).strip() for rev in ['\\''16e56b6"'^'"'\\'','\\''16e56b6'\\'']]
+    print(json.dumps({'\\''subtree'\\'':subtree,'\\''identical_tree'\\'':trees[0] == trees[1]}))
+'" in /Users/poonszesen/kg-v3-parity
+ succeeded in 111ms:
+python3: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+{"file": "engine_rs/src/lib.rs", "tests": 41, "ignore_attributes": 0}
+{"file": "engine_rs/tests/py_random.rs", "tests": 9, "ignore_attributes": 0}
+{"file": "engine_rs/tests/replay_parity.rs", "tests": 19, "ignore_attributes": 0}
+{"source_test_count": 69, "log_test_count": 69, "missing_from_log": [], "extra_in_log": []}
+{"changed_paths": 27, "doc_paths": ["cookbook/log.md", "cookbook/references/live-differential-parity-checks-the-rust-kernel.md", "docs/rules-parity-coverage.md"], "evidence_paths": 24, "unexpected_paths": []}
+{"subtree": "engine_rs", "identical_tree": true}
+{"subtree": "scripts", "identical_tree": true}
+{"subtree": "tests", "identical_tree": true}
+{"subtree": "src", "identical_tree": true}
+{"subtree": "python", "identical_tree": true}
+{"subtree": "configs", "identical_tree": true}
+
+codex
+No findings. Read-only verification of `16e56b6` on `kg/rebuild-parity` confirms:
+
+- All three locations correctly state **19 replay / 69 total**. Current source names exactly match the archived passing log: 41 library + 9 RNG + 19 replay.
+- All **24 evidence files** match their originals byte-for-byte. Recorded results agree; the copied r2 verdict remains accurately scoped to `25ec814`.
+- Changes are limited to the three count corrections, cookbook log entry, and evidence copies. Runtime code, tests, fixtures, configuration and dependencies are unchanged.
+
+Working tree is clean. No files modified or tests rerun.
+
+VERDICT: APPROVE
+hook: Stop
+hook: Stop Completed
+tokens used
+45,798
+No findings. Read-only verification of `16e56b6` on `kg/rebuild-parity` confirms:
+
+- All three locations correctly state **19 replay / 69 total**. Current source names exactly match the archived passing log: 41 library + 9 RNG + 19 replay.
+- All **24 evidence files** match their originals byte-for-byte. Recorded results agree; the copied r2 verdict remains accurately scoped to `25ec814`.
+- Changes are limited to the three count corrections, cookbook log entry, and evidence copies. Runtime code, tests, fixtures, configuration and dependencies are unchanged.
+
+Working tree is clean. No files modified or tests rerun.
+
+VERDICT: APPROVE

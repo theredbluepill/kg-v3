@@ -1,0 +1,1 @@
+Verified: the [cookbook record](/Users/poonszesen/kg-v3-t71/cookbook/references/snapshot-view-isolates-byte-exact-evaluation-opponents.md:88) supports **19 opponent tests passed, 1 failed**, with parity blocked at R04 step 12.

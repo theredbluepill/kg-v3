@@ -1,0 +1,1 @@
+You are Codex. READ-ONLY confirmation on branch kg/rebuild-bc-brief (this worktree). Your report ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits.md listed P1-P4. Claude's fix commits: ac0496e Apply Codex's review of the 5.1 owner-direction edits. Mark each RESOLVED/PARTIAL/UNRESOLVED; check no new inconsistency. End with VERDICT: APPROVE / APPROVE WITH EDITS / REVISE.

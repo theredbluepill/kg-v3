@@ -1,0 +1,17 @@
+The run is supported by the receipts, with edits needed to the reporting and timeout claim. All **108 manifest entries verify**; both attempts’ scripts match their pre-launch commits; source/tree/extension identities match; and the summary and recorded judgments reproduce. Observed driver time was **535.4 seconds**, with idle receipts before and after. No files changed or GPU runs launched during this review.
+
+1. **Correct the fp32 attribution.** [results.md:340](/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/results.md:340) says no channel cluster appeared, but mid eager channel 229 contains **700/5,305 = 13.2%** of outliers while representing **0.391%** of elements. That channel also concentrates compiled and padded outliers. Low Jaccard alone does not establish independent noise. Report the shared concentration and retain the narrower conclusion: **BF16 rounding is supported; no path exceeded the predeclared aggregate threshold.**
+
+2. **Correct the scaling explanation.** [results.md:393](/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/results.md:393) attributes smaller-batch inefficiency mainly to rollout A. Comparing `4 × wall(8-rank shape) − wall(2-rank shape)`, mid adds **0.295 s from A** and **0.300 s from B**; dense A improves by **0.063 s**, while B adds **0.572 s**. Also, efficiency uses **2×** the baseline rate for four ranks and **4×** for eight. The reported efficiencies themselves are correct.
+
+3. **The outer timeout does not guarantee subprocess cleanup.** [driver.py:267](/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/driver.py:267) starts stages in separate sessions, outside the process group controlled by [launch.sh:50](/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/launch.sh:50). There is no driver signal handler to terminate those groups if the outer timeout fires. Add bounded group cleanup before reusing the launcher as a hard-limit guarantee. **Neither recorded attempt overran; attempt 1’s ordinary stop worked.**
+
+4. **Remove the cross-attempt identity claim.** [README.md:22](/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/gpu-checks-2026-09-29/README.md:22) says every compiled-versus-eager number was identical. Key-bias relative errors changed **1.155399→1.125237**, **0.806780→0.796601**, and **0.858145→0.868495**; dX Frobenius-relative errors also changed slightly. Selected maxima reproduced, not every metric.
+
+5. **Document the executed loss coefficient.** [gpu-checks-bundle.md:37](/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/run-statements/gpu-checks-bundle.md:37) declares **0.5·MSE**, but [c4_timing.py:203](/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/c4_timing.py:203) computes half-MSE and then multiplies it by another 0.5: **0.25·MSE** overall. C3 does the same. Correct the workload description; the component timings remain usable.
+
+6. **Correct the mid replay maximum.** [results.md:370](/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/results.md:370) reports **1.8e−3**, but mid default reaches **0.001983642578125**, approximately **2.0e−3**. The mean remains comfortably below 0.05.
+
+The depth-one backward comparison, amended key-bias criterion, failing default control, teacher-KL sanity, finite gradients, timing arithmetic and component-only scope are supported. The disclosed fresh-weight and value-gap limitations remain applicable.
+
+VERDICT: APPROVE WITH EDITS

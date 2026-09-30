@@ -1,0 +1,1450 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ec07-c8be-7e82-850d-78e4c17646f6
+--------
+user
+You are Codex. READ-ONLY re-verification. Your r1 report: ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1.md (findings 1-6). Claude's fix commits: ddf1fb2 Apply Codex r1 edits to the model-only SPS ceiling receipts. Go through findings 1-6 one by one and state RESOLVED/PARTIAL/UNRESOLVED for each, checking README, run statement addendum and results.md; confirm raw results/logs were not edited. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll check findings 1–6 against `ddf1fb2`, verify the three receipt documents, and compare the raw artifacts with the pre-fix versions. Completion is a status for each finding and a final verdict; I’ll make no edits.
+
+exec
+/bin/zsh -lc 'pwd && git status --short && git log -5 --oneline && cat ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1.md && git show --stat --oneline ddf1fb2' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+/Users/poonszesen/kg-v3
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+?? .claude/worktrees/
+?? ops/rebuild-2026-09-29/codex/briefs-1.4-1.5-prompt.md
+?? ops/rebuild-2026-09-29/codex/briefs-1.4-1.5-transcript.log
+?? ops/rebuild-2026-09-29/codex/stream-d-report.md
+?? ops/rebuild-2026-09-29/codex/stream-d-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.1-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-resume-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-resume-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt1-usage-limit-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt2-killed-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-receipt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-attempt1-killed-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-3.4-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.2-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-sps-ceiling-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-b-2.1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-c-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-stream-c-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-c.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1.md
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+8fcfada Record the ATEN-only GEMM backend A/B with pod receipts
+9904121 Add pre-run statement and scripts for the ATEN-only GEMM backend A/B
+ddf1fb2 Apply Codex r1 edits to the model-only SPS ceiling receipts
+cb4af49 Record the model-only SPS ceiling probe (component) with pod receipts
+ed61770 Add pre-run statement and script for the model-only SPS ceiling probe
+The retained timings are usable as a **synthetic component benchmark**, with the following corrections. No files were changed or GPU workloads rerun.
+
+1. **P2 — Qualify the “ceiling” claim.** B and C are surrogate workloads whose costs are not proven bounds on the eventual trainer. At `e1458d2`, `configure_model_compile` still rejects Kaggriculture; the probe invokes compilation directly. Describe the numbers as **conditional estimates for the specified A/B/C/D schedule**. The script also retains no finite-loss/gradient checks or sampling-versus-replay equality check, so this is timing evidence, not numerical qualification. [Results](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:213)
+
+2. **P2 — Remove unsupported synchronization and bottleneck attribution.** The timer explicitly calls `end.synchronize()` before stopping the host clock. Host/event agreement therefore cannot establish intrinsically “fully synchronous” model calls. A−D measures incremental sampling-path cost, not isolated head kernels. B’s dominance does not isolate heads backward or Muon. No Nsight timeline exists; the reported `nsys` absence lacks a retained command-output receipt. [Timing harness](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/bench_model_sps.py:109)
+
+3. **P2 — Correct the prelaunch and stopping claims.** The prelaunch receipt shows **563 MiB on both GPUs**, zero utilization and no visible compute processes—not zero memory. Launch followed one second later despite the statement’s memory-in-use rule. Also, the driver continues after failures and allows three separate 25-minute timeouts; it does not enforce first-failure stopping or a 45-minute aggregate limit. Actual execution succeeded in **227 seconds**, so these discrepancies do not invalidate the timings. [Receipt](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/idle_nvidia_smi_prelaunch.txt:11), [driver](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/run_all.sh:2)
+
+4. **P2 — Separate memory observations from causal explanations.** Allocated peak **40.275 GiB** satisfies the component’s allocation target; the [plan explicitly defines 85% using `max_memory_allocated`](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/plan.md:31). Reserved peak **84.994 GiB / 89.5%** is a separate observation. Attribution to fragmentation and B carryover remains a hypothesis without allocator evidence or a phase-order control. Complete-trainer memory fit remains unqualified. [Memory explanation](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md:55)
+
+5. **P3 — Correct variability reporting.** Sparse B’s p90 is **148.678 ms versus 147.472 ms median: +0.818%**, contradicting “within 0.5% everywhere.” Dense B includes a **545.106 ms** sample versus **326.579 ms** median; disclose that tail. The weighted sum of component p90s is not a measured whole-update p90. [Sparse samples](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_sparse.json:180), [dense outlier](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_dense.json:169)
+
+6. **P3 — Tighten method descriptions.** C’s trunk chunks were counted; its two head chunks were **calculated from source**. Sparse C is below the **packed**, not padded, bound. B’s scalar ratio is per-player joint clipping because each row represents one seat; the README’s “not per_player” wording is incorrect. The engine’s `0.1 × model time` allowance is conservative: exact 10% SPS loss permits `model time / 9`. [Method and limits](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md:35)
+
+Verified: all **21 manifest entries** match; statement commit `ed61770` at **06:44:12Z** precedes launch at **06:45:05Z**; pod/source hashes match integration commit `e1458d2`; Rust and dependency inputs are unchanged. First-call separation, five warmups, 20 timed samples, BF16/TF32, dynamic trunk compilation, forced packed FlashAttention and planned shapes are supported. The arithmetic reproduces **3.928788 / 4.661861 / 8.564337 seconds** and **2085.121 / 1757.238 / 956.525 SPS per rank**. Component-only and unmeasured two-rank caveats are present.
+
+**VERDICT: APPROVE WITH EDITS**git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+ddf1fb2 Apply Codex r1 edits to the model-only SPS ceiling receipts
+ .../model-sps-ceiling-2026-09-29/MANIFEST.sha256   |  2 +-
+ .../model-sps-ceiling-2026-09-29/README.md         | 31 ++++++++++++++--------
+ ops/rebuild-2026-09-29/results.md                  | 22 ++++++++-------
+ .../run-statements/model-sps-ceiling.md            | 12 +++++++++
+ 4 files changed, 46 insertions(+), 21 deletions(-)
+
+exec
+/bin/zsh -lc "cat cookbook/index.md && sed -n '1,85p' cookbook/log.md && cat cookbook/decisions/throughput-means-correct-complete-work.md cookbook/workflows/profile-cuda-bottlenecks-with-nsight-systems.md && rg -n 'SPS|ceiling|model-only|surrogate|synchronous' cookbook ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md ops/rebuild-2026-09-29/results.md" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+# Kaggriculture v3
+
+The repository's cookbook records reusable decisions and knowledge across bounded **changes**. Isaiah training infrastructure is being adapted to Kaggriculture; source-v2 evidence is historical and does not qualify the port.
+
+# Start here
+
+- [[decisions/restart-the-port-from-isaiahs-clean-base|Restart from Isaiah's clean base]] (References describe branch `kg/reference-2026-09-29`)
+- [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|Adaptation scope and one trainer]]
+- [[decisions/diagnose-the-mechanism-before-spending-on-runs|Reasoning, capability mapping and failure attribution]]
+- [[decisions/the-policy-is-stateless-and-observation-only|Stateless, observation-only model constraints]]
+- [[decisions/recipe-choices-align-to-isaiah-without-owner-escalation|Recipe choices align to Isaiah]]
+- [[decisions/throughput-means-correct-complete-work|Throughput and correctness]]
+- [[decisions/evaluation-preserves-generality-and-evidence|Evaluation, telemetry and artifact custody]]
+- [[workflows/profile-cuda-bottlenecks-with-nsight-systems|NVIDIA profiling contract]]
+
+# Browse
+
+- [[references/index|Adaptation contracts and verification boundaries]]
+
+- [[decisions/index|Decisions]]
+- [[workflows/index|Workflows]]
+- [[log|Change log]]
+- Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
+- Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
+
+No v3 result board, comparison register or empirical lesson exists yet. Add a single standing board only after two results can be ranked; preserve outcome denominators and historical scope.
+# Change log
+
+## 2026-09-29 — Tighten the compiled-GEMM Reference after Codex's second review
+
+Codex re-verified the GEMM-limit evidence (APPROVE WITH EDITS, no blocking findings; `ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md`). The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] and `results.md` now:
+- separate the emitted `INDEX_DTYPE` (an all-buffer storage check) from the template size-arg dtype (output numel);
+- limit the "every failing graph" claim to kernels attributable from retained code, since two failures occurred during autotuning;
+- write L_in as floor(2³¹/K);
+- state the design bound as the strict < 2³¹ the guard implements.
+
+The run statement no longer implies Triton 3.5.0 was the installed version.
+
+## 2026-09-29 — Measure the compiled-GEMM limit at the rebuild's shapes (Codex-verified)
+
+A bounded probe ran on GPU 0 of the running pod (GEMM-limits run statement in `ops/rebuild-2026-09-29/run-statements/`). Codex verified it (`ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md`, APPROVE WITH EDITS), and all its findings are applied. This revises the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]:
+- **Input-side overflow.** At these shapes the overflow is on the input side: the A-load wraps once M·K > 2³¹ while the template size argument stays int32. Input-wide GEMMs failed at L_in+1, and output-wide GEMMs stayed correct to M·N = 2³². The universal `M·max(K, N)` rule is withdrawn. M × max(in, out) remains the design bound, justified by backward reading forward outputs as inputs.
+- **Silent in the trunk.** With the guard off, the real trunk corrupts silently at L+1. The guard is measured correct at L−1 and rejects L with zero trunk calls. Unguarded-at-L and real-trunk backward are inferred, not measured.
+- **Production compliance is unproven.** Kaggriculture is not yet wired through `ModelConfig`, the factory or `configure_model_compile`.
+- **No flash-attn on the pod.** The pod venv has no `flash-attn`, and its config had `force_flash_attn: false`. The plan's Phase 6 now installs and verifies it before any qualification.
+- **Analyzer and custody fixes.** `analyze_kernels.py` was fixed and its summaries regenerated. The git-archive hash was reconciled: `--prefix` accounts for the difference.
+
+Full evidence is in `ops/rebuild-2026-09-29/results.md`.
+
+## 2026-09-29 — Close Codex's lane B re-verification edits on the model branch
+
+Codex re-verified `4fdb526` (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify2-lane-B-r1b.md`). Three edits: `check_contract` now rejects −1 on the `tiles_int` count channels (yield, unwatered, unfed) while keeping the day/deadline sentinels; the contract-valid fixture uses the engine's `farmHandCostMult × fib(hires_today)` next-hire cost and rejects a zero configured order limit; the critic tests assert hand-computed, nonuniform winner probabilities and changed-seat responsiveness, and fail when critic logits are forced to zero (3 failures, source restored). `just py-prepare`: 884 passed, 3 skipped. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder reference]] is unchanged: its claims were already scoped to these checks.
+
+## 2026-09-29 — Close Codex's Task 2.1 verification findings on the model branch
+
+Codex's [verification](../ops/rebuild-2026-09-29/codex/verify-stream-b-2.1.md) approved Task 2.1 with edits. `check_contract` now requires leading dims exactly `[E, 2]` and per-field bounds (non-negative counts, ranks, globals and order limits; −1 tile sentinels and signed `market_int` still pass). The synthetic fixture now writes each seat's legal view of one game. New tests cover packed dispatch, distinct-mask chunk slices, marker-checked offsets, the mypy generics probe, and initialization, API and Muon membership, each seen failing against the old code or a deliberate one-line mutation (the compile-key and SiLU checks were not mutation-tested). The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] records the checks: `tests/kaggriculture` 155 passed, `just py-prepare` 878 passed, 3 skipped.
+
+## 2026-09-29 — Add Isaiah's critic to the Kaggriculture model (Task 2.2)
+
+The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now covers the critic: an `OutputProjectionMLP` shared over the self and opponent critic-value tokens, a winner softmax, and value `2p(self) − 1` from each seat's own view, with Isaiah's output gain and Muon exclusion. `just py-prepare` gives 767 passed. This is on `kg/rebuild-model`, pending Codex verification.
+
+## 2026-09-29 — Build the Kaggriculture encoder on Isaiah's layers (Task 2.1)
+
+The new [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] covers the contract types, the PEP 696 generic model base, and an encoder built entirely from Isaiah's classes, with one-hot stems, per-role tokens, a typed trunk config, his initialization, and the compiled-GEMM chunking guard. `just py-prepare` gives 762 passed. The work sits on branch `kg/rebuild-model`, pending Codex verification before merge.
+
+## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
+
+Owner decisions:
+- “6-10M ok as long as topologies aligned with isaiah”, recorded in the [[decisions/the-policy-is-stateless-and-observation-only|stateless Decision]]: Isaiah's ladder width and ratios, with depth reaching the budget.
+- “let's stick with 2.9”, and fit to RTX 6000 rather than Isaiah's B200s, recorded in the [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]]: global config unchanged, per-rank shapes and spm/accumulation fitted by memory smoke, ≤ 85% peak.
+
+The Kaggriculture contract reaches v4 (Codex accept-with-edits applied), with a companion section in `docs/rl-api-specs.md`.
+
+## 2026-09-29 — Rebuild failure status and traceback ordering on the clean base
+
+Task 0.3 implements the reference plan's logging fix under the
+[[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]]. The new
+[[references/failed-training-reports-status-before-distributed-cleanup|failure-reporting Reference]]
+records keyword-only logger exit codes, failed W&B finalization and rank-tagged
+stderr before process-group destruction. TDD goes from 9 failures/2 passes to
+11 passes; the Python suite and final py-prepare each pass 722 with 3 skips.
+The 7 Rust failures were missing generated Orbit fixtures in the fresh worktree; with them copied in, Claude's rerun gives 155 passed, 2 ignored.
+The distributed test mocks clean-base CUDA/NCCL rather than importing the old
+CPU-DDP hook. No training, evaluation or network operation ran.
+
+## 2026-09-29 — Trace the CUDA illegal memory access to a compiler GEMM overflow
+
+A blocking rerun of the reference PPO-from-BC setup on pod `w7ia3zvxqsvs3g` reproduced the fault after 3 iterations. It points both ranks at an Inductor max-autotune Triton GEMM template in the trunk MLP, whose 32-bit offsets wrap once rows × inner dim exceeds 2^31. A controlled probe matched eager at 2,088,960 rows and faulted at 2,105,344. The new [[references/compiled-gemm-template-overflows-above-2-21-rows|compiler overflow Reference]] records the mechanism, and why the reference's first-update log-ratio (−3.77) and BC→PPO deterioration came from silent corruption. It adds the rebuild requirements: a trunk-size guard and a first-minibatch log-ratio alarm. The BC, PPO and restart notes no longer call the fault unresolved.
+
+## 2026-09-29 — Plan the rebuild with explicit reference-branch dispositions
+
+Owner: “Please make plans adjusted to be work with clean base, and make sure we are utilizing the reference branch properly, without blindly copying.” `ops/rebuild-2026-09-29/plan.md` classifies every reference component as vendored-and-pinned (rules kernel only), port-after-review, rebuild-with-oracle, or reference-only. It maps 15 reference lessons to tasks, carries Isaiah's principles including the same layer topology, and splits the work between Claude and Codex with contract-first, cross-reviewed tasks. The [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records the rule. No code has changed yet.
+
+## 2026-09-29 — Restart the port from Isaiah's clean base
+
+Owner: “restore to starting points 32b3ec900ad406eedd965f53a1a0f4490d31c589 and work again … I want you & codex started from a clean state. Carry the cookbooks with you with .claude/.codex setup.”
+- Local `main` and `kg/isaiah-gap-closure` are reset to `32b3ec9`; `origin` is unchanged.
+- The prior port is kept as branch `kg/reference-2026-09-29` and tag `kg-reference-2026-09-29` (`65f0eac`).
+- The cookbook, `.claude/`, `.codex/`, `AGENTS.md`, the Base, `ops/pre-commit`, `ops/cookbook-setup-checks.md` and `.gitignore` carry over.
+- 88 sources whose files no longer exist now point at the reference branch.
+
+The new [[decisions/restart-the-port-from-isaiahs-clean-base|restart Decision]] records the owner directives: same layer topology with only game I/O differing (also in the [[decisions/the-policy-is-stateless-and-observation-only|stateless Decision]]), a required BC rerun, 2/4-rank RTX PRO 6000 verification (also in the [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]]), and working with Codex. References now describe the reference branch until rebuilt.
+
+## 2026-09-29 — Remove contradictions and trim operational history
+
+Before gap-closure work starts, the owner asks to fix cookbook contradictions and trim as needed. Owner directives recorded: “The plan must respect Isaiah principals while on different game (Kaggriculture)” in the [[decisions/v3-reuses-isaiah-infrastructure-with-kaggriculture-semantics|scope Decision]], and “Make sure we are refering to his stateless approach” in the [[decisions/the-policy-is-stateless-and-observation-only|stateless Decision]] (StatelessTransformerV1 is the reference, never the recurrent model). Contradictions fixed:
+- The [[decisions/preserve-the-ppo-recipe-across-bc-bootstrap|recipe Decision]]'s “do not change PPO batches” now applies to the BC period only.
+- The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO Reference]] now states the 20M cadence instead of 100k.
+- The [[references/bc-bootstrap-uses-native-replay-features-and-current-heads|BC Reference]] records the PPO-from-BC failure instead of “pending”.
+- Stale “being implemented” wording is corrected.
+- The multi-GPU Decision is renamed [[decisions/start-multi-gpu-qualification-with-two-ranks|two ranks]].
+---
+type: "Decision"
+title: "Throughput means correct complete work"
+description: "High throughput is required; preserve semantic parity and measure equivalent work rather than inferring gains from language or kernels."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/high-throughput-is-mandatory.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/myolie-native-sampling-grammar.md"}]
+---
+
+# Throughput means correct complete work
+
+Original v2 owner directive:
+
+> cookbook decision 下一個-高吞吐量是必須不是選擇
+
+Under today's instruction to reuse useful discipline, high throughput is a requirement for the v3 collection, model and training design. Preserve correctness while reporting collection rate, valid learner turns through a full update, phase timings and the total workflow cost. Separate startup/compilation from steady state. State hardware, precision, batch/rollout work, recording settings, transfer and evaluation boundaries. No absolute SPS floor or allowed regression percentage has been supplied.
+
+Rust preparation must actually execute in the path being measured. Preserve game ordering, no-op/STOP distinctions, conditional legality, masks, sampled behavior density and feature semantics; pin source/lockfile/binary and inputs/outputs. Compare equivalent work with an independent oracle where applicable. A faster parser or sampler does not establish a full-training speedup.
+
+The v2 native-sampler Reference is useful contrary evidence: its saved shared-host run lowered sampler CPU time while complete collection elapsed time increased. That is a scoped counterexample to extrapolating component gains, not a ban on native sampling and not a v3 benchmark. Reducing environments, histories or data volume is a workload change unless comparable end-to-end measurements show an optimization.
+
+Use [[../workflows/profile-cuda-bottlenecks-with-nsight-systems|Nsight Systems]] for NVIDIA timeline attribution. Temporary downscaling can diagnose a fault but does not close the throughput requirement. Measured scopes so far (the rejected old decoder and the historical fixed-minibatch sweep) live in `ops/gpu-sps-2026-09-29/results.md`. None of them establishes playing strength, dense-game capacity or an owner-specified performance floor, and each recipe change, including the Isaiah-aligned cadence, needs its own complete-work qualification.
+---
+type: "Workflow"
+title: "Profile CUDA bottlenecks with Nsight Systems"
+description: "Use representative Nsight timelines and explicit nested-range/capture limits for NVIDIA attribution without disrupting a learner."
+tags: ["kaggriculture-v3", "workflows"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "skill:/Users/poonszesen/.codex/skills/cookbook-setup/references/gpu-profiling.md"}]
+---
+
+# Profile CUDA bottlenecks with Nsight Systems
+
+For this NVIDIA CUDA training/inference project, **NVIDIA Nsight Systems (`nsys`) is the canonical timeline profiler**. This conditional setup extension follows the Kaggriculture owner's 2026-09-10 directive preserved by the cookbook-setup skill: “please add nsys as canonical tool for us in this project cookbook to make sure we use nsys for efficient profiling? Add this as conditional requirement in $cookbook-setup as well, thanks”.
+
+Before attributing throughput, utilization, memory or CPU/GPU bottlenecks, reuse a representative source/configuration-matched capture or obtain a short bounded capture of the actual relevant phase. Record warmup, process/batch identity, command, `nsys`/driver/runtime versions, overhead, raw `.nsys-rep` and exported report paths, relevant kernels/APIs/memcpy/synchronization, and unmeasured scope. Keep large traces outside cookbook prose.
+
+On an authorized NVIDIA host, first inspect `nsys --version`, `nsys profile --help` and `nsys status -e`. If absent, follow the matching [official installation guide](https://docs.nvidia.com/nsight-systems/InstallationGuide/index.html) for a compatible CLI outside the training environment; preserve package/version/install commands in the run receipt. Do not upgrade drivers/CUDA or weaken container security to make profiling work. Consult the matching [user guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html) before selecting flags. No installation is needed on this non-NVIDIA setup host merely to create the contract.
+
+Choose non-terminating capture behavior (`--kill=none`, and `--wait=all` where supported) while preserving runner checkpoint/watchdog handling. Never kill or restart a learner merely to satisfy profiling; plan launch-time instrumentation at an authorized safe boundary. CPU sampling permission failures do not by themselves establish CUDA tracing failure. Preserve concrete errors and label fallback evidence; utilization snapshots, VRAM percentages and unsynchronized Python timers cannot establish a kernel bottleneck.
+
+This adds no mandatory smoke, training/evaluation, per-run admission, new watcher or approval step. Existing sufficient captures qualify; obvious correctness repairs need not wait. At initial setup `nsys` was absent on the macOS host. The later owned NVIDIA host installs CLI-only Nsight without changing CUDA/drivers/security settings; the GPU episode records a full-startup trace and a separate post-warmup component capture. Nested NVTX host ranges must not be summed as disjoint work or read as GPU utilization, and aggregate CUDA API counts require trace correlation before assigning them to one component. See `ops/gpu-sps-2026-09-29/results.md` for exact scope and raw-trace custody status.
+ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:1:# Run statement — model-only SPS ceiling probe (COMPONENT measurement, single GPU, ≤ 45 min)
+ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:3:**Label: component measurement.** This probe times only the model's share of one PPO update. It gives an upper bound on env steps/s *if the engine, host copies, GAE, logging and DDP cost nothing*. It does **not** measure or prove end-to-end SPS (CLAUDE.md throughput rule), and every result derived from it is labeled that way.
+ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:5:- **Question (diagnostic, not training):** at the preset model (`configs/model/kaggriculture.yaml`: width 256, depth 8, 8 heads, `force_flash_attn: true`) with the heads merged (Task 2.3), what is the per-update model wall time on one RTX PRO 6000 Blackwell, and which workload dominates it? From that, what model-only SPS ceiling per rank follows, and what time budget per env step is left for the engine before it becomes the bottleneck?
+ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:13:- **Derived ceiling (written formula):** env steps per update per rank = 128 × 64 = 8,192; update wall = 64·t_A + t_C + 16·t_B + t_D (one PPO epoch of 16 minibatches); ceiling SPS per rank = 8,192 / update wall; two ranks ≈ 2× (the DDP all-reduce of ≈ 6.25 M params is **assumed** small and is not measured).
+ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:20:  - Script: `ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/bench_model_sps.py`, sha256 `4a7ede9a792f661f0d0853028c51469fd36051e424b50a98263e4fab6038a08a`, run with `CUDA_VISIBLE_DEVICES=0`, `TORCHINDUCTOR_CACHE_DIR` inside the run dir.
+ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:24:- **Artifacts:** pod `/workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/` (idle receipts, git receipts, per-density logs and `results_<density>.json`, summary). Local copy (files ≤ 1 MB; larger ones listed with sha256) in `ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/`; section "Model-only SPS ceiling (component)" appended to `ops/rebuild-2026-09-29/results.md`.
+ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:27:## Post-run addendum (2026-09-29, after Codex review `../codex/verify-sps-ceiling-r1.md`, APPROVE WITH EDITS)
+ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:29:The pre-run text above is unchanged as committed in `ed61770`. The following statements correct or qualify it against the retained receipts in `../model-sps-ceiling-2026-09-29/`.
+ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:31:- **Scope of the result.** The derived "ceiling" is a **conditional estimate for the specified A/B/C/D synthetic schedule**, not a proven bound: B (PPO-shaped loss) and C (teacher proxy) are surrogate workloads. The script retained no finite-loss/gradient check and no sampling-versus-replay equality check, so the result is **timing evidence only**. At `e1458d2`, `configure_model_compile` with `model_compile="trunk"` still rejects the Kaggriculture model; the probe called `compile_transformer_trunk` directly.
+ops/rebuild-2026-09-29/results.md:211:## Model-only SPS ceiling (component) (2026-09-29, 06:45–06:49Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+ops/rebuild-2026-09-29/results.md:213:**Component measurement, not end-to-end SPS.** These numbers are **conditional estimates for the specified A/B/C/D synthetic schedule**: model-only env steps/s if the engine, host copies, GAE, logging and DDP cost nothing. B (PPO-shaped loss) and C (teacher proxy) are surrogates, so their costs are not proven bounds on the eventual trainer. **Timing evidence only:** no finite-loss/gradient check and no sampling-versus-replay equality check were retained. At `e1458d2`, `configure_model_compile` (`model_compile="trunk"`) still rejects the Kaggriculture model; the probe compiled the trunk directly. (Revised after Codex review `codex/verify-sps-ceiling-r1.md`, APPROVE WITH EDITS.)
+ops/rebuild-2026-09-29/results.md:215:- Pre-run statement: `run-statements/model-sps-ceiling.md`, committed in `ed61770` at 06:44:12Z. Launch was at 06:45:05Z.
+ops/rebuild-2026-09-29/results.md:219:- Evidence and limits: `model-sps-ceiling-2026-09-29/README.md`.
+ops/rebuild-2026-09-29/results.md:221:| density (tokens/row) | t_A fwd 256 | t_B train 1,024 | t_C teacher-proxy 16,384 | t_D value 256 | update wall | ceiling SPS/rank | ≈2 ranks |
+ops/rebuild-2026-09-29/results.md:230:- ceiling = 8,192 / update wall.
+ops/rebuild-2026-09-29/results.md:239:- For the engine to cost no more than the model, which halves the ceiling, it must step 8,192 env steps in at most 3.9 s (sparse) to 8.6 s (dense) per rank. That is about 0.48–1.05 ms per env step.
+ops/rebuild-2026-09-29/results.md:240:- To lose at most 10 % of the ceiling SPS, engine time E must satisfy 8,192/(M + E) ≥ 0.9 · 8,192/M, i.e. E ≤ M/9: 0.437 s (sparse), 0.518 s (mid), 0.952 s (dense) per update, or 53 / 63 / 116 µs per env step. (The earlier 0.1 × M figures, 0.39–0.86 s and 48–105 µs, are conservative.)
+ops/rebuild-2026-09-29/results.md:255:**Profiling.** `nsys` absence on the pod is operator-reported (06:41:21Z pre-check; no command-output receipt retained). Nothing was installed and no timeline exists. In-step phase attribution is unresolved. Host/event median agreement cannot show the calls are intrinsically synchronous, because the timer calls `end.synchronize()` before reading the host clock.
+ops/rebuild-2026-09-29/results.md:261:**Infrastructure diagnostic, not a learning change.** One setting changed: `torch._inductor.config.max_autotune_gemm_backends` from torch 2.9.0's default `"ATEN,TRITON,CPP"` to `"ATEN"`, so every compiled mm/addmm lowers to extern cuBLAS instead of Inductor's Triton mm templates. The timing half is a **component measurement conditional on the A/B/C/D synthetic schedule** ("Model-only SPS ceiling (component)" above), not end-to-end SPS.
+ops/rebuild-2026-09-29/results.md:285:| density | A fwd 256 | B train 1,024 | C teacher-proxy 16,384 | D value 256 | update wall default → ATEN | cost | ceiling SPS/rank |
+ops/rebuild-2026-09-29/results.md:290:- The default arm reproduces the earlier ceiling run (4.662 s and 8.564 s).
+cookbook/log.md:127:The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO Reference]] closes the repeated-execution gap with30m38s, nine full2,048-optimizer-step/rank updates and normal exit without new KL stops, timeout or OOM. The last six updates measure3,380.64 game SPS across two PRO6000 GPUs; wall throughput including evaluation/startup is2,567.24. All nine128-game evaluations have zero banks,50% win rate and no promotion, so execution success is not evidence of stronger play. The pod is retained as requested; source-bound telemetry and final/best custody are in the continuation receipt.
+cookbook/log.md:131:The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO Reference]] records813 passing software tests/three hardware skips and a normal-exit two-rank repair run: two128-game evaluations at50%/49.61%, no promotion, unchanged incumbent and2,097,152 cumulative game transitions. One full2,048-step PPO update measures2,290.76 game SPS across two PRO6000 GPUs; the earlier3,679.43-SPS update only executes418 optimizer steps due KL stopping. The [[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]] records observed.25 shaping reward without a learning claim. The original half-hour failed/interrupted; the repair is a separate bounded attempt. Checkpoints and W&B telemetry remain source-bound, and the replacement pod stays RUNNING at the owner’s request.
+cookbook/log.md:195:The [[references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] now links a finite two-GPU heads-only result: 1,774.752 game SPS versus 310.819 for the rejected decoder at equal nominal five-update work, with independent weights/action distributions and no quality claim. Full-model CUDA diagnostics preserve raw BF16 errors and synthetic-capacity limits. The GPU receipt adds completed raw-trace custody and actual named-range launch attribution. [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO guidance]] records the explicit 32-environment/four-segment experiment and its fourfold optimizer-batch change; README removes stale old-model/no-GPU claims. Fused-native final checks and combined GPU measurement remain pending; no standing board or empirical Lesson is created.
+cookbook/log.md:219:The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|shared PPO record]] adds the initial two-rank config, bounded CUDA-only measurement harness, full-model CPU DDP diagnostic and optional reference dependency extra. Normal training retains incumbent evaluation; only measured invocations disable periodic file/evaluation overhead and state that exclusion. CUDA execution remains unavailable; CPU rejection and readiness do not establish GPU SPS.
+cookbook/log.md:223:The [[references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] records masked Gumbel categorical sampling, factored projection, cached grammar/ranges and inactive-branch parameter participation, with19CPU regressions and the measured scalar-extraction reductions. It preserves the exact starter/new-code provenance, sampling RNG difference and remaining STOP/validation synchronization; local timing is not CUDA SPS or policy-strength evidence.
+cookbook/log.md:227:The later owner directive changes the [[decisions/start-multi-gpu-qualification-with-two-ranks|compute preference]] to two RTX 5090/RTX PRO 6000 GPUs first; two allocation attempts failed and no pod was created. The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO record]] names unchanged incumbent/resume function bodies, three real-native regression tests, the initial checkpoint cadence, engine cache keys and opt-in CPU DDP diagnostic boundary. The [[references/native-game-semantics-use-v3-owned-buffers|native record]] adds reusable-buffer optimization, bounded paired CPU adapter evidence and the retained starter fixture/parser repair. Final shared receipt reconciliation remains pending; no CUDA SPS, learning or general scaling claim follows.
+cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md:32:1. **Optimizer-step cadence.** Apply Isaiah's own multi-GPU rule from `winner_ce_6m_4x5090.yaml`: divide `n_envs` and `segments_per_minibatch` by world size, keeping the global batch, 16 optimizer steps/iteration and env steps/iteration of the single-GPU run. For `scaling_6m` (256 envs, spm 16, accumulation 1) this gives 128 envs/rank, spm 8, accumulation 1 on two ranks, and 64/4/1 on four ranks. `target_kl` stays null as upstream. Each iteration then collects 16,384 game transitions and takes 16 optimizer steps of 1,024 global transitions, matching upstream warm-up/cosine data exposure. Residual differences: two-player games only, and dense-game memory is unmeasured, so a memory smoke precedes any long run. Earlier 4,096-env SPS figures do not qualify this cadence.
+cookbook/decisions/throughput-means-correct-complete-work.md:18:Under today's instruction to reuse useful discipline, high throughput is a requirement for the v3 collection, model and training design. Preserve correctness while reporting collection rate, valid learner turns through a full update, phase timings and the total workflow cost. Separate startup/compilation from steady state. State hardware, precision, batch/rollout work, recording settings, transfer and evaluation boundaries. No absolute SPS floor or allowed regression percentage has been supplied.
+cookbook/references/reward-reuse-preserves-objective-and-critic-semantics.md:21:| `win_share` | `(1-w)*sign(margin) + w*(2*share-1)`, `share=own/(own+other)` or .5 when total≤0 | `w=.1`; a bounded surrogate, not exactly the competition ranking |
+cookbook/references/full-turn-intentions-coordinate-batched-action-heads.md:79:named exploration surrogate, not exact marginal entropy. Shared parameters still
+cookbook/references/native-game-semantics-use-v3-owned-buffers.md:17:The fused native lifecycle is locally checked and executes in the measured two-GPU PPO path. `engine_rs/src/training.rs` and `owl.rs.KaggricultureTrainingEnv` own the active training game batch, BigInt seed streams, typed terminal state, reward/economic/mask computation and synchronous auto-reset. It reuses the engine/decoder/encoder while dropping unused legacy native controllers from active training. The Python adapter makes one native call per step; diagnostic terminal JSON is generated lazily only when requested. Caller-owned int64 NumPy inputs remain views when contiguous, with checked Rust narrowing into scratch; strided inputs are normalized at the Python boundary. This is not a zero-copy claim for narrowing, transactional game clones or double output staging, which remain for rollback correctness.
+cookbook/references/native-game-semantics-use-v3-owned-buffers.md:27:`python/owl/kaggriculture/types.py` declares two seat perspectives, 241 actor capacity, 252 command-frame capacity, twelve categorical slots, and versioned feature width. Version 2 declares 8,176 floats versus 8,165 in version 1. Each observation row is one player's legal perspective; attention must not mix private views. Actor presence and command positions are separate masks; prefix-dependent vocabulary legality comes from native grammar. The Python adapter passes contiguous `int64` action tensors through checked conversion to native `int16[env,2,252,12]` frames and `int32` lengths; observation context is `[env,4]`. Native work releases the GIL. Terminal `win_loss`/`win_only` reward conversion compares raw final banks before reset; the adapter retains terminal snapshots/metrics and synchronously resets finished native games. These claims require the adapter's own tests rather than inherited v2 qualification.
+cookbook/references/index.md:14:- [[shared-ppo-adapts-game-batches-without-a-second-loop|Shared PPO adapts game batches without a second loop]] — One shared Isaiah PPO trainer carries Kaggriculture batches; its core is upstream-equivalent, the recipe is partially aligned, and teacher, cadence, CUDA-fault and GPU-qualification gaps are tracked in ops. Historical SPS measurements link to their receipts.
+cookbook/references/explicit-game-tokens-and-grammar-replace-orbit-heads.md:110:CPU tests. Its heads-only two-PRO6000 run measured 1,774.752 game SPS over 5,120
+cookbook/references/explicit-game-tokens-and-grammar-replace-orbit-heads.md:118:282.253 game SPS in separate two-PRO6000 runs. Its original contract/source/docs
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:61:- Rejected Python-frame/GRU decoder: 310.8 / 282.3 game SPS. Heads-only replacement: 1,774.8 game SPS (`ops/gpu-sps-2026-09-29/results.md`).
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:62:- Fixed-minibatch environment sweep on two PRO6000: 3,627 / 5,703 / 6,363 / 6,947 / 7,167 learner-seat SPS at 8 / 32 / 128 / 2,048 / 4,096 envs/GPU; 8,192 OOMs (`ops/gpu-sps-2026-09-29/env-sweep/`).
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:64:- Uninterrupted half-hour continuation: nine full updates, 3,380.64 game SPS over the last six. All nine 128-game evaluations ended at zero banks, 50% and no promotion, so this is execution evidence, not strength (`ops/continuous30-2026-09-29/results.md`, `ops/default4096-2026-09-29/results.md`).
+
+exec
+/bin/zsh -lc 'git show --format=fuller ddf1fb2 -- ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29 ops/rebuild-2026-09-29/results.md ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+commit ddf1fb28b2f39cd85f4d402e5931a36370c5f8d4
+Author:     Season <seasonluke@gmail.com>
+AuthorDate: Tue Sep 29 14:59:54 2026 +0800
+Commit:     Season <seasonluke@gmail.com>
+CommitDate: Tue Sep 29 14:59:54 2026 +0800
+
+    Apply Codex r1 edits to the model-only SPS ceiling receipts
+    
+    Codex review verify-sps-ceiling-r1 (APPROVE WITH EDITS, findings 1-6):
+    - Call the numbers conditional estimates for the A/B/C/D synthetic
+      schedule and timing evidence only; configure_model_compile still
+      rejects the model at e1458d2.
+    - Drop the "fully synchronous" and heads/Muon attribution claims; A-D is
+      incremental sampling-path cost; nsys absence is operator-reported.
+    - Correct the prelaunch capture (563 MiB on both GPUs, 0 % util, no
+      compute processes) and note the driver enforced neither first-failure
+      stop nor a 45-min aggregate limit (actual 227 s).
+    - Separate allocated peak (40.275 GiB, within the plan's rule) from the
+      reserved peak (84.994 GiB, 89.5 %); the carryover explanation is a
+      hypothesis.
+    - Fix variability (sparse B p90 +0.818 %, dense B 545.106 ms tail
+      sample); the component-p90 sum is not a measured update p90.
+    - Counted trunk vs calculated head chunks, packed bound, per-player
+      joint clipping, exact 10 % engine allowance model_time/9.
+    
+    Raw results, logs and receipts are unchanged. The MANIFEST line for the
+    README is updated (was 582c63af...9d); all 21 entries verify.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+diff --git a/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/MANIFEST.sha256 b/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/MANIFEST.sha256
+index 67b302c..3513ad0 100644
+--- a/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/MANIFEST.sha256
++++ b/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/MANIFEST.sha256
+@@ -18,4 +18,4 @@ b2cf1b62c2a31b1ffe6371ef56468ba32d66005b297e9818bf81b895c8d8c78c  ./pod/results_
+ f6ab5d5f5b6fb6019a4aa787c88d98fac4cef76c5a53877e17a5e258df29eb87  ./pod/results_mid.json
+ 04d2b793ca3654149defbb42c5221d26fb882bb78ca476032e1ece9b6da56d2d  ./pod/results_sparse.json
+ 4fc3e802ac1853ffa9a36b4cd86be42585d4d2bdeb70f29255dab905b58b2d7b  ./pod/run_all.sh
+-582c63afabe8a5d9c26430c4130531b8aa534344d30c931939ddbfd294fbaa9d  ./README.md
++4c25e38a63f8f172dee1c09eb0b8feecf0e0076fcba0323b6e2b72921a495686  ./README.md
+diff --git a/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md b/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md
+index 39ab17d..4f63086 100644
+--- a/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md
++++ b/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md
+@@ -1,12 +1,17 @@
+ # Model-only SPS ceiling probe (COMPONENT measurement), 2026-09-29 06:45–06:49Z
+ 
+-**This is a component measurement, not end-to-end SPS.** It is an upper bound on env steps/s per rank *if the engine, host↔device copies, GAE, logging and the DDP all-reduce cost nothing*. Nothing here shows the trainer reaches these numbers.
++**This is a component measurement, not end-to-end SPS.** The numbers are **conditional estimates for the specified A/B/C/D synthetic schedule**: model-only env steps/s per rank *if the engine, host↔device copies, GAE, logging and the DDP all-reduce cost nothing, and if the eventual trainer's model work matches A/B/C/D*. B and C are surrogate workloads (see Limits), so their costs are not proven bounds on the eventual trainer. Nothing here shows the trainer reaches these numbers.
++
++**Timing evidence only, not numerical qualification.** The script retained no finite-loss or finite-gradient check and no sampling-versus-replay equality check (log-probs from A against `evaluate_actions` in B). At `e1458d2`, `owl.train.utils.configure_model_compile` with `model_compile="trunk"` still rejects the Kaggriculture model (it requires `StatelessTransformerV1`); the probe calls `model.compile_transformer_trunk(...)` directly, so the compiled path timed here is not yet reachable from `scripts/run_ppo.py` config.
++
++*Revised 2026-09-29 after Codex review `../codex/verify-sps-ceiling-r1.md` (APPROVE WITH EDITS, findings 1–6). Retained raw results, logs and receipts are unchanged; only this README's wording and the `MANIFEST.sha256` line for this README changed.*
+ 
+ - Pre-run statement: `../run-statements/model-sps-ceiling.md`, committed in `ed61770` at 06:44:12Z, before launch at 06:45:05Z.
+ - Source: `e1458d2a717d9d731a367cbb78b98616ee6649f4` (integration HEAD, heads merged), transferred by bundle (sha256 `4e56cc81…d025`) into `/workspace/kg-v3-rebuild`. Receipts: `pod/receipts/git_checkout.txt` and `git_post.txt` (HEAD `e1458d2`, `git status --porcelain` empty at 06:49:16Z; `runs/` is gitignored). There were no Rust, lock or pyproject changes since `69397da`, so no rebuild. `owl` imports from `/workspace/kg-v3-rebuild/python` (`pod/receipts/import_paths.txt`).
+ - Stack: torch 2.9.0+cu128, triton 3.5.0, flash-attn 2.8.3, RTX PRO 6000 Blackwell Server Edition (94.97 GiB visible to torch), GPU 0 only, 6,252,223 params.
+ - Script: `bench_model_sps.py` (sha256 `4a7ede9a…a08a`; the pod copy `pod/bench_model_sps.py` is identical). Driver: `pod/run_all.sh`. Per-density logs and JSON are in `pod/`.
+-- Idle receipts: `pod/receipts/idle_{nvidia_smi,ps}_{pre,prelaunch,post}.txt`. Every capture shows 0 MiB on both GPUs, no compute apps and no python/torchrun/run_ppo/cargo/pip/maturin process. The pod was left running and idle.
++- Idle receipts: `pod/receipts/idle_{nvidia_smi,ps}_{pre,prelaunch,post}.txt`. The `pre` (06:44:23Z) and `post` (06:49:16Z) captures show 0 MiB and 0 % on both GPUs. The `prelaunch` capture (06:45:04Z) shows **563 MiB on both GPUs** (P0), 0 % utilization and no running compute processes; it is not a 0 MiB capture. Launch followed one second later (06:45:05Z), although the run statement's safety rule said to wait if GPU memory was in use. No capture shows a compute app or a python/torchrun/run_ppo/cargo/pip/maturin process. The pod was left running and idle.
++- Stopping: `pod/run_all.sh` runs the three densities sequentially with `set -u` (no `set -e`), each under its own `timeout 1500` (25 min). It does **not** enforce the statement's first-failure stop (it would continue to the next density after a failure) or its 45-minute aggregate limit (the three timeouts allow up to 75 min). All three densities exited 0; actual execution was 06:45:05Z–06:48:52Z, **227 s** (`pod/driver.log`), so these gaps did not affect the timings.
+ 
+ ## Setup
+ 
+@@ -16,7 +21,7 @@
+ - Observations: `make_obs` for 128 envs, tiled along the env dim to reach 1,024 and 16,384 rows. The grammar tables are the synthetic `expected_grammar_tables`.
+ - Timing: CUDA events over 20 timed iterations, after the first call and 5 warmup iterations.
+ 
+-## Results (medians in ms; p90 is within 0.5 % of the median everywhere)
++## Results (medians in ms over 20 timed CUDA-event samples)
+ 
+ | density | tokens/row | A fwd 256 | B train 1,024 | C teacher 16,384 | D value 256 | update wall (s) | ceiling SPS/rank | ≈2 ranks |
+ |---|---|---|---|---|---|---|---|---|
+@@ -24,18 +29,20 @@
+ | mid (40/40 actors, 4 shops) | 303 | 12.87 | 177.56 | 987.72 | 9.50 | 4.662 | 1,757 | ~3,514 |
+ | dense (241/241 actors, 8 shops) | 709 | 25.41 | 326.58 | 1,690.58 | 22.04 | 8.564 | 957 | ~1,913 |
+ 
++**Variability.** p90/median is within +0.14 % for every workload except sparse B, whose p90 is **148.678 ms vs 147.472 ms median (+0.818 %)**; its last six samples ran at 148.2–148.8 ms. Dense B contains one tail sample of **545.106 ms** (sample 11 of 20) against a **326.579 ms** median (+66.9 %); the other 19 are 326.1–327.1 ms, so its p90 (327.007 ms) and median do not move, but its mean is 337.5 ms. The cause of that tail sample is not known. The script's `update_wall_s_p90` in the JSON is the weighted sum of component p90s; it is **not** a measured whole-update p90, and no whole update was timed.
++
+ **Formulas.**
+-- update wall = 64·t_A + t_C + 16·t_B + t_D.
++- update wall = 64·t_A + t_C + 16·t_B + t_D (medians).
+ - env steps per update per rank = 128 × 64 = 8,192.
+ - ceiling SPS per rank = 8,192 / update wall.
+ - Two ranks give about 2× that. This assumes the DDP all-reduce of 6.25 M params is small; that assumption was not measured.
+ 
+-**Share of update wall.** 16·B takes 60–61 %, C takes 20–22 %, 64·A takes 18–19 % and D takes 0.2–0.3 %, at every density.
++**Share of update wall.** 16·B takes 60–61 %, C takes 20–22 %, 64·A takes 18–19 % and D takes 0.2–0.3 %, at every density. This is a share of the synthetic schedule; it does not attribute B's cost to any sub-phase (stems, trunk, heads, backward, Muon).
+ 
+ **Flash path.**
+ - `use_flash_attn` returned True on every call in every workload.
+-- Trunk `pack_sequence` calls per call were as predicted: A, B and D made 1 each. C made 1 at sparse (3,637,248 packed tokens, under the padded bound), 2 at mid (4,194,126 + 770,226) and 3 at dense (4,193,735 + 4,193,735 + 3,228,786).
+-- The head row chunks in C were 2 (11,096 rows per chunk).
++- Trunk `pack_sequence` calls per call were **counted** by a wrapper and were as predicted: A, B and D made 1 each. C made 1 at sparse (3,637,248 packed tokens; 3,637,248 × 512 = 1.862 × 10⁹ < 2³¹, i.e. under the **packed**-token bound), 2 at mid (4,194,126 + 770,226) and 3 at dense (4,193,735 + 4,193,735 + 3,228,786).
++- The head row chunks in C were **calculated from source**, not counted: `ceil(16,384 / head_rows_per_chunk(config))` = 2 with 11,096 rows per chunk (`info.C_head_chunks` in the JSON).
+ 
+ **First call (compile/autotune).**
+ - The sparse process ran on a cold cache: A took 20.1 s and B 40.1 s.
+@@ -50,17 +57,19 @@
+ | mid | 0.59 | 20.92 | 30.74 | 0.51 |
+ | dense | 0.97 | **40.28** | 31.93 | 0.86 |
+ 
+-Values are `max_memory_allocated` in GiB. Against 94.97 GiB, the highest allocated peak is 42.4 % (B at dense), which is below the 85 % rule.
++Values are `max_memory_allocated` in GiB. The allocated peak is **40.275 GiB** (B at dense), 42.4 % of 94.97 GiB. The plan defines the 85 % memory rule on `max_memory_allocated` (`../plan.md`, "Resource fit"), so for these component workloads the allocated peak is within that rule. This does not qualify complete-trainer memory fit, which also includes rollout buffers, engine state, teacher cache, evaluation and DDP.
+ 
+-**Reserved memory is not below 85 %.** The caching allocator's `max_memory_reserved` reached 84.99 GiB (89.5 %) during dense C. It was 76.3 GiB (80 %) at mid and 72.4 GiB at sparse. That happened because C ran after B in the same process and reused its cached blocks, so this is fragmentation and carryover, not live tensors. A real trainer that runs teacher precompute after updates in one process could show about 87 GB in `nvidia-smi`. Mitigations are to run C before B, call `torch.cuda.empty_cache()` between phases, or use `expandable_segments`; none of these was tested.
++**Reserved peak is a separate observation.** The caching allocator's `max_memory_reserved` reached **84.994 GiB (89.5 %)** during dense C. It was 76.3 GiB (80 %) at mid and 72.4 GiB at sparse. That is not the plan's allocated-memory rule, but it is what `nvidia-smi` would show. **Hypothesis (not tested):** C ran after B in the same process and the allocator kept B's cached blocks, so the reserved peak reflects carryover and fragmentation rather than live tensors. No allocator snapshot or phase-order control (C before B, or `torch.cuda.empty_cache()` between phases) was run, so this attribution is unsupported. Candidate mitigations (run C before B, `empty_cache()` between phases, `expandable_segments`) are likewise untested.
+ 
+ ## Limits
+ 
+ - **Component only.** Engine stepping, obs/action host↔device copies, GAE, logging, W&B, DDP all-reduce and the rollout's Python loop are excluded.
+ - **(C) is a proxy.** The Kaggriculture model has no `compute_teacher_distillation_targets`. C is `evaluate_actions` under `no_grad` over 16,384 rows in one call. The real path would chunk by `teacher_segments_per_minibatch` and may produce full per-slot distributions instead of chosen-action log-probs.
+-- **(B) is PPO-shaped, not the `run_ppo` loss.** It uses a scalar per-row ratio, not per_player clipping, and no teacher KL. It uses Muon with default `MuonConfig()` and `clip_grad_norm_(10)`. It runs one epoch (16 minibatches) per update.
++- **(B) is PPO-shaped, not the `run_ppo` loss.** It clips one scalar joint ratio per row; because each row is one seat, that is per-player joint clipping (the earlier "not per_player" wording was wrong). It has no teacher KL. It uses Muon with default `MuonConfig()` and `clip_grad_norm_(10)`. It runs one epoch (16 minibatches) per update.
++- **Compile path not reachable from config.** `configure_model_compile` rejects the model at `e1458d2`; the probe compiles the trunk directly.
++- **No numerical checks.** No finite-loss/gradient or sampling-versus-replay equality check was retained; this is timing evidence only.
+ - **Uniform densities.** Every env in a batch has the same density; real rollouts mix densities within a batch. Batches are tiled copies of 128 envs, and the synthetic grammar tables and random weights change the sampled programs, not the tensor shapes.
+-- **No Nsight Systems.** `nsys` is not installed on the pod (checked 06:41:21Z; nothing installed), so no timeline was captured. Phase attribution inside a step (stems vs trunk vs heads vs optimizer, and host gaps) is **unresolved**. Two indirect signals exist. First, D (encode + critic) costs 67–87 % of A, so the heads cost about 3.4–3.6 ms per 256-row sampling call regardless of density. Second, the host wall median equals the CUDA-event median within 0.03 ms, so each call is fully synchronous (`evaluate_actions` has a replay-flag host sync by design).
++- **No Nsight Systems timeline.** `nsys` absence on the pod is **operator-reported** (pre-check at 06:41:21Z: `which nsys` empty, no `/usr/local/cuda*/bin/nsys`, no `/opt/nvidia/nsight-systems*`); no command-output receipt of that check was retained. Nothing was installed and no timeline was captured. Phase attribution inside a step (stems vs trunk vs heads vs backward vs optimizer, and host gaps) is **unresolved**. A − D (3.4–3.6 ms per 256-row call) is the **incremental cost of the sampling path** over the value-only path; it is not an isolated measurement of head kernels. B's dominance of the update wall does not isolate heads backward or Muon. The host wall median is within 0.03 ms of the CUDA-event median, but the harness calls `end.synchronize()` before stopping the host clock, so that agreement says nothing about whether the model calls are intrinsically synchronous.
+ - The later density processes had a warm compile cache, so their compile times are not cold-start numbers.
+ 
+ ## Large files kept on the pod only (not copied, > 1 MB)
+diff --git a/ops/rebuild-2026-09-29/results.md b/ops/rebuild-2026-09-29/results.md
+index e528ac9..2ecfb64 100644
+--- a/ops/rebuild-2026-09-29/results.md
++++ b/ops/rebuild-2026-09-29/results.md
+@@ -210,7 +210,7 @@ Evidence that the flash path ran:
+ 
+ ## Model-only SPS ceiling (component) (2026-09-29, 06:45–06:49Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+ 
+-**Component measurement, not end-to-end SPS.** These numbers are an upper bound on env steps/s if the engine, host copies, GAE, logging and DDP cost nothing.
++**Component measurement, not end-to-end SPS.** These numbers are **conditional estimates for the specified A/B/C/D synthetic schedule**: model-only env steps/s if the engine, host copies, GAE, logging and DDP cost nothing. B (PPO-shaped loss) and C (teacher proxy) are surrogates, so their costs are not proven bounds on the eventual trainer. **Timing evidence only:** no finite-loss/gradient check and no sampling-versus-replay equality check were retained. At `e1458d2`, `configure_model_compile` (`model_compile="trunk"`) still rejects the Kaggriculture model; the probe compiled the trunk directly. (Revised after Codex review `codex/verify-sps-ceiling-r1.md`, APPROVE WITH EDITS.)
+ 
+ - Pre-run statement: `run-statements/model-sps-ceiling.md`, committed in `ed61770` at 06:44:12Z. Launch was at 06:45:05Z.
+ - Source: `e1458d2` (full model with heads).
+@@ -225,29 +225,33 @@ Evidence that the flash path ran:
+ | dense (709) | 25.41 ms | 326.6 ms | 1,690.6 ms | 22.04 ms | 8.56 s | 957 | ~1,913 |
+ 
+ **Formulas.**
+-- update wall = 64·t_A + t_C + 16·t_B + t_D, using medians over 20 CUDA-event iterations (p90 is within 0.5 %).
++- update wall = 64·t_A + t_C + 16·t_B + t_D, using medians over 20 CUDA-event iterations.
++- Variability: p90/median ≤ +0.14 % everywhere except sparse B (p90 148.678 ms vs 147.472 ms median, **+0.818 %**). Dense B has one tail sample of **545.106 ms** vs a 326.579 ms median (cause unknown; p90 327.007 ms). The weighted sum of component p90s is not a measured whole-update p90; no whole update was timed.
+ - ceiling = 8,192 / update wall.
+ - Two ranks give about 2× that, assuming the all-reduce is small. The all-reduce was not measured.
+ 
+ **What dominates.**
+-- The 16 train steps take about 60 % of update wall at every density.
+-- Teacher precompute takes 20–22 % and rollout sampling takes 18–19 %.
++- The 16 train steps take about 60 % of the synthetic schedule's update wall at every density.
++- Teacher-proxy precompute takes 20–22 % and rollout sampling takes 18–19 %.
++- This is a share of the schedule only. It does not attribute B's cost to heads backward, Muon or any other sub-phase, and A − D is the incremental sampling-path cost, not isolated head kernels.
+ 
+ **Engine budget.**
+ - For the engine to cost no more than the model, which halves the ceiling, it must step 8,192 env steps in at most 3.9 s (sparse) to 8.6 s (dense) per rank. That is about 0.48–1.05 ms per env step.
+-- To stay within 10 % of the ceiling, it gets 0.39–0.86 s, or 48–105 µs per env step.
++- To lose at most 10 % of the ceiling SPS, engine time E must satisfy 8,192/(M + E) ≥ 0.9 · 8,192/M, i.e. E ≤ M/9: 0.437 s (sparse), 0.518 s (mid), 0.952 s (dense) per update, or 53 / 63 / 116 µs per env step. (The earlier 0.1 × M figures, 0.39–0.86 s and 48–105 µs, are conservative.)
+ - The 64 rollout steps run serially with the engine. Each batched engine step of 128 envs therefore competes with an 11–25 ms sampling forward.
+ 
+ **Flash and chunks.**
+ - `use_flash_attn` was True on every call.
+-- Trunk chunks in C were 1, 2 and 3 for sparse, mid and dense, as predicted. There were 2 head chunks.
++- Trunk chunks in C were **counted** as 1, 2 and 3 for sparse, mid and dense, as predicted (sparse is under the **packed**-token bound, 3,637,248 × 512 < 2³¹). The 2 head chunks were **calculated from source** (`ceil(16,384 / 11,096)`), not counted.
+ 
+ **Memory.**
+-- Peak allocated memory was at most 40.3 GiB (B at dense), 42 % of 94.97 GiB.
+-- Caching-allocator **reserved** memory reached 85.0 GiB (89.5 %) during dense C, because C ran after B in the same process. That is above the 85 % line on reserved memory, although live tensors stay under 34 %.
++- Peak allocated memory was at most **40.275 GiB** (B at dense), 42.4 % of 94.97 GiB, within the plan's 85 % rule, which is defined on `max_memory_allocated`. Complete-trainer memory fit is not qualified by this.
++- Caching-allocator **reserved** peak is a separate observation: **84.994 GiB (89.5 %)** during dense C. The explanation that C reused B's cached blocks (carryover/fragmentation) is a **hypothesis**; no allocator snapshot or phase-order control was run.
+ 
+ **Compile.**
+ - On a cold cache the first call took 20 s for A and 40 s for B.
+ - With a warm cache it took 7–11 s.
+ 
+-**Profiling.** `nsys` is absent on the pod and was not installed. In-step phase attribution is unresolved.
++**Profiling.** `nsys` absence on the pod is operator-reported (06:41:21Z pre-check; no command-output receipt retained). Nothing was installed and no timeline exists. In-step phase attribution is unresolved. Host/event median agreement cannot show the calls are intrinsically synchronous, because the timer calls `end.synchronize()` before reading the host clock.
++
++**Run conduct.** The prelaunch capture showed 563 MiB on both GPUs (0 % util, no compute processes), not 0 MiB, and launch followed one second later. The driver did not enforce the statement's first-failure stop or 45-minute aggregate limit (three independent 25-min timeouts, no `set -e`). All densities exited 0 in 227 s total, so neither gap affected the timings.
+diff --git a/ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md b/ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md
+index b68682e..5c31c83 100644
+--- a/ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md
++++ b/ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md
+@@ -23,3 +23,15 @@
+ - **Budget:** ≤ 45 min wall on the already-running pod ($4.18/h ≈ $3.1 max; no new billable resource).
+ - **Artifacts:** pod `/workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/` (idle receipts, git receipts, per-density logs and `results_<density>.json`, summary). Local copy (files ≤ 1 MB; larger ones listed with sha256) in `ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/`; section "Model-only SPS ceiling (component)" appended to `ops/rebuild-2026-09-29/results.md`.
+ - **Safety:** pre-check 06:41:21Z: `nvidia-smi` 0 MiB / 0 % on both GPUs, no compute apps, no python/torchrun/run_ppo/cargo/pip/maturin process. Re-checked and captured to files immediately before launch; if GPU memory is in use, wait up to 10 min then stop without running. `/workspace/kg-v3` (reference) is not touched. No driver/CUDA/torch changes, no security changes, no installs. The pod is never stopped, restarted or deleted; it is left running and idle.
++
++## Post-run addendum (2026-09-29, after Codex review `../codex/verify-sps-ceiling-r1.md`, APPROVE WITH EDITS)
++
++The pre-run text above is unchanged as committed in `ed61770`. The following statements correct or qualify it against the retained receipts in `../model-sps-ceiling-2026-09-29/`.
++
++- **Scope of the result.** The derived "ceiling" is a **conditional estimate for the specified A/B/C/D synthetic schedule**, not a proven bound: B (PPO-shaped loss) and C (teacher proxy) are surrogate workloads. The script retained no finite-loss/gradient check and no sampling-versus-replay equality check, so the result is **timing evidence only**. At `e1458d2`, `configure_model_compile` with `model_compile="trunk"` still rejects the Kaggriculture model; the probe called `compile_transformer_trunk` directly.
++- **Safety line vs receipt.** The pre-check line above says 0 MiB / 0 % at 06:41:21Z. The prelaunch capture (`pod/receipts/idle_nvidia_smi_prelaunch.txt`, 06:45:04Z) shows **563 MiB on both GPUs**, 0 % utilization and no running compute processes. Launch followed at 06:45:05Z without the wait that the "if GPU memory is in use" rule called for.
++- **Stopping condition vs driver.** `pod/run_all.sh` (no `set -e`, one `timeout 1500` per density) did **not** enforce the first-failure stop or the 45-minute aggregate limit; it would have continued past a failure and allowed up to 75 min. All three densities exited 0 in **227 s** (06:45:05Z–06:48:52Z, `pod/driver.log`), so the gap did not affect results.
++- **nsys.** The `nsys` pre-check above is **operator-reported**; no command-output receipt of it was retained.
++- **Memory rule.** The 85 % rule (plan, "Resource fit") is on `max_memory_allocated`; the allocated peak was 40.275 GiB (dense B), within it. The reserved peak, 84.994 GiB (89.5 %, dense C), is a separate observation; its carryover/fragmentation explanation is an untested hypothesis.
++- **Chunk expectation.** Trunk chunks in C were counted and matched (1/2/3). The sparse bound quoted above as "padded" is the **packed**-token bound (3,637,248 × 512 < 2³¹). The 2 head chunks were calculated from source (`head_rows_per_chunk`), not counted.
++- **Method wording.** B's "clipped ratio" is one scalar joint ratio per row; each row is one seat, so it is per-player joint clipping. Host/event timing agreement cannot establish intrinsic synchronization because the timer synchronizes on the end event before reading the host clock. A − D is incremental sampling-path cost, not isolated head kernels.
+
+exec
+/bin/zsh -lc 'rg --files ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29 && nl -ba ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md && nl -ba ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/bench_model_sps.py
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/MANIFEST.sha256
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_sparse.json
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/log_dense.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/log_sparse.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_mid.json
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/driver.log
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/log_mid.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/run_all.sh
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_dense.json
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/bench_model_sps.py
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/idle_ps_post.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/git_post.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/idle_ps_prelaunch.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/idle_nvidia_smi_pre.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/idle_ps_pre.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/git_checkout.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/idle_nvidia_smi_prelaunch.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/import_paths.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/idle_nvidia_smi_post.txt
+ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/compile_caches.sha256
+     1	# Model-only SPS ceiling probe (COMPONENT measurement), 2026-09-29 06:45–06:49Z
+     2	
+     3	**This is a component measurement, not end-to-end SPS.** The numbers are **conditional estimates for the specified A/B/C/D synthetic schedule**: model-only env steps/s per rank *if the engine, host↔device copies, GAE, logging and the DDP all-reduce cost nothing, and if the eventual trainer's model work matches A/B/C/D*. B and C are surrogate workloads (see Limits), so their costs are not proven bounds on the eventual trainer. Nothing here shows the trainer reaches these numbers.
+     4	
+     5	**Timing evidence only, not numerical qualification.** The script retained no finite-loss or finite-gradient check and no sampling-versus-replay equality check (log-probs from A against `evaluate_actions` in B). At `e1458d2`, `owl.train.utils.configure_model_compile` with `model_compile="trunk"` still rejects the Kaggriculture model (it requires `StatelessTransformerV1`); the probe calls `model.compile_transformer_trunk(...)` directly, so the compiled path timed here is not yet reachable from `scripts/run_ppo.py` config.
+     6	
+     7	*Revised 2026-09-29 after Codex review `../codex/verify-sps-ceiling-r1.md` (APPROVE WITH EDITS, findings 1–6). Retained raw results, logs and receipts are unchanged; only this README's wording and the `MANIFEST.sha256` line for this README changed.*
+     8	
+     9	- Pre-run statement: `../run-statements/model-sps-ceiling.md`, committed in `ed61770` at 06:44:12Z, before launch at 06:45:05Z.
+    10	- Source: `e1458d2a717d9d731a367cbb78b98616ee6649f4` (integration HEAD, heads merged), transferred by bundle (sha256 `4e56cc81…d025`) into `/workspace/kg-v3-rebuild`. Receipts: `pod/receipts/git_checkout.txt` and `git_post.txt` (HEAD `e1458d2`, `git status --porcelain` empty at 06:49:16Z; `runs/` is gitignored). There were no Rust, lock or pyproject changes since `69397da`, so no rebuild. `owl` imports from `/workspace/kg-v3-rebuild/python` (`pod/receipts/import_paths.txt`).
+    11	- Stack: torch 2.9.0+cu128, triton 3.5.0, flash-attn 2.8.3, RTX PRO 6000 Blackwell Server Edition (94.97 GiB visible to torch), GPU 0 only, 6,252,223 params.
+    12	- Script: `bench_model_sps.py` (sha256 `4a7ede9a…a08a`; the pod copy `pod/bench_model_sps.py` is identical). Driver: `pod/run_all.sh`. Per-density logs and JSON are in `pod/`.
+    13	- Idle receipts: `pod/receipts/idle_{nvidia_smi,ps}_{pre,prelaunch,post}.txt`. The `pre` (06:44:23Z) and `post` (06:49:16Z) captures show 0 MiB and 0 % on both GPUs. The `prelaunch` capture (06:45:04Z) shows **563 MiB on both GPUs** (P0), 0 % utilization and no running compute processes; it is not a 0 MiB capture. Launch followed one second later (06:45:05Z), although the run statement's safety rule said to wait if GPU memory was in use. No capture shows a compute app or a python/torchrun/run_ppo/cargo/pip/maturin process. The pod was left running and idle.
+    14	- Stopping: `pod/run_all.sh` runs the three densities sequentially with `set -u` (no `set -e`), each under its own `timeout 1500` (25 min). It does **not** enforce the statement's first-failure stop (it would continue to the next density after a failure) or its 45-minute aggregate limit (the three timeouts allow up to 75 min). All three densities exited 0; actual execution was 06:45:05Z–06:48:52Z, **227 s** (`pod/driver.log`), so these gaps did not affect the timings.
+    15	
+    16	## Setup
+    17	
+    18	- Model: preset `configs/model/kaggriculture.yaml`.
+    19	- Precision: fp32 params under `torch.autocast(bfloat16)`, with TF32 set by `configure_torch()`.
+    20	- Compilation: the trunk is compiled with `mode="max-autotune-no-cudagraphs"` and `dynamic=True`; the heads run eager. Flash is forced.
+    21	- Observations: `make_obs` for 128 envs, tiled along the env dim to reach 1,024 and 16,384 rows. The grammar tables are the synthetic `expected_grammar_tables`.
+    22	- Timing: CUDA events over 20 timed iterations, after the first call and 5 warmup iterations.
+    23	
+    24	## Results (medians in ms over 20 timed CUDA-event samples)
+    25	
+    26	| density | tokens/row | A fwd 256 | B train 1,024 | C teacher 16,384 | D value 256 | update wall (s) | ceiling SPS/rank | ≈2 ranks |
+    27	|---|---|---|---|---|---|---|---|---|
+    28	| sparse (1/1 actors, 1 shop) | 222 | 11.09 | 147.47 | 851.98 | 7.48 | 3.929 | 2,085 | ~4,170 |
+    29	| mid (40/40 actors, 4 shops) | 303 | 12.87 | 177.56 | 987.72 | 9.50 | 4.662 | 1,757 | ~3,514 |
+    30	| dense (241/241 actors, 8 shops) | 709 | 25.41 | 326.58 | 1,690.58 | 22.04 | 8.564 | 957 | ~1,913 |
+    31	
+    32	**Variability.** p90/median is within +0.14 % for every workload except sparse B, whose p90 is **148.678 ms vs 147.472 ms median (+0.818 %)**; its last six samples ran at 148.2–148.8 ms. Dense B contains one tail sample of **545.106 ms** (sample 11 of 20) against a **326.579 ms** median (+66.9 %); the other 19 are 326.1–327.1 ms, so its p90 (327.007 ms) and median do not move, but its mean is 337.5 ms. The cause of that tail sample is not known. The script's `update_wall_s_p90` in the JSON is the weighted sum of component p90s; it is **not** a measured whole-update p90, and no whole update was timed.
+    33	
+    34	**Formulas.**
+    35	- update wall = 64·t_A + t_C + 16·t_B + t_D (medians).
+    36	- env steps per update per rank = 128 × 64 = 8,192.
+    37	- ceiling SPS per rank = 8,192 / update wall.
+    38	- Two ranks give about 2× that. This assumes the DDP all-reduce of 6.25 M params is small; that assumption was not measured.
+    39	
+    40	**Share of update wall.** 16·B takes 60–61 %, C takes 20–22 %, 64·A takes 18–19 % and D takes 0.2–0.3 %, at every density. This is a share of the synthetic schedule; it does not attribute B's cost to any sub-phase (stems, trunk, heads, backward, Muon).
+    41	
+    42	**Flash path.**
+    43	- `use_flash_attn` returned True on every call in every workload.
+    44	- Trunk `pack_sequence` calls per call were **counted** by a wrapper and were as predicted: A, B and D made 1 each. C made 1 at sparse (3,637,248 packed tokens; 3,637,248 × 512 = 1.862 × 10⁹ < 2³¹, i.e. under the **packed**-token bound), 2 at mid (4,194,126 + 770,226) and 3 at dense (4,193,735 + 4,193,735 + 3,228,786).
+    45	- The head row chunks in C were **calculated from source**, not counted: `ceil(16,384 / head_rows_per_chunk(config))` = 2 with 11,096 rows per chunk (`info.C_head_chunks` in the JSON).
+    46	
+    47	**First call (compile/autotune).**
+    48	- The sparse process ran on a cold cache: A took 20.1 s and B 40.1 s.
+    49	- The mid and dense processes reused the run-local Inductor/Triton cache: A took 7.4 s, and B took 11.1 s at mid and 8.0 s at dense.
+    50	- D reused A's no-grad graph (≤ 0.02 s). C took 0.9–1.8 s.
+    51	
+    52	**Peak memory.**
+    53	
+    54	| density | A | B | C | D |
+    55	|---|---|---|---|---|
+    56	| sparse | 0.59 | 17.06 | 32.13 | 0.51 |
+    57	| mid | 0.59 | 20.92 | 30.74 | 0.51 |
+    58	| dense | 0.97 | **40.28** | 31.93 | 0.86 |
+    59	
+    60	Values are `max_memory_allocated` in GiB. The allocated peak is **40.275 GiB** (B at dense), 42.4 % of 94.97 GiB. The plan defines the 85 % memory rule on `max_memory_allocated` (`../plan.md`, "Resource fit"), so for these component workloads the allocated peak is within that rule. This does not qualify complete-trainer memory fit, which also includes rollout buffers, engine state, teacher cache, evaluation and DDP.
+    61	
+    62	**Reserved peak is a separate observation.** The caching allocator's `max_memory_reserved` reached **84.994 GiB (89.5 %)** during dense C. It was 76.3 GiB (80 %) at mid and 72.4 GiB at sparse. That is not the plan's allocated-memory rule, but it is what `nvidia-smi` would show. **Hypothesis (not tested):** C ran after B in the same process and the allocator kept B's cached blocks, so the reserved peak reflects carryover and fragmentation rather than live tensors. No allocator snapshot or phase-order control (C before B, or `torch.cuda.empty_cache()` between phases) was run, so this attribution is unsupported. Candidate mitigations (run C before B, `empty_cache()` between phases, `expandable_segments`) are likewise untested.
+    63	
+    64	## Limits
+    65	
+    66	- **Component only.** Engine stepping, obs/action host↔device copies, GAE, logging, W&B, DDP all-reduce and the rollout's Python loop are excluded.
+    67	- **(C) is a proxy.** The Kaggriculture model has no `compute_teacher_distillation_targets`. C is `evaluate_actions` under `no_grad` over 16,384 rows in one call. The real path would chunk by `teacher_segments_per_minibatch` and may produce full per-slot distributions instead of chosen-action log-probs.
+    68	- **(B) is PPO-shaped, not the `run_ppo` loss.** It clips one scalar joint ratio per row; because each row is one seat, that is per-player joint clipping (the earlier "not per_player" wording was wrong). It has no teacher KL. It uses Muon with default `MuonConfig()` and `clip_grad_norm_(10)`. It runs one epoch (16 minibatches) per update.
+    69	- **Compile path not reachable from config.** `configure_model_compile` rejects the model at `e1458d2`; the probe compiles the trunk directly.
+    70	- **No numerical checks.** No finite-loss/gradient or sampling-versus-replay equality check was retained; this is timing evidence only.
+    71	- **Uniform densities.** Every env in a batch has the same density; real rollouts mix densities within a batch. Batches are tiled copies of 128 envs, and the synthetic grammar tables and random weights change the sampled programs, not the tensor shapes.
+    72	- **No Nsight Systems timeline.** `nsys` absence on the pod is **operator-reported** (pre-check at 06:41:21Z: `which nsys` empty, no `/usr/local/cuda*/bin/nsys`, no `/opt/nvidia/nsight-systems*`); no command-output receipt of that check was retained. Nothing was installed and no timeline was captured. Phase attribution inside a step (stems vs trunk vs heads vs backward vs optimizer, and host gaps) is **unresolved**. A − D (3.4–3.6 ms per 256-row call) is the **incremental cost of the sampling path** over the value-only path; it is not an isolated measurement of head kernels. B's dominance of the update wall does not isolate heads backward or Muon. The host wall median is within 0.03 ms of the CUDA-event median, but the harness calls `end.synchronize()` before stopping the host clock, so that agreement says nothing about whether the model calls are intrinsically synchronous.
+    73	- The later density processes had a warm compile cache, so their compile times are not cold-start numbers.
+    74	
+    75	## Large files kept on the pod only (not copied, > 1 MB)
+    76	
+    77	- `/workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/v3-e1458d2.bundle`: 8,696,441 B, sha256 `4e56cc819f5972eaeca79e1b8357bc2f21d3e23439169c9a628566c73166d025`.
+    78	- `inductor_cache/` (150,591,125 B) and `triton_cache/` (95,711,340 B): 4,715 files in total. Their per-file sha256 manifest is `pod/receipts/compile_caches.sha256` (791,346 B, sha256 `0cd548eb8692369583333b6f05e5919576d636830e7a1b486ee3d4a171060043`).
+    79	
+    80	Local copy manifest: `MANIFEST.sha256`.
+     1	# Run statement — model-only SPS ceiling probe (COMPONENT measurement, single GPU, ≤ 45 min)
+     2	
+     3	**Label: component measurement.** This probe times only the model's share of one PPO update. It gives an upper bound on env steps/s *if the engine, host copies, GAE, logging and DDP cost nothing*. It does **not** measure or prove end-to-end SPS (CLAUDE.md throughput rule), and every result derived from it is labeled that way.
+     4	
+     5	- **Question (diagnostic, not training):** at the preset model (`configs/model/kaggriculture.yaml`: width 256, depth 8, 8 heads, `force_flash_attn: true`) with the heads merged (Task 2.3), what is the per-update model wall time on one RTX PRO 6000 Blackwell, and which workload dominates it? From that, what model-only SPS ceiling per rank follows, and what time budget per env step is left for the engine before it becomes the bottleneck?
+     6	- **Workloads** (GPU 0 only; fp32 params under `torch.autocast(bfloat16)`, TF32 on via `owl.train.utils.configure_torch`, trunk compiled via `compile_transformer_trunk(mode="max-autotune-no-cudagraphs")` (dynamic=True), heads eager; synthetic contract-valid observations from `tests/kaggriculture/conftest.py::make_obs` for 128 envs, tiled along the env dim for larger batches; synthetic `expected_grammar_tables`):
+     7	  - **(A) rollout sampling:** `model(obs)` (sample actions + values), 256 rows (128 envs × 2 seats), `no_grad`.
+     8	  - **(B) PPO train step:** `evaluate_actions` on 1,024 rows (spm 8 × horizon 64 × 2 seats) with actions sampled in (A), a PPO-shaped loss (clipped ratio 0.2 + 0.5·value MSE − 0.01·entropy), backward, `clip_grad_norm_(10)`, `create_optimizer(MuonConfig())` step.
+     9	  - **(C) teacher precompute:** the Kaggriculture model has no `compute_teacher_distillation_targets`, so the proxy is `evaluate_actions` under `no_grad` over one rollout, 16,384 rows (128 × 64 × 2), which goes through the chunked packed trunk path and the head row chunks. This is a proxy for the future last-best-teacher forward, not that code path.
+    10	  - **(D) critic bootstrap:** `compute_value` on 256 rows, `no_grad`.
+    11	  - **Densities** (same for all 128 envs; tokens per row = own + rival actors + shops + 219 fixed): sparse (1 own, 1 rival, 1 shop → 222 tokens), mid (40 own, 40 rival, 4 shops → 303 tokens), dense (241 own, 241 rival, 8 shops → 709 tokens, the padded maximum). One process per density, order sparse → mid → dense, sharing one run-local Inductor cache (so later processes may pay less compile time; reported as such).
+    12	- **Method:** per workload: first call timed separately with `perf_counter` + `synchronize` (includes compile/autotune), then ≥ 5 warmup iterations, then 20 timed iterations bracketed by CUDA events; report median and p90 (and host wall median). Peak memory per workload via `torch.cuda.reset_peak_memory_stats` / `max_memory_allocated` (and reserved) against 96 GB and the 85 % rule. Counting wrappers on `owl.model.kaggriculture.use_flash_attn` and `pack_sequence` confirm the packed flash path ran and count trunk chunks per call (expected in (C): sparse 1 (padded bound 16,384 × 222 × 512 < 2³¹), mid 2, dense 3; head chunks 2 (11,096 rows per head chunk)).
+    13	- **Derived ceiling (written formula):** env steps per update per rank = 128 × 64 = 8,192; update wall = 64·t_A + t_C + 16·t_B + t_D (one PPO epoch of 16 minibatches); ceiling SPS per rank = 8,192 / update wall; two ranks ≈ 2× (the DDP all-reduce of ≈ 6.25 M params is **assumed** small and is not measured).
+    14	- **Expected discriminating observation:** (B) × 16 or (A) × 64 dominates update wall at dense density; if (C) dominates, the teacher precompute becomes the target. If `use_flash_attn` is false anywhere or the chunk counts differ from the expectation above, the path is not the one described and the timing is reported as not representative.
+    15	- **nsys:** pre-check (06:41:21Z) found no `nsys` on the pod (`which nsys` empty, no `/usr/local/cuda*/bin/nsys`, no `/opt/nvidia/nsight-systems*`). No install; no Nsight timeline is captured. This limits phase attribution inside a step to CUDA-event totals.
+    16	- **Inputs and code path:**
+    17	  - Source: integration branch HEAD in `/Users/poonszesen/kg-v3-int` = `e1458d2a717d9d731a367cbb78b98616ee6649f4` (tree `16b79ba558dc41a04f7d89dd00227f06925ecdeb`; `python/owl/model` tree `782c165fd2a6088bcec765e857cfb77257c2f538`). sha256: `uv.lock` `f3311c31…07f5` (unchanged from Phase 6.0), `pyproject.toml` `6912a9e9…bb01`, `python/owl/model/kaggriculture.py` `20e88276…456c`, `python/owl/model/kaggriculture_actor.py` `59317244…778a`, `configs/model/kaggriculture.yaml` `2b19fac93cd22e0413808b7908d74237c10bc09ef26e4857b54f99e688506440`, `tests/kaggriculture/conftest.py` `95a23d38…9e96`, `python/owl/train/optimizer.py` `b35f444a…e83ce9`. No `src/`, `Cargo.*`, `pyproject.toml`, `uv.lock` or `rust-toolchain.toml` change between the pod's `69397da` and `e1458d2`, so no Rust rebuild is planned.
+    18	  - Transfer: `git bundle create` of `e1458d2` + scp to the pod; in `/workspace/kg-v3-rebuild` `git fetch <bundle>` + `git checkout --detach e1458d2`. No push to origin, no credentials copied. Receipts: pod `git rev-parse HEAD` and `git status --porcelain`.
+    19	  - Environment: `/workspace/kg-v3-rebuild/.venv` from Phase 6.0 (torch 2.9.0+cu128, triton 3.5.0, flash-attn 2.8.3), not modified.
+    20	  - Script: `ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/bench_model_sps.py`, sha256 `4a7ede9a792f661f0d0853028c51469fd36051e424b50a98263e4fab6038a08a`, run with `CUDA_VISIBLE_DEVICES=0`, `TORCHINDUCTOR_CACHE_DIR` inside the run dir.
+    21	  - Hardware: pod `w7ia3zvxqsvs3g`, 2× RTX PRO 6000 Blackwell Server Edition (96 GB), GPU 0 only.
+    22	- **Stopping condition:** all three densities complete, or the first hard failure (OOM, replay rejection, flash path absent, compile error) which is recorded as the result for that density, or 45 minutes wall from launch; whichever comes first.
+    23	- **Budget:** ≤ 45 min wall on the already-running pod ($4.18/h ≈ $3.1 max; no new billable resource).
+    24	- **Artifacts:** pod `/workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29/` (idle receipts, git receipts, per-density logs and `results_<density>.json`, summary). Local copy (files ≤ 1 MB; larger ones listed with sha256) in `ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/`; section "Model-only SPS ceiling (component)" appended to `ops/rebuild-2026-09-29/results.md`.
+    25	- **Safety:** pre-check 06:41:21Z: `nvidia-smi` 0 MiB / 0 % on both GPUs, no compute apps, no python/torchrun/run_ppo/cargo/pip/maturin process. Re-checked and captured to files immediately before launch; if GPU memory is in use, wait up to 10 min then stop without running. `/workspace/kg-v3` (reference) is not touched. No driver/CUDA/torch changes, no security changes, no installs. The pod is never stopped, restarted or deleted; it is left running and idle.
+    26	
+    27	## Post-run addendum (2026-09-29, after Codex review `../codex/verify-sps-ceiling-r1.md`, APPROVE WITH EDITS)
+    28	
+    29	The pre-run text above is unchanged as committed in `ed61770`. The following statements correct or qualify it against the retained receipts in `../model-sps-ceiling-2026-09-29/`.
+    30	
+    31	- **Scope of the result.** The derived "ceiling" is a **conditional estimate for the specified A/B/C/D synthetic schedule**, not a proven bound: B (PPO-shaped loss) and C (teacher proxy) are surrogate workloads. The script retained no finite-loss/gradient check and no sampling-versus-replay equality check, so the result is **timing evidence only**. At `e1458d2`, `configure_model_compile` with `model_compile="trunk"` still rejects the Kaggriculture model; the probe called `compile_transformer_trunk` directly.
+    32	- **Safety line vs receipt.** The pre-check line above says 0 MiB / 0 % at 06:41:21Z. The prelaunch capture (`pod/receipts/idle_nvidia_smi_prelaunch.txt`, 06:45:04Z) shows **563 MiB on both GPUs**, 0 % utilization and no running compute processes. Launch followed at 06:45:05Z without the wait that the "if GPU memory is in use" rule called for.
+    33	- **Stopping condition vs driver.** `pod/run_all.sh` (no `set -e`, one `timeout 1500` per density) did **not** enforce the first-failure stop or the 45-minute aggregate limit; it would have continued past a failure and allowed up to 75 min. All three densities exited 0 in **227 s** (06:45:05Z–06:48:52Z, `pod/driver.log`), so the gap did not affect results.
+    34	- **nsys.** The `nsys` pre-check above is **operator-reported**; no command-output receipt of it was retained.
+    35	- **Memory rule.** The 85 % rule (plan, "Resource fit") is on `max_memory_allocated`; the allocated peak was 40.275 GiB (dense B), within it. The reserved peak, 84.994 GiB (89.5 %, dense C), is a separate observation; its carryover/fragmentation explanation is an untested hypothesis.
+    36	- **Chunk expectation.** Trunk chunks in C were counted and matched (1/2/3). The sparse bound quoted above as "padded" is the **packed**-token bound (3,637,248 × 512 < 2³¹). The 2 head chunks were calculated from source (`head_rows_per_chunk`), not counted.
+    37	- **Method wording.** B's "clipped ratio" is one scalar joint ratio per row; each row is one seat, so it is per-player joint clipping. Host/event timing agreement cannot establish intrinsic synchronization because the timer synchronizes on the end event before reading the host clock. A − D is incremental sampling-path cost, not isolated head kernels.
+
+exec
+/bin/zsh -lc "cat cookbook/decisions/throughput-means-correct-complete-work.md cookbook/workflows/profile-cuda-bottlenecks-with-nsight-systems.md && sed -n '1,48p' cookbook/log.md && rg -n 'SPS|ceiling|model-only|surrogate|synchronous' cookbook && nl -ba ops/rebuild-2026-09-29/results.md | sed -n '208,282p'" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+---
+type: "Decision"
+title: "Throughput means correct complete work"
+description: "High throughput is required; preserve semantic parity and measure equivalent work rather than inferring gains from language or kernels."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/high-throughput-is-mandatory.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/myolie-native-sampling-grammar.md"}]
+---
+
+# Throughput means correct complete work
+
+Original v2 owner directive:
+
+> cookbook decision 下一個-高吞吐量是必須不是選擇
+
+Under today's instruction to reuse useful discipline, high throughput is a requirement for the v3 collection, model and training design. Preserve correctness while reporting collection rate, valid learner turns through a full update, phase timings and the total workflow cost. Separate startup/compilation from steady state. State hardware, precision, batch/rollout work, recording settings, transfer and evaluation boundaries. No absolute SPS floor or allowed regression percentage has been supplied.
+
+Rust preparation must actually execute in the path being measured. Preserve game ordering, no-op/STOP distinctions, conditional legality, masks, sampled behavior density and feature semantics; pin source/lockfile/binary and inputs/outputs. Compare equivalent work with an independent oracle where applicable. A faster parser or sampler does not establish a full-training speedup.
+
+The v2 native-sampler Reference is useful contrary evidence: its saved shared-host run lowered sampler CPU time while complete collection elapsed time increased. That is a scoped counterexample to extrapolating component gains, not a ban on native sampling and not a v3 benchmark. Reducing environments, histories or data volume is a workload change unless comparable end-to-end measurements show an optimization.
+
+Use [[../workflows/profile-cuda-bottlenecks-with-nsight-systems|Nsight Systems]] for NVIDIA timeline attribution. Temporary downscaling can diagnose a fault but does not close the throughput requirement. Measured scopes so far (the rejected old decoder and the historical fixed-minibatch sweep) live in `ops/gpu-sps-2026-09-29/results.md`. None of them establishes playing strength, dense-game capacity or an owner-specified performance floor, and each recipe change, including the Isaiah-aligned cadence, needs its own complete-work qualification.
+---
+type: "Workflow"
+title: "Profile CUDA bottlenecks with Nsight Systems"
+description: "Use representative Nsight timelines and explicit nested-range/capture limits for NVIDIA attribution without disrupting a learner."
+tags: ["kaggriculture-v3", "workflows"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "skill:/Users/poonszesen/.codex/skills/cookbook-setup/references/gpu-profiling.md"}]
+---
+
+# Profile CUDA bottlenecks with Nsight Systems
+
+For this NVIDIA CUDA training/inference project, **NVIDIA Nsight Systems (`nsys`) is the canonical timeline profiler**. This conditional setup extension follows the Kaggriculture owner's 2026-09-10 directive preserved by the cookbook-setup skill: “please add nsys as canonical tool for us in this project cookbook to make sure we use nsys for efficient profiling? Add this as conditional requirement in $cookbook-setup as well, thanks”.
+
+Before attributing throughput, utilization, memory or CPU/GPU bottlenecks, reuse a representative source/configuration-matched capture or obtain a short bounded capture of the actual relevant phase. Record warmup, process/batch identity, command, `nsys`/driver/runtime versions, overhead, raw `.nsys-rep` and exported report paths, relevant kernels/APIs/memcpy/synchronization, and unmeasured scope. Keep large traces outside cookbook prose.
+
+On an authorized NVIDIA host, first inspect `nsys --version`, `nsys profile --help` and `nsys status -e`. If absent, follow the matching [official installation guide](https://docs.nvidia.com/nsight-systems/InstallationGuide/index.html) for a compatible CLI outside the training environment; preserve package/version/install commands in the run receipt. Do not upgrade drivers/CUDA or weaken container security to make profiling work. Consult the matching [user guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html) before selecting flags. No installation is needed on this non-NVIDIA setup host merely to create the contract.
+
+Choose non-terminating capture behavior (`--kill=none`, and `--wait=all` where supported) while preserving runner checkpoint/watchdog handling. Never kill or restart a learner merely to satisfy profiling; plan launch-time instrumentation at an authorized safe boundary. CPU sampling permission failures do not by themselves establish CUDA tracing failure. Preserve concrete errors and label fallback evidence; utilization snapshots, VRAM percentages and unsynchronized Python timers cannot establish a kernel bottleneck.
+
+This adds no mandatory smoke, training/evaluation, per-run admission, new watcher or approval step. Existing sufficient captures qualify; obvious correctness repairs need not wait. At initial setup `nsys` was absent on the macOS host. The later owned NVIDIA host installs CLI-only Nsight without changing CUDA/drivers/security settings; the GPU episode records a full-startup trace and a separate post-warmup component capture. Nested NVTX host ranges must not be summed as disjoint work or read as GPU utilization, and aggregate CUDA API counts require trace correlation before assigning them to one component. See `ops/gpu-sps-2026-09-29/results.md` for exact scope and raw-trace custody status.
+# Change log
+
+## 2026-09-29 — Tighten the compiled-GEMM Reference after Codex's second review
+
+Codex re-verified the GEMM-limit evidence (APPROVE WITH EDITS, no blocking findings; `ops/rebuild-2026-09-29/codex/verify-gemm-limits-r2.md`). The [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]] and `results.md` now:
+- separate the emitted `INDEX_DTYPE` (an all-buffer storage check) from the template size-arg dtype (output numel);
+- limit the "every failing graph" claim to kernels attributable from retained code, since two failures occurred during autotuning;
+- write L_in as floor(2³¹/K);
+- state the design bound as the strict < 2³¹ the guard implements.
+
+The run statement no longer implies Triton 3.5.0 was the installed version.
+
+## 2026-09-29 — Measure the compiled-GEMM limit at the rebuild's shapes (Codex-verified)
+
+A bounded probe ran on GPU 0 of the running pod (GEMM-limits run statement in `ops/rebuild-2026-09-29/run-statements/`). Codex verified it (`ops/rebuild-2026-09-29/codex/verify-gemm-limits-r1.md`, APPROVE WITH EDITS), and all its findings are applied. This revises the [[references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]:
+- **Input-side overflow.** At these shapes the overflow is on the input side: the A-load wraps once M·K > 2³¹ while the template size argument stays int32. Input-wide GEMMs failed at L_in+1, and output-wide GEMMs stayed correct to M·N = 2³². The universal `M·max(K, N)` rule is withdrawn. M × max(in, out) remains the design bound, justified by backward reading forward outputs as inputs.
+- **Silent in the trunk.** With the guard off, the real trunk corrupts silently at L+1. The guard is measured correct at L−1 and rejects L with zero trunk calls. Unguarded-at-L and real-trunk backward are inferred, not measured.
+- **Production compliance is unproven.** Kaggriculture is not yet wired through `ModelConfig`, the factory or `configure_model_compile`.
+- **No flash-attn on the pod.** The pod venv has no `flash-attn`, and its config had `force_flash_attn: false`. The plan's Phase 6 now installs and verifies it before any qualification.
+- **Analyzer and custody fixes.** `analyze_kernels.py` was fixed and its summaries regenerated. The git-archive hash was reconciled: `--prefix` accounts for the difference.
+
+Full evidence is in `ops/rebuild-2026-09-29/results.md`.
+
+## 2026-09-29 — Close Codex's lane B re-verification edits on the model branch
+
+Codex re-verified `4fdb526` (APPROVE WITH EDITS; `ops/rebuild-2026-09-29/codex/verify2-lane-B-r1b.md`). Three edits: `check_contract` now rejects −1 on the `tiles_int` count channels (yield, unwatered, unfed) while keeping the day/deadline sentinels; the contract-valid fixture uses the engine's `farmHandCostMult × fib(hires_today)` next-hire cost and rejects a zero configured order limit; the critic tests assert hand-computed, nonuniform winner probabilities and changed-seat responsiveness, and fail when critic logits are forced to zero (3 failures, source restored). `just py-prepare`: 884 passed, 3 skipped. The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder reference]] is unchanged: its claims were already scoped to these checks.
+
+## 2026-09-29 — Close Codex's Task 2.1 verification findings on the model branch
+
+Codex's [verification](../ops/rebuild-2026-09-29/codex/verify-stream-b-2.1.md) approved Task 2.1 with edits. `check_contract` now requires leading dims exactly `[E, 2]` and per-field bounds (non-negative counts, ranks, globals and order limits; −1 tile sentinels and signed `market_int` still pass). The synthetic fixture now writes each seat's legal view of one game. New tests cover packed dispatch, distinct-mask chunk slices, marker-checked offsets, the mypy generics probe, and initialization, API and Muon membership, each seen failing against the old code or a deliberate one-line mutation (the compile-key and SiLU checks were not mutation-tested). The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] records the checks: `tests/kaggriculture` 155 passed, `just py-prepare` 878 passed, 3 skipped.
+
+## 2026-09-29 — Add Isaiah's critic to the Kaggriculture model (Task 2.2)
+
+The [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] now covers the critic: an `OutputProjectionMLP` shared over the self and opponent critic-value tokens, a winner softmax, and value `2p(self) − 1` from each seat's own view, with Isaiah's output gain and Muon exclusion. `just py-prepare` gives 767 passed. This is on `kg/rebuild-model`, pending Codex verification.
+
+## 2026-09-29 — Build the Kaggriculture encoder on Isaiah's layers (Task 2.1)
+
+The new [[references/kaggriculture-encoder-reuses-isaiah-stateless-layers|encoder Reference]] covers the contract types, the PEP 696 generic model base, and an encoder built entirely from Isaiah's classes, with one-hot stems, per-role tokens, a typed trunk config, his initialization, and the compiled-GEMM chunking guard. `just py-prepare` gives 762 passed. The work sits on branch `kg/rebuild-model`, pending Codex verification before merge.
+
+## 2026-09-29 — Record model size, torch pin and RTX PRO 6000 resource fit
+
+Owner decisions:
+- “6-10M ok as long as topologies aligned with isaiah”, recorded in the [[decisions/the-policy-is-stateless-and-observation-only|stateless Decision]]: Isaiah's ladder width and ratios, with depth reaching the budget.
+- “let's stick with 2.9”, and fit to RTX 6000 rather than Isaiah's B200s, recorded in the [[decisions/start-multi-gpu-qualification-with-two-ranks|multi-GPU Decision]]: global config unchanged, per-rank shapes and spm/accumulation fitted by memory smoke, ≤ 85% peak.
+
+The Kaggriculture contract reaches v4 (Codex accept-with-edits applied), with a companion section in `docs/rl-api-specs.md`.
+
+## 2026-09-29 — Rebuild failure status and traceback ordering on the clean base
+cookbook/log.md:127:The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO Reference]] closes the repeated-execution gap with30m38s, nine full2,048-optimizer-step/rank updates and normal exit without new KL stops, timeout or OOM. The last six updates measure3,380.64 game SPS across two PRO6000 GPUs; wall throughput including evaluation/startup is2,567.24. All nine128-game evaluations have zero banks,50% win rate and no promotion, so execution success is not evidence of stronger play. The pod is retained as requested; source-bound telemetry and final/best custody are in the continuation receipt.
+cookbook/log.md:131:The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO Reference]] records813 passing software tests/three hardware skips and a normal-exit two-rank repair run: two128-game evaluations at50%/49.61%, no promotion, unchanged incumbent and2,097,152 cumulative game transitions. One full2,048-step PPO update measures2,290.76 game SPS across two PRO6000 GPUs; the earlier3,679.43-SPS update only executes418 optimizer steps due KL stopping. The [[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]] records observed.25 shaping reward without a learning claim. The original half-hour failed/interrupted; the repair is a separate bounded attempt. Checkpoints and W&B telemetry remain source-bound, and the replacement pod stays RUNNING at the owner’s request.
+cookbook/log.md:195:The [[references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] now links a finite two-GPU heads-only result: 1,774.752 game SPS versus 310.819 for the rejected decoder at equal nominal five-update work, with independent weights/action distributions and no quality claim. Full-model CUDA diagnostics preserve raw BF16 errors and synthetic-capacity limits. The GPU receipt adds completed raw-trace custody and actual named-range launch attribution. [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO guidance]] records the explicit 32-environment/four-segment experiment and its fourfold optimizer-batch change; README removes stale old-model/no-GPU claims. Fused-native final checks and combined GPU measurement remain pending; no standing board or empirical Lesson is created.
+cookbook/log.md:219:The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|shared PPO record]] adds the initial two-rank config, bounded CUDA-only measurement harness, full-model CPU DDP diagnostic and optional reference dependency extra. Normal training retains incumbent evaluation; only measured invocations disable periodic file/evaluation overhead and state that exclusion. CUDA execution remains unavailable; CPU rejection and readiness do not establish GPU SPS.
+cookbook/log.md:223:The [[references/explicit-game-tokens-and-grammar-replace-orbit-heads|model contract]] records masked Gumbel categorical sampling, factored projection, cached grammar/ranges and inactive-branch parameter participation, with19CPU regressions and the measured scalar-extraction reductions. It preserves the exact starter/new-code provenance, sampling RNG difference and remaining STOP/validation synchronization; local timing is not CUDA SPS or policy-strength evidence.
+cookbook/log.md:227:The later owner directive changes the [[decisions/start-multi-gpu-qualification-with-two-ranks|compute preference]] to two RTX 5090/RTX PRO 6000 GPUs first; two allocation attempts failed and no pod was created. The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO record]] names unchanged incumbent/resume function bodies, three real-native regression tests, the initial checkpoint cadence, engine cache keys and opt-in CPU DDP diagnostic boundary. The [[references/native-game-semantics-use-v3-owned-buffers|native record]] adds reusable-buffer optimization, bounded paired CPU adapter evidence and the retained starter fixture/parser repair. Final shared receipt reconciliation remains pending; no CUDA SPS, learning or general scaling claim follows.
+cookbook/decisions/throughput-means-correct-complete-work.md:18:Under today's instruction to reuse useful discipline, high throughput is a requirement for the v3 collection, model and training design. Preserve correctness while reporting collection rate, valid learner turns through a full update, phase timings and the total workflow cost. Separate startup/compilation from steady state. State hardware, precision, batch/rollout work, recording settings, transfer and evaluation boundaries. No absolute SPS floor or allowed regression percentage has been supplied.
+cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md:32:1. **Optimizer-step cadence.** Apply Isaiah's own multi-GPU rule from `winner_ce_6m_4x5090.yaml`: divide `n_envs` and `segments_per_minibatch` by world size, keeping the global batch, 16 optimizer steps/iteration and env steps/iteration of the single-GPU run. For `scaling_6m` (256 envs, spm 16, accumulation 1) this gives 128 envs/rank, spm 8, accumulation 1 on two ranks, and 64/4/1 on four ranks. `target_kl` stays null as upstream. Each iteration then collects 16,384 game transitions and takes 16 optimizer steps of 1,024 global transitions, matching upstream warm-up/cosine data exposure. Residual differences: two-player games only, and dense-game memory is unmeasured, so a memory smoke precedes any long run. Earlier 4,096-env SPS figures do not qualify this cadence.
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:61:- Rejected Python-frame/GRU decoder: 310.8 / 282.3 game SPS. Heads-only replacement: 1,774.8 game SPS (`ops/gpu-sps-2026-09-29/results.md`).
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:62:- Fixed-minibatch environment sweep on two PRO6000: 3,627 / 5,703 / 6,363 / 6,947 / 7,167 learner-seat SPS at 8 / 32 / 128 / 2,048 / 4,096 envs/GPU; 8,192 OOMs (`ops/gpu-sps-2026-09-29/env-sweep/`).
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:64:- Uninterrupted half-hour continuation: nine full updates, 3,380.64 game SPS over the last six. All nine 128-game evaluations ended at zero banks, 50% and no promotion, so this is execution evidence, not strength (`ops/continuous30-2026-09-29/results.md`, `ops/default4096-2026-09-29/results.md`).
+cookbook/references/full-turn-intentions-coordinate-batched-action-heads.md:79:named exploration surrogate, not exact marginal entropy. Shared parameters still
+cookbook/references/reward-reuse-preserves-objective-and-critic-semantics.md:21:| `win_share` | `(1-w)*sign(margin) + w*(2*share-1)`, `share=own/(own+other)` or .5 when total≤0 | `w=.1`; a bounded surrogate, not exactly the competition ranking |
+cookbook/references/explicit-game-tokens-and-grammar-replace-orbit-heads.md:110:CPU tests. Its heads-only two-PRO6000 run measured 1,774.752 game SPS over 5,120
+cookbook/references/explicit-game-tokens-and-grammar-replace-orbit-heads.md:118:282.253 game SPS in separate two-PRO6000 runs. Its original contract/source/docs
+cookbook/references/native-game-semantics-use-v3-owned-buffers.md:17:The fused native lifecycle is locally checked and executes in the measured two-GPU PPO path. `engine_rs/src/training.rs` and `owl.rs.KaggricultureTrainingEnv` own the active training game batch, BigInt seed streams, typed terminal state, reward/economic/mask computation and synchronous auto-reset. It reuses the engine/decoder/encoder while dropping unused legacy native controllers from active training. The Python adapter makes one native call per step; diagnostic terminal JSON is generated lazily only when requested. Caller-owned int64 NumPy inputs remain views when contiguous, with checked Rust narrowing into scratch; strided inputs are normalized at the Python boundary. This is not a zero-copy claim for narrowing, transactional game clones or double output staging, which remain for rollback correctness.
+cookbook/references/native-game-semantics-use-v3-owned-buffers.md:27:`python/owl/kaggriculture/types.py` declares two seat perspectives, 241 actor capacity, 252 command-frame capacity, twelve categorical slots, and versioned feature width. Version 2 declares 8,176 floats versus 8,165 in version 1. Each observation row is one player's legal perspective; attention must not mix private views. Actor presence and command positions are separate masks; prefix-dependent vocabulary legality comes from native grammar. The Python adapter passes contiguous `int64` action tensors through checked conversion to native `int16[env,2,252,12]` frames and `int32` lengths; observation context is `[env,4]`. Native work releases the GIL. Terminal `win_loss`/`win_only` reward conversion compares raw final banks before reset; the adapter retains terminal snapshots/metrics and synchronously resets finished native games. These claims require the adapter's own tests rather than inherited v2 qualification.
+cookbook/references/index.md:14:- [[shared-ppo-adapts-game-batches-without-a-second-loop|Shared PPO adapts game batches without a second loop]] — One shared Isaiah PPO trainer carries Kaggriculture batches; its core is upstream-equivalent, the recipe is partially aligned, and teacher, cadence, CUDA-fault and GPU-qualification gaps are tracked in ops. Historical SPS measurements link to their receipts.
+   208	    - Fresh post-run receipt at 06:36:54Z: HEAD `69397da`, detached, `git status --porcelain` empty, `runs/` gitignored.
+   209	  - Still **operator-reported**, with no retained receipt: "no credentials copied" and "nothing pushed". The only evidence is the clone's remote list, which shows just the bundle path.
+   210	
+   211	## Model-only SPS ceiling (component) (2026-09-29, 06:45–06:49Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+   212	
+   213	**Component measurement, not end-to-end SPS.** These numbers are **conditional estimates for the specified A/B/C/D synthetic schedule**: model-only env steps/s if the engine, host copies, GAE, logging and DDP cost nothing. B (PPO-shaped loss) and C (teacher proxy) are surrogates, so their costs are not proven bounds on the eventual trainer. **Timing evidence only:** no finite-loss/gradient check and no sampling-versus-replay equality check were retained. At `e1458d2`, `configure_model_compile` (`model_compile="trunk"`) still rejects the Kaggriculture model; the probe compiled the trunk directly. (Revised after Codex review `codex/verify-sps-ceiling-r1.md`, APPROVE WITH EDITS.)
+   214	
+   215	- Pre-run statement: `run-statements/model-sps-ceiling.md`, committed in `ed61770` at 06:44:12Z. Launch was at 06:45:05Z.
+   216	- Source: `e1458d2` (full model with heads).
+   217	- Settings: preset config, bf16 autocast over fp32 params, TF32, trunk compiled with `max-autotune-no-cudagraphs` (dynamic), heads eager, flash forced.
+   218	- Inputs: synthetic `make_obs` observations and synthetic grammar tables.
+   219	- Evidence and limits: `model-sps-ceiling-2026-09-29/README.md`.
+   220	
+   221	| density (tokens/row) | t_A fwd 256 | t_B train 1,024 | t_C teacher-proxy 16,384 | t_D value 256 | update wall | ceiling SPS/rank | ≈2 ranks |
+   222	|---|---|---|---|---|---|---|---|
+   223	| sparse (222) | 11.09 ms | 147.5 ms | 852.0 ms | 7.48 ms | 3.93 s | 2,085 | ~4,170 |
+   224	| mid (303) | 12.87 ms | 177.6 ms | 987.7 ms | 9.50 ms | 4.66 s | 1,757 | ~3,514 |
+   225	| dense (709) | 25.41 ms | 326.6 ms | 1,690.6 ms | 22.04 ms | 8.56 s | 957 | ~1,913 |
+   226	
+   227	**Formulas.**
+   228	- update wall = 64·t_A + t_C + 16·t_B + t_D, using medians over 20 CUDA-event iterations.
+   229	- Variability: p90/median ≤ +0.14 % everywhere except sparse B (p90 148.678 ms vs 147.472 ms median, **+0.818 %**). Dense B has one tail sample of **545.106 ms** vs a 326.579 ms median (cause unknown; p90 327.007 ms). The weighted sum of component p90s is not a measured whole-update p90; no whole update was timed.
+   230	- ceiling = 8,192 / update wall.
+   231	- Two ranks give about 2× that, assuming the all-reduce is small. The all-reduce was not measured.
+   232	
+   233	**What dominates.**
+   234	- The 16 train steps take about 60 % of the synthetic schedule's update wall at every density.
+   235	- Teacher-proxy precompute takes 20–22 % and rollout sampling takes 18–19 %.
+   236	- This is a share of the schedule only. It does not attribute B's cost to heads backward, Muon or any other sub-phase, and A − D is the incremental sampling-path cost, not isolated head kernels.
+   237	
+   238	**Engine budget.**
+   239	- For the engine to cost no more than the model, which halves the ceiling, it must step 8,192 env steps in at most 3.9 s (sparse) to 8.6 s (dense) per rank. That is about 0.48–1.05 ms per env step.
+   240	- To lose at most 10 % of the ceiling SPS, engine time E must satisfy 8,192/(M + E) ≥ 0.9 · 8,192/M, i.e. E ≤ M/9: 0.437 s (sparse), 0.518 s (mid), 0.952 s (dense) per update, or 53 / 63 / 116 µs per env step. (The earlier 0.1 × M figures, 0.39–0.86 s and 48–105 µs, are conservative.)
+   241	- The 64 rollout steps run serially with the engine. Each batched engine step of 128 envs therefore competes with an 11–25 ms sampling forward.
+   242	
+   243	**Flash and chunks.**
+   244	- `use_flash_attn` was True on every call.
+   245	- Trunk chunks in C were **counted** as 1, 2 and 3 for sparse, mid and dense, as predicted (sparse is under the **packed**-token bound, 3,637,248 × 512 < 2³¹). The 2 head chunks were **calculated from source** (`ceil(16,384 / 11,096)`), not counted.
+   246	
+   247	**Memory.**
+   248	- Peak allocated memory was at most **40.275 GiB** (B at dense), 42.4 % of 94.97 GiB, within the plan's 85 % rule, which is defined on `max_memory_allocated`. Complete-trainer memory fit is not qualified by this.
+   249	- Caching-allocator **reserved** peak is a separate observation: **84.994 GiB (89.5 %)** during dense C. The explanation that C reused B's cached blocks (carryover/fragmentation) is a **hypothesis**; no allocator snapshot or phase-order control was run.
+   250	
+   251	**Compile.**
+   252	- On a cold cache the first call took 20 s for A and 40 s for B.
+   253	- With a warm cache it took 7–11 s.
+   254	
+   255	**Profiling.** `nsys` absence on the pod is operator-reported (06:41:21Z pre-check; no command-output receipt retained). Nothing was installed and no timeline exists. In-step phase attribution is unresolved. Host/event median agreement cannot show the calls are intrinsically synchronous, because the timer calls `end.synchronize()` before reading the host clock.
+   256	
+   257	**Run conduct.** The prelaunch capture showed 563 MiB on both GPUs (0 % util, no compute processes), not 0 MiB, and launch followed one second later. The driver did not enforce the statement's first-failure stop or 45-minute aggregate limit (three independent 25-min timeouts, no `set -e`). All densities exited 0 in 227 s total, so neither gap affected the timings.
+   258	
+   259	## ATEN-only GEMM A/B (2026-09-29, 07:06–07:15Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+   260	
+   261	**Infrastructure diagnostic, not a learning change.** One setting changed: `torch._inductor.config.max_autotune_gemm_backends` from torch 2.9.0's default `"ATEN,TRITON,CPP"` to `"ATEN"`, so every compiled mm/addmm lowers to extern cuBLAS instead of Inductor's Triton mm templates. The timing half is a **component measurement conditional on the A/B/C/D synthetic schedule** ("Model-only SPS ceiling (component)" above), not end-to-end SPS.
+   262	
+   263	- Pre-run statement: `run-statements/aten-gemm-ab.md`, committed with the scripts in `9904121` at 07:06:00Z. Driver 07:06:31Z–07:14:55Z, 503.9 s, exit 0; no first-failure stop fired.
+   264	- Source: `e1458d2` (integration HEAD, unchanged); the pod checkout's porcelain was empty before and after.
+   265	- Stack: torch 2.9.0+cu128, triton 3.5.0, **real flash-attn 2.8.3**, driver 595.91.07.
+   266	- Idle gate passed at 0 MiB / 0 % / no processes. The pod was left running and idle.
+   267	- Evidence, custody and limits: `aten-gemm-ab-2026-09-29/README.md`.
+   268	
+   269	**Correctness above the int32 bound (guard bypassed, compared element-wise to eager):** every case that failed under default backends was correct under ATEN-only.
+   270	- Real trunk, packed, at 4,194,305 / 4,198,400 / 4,194,444 / 8,387,470 tokens: 0 wrong tokens, max |Δ| ≤ 0.1699.
+   271	- Linear 768→256 at 2,796,203 rows and Linear 512→256 at 4,198,401 and 8,388,608 rows: 0 bad rows, max |Δ| 0.0 (the same cuBLAS call as eager).
+   272	- MLP 256→512→256 forward and backward at 4,194,305 rows: forward and dX clean; parameter-gradient relative max ≤ 0.0026.
+   273	
+   274	The default-backend controls in the same run reproduced the failure: the trunk had 2 and 4,665 wrong tokens (the second with 1,194,240 non-finite values), identical to the earlier probe, and Linear 768→256 hit an illegal memory access during autotuning. The A/B therefore discriminates.
+   275	
+   276	**Kernel evidence** comes from the analyzer (rev 2, unchanged) and a template census:
+   277	- Every ATEN-only cache has **zero `triton_tem_` definitions or launches**. GEMMs are `extern_kernels.bias_addmm`/`mm`, including the trunk backward graph of the bench's B (96 `mm`).
+   278	- Every ATEN autotune line logs `num_triton_choices: 0`.
+   279	- Pointwise and reduction fusions stay Triton (for example, 4 pointwise and 5 persistent-reduction kernels per trunk-forward wrapper).
+   280	- In the same run, the default caches launch the vulnerable templates (`…addmm_gelu_t_9`, A-load `512*idx_m`, `ks0: i32`; backward `triton_tem_fused_mm_*`, `ks0: i32`).
+   281	- Decompose-K and persistent-TMA text is absent everywhere, but the default caches had none either. Their exclusion under ATEN rests on source gating: `kernel/mm.py` adds them only inside `use_triton_template`, which requires `TRITON` in the backend list.
+   282	
+
+codex
+The revised documents address all six findings, including the prelaunch discrepancy and unenforced stopping rules. I’m checking the corrected numbers against the retained JSON and confirming that the addendum preserves the original pre-run statement.
+
+exec
+/bin/zsh -lc "nl -ba ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/bench_model_sps.py | sed -n '75,315p' && cat ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/run_all.sh ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/driver.log && cat ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/receipts/idle_nvidia_smi_prelaunch.txt" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+    75	        elif isinstance(value, BaseModel):
+    76	            fields[name] = _tile(value, k)
+    77	        else:
+    78	            fields[name] = value
+    79	    return type(obj)(**fields)
+    80	
+    81	
+    82	def _pct(xs: list[float], q: float) -> float:
+    83	    s = sorted(xs)
+    84	    idx = min(len(s) - 1, max(0, round(q * (len(s) - 1))))
+    85	    return s[idx]
+    86	
+    87	
+    88	def _time(
+    89	    fn: Callable[[], Any], counters: dict[str, Any], tag: str
+    90	) -> dict[str, Any]:
+    91	    """First call (includes compile), WARMUP, then TIMED iterations (CUDA events)."""
+    92	    torch.cuda.synchronize()
+    93	    torch.cuda.reset_peak_memory_stats()
+    94	    counters["pack_calls"] = []
+    95	    counters["flash_flags"] = []
+    96	    t0 = time.perf_counter()
+    97	    fn()
+    98	    torch.cuda.synchronize()
+    99	    first_s = time.perf_counter() - t0
+   100	    first_pack = list(counters["pack_calls"])
+   101	    first_flash = list(counters["flash_flags"])
+   102	    for _ in range(WARMUP):
+   103	        fn()
+   104	    torch.cuda.synchronize()
+   105	    counters["pack_calls"] = []
+   106	    counters["flash_flags"] = []
+   107	    ev_ms: list[float] = []
+   108	    host_ms: list[float] = []
+   109	    for _ in range(TIMED):
+   110	        start = torch.cuda.Event(enable_timing=True)
+   111	        end = torch.cuda.Event(enable_timing=True)
+   112	        h0 = time.perf_counter()
+   113	        start.record()
+   114	        fn()
+   115	        end.record()
+   116	        end.synchronize()
+   117	        host_ms.append((time.perf_counter() - h0) * 1e3)
+   118	        ev_ms.append(start.elapsed_time(end))
+   119	    pack_calls = counters["pack_calls"]
+   120	    result = {
+   121	        "workload": tag,
+   122	        "first_call_s_incl_compile": first_s,
+   123	        "first_call_pack_calls": first_pack,
+   124	        "first_call_use_flash_attn": first_flash,
+   125	        "warmup_iters": WARMUP,
+   126	        "timed_iters": TIMED,
+   127	        "cuda_event_ms": ev_ms,
+   128	        "median_ms": statistics.median(ev_ms),
+   129	        "p90_ms": _pct(ev_ms, 0.9),
+   130	        "min_ms": min(ev_ms),
+   131	        "max_ms": max(ev_ms),
+   132	        "host_wall_median_ms": statistics.median(host_ms),
+   133	        "pack_sequence_calls_per_iter": len(pack_calls) / TIMED,
+   134	        "packed_tokens_per_chunk_first_iter": [
+   135	            n for n, _ in pack_calls[: max(1, len(pack_calls) // TIMED)]
+   136	        ],
+   137	        "use_flash_attn_all_true": bool(counters["flash_flags"])
+   138	        and all(counters["flash_flags"]),
+   139	        "use_flash_attn_calls_per_iter": len(counters["flash_flags"]) / TIMED,
+   140	        "max_memory_allocated_gib": torch.cuda.max_memory_allocated() / GIB,
+   141	        "max_memory_reserved_gib": torch.cuda.max_memory_reserved() / GIB,
+   142	    }
+   143	    print(
+   144	        f"[{tag}] first={first_s:.2f}s median={result['median_ms']:.2f}ms "
+   145	        f"p90={result['p90_ms']:.2f}ms peak_alloc="
+   146	        f"{result['max_memory_allocated_gib']:.2f}GiB "
+   147	        f"chunks/iter={result['pack_sequence_calls_per_iter']} "
+   148	        f"flash={result['use_flash_attn_all_true']}",
+   149	        flush=True,
+   150	    )
+   151	    return result
+   152	
+   153	
+   154	def main() -> None:
+   155	    parser = argparse.ArgumentParser()
+   156	    parser.add_argument("--density", choices=sorted(DENSITIES), required=True)
+   157	    parser.add_argument("--out", type=Path, required=True)
+   158	    args = parser.parse_args()
+   159	    args.out.mkdir(parents=True, exist_ok=True)
+   160	
+   161	    import flash_attn
+   162	    import triton
+   163	    from owl.kaggriculture import types as kt
+   164	    from owl.model import kaggriculture as km
+   165	    from owl.model.attn import flash_attn_available
+   166	    from owl.train.optimizer import MuonConfig, create_optimizer
+   167	    from owl.train.utils import configure_torch
+   168	
+   169	    from tests.kaggriculture.conftest import make_obs
+   170	
+   171	    assert torch.cuda.is_available()
+   172	    device = torch.device("cuda", 0)
+   173	    torch.cuda.set_device(device)
+   174	    configure_torch()  # TF32 on, cudnn.benchmark, as run_ppo
+   175	    assert flash_attn_available(), "flash-attn not importable"
+   176	    config = km.KaggricultureTransformerConfig.from_file(
+   177	        ROOT / "configs/model/kaggriculture.yaml"
+   178	    )
+   179	    assert config.force_flash_attn is True
+   180	
+   181	    counters: dict[str, Any] = {"pack_calls": [], "flash_flags": []}
+   182	    real_pack = km.pack_sequence
+   183	    real_use_flash = km.use_flash_attn
+   184	
+   185	    def counting_pack(x: torch.Tensor, mask: torch.Tensor, **kw: Any) -> Any:
+   186	        px, packed = real_pack(x, mask, **kw)
+   187	        counters["pack_calls"].append((int(px.shape[0]), int(packed.max_seqlen)))
+   188	        return px, packed
+   189	
+   190	    def counting_use_flash(x: torch.Tensor) -> bool:
+   191	        flag = real_use_flash(x)
+   192	        counters["flash_flags"].append(bool(flag))
+   193	        return flag
+   194	
+   195	    km.pack_sequence = counting_pack
+   196	    km.use_flash_attn = counting_use_flash
+   197	
+   198	    torch.manual_seed(0)
+   199	    model = km.KaggricultureTransformer(
+   200	        config,
+   201	        obs_spec=kt.KaggricultureObsConfig(),
+   202	        action_spec=kt.KaggricultureActionConfig(),
+   203	    ).to(device)
+   204	    n_params = sum(p.numel() for p in model.parameters())
+   205	    model.compile_transformer_trunk(mode="max-autotune-no-cudagraphs")
+   206	    model.train()
+   207	
+   208	    d = DENSITIES[args.density]
+   209	    t0 = time.time()
+   210	    obs_cpu = make_obs(
+   211	        ENVS, own_actors=d["own"], rival_actors=d["rival"], shops=d["shops"]
+   212	    )
+   213	    make_obs_s = time.time() - t0
+   214	    obs = _to(obs_cpu, device)
+   215	    assert isinstance(obs, kt.KaggricultureObsBatch)
+   216	    seq = obs.actor_mask.sum(-1) + obs.shop_mask.sum(-1)
+   217	    fixed_tokens = km.sequence_length(config) - kt.ACTOR_SLOTS - kt.SHOP_SLOTS
+   218	    tokens_per_row = (seq + fixed_tokens).flatten()
+   219	
+   220	    def autocast() -> Any:
+   221	        return torch.autocast("cuda", dtype=torch.bfloat16)
+   222	
+   223	    info: dict[str, Any] = {
+   224	        "density": args.density,
+   225	        "density_spec": d,
+   226	        "envs": ENVS,
+   227	        "rows_A_D": ENVS * kt.PLAYERS,
+   228	        "rows_B": SPM * HORIZON * kt.PLAYERS,
+   229	        "rows_C": ENVS * HORIZON * kt.PLAYERS,
+   230	        "tokens_per_row_min": int(tokens_per_row.min()),
+   231	        "tokens_per_row_max": int(tokens_per_row.max()),
+   232	        "padded_seq_len": km.sequence_length(config),
+   233	        "make_obs_s": make_obs_s,
+   234	        "n_params": n_params,
+   235	        "config": config.model_dump(),
+   236	        "torch": torch.__version__,
+   237	        "cuda_runtime": torch.version.cuda,
+   238	        "flash_attn": flash_attn.__version__,
+   239	        "triton": triton.__version__,
+   240	        "device_name": torch.cuda.get_device_name(device),
+   241	        "tf32_matmul": torch.backends.cuda.matmul.allow_tf32,
+   242	        "trunk_compile": "torch.compile(mode=max-autotune-no-cudagraphs, dynamic=True)",
+   243	        "heads": "eager",
+   244	        "autocast": "bfloat16, fp32 params",
+   245	        "grammar_tables": "expected_grammar_tables (synthetic)",
+   246	        "git_head": subprocess.run(
+   247	            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+   248	        ).stdout.strip(),
+   249	        "gpu_total_gib": torch.cuda.get_device_properties(device).total_memory / GIB,
+   250	    }
+   251	    print(json.dumps({k: v for k, v in info.items() if k != "config"}), flush=True)
+   252	    results: dict[str, Any] = {}
+   253	
+   254	    # --- A: rollout sampling ----------------------------------------------------
+   255	    def run_a() -> Any:
+   256	        with torch.no_grad(), autocast():
+   257	            return model(obs)
+   258	
+   259	    results["A"] = _time(run_a, counters, "A_rollout_forward_256")
+   260	    with torch.no_grad(), autocast():
+   261	        sampled = model(obs)
+   262	    actions_256 = sampled.actions
+   263	    old_logp_256 = sampled.log_probs.event.float().sum(dim=(-1, -2))
+   264	
+   265	    # --- D: critic bootstrap ------------------------------------------------------
+   266	    def run_d() -> Any:
+   267	        with torch.no_grad(), autocast():
+   268	            return model.compute_value(obs)
+   269	
+   270	    results["D"] = _time(run_d, counters, "D_compute_value_256")
+   271	
+   272	    # --- B: PPO train step ----------------------------------------------------------
+   273	    k_b = SPM * HORIZON // ENVS  # 4 -> 512 envs x 2 seats = 1,024 rows
+   274	    obs_b = _tile(obs, k_b)
+   275	    assert isinstance(obs_b, kt.KaggricultureObsBatch)
+   276	    actions_b = kt.KaggricultureActions(
+   277	        tokens=actions_256.tokens.repeat(k_b, 1, 1, 1),
+   278	        lengths=actions_256.lengths.repeat(k_b, 1),
+   279	    )
+   280	    old_logp_b = old_logp_256.repeat(k_b, 1)
+   281	    gen = torch.Generator(device=device).manual_seed(3)
+   282	    adv_b = torch.randn(old_logp_b.shape, generator=gen, device=device)
+   283	    ret_b = torch.rand(old_logp_b.shape, generator=gen, device=device) * 2 - 1
+   284	    optimizer = create_optimizer(model, MuonConfig())
+   285	
+   286	    def run_b() -> Any:
+   287	        with autocast():
+   288	            ev = model.evaluate_actions(obs_b, actions_b)
+   289	        new_logp = ev.log_probs.event.float().sum(dim=(-1, -2))
+   290	        ratio = (new_logp - old_logp_b).exp()
+   291	        pg = -torch.min(ratio * adv_b, ratio.clamp(0.8, 1.2) * adv_b).mean()
+   292	        v_loss = 0.5 * (ev.values.float() - ret_b).pow(2).mean()
+   293	        ent = ev.entropies.event.float().sum(dim=(-1, -2)).mean()
+   294	        loss = pg + 0.5 * v_loss - 0.01 * ent
+   295	        optimizer.zero_grad(set_to_none=True)
+   296	        loss.backward()
+   297	        torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
+   298	        optimizer.step()
+   299	        return loss
+   300	
+   301	    results["B"] = _time(run_b, counters, "B_ppo_train_step_1024")
+   302	    del obs_b, actions_b
+   303	
+   304	    # --- C: teacher precompute proxy --------------------------------------------------
+   305	    k_c = HORIZON  # 64 -> 8,192 envs x 2 seats = 16,384 rows
+   306	    obs_c = _tile(obs, k_c)
+   307	    assert isinstance(obs_c, kt.KaggricultureObsBatch)
+   308	    actions_c = kt.KaggricultureActions(
+   309	        tokens=actions_256.tokens.repeat(k_c, 1, 1, 1),
+   310	        lengths=actions_256.lengths.repeat(k_c, 1),
+   311	    )
+   312	    info["C_head_rows_per_chunk"] = km.head_rows_per_chunk(config)
+   313	    info["C_head_chunks"] = -(-ENVS * HORIZON * kt.PLAYERS // km.head_rows_per_chunk(config))
+   314	
+   315	    def run_c() -> Any:
+#!/bin/bash
+set -u
+R=/workspace/kg-v3-rebuild/runs/model-sps-ceiling-2026-09-29
+cd /workspace/kg-v3-rebuild
+export CUDA_VISIBLE_DEVICES=0 TORCHINDUCTOR_CACHE_DIR=$R/inductor_cache TRITON_CACHE_DIR=$R/triton_cache PYTHONUNBUFFERED=1
+for d in sparse mid dense; do
+  echo "=== $d start $(date -u +%FT%TZ)"
+  timeout 1500 .venv/bin/python $R/bench_model_sps.py --density $d --out $R > $R/log_$d.txt 2>&1
+  echo "=== $d exit $? $(date -u +%FT%TZ)"
+done
+echo ALLDONE
+=== sparse start 2026-09-29T06:45:05Z
+=== sparse exit 0 2026-09-29T06:46:38Z
+=== mid start 2026-09-29T06:46:38Z
+=== mid exit 0 2026-09-29T06:47:34Z
+=== dense start 2026-09-29T06:47:34Z
+=== dense exit 0 2026-09-29T06:48:52Z
+ALLDONE
+2026-09-29T06:45:04Z
+Tue Sep 29 06:45:04 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.91.07              Driver Version: 595.91.07      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA RTX PRO 6000 Blac...    On  |   00000000:85:00.0 Off |                    0 |
+| N/A   32C    P0             79W /  600W |     563MiB /  97887MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA RTX PRO 6000 Blac...    On  |   00000000:F4:00.0 Off |                    0 |
+| N/A   32C    P0             62W /  600W |     563MiB /  97887MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+
+exec
+/bin/zsh -lc "sed -n '1,120p' ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod/results_sparse.json && rg -n 'max_memory_allocated|85|Resource fit' ops/rebuild-2026-09-29/plan.md && git show e1458d2:python/owl/train/utils.py | sed -n '/def configure_model_compile/,/def /p' && git diff ddf1fb2 HEAD -- ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29 ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+{
+  "info": {
+    "density": "sparse",
+    "density_spec": {
+      "own": 1,
+      "rival": 1,
+      "shops": 1
+    },
+    "envs": 128,
+    "rows_A_D": 256,
+    "rows_B": 1024,
+    "rows_C": 16384,
+    "tokens_per_row_min": 222,
+    "tokens_per_row_max": 222,
+    "padded_seq_len": 709,
+    "make_obs_s": 0.32111334800720215,
+    "n_params": 6252223,
+    "config": {
+      "model_arch": "kaggriculture_transformer",
+      "embed_dim": 256,
+      "depth": 8,
+      "n_heads": 8,
+      "mlp_ratio": 2.0,
+      "activation": "gelu",
+      "n_scratch_tokens": 4,
+      "force_flash_attn": true
+    },
+    "torch": "2.9.0+cu128",
+    "cuda_runtime": "12.8",
+    "flash_attn": "2.8.3",
+    "triton": "3.5.0",
+    "device_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "tf32_matmul": true,
+    "trunk_compile": "torch.compile(mode=max-autotune-no-cudagraphs, dynamic=True)",
+    "heads": "eager",
+    "autocast": "bfloat16, fp32 params",
+    "grammar_tables": "expected_grammar_tables (synthetic)",
+    "git_head": "e1458d2a717d9d731a367cbb78b98616ee6649f4",
+    "gpu_total_gib": 94.972412109375,
+    "C_head_rows_per_chunk": 11096,
+    "C_head_chunks": 2
+  },
+  "results": {
+    "A": {
+      "workload": "A_rollout_forward_256",
+      "first_call_s_incl_compile": 20.105426851660013,
+      "first_call_pack_calls": [
+        [
+          56832,
+          709
+        ]
+      ],
+      "first_call_use_flash_attn": [
+        true
+      ],
+      "warmup_iters": 5,
+      "timed_iters": 20,
+      "cuda_event_ms": [
+        11.088064193725586,
+        11.090080261230469,
+        11.090208053588867,
+        11.090592384338379,
+        11.086272239685059,
+        11.089728355407715,
+        11.084863662719727,
+        11.091263771057129,
+        11.103360176086426,
+        11.108768463134766,
+        11.08886432647705,
+        11.093152046203613,
+        11.09171199798584,
+        11.085984230041504,
+        11.079968452453613,
+        11.093855857849121,
+        11.095871925354004,
+        11.105600357055664,
+        11.101152420043945,
+        11.087776184082031
+      ],
+      "median_ms": 11.090400218963623,
+      "p90_ms": 11.103360176086426,
+      "min_ms": 11.079968452453613,
+      "max_ms": 11.108768463134766,
+      "host_wall_median_ms": 11.105991201475263,
+      "pack_sequence_calls_per_iter": 1.0,
+      "packed_tokens_per_chunk_first_iter": [
+        56832
+      ],
+      "use_flash_attn_all_true": true,
+      "use_flash_attn_calls_per_iter": 1.0,
+      "max_memory_allocated_gib": 0.587519645690918,
+      "max_memory_reserved_gib": 1.12890625
+    },
+    "D": {
+      "workload": "D_compute_value_256",
+      "first_call_s_incl_compile": 0.007957241032272577,
+      "first_call_pack_calls": [
+        [
+          56832,
+          709
+        ]
+      ],
+      "first_call_use_flash_attn": [
+        true
+      ],
+      "warmup_iters": 5,
+      "timed_iters": 20,
+      "cuda_event_ms": [
+        7.48579216003418,
+        7.478687763214111,
+        7.486591815948486,
+        7.483327865600586,
+        7.483039855957031,
+        7.48140811920166,
+        7.480639934539795,
+        7.47219181060791,
+        7.482656002044678,
+        7.474463939666748,
+        7.489920139312744,
+        7.483007907867432,
+26:### Resource fit on 2× RTX PRO 6000 (owner, 2026-09-29)
+31:- **Memory target:** peak `torch.cuda.max_memory_allocated` ≤ 85% of 97,887 MiB per rank. It is measured at the **densest** states (late-game BC policy, maximum actors and tokens ≈ 720), not early sparse states. It covers rollout, update, teacher precompute and cache, evaluation, and compile/autotune transients. Per-rank shapes (128 envs, spm 8) equal Isaiah's 5090 per-rank shapes; our tokens are about 2× Orbit's (~720 vs ~337), so the expected peak is well under 96 GB. The 6.1 smoke must confirm it. If it doesn't fit, move to spm 4 / accumulation 2 (the same product, I1) before touching anything else, and never change the global batch.
+289:- [ ] **6.1 Memory smoke, 2 ranks:** one full iteration with the teacher on and a forced evaluation at dense BC positions. Record peak memory per phase against the ≤ 85% target, teacher cache bytes, native step time and the chosen `native_threads`, confirm the FlashAttention path ran, and record the spm/accum split decision (I1/I3; see "Resource fit").
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+def configure_model_compile(model: BaseModelAPI, cfg: ModelCompileConfig) -> int:
+    match cfg.model_compile:
+        case "none":
+            return 0
+        case "mlp":
+            return _compile_transformer_mlp_modules(
+                model,
+                mode=cfg.model_compile_mode,
+            )
+        case "trunk":
+            if isinstance(model, RecurrentTransformerV1):
+                raise RuntimeError(
+                    "rl.model_compile='trunk' does not support recurrent_transformer_v1"
+                )
+            if not isinstance(model, StatelessTransformerV1):
+                raise RuntimeError(
+                    "rl.model_compile='trunk' requires stateless_transformer_v1"
+                )
+            return model.compile_transformer_trunk(mode=cfg.model_compile_mode)
+        case _:
+            assert_never(cfg.model_compile)
+
+
+def _compile_transformer_mlp_modules(
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+
+exec
+/bin/zsh -lc "python3 -c 'from pathlib import Path
+import json, statistics, subprocess
+p=Path('\\''ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/pod'\\'')
+for density in ('\\''sparse'\\'','\\''mid'\\'','\\''dense'\\''):
+    d=json.loads((p/f'\\''results_{density}.json'\\'').read_text())
+    r=d['\\''results'\\'']
+    print(density)
+    for k in '\\''ABCD'\\'':
+        v=r[k]; xs=v['\\''cuda_event_ms'\\'']; med=statistics.median(xs); p90=sorted(xs)[round(.9*(len(xs)-1))]
+        assert med==v['\\''median_ms'\\''] and p90==v['\\''p90_ms'\\''] and len(xs)==20
+        print(f'\\'' {k}: median={med:.6f}, p90={p90:.6f}, pct={(p90/med-1)*100:.6f}, max={max(xs):.6f}, mean={statistics.mean(xs):.6f}, alloc={v[\"max_memory_allocated_gib\"]:.6f}, reserved={v[\"max_memory_reserved_gib\"]:.6f}'\\'')
+    m=(64*r['\\''A'\\'']['\\''median_ms'\\'']+r['\\''C'\\'']['\\''median_ms'\\'']+16*r['\\''B'\\'']['\\''median_ms'\\'']+r['\\''D'\\'']['\\''median_ms'\\''])/1000
+    print(f'\\'' sum={m:.9f}s SPS={8192/m:.6f} engine_M/9={m/9:.9f}s or {m/9/8192*1e6:.6f}us/env'\\'')
+    print('\\'' C trunk chunks:'\\'',r['\\''C'\\'']['\\''pack_sequence_calls_per_iter'\\''],'\\''head chunks calculated:'\\'',d['\\''info'\\'']['\\''C_head_chunks'\\''])
+    if density=='\\''sparse'\\'': print('\\'' B last six:'\\'',r['\\''B'\\'']['\\''cuda_event_ms'\\''][-6:])
+    if density=='\\''dense'\\'': print('\\'' B max sample (1-based):'\\'',r['\\''B'\\'']['\\''cuda_event_ms'\\''].index(max(r['\\''B'\\'']['\\''cuda_event_ms'\\'']))+1)
+stmt='\\''ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md'\\''
+def git(ref,path): return subprocess.check_output(['\\''git'\\'','\\''show'\\'',f'\\''{ref}:{path}'\\''])
+old=git('\\''ed61770'\\'',stmt)
+for ref in ('\\''ddf1fb2'\\'','\\''HEAD'\\''):
+    new=git(ref,stmt); prefix=new.split(b'\\''\\n## Post-run addendum'\\'')[0].rstrip(b'\\''\\n'\\'')+b'\\''\\n'\\''
+    print(f'\\''{ref} pre-run statement exactly matches ed61770:'\\'',prefix==old)
+result='\\''ops/rebuild-2026-09-29/results.md'\\''
+def section(b): return b.split(b'\\''## Model-only SPS ceiling (component)'\\'')[1].split(b'\\''\\n## '\\'')[0].strip()
+print('\\''results SPS section unchanged since fix:'\\'',section(git('\\''ddf1fb2'\\'',result))==section(Path(result).read_bytes()))
+'" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+python3: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+sparse
+ A: median=11.090400, p90=11.103360, pct=0.116857, max=11.108768, mean=11.092357, alloc=0.587520, reserved=1.128906
+ B: median=147.471535, p90=148.677505, pct=0.817765, max=148.827042, mean=147.702368, alloc=17.056581, reserved=17.943359
+ C: median=851.976349, p90=852.353699, pct=0.044291, max=852.660217, mean=852.045676, alloc=32.127506, reserved=72.404297
+ D: median=7.481424, p90=7.486592, pct=0.069074, max=7.491008, mean=7.481947, alloc=0.511045, reserved=1.351562
+ sum=3.928787943s SPS=2085.121447 engine_M/9=0.436531994s or 53.287597us/env
+ C trunk chunks: 1.0 head chunks calculated: 2
+ B last six: [148.3863983154297, 148.16671752929688, 148.67750549316406, 148.7530517578125, 148.82704162597656, 148.670654296875]
+mid
+ A: median=12.870080, p90=12.875680, pct=0.043512, max=12.880064, mean=12.869058, alloc=0.587520, reserved=1.128906
+ B: median=177.559906, p90=177.705215, pct=0.081837, max=177.935455, mean=177.604292, alloc=20.919465, reserved=21.816406
+ C: median=987.716522, p90=987.937317, pct=0.022354, max=987.970032, mean=987.723059, alloc=30.739679, reserved=76.277344
+ D: median=9.500592, p90=9.508416, pct=0.082352, max=9.510944, mean=9.500501, alloc=0.511045, reserved=1.351562
+ sum=4.661860730s SPS=1757.238252 engine_M/9=0.517984526s or 63.230533us/env
+ C trunk chunks: 2.0 head chunks calculated: 2
+dense
+ A: median=25.413199, p90=25.421280, pct=0.031796, max=25.430624, mean=25.411800, alloc=0.974392, reserved=1.376953
+ B: median=326.579453, p90=327.007263, pct=0.130997, max=545.106445, mean=337.514796, alloc=40.275395, reserved=41.611328
+ C: median=1690.576782, p90=1690.817505, pct=0.014239, max=1692.105103, mean=1690.604291, alloc=31.930337, reserved=84.994141
+ D: median=22.044304, p90=22.054560, pct=0.046524, max=22.062624, mean=22.044794, alloc=0.862261, reserved=1.599609
+ sum=8.564337090s SPS=956.524704 engine_M/9=0.951593010s or 116.161256us/env
+ C trunk chunks: 3.0 head chunks calculated: 2
+ B max sample (1-based): 11
+ddf1fb2 pre-run statement exactly matches ed61770: True
+HEAD pre-run statement exactly matches ed61770: True
+results SPS section unchanged since fix: True
+
+codex
+Checked `ddf1fb2` against r1, including the [README](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md), [run statement addendum](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:27), and [results.md](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:211).
+
+1. **RESOLVED — Ceiling qualification.** Results are conditional estimates for the synthetic A/B/C/D schedule. Surrogate workloads, unavailable trainer compile integration, and missing numerical checks are explicitly disclosed.
+
+2. **RESOLVED — Synchronization and attribution.** The documents acknowledge the timer’s explicit synchronization, describe A−D as incremental sampling-path cost, and withdraw heads/Muon attribution. `nsys` absence is correctly labeled operator-reported without a retained receipt.
+
+3. **RESOLVED — Prelaunch and stopping claims.** The 563 MiB prelaunch reading, launch without the prescribed wait, and unenforced first-failure/aggregate limits are documented accurately. Logs confirm three successful exits over 227 seconds. These are corrected historical disclosures; the driver remains unchanged. The original pre-run text is byte-identical to `ed61770`.
+
+4. **RESOLVED — Memory interpretation.** Allocated peak **40.275 GiB** is distinguished from reserved peak **84.994 GiB**. The allocation target is scoped to these components; carryover/fragmentation remains an untested hypothesis, and complete-trainer memory fit remains unqualified.
+
+5. **RESOLVED — Variability.** Recalculation confirms sparse B’s **+0.818%** p90 difference and dense B’s **545.106 ms** tail sample. Both are disclosed. The weighted component-p90 sum is explicitly distinguished from a measured whole-update p90.
+
+6. **RESOLVED — Method descriptions.** Counted trunk chunks versus calculated head chunks, the packed-token bound, and per-player joint clipping are corrected. The exact engine allowance **E ≤ M/9** and reported budgets reproduce.
+
+**Raw evidence unchanged:** all 20 non-README artifacts—3 result JSONs, 4 logs, 10 receipts, and 3 scripts—are byte-identical across `cb4af49`, `ddf1fb2`, current HEAD, and the worktree. All **21/21 manifest entries** verify in each state; only the README’s manifest entry changed.
+
+Read-only verification; no files edited or GPU workloads rerun. Approval covers the corrected component-timing receipts.
+
+**VERDICT: APPROVE**
+hook: Stop
+hook: Stop Completed
+tokens used
+58,037
+Checked `ddf1fb2` against r1, including the [README](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/model-sps-ceiling-2026-09-29/README.md), [run statement addendum](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/model-sps-ceiling.md:27), and [results.md](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:211).
+
+1. **RESOLVED — Ceiling qualification.** Results are conditional estimates for the synthetic A/B/C/D schedule. Surrogate workloads, unavailable trainer compile integration, and missing numerical checks are explicitly disclosed.
+
+2. **RESOLVED — Synchronization and attribution.** The documents acknowledge the timer’s explicit synchronization, describe A−D as incremental sampling-path cost, and withdraw heads/Muon attribution. `nsys` absence is correctly labeled operator-reported without a retained receipt.
+
+3. **RESOLVED — Prelaunch and stopping claims.** The 563 MiB prelaunch reading, launch without the prescribed wait, and unenforced first-failure/aggregate limits are documented accurately. Logs confirm three successful exits over 227 seconds. These are corrected historical disclosures; the driver remains unchanged. The original pre-run text is byte-identical to `ed61770`.
+
+4. **RESOLVED — Memory interpretation.** Allocated peak **40.275 GiB** is distinguished from reserved peak **84.994 GiB**. The allocation target is scoped to these components; carryover/fragmentation remains an untested hypothesis, and complete-trainer memory fit remains unqualified.
+
+5. **RESOLVED — Variability.** Recalculation confirms sparse B’s **+0.818%** p90 difference and dense B’s **545.106 ms** tail sample. Both are disclosed. The weighted component-p90 sum is explicitly distinguished from a measured whole-update p90.
+
+6. **RESOLVED — Method descriptions.** Counted trunk chunks versus calculated head chunks, the packed-token bound, and per-player joint clipping are corrected. The exact engine allowance **E ≤ M/9** and reported budgets reproduce.
+
+**Raw evidence unchanged:** all 20 non-README artifacts—3 result JSONs, 4 logs, 10 receipts, and 3 scripts—are byte-identical across `cb4af49`, `ddf1fb2`, current HEAD, and the worktree. All **21/21 manifest entries** verify in each state; only the README’s manifest entry changed.
+
+Read-only verification; no files edited or GPU workloads rerun. Approval covers the corrected component-timing receipts.
+
+**VERDICT: APPROVE**

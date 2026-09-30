@@ -1,0 +1,1821 @@
+OpenAI Codex v0.158.0
+--------
+workdir: /Users/poonszesen/kg-v3
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0ebe5-b0c9-79d1-af3d-0892b8fb321c
+--------
+user
+You are Codex. READ-ONLY re-verification. Your r1 report is ops/rebuild-2026-09-29/codex/verify-flash-attn-r1.md (APPROVE WITH EDITS, findings 1-5). Claude's fix commits: 78df33c Apply Codex r1 edits to the Phase 6.0 flash-attn receipts. Confirm each finding is resolved in ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md, ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/ and results.md, that operator-reported claims are labeled, that the new wheel-member receipt supports byte equality, the manifest verifies, and no new overclaim appears. End with VERDICT: APPROVE / APPROVE WITH EDITS / REJECT.
+
+hook: SessionStart
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+codex
+I’ll compare commit `78df33c` with the five r1 findings, verify the receipts and manifest, and check the revised claims against the retained evidence. This review will remain read-only.
+
+exec
+/bin/zsh -lc 'cat ops/rebuild-2026-09-29/codex/verify-flash-attn-r1.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+The receipts support successful installation and actual eager/compiled FlashAttention forward execution on sm_120. They need these reporting and custody edits:
+
+1. **P2 — Separate numerical observations from qualification.** The trunk comparisons exceed the stated tolerance for approximately **0.017–0.021%** of elements. The script reports differences without asserting numerical acceptance. Equal maximum errors do not prove “BF16 output rounding,” and similar pairwise differences do not exclude a path-specific error. Keep rounding as a plausible explanation and describe the trunk smoke as completed with outliers. [results.md:154](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:154), [results.md:167](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:167)
+
+2. **P2 — Distinguish retained evidence from operator reports.** The run statement first appears in git at **06:28:07Z**, after execution; this does not prove late authorship, but no retained timestamp establishes pre-run authorship. Raw idle checks are also absent. `source_commit.txt` establishes the recorded commit, not detached HEAD or a clean tree. Recover existing receipts or label these claims as operator-reported. [Run statement:18](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:18), [README:8](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md:8)
+
+3. **P2 — Retain the wheel-member comparison.** The installed `.so` hash and wheel hash are recorded separately, but the claimed byte equality lacks a retained extraction/comparison result. Preserve that small receipt; the binary itself can remain on the pod. [README:25](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md:25)
+
+4. **P3 — Repair the manifest.** It records the empty-file hash for itself. Exclude the manifest when generating it and document the relocated `smoke_flash.py`. All **23 available payload entries** otherwise verify; the wheel is intentionally remote-only. [MANIFEST.sha256:11](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/MANIFEST.sha256:11)
+
+5. **P3 — Correct reference terminology.** The script uses automatically selected fp32 SDPA, not an explicitly selected or profiled *math* backend. Also, BF16 spacing near **1.38 is 0.0078125**, not 0.00390625; the maximum-error element’s magnitude was not retained. [Run statement:7](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:7), [results.md:155](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:155)
+
+Verified:
+
+- Installed torch **2.9.0+cu128**, Triton **3.5.0**, flash-attn **2.8.3**, and supporting versions match the pinned source’s lockfile.
+- Source hashes match `69397da`; it is an ancestor of the current integration branch, which has advanced.
+- The cubin listing contains **72 sm_120 entries**. Upstream [setup.py](https://raw.githubusercontent.com/Dao-AILab/flash-attention/v2.8.3/setup.py) supports the stated architecture/build mechanism, and the official [release asset listing](https://github.com/Dao-AILab/flash-attention/releases/expanded_assets/v2.8.3) matches the recorded wheel digest.
+- Eager and compiled profiles contain real flash kernels. The padded control makes no pack calls and uses the separate mem-efficient SDPA kernel.
+- Both named CUDA tests explicitly **PASSED**: **7/7, zero skips**. The additional Kaggriculture suite passed **161/161**.
+- Logged execution is comfortably within 90 minutes. The extra regression suite followed the literal three-part stopping condition; exact overall boundaries and cost remain reported estimates.
+- No credentials or large binaries were found in the scoped receipt commit. Backward, integrated PPO, and throughput remain appropriately unqualified.
+
+No files changed and no GPU runs launched.
+
+**VERDICT: APPROVE WITH EDITS**
+exec
+/bin/zsh -lc "rg -n 'flash.attn|byte.equal|wheel.member|operator.reported' cookbook ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md ops/rebuild-2026-09-29/results.md && rg --files ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:1:# Run statement — flash-attn on the pod and the real FlashAttention path (Phase 6.0, single GPU, ≤ 90 min)
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:3:- **Question (environment + diagnostic, not training):** the GEMM-limit probe found no `flash-attn` in the pod venv, while our preset (`configs/model/kaggriculture.yaml`) sets `force_flash_attn: true`. Can a v3 environment on the pod install `flash-attn 2.8.3` through the project's `flash-attn` extra against the locked torch 2.9.0+cu128, and does the model's packed FlashAttention varlen path then actually run and agree with SDPA on sm_120 (RTX PRO 6000 Blackwell)?
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:5:  - **Wheel availability:** with `FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE` (pyproject `extra-build-variables`) flash-attn's `setup.py` downloads `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` from the v2.8.3 GitHub release; if the download failed, SKIP_CUDA_BUILD would produce a wheel *without* `flash_attn_2_cuda`, so `import flash_attn` failing (or `flash_attn_available()` false) is the discriminating signal. Pre-check (Mac, 06:18Z): HTTP 200 for both the torch2.9 and torch2.8 cp312 cxx11abiTRUE wheel URLs.
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:7:  - **Kernel numerics (a):** `flash_attn_varlen_func` on BF16 packed q/k/v (8 heads, head_dim 32, 256 sequences of 214–709 tokens, ~180k total) vs per-sequence `F.scaled_dot_product_attention` in fp32 math: expected max |Δ| at BF16 noise (≲ 1e-2). A large diff or error → kernel wrong/unsupported on sm_120.
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:8:  - **Model path (b):** `KaggricultureTransformer` with the preset config (width 256, depth 8, 8 heads, `force_flash_attn=True`), fp32 params under `torch.autocast(bfloat16)` with TF32 on, on a 256-row contract-valid batch from `tests/kaggriculture/conftest.py::make_obs` (128 envs, varied actor/shop counts). Evidence the flash path ran: `use_flash_attn(x)` true, a counting wrapper on `owl.model.kaggriculture.pack_sequence` fires once per forward, and the torch profiler records a flash-attn forward CUDA kernel (`flash_fwd*`) in both eager and compiled (`compile_transformer_trunk(mode="max-autotune-no-cudagraphs")`, dynamic) runs. Compiled vs eager and flash vs padded SDPA (same weights, `use_flash_attn` patched false, `force_flash_attn=False`) over present tokens: expected BF16-level agreement; report max |Δ|, mean |Δ| and the fraction outside `0.02 + 0.02|ref|`.
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:9:  - **Tests (c):** `uv run pytest tests/owl/model/test_attn.py -q` runs the two flash-attn CUDA tests that skip on the Mac (expected: all pass, 0 skipped).
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:12:  - Environment: `/workspace/kg-v3-rebuild/.venv`, Python 3.12, `uv sync --frozen --group dev` then `--extra flash-attn` (torch 2.9.0+cu128 and triton 3.5.0 from the lock; flash-attn 2.8.3 via the extra). System uv 0.9.0 and the pod's existing rustup toolchain `nightly-2026-04-18` (matching `rust-toolchain.toml`) are used as found; nothing system-wide is upgraded. Rust extension built with `uv run maturin develop` (the justfile `build` recipe).
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:13:  - Smoke script: `ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/smoke_flash.py` (sha256 recorded in the receipt), run with `CUDA_VISIBLE_DEVICES=0`.
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:17:- **Artifacts:** pod `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` (setup logs, `versions.json`, `cuobjdump` listing, smoke JSON/log, pytest log). Local copy of logs and a summary in `ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/`; result section "Phase 6.0 — flash-attn on the pod" in `ops/rebuild-2026-09-29/results.md`.
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:22:## Post-run addendum (2026-09-29 ≈06:40Z, after Codex review `codex/verify-flash-attn-r1.md`)
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:24:The text above this rule is the pre-run statement, byte-for-byte: its first 5,427 bytes hash to sha256 `405c4bd62b19ad072c17e3039276d010ad0e8740a2f2bc3a44b9f027492aaac3`. Check with `head -c 5427 pod-flash-attn-setup.md | shasum -a 256`. Nothing above the rule was edited after the run.
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:31:The excerpts are in `../flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`. That transcript is a local harness log kept outside git and is not tamper-evident. The excerpt file records its sha256 at extraction time. No copy of this statement was placed on the pod.
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:38:  - A fresh post-run check at 06:36:54Z is in `../flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`.
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:39:  - "`/workspace/kg-v3` and its `.venv` are not touched" needs a qualification. A read-only check at 06:38Z (`../flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found no file in `/workspace/kg-v3` with a changed mtime. However, 19,796 entries in `/workspace/kg-v3/.venv` have a changed ctime. All of those are hard-linked regular files, and the sampled files share their inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, but the two venvs now share inodes.
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:42:  - "No credentials copied" and "nothing pushed" remain **operator-reported**. The only retained evidence is the pod clone's remote list, which shows just the bundle path.
+ops/rebuild-2026-09-29/results.md:32:**Owner decision: stay on torch 2.9** (Isaiah's pin, with its locked flash-attn 2.8.3 / triton 3.5.0). The 2.9 overflow is handled by the design requirements above: Isaiah's cadence keeps rows far below the threshold, the trunk chunks and guards, and the first-minibatch log-ratio alarm catches silent corruption. Torch 2.8 remains a measured fallback if 2.9 ever needs replacing.
+ops/rebuild-2026-09-29/results.md:45:**Anomaly: no FlashAttention on the pod.** The pod venv has **no `flash-attn` package**, and the pod's run config had `force_flash_attn: false`. That config lives on the pod and was not copied here. The model preset (`configs/model/kaggriculture.yaml`) and Isaiah's recipe (plan I8) require `force_flash_attn: true` with flash-attn 2.8.3. Consequences:
+ops/rebuild-2026-09-29/results.md:46:- The packed path in this probe ran on a shim: torch's own varlen `aten._flash_attention_forward` in place of `flash_attn_varlen_func`. The shim was checked against per-sequence SDPA: max |Δ| 0.0022 in the pre-launch smoke check, and 0.00225955 in-run (`pod-run/trunk_packed.jsonl:1`). Every GEMM, the pack/unpack and the guard are branch code, but the packed results say nothing about the real flash-attn kernel.
+ops/rebuild-2026-09-29/results.md:47:- **Phase 6 must install or build flash-attn 2.8.3 on the pod (`uv sync --extra flash-attn`) and verify that the real FlashAttention path ran before any qualification or throughput claim** (plan, Phase 6).
+ops/rebuild-2026-09-29/results.md:55:- The Rust-extension symlink and the missing flash-attn are disclosed deviations. This run is not a full production-path check.
+ops/rebuild-2026-09-29/results.md:140:- flash-attn: absent on the pod. Install and verify it in Phase 6 (above).
+ops/rebuild-2026-09-29/results.md:144:## Phase 6.0 — flash-attn on the pod (2026-09-29, 06:16–06:27Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+ops/rebuild-2026-09-29/results.md:146:Run statement: `run-statements/pod-flash-attn-setup.md`, which now has a post-run addendum on custody and corrections. Receipts are in `flash-attn-setup-2026-09-29/`; the README has identities and hashes. Codex reviewed them in `codex/verify-flash-attn-r1.md` (APPROVE WITH EDITS), and this section applies those edits.
+ops/rebuild-2026-09-29/results.md:148:Wall time was about 11 min of the 90-min budget, roughly $0.8 at $4.18/h, with no new billable resource. The operator transcript's first and last pod commands are at 06:16:21Z and 06:28:14Z, so the wall time and cost are estimates. The pod was left running and idle: idle checks are retained at 06:16:25, 06:24:26, 06:26:39 and 06:28:14Z (`flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`) and at 06:36:54Z (`flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`).
+ops/rebuild-2026-09-29/results.md:150:**Outcome: the blocker is cleared for the forward path. The trunk numerics are not qualified (see (b)).** A separate v3 environment, `/workspace/kg-v3-rebuild` (`kg/isaiah-gap-closure` @ `69397da`, via git bundle; `.venv` from `uv sync --frozen --group dev --extra flash-attn`), has torch 2.9.0+cu128, triton 3.5.0 and flash-attn 2.8.3, and the model's forced packed FlashAttention path runs on sm_120.
+ops/rebuild-2026-09-29/results.md:151:- **Install:** the extra's sdist build (`FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE`, no build isolation) downloaded the prebuilt release wheel `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` in 7.5 s. No compile, so no `MAX_JOBS`/arch settings were needed. Wheel sha256 `4e2f9e39…0810` equals the GitHub release digest. The installed `flash_attn_2_cuda` `.so` (sha256 `8ca052bf…5807`) is byte-identical to the wheel's member: the member was extracted from the retained wheel, both files have the same sha256, and `cmp` exits 0. That receipt was produced post-run at 06:37Z and is kept as `flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt`, locally and on the pod.
+ops/rebuild-2026-09-29/results.md:152:- **sm_120 support:** flash-attn 2.8.3's `setup.py` includes `120` in its default arch list (CUDA ≥ 12.8). The installed `.so` carries 72 sm_120 cubins, alongside sm_80/90/100 (`cuobjdump --list-elf`). Not a blocker.
+ops/rebuild-2026-09-29/results.md:153:- **Rust extension:** `maturin develop` (justfile `build`, dev profile) → `owl.rs` sha256 `35239d1b…93b8`. `owl` and `owl.model.kaggriculture` import from the new checkout, and `flash_attn_available()` is True.
+ops/rebuild-2026-09-29/results.md:155:**(a) Kernel vs SDPA.** `flash_attn_varlen_func` ran on BF16 packed q/k/v with 8 heads × head_dim 32, 256 sequences of 214–709 tokens, 173,518 tokens in total. The reference is per-sequence `F.scaled_dot_product_attention` on fp32 inputs, with the backend chosen automatically. The math backend was not selected explicitly, and the backend actually used was not profiled.
+ops/rebuild-2026-09-29/results.md:160:**(b) Model trunk.** Setup: preset `configs/model/kaggriculture.yaml` (width 256, depth 8, 8 heads, `force_flash_attn: true`), fp32 params, `autocast(bfloat16)`, TF32 via `configure_torch()`. Batch: `make_obs` with 128 envs = 256 rows, 173,108 present tokens, lengths 221–709, padded length 709.
+ops/rebuild-2026-09-29/results.md:182:- `use_flash_attn(x)` is True with x in bfloat16.
+ops/rebuild-2026-09-29/results.md:187:- Control: the padded path (dispatch patched off) made no pack calls and launched no flash kernel. It used PyTorch's mem-efficient `fmha_cutlassF_bf16…sm80` kernel. The JSON field `eager_padded_use_flash_attn_x: true` reports the unpatched `owl.model.attn.use_flash_attn`, not the patched dispatch.
+ops/rebuild-2026-09-29/results.md:199:  - `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` also holds the 243 MB wheel re-download and a 55 MB Inductor cache.
+ops/rebuild-2026-09-29/results.md:200:  - `/workspace/transfer-flash-attn-2026-09-29/v3.bundle` is kept for custody.
+ops/rebuild-2026-09-29/results.md:201:  - A post-run read-only check at 06:38Z (`flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found:
+ops/rebuild-2026-09-29/results.md:209:  - Still **operator-reported**, with no retained receipt: "no credentials copied" and "nothing pushed". The only evidence is the clone's remote list, which shows just the bundle path.
+cookbook/log.md:19:- **No flash-attn on the pod.** The pod venv has no `flash-attn`, and its config had `force_flash_attn: false`. The plan's Phase 6 now installs and verifies it before any qualification.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:70:- **FlashAttention:** the packed-path runs used torch's ATen varlen flash shim, because the pod venv has no `flash-attn`; the pod's run config also had `force_flash_attn: false`. The real flash-attn kernel is untested, and Phase 6 must install and verify it.
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run_followup.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/wheel_member_compare.sh
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/extract_operator_transcript.py
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/smoke_flash.py
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/09_owl_rs_after_pytest.log
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/cuobjdump_list_ptx.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/cuobjdump_list_elf.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/03_uv_sync_project.log
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/versions.py
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/01_uv_sync_base.log
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/10_pytest_kaggriculture.log
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/uv_version.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/nvcc_version.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/02_uv_sync_flash.log
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/04_maturin_develop.log
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/versions.json
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/06_smoke_flash.log
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/08_pytest_test_attn_verbose.log
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/versions.err
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/source_commit.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/MANIFEST.sha256
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/07_pytest_test_attn.log
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/05_import_check.log
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/smoke/kernels_eager_padded.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/smoke/kernels_eager_flash.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/smoke/smoke_flash.json
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/smoke/kernels_compiled_flash.txt
+
+exec
+/bin/zsh -lc 'git status --short && git show --stat --oneline 78df33c' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+?? .claude/worktrees/
+?? ops/rebuild-2026-09-29/codex/stream-d-report.md
+?? ops/rebuild-2026-09-29/codex/stream-d-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.1-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.1-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-brief-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-resume-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.2-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-report.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-brief-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-resume-prompt.md
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-resume-transcript.log
+?? ops/rebuild-2026-09-29/codex/task-1.3-impl-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt1-usage-limit-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-attempt2-killed-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.1b-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-receipt.md
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-1.2-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-attempt1-killed-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-2.3-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-deps-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-deps.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-flash-attn-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-gemm-limits-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-1.1b-r3.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r1.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-merge-heads-r2.md
+?? ops/rebuild-2026-09-29/codex/verify-stream-b-2.1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-c-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify-stream-c-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify-stream-c.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-B-r2.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r1.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-C-r2.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1-prompt.md
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1-transcript.log
+?? ops/rebuild-2026-09-29/codex/verify2-lane-D-r1.md
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+78df33c Apply Codex r1 edits to the Phase 6.0 flash-attn receipts
+ .../flash-attn-setup-2026-09-29/README.md          |  27 ++++-
+ .../pod/MANIFEST.sha256                            |  11 +-
+ .../pod/wheel_member_compare.txt                   |  32 ++++++
+ .../post-run/extract_operator_transcript.py        |  54 ++++++++++
+ .../post-run/git_idle_state_post_run.txt           |  19 ++++
+ .../post-run/operator_transcript_excerpts.txt      | 113 +++++++++++++++++++++
+ .../post-run/untouched_paths_post_run.txt          |  20 ++++
+ .../post-run/untouched_paths_post_run_followup.txt |  19 ++++
+ .../post-run/wheel_member_compare.sh               |  33 ++++++
+ ops/rebuild-2026-09-29/results.md                  |  48 ++++++---
+ .../run-statements/pod-flash-attn-setup.md         |  24 +++++
+ 11 files changed, 378 insertions(+), 22 deletions(-)
+
+exec
+/bin/zsh -lc 'cat cookbook/decisions/evaluation-preserves-generality-and-evidence.md cookbook/decisions/diagnose-the-mechanism-before-spending-on-runs.md cookbook/decisions/throughput-means-correct-complete-work.md && nl -ba ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt && cat ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/extract_operator_transcript.py' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+---
+type: "Decision"
+title: "Evaluation preserves generality and evidence"
+description: "Measure win rate and bank margin across opponents, retain source-bound evidence and telemetry, and keep submission authority with the owner."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:.gitignore"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/candidates-are-measured-by-win-rate-and-margin.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/no-candidate-agent-overfits-to-a-single-opponent.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/myolie-uses-wandb-for-telemetry-and-monitoring.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/repository-tracking-preserves-evidence-and-excludes-local-state.md"}]
+---
+
+# Evaluation preserves generality and evidence
+
+The owner's current reuse instruction carries forward v2's documented evaluation and custody discipline. Candidates are judged on win rate plus final-bank margin across differently playing opponents. Record versions, seeds, both seats, denominators, legality, completion and runtime. Keep diagnostic margin distinct from official win/loss/tie outcome. A gain against one opponent is scoped evidence; use fresh seeds and held-out opponents for generalization, and distinguish selection panels from final qualification. Local gate success does not establish public-ladder robustness.
+
+Keep experiment identity stable through retries, using separate attempt/checkpoint metadata. Select a v3 name when an experiment exists; do not import the v2 prefix or conceal continuation by renaming. The owner decides which artifact is submitted; development authorization alone is not a submission decision.
+
+Original v2 telemetry directive:
+
+> 你幫忙下一個cookbook record 去用wandb做telemetry做監控
+
+Use W&B for training/evaluation telemetry alongside durable local evidence, with explicit run identity, phase, source/checkpoint hashes and completed-work denominators. Configure v3 identifiers; do not publish into v2's project/group. Telemetry implementation, authentication and live readback need their own verification. Record outages and pending synchronization honestly; a dashboard is not an independent causal check.
+
+Original bulk-artifact directive:
+
+> why are we pushing the training artifacts as well? They should be gitignored.
+
+Track source, lockfiles, compact results, receipts and hash manifests. Exclude credentials, environments, caches, bulk weights/optimizer state and generated corpora; retain path, bytes and SHA-256 custody manifests for local artifacts. Ignoring is not deletion. No competitive result, cloud connection or submission is established here.
+---
+type: "Decision"
+title: "Diagnose the mechanism before spending on runs"
+description: "Keep decisions reproducible, map game capabilities to executable mechanisms, and distinguish four failure classes before repairing."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/kaggriculture-v2-starts-with-a-clean-design.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/the-architecture-must-express-the-decisions-needed-to-win.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/failures-must-distinguish-information-decision-execution-and-architecture-errors.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/stalled-improvement-requires-attribution-and-explicit-architecture-limits.md"}]
+---
+
+# Diagnose the mechanism before spending on runs
+
+The owner's reuse instruction adopts useful v2 discipline for this adaptation. Its original owner directives include:
+
+> crafting a system that is undebuggable and reuqesting blind guess/ experiment is banned explicitly in this project.
+
+> 證據是你有信心的時候才去收集的，不是沒有信心下的賭博.
+
+> 贏所需的決策，架構能否表達？
+
+V3 operationalizes those requirements as follows. Before a costly run, state the observed problem, code/data path, supported mechanism or diagnostic question, expected discriminating observation, and stopping condition. Preserve source/configuration, inputs, seeds and outputs sufficient to replay and localize it. Inspect implementation or add focused diagnostics when visibility is missing. A diagnostic may resolve an unknown cause; mark uncertainty rather than inventing confidence.
+
+Before relying on an architecture, map investment payback, labor allocation, sale timing and market adaptation to available information, represented state, a choice mechanism and executable actions. Trace a worked case through those boundaries. Explicit capacity is necessary, but does not prove effective learned use.
+
+Distinguish **information insufficiency**, **decision error**, **execution error**, and **architecture error**, following the original owner quote “資訊不足、決策錯誤與執行錯誤，或者是架構錯誤”. Trace observed inputs → representation → intended choice → emitted action → engine outcome. Information available but discarded by representation is not an environmental information shortage. Multiple causes may coexist; unresolved attribution must be named.
+
+When repeated repairs fail, inspect the engine, relevant original research and applicable competition discussion before spending again. A justified repair needs a mechanism and discriminating check. Record `ARCHITECTURE LIMITATION` only with its evidence, conditions, attempted repairs and reopening condition; qualify it as suspected when attribution remains unresolved. Repeated poor scores alone never prove impossibility. These rules add no approval step.
+---
+type: "Decision"
+title: "Throughput means correct complete work"
+description: "High throughput is required; preserve semantic parity and measure equivalent work rather than inferring gains from language or kernels."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/high-throughput-is-mandatory.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/myolie-native-sampling-grammar.md"}]
+---
+
+# Throughput means correct complete work
+
+Original v2 owner directive:
+
+> cookbook decision 下一個-高吞吐量是必須不是選擇
+
+Under today's instruction to reuse useful discipline, high throughput is a requirement for the v3 collection, model and training design. Preserve correctness while reporting collection rate, valid learner turns through a full update, phase timings and the total workflow cost. Separate startup/compilation from steady state. State hardware, precision, batch/rollout work, recording settings, transfer and evaluation boundaries. No absolute SPS floor or allowed regression percentage has been supplied.
+
+Rust preparation must actually execute in the path being measured. Preserve game ordering, no-op/STOP distinctions, conditional legality, masks, sampled behavior density and feature semantics; pin source/lockfile/binary and inputs/outputs. Compare equivalent work with an independent oracle where applicable. A faster parser or sampler does not establish a full-training speedup.
+
+The v2 native-sampler Reference is useful contrary evidence: its saved shared-host run lowered sampler CPU time while complete collection elapsed time increased. That is a scoped counterexample to extrapolating component gains, not a ban on native sampling and not a v3 benchmark. Reducing environments, histories or data volume is a workload change unless comparable end-to-end measurements show an optimization.
+
+Use [[../workflows/profile-cuda-bottlenecks-with-nsight-systems|Nsight Systems]] for NVIDIA timeline attribution. Temporary downscaling can diagnose a fault but does not close the throughput requirement. Measured scopes so far (the rejected old decoder and the historical fixed-minibatch sweep) live in `ops/gpu-sps-2026-09-29/results.md`. None of them establishes playing strength, dense-game capacity or an owner-specified performance floor, and each recipe change, including the Isaiah-aligned cadence, needs its own complete-work qualification.
+     1	# source transcript: ~/.claude/projects/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/subagents/workflows/wf_6fbe8f60-1c7/agent-a67cdbbbc0dde3368.jsonl
+     2	# source transcript sha256 at extraction: ad6266d39c92c72f37b94e743cae6993844b036122683b3c11a811ee68fff62c (760231 bytes)
+     3	
+     4	===== line 42 | 2026-09-29T06:16:21.596Z | pre-run idle/pre-check (tool call)
+     5	Bash toolu_01SuQb1Fqt1Nk5L5rPVmCyN6
+     6	S=/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad; mkdir -p $S; cat > $S/pod <<'EOF'
+     7	#!/bin/bash
+     8	exec ssh -i ~/.ssh/runpod-grinder -o IdentitiesOnly=yes -o UserKnownHostsFile=~/.ssh/known_hosts.runpod -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o ServerAliveInterval=30 -p <pod-ssh-port> root@<pod-ssh-host> "$@"
+     9	EOF
+    10	cat > $S/podscp <<'EOF'
+    11	#!/bin/bash
+    12	exec scp -i ~/.ssh/runpod-grinder -o IdentitiesOnly=yes -o UserKnownHostsFile=~/.ssh/known_hosts.runpod -o StrictHostKeyChecking=accept-new -P <pod-ssh-port> "$@"
+    13	EOF
+    14	chmod +x $S/pod $S/podscp; $S/pod 'date -u; nvidia-smi --query-gpu=index,name,memory.used,utilization.gpu,driver_version --format=csv; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; ps -eo pid,etime,cmd | grep -E "python|torchrun|run_ppo|maturin|cargo|pip|uv " | grep -v grep; nproc; free -g; df -h /workspace /; which uv; ls ~/.local/bin 2>/dev/null; ls /workspace; nvcc --version 2>/dev/null | tail -2; ls /usr/local | grep cuda; which cargo rustc; python3 --version'
+    15	
+    16	===== line 43 | 2026-09-29T06:16:25.552Z | pre-run idle/pre-check (result)
+    17	result for toolu_01SuQb1Fqt1Nk5L5rPVmCyN6
+    18	Tue Sep 29 06:16:25 UTC 2026
+    19	index, name, memory.used [MiB], utilization.gpu [%], driver_version
+    20	0, NVIDIA RTX PRO 6000 Blackwell Server Edition, 0 MiB, 0 %, 595.91.07
+    21	1, NVIDIA RTX PRO 6000 Blackwell Server Edition, 0 MiB, 0 %, 595.91.07
+    22	pid, process_name, used_gpu_memory [MiB]
+    23	256
+    24	               total        used        free      shared  buff/cache   available
+    25	Mem:            1511          81         409           0        1038        1429
+    26	Swap:              0           0           0
+    27	Filesystem      Size  Used Avail Use% Mounted on
+    28	overlay          50G   28G   23G  55% /
+    29	overlay          50G   28G   23G  55% /
+    30	/usr/bin/uv
+    31	gemm-limits-src-1ddc71d
+    32	kg-v3
+    33	cuda
+    34	cuda-12
+    35	cuda-12.8
+    36	Python 3.12.3
+    37	
+    38	===== line 86 | 2026-09-29T06:17:58.822Z | run statement Write (content hashed, not reproduced)
+    39	Write ~/kg-v3/ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md
+    40	content sha256 405c4bd62b19ad072c17e3039276d010ad0e8740a2f2bc3a44b9f027492aaac3 (5427 bytes)
+    41	
+    42	===== line 92 | 2026-09-29T06:18:04.400Z | first pod mutation: bundle transfer, clone, detached checkout, status (tool call)
+    43	Bash toolu_017PQnkQmyG5pijpkcev8w8b
+    44	S=/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad; date -u; git -C /Users/poonszesen/kg-v3-int bundle create $S/v3.bundle HEAD 2>&1 | tail -2; shasum -a 256 $S/v3.bundle; ls -la $S/v3.bundle; $S/pod 'mkdir -p /workspace/transfer-flash-attn-2026-09-29' && $S/podscp $S/v3.bundle root@<pod-ssh-host>:/workspace/transfer-flash-attn-2026-09-29/v3.bundle && $S/pod 'cd /workspace && sha256sum transfer-flash-attn-2026-09-29/v3.bundle && git clone -q transfer-flash-attn-2026-09-29/v3.bundle kg-v3-rebuild && cd kg-v3-rebuild && git checkout -q 69397da3d1559be4fbb525636122d8a9bc614a49 && git rev-parse HEAD && git status --short | head && git remote -v && mkdir -p runs/flash-attn-setup-2026-09-29'
+    45	
+    46	===== line 93 | 2026-09-29T06:18:38.661Z | first pod mutation (result)
+    47	result for toolu_017PQnkQmyG5pijpkcev8w8b
+    48	Tue 29 Sep 2026 06:18:04 UTC
+    49	149763ad2a727cce47242cfe840db7224495ff2d43b79f72466e87b01848c6fd  /private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad/v3.bundle
+    50	.rw-r--r--@ 6.9M poonszesen 29 Sep 14:18 /private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad/v3.bundle
+    51	149763ad2a727cce47242cfe840db7224495ff2d43b79f72466e87b01848c6fd  transfer-flash-attn-2026-09-29/v3.bundle
+    52	Note: switching to '69397da3d1559be4fbb525636122d8a9bc614a49'.
+    53	
+    54	You are in 'detached HEAD' state. You can look around, make experimental
+    55	changes and commit them, and you can discard any commits you make in this
+    56	state without impacting any branches by switching back to a branch.
+    57	
+    58	If you want to create a new branch to retain commits you create, you may
+    59	do so (now or later) by using -c with the switch command. Example:
+    60	
+    61	  git switch -c <new-branch-name>
+    62	
+    63	Or undo this operation with:
+    64	
+    65	  git switch -
+    66	
+    67	Turn off this advice by setting config variable advice.detachedHead to false
+    68	
+    69	69397da3d1559be4fbb525636122d8a9bc614a49
+    70	origin	/workspace/transfer-flash-attn-2026-09-29/v3.bundle (fetch)
+    71	origin	/workspace/transfer-flash-attn-2026-09-29/v3.bundle (push)
+    72	
+    73	===== line 153 | 2026-09-29T06:24:18.122Z | pre-smoke idle re-check (tool call)
+    74	Bash toolu_013Vqh8iVgYrT7ZYJ7XdNjoE
+    75	S=/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad; F=/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/smoke_flash.py; python3 -m py_compile $F && echo ok; $S/podscp $F root@<pod-ssh-host>:/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/smoke_flash.py >/dev/null; $S/pod 'date -u; nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader; nvidia-smi --query-compute-apps=pid,process_name --format=csv,noheader; ps -eo pid,cmd | grep -E "python|torchrun|run_ppo" | grep -v grep; sha256sum /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/smoke_flash.py'
+    76	
+    77	===== line 154 | 2026-09-29T06:24:26.617Z | pre-smoke idle re-check (result)
+    78	result for toolu_013Vqh8iVgYrT7ZYJ7XdNjoE
+    79	ok
+    80	Tue Sep 29 06:24:26 UTC 2026
+    81	0, 0 MiB, 0 %
+    82	1, 0 MiB, 0 %
+    83	0e1db99db9a9649015315b09a79eac8306df83edeed4a9f59a7168ff5823dee3  /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/smoke_flash.py
+    84	
+    85	===== line 176 | 2026-09-29T06:26:35.295Z | end-of-run check incl. tracked-file git status (tool call)
+    86	Bash toolu_012TMeT9QWpnoz4hevn9m66E
+    87	S=/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad; $S/pod 'cd /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29 && /usr/local/cuda-12.8/bin/nvcc --version > nvcc_version.txt; tail -2 nvcc_version.txt; uv --version > uv_version.txt; rustc --version >> uv_version.txt 2>/dev/null || $HOME/.cargo/bin/rustc --version >> uv_version.txt; cat uv_version.txt; cd /workspace/kg-v3-rebuild && git rev-parse HEAD > runs/flash-attn-setup-2026-09-29/source_commit.txt && git status --short --untracked-files=no | wc -l; cd runs/flash-attn-setup-2026-09-29 && find . -type f -not -path "./inductor_cache/*" -exec sha256sum {} \; | sort -k2 > MANIFEST.sha256; find inductor_cache -type f | wc -l; du -sh wheel inductor_cache; df -h / | tail -1; nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader; ps -eo pid,cmd | grep -E "python|torchrun|run_ppo" | grep -v grep; date -u'
+    88	
+    89	===== line 177 | 2026-09-29T06:26:39.741Z | end-of-run check (result)
+    90	result for toolu_012TMeT9QWpnoz4hevn9m66E
+    91	Cuda compilation tools, release 12.8, V12.8.93
+    92	Build cuda_12.8.r12.8/compiler.35583870_0
+    93	uv 0.9.0
+    94	rustc 1.97.0-nightly (e9e32aca5 2026-04-17)
+    95	0
+    96	1106
+    97	243M	wheel
+    98	55M	inductor_cache
+    99	overlay          50G   31G   20G  62% /
+   100	0, 0 MiB, 0 %
+   101	1, 0 MiB, 0 %
+   102	Tue Sep 29 06:26:39 UTC 2026
+   103	
+   104	===== line 211 | 2026-09-29T06:28:11.270Z | post-commit idle check (tool call)
+   105	Bash toolu_01BrK8VxHX3VhzBhnFDkPzG6
+   106	/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad/pod 'date -u; nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader; ps -eo pid,cmd | grep -E "python|torchrun|run_ppo|cargo" | grep -v grep | wc -l'
+   107	
+   108	===== line 212 | 2026-09-29T06:28:14.621Z | post-commit idle check (result)
+   109	result for toolu_01BrK8VxHX3VhzBhnFDkPzG6
+   110	Tue Sep 29 06:28:14 UTC 2026
+   111	0, 0 MiB, 0 %
+   112	1, 0 MiB, 0 %
+   113	0
+"""Extract Phase 6.0 operator-session tool calls/results that back the run statement's
+pre-run authorship, idle checks and source-state claims.
+
+Usage: python3 extract_operator_transcript.py <transcript.jsonl> > operator_transcript_excerpts.txt
+The pod's public SSH host/port are redacted; nothing else is changed.
+"""
+
+import hashlib
+import json
+import sys
+
+ENTRIES = {  # transcript line index -> purpose
+    42: "pre-run idle/pre-check (tool call)",
+    43: "pre-run idle/pre-check (result)",
+    86: "run statement Write (content hashed, not reproduced)",
+    92: "first pod mutation: bundle transfer, clone, detached checkout, status (tool call)",
+    93: "first pod mutation (result)",
+    153: "pre-smoke idle re-check (tool call)",
+    154: "pre-smoke idle re-check (result)",
+    176: "end-of-run check incl. tracked-file git status (tool call)",
+    177: "end-of-run check (result)",
+    211: "post-commit idle check (tool call)",
+    212: "post-commit idle check (result)",
+}
+REDACT = {"157.157.221.177": "<pod-ssh-host>", "-p 10854": "-p <pod-ssh-port>", "-P 10854": "-P <pod-ssh-port>"}
+
+
+def redact(s: str) -> str:
+    for k, v in REDACT.items():
+        s = s.replace(k, v)
+    return s
+
+
+path = sys.argv[1]
+raw = open(path, "rb").read()
+print(f"# source transcript: {path.replace('/Users/poonszesen', '~')}")
+print(f"# source transcript sha256 at extraction: {hashlib.sha256(raw).hexdigest()} ({len(raw)} bytes)")
+lines = raw.decode().splitlines()
+for i, purpose in ENTRIES.items():
+    d = json.loads(lines[i])
+    for b in d["message"]["content"]:
+        print(f"\n===== line {i} | {d['timestamp']} | {purpose}")
+        if b.get("type") == "tool_use":
+            inp = b["input"]
+            if b["name"] == "Write":
+                c = inp["content"].encode()
+                print(f"Write {inp['file_path'].replace('/Users/poonszesen', '~')}")
+                print(f"content sha256 {hashlib.sha256(c).hexdigest()} ({len(c)} bytes)")
+            else:
+                print(f"{b['name']} {b['id']}\n{redact(str(inp.get('command')))}")
+        elif b.get("type") == "tool_result":
+            cc = b.get("content")
+            t = cc if isinstance(cc, str) else "\n".join(x.get("text", "") for x in cc if isinstance(x, dict))
+            print(f"result for {b['tool_use_id']}\n{redact(t)}")
+
+exec
+/bin/zsh -lc "nl -ba ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md && nl -ba ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md && nl -ba ops/rebuild-2026-09-29/results.md | sed -n '144,230p'" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+     1	# Run statement — flash-attn on the pod and the real FlashAttention path (Phase 6.0, single GPU, ≤ 90 min)
+     2	
+     3	- **Question (environment + diagnostic, not training):** the GEMM-limit probe found no `flash-attn` in the pod venv, while our preset (`configs/model/kaggriculture.yaml`) sets `force_flash_attn: true`. Can a v3 environment on the pod install `flash-attn 2.8.3` through the project's `flash-attn` extra against the locked torch 2.9.0+cu128, and does the model's packed FlashAttention varlen path then actually run and agree with SDPA on sm_120 (RTX PRO 6000 Blackwell)?
+     4	- **Hypotheses and discriminating observations:**
+     5	  - **Wheel availability:** with `FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE` (pyproject `extra-build-variables`) flash-attn's `setup.py` downloads `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` from the v2.8.3 GitHub release; if the download failed, SKIP_CUDA_BUILD would produce a wheel *without* `flash_attn_2_cuda`, so `import flash_attn` failing (or `flash_attn_available()` false) is the discriminating signal. Pre-check (Mac, 06:18Z): HTTP 200 for both the torch2.9 and torch2.8 cp312 cxx11abiTRUE wheel URLs.
+     6	  - **sm_120 support:** the sdist `setup.py` (sha256 of sdist `1e71dd64…0370d`, equal to the `uv.lock` hash) defaults `FLASH_ATTN_CUDA_ARCHS="80;90;100;120"` and adds `arch=compute_120,code=sm_120` when the CUDA toolkit is ≥ 12.8. The installed `.so` is checked with `cuobjdump --list-elf` for an `sm_120` cubin. No sm_120 cubin and no compatible PTX, or a "no kernel image" error on the smoke → blocker, reported as such (no workaround).
+     7	  - **Kernel numerics (a):** `flash_attn_varlen_func` on BF16 packed q/k/v (8 heads, head_dim 32, 256 sequences of 214–709 tokens, ~180k total) vs per-sequence `F.scaled_dot_product_attention` in fp32 math: expected max |Δ| at BF16 noise (≲ 1e-2). A large diff or error → kernel wrong/unsupported on sm_120.
+     8	  - **Model path (b):** `KaggricultureTransformer` with the preset config (width 256, depth 8, 8 heads, `force_flash_attn=True`), fp32 params under `torch.autocast(bfloat16)` with TF32 on, on a 256-row contract-valid batch from `tests/kaggriculture/conftest.py::make_obs` (128 envs, varied actor/shop counts). Evidence the flash path ran: `use_flash_attn(x)` true, a counting wrapper on `owl.model.kaggriculture.pack_sequence` fires once per forward, and the torch profiler records a flash-attn forward CUDA kernel (`flash_fwd*`) in both eager and compiled (`compile_transformer_trunk(mode="max-autotune-no-cudagraphs")`, dynamic) runs. Compiled vs eager and flash vs padded SDPA (same weights, `use_flash_attn` patched false, `force_flash_attn=False`) over present tokens: expected BF16-level agreement; report max |Δ|, mean |Δ| and the fraction outside `0.02 + 0.02|ref|`.
+     9	  - **Tests (c):** `uv run pytest tests/owl/model/test_attn.py -q` runs the two flash-attn CUDA tests that skip on the Mac (expected: all pass, 0 skipped).
+    10	- **Inputs and code path:**
+    11	  - Source: integration branch `kg/isaiah-gap-closure` at `69397da3d1559be4fbb525636122d8a9bc614a49` (tree `eef9249e…`; `python/owl/model` tree `2a5a02cf…`; `uv.lock` sha256 `f3311c31…07f5`; `pyproject.toml` sha256 `6912a9e9…bb01`; `python/owl/model/kaggriculture.py` sha256 `92f4df61…9dee`). Transferred as `git bundle create v3.bundle HEAD` + scp; cloned to `/workspace/kg-v3-rebuild` and checked out at that commit. No push to origin, no credentials copied.
+    12	  - Environment: `/workspace/kg-v3-rebuild/.venv`, Python 3.12, `uv sync --frozen --group dev` then `--extra flash-attn` (torch 2.9.0+cu128 and triton 3.5.0 from the lock; flash-attn 2.8.3 via the extra). System uv 0.9.0 and the pod's existing rustup toolchain `nightly-2026-04-18` (matching `rust-toolchain.toml`) are used as found; nothing system-wide is upgraded. Rust extension built with `uv run maturin develop` (the justfile `build` recipe).
+    13	  - Smoke script: `ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/smoke_flash.py` (sha256 recorded in the receipt), run with `CUDA_VISIBLE_DEVICES=0`.
+    14	  - Hardware: pod `w7ia3zvxqsvs3g`, 2× RTX PRO 6000 Blackwell (cc 12.0), driver 595.91.07, GPU 0 only.
+    15	- **Stopping condition:** the three smoke parts complete, or the first hard blocker (wheel unavailable and no sm_120 support, import failure, "no kernel image"), or 90 minutes wall. If a source build becomes necessary it is bounded by `MAX_JOBS` sized to the pod's cgroup (54 CPUs quota, RAM ample) and `TORCH_CUDA_ARCH_LIST=12.0`/`FLASH_ATTN_CUDA_ARCHS=120`, and counts against the same 90 minutes.
+    16	- **Budget:** ≤ 90 min wall on the already-running pod ($4.18/h ≈ $6.3 max; no new billable resource).
+    17	- **Artifacts:** pod `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` (setup logs, `versions.json`, `cuobjdump` listing, smoke JSON/log, pytest log). Local copy of logs and a summary in `ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/`; result section "Phase 6.0 — flash-attn on the pod" in `ops/rebuild-2026-09-29/results.md`.
+    18	- **Safety:** pre-check 06:16Z: `nvidia-smi` 0 MiB / 0 % on both GPUs, no compute apps, no python/torchrun/run_ppo/cargo/pip process. Re-checked immediately before the smoke. `/workspace/kg-v3` and its `.venv` are not touched; `/workspace/gemm-limits-src-1ddc71d` is not touched. No driver/CUDA/system-torch changes, no security changes. Never stop, restart or delete the pod; it is left running and idle.
+    19	
+    20	---
+    21	
+    22	## Post-run addendum (2026-09-29 ≈06:40Z, after Codex review `codex/verify-flash-attn-r1.md`)
+    23	
+    24	The text above this rule is the pre-run statement, byte-for-byte: its first 5,427 bytes hash to sha256 `405c4bd62b19ad072c17e3039276d010ad0e8740a2f2bc3a44b9f027492aaac3`. Check with `head -c 5427 pod-flash-attn-setup.md | shasum -a 256`. Nothing above the rule was edited after the run.
+    25	
+    26	**Custody of this statement.** Git first records the file in `4fd40c7` at 06:28:07Z, which is after execution. That commit alone does not show when the statement was written. The operator session's transcript does show the timing:
+    27	- The `Write` of this file happened at **06:17:58.822Z**, and the written content has the same sha256 (`405c4bd6…aac3`).
+    28	- The first command that changed the pod (bundle, clone, checkout) started at **06:18:04Z**.
+    29	- The earlier 06:16:25Z call only read state.
+    30	
+    31	The excerpts are in `../flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`. That transcript is a local harness log kept outside git and is not tamper-evident. The excerpt file records its sha256 at extraction time. No copy of this statement was placed on the pod.
+    32	
+    33	**Corrections to the wording above.** The original text stays as written; these corrections apply to it.
+    34	- **(a) reference.** "fp32 SDPA in fp32 math" means `F.scaled_dot_product_attention` on fp32 inputs, with the backend chosen automatically. The math backend was not selected explicitly, and the backend actually used was not profiled.
+    35	- **(b) expectation.** The trunk result did not meet the "BF16-level agreement" expectation as a proven claim. The trunk smoke completed with outliers: 0.017–0.021 % of elements fall outside `0.02 + 0.02|ref|`, and the script asserts no numerical acceptance. See `../results.md` for details.
+    36	- **Safety claims.** Some of the safety claims above now have receipts:
+    37	  - Pre-check 06:16:25Z, pre-smoke re-check 06:24:26Z, end-of-run check 06:26:39Z and post-commit check 06:28:14Z are all in the transcript excerpts.
+    38	  - A fresh post-run check at 06:36:54Z is in `../flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`.
+    39	  - "`/workspace/kg-v3` and its `.venv` are not touched" needs a qualification. A read-only check at 06:38Z (`../flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found no file in `/workspace/kg-v3` with a changed mtime. However, 19,796 entries in `/workspace/kg-v3/.venv` have a changed ctime. All of those are hard-linked regular files, and the sampled files share their inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, but the two venvs now share inodes.
+    40	  - `/workspace/gemm-limits-src-1ddc71d` has no mtime or ctime changes.
+    41	  - The driver is still 595.91.07, and the system torch is still 2.8.0+cu128 (`version.py` mtime 2025-10-09).
+    42	  - "No credentials copied" and "nothing pushed" remain **operator-reported**. The only retained evidence is the pod clone's remote list, which shows just the bundle path.
+     1	# flash-attn on the pod — receipts (Phase 6.0, 2026-09-29 06:16–06:27Z)
+     2	
+     3	Run statement: `../run-statements/pod-flash-attn-setup.md`. Summary and interpretation: `../results.md`, section "Phase 6.0 — flash-attn on the pod".
+     4	
+     5	## Identity
+     6	
+     7	- Pod `w7ia3zvxqsvs3g` (RUNNING, $4.18/h; 2× RTX PRO 6000 Blackwell Server Edition, cc 12.0, driver 595.91.07). GPU 0 only (`CUDA_VISIBLE_DEVICES=0`). Left running and idle. The idle checks at 06:16:25, 06:24:26, 06:26:39 and 06:28:14Z are retained in `post-run/operator_transcript_excerpts.txt`. A fresh read-only check at 06:36:54Z is in `post-run/git_idle_state_post_run.txt`. Every check shows 0 MiB and 0 % on both GPUs, with no python process running.
+     8	- Source: `kg/isaiah-gap-closure` @ `69397da3d1559be4fbb525636122d8a9bc614a49`, transferred as `git bundle create v3.bundle HEAD` (sha256 `149763ad2a727cce47242cfe840db7224495ff2d43b79f72466e87b01848c6fd`, 6.9 MB; pod copy at `/workspace/transfer-flash-attn-2026-09-29/v3.bundle`, same hash). Cloned to `/workspace/kg-v3-rebuild`. `pod/source_commit.txt` records only the commit hash. The detached HEAD and clean tree are backed by other receipts:
+     9	  - the `git checkout` output at 06:18:38Z and the tracked-file `git status` count of 0 at 06:26:39Z (`post-run/operator_transcript_excerpts.txt`);
+    10	  - a fresh post-run receipt at 06:36:54Z (`post-run/git_idle_state_post_run.txt`): HEAD `69397da`, `symbolic-ref` exit 1 (detached), `git status --porcelain` empty, `runs/` gitignored.
+    11	
+    12	  "Nothing pushed; no credentials copied" is **operator-reported**. The only receipt is the clone's `git remote -v`, which shows just the bundle path.
+    13	
+    14	  `/workspace/kg-v3` was checked read-only at 06:38Z (`post-run/untouched_paths_post_run*.txt`):
+    15	  - no mtime changes;
+    16	  - 19,796 `.venv` entries have a new ctime. All of them are hard-linked regular files: none has link count 1, and none is a non-regular entry. The sampled files share an inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, but the two venvs share inodes;
+    17	  - `/workspace/gemm-limits-src-1ddc71d` is unchanged.
+    18	- Environment: `/workspace/kg-v3-rebuild/.venv`, uv 0.9.0 (pod system), Python 3.12.3, rustc 1.97.0-nightly (e9e32aca5 2026-04-17) = `nightly-2026-04-18` already on the pod.
+    19	
+    20	## Versions actually installed (`pod/versions.json`)
+    21	
+    22	| Component | Version |
+    23	|---|---|
+    24	| torch | 2.9.0+cu128 (CUDA 12.8, cuDNN 91002, cxx11abi True, arch list incl. sm_120) |
+    25	| triton | 3.5.0 |
+    26	| flash-attn | 2.8.3 (einops 0.8.2) |
+    27	| nvcc (not used; no source build) | 12.8.93 (`/usr/local/cuda-12.8`) |
+    28	| maturin | 1.13.1 |
+    29	
+    30	## flash-attn wheel custody
+    31	
+    32	- The lock's sdist (`flash_attn-2.8.3.tar.gz`, sha256 `1e71dd64…0370d`) was built with `FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE` and no build isolation (pyproject). Its `setup.py` downloaded the prebuilt release wheel `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` (`pod/02_uv_sync_flash.log`: "Guessing wheel URL"; 7.5 s; no compile).
+    33	- Release asset digest (GitHub API): `sha256:4e2f9e39313266b1544b68138b15b91ee6221eccf14f7902b7c6620351340810`, 253,780,426 bytes, asset updated 2025-12-17T09:32:21Z (the v2.8.3 release itself is dated 2025-08-14; the torch 2.9 wheels were added later, so the URL resolves to a mutable release asset). A re-download on the pod (`runs/flash-attn-setup-2026-09-29/wheel/`, 243 MB, not copied here) has that same sha256.
+    34	- Installed `flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so`: sha256 `8ca052bf2d3f53baa629e22749b9622a95273c5bffb5f06cd24768ef63f65807`, 997,961,816 bytes — byte-identical to the `.so` inside the release wheel. Receipt: `pod/wheel_member_compare.txt`, produced post-run at 06:37Z by `post-run/wheel_member_compare.sh`. The script extracts the member from the retained wheel into a temp dir, which it removes afterwards. Both files hash to `8ca052bf…5807`, `cmp` exits 0, and the `dist-info/RECORD` entry agrees. The receipt is also kept on the pod in the run dir.
+    35	- sm_120 support: flash-attn 2.8.3 `setup.py` defaults `FLASH_ATTN_CUDA_ARCHS="80;90;100;120"` and emits `arch=compute_120,code=sm_120` for CUDA ≥ 12.8. `cuobjdump --list-elf` on the installed `.so` lists 72 cubins each for sm_80, sm_90, sm_100 and **sm_120** (`pod/cuobjdump_list_elf.txt`); no PTX (`pod/cuobjdump_list_ptx.txt`).
+    36	- `dist-info/RECORD` sha256 `817df8e9…540e`.
+    37	
+    38	## Rust extension
+    39	
+    40	`uv sync --frozen --group dev --extra flash-attn` installed the project (editable, 20 s), then `uv run --frozen --group dev --extra flash-attn maturin develop` (justfile `build`; dev profile, unoptimized) built `python/owl/rs.abi3.so`, sha256 `35239d1b6c8c0e68d97bdf5c8a2e102caa8ca77176c26ff8e1e076c517e693b8`. `owl`, `owl.rs`, `owl.model.kaggriculture` import from `/workspace/kg-v3-rebuild` (`pod/05_import_check.log`). The first `uv run --frozen pytest` reinstalled the editable `owl` once ("Uninstalled 1 / Installed 1"); `owl.rs` hash unchanged afterwards (`pod/09_owl_rs_after_pytest.log`).
+    41	
+    42	## Files
+    43	
+    44	- `smoke_flash.py` is the smoke script, sha256 `0e1db99db9a9649015315b09a79eac8306df83edeed4a9f59a7168ff5823dee3`. The same bytes ran on the pod (sha256 check at 06:24:26Z in the transcript excerpts).
+    45	  - **Relocation:** on the pod it sits in the run dir, `runs/flash-attn-setup-2026-09-29/smoke_flash.py`. Locally it is one level above `pod/`, so the local manifest lists it as `../smoke_flash.py`.
+    46	- `pod/01…04_*.log` — sync/build logs; `pod/05_import_check.log`; `pod/06_smoke_flash.log` (includes autotune output); `pod/07`, `pod/08` — `tests/owl/model/test_attn.py` (7 passed, 0 skipped); `pod/10_pytest_kaggriculture.log` (161 passed).
+    47	- `pod/smoke/smoke_flash.json` — all measurements; `pod/smoke/kernels_*.txt` — CUDA kernel names per profiled forward.
+    48	- `pod/MANIFEST.sha256` was regenerated locally on 2026-09-29 after Codex review r1. It excludes itself. The original had recorded the empty-file hash for its own entry.
+    49	  - It covers every local `pod/` payload file, including the new `wheel_member_compare.txt`, plus `../smoke_flash.py` and `../post-run/*`. Check it with `cd pod && shasum -a 256 -c MANIFEST.sha256`.
+    50	  - The wheel (`wheel/…whl`, sha256 `4e2f9e39…0810`) is remote-only and is not listed.
+    51	  - The pod-side `MANIFEST.sha256` was left unchanged. It still carries the stale self-entry and does not list `wheel_member_compare.txt`.
+    52	- `post-run/` holds receipts added after Codex review r1:
+    53	  - `operator_transcript_excerpts.txt`, extracted by `extract_operator_transcript.py`, contains the timestamped operator-session calls and results: pre-run statement `Write` 06:17:58.822Z, content sha256 equal to the committed pre-run text; pre-check; first pod mutation 06:18:04Z; idle re-checks. The pod SSH host and port are redacted. The source is a local harness transcript outside git, not tamper-evident; its sha256 at extraction is recorded.
+    54	  - `git_idle_state_post_run.txt` covers git and idle state, and `untouched_paths_post_run.txt` / `untouched_paths_post_run_followup.txt` cover the untouched-path mtime/ctime checks. All three are read-only and post-run.
+    55	  - `wheel_member_compare.sh` is the script behind `pod/wheel_member_compare.txt`.
+    56	- Not copied (large, on the pod only): `wheel/…whl` (243 MB, sha256 above), `inductor_cache/` (55 MB, 1,106 files).
+   144	## Phase 6.0 — flash-attn on the pod (2026-09-29, 06:16–06:27Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+   145	
+   146	Run statement: `run-statements/pod-flash-attn-setup.md`, which now has a post-run addendum on custody and corrections. Receipts are in `flash-attn-setup-2026-09-29/`; the README has identities and hashes. Codex reviewed them in `codex/verify-flash-attn-r1.md` (APPROVE WITH EDITS), and this section applies those edits.
+   147	
+   148	Wall time was about 11 min of the 90-min budget, roughly $0.8 at $4.18/h, with no new billable resource. The operator transcript's first and last pod commands are at 06:16:21Z and 06:28:14Z, so the wall time and cost are estimates. The pod was left running and idle: idle checks are retained at 06:16:25, 06:24:26, 06:26:39 and 06:28:14Z (`flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`) and at 06:36:54Z (`flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`).
+   149	
+   150	**Outcome: the blocker is cleared for the forward path. The trunk numerics are not qualified (see (b)).** A separate v3 environment, `/workspace/kg-v3-rebuild` (`kg/isaiah-gap-closure` @ `69397da`, via git bundle; `.venv` from `uv sync --frozen --group dev --extra flash-attn`), has torch 2.9.0+cu128, triton 3.5.0 and flash-attn 2.8.3, and the model's forced packed FlashAttention path runs on sm_120.
+   151	- **Install:** the extra's sdist build (`FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE`, no build isolation) downloaded the prebuilt release wheel `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` in 7.5 s. No compile, so no `MAX_JOBS`/arch settings were needed. Wheel sha256 `4e2f9e39…0810` equals the GitHub release digest. The installed `flash_attn_2_cuda` `.so` (sha256 `8ca052bf…5807`) is byte-identical to the wheel's member: the member was extracted from the retained wheel, both files have the same sha256, and `cmp` exits 0. That receipt was produced post-run at 06:37Z and is kept as `flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt`, locally and on the pod.
+   152	- **sm_120 support:** flash-attn 2.8.3's `setup.py` includes `120` in its default arch list (CUDA ≥ 12.8). The installed `.so` carries 72 sm_120 cubins, alongside sm_80/90/100 (`cuobjdump --list-elf`). Not a blocker.
+   153	- **Rust extension:** `maturin develop` (justfile `build`, dev profile) → `owl.rs` sha256 `35239d1b…93b8`. `owl` and `owl.model.kaggriculture` import from the new checkout, and `flash_attn_available()` is True.
+   154	
+   155	**(a) Kernel vs SDPA.** `flash_attn_varlen_func` ran on BF16 packed q/k/v with 8 heads × head_dim 32, 256 sequences of 214–709 tokens, 173,518 tokens in total. The reference is per-sequence `F.scaled_dot_product_attention` on fp32 inputs, with the backend chosen automatically. The math backend was not selected explicitly, and the backend actually used was not profiled.
+   156	- Against that reference, flash has max |Δ| 0.00359 and mean |Δ| 1.07e-4. BF16 SDPA against the same reference gives the same max |Δ| (0.00359, mean 1.06e-4). BF16 output rounding is a plausible explanation that fits this. Equal maxima do not prove it.
+   157	- Flash differs from BF16 SDPA by at most 0.00390625 = 2⁻⁸. Near |ref| ≈ 1.38, the largest reference magnitude, BF16 spacing is 2⁻⁷ = 0.0078125, so this is half a spacing there. It would be one spacing for values in [0.5, 1). The magnitude of the element with the largest error was not retained.
+   158	- No element falls outside `0.02 + 0.02|ref|`. The profiler records `flash::flash_fwd_kernel<…bfloat16…>`.
+   159	
+   160	**(b) Model trunk.** Setup: preset `configs/model/kaggriculture.yaml` (width 256, depth 8, 8 heads, `force_flash_attn: true`), fp32 params, `autocast(bfloat16)`, TF32 via `configure_torch()`. Batch: `make_obs` with 128 envs = 256 rows, 173,108 present tokens, lengths 221–709, padded length 709.
+   161	
+   162	**The trunk smoke completed with outliers.** In every comparison, 0.017–0.021 % of present-token elements fall outside `0.02 + 0.02|ref|`. The script reports these differences but asserts no numerical acceptance, so this run does not claim trunk numerical agreement.
+   163	
+   164	| Comparison (present tokens) | elements | max \|Δ\| | mean \|Δ\| | outside tol |
+   165	|---|---|---|---|---|
+   166	| compiled flash vs eager flash | 44.3M | 0.0872 | 0.00542 | 0.018 % |
+   167	| eager flash vs eager padded SDPA | 44.3M | 0.0805 | 0.00498 | 0.021 % |
+   168	| compiled flash vs eager padded SDPA | 44.3M | 0.0775 | 0.00546 | 0.019 % |
+   169	| compiled vs eager, second shape (64 rows) | 10.9M | 0.0872 | 0.00542 | 0.017 % |
+   170	
+   171	Reference output magnitudes reach 4.03, or 3.86 for the 64-row shape. BF16 spacing is 0.03125 in [4, 8) and 0.015625 in [2, 4). The magnitudes of the elements with the largest errors, and the locations of the outliers, were not retained.
+   172	
+   173	The three paths differ from one another by similar amounts. BF16 rounding accumulated over 8 layers is a plausible explanation. It is not proven: similar pairwise differences do not rule out an error specific to one path.
+   174	
+   175	**What would discriminate (future Phase 6 work, not run now):** run the same weights and batch through an fp32 reference with autocast off and TF32 off (padded SDPA). Compare both BF16 paths (flash and padded) against it, and retain the magnitudes and locations of the largest-error elements and of the outliers.
+   176	- If both paths show similar error distributions against fp32, and their outliers sit on large-magnitude or long-sequence elements, that supports rounding.
+   177	- If flash errors are larger, or cluster at pack boundaries or particular sequences, that indicates a path-specific error.
+   178	
+   179	All outputs are finite, masked positions are exactly zero, and repeated compiled calls agree exactly (Δ = 0).
+   180	
+   181	Evidence that the flash path ran:
+   182	- `use_flash_attn(x)` is True with x in bfloat16.
+   183	- `pack_sequence` was called exactly once per forward, as (173,108 tokens, max_seqlen 709), in both eager and compiled.
+   184	- In eager mode, the Python-level `varlen_attention` ran 8 times, one per block.
+   185	- The CUDA profiler shows `flash::flash_fwd_kernel` in both the eager and the compiled forward. The compiled forward also shows 12 Triton kernels.
+   186	- Compile: `compile_transformer_trunk("max-autotune-no-cudagraphs")`, dynamic. The first call took 20.6 s, including autotune. Autotune picked Triton templates for the 173,108-row mms.
+   187	- Control: the padded path (dispatch patched off) made no pack calls and launched no flash kernel. It used PyTorch's mem-efficient `fmha_cutlassF_bf16…sm80` kernel. The JSON field `eager_padded_use_flash_attn_x: true` reports the unpatched `owl.model.attn.use_flash_attn`, not the patched dispatch.
+   188	- Peak allocated memory was 1.72 GiB.
+   189	
+   190	**(c) Tests.** On the pod, `uv run --frozen pytest tests/owl/model/test_attn.py` passed 7 of 7 with 0 skipped. That includes `test_varlen_attention_flash_backend` and `test_varlen_attention_matches_torch_sdpa_per_sequence`, which skip on the Mac. `tests/kaggriculture` passed 161 of 161.
+   191	
+   192	**Limits and handoffs:**
+   193	- **Forward only.** The flash backward kernels, and compiled backward through the packed trunk, were not exercised. The actor heads don't exist yet (Task 2.3), and the model is not yet wired into `run_ppo`. So 6.1 still has to confirm flash in rollout, PPO update and evaluation, with backward included.
+   194	- The timings above are single profiled forwards. They are not throughput evidence.
+   195	- The Rust extension is a dev-profile (unoptimized) build. Build `--release` before any env-throughput measurement.
+   196	- **Custody:** the torch 2.9 wheel is a release asset added on 2025-12-17, after the v2.8.3 tag. `setup.py` resolves it by URL, and `uv.lock` pins only the sdist hash. Record the asset digest above. A rebuilt pod that resolves a different asset would change the kernel without changing the lock.
+   197	- **Pod state:**
+   198	  - The new venv and cache take about 3 GB; disk is at 20 GB free (62 %).
+   199	  - `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` also holds the 243 MB wheel re-download and a 55 MB Inductor cache.
+   200	  - `/workspace/transfer-flash-attn-2026-09-29/v3.bundle` is kept for custody.
+   201	  - A post-run read-only check at 06:38Z (`flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found:
+   202	    - `/workspace/kg-v3`: no mtime changes.
+   203	    - `/workspace/gemm-limits-src-1ddc71d`: no mtime or ctime changes.
+   204	    - `/workspace/kg-v3/.venv`: 19,796 entries have a new ctime. All are hard-linked regular files, and the sampled ones share an inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, so no content write is recorded, but the two venvs now **share inodes**. An in-place edit of a file in either venv would change the other.
+   205	  - Source state:
+   206	    - Detached HEAD at `69397da` with a clean checkout: `git checkout` output at 06:18:38Z (transcript excerpts).
+   207	    - Zero tracked-file changes at 06:26:39Z.
+   208	    - Fresh post-run receipt at 06:36:54Z: HEAD `69397da`, detached, `git status --porcelain` empty, `runs/` gitignored.
+   209	  - Still **operator-reported**, with no retained receipt: "no credentials copied" and "nothing pushed". The only evidence is the clone's remote list, which shows just the bundle path.
+
+exec
+/bin/zsh -lc 'git show --format=fuller --no-ext-diff 78df33c -- ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md ops/rebuild-2026-09-29/results.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+commit 78df33c32e662757aa572a2918bfeb37151d1639
+Author:     Season <seasonluke@gmail.com>
+AuthorDate: Tue Sep 29 14:41:09 2026 +0800
+Commit:     Season <seasonluke@gmail.com>
+CommitDate: Tue Sep 29 14:41:09 2026 +0800
+
+    Apply Codex r1 edits to the Phase 6.0 flash-attn receipts
+    
+    Separate observation from qualification: the trunk smoke completed with
+    outliers (0.017-0.021% outside tolerance, no acceptance asserted); BF16
+    rounding stays a plausible, unproven explanation, with an fp32
+    autocast-off reference comparison named as future Phase 6 work. Fix the
+    reference terminology (automatically selected fp32 SDPA) and the BF16
+    spacing near 1.38 (0.0078125).
+    
+    Add custody receipts: operator-transcript excerpts showing the run
+    statement was written at 06:17:58Z (content hash equal to the committed
+    pre-run text) before the first pod mutation, plus retained idle checks;
+    fresh post-run git/idle and untouched-path checks (which surface shared
+    hard-linked inodes between the two venvs); and the wheel-member vs
+    installed .so comparison. Label remaining claims operator-reported.
+    Regenerate MANIFEST.sha256 without its self-entry and document the
+    relocated smoke_flash.py.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+diff --git a/ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md b/ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md
+index 91636f4..b7a4e8a 100644
+--- a/ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md
++++ b/ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md
+@@ -4,8 +4,17 @@ Run statement: `../run-statements/pod-flash-attn-setup.md`. Summary and interpre
+ 
+ ## Identity
+ 
+-- Pod `w7ia3zvxqsvs3g` (RUNNING, $4.18/h; 2× RTX PRO 6000 Blackwell Server Edition, cc 12.0, driver 595.91.07). GPU 0 only (`CUDA_VISIBLE_DEVICES=0`). Left running and idle (06:26:39Z: 0 MiB / 0 % on both GPUs, no python process).
+-- Source: `kg/isaiah-gap-closure` @ `69397da3d1559be4fbb525636122d8a9bc614a49`, transferred as `git bundle create v3.bundle HEAD` (sha256 `149763ad2a727cce47242cfe840db7224495ff2d43b79f72466e87b01848c6fd`, 6.9 MB; pod copy at `/workspace/transfer-flash-attn-2026-09-29/v3.bundle`, same hash). Cloned to `/workspace/kg-v3-rebuild`, detached at that commit, clean tree (`pod/source_commit.txt`). Nothing pushed; no credentials copied. `/workspace/kg-v3` and its `.venv` were not touched.
++- Pod `w7ia3zvxqsvs3g` (RUNNING, $4.18/h; 2× RTX PRO 6000 Blackwell Server Edition, cc 12.0, driver 595.91.07). GPU 0 only (`CUDA_VISIBLE_DEVICES=0`). Left running and idle. The idle checks at 06:16:25, 06:24:26, 06:26:39 and 06:28:14Z are retained in `post-run/operator_transcript_excerpts.txt`. A fresh read-only check at 06:36:54Z is in `post-run/git_idle_state_post_run.txt`. Every check shows 0 MiB and 0 % on both GPUs, with no python process running.
++- Source: `kg/isaiah-gap-closure` @ `69397da3d1559be4fbb525636122d8a9bc614a49`, transferred as `git bundle create v3.bundle HEAD` (sha256 `149763ad2a727cce47242cfe840db7224495ff2d43b79f72466e87b01848c6fd`, 6.9 MB; pod copy at `/workspace/transfer-flash-attn-2026-09-29/v3.bundle`, same hash). Cloned to `/workspace/kg-v3-rebuild`. `pod/source_commit.txt` records only the commit hash. The detached HEAD and clean tree are backed by other receipts:
++  - the `git checkout` output at 06:18:38Z and the tracked-file `git status` count of 0 at 06:26:39Z (`post-run/operator_transcript_excerpts.txt`);
++  - a fresh post-run receipt at 06:36:54Z (`post-run/git_idle_state_post_run.txt`): HEAD `69397da`, `symbolic-ref` exit 1 (detached), `git status --porcelain` empty, `runs/` gitignored.
++
++  "Nothing pushed; no credentials copied" is **operator-reported**. The only receipt is the clone's `git remote -v`, which shows just the bundle path.
++
++  `/workspace/kg-v3` was checked read-only at 06:38Z (`post-run/untouched_paths_post_run*.txt`):
++  - no mtime changes;
++  - 19,796 `.venv` entries have a new ctime. All of them are hard-linked regular files: none has link count 1, and none is a non-regular entry. The sampled files share an inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, but the two venvs share inodes;
++  - `/workspace/gemm-limits-src-1ddc71d` is unchanged.
+ - Environment: `/workspace/kg-v3-rebuild/.venv`, uv 0.9.0 (pod system), Python 3.12.3, rustc 1.97.0-nightly (e9e32aca5 2026-04-17) = `nightly-2026-04-18` already on the pod.
+ 
+ ## Versions actually installed (`pod/versions.json`)
+@@ -22,7 +31,7 @@ Run statement: `../run-statements/pod-flash-attn-setup.md`. Summary and interpre
+ 
+ - The lock's sdist (`flash_attn-2.8.3.tar.gz`, sha256 `1e71dd64…0370d`) was built with `FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE` and no build isolation (pyproject). Its `setup.py` downloaded the prebuilt release wheel `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` (`pod/02_uv_sync_flash.log`: "Guessing wheel URL"; 7.5 s; no compile).
+ - Release asset digest (GitHub API): `sha256:4e2f9e39313266b1544b68138b15b91ee6221eccf14f7902b7c6620351340810`, 253,780,426 bytes, asset updated 2025-12-17T09:32:21Z (the v2.8.3 release itself is dated 2025-08-14; the torch 2.9 wheels were added later, so the URL resolves to a mutable release asset). A re-download on the pod (`runs/flash-attn-setup-2026-09-29/wheel/`, 243 MB, not copied here) has that same sha256.
+-- Installed `flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so`: sha256 `8ca052bf2d3f53baa629e22749b9622a95273c5bffb5f06cd24768ef63f65807`, 997,961,816 bytes — byte-identical to the `.so` inside the release wheel.
++- Installed `flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so`: sha256 `8ca052bf2d3f53baa629e22749b9622a95273c5bffb5f06cd24768ef63f65807`, 997,961,816 bytes — byte-identical to the `.so` inside the release wheel. Receipt: `pod/wheel_member_compare.txt`, produced post-run at 06:37Z by `post-run/wheel_member_compare.sh`. The script extracts the member from the retained wheel into a temp dir, which it removes afterwards. Both files hash to `8ca052bf…5807`, `cmp` exits 0, and the `dist-info/RECORD` entry agrees. The receipt is also kept on the pod in the run dir.
+ - sm_120 support: flash-attn 2.8.3 `setup.py` defaults `FLASH_ATTN_CUDA_ARCHS="80;90;100;120"` and emits `arch=compute_120,code=sm_120` for CUDA ≥ 12.8. `cuobjdump --list-elf` on the installed `.so` lists 72 cubins each for sm_80, sm_90, sm_100 and **sm_120** (`pod/cuobjdump_list_elf.txt`); no PTX (`pod/cuobjdump_list_ptx.txt`).
+ - `dist-info/RECORD` sha256 `817df8e9…540e`.
+ 
+@@ -32,8 +41,16 @@ Run statement: `../run-statements/pod-flash-attn-setup.md`. Summary and interpre
+ 
+ ## Files
+ 
+-- `smoke_flash.py` — smoke script, sha256 `0e1db99db9a9649015315b09a79eac8306df83edeed4a9f59a7168ff5823dee3` (same bytes ran on the pod).
++- `smoke_flash.py` is the smoke script, sha256 `0e1db99db9a9649015315b09a79eac8306df83edeed4a9f59a7168ff5823dee3`. The same bytes ran on the pod (sha256 check at 06:24:26Z in the transcript excerpts).
++  - **Relocation:** on the pod it sits in the run dir, `runs/flash-attn-setup-2026-09-29/smoke_flash.py`. Locally it is one level above `pod/`, so the local manifest lists it as `../smoke_flash.py`.
+ - `pod/01…04_*.log` — sync/build logs; `pod/05_import_check.log`; `pod/06_smoke_flash.log` (includes autotune output); `pod/07`, `pod/08` — `tests/owl/model/test_attn.py` (7 passed, 0 skipped); `pod/10_pytest_kaggriculture.log` (161 passed).
+ - `pod/smoke/smoke_flash.json` — all measurements; `pod/smoke/kernels_*.txt` — CUDA kernel names per profiled forward.
+-- `pod/MANIFEST.sha256` — hashes of everything in the pod run dir except the Inductor cache.
++- `pod/MANIFEST.sha256` was regenerated locally on 2026-09-29 after Codex review r1. It excludes itself. The original had recorded the empty-file hash for its own entry.
++  - It covers every local `pod/` payload file, including the new `wheel_member_compare.txt`, plus `../smoke_flash.py` and `../post-run/*`. Check it with `cd pod && shasum -a 256 -c MANIFEST.sha256`.
++  - The wheel (`wheel/…whl`, sha256 `4e2f9e39…0810`) is remote-only and is not listed.
++  - The pod-side `MANIFEST.sha256` was left unchanged. It still carries the stale self-entry and does not list `wheel_member_compare.txt`.
++- `post-run/` holds receipts added after Codex review r1:
++  - `operator_transcript_excerpts.txt`, extracted by `extract_operator_transcript.py`, contains the timestamped operator-session calls and results: pre-run statement `Write` 06:17:58.822Z, content sha256 equal to the committed pre-run text; pre-check; first pod mutation 06:18:04Z; idle re-checks. The pod SSH host and port are redacted. The source is a local harness transcript outside git, not tamper-evident; its sha256 at extraction is recorded.
++  - `git_idle_state_post_run.txt` covers git and idle state, and `untouched_paths_post_run.txt` / `untouched_paths_post_run_followup.txt` cover the untouched-path mtime/ctime checks. All three are read-only and post-run.
++  - `wheel_member_compare.sh` is the script behind `pod/wheel_member_compare.txt`.
+ - Not copied (large, on the pod only): `wheel/…whl` (243 MB, sha256 above), `inductor_cache/` (55 MB, 1,106 files).
+diff --git a/ops/rebuild-2026-09-29/results.md b/ops/rebuild-2026-09-29/results.md
+index 56cbe50..f31b637 100644
+--- a/ops/rebuild-2026-09-29/results.md
++++ b/ops/rebuild-2026-09-29/results.md
+@@ -143,28 +143,40 @@ Where our workloads sit, as rows × 709 tokens against L = 4,194,304 (2³¹/512)
+ 
+ ## Phase 6.0 — flash-attn on the pod (2026-09-29, 06:16–06:27Z, pod `w7ia3zvxqsvs3g`, GPU 0 only)
+ 
+-Run statement: `run-statements/pod-flash-attn-setup.md`. Receipts: `flash-attn-setup-2026-09-29/` (README has identities and hashes). Wall ≈ 11 min of the 90-min budget (≈ $0.8 at $4.18/h); no new billable resource; pod left running and idle.
++Run statement: `run-statements/pod-flash-attn-setup.md`, which now has a post-run addendum on custody and corrections. Receipts are in `flash-attn-setup-2026-09-29/`; the README has identities and hashes. Codex reviewed them in `codex/verify-flash-attn-r1.md` (APPROVE WITH EDITS), and this section applies those edits.
+ 
+-**Outcome: the blocker is cleared for the forward path.** A separate v3 environment, `/workspace/kg-v3-rebuild` (`kg/isaiah-gap-closure` @ `69397da`, via git bundle; `.venv` from `uv sync --frozen --group dev --extra flash-attn`), has torch 2.9.0+cu128, triton 3.5.0 and flash-attn 2.8.3, and the model's forced packed FlashAttention path runs on sm_120.
+-- **Install:** the extra's sdist build (`FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE`, no build isolation) downloaded the prebuilt release wheel `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` in 7.5 s. No compile, so no `MAX_JOBS`/arch settings were needed. Wheel sha256 `4e2f9e39…0810` equals the GitHub release digest. The installed `flash_attn_2_cuda` `.so` (sha256 `8ca052bf…5807`) is byte-identical to the wheel's.
++Wall time was about 11 min of the 90-min budget, roughly $0.8 at $4.18/h, with no new billable resource. The operator transcript's first and last pod commands are at 06:16:21Z and 06:28:14Z, so the wall time and cost are estimates. The pod was left running and idle: idle checks are retained at 06:16:25, 06:24:26, 06:26:39 and 06:28:14Z (`flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`) and at 06:36:54Z (`flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`).
++
++**Outcome: the blocker is cleared for the forward path. The trunk numerics are not qualified (see (b)).** A separate v3 environment, `/workspace/kg-v3-rebuild` (`kg/isaiah-gap-closure` @ `69397da`, via git bundle; `.venv` from `uv sync --frozen --group dev --extra flash-attn`), has torch 2.9.0+cu128, triton 3.5.0 and flash-attn 2.8.3, and the model's forced packed FlashAttention path runs on sm_120.
++- **Install:** the extra's sdist build (`FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE`, no build isolation) downloaded the prebuilt release wheel `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` in 7.5 s. No compile, so no `MAX_JOBS`/arch settings were needed. Wheel sha256 `4e2f9e39…0810` equals the GitHub release digest. The installed `flash_attn_2_cuda` `.so` (sha256 `8ca052bf…5807`) is byte-identical to the wheel's member: the member was extracted from the retained wheel, both files have the same sha256, and `cmp` exits 0. That receipt was produced post-run at 06:37Z and is kept as `flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt`, locally and on the pod.
+ - **sm_120 support:** flash-attn 2.8.3's `setup.py` includes `120` in its default arch list (CUDA ≥ 12.8). The installed `.so` carries 72 sm_120 cubins, alongside sm_80/90/100 (`cuobjdump --list-elf`). Not a blocker.
+ - **Rust extension:** `maturin develop` (justfile `build`, dev profile) → `owl.rs` sha256 `35239d1b…93b8`. `owl` and `owl.model.kaggriculture` import from the new checkout, and `flash_attn_available()` is True.
+ 
+-**(a) Kernel vs SDPA.** `flash_attn_varlen_func` ran on BF16 packed q/k/v with 8 heads × head_dim 32, 256 sequences of 214–709 tokens, 173,518 tokens in total. Against per-sequence fp32 SDPA:
+-- max |Δ| is 0.00359 and mean |Δ| is 1.07e-4. BF16 SDPA vs fp32 SDPA gives the same max |Δ| (0.00359, mean 1.06e-4), so the flash error equals BF16 output rounding.
+-- The flash output differs from BF16 SDPA by at most 0.0039 (one BF16 ulp at |ref| ≈ 1.38).
++**(a) Kernel vs SDPA.** `flash_attn_varlen_func` ran on BF16 packed q/k/v with 8 heads × head_dim 32, 256 sequences of 214–709 tokens, 173,518 tokens in total. The reference is per-sequence `F.scaled_dot_product_attention` on fp32 inputs, with the backend chosen automatically. The math backend was not selected explicitly, and the backend actually used was not profiled.
++- Against that reference, flash has max |Δ| 0.00359 and mean |Δ| 1.07e-4. BF16 SDPA against the same reference gives the same max |Δ| (0.00359, mean 1.06e-4). BF16 output rounding is a plausible explanation that fits this. Equal maxima do not prove it.
++- Flash differs from BF16 SDPA by at most 0.00390625 = 2⁻⁸. Near |ref| ≈ 1.38, the largest reference magnitude, BF16 spacing is 2⁻⁷ = 0.0078125, so this is half a spacing there. It would be one spacing for values in [0.5, 1). The magnitude of the element with the largest error was not retained.
+ - No element falls outside `0.02 + 0.02|ref|`. The profiler records `flash::flash_fwd_kernel<…bfloat16…>`.
+ 
+ **(b) Model trunk.** Setup: preset `configs/model/kaggriculture.yaml` (width 256, depth 8, 8 heads, `force_flash_attn: true`), fp32 params, `autocast(bfloat16)`, TF32 via `configure_torch()`. Batch: `make_obs` with 128 envs = 256 rows, 173,108 present tokens, lengths 221–709, padded length 709.
+ 
+-| Comparison (present tokens, 44.3M elements) | max \|Δ\| | mean \|Δ\| | outside tol |
+-|---|---|---|---|
+-| compiled flash vs eager flash | 0.0872 | 0.00542 | 0.018 % |
+-| eager flash vs eager padded SDPA | 0.0805 | 0.00498 | 0.021 % |
+-| compiled flash vs eager padded SDPA | 0.0775 | 0.00546 | 0.019 % |
+-| compiled vs eager, second shape (64 rows) | 0.0872 | 0.00542 | 0.017 % |
++**The trunk smoke completed with outliers.** In every comparison, 0.017–0.021 % of present-token elements fall outside `0.02 + 0.02|ref|`. The script reports these differences but asserts no numerical acceptance, so this run does not claim trunk numerical agreement.
++
++| Comparison (present tokens) | elements | max \|Δ\| | mean \|Δ\| | outside tol |
++|---|---|---|---|---|
++| compiled flash vs eager flash | 44.3M | 0.0872 | 0.00542 | 0.018 % |
++| eager flash vs eager padded SDPA | 44.3M | 0.0805 | 0.00498 | 0.021 % |
++| compiled flash vs eager padded SDPA | 44.3M | 0.0775 | 0.00546 | 0.019 % |
++| compiled vs eager, second shape (64 rows) | 10.9M | 0.0872 | 0.00542 | 0.017 % |
++
++Reference output magnitudes reach 4.03, or 3.86 for the 64-row shape. BF16 spacing is 0.03125 in [4, 8) and 0.015625 in [2, 4). The magnitudes of the elements with the largest errors, and the locations of the outliers, were not retained.
++
++The three paths differ from one another by similar amounts. BF16 rounding accumulated over 8 layers is a plausible explanation. It is not proven: similar pairwise differences do not rule out an error specific to one path.
++
++**What would discriminate (future Phase 6 work, not run now):** run the same weights and batch through an fp32 reference with autocast off and TF32 off (padded SDPA). Compare both BF16 paths (flash and padded) against it, and retain the magnitudes and locations of the largest-error elements and of the outliers.
++- If both paths show similar error distributions against fp32, and their outliers sit on large-magnitude or long-sequence elements, that supports rounding.
++- If flash errors are larger, or cluster at pack boundaries or particular sequences, that indicates a path-specific error.
+ 
+-Output magnitudes reach about 4.0, where one BF16 ulp is 0.03. All three paths differ from one another by the same amount, which fits BF16 accumulation over 8 layers rather than a path-specific error. All outputs are finite, masked positions are exactly zero, and repeated compiled calls agree exactly (Δ = 0).
++All outputs are finite, masked positions are exactly zero, and repeated compiled calls agree exactly (Δ = 0).
+ 
+ Evidence that the flash path ran:
+ - `use_flash_attn(x)` is True with x in bfloat16.
+@@ -186,4 +198,12 @@ Evidence that the flash path ran:
+   - The new venv and cache take about 3 GB; disk is at 20 GB free (62 %).
+   - `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` also holds the 243 MB wheel re-download and a 55 MB Inductor cache.
+   - `/workspace/transfer-flash-attn-2026-09-29/v3.bundle` is kept for custody.
+-  - `/workspace/kg-v3`, its `.venv`, and `/workspace/gemm-limits-src-1ddc71d` were not modified.
++  - A post-run read-only check at 06:38Z (`flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found:
++    - `/workspace/kg-v3`: no mtime changes.
++    - `/workspace/gemm-limits-src-1ddc71d`: no mtime or ctime changes.
++    - `/workspace/kg-v3/.venv`: 19,796 entries have a new ctime. All are hard-linked regular files, and the sampled ones share an inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, so no content write is recorded, but the two venvs now **share inodes**. An in-place edit of a file in either venv would change the other.
++  - Source state:
++    - Detached HEAD at `69397da` with a clean checkout: `git checkout` output at 06:18:38Z (transcript excerpts).
++    - Zero tracked-file changes at 06:26:39Z.
++    - Fresh post-run receipt at 06:36:54Z: HEAD `69397da`, detached, `git status --porcelain` empty, `runs/` gitignored.
++  - Still **operator-reported**, with no retained receipt: "no credentials copied" and "nothing pushed". The only evidence is the clone's remote list, which shows just the bundle path.
+diff --git a/ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md b/ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md
+index c39da2c..1dc95dc 100644
+--- a/ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md
++++ b/ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md
+@@ -16,3 +16,27 @@
+ - **Budget:** ≤ 90 min wall on the already-running pod ($4.18/h ≈ $6.3 max; no new billable resource).
+ - **Artifacts:** pod `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` (setup logs, `versions.json`, `cuobjdump` listing, smoke JSON/log, pytest log). Local copy of logs and a summary in `ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/`; result section "Phase 6.0 — flash-attn on the pod" in `ops/rebuild-2026-09-29/results.md`.
+ - **Safety:** pre-check 06:16Z: `nvidia-smi` 0 MiB / 0 % on both GPUs, no compute apps, no python/torchrun/run_ppo/cargo/pip process. Re-checked immediately before the smoke. `/workspace/kg-v3` and its `.venv` are not touched; `/workspace/gemm-limits-src-1ddc71d` is not touched. No driver/CUDA/system-torch changes, no security changes. Never stop, restart or delete the pod; it is left running and idle.
++
++---
++
++## Post-run addendum (2026-09-29 ≈06:40Z, after Codex review `codex/verify-flash-attn-r1.md`)
++
++The text above this rule is the pre-run statement, byte-for-byte: its first 5,427 bytes hash to sha256 `405c4bd62b19ad072c17e3039276d010ad0e8740a2f2bc3a44b9f027492aaac3`. Check with `head -c 5427 pod-flash-attn-setup.md | shasum -a 256`. Nothing above the rule was edited after the run.
++
++**Custody of this statement.** Git first records the file in `4fd40c7` at 06:28:07Z, which is after execution. That commit alone does not show when the statement was written. The operator session's transcript does show the timing:
++- The `Write` of this file happened at **06:17:58.822Z**, and the written content has the same sha256 (`405c4bd6…aac3`).
++- The first command that changed the pod (bundle, clone, checkout) started at **06:18:04Z**.
++- The earlier 06:16:25Z call only read state.
++
++The excerpts are in `../flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`. That transcript is a local harness log kept outside git and is not tamper-evident. The excerpt file records its sha256 at extraction time. No copy of this statement was placed on the pod.
++
++**Corrections to the wording above.** The original text stays as written; these corrections apply to it.
++- **(a) reference.** "fp32 SDPA in fp32 math" means `F.scaled_dot_product_attention` on fp32 inputs, with the backend chosen automatically. The math backend was not selected explicitly, and the backend actually used was not profiled.
++- **(b) expectation.** The trunk result did not meet the "BF16-level agreement" expectation as a proven claim. The trunk smoke completed with outliers: 0.017–0.021 % of elements fall outside `0.02 + 0.02|ref|`, and the script asserts no numerical acceptance. See `../results.md` for details.
++- **Safety claims.** Some of the safety claims above now have receipts:
++  - Pre-check 06:16:25Z, pre-smoke re-check 06:24:26Z, end-of-run check 06:26:39Z and post-commit check 06:28:14Z are all in the transcript excerpts.
++  - A fresh post-run check at 06:36:54Z is in `../flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`.
++  - "`/workspace/kg-v3` and its `.venv` are not touched" needs a qualification. A read-only check at 06:38Z (`../flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found no file in `/workspace/kg-v3` with a changed mtime. However, 19,796 entries in `/workspace/kg-v3/.venv` have a changed ctime. All of those are hard-linked regular files, and the sampled files share their inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, but the two venvs now share inodes.
++  - `/workspace/gemm-limits-src-1ddc71d` has no mtime or ctime changes.
++  - The driver is still 595.91.07, and the system torch is still 2.8.0+cu128 (`version.py` mtime 2025-10-09).
++  - "No credentials copied" and "nothing pushed" remain **operator-reported**. The only retained evidence is the pod clone's remote list, which shows just the bundle path.
+
+exec
+/bin/zsh -lc 'cat cookbook/decisions/evaluation-preserves-generality-and-evidence.md cookbook/decisions/diagnose-the-mechanism-before-spending-on-runs.md cookbook/decisions/throughput-means-correct-complete-work.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+---
+type: "Decision"
+title: "Evaluation preserves generality and evidence"
+description: "Measure win rate and bank margin across opponents, retain source-bound evidence and telemetry, and keep submission authority with the owner."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "repository:.gitignore"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/candidates-are-measured-by-win-rate-and-margin.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/no-candidate-agent-overfits-to-a-single-opponent.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/myolie-uses-wandb-for-telemetry-and-monitoring.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/repository-tracking-preserves-evidence-and-excludes-local-state.md"}]
+---
+
+# Evaluation preserves generality and evidence
+
+The owner's current reuse instruction carries forward v2's documented evaluation and custody discipline. Candidates are judged on win rate plus final-bank margin across differently playing opponents. Record versions, seeds, both seats, denominators, legality, completion and runtime. Keep diagnostic margin distinct from official win/loss/tie outcome. A gain against one opponent is scoped evidence; use fresh seeds and held-out opponents for generalization, and distinguish selection panels from final qualification. Local gate success does not establish public-ladder robustness.
+
+Keep experiment identity stable through retries, using separate attempt/checkpoint metadata. Select a v3 name when an experiment exists; do not import the v2 prefix or conceal continuation by renaming. The owner decides which artifact is submitted; development authorization alone is not a submission decision.
+
+Original v2 telemetry directive:
+
+> 你幫忙下一個cookbook record 去用wandb做telemetry做監控
+
+Use W&B for training/evaluation telemetry alongside durable local evidence, with explicit run identity, phase, source/checkpoint hashes and completed-work denominators. Configure v3 identifiers; do not publish into v2's project/group. Telemetry implementation, authentication and live readback need their own verification. Record outages and pending synchronization honestly; a dashboard is not an independent causal check.
+
+Original bulk-artifact directive:
+
+> why are we pushing the training artifacts as well? They should be gitignored.
+
+Track source, lockfiles, compact results, receipts and hash manifests. Exclude credentials, environments, caches, bulk weights/optimizer state and generated corpora; retain path, bytes and SHA-256 custody manifests for local artifacts. Ignoring is not deletion. No competitive result, cloud connection or submission is established here.
+---
+type: "Decision"
+title: "Diagnose the mechanism before spending on runs"
+description: "Keep decisions reproducible, map game capabilities to executable mechanisms, and distinguish four failure classes before repairing."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/kaggriculture-v2-starts-with-a-clean-design.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/the-architecture-must-express-the-decisions-needed-to-win.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/failures-must-distinguish-information-decision-execution-and-architecture-errors.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/stalled-improvement-requires-attribution-and-explicit-architecture-limits.md"}]
+---
+
+# Diagnose the mechanism before spending on runs
+
+The owner's reuse instruction adopts useful v2 discipline for this adaptation. Its original owner directives include:
+
+> crafting a system that is undebuggable and reuqesting blind guess/ experiment is banned explicitly in this project.
+
+> 證據是你有信心的時候才去收集的，不是沒有信心下的賭博.
+
+> 贏所需的決策，架構能否表達？
+
+V3 operationalizes those requirements as follows. Before a costly run, state the observed problem, code/data path, supported mechanism or diagnostic question, expected discriminating observation, and stopping condition. Preserve source/configuration, inputs, seeds and outputs sufficient to replay and localize it. Inspect implementation or add focused diagnostics when visibility is missing. A diagnostic may resolve an unknown cause; mark uncertainty rather than inventing confidence.
+
+Before relying on an architecture, map investment payback, labor allocation, sale timing and market adaptation to available information, represented state, a choice mechanism and executable actions. Trace a worked case through those boundaries. Explicit capacity is necessary, but does not prove effective learned use.
+
+Distinguish **information insufficiency**, **decision error**, **execution error**, and **architecture error**, following the original owner quote “資訊不足、決策錯誤與執行錯誤，或者是架構錯誤”. Trace observed inputs → representation → intended choice → emitted action → engine outcome. Information available but discarded by representation is not an environmental information shortage. Multiple causes may coexist; unresolved attribution must be named.
+
+When repeated repairs fail, inspect the engine, relevant original research and applicable competition discussion before spending again. A justified repair needs a mechanism and discriminating check. Record `ARCHITECTURE LIMITATION` only with its evidence, conditions, attempted repairs and reopening condition; qualify it as suspected when attribution remains unresolved. Repeated poor scores alone never prove impossibility. These rules add no approval step.
+---
+type: "Decision"
+title: "Throughput means correct complete work"
+description: "High throughput is required; preserve semantic parity and measure equivalent work rather than inferring gains from language or kernels."
+tags: ["kaggriculture-v3", "decisions"]
+status: "stable"
+generated: {"by": "openai/codex", "at": "2026-09-28"}
+decider: "Owner requests reuse of useful v2 decisions and discipline, then directs: just clone the repo in and start adapting; scoped implementation interpretation below."
+sources: [{"resource": "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/results.md"}, {"resource": "user-directive:2026-09-28:kaggriculture-v3-reuse-and-adapt"}, {"resource": "repository:ops/cookbook-setup-checks.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/decisions/high-throughput-is-mandatory.md"}, {"resource": "external-repository:/Users/poonszesen/kaggriculture-v2/cookbook/references/myolie-native-sampling-grammar.md"}]
+---
+
+# Throughput means correct complete work
+
+Original v2 owner directive:
+
+> cookbook decision 下一個-高吞吐量是必須不是選擇
+
+Under today's instruction to reuse useful discipline, high throughput is a requirement for the v3 collection, model and training design. Preserve correctness while reporting collection rate, valid learner turns through a full update, phase timings and the total workflow cost. Separate startup/compilation from steady state. State hardware, precision, batch/rollout work, recording settings, transfer and evaluation boundaries. No absolute SPS floor or allowed regression percentage has been supplied.
+
+Rust preparation must actually execute in the path being measured. Preserve game ordering, no-op/STOP distinctions, conditional legality, masks, sampled behavior density and feature semantics; pin source/lockfile/binary and inputs/outputs. Compare equivalent work with an independent oracle where applicable. A faster parser or sampler does not establish a full-training speedup.
+
+The v2 native-sampler Reference is useful contrary evidence: its saved shared-host run lowered sampler CPU time while complete collection elapsed time increased. That is a scoped counterexample to extrapolating component gains, not a ban on native sampling and not a v3 benchmark. Reducing environments, histories or data volume is a workload change unless comparable end-to-end measurements show an optimization.
+
+Use [[../workflows/profile-cuda-bottlenecks-with-nsight-systems|Nsight Systems]] for NVIDIA timeline attribution. Temporary downscaling can diagnose a fault but does not close the throughput requirement. Measured scopes so far (the rejected old decoder and the historical fixed-minibatch sweep) live in `ops/gpu-sps-2026-09-29/results.md`. None of them establishes playing strength, dense-game capacity or an owner-specified performance floor, and each recipe change, including the Isaiah-aligned cadence, needs its own complete-work qualification.
+
+exec
+/bin/zsh -lc 'nl -ba ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt && cat ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/extract_operator_transcript.py' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+     1	# source transcript: ~/.claude/projects/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/subagents/workflows/wf_6fbe8f60-1c7/agent-a67cdbbbc0dde3368.jsonl
+     2	# source transcript sha256 at extraction: ad6266d39c92c72f37b94e743cae6993844b036122683b3c11a811ee68fff62c (760231 bytes)
+     3	
+     4	===== line 42 | 2026-09-29T06:16:21.596Z | pre-run idle/pre-check (tool call)
+     5	Bash toolu_01SuQb1Fqt1Nk5L5rPVmCyN6
+     6	S=/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad; mkdir -p $S; cat > $S/pod <<'EOF'
+     7	#!/bin/bash
+     8	exec ssh -i ~/.ssh/runpod-grinder -o IdentitiesOnly=yes -o UserKnownHostsFile=~/.ssh/known_hosts.runpod -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o ServerAliveInterval=30 -p <pod-ssh-port> root@<pod-ssh-host> "$@"
+     9	EOF
+    10	cat > $S/podscp <<'EOF'
+    11	#!/bin/bash
+    12	exec scp -i ~/.ssh/runpod-grinder -o IdentitiesOnly=yes -o UserKnownHostsFile=~/.ssh/known_hosts.runpod -o StrictHostKeyChecking=accept-new -P <pod-ssh-port> "$@"
+    13	EOF
+    14	chmod +x $S/pod $S/podscp; $S/pod 'date -u; nvidia-smi --query-gpu=index,name,memory.used,utilization.gpu,driver_version --format=csv; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; ps -eo pid,etime,cmd | grep -E "python|torchrun|run_ppo|maturin|cargo|pip|uv " | grep -v grep; nproc; free -g; df -h /workspace /; which uv; ls ~/.local/bin 2>/dev/null; ls /workspace; nvcc --version 2>/dev/null | tail -2; ls /usr/local | grep cuda; which cargo rustc; python3 --version'
+    15	
+    16	===== line 43 | 2026-09-29T06:16:25.552Z | pre-run idle/pre-check (result)
+    17	result for toolu_01SuQb1Fqt1Nk5L5rPVmCyN6
+    18	Tue Sep 29 06:16:25 UTC 2026
+    19	index, name, memory.used [MiB], utilization.gpu [%], driver_version
+    20	0, NVIDIA RTX PRO 6000 Blackwell Server Edition, 0 MiB, 0 %, 595.91.07
+    21	1, NVIDIA RTX PRO 6000 Blackwell Server Edition, 0 MiB, 0 %, 595.91.07
+    22	pid, process_name, used_gpu_memory [MiB]
+    23	256
+    24	               total        used        free      shared  buff/cache   available
+    25	Mem:            1511          81         409           0        1038        1429
+    26	Swap:              0           0           0
+    27	Filesystem      Size  Used Avail Use% Mounted on
+    28	overlay          50G   28G   23G  55% /
+    29	overlay          50G   28G   23G  55% /
+    30	/usr/bin/uv
+    31	gemm-limits-src-1ddc71d
+    32	kg-v3
+    33	cuda
+    34	cuda-12
+    35	cuda-12.8
+    36	Python 3.12.3
+    37	
+    38	===== line 86 | 2026-09-29T06:17:58.822Z | run statement Write (content hashed, not reproduced)
+    39	Write ~/kg-v3/ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md
+    40	content sha256 405c4bd62b19ad072c17e3039276d010ad0e8740a2f2bc3a44b9f027492aaac3 (5427 bytes)
+    41	
+    42	===== line 92 | 2026-09-29T06:18:04.400Z | first pod mutation: bundle transfer, clone, detached checkout, status (tool call)
+    43	Bash toolu_017PQnkQmyG5pijpkcev8w8b
+    44	S=/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad; date -u; git -C /Users/poonszesen/kg-v3-int bundle create $S/v3.bundle HEAD 2>&1 | tail -2; shasum -a 256 $S/v3.bundle; ls -la $S/v3.bundle; $S/pod 'mkdir -p /workspace/transfer-flash-attn-2026-09-29' && $S/podscp $S/v3.bundle root@<pod-ssh-host>:/workspace/transfer-flash-attn-2026-09-29/v3.bundle && $S/pod 'cd /workspace && sha256sum transfer-flash-attn-2026-09-29/v3.bundle && git clone -q transfer-flash-attn-2026-09-29/v3.bundle kg-v3-rebuild && cd kg-v3-rebuild && git checkout -q 69397da3d1559be4fbb525636122d8a9bc614a49 && git rev-parse HEAD && git status --short | head && git remote -v && mkdir -p runs/flash-attn-setup-2026-09-29'
+    45	
+    46	===== line 93 | 2026-09-29T06:18:38.661Z | first pod mutation (result)
+    47	result for toolu_017PQnkQmyG5pijpkcev8w8b
+    48	Tue 29 Sep 2026 06:18:04 UTC
+    49	149763ad2a727cce47242cfe840db7224495ff2d43b79f72466e87b01848c6fd  /private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad/v3.bundle
+    50	.rw-r--r--@ 6.9M poonszesen 29 Sep 14:18 /private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad/v3.bundle
+    51	149763ad2a727cce47242cfe840db7224495ff2d43b79f72466e87b01848c6fd  transfer-flash-attn-2026-09-29/v3.bundle
+    52	Note: switching to '69397da3d1559be4fbb525636122d8a9bc614a49'.
+    53	
+    54	You are in 'detached HEAD' state. You can look around, make experimental
+    55	changes and commit them, and you can discard any commits you make in this
+    56	state without impacting any branches by switching back to a branch.
+    57	
+    58	If you want to create a new branch to retain commits you create, you may
+    59	do so (now or later) by using -c with the switch command. Example:
+    60	
+    61	  git switch -c <new-branch-name>
+    62	
+    63	Or undo this operation with:
+    64	
+    65	  git switch -
+    66	
+    67	Turn off this advice by setting config variable advice.detachedHead to false
+    68	
+    69	69397da3d1559be4fbb525636122d8a9bc614a49
+    70	origin	/workspace/transfer-flash-attn-2026-09-29/v3.bundle (fetch)
+    71	origin	/workspace/transfer-flash-attn-2026-09-29/v3.bundle (push)
+    72	
+    73	===== line 153 | 2026-09-29T06:24:18.122Z | pre-smoke idle re-check (tool call)
+    74	Bash toolu_013Vqh8iVgYrT7ZYJ7XdNjoE
+    75	S=/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad; F=/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/smoke_flash.py; python3 -m py_compile $F && echo ok; $S/podscp $F root@<pod-ssh-host>:/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/smoke_flash.py >/dev/null; $S/pod 'date -u; nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader; nvidia-smi --query-compute-apps=pid,process_name --format=csv,noheader; ps -eo pid,cmd | grep -E "python|torchrun|run_ppo" | grep -v grep; sha256sum /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/smoke_flash.py'
+    76	
+    77	===== line 154 | 2026-09-29T06:24:26.617Z | pre-smoke idle re-check (result)
+    78	result for toolu_013Vqh8iVgYrT7ZYJ7XdNjoE
+    79	ok
+    80	Tue Sep 29 06:24:26 UTC 2026
+    81	0, 0 MiB, 0 %
+    82	1, 0 MiB, 0 %
+    83	0e1db99db9a9649015315b09a79eac8306df83edeed4a9f59a7168ff5823dee3  /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/smoke_flash.py
+    84	
+    85	===== line 176 | 2026-09-29T06:26:35.295Z | end-of-run check incl. tracked-file git status (tool call)
+    86	Bash toolu_012TMeT9QWpnoz4hevn9m66E
+    87	S=/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad; $S/pod 'cd /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29 && /usr/local/cuda-12.8/bin/nvcc --version > nvcc_version.txt; tail -2 nvcc_version.txt; uv --version > uv_version.txt; rustc --version >> uv_version.txt 2>/dev/null || $HOME/.cargo/bin/rustc --version >> uv_version.txt; cat uv_version.txt; cd /workspace/kg-v3-rebuild && git rev-parse HEAD > runs/flash-attn-setup-2026-09-29/source_commit.txt && git status --short --untracked-files=no | wc -l; cd runs/flash-attn-setup-2026-09-29 && find . -type f -not -path "./inductor_cache/*" -exec sha256sum {} \; | sort -k2 > MANIFEST.sha256; find inductor_cache -type f | wc -l; du -sh wheel inductor_cache; df -h / | tail -1; nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader; ps -eo pid,cmd | grep -E "python|torchrun|run_ppo" | grep -v grep; date -u'
+    88	
+    89	===== line 177 | 2026-09-29T06:26:39.741Z | end-of-run check (result)
+    90	result for toolu_012TMeT9QWpnoz4hevn9m66E
+    91	Cuda compilation tools, release 12.8, V12.8.93
+    92	Build cuda_12.8.r12.8/compiler.35583870_0
+    93	uv 0.9.0
+    94	rustc 1.97.0-nightly (e9e32aca5 2026-04-17)
+    95	0
+    96	1106
+    97	243M	wheel
+    98	55M	inductor_cache
+    99	overlay          50G   31G   20G  62% /
+   100	0, 0 MiB, 0 %
+   101	1, 0 MiB, 0 %
+   102	Tue Sep 29 06:26:39 UTC 2026
+   103	
+   104	===== line 211 | 2026-09-29T06:28:11.270Z | post-commit idle check (tool call)
+   105	Bash toolu_01BrK8VxHX3VhzBhnFDkPzG6
+   106	/private/tmp/claude-501/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/scratchpad/pod 'date -u; nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader; ps -eo pid,cmd | grep -E "python|torchrun|run_ppo|cargo" | grep -v grep | wc -l'
+   107	
+   108	===== line 212 | 2026-09-29T06:28:14.621Z | post-commit idle check (result)
+   109	result for toolu_01BrK8VxHX3VhzBhnFDkPzG6
+   110	Tue Sep 29 06:28:14 UTC 2026
+   111	0, 0 MiB, 0 %
+   112	1, 0 MiB, 0 %
+   113	0
+"""Extract Phase 6.0 operator-session tool calls/results that back the run statement's
+pre-run authorship, idle checks and source-state claims.
+
+Usage: python3 extract_operator_transcript.py <transcript.jsonl> > operator_transcript_excerpts.txt
+The pod's public SSH host/port are redacted; nothing else is changed.
+"""
+
+import hashlib
+import json
+import sys
+
+ENTRIES = {  # transcript line index -> purpose
+    42: "pre-run idle/pre-check (tool call)",
+    43: "pre-run idle/pre-check (result)",
+    86: "run statement Write (content hashed, not reproduced)",
+    92: "first pod mutation: bundle transfer, clone, detached checkout, status (tool call)",
+    93: "first pod mutation (result)",
+    153: "pre-smoke idle re-check (tool call)",
+    154: "pre-smoke idle re-check (result)",
+    176: "end-of-run check incl. tracked-file git status (tool call)",
+    177: "end-of-run check (result)",
+    211: "post-commit idle check (tool call)",
+    212: "post-commit idle check (result)",
+}
+REDACT = {"157.157.221.177": "<pod-ssh-host>", "-p 10854": "-p <pod-ssh-port>", "-P 10854": "-P <pod-ssh-port>"}
+
+
+def redact(s: str) -> str:
+    for k, v in REDACT.items():
+        s = s.replace(k, v)
+    return s
+
+
+path = sys.argv[1]
+raw = open(path, "rb").read()
+print(f"# source transcript: {path.replace('/Users/poonszesen', '~')}")
+print(f"# source transcript sha256 at extraction: {hashlib.sha256(raw).hexdigest()} ({len(raw)} bytes)")
+lines = raw.decode().splitlines()
+for i, purpose in ENTRIES.items():
+    d = json.loads(lines[i])
+    for b in d["message"]["content"]:
+        print(f"\n===== line {i} | {d['timestamp']} | {purpose}")
+        if b.get("type") == "tool_use":
+            inp = b["input"]
+            if b["name"] == "Write":
+                c = inp["content"].encode()
+                print(f"Write {inp['file_path'].replace('/Users/poonszesen', '~')}")
+                print(f"content sha256 {hashlib.sha256(c).hexdigest()} ({len(c)} bytes)")
+            else:
+                print(f"{b['name']} {b['id']}\n{redact(str(inp.get('command')))}")
+        elif b.get("type") == "tool_result":
+            cc = b.get("content")
+            t = cc if isinstance(cc, str) else "\n".join(x.get("text", "") for x in cc if isinstance(x, dict))
+            print(f"result for {b['tool_use_id']}\n{redact(t)}")
+
+codex
+The numerical claims now distinguish successful execution from unqualified trunk accuracy, and the remaining “nothing pushed” and “no credentials copied” claims are labeled operator-reported. Recovered receipts cover authorship timing, idle checks, and checkout state; I’m checking their consistency and hashes.
+
+exec
+/bin/zsh -lc "cat ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/smoke/smoke_flash.json && sed -n '1,280p' ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/smoke_flash.py" in /Users/poonszesen/kg-v3
+exec
+/bin/zsh -lc 'cat ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run.txt ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run_followup.txt && cat ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+{
+  "torch": "2.9.0+cu128",
+  "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "capability": [
+    12,
+    0
+  ],
+  "tolerance": "|d| <= 0.02 + 0.02|ref|",
+  "a_kernel": {
+    "heads": 8,
+    "head_dim": 32,
+    "n_seq": 256,
+    "total_tokens": 173518,
+    "min_len": 214,
+    "max_len": 709,
+    "out_dtype": "torch.bfloat16",
+    "flash_vs_sdpa_fp32": {
+      "max_abs": 0.00359499454498291,
+      "mean_abs": 0.00010687458416214213,
+      "ref_max_abs": 1.379217505455017,
+      "frac_outside_tol": 0.0,
+      "n": 44420608,
+      "finite": true
+    },
+    "sdpa_bf16_vs_sdpa_fp32_noise_baseline": {
+      "max_abs": 0.00359499454498291,
+      "mean_abs": 0.00010589673911454156,
+      "ref_max_abs": 1.379217505455017,
+      "frac_outside_tol": 0.0,
+      "n": 44420608,
+      "finite": true
+    },
+    "flash_vs_sdpa_bf16": {
+      "max_abs": 0.00390625,
+      "mean_abs": 7.03355108271353e-05,
+      "ref_max_abs": 1.3828125,
+      "frac_outside_tol": 0.0,
+      "n": 44420608,
+      "finite": true
+    },
+    "flash_kernels": [
+      "void flash::flash_fwd_kernel<Flash_fwd_kernel_traits<32, 128, 128, 4, false, false, cutlass::bfloat16_t, Flash_kernel_traits<32, 128, 128, 4, cutlass::bfloat16_t> >, false, false, false, false, false, true, false, false>(flash::Flash_fwd_params)"
+    ]
+  },
+  "a_wall_s": 2.8805980682373047,
+  "b_model": {
+    "config": {
+      "model_arch": "kaggriculture_transformer",
+      "embed_dim": 256,
+      "depth": 8,
+      "n_heads": 8,
+      "mlp_ratio": 2.0,
+      "activation": "gelu",
+      "n_scratch_tokens": 4,
+      "force_flash_attn": true
+    },
+    "rows": 256,
+    "make_obs_s": 2.6888558864593506,
+    "present_tokens_total": 173108,
+    "padded_seq_len": 709,
+    "eager_flash_use_flash_attn_x": true,
+    "eager_flash_x_dtype": "torch.bfloat16",
+    "seqlen_min": 221,
+    "seqlen_max": 709,
+    "seqlen_total": 173108,
+    "eager_flash": {
+      "pack_calls": [
+        [
+          173108,
+          709
+        ]
+      ],
+      "varlen_attention_python_calls": 8,
+      "flash_kernels": [
+        "void flash::flash_fwd_kernel<Flash_fwd_kernel_traits<32, 128, 128, 4, false, false, cutlass::bfloat16_t, Flash_kernel_traits<32, 128, 128, 4, cutlass::bfloat16_t> >, false, false, false, false, false, true, false, false>(flash::Flash_fwd_params)"
+      ],
+      "sdpa_like_kernels": [],
+      "wall_s_profiled": 0.08560657501220703
+    },
+    "compiled_flash_use_flash_attn_x": true,
+    "compiled_flash_x_dtype": "torch.bfloat16",
+    "compiled_flash": {
+      "first_call_compile_s": 20.6303288936615,
+      "pack_calls": [
+        [
+          173108,
+          709
+        ]
+      ],
+      "flash_kernels": [
+        "void flash::flash_fwd_kernel<Flash_fwd_kernel_traits<32, 128, 128, 4, false, false, cutlass::bfloat16_t, Flash_kernel_traits<32, 128, 128, 4, cutlass::bfloat16_t> >, false, false, false, false, false, true, false, false>(flash::Flash_fwd_params)"
+      ],
+      "triton_kernel_count": 12,
+      "wall_s_profiled": 0.022110700607299805,
+      "repeat_consistency_max_abs": 0.0
+    },
+    "compiled_vs_eager_64rows": {
+      "max_abs": 0.0871884822845459,
+      "mean_abs": 0.005415158811956644,
+      "ref_max_abs": 3.864929437637329,
+      "frac_outside_tol": 0.00017485747230239213,
+      "n": 10911744,
+      "finite": true
+    },
+    "eager_padded_use_flash_attn_x": true,
+    "eager_padded_x_dtype": "torch.bfloat16",
+    "eager_padded": {
+      "pack_calls": [],
+      "flash_kernels": []
+    },
+    "compiled_vs_eager_flash": {
+      "max_abs": 0.0871884822845459,
+      "mean_abs": 0.005415042862296104,
+      "ref_max_abs": 4.030257225036621,
+      "frac_outside_tol": 0.0001764613698469475,
+      "n": 44315648,
+      "finite": true
+    },
+    "eager_flash_vs_eager_padded_sdpa": {
+      "max_abs": 0.08051800727844238,
+      "mean_abs": 0.004975189454853535,
+      "ref_max_abs": 4.011500358581543,
+      "frac_outside_tol": 0.00021405532606877387,
+      "n": 44315648,
+      "finite": true
+    },
+    "compiled_flash_vs_eager_padded_sdpa": {
+      "max_abs": 0.07747316360473633,
+      "mean_abs": 0.005459361709654331,
+      "ref_max_abs": 4.011500358581543,
+      "frac_outside_tol": 0.0001858711475506425,
+      "n": 44315648,
+      "finite": true
+    },
+    "masked_positions_zero": true
+  },
+  "b_wall_s": 27.758091926574707,
+  "max_memory_allocated_mib": 1723.91162109375
+}
+"""Phase 6.0 smoke: flash-attn 2.8.3 kernel and the model's packed flash path.
+
+Run from the v3 checkout root on the pod with CUDA_VISIBLE_DEVICES=0:
+    .venv/bin/python <this> --out <dir>
+Part (a): flash_attn_varlen_func vs per-sequence SDPA on packed BF16 q/k/v.
+Part (b): KaggricultureTransformer (preset config, force_flash_attn=True) on a
+contract-valid 256-row batch: eager flash, compiled flash, eager padded SDPA.
+Run-statement: ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+import torch
+import torch.nn.functional as F
+from pydantic import BaseModel
+
+ROOT = Path.cwd()
+sys.path.insert(0, str(ROOT))
+
+TOL_ABS, TOL_REL = 0.02, 0.02
+
+
+def _diff(a: torch.Tensor, ref: torch.Tensor) -> dict[str, float]:
+    a, ref = a.float(), ref.float()
+    d = (a - ref).abs()
+    outside = d > TOL_ABS + TOL_REL * ref.abs()
+    return {
+        "max_abs": float(d.max()),
+        "mean_abs": float(d.mean()),
+        "ref_max_abs": float(ref.abs().max()),
+        "frac_outside_tol": float(outside.float().mean()),
+        "n": int(d.numel()),
+        "finite": bool(torch.isfinite(a).all()),
+    }
+
+
+def _kernel_names(prof: torch.profiler.profile) -> list[str]:
+    names = {
+        e.key
+        for e in prof.key_averages()
+        if e.device_type == torch.autograd.DeviceType.CUDA
+    }
+    return sorted(names)
+
+
+def part_a(device: torch.device) -> dict[str, Any]:
+    from flash_attn import flash_attn_varlen_func
+
+    g = torch.Generator().manual_seed(0)
+    heads, head_dim, n_seq = 8, 32, 256
+    lengths = [214, 709] + torch.randint(650, 710, (n_seq - 2,), generator=g).tolist()
+    total = sum(lengths)
+    cu = torch.tensor([0, *torch.tensor(lengths).cumsum(0).tolist()], dtype=torch.int32)
+    q, k, v = (
+        torch.randn((total, heads, head_dim), generator=g).to(device, torch.bfloat16)
+        for _ in range(3)
+    )
+    cu = cu.to(device)
+    with torch.profiler.profile(
+        activities=[torch.profiler.ProfilerActivity.CUDA]
+    ) as prof:
+        out = flash_attn_varlen_func(
+            q, k, v, cu_seqlens_q=cu, cu_seqlens_k=cu,
+            max_seqlen_q=max(lengths), max_seqlen_k=max(lengths),
+            dropout_p=0.0, causal=False,
+        )  # fmt: skip
+        torch.cuda.synchronize()
+    ref32 = torch.empty_like(out, dtype=torch.float32)
+    ref16 = torch.empty_like(out)
+    for i in range(n_seq):
+        s, e = int(cu[i]), int(cu[i + 1])
+        qi, ki, vi = (t[s:e].transpose(0, 1).unsqueeze(0) for t in (q, k, v))
+        ref32[s:e] = (
+            F.scaled_dot_product_attention(qi.float(), ki.float(), vi.float())
+            .squeeze(0)
+            .transpose(0, 1)
+        )
+        ref16[s:e] = (
+            F.scaled_dot_product_attention(qi, ki, vi).squeeze(0).transpose(0, 1)
+        )
+    kernels = _kernel_names(prof)
+    return {
+        "heads": heads,
+        "head_dim": head_dim,
+        "n_seq": n_seq,
+        "total_tokens": total,
+        "min_len": min(lengths),
+        "max_len": max(lengths),
+        "out_dtype": str(out.dtype),
+        "flash_vs_sdpa_fp32": _diff(out, ref32),
+        "sdpa_bf16_vs_sdpa_fp32_noise_baseline": _diff(ref16, ref32),
+        "flash_vs_sdpa_bf16": _diff(out, ref16),
+        "flash_kernels": [n for n in kernels if "flash" in n.lower()],
+    }
+
+
+def _to(obj: BaseModel, device: torch.device) -> BaseModel:
+    fields: dict[str, Any] = {}
+    for name in type(obj).model_fields:
+        value = getattr(obj, name)
+        if isinstance(value, torch.Tensor):
+            fields[name] = value.to(device)
+        elif isinstance(value, BaseModel):
+            fields[name] = _to(value, device)
+        else:
+            fields[name] = value
+    return type(obj)(**fields)
+
+
+def part_b(device: torch.device, out_dir: Path) -> dict[str, Any]:
+    from owl.kaggriculture import types as kt
+    from owl.model import kaggriculture as km
+    from owl.model.attn import flash_attn_available, use_flash_attn
+    from owl.model import stateless_transformer_v1 as stv1
+    from owl.train.utils import configure_torch
+
+    from tests.kaggriculture.conftest import make_obs
+
+    configure_torch()  # TF32 on, as run_ppo
+    assert flash_attn_available(), "flash-attn not importable"
+    config = km.KaggricultureTransformerConfig.from_file(
+        ROOT / "configs/model/kaggriculture.yaml"
+    )
+    assert config.force_flash_attn is True
+    torch.manual_seed(0)
+    model = km.KaggricultureTransformer(
+        config,
+        obs_spec=kt.KaggricultureObsConfig(),
+        action_spec=kt.KaggricultureActionConfig(),
+    ).to(device)
+    model.eval()
+    g = torch.Generator().manual_seed(1)
+    envs = 128
+    own = [1, 241] + torch.randint(215, 242, (envs - 2,), generator=g).tolist()
+    rival = [1, 241] + torch.randint(215, 242, (envs - 2,), generator=g).tolist()
+    shops = [0, 8] + torch.randint(0, 9, (envs - 2,), generator=g).tolist()
+    t0 = time.time()
+    obs = make_obs(envs, own_actors=own, rival_actors=rival, shops=shops)
+    make_obs_s = time.time() - t0
+    obs = _to(obs, device)
+    assert isinstance(obs, kt.KaggricultureObsBatch)
+    counts = model.count_non_masked_tokens(obs)
+
+    pack_calls: list[tuple[int, int]] = []
+    real_pack = km.pack_sequence
+
+    def counting_pack(x: torch.Tensor, mask: torch.Tensor, **kw: Any) -> Any:
+        px, packed = real_pack(x, mask, **kw)
+        pack_calls.append((int(px.shape[0]), int(packed.max_seqlen)))
+        return px, packed
+
+    km.pack_sequence = counting_pack
+    varlen_calls = [0]
+    real_varlen = stv1.varlen_attention
+
+    def counting_varlen(*a: Any, **kw: Any) -> torch.Tensor:
+        varlen_calls[0] += 1
+        return real_varlen(*a, **kw)
+
+    stv1.varlen_attention = counting_varlen
+
+    def run(tag: str) -> tuple[torch.Tensor, torch.Tensor, list[str], float]:
+        with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+            x, mask = model._assemble_tokens(obs)
+            flash_flag = use_flash_attn(x)
+            torch.cuda.synchronize()
+            with torch.profiler.profile(
+                activities=[torch.profiler.ProfilerActivity.CUDA]
+            ) as prof:
+                t = time.time()
+                enc = model.encode_observations(obs)
+                torch.cuda.synchronize()
+                dt = time.time() - t
+        info[f"{tag}_use_flash_attn_x"] = flash_flag
+        info[f"{tag}_x_dtype"] = str(x.dtype)
+        return enc.hidden, enc.token_mask, _kernel_names(prof), dt
+
+    info: dict[str, Any] = {
+        "config": config.model_dump(),
+        "rows": int(obs.still_playing.numel()),
+        "make_obs_s": make_obs_s,
+        "present_tokens_total": int(counts),
+        "padded_seq_len": km.sequence_length(config),
+    }
+    # eager flash
+    h_eager, mask, k_eager, t_eager = run("eager_flash")
+    seqlens = mask.sum(1)
+    info["seqlen_min"] = int(seqlens.min())
+    info["seqlen_max"] = int(seqlens.max())
+    info["seqlen_total"] = int(seqlens.sum())
+    info["eager_flash"] = {
+        "pack_calls": list(pack_calls),
+        "varlen_attention_python_calls": varlen_calls[0],
+        "flash_kernels": [n for n in k_eager if "flash" in n.lower()],
+        "sdpa_like_kernels": [
+            n for n in k_eager if "fmha" in n.lower() or "efficient" in n.lower()
+        ],
+        "wall_s_profiled": t_eager,
+    }
+    pack_calls.clear()
+    varlen_calls[0] = 0
+    # restore before compiling so the counter cannot add graph breaks
+    stv1.varlen_attention = real_varlen
+
+    # compiled flash (first call compiles + autotunes)
+    assert model.compile_transformer_trunk(mode="max-autotune-no-cudagraphs") == 1
+    t = time.time()
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+        h_c0 = model.encode_observations(obs).hidden
+    torch.cuda.synchronize()
+    compile_s = time.time() - t
+    pack_calls.clear()
+    h_comp, _, k_comp, t_comp = run("compiled_flash")
+    info["compiled_flash"] = {
+        "first_call_compile_s": compile_s,
+        "pack_calls": list(pack_calls),
+        "flash_kernels": [n for n in k_comp if "flash" in n.lower()],
+        "triton_kernel_count": sum(1 for n in k_comp if n.startswith("triton")),
+        "wall_s_profiled": t_comp,
+        "repeat_consistency_max_abs": float((h_c0 - h_comp).float().abs().max()),
+    }
+    pack_calls.clear()
+    # compiled at a second (smaller) shape to exercise dynamic=True
+    sub = _to(
+        make_obs(32, own_actors=own[:32], rival_actors=rival[:32], shops=shops[:32]),
+        device,
+    )
+    assert isinstance(sub, kt.KaggricultureObsBatch)
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+        hs_c = model.encode_observations(sub)
+        compiled_trunk = model._compiled_transformer_trunk
+        model._compiled_transformer_trunk = None
+        hs_e = model.encode_observations(sub)
+        model._compiled_transformer_trunk = compiled_trunk
+    m = hs_e.token_mask
+    info["compiled_vs_eager_64rows"] = _diff(hs_c.hidden[m], hs_e.hidden[m])
+
+    # padded SDPA reference (same weights, flash dispatch disabled, eager trunk)
+    real_use, real_req = km.use_flash_attn, km._requires_flash_attn
+    km.use_flash_attn = lambda *_: False
+    km._requires_flash_attn = lambda *_, **__: False
+    model._compiled_transformer_trunk = None
+    pack_calls.clear()
+    h_pad, mask_pad, k_pad, _ = run("eager_padded")
+    info["eager_padded"] = {
+        "pack_calls": list(pack_calls),
+        "flash_kernels": [n for n in k_pad if "flash" in n.lower()],
+    }
+    km.use_flash_attn, km._requires_flash_attn = real_use, real_req
+    assert torch.equal(mask, mask_pad)
+    info["compiled_vs_eager_flash"] = _diff(h_comp[mask], h_eager[mask])
+    info["eager_flash_vs_eager_padded_sdpa"] = _diff(h_eager[mask], h_pad[mask])
+    info["compiled_flash_vs_eager_padded_sdpa"] = _diff(h_comp[mask], h_pad[mask])
+    info["masked_positions_zero"] = bool(
+        (h_eager[~mask] == 0).all() and (h_comp[~mask] == 0).all()
+    )
+    km.pack_sequence = real_pack
+    (out_dir / "kernels_eager_flash.txt").write_text("\n".join(k_eager) + "\n")
+    (out_dir / "kernels_compiled_flash.txt").write_text("\n".join(k_comp) + "\n")
+    (out_dir / "kernels_eager_padded.txt").write_text("\n".join(k_pad) + "\n")
+    return info
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out", type=Path, required=True)
+    args = parser.parse_args()
+    args.out.mkdir(parents=True, exist_ok=True)
+    device = torch.device("cuda", 0)
+    result: dict[str, Any] = {
+        "torch": torch.__version__,
+        "device": torch.cuda.get_device_name(device),
+        "capability": list(torch.cuda.get_device_capability(device)),
+
+ succeeded in 0ms:
+# post-run git/idle-state receipt for pod w7ia3zvxqsvs3g (read-only commands; taken AFTER Phase 6.0 ended at ~06:27Z, not during it)
+date_utc: 2026-09-29T06:36:54Z
+$ git rev-parse HEAD
+69397da3d1559be4fbb525636122d8a9bc614a49
+$ git symbolic-ref -q HEAD   # exit 1 = detached HEAD
+exit=1
+$ git status --porcelain   # empty = clean (runs/ is gitignored)
+exit=0
+$ git status --porcelain --untracked-files=no | wc -l
+0
+$ git check-ignore -v runs/flash-attn-setup-2026-09-29
+.gitignore:27:runs/	runs/flash-attn-setup-2026-09-29
+exit=0
+$ nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+0, 0 MiB, 0 %
+1, 0 MiB, 0 %
+$ nvidia-smi --query-compute-apps=pid,process_name --format=csv,noheader   # empty = no compute apps
+$ ps -eo pid,cmd | grep -E "python|torchrun|run_ppo|cargo|pip" | grep -v grep | wc -l
+0
+# post-run read-only check: were paths the run statement promised not to touch modified since the run began? (mtime/ctime evidence only)
+date_utc: 2026-09-29T06:38:19Z
+$ find /workspace/kg-v3 -xdev \( -newermt "2026-09-29 06:16:00Z" -o -newerct "2026-09-29 06:16:00Z" \) | wc -l
+19796
+$ ... | head -5
+/workspace/kg-v3/.venv/bin/maturin
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/__init__.py
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/buf.py
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/mman.py
+/workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/util.py
+$ find /workspace/gemm-limits-src-1ddc71d -xdev \( -newermt "2026-09-29 06:16:00Z" -o -newerct "2026-09-29 06:16:00Z" \) | wc -l
+0
+$ ... | head -5
+$ nvidia-smi --query-gpu=driver_version --format=csv,noheader
+595.91.07
+595.91.07
+$ python3 -c "import torch;print(torch.__version__, torch.__file__)"   # system python
+2.8.0+cu128 /usr/local/lib/python3.12/dist-packages/torch/__init__.py
+$ stat -c "%y %n" $(python3 -c "import torch,os;print(os.path.dirname(torch.__file__))")/version.py
+2025-10-09 06:07:50.000000000 +0000 /usr/local/lib/python3.12/dist-packages/torch/version.py
+# follow-up (read-only): split the /workspace/kg-v3 hits into mtime vs ctime-only, and check hard-link sharing with the new venv
+date_utc: 2026-09-29T06:38:37Z
+$ find /workspace/kg-v3 -xdev -newermt "2026-09-29 06:16:00Z" | wc -l   # content/mtime changes
+0
+$ find /workspace/kg-v3 -xdev -newerct "2026-09-29 06:16:00Z" -not -path "/workspace/kg-v3/.venv/*" | wc -l   # ctime hits outside .venv
+0
+$ find /workspace/kg-v3/.venv -xdev -newerct "2026-09-29 06:16:00Z" -type f -links 1 | wc -l   # ctime-changed regular files NOT hard-linked
+0
+$ find /workspace/kg-v3/.venv -xdev -newerct "2026-09-29 06:16:00Z" -not -type f | wc -l   # ctime-changed non-regular entries
+0
+$ stat -c "%i %h %y %z %n" /workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/buf.py /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/smmap/buf.py
+13074928871 3 2026-09-28 18:33:22.718836837 +0000 2026-09-29 06:20:31.943238055 +0000 /workspace/kg-v3/.venv/lib/python3.12/site-packages/smmap/buf.py
+13074928871 3 2026-09-28 18:33:22.718836837 +0000 2026-09-29 06:20:31.943238055 +0000 /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/smmap/buf.py
+$ stat -c "%i %h %y %z %n" /workspace/kg-v3/.venv/bin/maturin /workspace/kg-v3-rebuild/.venv/bin/maturin
+27978772823 3 2026-09-28 18:33:24.733847737 +0000 2026-09-29 06:20:31.895237790 +0000 /workspace/kg-v3/.venv/bin/maturin
+27978772823 3 2026-09-28 18:33:24.733847737 +0000 2026-09-29 06:20:31.895237790 +0000 /workspace/kg-v3-rebuild/.venv/bin/maturin
+$ uv cache dir; UV_LINK_MODE=unset
+/root/.cache/uv
+UV_LINK_MODE=unset
+# Run statement — flash-attn on the pod and the real FlashAttention path (Phase 6.0, single GPU, ≤ 90 min)
+
+- **Question (environment + diagnostic, not training):** the GEMM-limit probe found no `flash-attn` in the pod venv, while our preset (`configs/model/kaggriculture.yaml`) sets `force_flash_attn: true`. Can a v3 environment on the pod install `flash-attn 2.8.3` through the project's `flash-attn` extra against the locked torch 2.9.0+cu128, and does the model's packed FlashAttention varlen path then actually run and agree with SDPA on sm_120 (RTX PRO 6000 Blackwell)?
+- **Hypotheses and discriminating observations:**
+  - **Wheel availability:** with `FLASH_ATTENTION_SKIP_CUDA_BUILD=TRUE` (pyproject `extra-build-variables`) flash-attn's `setup.py` downloads `flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl` from the v2.8.3 GitHub release; if the download failed, SKIP_CUDA_BUILD would produce a wheel *without* `flash_attn_2_cuda`, so `import flash_attn` failing (or `flash_attn_available()` false) is the discriminating signal. Pre-check (Mac, 06:18Z): HTTP 200 for both the torch2.9 and torch2.8 cp312 cxx11abiTRUE wheel URLs.
+  - **sm_120 support:** the sdist `setup.py` (sha256 of sdist `1e71dd64…0370d`, equal to the `uv.lock` hash) defaults `FLASH_ATTN_CUDA_ARCHS="80;90;100;120"` and adds `arch=compute_120,code=sm_120` when the CUDA toolkit is ≥ 12.8. The installed `.so` is checked with `cuobjdump --list-elf` for an `sm_120` cubin. No sm_120 cubin and no compatible PTX, or a "no kernel image" error on the smoke → blocker, reported as such (no workaround).
+  - **Kernel numerics (a):** `flash_attn_varlen_func` on BF16 packed q/k/v (8 heads, head_dim 32, 256 sequences of 214–709 tokens, ~180k total) vs per-sequence `F.scaled_dot_product_attention` in fp32 math: expected max |Δ| at BF16 noise (≲ 1e-2). A large diff or error → kernel wrong/unsupported on sm_120.
+  - **Model path (b):** `KaggricultureTransformer` with the preset config (width 256, depth 8, 8 heads, `force_flash_attn=True`), fp32 params under `torch.autocast(bfloat16)` with TF32 on, on a 256-row contract-valid batch from `tests/kaggriculture/conftest.py::make_obs` (128 envs, varied actor/shop counts). Evidence the flash path ran: `use_flash_attn(x)` true, a counting wrapper on `owl.model.kaggriculture.pack_sequence` fires once per forward, and the torch profiler records a flash-attn forward CUDA kernel (`flash_fwd*`) in both eager and compiled (`compile_transformer_trunk(mode="max-autotune-no-cudagraphs")`, dynamic) runs. Compiled vs eager and flash vs padded SDPA (same weights, `use_flash_attn` patched false, `force_flash_attn=False`) over present tokens: expected BF16-level agreement; report max |Δ|, mean |Δ| and the fraction outside `0.02 + 0.02|ref|`.
+  - **Tests (c):** `uv run pytest tests/owl/model/test_attn.py -q` runs the two flash-attn CUDA tests that skip on the Mac (expected: all pass, 0 skipped).
+- **Inputs and code path:**
+  - Source: integration branch `kg/isaiah-gap-closure` at `69397da3d1559be4fbb525636122d8a9bc614a49` (tree `eef9249e…`; `python/owl/model` tree `2a5a02cf…`; `uv.lock` sha256 `f3311c31…07f5`; `pyproject.toml` sha256 `6912a9e9…bb01`; `python/owl/model/kaggriculture.py` sha256 `92f4df61…9dee`). Transferred as `git bundle create v3.bundle HEAD` + scp; cloned to `/workspace/kg-v3-rebuild` and checked out at that commit. No push to origin, no credentials copied.
+  - Environment: `/workspace/kg-v3-rebuild/.venv`, Python 3.12, `uv sync --frozen --group dev` then `--extra flash-attn` (torch 2.9.0+cu128 and triton 3.5.0 from the lock; flash-attn 2.8.3 via the extra). System uv 0.9.0 and the pod's existing rustup toolchain `nightly-2026-04-18` (matching `rust-toolchain.toml`) are used as found; nothing system-wide is upgraded. Rust extension built with `uv run maturin develop` (the justfile `build` recipe).
+  - Smoke script: `ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/smoke_flash.py` (sha256 recorded in the receipt), run with `CUDA_VISIBLE_DEVICES=0`.
+  - Hardware: pod `w7ia3zvxqsvs3g`, 2× RTX PRO 6000 Blackwell (cc 12.0), driver 595.91.07, GPU 0 only.
+- **Stopping condition:** the three smoke parts complete, or the first hard blocker (wheel unavailable and no sm_120 support, import failure, "no kernel image"), or 90 minutes wall. If a source build becomes necessary it is bounded by `MAX_JOBS` sized to the pod's cgroup (54 CPUs quota, RAM ample) and `TORCH_CUDA_ARCH_LIST=12.0`/`FLASH_ATTN_CUDA_ARCHS=120`, and counts against the same 90 minutes.
+- **Budget:** ≤ 90 min wall on the already-running pod ($4.18/h ≈ $6.3 max; no new billable resource).
+- **Artifacts:** pod `/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/` (setup logs, `versions.json`, `cuobjdump` listing, smoke JSON/log, pytest log). Local copy of logs and a summary in `ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/`; result section "Phase 6.0 — flash-attn on the pod" in `ops/rebuild-2026-09-29/results.md`.
+- **Safety:** pre-check 06:16Z: `nvidia-smi` 0 MiB / 0 % on both GPUs, no compute apps, no python/torchrun/run_ppo/cargo/pip process. Re-checked immediately before the smoke. `/workspace/kg-v3` and its `.venv` are not touched; `/workspace/gemm-limits-src-1ddc71d` is not touched. No driver/CUDA/system-torch changes, no security changes. Never stop, restart or delete the pod; it is left running and idle.
+
+---
+
+## Post-run addendum (2026-09-29 ≈06:40Z, after Codex review `codex/verify-flash-attn-r1.md`)
+
+The text above this rule is the pre-run statement, byte-for-byte: its first 5,427 bytes hash to sha256 `405c4bd62b19ad072c17e3039276d010ad0e8740a2f2bc3a44b9f027492aaac3`. Check with `head -c 5427 pod-flash-attn-setup.md | shasum -a 256`. Nothing above the rule was edited after the run.
+
+**Custody of this statement.** Git first records the file in `4fd40c7` at 06:28:07Z, which is after execution. That commit alone does not show when the statement was written. The operator session's transcript does show the timing:
+- The `Write` of this file happened at **06:17:58.822Z**, and the written content has the same sha256 (`405c4bd6…aac3`).
+- The first command that changed the pod (bundle, clone, checkout) started at **06:18:04Z**.
+- The earlier 06:16:25Z call only read state.
+
+The excerpts are in `../flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt`. That transcript is a local harness log kept outside git and is not tamper-evident. The excerpt file records its sha256 at extraction time. No copy of this statement was placed on the pod.
+
+**Corrections to the wording above.** The original text stays as written; these corrections apply to it.
+- **(a) reference.** "fp32 SDPA in fp32 math" means `F.scaled_dot_product_attention` on fp32 inputs, with the backend chosen automatically. The math backend was not selected explicitly, and the backend actually used was not profiled.
+- **(b) expectation.** The trunk result did not meet the "BF16-level agreement" expectation as a proven claim. The trunk smoke completed with outliers: 0.017–0.021 % of elements fall outside `0.02 + 0.02|ref|`, and the script asserts no numerical acceptance. See `../results.md` for details.
+- **Safety claims.** Some of the safety claims above now have receipts:
+  - Pre-check 06:16:25Z, pre-smoke re-check 06:24:26Z, end-of-run check 06:26:39Z and post-commit check 06:28:14Z are all in the transcript excerpts.
+  - A fresh post-run check at 06:36:54Z is in `../flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt`.
+  - "`/workspace/kg-v3` and its `.venv` are not touched" needs a qualification. A read-only check at 06:38Z (`../flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run*.txt`) found no file in `/workspace/kg-v3` with a changed mtime. However, 19,796 entries in `/workspace/kg-v3/.venv` have a changed ctime. All of those are hard-linked regular files, and the sampled files share their inode with the new venv (link count 3), which fits uv hard-linking from its cache. Their mtimes are unchanged, but the two venvs now share inodes.
+  - `/workspace/gemm-limits-src-1ddc71d` has no mtime or ctime changes.
+  - The driver is still 595.91.07, and the system torch is still 2.8.0+cu128 (`version.py` mtime 2025-10-09).
+  - "No credentials copied" and "nothing pushed" remain **operator-reported**. The only retained evidence is the pod clone's remote list, which shows just the bundle path.
+
+exec
+/bin/zsh -lc "python3 -B -c 'import hashlib, pathlib, subprocess, json
+base = pathlib.Path(\"ops/rebuild-2026-09-29\")
+scope = [str(base/\"run-statements/pod-flash-attn-setup.md\"), str(base/\"results.md\"), str(base/\"flash-attn-setup-2026-09-29\")]
+r = subprocess.run([\"git\",\"diff\",\"78df33c\",\"--\",*scope],capture_output=True,text=True,check=True)
+print(\"scoped working tree matches 78df33c:\", not r.stdout)
+statement = (base/\"run-statements/pod-flash-attn-setup.md\").read_bytes()
+previous = subprocess.run([\"git\",\"show\",\"78df33c"'^:ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md"],capture_output=True,check=True).stdout
+print("prior statement bytes:",len(previous),"sha256:",hashlib.sha256(previous).hexdigest())
+print("original prefix unchanged:",statement[:len(previous)] == previous)
+raw_path = pathlib.Path.home()/".claude/projects/-Users-poonszesen-kg-v3/3f7ce81c-f27d-4f24-bb54-c9e0de2d998a/subagents/workflows/wf_6fbe8f60-1c7/agent-a67cdbbbc0dde3368.jsonl"
+print("source transcript available:",raw_path.is_file())
+if raw_path.is_file():
+    raw=raw_path.read_bytes()
+    print("current source bytes:",len(raw),"sha256:",hashlib.sha256(raw).hexdigest())
+    extracted=subprocess.run(["python3","-B",str(base/"flash-attn-setup-2026-09-29/post-run/extract_operator_transcript.py"),str(raw_path)],capture_output=True,check=True).stdout
+    retained=(base/"flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt").read_bytes()
+    print("retained excerpt byte equal to fresh extraction:", extracted == retained)
+    print("excerpts excluding source length/hash header byte equal:", extracted.splitlines()[2:] == retained.splitlines()[2:])
+    lines=raw.decode().splitlines()
+    content=json.loads(lines[86])["message"]["content"][0]["input"]["content"].encode()
+    print("source Write content matches original statement:",content==previous)
+'"'" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+python3: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+scoped working tree matches 78df33c: True
+prior statement bytes: 5427 sha256: 405c4bd62b19ad072c17e3039276d010ad0e8740a2f2bc3a44b9f027492aaac3
+original prefix unchanged: True
+source transcript available: True
+current source bytes: 760231 sha256: ad6266d39c92c72f37b94e743cae6993844b036122683b3c11a811ee68fff62c
+retained excerpt byte equal to fresh extraction: True
+excerpts excluding source length/hash header byte equal: True
+source Write content matches original statement: True
+
+exec
+/bin/zsh -lc 'nl -ba ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt && nl -ba ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/wheel_member_compare.sh && nl -ba ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/MANIFEST.sha256 && git show --format= --name-only 78df33c' in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+     1	# flash_attn_2_cuda wheel-member vs installed .so comparison (Phase 6.0 follow-up; post-run)
+     2	date_utc_start: 2026-09-29T06:37:10Z
+     3	host: 58d6b0752a98  (pod w7ia3zvxqsvs3g)
+     4	wheel: /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/wheel/flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+     5	installed: /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+     6	tempdir: /tmp/fa-wheel-cmp.sEzKGV (removed afterwards)
+     7	
+     8	$ sha256sum "$W"
+     9	4e2f9e39313266b1544b68138b15b91ee6221eccf14f7902b7c6620351340810  /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/wheel/flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+    10	$ unzip -l "$W" 'flash_attn_2_cuda*.so'
+    11	Archive:  /workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29/wheel/flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+    12	  Length      Date    Time    Name
+    13	---------  ---------- -----   ----
+    14	997961816  2025-12-17 06:09   flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+    15	---------                     -------
+    16	997961816                     1 file
+    17	$ unzip -q "$W" 'flash_attn_2_cuda*.so' -d "$T"; echo exit=$?
+    18	exit=0
+    19	$ ls -l "$T" "$I"
+    20	-rwxr-xr-x 2 root root 997961816 Sep 29 06:21 /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+    21	
+    22	/tmp/fa-wheel-cmp.sEzKGV:
+    23	total 974576
+    24	-rwxr-xr-x 1 root root 997961816 Dec 17  2025 flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+    25	$ sha256sum "$T"/flash_attn_2_cuda*.so "$I"
+    26	8ca052bf2d3f53baa629e22749b9622a95273c5bffb5f06cd24768ef63f65807  /tmp/fa-wheel-cmp.sEzKGV/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+    27	8ca052bf2d3f53baa629e22749b9622a95273c5bffb5f06cd24768ef63f65807  /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+    28	$ cmp "$T"/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so "$I"; echo exit=$?   # exit=0 = byte-identical
+    29	exit=0
+    30	$ grep flash_attn_2_cuda .venv/lib/python3.12/site-packages/flash_attn-2.8.3.dist-info/RECORD
+    31	flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so,sha256=jKBSvy0_U7qmKeInSbliKpUnPFv_tfBs0kdo72P2WAc,997961816
+    32	date_utc_end: 2026-09-29T06:37:16Z
+     1	set -u
+     2	R=/workspace/kg-v3-rebuild/runs/flash-attn-setup-2026-09-29
+     3	W=$R/wheel/flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+     4	I=/workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so
+     5	O=$R/wheel_member_compare.txt
+     6	T=$(mktemp -d /tmp/fa-wheel-cmp.XXXXXX)
+     7	{
+     8	echo "# flash_attn_2_cuda wheel-member vs installed .so comparison (Phase 6.0 follow-up; post-run)"
+     9	echo "date_utc_start: $(date -u +%FT%TZ)"
+    10	echo "host: $(hostname)  (pod w7ia3zvxqsvs3g)"
+    11	echo "wheel: $W"
+    12	echo "installed: $I"
+    13	echo "tempdir: $T (removed afterwards)"
+    14	echo
+    15	echo "\$ sha256sum \"\$W\""
+    16	sha256sum "$W"
+    17	echo "\$ unzip -l \"\$W\" 'flash_attn_2_cuda*.so'"
+    18	unzip -l "$W" 'flash_attn_2_cuda*.so'
+    19	echo "\$ unzip -q \"\$W\" 'flash_attn_2_cuda*.so' -d \"\$T\"; echo exit=\$?"
+    20	unzip -q "$W" 'flash_attn_2_cuda*.so' -d "$T"; echo "exit=$?"
+    21	echo "\$ ls -l \"\$T\" \"\$I\""
+    22	ls -l "$T" "$I"
+    23	echo "\$ sha256sum \"\$T\"/flash_attn_2_cuda*.so \"\$I\""
+    24	sha256sum "$T"/flash_attn_2_cuda*.so "$I"
+    25	echo "\$ cmp \"\$T\"/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so \"\$I\"; echo exit=\$?   # exit=0 = byte-identical"
+    26	cmp "$T"/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so "$I"; echo "exit=$?"
+    27	echo "\$ grep flash_attn_2_cuda .venv/lib/python3.12/site-packages/flash_attn-2.8.3.dist-info/RECORD"
+    28	grep flash_attn_2_cuda /workspace/kg-v3-rebuild/.venv/lib/python3.12/site-packages/flash_attn-2.8.3.dist-info/RECORD
+    29	echo "date_utc_end: $(date -u +%FT%TZ)"
+    30	} > "$O" 2>&1
+    31	rm -rf "$T"
+    32	echo "tempdir removed: $([ -e "$T" ] && echo no || echo yes)"
+    33	sha256sum "$O"
+     1	ba5adde72765a1ea91dff01a2abe48afc14375a635c1f90796eeb8368b0d8767  ./01_uv_sync_base.log
+     2	06a031a604ea39c5f769fa978cb4ecb004f7278137f973aa18b729b902696e51  ./02_uv_sync_flash.log
+     3	e53d721d5e04a2c81420752a973ddb7956730f7f9c2ac10e048267313860bbb6  ./03_uv_sync_project.log
+     4	55b46a6fe135180f941f3564c1d48ac5a9797721576c6c34e3c1d20211edff84  ./04_maturin_develop.log
+     5	3374c9aff9bc9b5827b348eef5a3ab1b77f407b1917be66f6b7bf9d5f4134eda  ./05_import_check.log
+     6	074ee55ddb3366295d91a05f3e50d32e42509779ae91b7f66a4b1b37f4dcc539  ./06_smoke_flash.log
+     7	9eba2421b1bcc6780f76f8449f47b2ada499ce0f17315ae1f21bd61e80c0126b  ./07_pytest_test_attn.log
+     8	9743fa88d4f476455833e55e58e66d64e6aeb401814e3d4416c39096e49eb9f8  ./08_pytest_test_attn_verbose.log
+     9	bc36728500a44358019420384b7c252d5127957abe7c36fd15a9778c06fd2d01  ./09_owl_rs_after_pytest.log
+    10	2177ea772a53fae044d72a6e3ce8ef469bdaa38c1602b38e1e3b1a8fea394c1a  ./10_pytest_kaggriculture.log
+    11	28ea68e8f065fd5afd8f9bc7da2615d6f9674c447561c9fe0f57eaffc31cefb2  ./cuobjdump_list_elf.txt
+    12	5c705b96b2bf1696303a227da0d28efa0be6f725c101463d0cb2e40cb45ef1d9  ./cuobjdump_list_ptx.txt
+    13	68f8b0a1301428031e307cf5260142a517bff25cc232a09eae2734be475d721f  ./nvcc_version.txt
+    14	e562e5c83d303415f9bfaa282d289d1f1de0b782dbbb7d454a2299c1339eea2c  ./smoke/kernels_compiled_flash.txt
+    15	337995710665bdd53d382278042e638db47f8214fb684bbc1e2e52cf5e3693a7  ./smoke/kernels_eager_flash.txt
+    16	17ad55eebb5ba54ba2848dc022b83d9d4b5ac7a897ff75124fd0fc95f2a7df48  ./smoke/kernels_eager_padded.txt
+    17	2c00826f3be5613a2032acb2e60dad8c74de0425fd66b7a123c4f9ad5e9d1aa0  ./smoke/smoke_flash.json
+    18	d9492185a813bd6c60f844c9f955f0fa0cdcd61fd9cfe0ab567aba7f8e8079e0  ./source_commit.txt
+    19	0160fa229d7fd4d338e3b52f7595d995ea4f3679f250343b5431376e0f4652ab  ./uv_version.txt
+    20	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  ./versions.err
+    21	ab0b977ad01a0384ccaf6ef464a34395842fa909ac7f4e738d90b3082057483f  ./versions.json
+    22	37156ec490fd4604624208f7fd17986ffa291e30140c0477a04c27ff8339742d  ./versions.py
+    23	74ae6b399691fd30621a081b4dd2b73ffd72b3c159367edcdcde3fa6de2de927  ./wheel_member_compare.txt
+    24	0e1db99db9a9649015315b09a79eac8306df83edeed4a9f59a7168ff5823dee3  ../smoke_flash.py
+    25	7f2ff28fe57167c8b62bfcdcfb925943775096076ea27646a6e3a2213c19dc4a  ../post-run/extract_operator_transcript.py
+    26	320cc1a180dbb9938cc6c4ce7f64a4207b3e901beb2d57003b878e5945e98d56  ../post-run/git_idle_state_post_run.txt
+    27	fdb7c18a57a5203bdead3956c3d6193087479b87d62cca4a53fd63ec0251c97a  ../post-run/operator_transcript_excerpts.txt
+    28	6db2649f7aed83b929769a2f488b79e377f7db0087d881c35b9ae5c97961b7a1  ../post-run/untouched_paths_post_run_followup.txt
+    29	05be74c1fc71e3dcb7e9628df5b241da2a4e274a2904ffffbb792177f243010c  ../post-run/untouched_paths_post_run.txt
+    30	06a7206294be02234166e589295c9e9602a2594767964c01b83c1561f109a704  ../post-run/wheel_member_compare.sh
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/README.md
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/MANIFEST.sha256
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/extract_operator_transcript.py
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/git_idle_state_post_run.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/operator_transcript_excerpts.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/untouched_paths_post_run_followup.txt
+ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/post-run/wheel_member_compare.sh
+ops/rebuild-2026-09-29/results.md
+ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md
+
+codex
+All five r1 findings are resolved in `78df33c`. The reviewed files match that commit. No new overclaim found.
+
+1. **Numerics:** [results.md](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:155) explicitly reports trunk outliers and unqualified accuracy. BF16 rounding remains a plausible, unproven explanation.
+2. **Evidence provenance:** The [run-statement addendum](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/run-statements/pod-flash-attn-setup.md:24) separates recovered evidence from operator reports. I reproduced the transcript excerpts byte-for-byte and verified the original statement’s hash. Idle and checkout receipts support those claims; “nothing pushed” and “no credentials copied” remain labeled operator-reported.
+3. **Wheel equality:** The [new receipt](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/flash-attn-setup-2026-09-29/pod/wheel_member_compare.txt:17) records successful extraction, matching sizes and SHA-256 hashes, and `cmp` exit **0**. This supports byte equality at the documented post-run check.
+4. **Manifest:** All **30/30 entries verify**, with complete documented payload coverage and no self-entry. Script relocation, remote-only wheel exclusion, and the stale pod-side manifest are explicitly disclosed.
+5. **Terminology:** Automatically selected fp32 SDPA is correctly distinguished from an explicitly selected math backend. BF16 spacing near 1.38 is corrected to **0.0078125**.
+
+Trunk numerical qualification, backward, integrated PPO, and throughput remain open. No files changed or GPU runs launched.
+
+**VERDICT: APPROVE**
+hook: Stop
+hook: Stop Blocked
+codex
+I’ll check the cookbook for records bearing on the corrected numerical claims and cite the supporting evidence.
+
+exec
+/bin/zsh -lc "rg -n -i 'BF16|bfloat16|0\\.0078125|0\\.00390625|0\\.017|0\\.021|flash.?attn|FlashAttention|trunk numerics|rounding' cookbook/log.md cookbook/references cookbook/decisions cookbook/workflows" in /Users/poonszesen/kg-v3
+ succeeded in 0ms:
+cookbook/references/explicit-game-tokens-and-grammar-replace-orbit-heads.md:114:These short-workload receipts and their BF16/actor-population limits remain in
+cookbook/decisions/preserve-the-ppo-recipe-across-bc-bootstrap.md:18:The historical saved complete YAML is `ops/bc-bootstrap-2026-09-29/ppo-config-preserved.yaml`. PPO uses two PRO6000 GPUs,4,096 environments/rank, horizon64, one PPO epoch, one segment/minibatch, accumulation2:128 learner-seat observations/rank/minibatch and512-seat global effective optimizer batch. AdamW learning rate1e-4, weight decay.01; BF16, compiled current transformer trunk and batched heads,8,353,727 parameters. That historical run used joint per-player clipping, target KL.03, gamma1, GAE lambda.95, MSE critic and normalized advantages. Full optimizer/model details live in the snapshot rather than this summary.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:17:A controlled probe confirmed the threshold. It used a synthetic BF16 MLP (256→1024, GELU, 1024→256) with `torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)`, compiled at a small shape first. At M = 2,088,960 the compiled output matches eager within BF16 noise (max diff 0.0078). At M = 2,105,344 it faults. Environment: torch 2.9.0+cu128, RTX PRO 6000 Blackwell, driver 595.91.07. Hashes and logs are in `ops/rebuild-2026-09-29/results.md`.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:26:A second bounded probe compared compiled output against eager at every point. It covered synthetic compiled Linears and MLPs, plus the real `KaggricultureTransformer` trunk from `kg/rebuild-model` @ `1ddc71d`, compiled directly through its own `compile_transformer_trunk`. Precision matched `run_ppo`: fp32 parameters under bf16 autocast, `max-autotune-no-cudagraphs`, `dynamic=True`, compiled small first. Codex verified the evidence and requested edits, applied here. The table, the generated-code attribution and the source citations are in `ops/rebuild-2026-09-29/results.md`, "GEMM limits at our shapes".
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:69:- **Tolerances:** the checks detect the reported corruption. They do not prove BF16 equivalence for arbitrary inputs.
+cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:70:- **FlashAttention:** the packed-path runs used torch's ATen varlen flash shim, because the pod venv has no `flash-attn`; the pod's run config also had `force_flash_attn: false`. The real flash-attn kernel is untested, and Phase 6 must install and verify it.
+cookbook/log.md:19:- **No flash-attn on the pod.** The pod venv has no `flash-attn`, and its config had `force_flash_attn: false`. The plan's Phase 6 now installs and verifies it before any qualification.
+cookbook/log.md:99:The owner supplies an external review; the [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO Reference]] confirms the missed2048-versus16 optimizer updates/iteration and fourfold scheduler data-exposure difference. A new resolved-config/workload audit also records normalization windows, Muon grouping and FlashAttention requirements. Compile settings had already been corrected; BC inherited a previously PPO-trained critic. Batch alternatives remain unadopted and no new run starts during this fact-check.
+cookbook/log.md:195:The [[references/explicit-game-tokens-and-grammar-replace-orbit-heads|model record]] now links a finite two-GPU heads-only result: 1,774.752 game SPS versus 310.819 for the rejected decoder at equal nominal five-update work, with independent weights/action distributions and no quality claim. Full-model CUDA diagnostics preserve raw BF16 errors and synthetic-capacity limits. The GPU receipt adds completed raw-trace custody and actual named-range launch attribution. [[references/shared-ppo-adapts-game-batches-without-a-second-loop|PPO guidance]] records the explicit 32-environment/four-segment experiment and its fourfold optimizer-batch change; README removes stale old-model/no-GPU claims. Fused-native final checks and combined GPU measurement remain pending; no standing board or empirical Lesson is created.
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:20:- Muon grouping and the FlashAttention requirement differ from upstream.
+cookbook/references/shared-ppo-adapts-game-batches-without-a-second-loop.md:72:`Dockerfile` keeps the starter CUDA/uv/Rust build with kg-v3 paths and copies `engine_rs/` before Cargo resolution. `Dockerfile.kaggle` includes that path dependency, but its Orbit serving path does not support Kaggriculture (`docs/containerization.md`). Neither image has run on an NVIDIA host. Still unqualified: container builds, measured FlashAttention kernel use, Kaggriculture serving/export, the aligned recipe on GPU, and competitive strength. `verified-scoped` covers the source and check evidence above, not these targets. The pre-trim text of this note is preserved byte-exact in `ops/cookbook-cleanup-2026-09-29/before/`.
+cookbook/references/bc-bootstrap-uses-native-replay-features-and-current-heads.md:15:The current policy and initial incumbent both end at zero banks in8 native games/seeds7000–7007,16 seat trajectories each. Current-policy mean bank falls from3000 to595.125 after one turn,26.5625 after eight, and zero by192; the initial policy shows the same failure pattern. Removing market orders while retaining model unit commands preserves3000 for every seat through719 turns, as does full PASS. This localizes the observed cash depletion to market behavior rather than a zeroed bank metric. It does not establish an optimal no-trade policy or full engine correctness. Diagnostic action sampling is eager BF16, not a compiled-path numerical parity or speed test.
+cookbook/references/bc-bootstrap-uses-native-replay-features-and-current-heads.md:24:- `train_bc.py`: current8,353,727-parameter stateless v3 actor; no v2 weights/model or opponent identity. Reuse current evaluate_actions, compiler, BF16, distributed context and optimizer factory. Mean turn NLL is normalized by active frame count; frozen critic head receives no supervised value target, but shared-trunk updates still change its predictions. Two ranks use64 game rows/128 seat observations per microbatch, accumulation2 and512-seat global optimizer batch. Fresh AdamW state, learning rate1e-4, weight decay.01. This is offline BC, not a second PPO trainer. Validation uses a fixed random subset of held-out episode rows and selects best NLL; it is neither final playing strength nor a promotion.
+
+codex
+Cookbook search confirms [BF16 equivalence remains unproven](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:69). The corrected **0.0078125** spacing is a format calculation, not a measured error location, as [results.md documents](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:157).
+
+**VERDICT: APPROVE**
+hook: Stop
+hook: Stop Completed
+tokens used
+68,603
+Cookbook search confirms [BF16 equivalence remains unproven](/Users/poonszesen/kg-v3/cookbook/references/compiled-gemm-template-overflows-above-2-21-rows.md:69). The corrected **0.0078125** spacing is a format calculation, not a measured error location, as [results.md documents](/Users/poonszesen/kg-v3/ops/rebuild-2026-09-29/results.md:157).
+
+**VERDICT: APPROVE**

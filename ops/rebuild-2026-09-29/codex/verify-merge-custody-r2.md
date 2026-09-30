@@ -1,0 +1,54 @@
+Verified `kg/merge-custody` at `3642a252a9e106d2e162b8e0f9daecab46802f9a` against `666deec`, including parents `bd31cb6` and `b1ef31d`. Two P3 findings remain; no P0–P2 findings.
+
+1. **P3 — Qualify the remaining rerun-input claim.** [results.md:439](/Users/poonszesen/kg-v3-m-custody/ops/rebuild-2026-09-29/results.md:439) still says the stages reran “on the same states.” The corrected run-statement addendum at line 190 says retained evidence does not establish input identity; README line 21 correctly calls it operator-reported. **Fix:** qualify results line 439 likewise and link the addendum. The custody limitation is now disclosed, making this residual issue a wording inconsistency.
+
+2. **P3 — Identify the native-env revision in each downstream merge.** [phase-status.md:54](/Users/poonszesen/kg-v3-m-custody/ops/rebuild-2026-09-29/phase-status.md:54) lists approved tip `b6b722f`, then says it merged into adapter `558ac3c`, BC-now `66a4aeb`, and replay `37c1e51`. `git show -s --format='%h %p'` confirms only adapter merged `b6b722f`; the other two merged earlier `1e63597`. Ancestry checks confirm they lack `b6b722f`. **Fix:** distinguish those revisions and note that BC-now/replay lack the subsequent fixture-publication rollback fix.
+
+Round 1 dispositions:
+
+| R1 finding | Status | Evidence |
+|---|---|---|
+| #1 Gain-only attribution | **RESOLVED** | Results lines 458, 469 and 474 identify reinitialization, changed seed and resampled actions, and leave gain-only causality and Isaiah suppression unproven. This matches `kg_gap.py:284–297`. |
+| #2 Exact-equality overclaim | **RESOLVED** | Results lines 444–449 restrict equality to measured Kaggriculture comparisons and report Isaiah’s 1.19e-7–2.38e-7 differences. Raw summary fields agree. |
+| #3 Rerun input identity | **PARTIAL** | Run-statement line 190 and README line 21 correctly qualify identity; results line 439 needs the P3 correction above. Preserving preregistered text with an explicit post-run correction is appropriate. |
+| #4 Ambiguous bulk-manifest paths | **RESOLVED** | README line 35 identifies `pod/large_files.sha256`, lines 13–14 and their rerun destination. Ordering and the 11:06 timestamp agree with the rerun launch window. The pod receipt remains byte-identical to `bd31cb6`; documenting the interpretation resolves the ambiguity without rewriting captured evidence. |
+| #5 Numerical compression | **RESOLVED** | Results match backend-specific ranges: relative means approximately 0.0061 ATEN / 0.0066 default; baseline log-probability maxima 0.0003585815–0.0003724098. |
+| #6 EXCLUDE schema | **RESOLVED** | All three objects contain exactly `path` and `reason`. Markdown line 3 describes that schema correctly. |
+
+Cookbook cross-check: `rg` across the log and notes found the numerical corrections in [cookbook/log.md:5](/Users/poonszesen/kg-v3-m-custody/cookbook/log.md:5) and custody totals in [cookbook/log.md:9](/Users/poonszesen/kg-v3-m-custody/cookbook/log.md:9), consistent with the independently checked evidence below.
+
+Checks and reproducible evidence:
+
+| Check | Commands / method | Result |
+|---|---|---|
+| Scope and ancestry | `git diff --name-status 666deec HEAD`; `git merge-base --is-ancestor <parent> HEAD` | **1,721 additions, 9 modifications, 0 deletions**. All three parents are ancestors. No application, config, test or Rust changes from BASE. |
+| Full r2 correction | `git diff 5ee1188 3642a25` | All **9 changed files** reviewed. |
+| Pytest collection | `uv run --no-sync pytest tests/ --collect-only -q -p no:cacheprovider` in four temporary checkouts | BASE **1,701**; value-gap **887**; phase-map **1,632**; HEAD **1,701**. No BASE/phase-map names lost. |
+| Superseded value-gap tests | `git diff bd31cb6 666deec -- tests/kaggriculture/test_model_encoder.py` | Five old names replaced **before BASE**: deferred-head test, kmax test and three overflow-rejection cases. HEAD adds 819 names relative to that parent. No staging-merge loss. |
+| Rust collection | `git diff --name-only 666deec HEAD -- '*.rs' Cargo.toml Cargo.lock engine_rs/Cargo.toml engine_rs/Cargo.lock` | Empty; conditional Rust collection unnecessary. |
+| Cookbook preservation/indexing | `git ls-tree -r --name-only <ref> -- cookbook`; index-link audit | Concepts: **33 / 23 / 29 / 33** for BASE/value-gap/phase-map/HEAD. None lost. All **33 concepts**, including **21 References**, indexed exactly once. |
+| Conflict-resolved sections | `git show <ref>:<path>`; per-parent section/body comparisons | Results retain all **6 / 6 / 2** parent sections; HEAD has **7**. Logs retain **120 / 57 / 101** sections; HEAD has **125**. All **17 plan sections** retained. |
+| Merge semantics | Per-parent diffs of results, References index, log and plan | GPU bundle precedes value-gap; later-attribution link is correct. Integration corrections survive phase grouping. Teacher occupies Phase 4; flash-attn/SPS occupy Phase 6. Log bodies preserved apart from boundary whitespace. |
+| Inventory copies | `/private/tmp/custody-round-two/audit.py`; `git cat-file --batch` plus SHA-256 | **1,537 COMMIT files / 27,521,530 B**, **9 promoted DEFER files / 830,834 B**, and PNG override match inventory hashes, sizes and destinations. |
+| Added-ops accounting | Added-path comparison against inventory and parents | **1,721 = 1,537 COMMIT + 9 promoted + 1 PNG + 166 exact value-gap-parent files + 3 revised value-gap files + 1 revised phase tracker + 4 branch artifacts.** No unexplained additions. |
+| Accounting exceptions | Custody files and cookbook/log | The four branch artifacts are both custody manifests and both verification logs. The manifests explain themselves; cookbook/log explains the logs. Neither log has an inventory/parent entry or an explicit explanation in `evidence-custody.md`, as acknowledged in the review request. |
+| Manifest completeness | Inventory-to-JSON field comparison | **262 MANIFEST / 67,738,146 B; 90 DEFER / 16,890,641 B; 3 EXCLUDE; 21 SKIP / 1,375,311 B.** No missing, extra, duplicate or mismatched entries. All **352 location dictionaries** match. One symlink preserves inventory-null size/hash and its target. |
+| Manifest tables/statuses | `supplement.py`; BASE blob comparisons | **31/31 checks pass**, including nine reason rows and six task/status rows. Six DEFER and 21 SKIP files match BASE; nine promoted files were absent. Remaining counts: **261 local, 75 deferred**. COMMIT-only transcripts: **62 / 16,001,189 B**. |
+| Citation custody | Inventory citation-list comparison | Of **66** missing citations, **41** now resolve; remaining **25** comprise 22 historical-branch citations and three deferred citations. |
+| Independent secret scan | `scan.py`, `triage.py`, `finalize.py`; committed AM blobs, including PNG bytes/metadata | **1,730 files / 31,560,009 B** scanned. **24,993 matches triaged; zero true credentials, exposed endpoints or unresolved hits.** Required private-key, API-key/token/secret/password, Bearer, provider, SSH, Fernet and address patterns covered. |
+| Secret-hit dispositions | Per-hit `triaged.json` | **6,656 keyword**, **6,245 40-hex**, **12,069 host:port-like**, **21 IPv4-like**, one private-key-regex and one Bearer-prose match. These resolve to identifiers/prose, Git/checksum provenance, citations/labels/PCI addresses, NVIDIA versions, public C2PA metadata or compressed-image byte coincidences. |
+| Pod endpoint exclusion | Exact host/port comparison using BASE’s redaction map | **Zero new copies** of either value. Redaction-map file unchanged from BASE. |
+| Bulk extensions/size | Extension scan, blob sizes, PNG signature and receipt digest | **Zero prohibited extensions**. Only addition over 512 KiB: `ops/v3-architecture-image-2026-09-29/v3-agent-architecture.png`, **1,361,061 B**, SHA-256 `6f789aad52272e830cc9df14b77af55e3bf37fca3e5d7fee9a7dadfa2a4a9ad3`. Inventory, receipt and explicit image justification agree. |
+| Phase commits/branches | `git merge-base --is-ancestor`; `git worktree list --porcelain`; `git rev-parse`; merge-parent inspection | **161 mentions / 99 unique commits** checked. All **108 mentions in 33 merged rows** are HEAD ancestors. **26 branch names** checked; 25 exist, proposed branch absent as stated. Eight pending branches remain outside BASE/HEAD. Revision ambiguity is finding 2. |
+| Phase reports/snapshot | Report reads and timestamped git history | All **67 reports** exist and support cited verdict/status: 45 tracked Codex, 21 declared local Codex, one independent BC. Later branch advances follow the snapshot. Historical process/uncommitted-file counts cannot be reconstructed independently. |
+| Changed plan checkboxes | `git diff 666deec HEAD -- ops/rebuild-2026-09-29/plan.md` | BASE **62 boxes / 4 checked**; HEAD **63 / 38**. All **34 newly checked** boxes supported by merged work; one new unchecked Phase-8 item. Combined Phase 4 remains open for 4.4. |
+| Value-gap reconstruction | `python3 summarize.py pod pod/frerun`; SHA-256 manifest verification | Summary reproduces **byte-for-byte**. **167/167 manifest entries** pass; complete tracked-bundle coverage except manifest itself. |
+| Cookbook contract | Metadata/source parser; actual lint payload with `tool_name: "Write"` and absolute file path | **7 changed cookbook files, 4 concepts**; required fields/first tag pass; **42/42 repository sources** literal and resolving. **4/4 lint calls** return `{}`. Material-change log entries present. |
+| Pre-commit/docs | Temporary clone: `git reset --soft 666deec`; `sh ops/pre-commit`; `uv run --no-sync python scripts/check_doc_freshness.py` | Pass with full branch delta staged; **no `DOCS_CURRENT` override**. Original index untouched. |
+| Python static checks | `uvx --offline ruff check python/ scripts/ tests/`; `ruff format --check`; `uv run --no-sync mypy python/ scripts/`; syntax script | All pass: **119 formatted files**, **64 mypy source files**. Non-mutating py-prepare equivalents used. |
+| Python suite | `uv run --no-sync pytest tests/ -m 'not slow' -q -p no:cacheprovider --basetemp=/tmp/custody-verify-ob_htb9c/test-temp --junitxml=…` | **1,690 passed, 11 skipped**, one successful full run, 44.65 s pytest-reported time. |
+| Worktree preservation | Before/after SHA-256 snapshot; `git status --porcelain=v1`; working/index diff checks | **3,956 tracked files unchanged**, zero hash mismatches; status clean, including after the cookbook cross-check. Scratch/cloning/staging confined to `/tmp` or `/private/tmp`. No training or GPU work launched. |
+
+Detailed scripts and receipts remain under `/tmp/custody-verify-ob_htb9c/`, `/tmp/custody-merge-phase-verify/`, `/private/tmp/custody-value-audit/`, and `/private/tmp/custody-round-two/`.
+
+VERDICT: APPROVE WITH EDITS
