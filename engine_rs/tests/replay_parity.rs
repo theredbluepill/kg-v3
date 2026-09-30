@@ -350,6 +350,88 @@ fn kernel_public_api() {
     assert_eq!(game.terminal_banks().unwrap(), &[3000.0, 3000.0]);
 }
 
+#[test]
+fn stepped_candidate_preserves_source_and_matches_recorded_games() {
+    let mut transitions = 0;
+    for episode in [95324500, 95901360, 95921764, 95990191] {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(format!("fixtures/episode-{episode}.jsonl.gz"));
+        let text = read_trace(&path);
+        let mut lines = text.lines();
+        let header: TraceHeader = serde_json::from_str(lines.next().unwrap()).unwrap();
+        let mut game =
+            Game::new_with_seed_decimal(header.configuration, &header.seed.to_string(), 2).unwrap();
+        for line in lines {
+            let row: Value = serde_json::from_str(line).unwrap();
+            let actions = row["actions"].as_array().unwrap();
+            // Debug includes the hidden seed/config and telemetry ledgers; serialized
+            // snapshots additionally pin numeric representation and JSON key order.
+            let before = format!("{game:?}");
+            let (candidate, metrics) = game.stepped_with_market_metrics(actions).unwrap();
+            assert_eq!(format!("{game:?}"), before);
+            let mutable_metrics = game.step_with_market_metrics(actions).unwrap();
+            assert_eq!(format!("{metrics:?}"), format!("{mutable_metrics:?}"));
+            assert_eq!(format!("{candidate:?}"), format!("{game:?}"));
+            assert_eq!(
+                serde_json::to_vec(&candidate.snapshot()).unwrap(),
+                serde_json::to_vec(&game.snapshot()).unwrap()
+            );
+            let (public, privates) = snapshot_values(&candidate);
+            compare_tree(&public, &row["expected"], "public", transitions, None).unwrap();
+            compare_tree(&privates, &row["privates"], "private", transitions, None).unwrap();
+            game = candidate;
+            transitions += 1;
+        }
+        assert!(game.snapshot().done);
+    }
+    assert_eq!(transitions, 4 * 719);
+}
+
+#[test]
+fn stepped_candidate_preserves_early_and_deferred_errors() {
+    let pass = [json!({"farmer": ["PASS"]}), json!({"farmer": ["PASS"]})];
+    let mut config = Config {
+        episode_steps: 2_i64.into(),
+        weed_spawn_chance: Value::from(0),
+        ..Config::default()
+    };
+    // Failure occurs during market pricing, after unit and telemetry mutations.
+    config
+        .market_params
+        .insert("WHEAT".to_string(), json!({"T": "10"}));
+    let mut game = Game::new(config, 7, 2).unwrap();
+    let before = format!("{game:?}");
+    let error = game.stepped_with_market_metrics(&pass).unwrap_err();
+    assert!(error.contains("must be numeric"));
+    assert_eq!(game.step_with_market_metrics(&pass).unwrap_err(), error);
+    assert_eq!(format!("{game:?}"), before);
+
+    let wrong_count = game.stepped_with_market_metrics(&pass[..1]).unwrap_err();
+    assert_eq!(wrong_count, "got 1 actions for 2 farms");
+    assert_eq!(
+        game.step_with_market_metrics(&pass[..1]).unwrap_err(),
+        wrong_count
+    );
+    assert_eq!(format!("{game:?}"), before);
+
+    let mut completed = Game::new(
+        Config {
+            episode_steps: 2_i64.into(),
+            ..Config::default()
+        },
+        7,
+        2,
+    )
+    .unwrap();
+    completed.step(&pass).unwrap();
+    let before = format!("{completed:?}");
+    // Completed-game validation still precedes the action-count check.
+    let error = completed.stepped_with_market_metrics(&[]).unwrap_err();
+    assert_eq!(error, "cannot step a completed game");
+    assert_eq!(completed.step_with_market_metrics(&[]).unwrap_err(), error);
+    assert_eq!(format!("{completed:?}"), before);
+}
+
 /// Counts from one successful replay.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct ReplayStats {

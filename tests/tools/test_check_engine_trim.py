@@ -536,6 +536,59 @@ def test_declared_eighth_lib_removal_is_rejected(
         checker.check(trimmed)
 
 
+@pytest.mark.parametrize(
+    "mutation", ["drop extraction", "change checks", "change body"]
+)
+def test_declared_change_beyond_candidate_api_is_rejected(
+    trimmed: Path, reference: dict[str, bytes], mutation: str
+) -> None:
+    path = "engine_rs/src/lib.rs"
+    current = (trimmed / path).read_bytes()
+    if mutation == "drop extraction":
+        removed = {19, 21, 22, 23, 24, 25, 27}
+        changed = b"".join(
+            line
+            for number, line in enumerate(reference[path].splitlines(keepends=True), 1)
+            if number not in removed
+        )
+    elif mutation == "change checks":
+        changed = current.replace(
+            b"if actions.len() != self.farms.len() {",
+            b"if actions.len() > self.farms.len() {",
+            1,
+        )
+    else:
+        changed = current.replace(
+            b"let previous_step = self.step;", b"let previous_step = self.step + 1;", 1
+        )
+    assert changed != current
+    _declare(trimmed, path, changed, _whole_file_edit(reference[path], changed))
+    with pytest.raises(ValueError, match="transactional API extraction"):
+        checker.check(trimmed)
+
+
+@pytest.mark.parametrize("mutation", ["remove", "rewrite", "duplicate"])
+def test_candidate_provenance_cannot_be_redeclared(
+    trimmed: Path, reference: dict[str, bytes], mutation: str
+) -> None:
+    current = (trimmed / _VENDORED).read_bytes()
+    index = current.index(checker.CANDIDATE_APPENDIX_HEADING)
+    if mutation == "remove":
+        changed = current[:index]
+    elif mutation == "rewrite":
+        changed = current[:index] + checker.CANDIDATE_APPENDIX_HEADING + b"\nChanged.\n"
+    else:
+        changed = current + current[index:]
+    _declare(
+        trimmed,
+        _VENDORED,
+        changed,
+        _whole_file_edit(reference[_VENDORED], changed),
+    )
+    with pytest.raises(ValueError, match="transactional candidate appendix"):
+        checker.check(trimmed)
+
+
 PIN_PAIR = ("1.32.7", "a" * 64)
 
 

@@ -1135,13 +1135,21 @@ fn actions(env: &NativeEnv, farmer: Value, market: Value) -> (Vec<i64>, Vec<i64>
     (tokens, lengths)
 }
 fn fixture(seed: i64, episode: i64, terminal: bool) -> (NativeEnv, Output) {
+    fixture_with_threads(seed, episode, terminal, 1)
+}
+fn fixture_with_threads(
+    seed: i64,
+    episode: i64,
+    terminal: bool,
+    threads: usize,
+) -> (NativeEnv, Output) {
     let mut env = NativeEnv::new(
         2,
         seed,
         1,
         serde_json::from_value(json!({"episodeSteps":episode})).unwrap(),
         reward_config(),
-        1,
+        threads,
         241,
         None,
     )
@@ -1153,6 +1161,151 @@ fn fixture(seed: i64, episode: i64, terminal: bool) -> (NativeEnv, Output) {
         out.step(&mut env, &t, &l).unwrap();
     }
     (env, out)
+}
+
+#[test]
+fn parallel_admission_preserves_error_precedence() {
+    for threads in [1, 4, 8] {
+        // The next terminal batch overflows only at env 1. Its malformed raw
+        // transport must win over that overflow and env 0's grammar error.
+        let (mut env, mut out) = fixture_with_threads(i64::MAX - 5, 2, true, threads);
+        let before = capture(&env, &mut out);
+        let (mut tokens, mut lengths) = actions(&env, json!(["PASS"]), json!([]));
+        tokens[0] = 1; // In vocabulary, but the farmer's implicit actor is zero.
+        lengths[3] = 0;
+        let error = out.step(&mut env, &tokens, &lengths).unwrap_err();
+        assert_eq!(
+            error,
+            EnvError::Value("env=1 seat=1 length outside 1..=252".into())
+        );
+        assert_eq!(capture(&env, &mut out), before);
+
+        lengths[3] = lengths[2];
+        let error = out.step(&mut env, &tokens, &lengths).unwrap_err();
+        assert_eq!(
+            error,
+            EnvError::Overflow("env=1 seed counter overflow".into())
+        );
+        assert_eq!(capture(&env, &mut out), before);
+
+        let (mut env, mut out) = fixture_with_threads(17000, 720, false, threads);
+        let before = capture(&env, &mut out);
+        let (mut tokens, lengths) = actions(&env, json!(["PASS"]), json!([]));
+        for row in 0..4 {
+            tokens[row * grammar::TOKENS_PER_SEAT] = 1;
+        }
+        // Multiple grammar failures select the first env/seat, before any
+        // engine worker can reach the injected error.
+        env.set_fault(FaultPoint::StepResult, 0);
+        let error = out.step(&mut env, &tokens, &lengths).unwrap_err();
+        assert!(error.to_string().starts_with("env=0 seat=0 "), "{error}");
+        assert_eq!(env.fault_hits(), 0);
+        assert_eq!(capture(&env, &mut out), before);
+
+        // Several raw failures also retain env order and seat order.
+        tokens[grammar::TOKENS_PER_SEAT + 1] = -1;
+        tokens[2 * grammar::TOKENS_PER_SEAT + 1] = -1;
+        let error = out.step(&mut env, &tokens, &lengths).unwrap_err();
+        assert_eq!(
+            error,
+            EnvError::Value("env=0 seat=1 frame=0 slot=unit_kind invalid token/padding".into())
+        );
+        assert_eq!(env.fault_hits(), 0);
+        assert_eq!(capture(&env, &mut out), before);
+    }
+}
+
+#[test]
+fn discarded_pending_batch_preserves_state_and_can_retry() {
+    for episode in [2, 720] {
+        let expected = {
+            let (mut env, mut out) = fixture(17000, episode, false);
+            economic_step(&mut env, &mut out);
+            capture(&env, &mut out)
+        };
+        for threads in [1, 4, 8] {
+            let (mut env, mut out) = fixture_with_threads(17000, episode, false, threads);
+            let before = capture(&env, &mut out);
+            let (tokens, lengths) = actions(&env, json!(["PASS"]), json!([["HIRE"]]));
+            // Model Python return-allocation failure: neither pending candidate
+            // is committed. The second prepare also exercises absent scratch.
+            for _ in 0..2 {
+                let pending = env.prepare_step(&tokens, &lengths).unwrap();
+                assert_eq!(pending.metrics().len(), if episode == 2 { 2 } else { 0 });
+                drop(pending);
+                assert_eq!(capture(&env, &mut out), before);
+            }
+            economic_step(&mut env, &mut out);
+            assert_eq!(capture(&env, &mut out), expected);
+        }
+    }
+}
+
+#[test]
+fn rejected_publication_preserves_state_and_can_retry() {
+    for threads in [1, 4, 8] {
+        let expected = {
+            let (mut env, mut out) = fixture(17000, 2, false);
+            economic_step(&mut env, &mut out);
+            capture(&env, &mut out)
+        };
+        let (mut env, mut out) = fixture_with_threads(17000, 2, false, threads);
+        let before = capture(&env, &mut out);
+        let (tokens, lengths) = actions(&env, json!(["PASS"]), json!([]));
+        let pending = env.prepare_step(&tokens, &lengths).unwrap();
+        let mut wrong_output = Output::new(1);
+        let wrong_before = wrong_output.bytes();
+        let error = env
+            .commit(
+                pending,
+                &mut wrong_output.obs.buffers_mut(),
+                out.transition.buffers_mut(),
+            )
+            .unwrap_err();
+        assert_eq!(error, EnvError::Value("publication n_envs mismatch".into()));
+        assert_eq!(wrong_output.bytes(), wrong_before);
+        assert_eq!(capture(&env, &mut out), before);
+        economic_step(&mut env, &mut out);
+        assert_eq!(capture(&env, &mut out), expected);
+    }
+}
+
+#[test]
+fn failed_parallel_step_clears_reused_actor_padding_on_retry() {
+    for threads in [1, 4, 8] {
+        for fault in [
+            FaultPoint::StepPrepare,
+            FaultPoint::StepPanic,
+            FaultPoint::AutoReset,
+        ] {
+            let (mut env, mut out) = fixture_with_threads(17000, 3, false, threads);
+            let (tokens, lengths) = actions(&env, json!(["PASS"]), json!([["HIRE"]]));
+            out.step(&mut env, &tokens, &lengths).unwrap();
+            for rows in out.obs.buffers_mut().envs_mut() {
+                assert_eq!(rows.seats[0].globals_int[14], 2);
+                assert_eq!(rows.seats[1].globals_int[14], 2);
+            }
+            let before = capture(&env, &mut out);
+            let (tokens, lengths) = actions(&env, json!(["PASS"]), json!([]));
+            // Env 0 writes reset rows into scratch while env 1 fails before
+            // writing. Retry must clear both the fresh and previous dense rows.
+            env.set_fault(fault, 1);
+            assert!(out.step(&mut env, &tokens, &lengths).is_err());
+            assert_eq!(env.fault_hits(), 1);
+            assert_eq!(capture(&env, &mut out), before);
+            env.clear_fault();
+            out.step(&mut env, &tokens, &lengths).unwrap();
+            assert!(out.transition.dones.iter().all(|done| *done));
+            for rows in out.obs.buffers_mut().envs_mut() {
+                assert_eq!(rows.seats[0].globals_int[14], 1);
+                assert_eq!(rows.seats[1].globals_int[14], 1);
+            }
+            let after = capture(&env, &mut out);
+            // Fresh observation allocates zeroed storage; byte equality covers
+            // all 29 fields, padded actor slots, and cached transition tensors.
+            assert_eq!(after.bytes, after.fresh);
+        }
+    }
 }
 #[derive(PartialEq)]
 struct Snapshot {

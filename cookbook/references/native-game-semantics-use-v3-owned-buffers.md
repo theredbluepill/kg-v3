@@ -1,11 +1,27 @@
 ---
 type: "Reference"
 title: "Native game semantics use v3-owned buffers"
-description: "Task 1.4 adds the transactional native lifecycle, checked seed streams, rewards and codec/table bindings (16-game TrainingBatch oracle bit-exact, release overflow proof on the pod). Task 1.5 wires the typed adapter, one-buffer entry fence, factory, codec and strict native grammar tables to that binding with no missing-binding skip left; full just prepare passes. Since the Task 3.1 remainder (15ea55f) the canonical trainer and policy evaluation consume the adapter on CPU; the pod DMA fence test and the early two-rank smoke remain pending."
+description: "The 2026-10-01 native SPS refinement parallelizes admission/decode/publication, reuses staging and advances one transactional game clone; a pristine-base 1,440-step golden matches at 1/4/8 threads. Mac component timing and checks are in ops/sps-2026-10-01/report.md; H200/complete-update speed is unmeasured. Task 1.4 adds the transactional native lifecycle, checked seed streams, rewards and codec/table bindings (16-game TrainingBatch oracle bit-exact, release overflow proof on the pod). Task 1.5 wires the typed adapter, one-buffer entry fence, factory, codec and strict native grammar tables to that binding with no missing-binding skip left; full just prepare passes. Since the Task 3.1 remainder (15ea55f) the canonical trainer and policy evaluation consume the adapter on CPU; the pod DMA fence test and the early two-rank smoke remain pending."
 tags: ["kaggriculture-v3", "adaptation"]
 status: "verified-scoped"
-generated: {"by": "openai/codex; revised by anthropic/claude-opus-5-5", "at": "2026-09-29"}
+generated: {"by": "openai/codex; earlier revisions by anthropic/claude-opus-5-5", "at": "2026-10-01"}
 sources:
+  - resource: "repository:ops/sps-2026-10-01/brief-native.md"
+  - resource: "repository:ops/sps-2026-10-01/code-map.md"
+  - resource: "repository:ops/sps-2026-10-01/run-statement.md"
+  - resource: "repository:ops/sps-2026-10-01/report.md"
+  - resource: "repository:ops/sps-2026-10-01/native-golden.json"
+  - resource: "repository:ops/sps-2026-10-01/native_benchmark.py"
+  - resource: "repository:tests/kaggriculture/native_step_oracle.py"
+  - resource: "repository:tests/kaggriculture/test_native_step_parity.py"
+  - resource: "repository:src/kaggriculture/buffers.rs"
+  - resource: "repository:src/kaggriculture/observe.rs"
+  - resource: "repository:engine_rs/src/lib.rs"
+  - resource: "repository:engine_rs/VENDORED_FROM.md"
+  - resource: "repository:engine_rs/tests/replay_parity.rs"
+  - resource: "repository:tests/tools/test_check_engine_trim.py"
+  - resource: "repository:tests/tools/test_observation_oracle_custody.py"
+  - resource: "repository:ops/sps-2026-10-01/oracle-test-isolation.md"
   - resource: "repository:ops/rebuild-2026-09-29/briefs/1.2.md"
   - resource: "repository:ops/rebuild-2026-09-29/1.2/results.md"
   - resource: "repository:ops/rebuild-2026-09-29/1.2/claude_review_mutations.py"
@@ -17,7 +33,6 @@ sources:
   - resource: "repository:src/kaggriculture/grammar_kernel_tests.rs"
   - resource: "repository:engine_rs/TRIM_MANIFEST.json"
   - resource: "repository:scripts/check_engine_trim.py"
-  - resource: "repository:tests/tools/test_check_engine_trim.py"
   - resource: "reference-branch:kg/reference-2026-09-29/engine_rs/src/training.rs"
   - resource: "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/README.md"
   - resource: "reference-branch:kg/reference-2026-09-29/ops/gpu-sps-2026-09-29/native-lifecycle/benchmark.json"
@@ -117,6 +132,86 @@ sources:
 ---
 
 # Native game semantics use v3-owned buffers
+
+## Native SPS refinement — current lifecycle, 2026-10-01
+
+The owner requested execution of `ops/sps-2026-10-01/brief-native.md`: accelerate
+the serial native step with identical behavior, record Mac parity/timing and
+commit locally. Existing-concept search covered native lifecycle, staging,
+transaction rollback, clone costs, seed order and negative throughput evidence.
+This existing Reference owns the adaptation; there is no new training ranking.
+
+`prepare_step` now admits raw transport, predicts terminal states and decodes
+programs per environment on the existing Rayon pool. Ordered collection keeps
+raw errors before seed overflow before grammar errors before engine errors.
+The seed stream still reserves in ascending environment order. Each worker asks
+`ObservationGame::stepped_with_market_metrics` for the engine's one transactional
+candidate, without first cloning the game in the adapter. The original mutating
+engine API delegates to the same candidate method; `step_in_place` is unchanged.
+The trim checker independently derives this exact extraction from the historical
+seven-removal trim and pins its hash, manifest and append-only provenance.
+
+Private staging is allocated at construction, taken during step preparation and
+returned at commit or a worker failure. `write_seat` clears every field, including
+padding, in the worker before encoding. If a caller discards a pending batch,
+only scratch is lost; the next step allocates replacement storage. Commit checks
+all dimensions before copying into disjoint caller-owned rows in parallel and
+replacing/dropping old games and snapshots on workers. The small transition cache
+and ordered metric reduction remain serial. Reset/truncate keep their existing
+semantics. PyO3's two GIL releases, typed NumPy guards, return-allocation-before-
+commit and the Python pinned-buffer fence are unchanged. No selector is added:
+the parity-qualified implementation is the one canonical native path.
+
+Adaptation inventory: `env.rs` (parallel preparation/publication and scratch
+reuse), `buffers.rs` (constant-time admitted batch dimension), `observe.rs` and
+`engine_rs/src/lib.rs` (one-clone candidate API), `engine_rs/TRIM_MANIFEST.json`,
+`VENDORED_FROM.md`, `scripts/check_engine_trim.py` and its tests (narrow custody),
+`engine_rs/tests/replay_parity.rs`, `src/kaggriculture/env_tests.rs`,
+`tests/kaggriculture/{native_step_oracle,test_native_step_parity}.py` (parity and
+failure regressions), `tests/tools/test_observation_oracle_custody.py` (fresh
+per-test watchdog budget plus an expired-before-launch regression), four mapped
+docs (`rl-api-specs`, `kaggriculture-contract`,
+`rules-engine`, `rules-parity-coverage`), this note/index/log, and the brief,
+benchmark, source-bound golden and check receipts in `ops/sps-2026-10-01/`.
+Bindings, reward arithmetic, grammar, trainer, model and recipe are unchanged.
+
+Independent checks: a fresh release build of pristine `b2276bc5` recorded four
+environments for 1,440 steps, eight complete default games (719 transitions per
+game), plus masked truncation/reset follow-ups. The new release matches every
+field's complete byte-stream hash, metrics with float bit patterns, actions,
+snapshots, terminal records and seed state at native threads 1, 4 and 8. A
+reverse-order independent-environment test crosses auto-reset. New Rust tests
+exercise raw/grammar/overflow error priority, abandoned pending batches,
+publication preflight and actor-padding reuse after failure at those thread
+counts. The candidate engine API matches four official replay episodes (2,876
+transitions) and early/deferred failure rollback. The full direct `just prepare`
+command set passes with offline tool substitutions: 413 Rust tests (five ignores),
+3,016 Python tests (nine skips), formatting, strict Clippy, Ruff, mypy and docs
+checks. The initial copied-venv pytest launcher resolved the old checkout and
+was corrected; the source-verified full/focused Python reruns are authoritative,
+with an assertion inside pytest of the actual extension and interpreter paths.
+The first source-verified full run exposed a pre-existing watchdog test budget
+that began at collection and expired during earlier tests. Only the test fixture
+now starts a fresh invocation budget per test; production timeout code and its
+active-child/expired-before-launch enforcement remain unchanged.
+Timing, all skips and build/tool limitations are reported in
+`ops/sps-2026-10-01/report.md`.
+
+The initial, alternating-pair and final-release Mac series all have equal action
+and output hashes and lower candidate medians, but substantial host drift and
+two losses among five alternating pairs prevent a stable percentage speed claim.
+All samples, including those losses, remain in the report and JSON receipts.
+
+Future consequence: retain private staging, complete admission before publication,
+and ordered seed/error selection when refining throughput. The finite golden is
+strong regression evidence, not exhaustive proof over every possible action and
+configuration. The randomized benchmark reaches at most 13 actors; it measures
+only CPU PyO3 native step, excluding policy, Python reward telemetry, GPU copies,
+PPO and multi-rank work. It does not qualify the live H200 workload or complete-
+update SPS. The snapshot still clones private inventories and grammar still uses
+JSON. No remote host, learner or driver was touched. Reopen performance claims
+with an equivalent full-update H200 measurement; use Nsight for any CUDA timeline
+attribution.
 
 ## Task 1.5 Stage 2 — adapter on the real binding
 

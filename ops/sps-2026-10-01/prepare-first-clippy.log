@@ -1,0 +1,87 @@
++ uv run maturin develop --skip-install --offline
+📦 Including license file `LICENSE`
+🍹 Building a mixed python/rust project
+🔗 Found pyo3 bindings with abi3 support
+🐍 Found CPython 3.12 at /Users/poonszesen/kg-v3-sps/.venv/bin/python
+📡 Using build options features from pyproject.toml
+   Compiling target-lexicon v0.13.5
+   Compiling autocfg v1.5.0
+   Compiling proc-macro2 v1.0.106
+   Compiling pyo3-build-config v0.28.3
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.45
+   Compiling num-traits v0.2.19
+   Compiling syn v2.0.117
+   Compiling serde_core v1.0.228
+   Compiling libc v0.2.186
+   Compiling num-integer v0.1.46
+   Compiling crossbeam-utils v0.8.21
+   Compiling pyo3-ffi v0.28.3
+   Compiling pyo3-macros-backend v0.28.3
+   Compiling zmij v1.0.21
+   Compiling matrixmultiply v0.3.10
+   Compiling heck v0.5.0
+   Compiling serde_json v1.0.151
+   Compiling hashbrown v0.17.0
+   Compiling equivalent v1.0.2
+   Compiling serde v1.0.228
+   Compiling indexmap v2.14.0
+   Compiling crossbeam-epoch v0.9.18
+   Compiling serde_derive v1.0.228
+   Compiling num-bigint v0.4.8
+   Compiling pyo3 v0.28.3
+   Compiling rawpointer v0.2.1
+   Compiling getrandom v0.4.2
+   Compiling cfg-if v1.0.4
+   Compiling rand_core v0.10.1
+   Compiling rayon-core v1.13.0
+   Compiling itoa v1.0.18
+   Compiling memchr v2.8.0
+   Compiling num-rational v0.4.2
+   Compiling pyo3-macros v0.28.3
+   Compiling crossbeam-deque v0.8.6
+   Compiling num-complex v0.4.6
+   Compiling numpy v0.28.0
+   Compiling once_cell v1.21.4
+   Compiling kaggriculture-engine v0.1.0 (/Users/poonszesen/kg-v3-sps/engine_rs)
+   Compiling ndarray v0.17.2
+   Compiling chacha20 v0.10.0
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-sps)
+   Compiling rustc-hash v2.1.2
+   Compiling either v1.15.0
+   Compiling rayon v1.12.0
+   Compiling rand v0.10.1
+   Compiling kaggriculture-opponents v0.1.0 (/Users/poonszesen/kg-v3-sps/opponents_rs)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 26.38s
+📦 Built wheel for abi3 Python ≥ 3.11 to /var/folders/s_/d3vy5t5s4dv607gfkpx495000000gn/T/.tmpogCTJD/owl-0.1.0-cp311-abi3-macosx_11_0_arm64.whl
++ uv run python scripts/check_engine_trim.py
+engine trim manifest: OK
++ uv run python scripts/check_opponent_import.py
+opponent import check passed (entry pins; custody only; parity is checked separately)
++ cargo fmt
++ cargo fmt --manifest-path engine_rs/Cargo.toml --check
++ cargo fmt --manifest-path opponents_rs/Cargo.toml --check
++ /Users/poonszesen/.cache/uv/binaries-v0/ruff/0.15.10/aarch64-apple-darwin/ruff check python scripts tests --select I --fix
+All checks passed!
++ /Users/poonszesen/.cache/uv/binaries-v0/ruff/0.15.10/aarch64-apple-darwin/ruff format python scripts tests
+155 files left unchanged
++ cargo clippy --all-targets --offline -- -D warnings
+   Compiling owl v0.1.0 (/Users/poonszesen/kg-v3-sps)
+error: the loop variable `seat` is used to index `lengths`
+   --> src/kaggriculture/env.rs:867:17
+    |
+867 |     for seat in 0..2 {
+    |                 ^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_range_loop
+    = note: `-D clippy::needless-range-loop` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::needless_range_loop)]`
+help: consider using an iterator and enumerate()
+    |
+867 -     for seat in 0..2 {
+867 +     for (seat, <item>) in lengths.iter().enumerate().take(2) {
+    |
+
+error: could not compile `owl` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `owl` (lib test) due to 1 previous error

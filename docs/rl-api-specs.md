@@ -1432,6 +1432,22 @@ overwrite data still in use by a reader. Task 1.4 implements lifecycle
 rollback; the Task 1.5 Python adapter owns the entry fence for pinned CUDA
 readers described below.
 
+The native lifecycle reuses its private `ObsStaging` across successful steps.
+Each worker clears and rewrites its two seat rows, including all padding. Raw
+transport admission, terminal prediction and grammar decoding run per environment
+in the existing Rayon pool. Error precedence remains raw transport, seed
+reservation, grammar, then engine work, with errors selected in environment order.
+The engine returns one transactional game clone through
+`stepped_with_market_metrics`; the committed game is unchanged until publication.
+After all workers and Python return allocation succeed, commit checks dimensions,
+copies the 29 fields into disjoint caller-owned environment slices in parallel,
+and replaces/drops each old game and snapshot on its worker. It returns staging
+to the next step. A discarded pending batch causes a replacement scratch allocation
+on the next step, with no committed state change. Reset/truncation keep selected-row
+publication and transition semantics. Preparation and commit retain their GIL
+release, and the pinned-buffer entry fence and NumPy borrow guards are unchanged.
+This is the sole native path; no runtime selector or tensor/config change is added.
+
 The explicit-header seam in the existing `owl.rs` extension is:
 
 ```python

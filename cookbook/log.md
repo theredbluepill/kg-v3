@@ -25,6 +25,28 @@ The [[references/rollout-optimizations-preserve-sampling-behind-default-off-swit
   multi-rank behavior and complete-update speed remain for the diagnostic
   H200. Component CPU timing is not a live-recipe SPS claim.
 
+## 2026-10-01 — Parallelize native step preparation/publication and reuse transactional staging
+
+The owner requested full execution of `ops/sps-2026-10-01/brief-native.md`. The
+[[references/native-game-semantics-use-v3-owned-buffers|native lifecycle Reference]]
+and its index now record worker-side admission/decode, one transactional game
+clone, reused private staging, parallel caller-row publication and worker-side
+old-game destruction. Engine custody pins the narrow API extraction; the rules
+body, RNG, rewards, grammar, trainer and recipe remain unchanged. New parity and
+failure tests cover the pristine-base 1,440-step/4-env golden, 1/4/8 threads,
+reversed execution order, truncation, error priority and abandoned transactions.
+Full direct preparation checks pass (413 Rust, five ignored; 3,016 Python, nine skipped,
+plus format/lint/type/docs/custody checks). Copied launcher paths were corrected
+and Python qualification repeated with an in-process source assertion. An
+inherited import-time watchdog test budget expired during the full suite;
+per-test invocation budgets and an expired-before-launch regression repair test
+isolation without changing the production timeout. All three Mac native timing
+series are retained, including two losses in five alternating pairs; host drift
+prevents a stable speedup claim. Exact Mac native-step before/after
+timing, changed-path inventory, Git-metadata publication restriction and limits
+are in `ops/sps-2026-10-01/report.md`. No H200 measurement, full-update SPS
+claim, training run, remote access or push is part of this change.
+
 ## 2026-10-01 — Add NVIDIA driver 570.211.01 (H200) to the probed compile stack
 
 Owner, verbatim: "please setup this 8-gpu pod real quick and notice increased vram & h200." and "Keep the current recipe". The new 8×H200 pod runs driver 570.211.01, which `check_compile_stack` rejected, so the recipe could run compiled only after the ATEN-only A/B was repeated there.

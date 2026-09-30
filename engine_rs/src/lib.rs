@@ -1429,6 +1429,14 @@ impl Game {
     }
 
     pub fn step_with_market_metrics(&mut self, actions: &[Value]) -> Result<StepMetrics, String> {
+        let (candidate, metrics) = self.stepped_with_market_metrics(actions)?;
+        *self = candidate;
+        Ok(metrics)
+    }
+
+    /// Return a successfully stepped copy while leaving the source game untouched.
+    /// Batch callers can stage this candidate without first cloning the source.
+    pub fn stepped_with_market_metrics(&self, actions: &[Value]) -> Result<(Self, StepMetrics), String> {
         if self.done {
             return Err("cannot step a completed game".to_string());
         }
@@ -1445,8 +1453,7 @@ impl Game {
         // deferred config/custom-market/malformed-count error cannot leak mutations.
         let mut candidate = self.clone();
         let metrics = candidate.step_in_place(actions)?;
-        *self = candidate;
-        Ok(metrics)
+        Ok((candidate, metrics))
     }
 
     fn step_in_place(&mut self, actions: &[Value]) -> Result<StepMetrics, String> {
