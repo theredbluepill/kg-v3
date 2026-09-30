@@ -133,11 +133,14 @@ the commit the cached module was built from. It then:
    --memory=6.5g`): 40 turns by default, 720 with `--full-episode`;
 5. writes `OUT_DIR/PACKAGE.md` with hashes, checks and per-stage wall times.
 
-The cached module (`2bbdd2f0…`, built from `9a743fad` for the 08bc submission)
-was built with default cargo features, so the fixed-opponent controllers
-(EcoBot, E776, Cha22) are compiled in, although `Cargo.toml` says the Kaggle
-build drops them. The script refuses it unless `--allow-fixed-opponents` is
-passed, and records the flag. After a native change, rebuild the module on a
+The cached module (`3e5e4e55…`, 3.5 MB, built from `9a743fad`) is the Kaggle
+feature build: `--no-default-features`, so no fixed-opponent controllers. The
+manifest keeps the earlier 08bc module (`2bbdd2f0…`, 14.3 MB) under
+`superseded_modules` as "contains opponents, do not ship": it was built with
+default cargo features, so EcoBot, E776 and Cha22 are compiled in, and the 08bc
+submission shipped it. The script refuses any cached module whose manifest
+records opponents unless `--allow-fixed-opponents` is passed, and records the
+flag. After a native change, rebuild the module on a
 Linux x86-64 host (`maturin build --release --compatibility linux
 --no-default-features` with CPython 3.11, highest glibc symbol at most 2.35),
 then replace `native-cache/manifest.json`. Nothing here uploads or submits.

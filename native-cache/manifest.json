@@ -2,15 +2,15 @@
   "format": "kaggriculture-native-cache-v1",
   "about": "The Linux x86-64 owl.rs module scripts/package_checkpoint.sh reuses. The .so itself is gitignored under native-cache/; this file is its custody record. Rebuild it (and replace this record) whenever a native_source_paths entry differs from source_commit.",
   "module": {
-    "cache_path": "native-cache/2bbdd2f0c69efd9606e2a9f6b3a60698a15f039a4bf5337e69ca274139c078e4.abi3.so",
-    "sha256": "2bbdd2f0c69efd9606e2a9f6b3a60698a15f039a4bf5337e69ca274139c078e4",
-    "bytes": 14309312,
+    "cache_path": "native-cache/3e5e4e556a58a3cb0595f422ec09dff4a2e2d73f018469583617f571a6bc664e.abi3.so",
+    "sha256": "3e5e4e556a58a3cb0595f422ec09dff4a2e2d73f018469583617f571a6bc664e",
+    "bytes": 3485792,
     "source_commit": "9a743fad991593fdd372115a48e3b372acf45b8b",
     "source_tree": "aaf9d4d29ea83343e0f72beeefeb2a8c6cca1947",
     "glibc_symbol_max": "2.35",
-    "fixed_opponents_compiled_in": true,
-    "fixed_opponents_evidence": "built with default cargo features (receipt command has no --no-default-features); the module's strings name opponents_rs/src/native_agents/e776.rs, EcoBot and the cha22 registry key",
-    "seed_from": "artifacts/08bc/rs.abi3.so"
+    "fixed_opponents_compiled_in": false,
+    "fixed_opponents_evidence": "built with --no-default-features (Kaggle feature set: extension-module only); strings/symbols name no opponents_rs, EcoBot, E776 or Cha22 code; kaggriculture_opponent_bots() == () on the pod",
+    "seed_from": "artifacts/native-clean/rs.abi3.so"
   },
   "native_source_paths": [
     "src",
@@ -24,29 +24,30 @@
   ],
   "native_pyproject_table": "tool.maturin",
   "receipt": {
-    "built_on": "RunPod pod abl4mvr5w1mmn4, /root/sub08bc (CPU only, nice -n 19, CUDA_VISIBLE_DEVICES empty; live run pcy5knet and /root/kg-v3-anchor untouched)",
-    "built_utc": "2026-09-30T14:56:49Z..2026-09-30T14:57:56Z",
+    "built_on": "RunPod pod abl4mvr5w1mmn4, /root/sub08bc (CPU only, nice -n 19, CUDA_VISIBLE_DEVICES empty; live training run and /root/kg-v3-anchor untouched)",
+    "built_utc": "2026-09-30T15:56:11Z..2026-09-30T15:56:49Z",
     "source_commit": "9a743fad991593fdd372115a48e3b372acf45b8b",
     "source_tree": "aaf9d4d29ea83343e0f72beeefeb2a8c6cca1947",
     "source_tree_clean": true,
-    "source_transport": "git bundle of kg/submit-08bc (sha256 c39321d8dba394741985a0eb12284e08eb4f70c86ce473340bfa5afe94479b2e), cloned on the pod",
-    "script": "artifacts/08bc/pod-native-build.sh (pod copy /root/sub08bc/build.sh; CARGO_BUILD_JOBS=8; RUSTFLAGS unset; no .cargo target-cpu config)",
+    "source_transport": "same pod clone of the kg/submit-08bc git bundle used for the 2bbdd2f0 build (HEAD 9a743fad, git status --porcelain empty)",
+    "script": "artifacts/native-clean/pod-native-build-clean.sh (pod copy /root/sub08bc/build-clean.sh, sha256 0bf27b76f2afb4fb0e11f8b46ce5c99af9b0c9ee49eee9b62fb007fa2f1f1ac0; CARGO_BUILD_JOBS=8; CARGO_TARGET_DIR=/root/sub08bc/target-clean (fresh); RUSTFLAGS unset); log artifacts/native-clean/build-clean.log",
     "toolchain": {
       "rustc": "1.97.0-nightly (e9e32aca5 2026-04-17)",
       "cargo": "1.97.0-nightly (eb94155a9 2026-04-09)",
       "maturin": "1.15.0",
       "python": "CPython 3.11.13 (fresh uv venv /root/sub08bc/venv)"
     },
-    "command": "maturin build --release --compatibility linux -i /root/sub08bc/venv/bin/python",
+    "command": "maturin build --release --compatibility linux --no-default-features -i /root/sub08bc/venv/bin/python",
+    "cargo_features": "--no-default-features (drops fixed-opponents) plus extension-module from pyproject [tool.maturin] features (maturin: 'Using build options features from pyproject.toml')",
     "host_glibc": "2.39 (Ubuntu 24.04)",
     "wheel": {
       "name": "owl-0.1.0-cp311-abi3-linux_x86_64.whl",
-      "sha256": "514c91f25c673909a64619e3abeeaa9cdf07283606fbfad55daea896a26200bf"
+      "sha256": "d81c1bf5845fbefda6f7d6237e9044eaa20208b04da9e3890e8b099e2b2f383f"
     },
     "module": {
       "path": "owl/rs.abi3.so",
-      "bytes": 14309312,
-      "sha256": "2bbdd2f0c69efd9606e2a9f6b3a60698a15f039a4bf5337e69ca274139c078e4",
+      "bytes": 3485792,
+      "sha256": "3e5e4e556a58a3cb0595f422ec09dff4a2e2d73f018469583617f571a6bc664e",
       "elf": "ELF64 LSB x86-64 shared object, not stripped",
       "needed": [
         "libgcc_s.so.1",
@@ -59,9 +60,68 @@
         "hypotf"
       ]
     },
-    "isa_check": "objdump -d: 0 zmm / 0 AVX-512 mask-register instructions; ymm (AVX2) only in chacha20 avx2 backend and memchr find_avx2 paths, which those crates select by runtime CPU detection",
-    "pod_smoke": "venv python 3.11.13 imported owl.rs from the wheel and assert_release_build() passed",
+    "opponent_check": "strings -a: 0 matches each for kaggriculture_opponents, opponents_rs, native_agents, e776, E776, EcoBot, ecobot, cha22, Cha22, farm2945, metav4, ig_agent (the 2bbdd2f0 module: 1013 kaggriculture_opponents, 46 e776, 7 EcoBot, 77 cha22); the one 'v43' string is the mangled PyRlVecEnv 'Env43___pymethod' name and the one nm match for 'e776' is address 0x1e7760 (UnitKind::try_from), neither opponent code",
+    "isa_check": "objdump -d: 0 zmm / 0 AVX-512 mask-register instructions; 246 ymm lines (not attributed per crate here)",
+    "pod_smoke": "venv python 3.11.13 imported owl.rs from the extracted wheel; assert_release_build() passed and kaggriculture_opponent_bots() == ()",
     "runtime_glibc": "2.35 (ops/rebuild-2026-09-29/7.4/kaggle-runtime-receipt.json)",
-    "limits": "Not built inside Kaggle's image (no Docker on the pod). Module is 14.3 MB versus the BC build 3.5 MB; this source also links the engine and opponents crates (size cause not investigated); not stripped."
-  }
+    "limits": "Not built inside Kaggle's image (no Docker on the pod). Not stripped. ymm usage not attributed to runtime-dispatched paths as the 2bbdd2f0 receipt did."
+  },
+  "superseded_modules": [
+    {
+      "status": "contains opponents, do not ship",
+      "reason": "built with default cargo features, so the fixed-opponent controllers (EcoBot, E776, Cha22) are compiled in; EcoBot and E776 carry no redistribution license. The 08bc submission (Kaggle ref 56711278) shipped this module.",
+      "module": {
+        "cache_path": "native-cache/2bbdd2f0c69efd9606e2a9f6b3a60698a15f039a4bf5337e69ca274139c078e4.abi3.so",
+        "sha256": "2bbdd2f0c69efd9606e2a9f6b3a60698a15f039a4bf5337e69ca274139c078e4",
+        "bytes": 14309312,
+        "source_commit": "9a743fad991593fdd372115a48e3b372acf45b8b",
+        "source_tree": "aaf9d4d29ea83343e0f72beeefeb2a8c6cca1947",
+        "glibc_symbol_max": "2.35",
+        "fixed_opponents_compiled_in": true,
+        "fixed_opponents_evidence": "built with default cargo features (receipt command has no --no-default-features); the module's strings name opponents_rs/src/native_agents/e776.rs, EcoBot and the cha22 registry key",
+        "seed_from": "artifacts/08bc/rs.abi3.so"
+      },
+      "receipt": {
+        "built_on": "RunPod pod abl4mvr5w1mmn4, /root/sub08bc (CPU only, nice -n 19, CUDA_VISIBLE_DEVICES empty; live run pcy5knet and /root/kg-v3-anchor untouched)",
+        "built_utc": "2026-09-30T14:56:49Z..2026-09-30T14:57:56Z",
+        "source_commit": "9a743fad991593fdd372115a48e3b372acf45b8b",
+        "source_tree": "aaf9d4d29ea83343e0f72beeefeb2a8c6cca1947",
+        "source_tree_clean": true,
+        "source_transport": "git bundle of kg/submit-08bc (sha256 c39321d8dba394741985a0eb12284e08eb4f70c86ce473340bfa5afe94479b2e), cloned on the pod",
+        "script": "artifacts/08bc/pod-native-build.sh (pod copy /root/sub08bc/build.sh; CARGO_BUILD_JOBS=8; RUSTFLAGS unset; no .cargo target-cpu config)",
+        "toolchain": {
+          "rustc": "1.97.0-nightly (e9e32aca5 2026-04-17)",
+          "cargo": "1.97.0-nightly (eb94155a9 2026-04-09)",
+          "maturin": "1.15.0",
+          "python": "CPython 3.11.13 (fresh uv venv /root/sub08bc/venv)"
+        },
+        "command": "maturin build --release --compatibility linux -i /root/sub08bc/venv/bin/python",
+        "host_glibc": "2.39 (Ubuntu 24.04)",
+        "wheel": {
+          "name": "owl-0.1.0-cp311-abi3-linux_x86_64.whl",
+          "sha256": "514c91f25c673909a64619e3abeeaa9cdf07283606fbfad55daea896a26200bf"
+        },
+        "module": {
+          "path": "owl/rs.abi3.so",
+          "bytes": 14309312,
+          "sha256": "2bbdd2f0c69efd9606e2a9f6b3a60698a15f039a4bf5337e69ca274139c078e4",
+          "elf": "ELF64 LSB x86-64 shared object, not stripped",
+          "needed": [
+            "libgcc_s.so.1",
+            "libm.so.6",
+            "libc.so.6",
+            "ld-linux-x86-64.so.2"
+          ],
+          "glibc_symbol_max": "2.35",
+          "glibc_2.35_symbols": [
+            "hypotf"
+          ]
+        },
+        "isa_check": "objdump -d: 0 zmm / 0 AVX-512 mask-register instructions; ymm (AVX2) only in chacha20 avx2 backend and memchr find_avx2 paths, which those crates select by runtime CPU detection",
+        "pod_smoke": "venv python 3.11.13 imported owl.rs from the wheel and assert_release_build() passed",
+        "runtime_glibc": "2.35 (ops/rebuild-2026-09-29/7.4/kaggle-runtime-receipt.json)",
+        "limits": "Not built inside Kaggle's image (no Docker on the pod). Module is 14.3 MB versus the BC build 3.5 MB; this source also links the engine and opponents crates (size cause not investigated); not stripped."
+      }
+    }
+  ]
 }
