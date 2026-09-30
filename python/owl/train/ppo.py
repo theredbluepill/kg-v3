@@ -16,7 +16,11 @@ from owl.kaggriculture.env import (
     KaggricultureVectorizedEnv,
     allocate_observation_buffers,
 )
-from owl.kaggriculture.telemetry import self_play_bank_metrics
+from owl.kaggriculture.telemetry import (
+    fixed_opponent_metrics,
+    self_play_bank_metrics,
+    split_fixed_opponent_games,
+)
 from owl.kaggriculture.types import (
     ACTION_SLOTS,
     MAX_FRAMES,
@@ -251,6 +255,8 @@ class _PPORolloutSegments:
     bootstrap_values: torch.Tensor | None = None
     entity_logp: torch.Tensor | None = None
     initial_hidden_state: ModelHiddenState | None = None
+    # Fixed-opponent collection only: [N, T, players] seats the learner played.
+    learner: torch.Tensor | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -273,6 +279,7 @@ class _PPORolloutBuffer:
         obs_spec: EntityBasedBaseConfig | KaggricultureObsConfig,
         action_spec: ActionConfig | KaggricultureActionConfig,
         device: torch.device,
+        learner_mask: bool = False,
     ) -> None:
         if horizon <= 0:
             raise ValueError("horizon must be positive")
@@ -531,6 +538,16 @@ class _PPORolloutBuffer:
             device=device,
         )
         self.initial_hidden_state: ModelHiddenState | None = None
+        # Allocated only for fixed-opponent collection (env.opponent_mix).
+        self.learner: torch.Tensor | None = (
+            torch.zeros(
+                (horizon, n_envs, player_slots),
+                dtype=torch.bool,
+                device=device,
+            )
+            if learner_mask
+            else None
+        )
 
     def write_step(
         self,
@@ -545,6 +562,7 @@ class _PPORolloutBuffer:
         dones: torch.Tensor,
         truncated: torch.Tensor | None = None,
         bootstrap_values: torch.Tensor | None = None,
+        learner: torch.Tensor | None = None,
     ) -> None:
         if not 0 <= step < self.horizon:
             raise ValueError(f"step must be in 0..{self.horizon - 1}, got {step}")
@@ -566,6 +584,12 @@ class _PPORolloutBuffer:
             self.bootstrap_values[step].zero_()
         else:
             self.bootstrap_values[step].copy_(bootstrap_values)
+        if (self.learner is None) != (learner is None):
+            raise ValueError(
+                "a learner mask is written exactly when the buffer holds one"
+            )
+        if self.learner is not None and learner is not None:
+            self.learner[step].copy_(learner)
 
     def segment_major(self) -> _PPORolloutSegments:
         """Return contiguous segment-major/time-second rollout tensors [N, T, ...]."""
@@ -580,6 +604,11 @@ class _PPORolloutBuffer:
             truncated=self.truncated.transpose(0, 1).contiguous(),
             bootstrap_values=self.bootstrap_values.transpose(0, 1).contiguous(),
             initial_hidden_state=self.initial_hidden_state,
+            learner=(
+                None
+                if self.learner is None
+                else self.learner.transpose(0, 1).contiguous()
+            ),
         )
 
 
@@ -644,6 +673,18 @@ class PPOTrainer:
             non_blocking=self._non_blocking_env_to_device,
         )
         self._hidden_state = model.initial_hidden_state(env.n_envs, device=device)
+        # Fixed-opponent collection (env.opponent_mix): the seats the learner
+        # plays on the current observation, on the host (row selection without a
+        # device sync) and on the training device (rollout storage). None in
+        # pure self-play, whose path is unchanged.
+        self._learner_host: torch.Tensor | None = None
+        self._learner: torch.Tensor | None = None
+        if _env_opponent_envs(env) > 0:
+            if self._hidden_state is not None:
+                raise NotImplementedError("env.opponent_mix requires a stateless model")
+            learner_mask = cast(KaggricultureVectorizedEnv, env).learner_mask
+            self._learner_host = learner_mask.clone()
+            self._learner = learner_mask.to(device=device, copy=True)
         self._truncation_enabled = (
             config.truncation_prob > 0.0 and config.truncation_step is not None
         )
@@ -675,6 +716,7 @@ class PPOTrainer:
             obs_spec=env.obs_spec,
             action_spec=env.action_spec,
             device=device,
+            learner_mask=self._learner is not None,
         )
         self._last_env_metrics: dict[str, list[float]] = {}
         self.set_teacher_model(teacher_model, active=teacher_active)
@@ -763,12 +805,17 @@ class PPOTrainer:
         max_entities_seen = _max_entity_count(segments.obs)
         value_mask = segments.obs.still_playing
         policy_mask = _policy_mask(segments.obs)
+        policy_entity_mask = _policy_entity_mask(segments.obs)
+        if segments.learner is not None:
+            value_mask, policy_mask, policy_entity_mask = _apply_learner_mask(
+                segments.learner, value_mask, policy_mask, policy_entity_mask
+            )
         model_tokens = self._sum_int(
             cast(
                 BaseModelAPI[Any, Any, Any], unwrap_model(self.model)
             ).count_non_masked_tokens(segments.obs)
         )
-        active_entities = self._sum_int(_policy_entity_mask(segments.obs).sum())
+        active_entities = self._sum_int(policy_entity_mask.sum())
         advantages, returns = self._compute_gae(
             rewards=segments.rewards,
             values=segments.values,
@@ -992,15 +1039,38 @@ class PPOTrainer:
                 f"Kaggriculture step metrics lack {sorted(missing)}; the native "
                 "step returns both terminal bank lists on every step"
             )
-        local = (
-            list(env_metrics["terminal_bank_0"]),
-            list(env_metrics["terminal_bank_1"]),
+        # Every step of a fixed-opponent env batch returns the learner-seat list
+        # (possibly empty); pure self-play steps never do.
+        if "_terminal_learner_seat" not in env_metrics:
+            local = (
+                list(env_metrics["terminal_bank_0"]),
+                list(env_metrics["terminal_bank_1"]),
+            )
+            gathered = all_gather_object(local, self.distributed_context)
+            return self_play_bank_metrics(
+                [bank for rank_banks in gathered for bank in rank_banks[0]],
+                [bank for rank_banks in gathered for bank in rank_banks[1]],
+            )
+        # Fixed-opponent collection: the self-play keys cover self-play games
+        # only; the scripted games feed the *_vs_bot keys.
+        self_play, versus = split_fixed_opponent_games(
+            env_metrics["terminal_bank_0"],
+            env_metrics["terminal_bank_1"],
+            env_metrics["_terminal_learner_seat"],
         )
-        gathered = all_gather_object(local, self.distributed_context)
-        return self_play_bank_metrics(
-            [bank for rank_banks in gathered for bank in rank_banks[0]],
-            [bank for rank_banks in gathered for bank in rank_banks[1]],
+        gathered_mix = all_gather_object((self_play, versus), self.distributed_context)
+        metrics = self_play_bank_metrics(
+            [bank for rank in gathered_mix for bank in rank[0][0]],
+            [bank for rank in gathered_mix for bank in rank[0][1]],
         )
+        metrics.update(
+            fixed_opponent_metrics(
+                [bank for rank in gathered_mix for bank in rank[1][0]],
+                [bank for rank in gathered_mix for bank in rank[1][1]],
+                prefix="train/",
+            )
+        )
+        return metrics
 
     def _collect_rollout(self) -> torch.Tensor:
         self.rollout.rewards.zero_()
@@ -1011,14 +1081,28 @@ class PPOTrainer:
         env_metrics: dict[str, list[float]] = {}
         with torch.no_grad():
             for step in range(self.config.horizon):
-                with _autocast_context(self.config, self.device):
-                    output = _model_forward(
-                        self.model,
-                        self._obs,
-                        hidden_state=self._hidden_state,
-                    )
-                self._hidden_state = output.next_hidden_state
-                actions = _output_actions(output)
+                if self._learner_host is None:
+                    with _autocast_context(self.config, self.device):
+                        output = _model_forward(
+                            self.model,
+                            self._obs,
+                            hidden_state=self._hidden_state,
+                        )
+                    self._hidden_state = output.next_hidden_state
+                    actions = _output_actions(output)
+                    logp = _output_logp(output)
+                    entity_logp = _output_entity_logp(output)
+                    values = _output_values(output)
+                else:
+                    # Scripted seats cost no forward pass: only learner rows run.
+                    with _autocast_context(self.config, self.device):
+                        learner_output = forward_learner_rows(
+                            self.model, self._obs, self._learner_host
+                        )
+                    actions = learner_output.actions
+                    logp = learner_output.logp
+                    entity_logp = learner_output.entity_logp
+                    values = learner_output.values
                 next_obs, rewards, dones, step_env_metrics = _step_env(
                     self.env, actions
                 )
@@ -1041,14 +1125,24 @@ class PPOTrainer:
                     step,
                     obs=self._obs,
                     actions=actions,
-                    logp=_output_logp(output),
-                    entity_logp=_output_entity_logp(output),
-                    values=_output_values(output),
+                    logp=logp,
+                    entity_logp=entity_logp,
+                    values=values,
                     rewards=rewards,
                     dones=dones,
                     truncated=truncated,
                     bootstrap_values=bootstrap_values,
+                    learner=self._learner,
                 )
+                if self._learner_host is not None and self._learner is not None:
+                    # After any auto-reset or truncation: the next obs's seats.
+                    learner_mask = cast(
+                        KaggricultureVectorizedEnv, self.env
+                    ).learner_mask
+                    self._learner_host.copy_(learner_mask)
+                    self._learner.copy_(
+                        learner_mask, non_blocking=self._non_blocking_env_to_device
+                    )
                 self._hidden_state = self.model.reset_hidden_state(
                     self._hidden_state,
                     dones,
@@ -1167,7 +1261,10 @@ class PPOTrainer:
         for start in range(0, self.n_envs, chunk_size):
             stop = min(start + chunk_size, self.n_envs)
             chunk_idx = torch.arange(start, stop, device=segments.logp.device)
-            chunk_obs = _obs_index(segments.obs, chunk_idx)
+            chunk_obs = _learner_model_view(
+                _obs_index(segments.obs, chunk_idx),
+                None if segments.learner is None else segments.learner[chunk_idx],
+            )
             chunk_actions = _actions_index(segments.actions, chunk_idx)
             with torch.no_grad(), _autocast_context(self.config, self.device):
                 chunks.append(
@@ -1346,7 +1443,10 @@ class PPOTrainer:
     ) -> _PPOUpdateResult:
         idx = indices
         batch_segment_actions = _actions_index(segments.actions, idx)
-        batch_segment_obs = _obs_index(segments.obs, idx)
+        batch_learner = None if segments.learner is None else segments.learner[idx]
+        batch_segment_obs = _learner_model_view(
+            _obs_index(segments.obs, idx), batch_learner
+        )
         batch_hidden_state = self.model.index_hidden_state(
             segments.initial_hidden_state,
             idx,
@@ -3179,6 +3279,132 @@ def _output_action_kl_components(
 
 def _output_values(output: ModelOutput[GameActions] | ModelEvaluation) -> torch.Tensor:
     return output.values
+
+
+def _env_opponent_envs(env: GameVectorizedEnv) -> int:
+    """Fixed-opponent envs in this rank's batch; 0 is pure self-play."""
+    if isinstance(env, KaggricultureVectorizedEnv):
+        return env.opponent_envs
+    return 0
+
+
+def _apply_learner_mask(
+    learner: torch.Tensor,
+    value_mask: torch.Tensor,
+    policy_mask: torch.Tensor,
+    policy_entity_mask: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Restrict the value, policy and entity masks to the learner's seats.
+
+    The PPO policy, entropy and teacher-KL terms weight by the policy mask, the
+    value and teacher-value terms by the value mask, and advantage
+    normalization, return/explained-variance telemetry and every denominator
+    by one of them. So scripted-seat rows add nothing anywhere: the trainer
+    never trains on the bot's actions or on its seat's rewards.
+    """
+    return (
+        value_mask & learner,
+        policy_mask & learner,
+        policy_entity_mask & learner.unsqueeze(-1),
+    )
+
+
+def _learner_model_view(
+    obs: _ObservationT, learner: torch.Tensor | None
+) -> _ObservationT:
+    """The replay input: scripted-seat rows marked not playing.
+
+    The model encodes each seat row independently, so a learner row's outputs
+    do not depend on this. A not-playing row's policy admits exactly the
+    absent program the scripted seat was stored with, and its outputs carry no
+    weight: the loss masks are the learner mask itself (``train_iteration``).
+    """
+    if learner is None:
+        return obs
+    if not isinstance(obs, KaggricultureObsBatch):
+        raise TypeError("a learner mask requires Kaggriculture observations")
+    require_same_shape(
+        obs.still_playing, learner, left_name="still_playing", right_name="learner"
+    )
+    return cast(
+        _ObservationT,
+        obs.model_copy(update={"still_playing": obs.still_playing & learner}),
+    )
+
+
+@dataclass(frozen=True)
+class LearnerRowsOutput:
+    """A policy step over the learner's seat rows only, in ``[env, seat]``.
+
+    Scripted-seat rows hold the absent program (length 0, zero tokens) and zero
+    log-probabilities and values; they are never trained on.
+    """
+
+    actions: KaggricultureActions
+    logp: torch.Tensor
+    entity_logp: torch.Tensor
+    values: torch.Tensor
+
+
+def forward_learner_rows(
+    model: BaseModelAPI[Any, Any, Any],
+    obs: GameObsBatch,
+    learner_host: torch.Tensor,
+    *,
+    deterministic: bool = False,
+) -> LearnerRowsOutput:
+    """Run the stateless policy on the learner rows of ``obs`` alone.
+
+    ``learner_host`` is the ``[env, seat]`` CPU bool learner mask, so selecting
+    rows needs no device synchronization. The selected rows form a
+    ``[rows, 1]`` batch; the model encodes rows independently, so each row's
+    action distribution equals its distribution in the full batch.
+    """
+    if not isinstance(obs, KaggricultureObsBatch):
+        raise TypeError("forward_learner_rows requires Kaggriculture observations")
+    if learner_host.device.type != "cpu" or learner_host.dtype != torch.bool:
+        raise ValueError("learner_host must be a CPU bool tensor")
+    require_same_shape(
+        obs.still_playing,
+        learner_host,
+        left_name="still_playing",
+        right_name="learner_host",
+    )
+    n_envs, players = learner_host.shape
+    device = obs.still_playing.device
+    rows = (
+        torch.nonzero(learner_host.reshape(-1), as_tuple=False)
+        .flatten()
+        .to(device=device)
+    )
+    selected = _map_observation(
+        obs, lambda tensor: tensor.flatten(0, 1).index_select(0, rows).unsqueeze(1)
+    )
+    output = model(selected, deterministic=deterministic)
+    actions = output.actions
+    if not isinstance(actions, KaggricultureActions):
+        raise TypeError("a Kaggriculture model must return KaggricultureActions")
+    flat = n_envs * players
+    tokens = actions.tokens.new_zeros((flat, MAX_FRAMES, ACTION_SLOTS))
+    tokens[rows] = actions.tokens.reshape(-1, MAX_FRAMES, ACTION_SLOTS)
+    lengths = actions.lengths.new_zeros((flat,))
+    lengths[rows] = actions.lengths.reshape(-1)
+    entity = _output_entity_logp(output).reshape(-1, MAX_FRAMES)
+    entity_logp = entity.new_zeros((flat, MAX_FRAMES))
+    entity_logp[rows] = entity
+    row_values = _output_values(output).reshape(-1)
+    values = row_values.new_zeros((flat,))
+    values[rows] = row_values
+    entity_logp = entity_logp.reshape(n_envs, players, MAX_FRAMES)
+    return LearnerRowsOutput(
+        actions=KaggricultureActions(
+            tokens=tokens.reshape(n_envs, players, MAX_FRAMES, ACTION_SLOTS),
+            lengths=lengths.reshape(n_envs, players),
+        ),
+        logp=entity_logp.sum(dim=-1),
+        entity_logp=entity_logp,
+        values=values.reshape(n_envs, players),
+    )
 
 
 def _policy_mask(obs: GameObsBatch) -> torch.Tensor:

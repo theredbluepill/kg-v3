@@ -59,6 +59,7 @@ impl SeedStream {
 }
 
 use super::buffers::checked_lengths;
+use super::opponents::{HostedSeat, OpponentKind};
 use super::reward::RewardConfig;
 use super::{
     grammar, write_env, ObsRowMut, ObsStaging, ObservationConfig, ObservationGame,
@@ -89,7 +90,26 @@ pub struct TerminalRecord {
     pub episode_steps: i64,
     pub winner: i64,
     pub econ: [[i64; 32]; 2],
+    /// The learned seat of a fixed-opponent game; None in self-play.
+    pub learner_seat: Option<usize>,
 }
+
+/// Fixed-opponent collection (`env.opponent_mix`): environments `0..envs` host
+/// one native scripted seat. The opponent kind is collection bookkeeping only;
+/// it never enters an observation, reward, mask or tensor the model reads.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OpponentMix {
+    pub kind: OpponentKind,
+    pub envs: usize,
+}
+
+/// The learned seat of env `env` in its `episode`-th game (0 at construction,
+/// +1 at every reset, truncation or auto-reset): seats alternate by env index
+/// and by episode, so each env's learner plays both seats in turn.
+pub fn learner_seat(env: usize, episode: u64) -> usize {
+    ((env % 2) + (episode % 2) as usize) % 2
+}
+
 struct EnvSlot {
     game: ObservationGame,
     prepared: PreparedObservation,
@@ -99,6 +119,32 @@ struct EnvSlot {
     steps: i64,
     hires: [usize; 2],
     terminal: Option<TerminalRecord>,
+    episode: u64,
+    /// The hosted scripted controller of a fixed-opponent env; None in self-play.
+    bot: Option<HostedSeat>,
+}
+
+/// A fresh controller for env `env`'s new game, or None for a self-play env.
+fn new_bot(
+    mix: Option<OpponentMix>,
+    config: &Config,
+    env: usize,
+    episode: u64,
+    prepared: &PreparedObservation,
+) -> Result<Option<HostedSeat>, EnvError> {
+    let Some(mix) = mix.filter(|mix| env < mix.envs) else {
+        return Ok(None);
+    };
+    let seat = 1 - learner_seat(env, episode);
+    HostedSeat::new(mix.kind, seat, config, prepared.snapshot().clone())
+        .map(Some)
+        .map_err(|e| EnvError::Value(format!("opponent seat={seat}: {e}")))
+}
+
+fn next_episode(episode: u64) -> Result<u64, EnvError> {
+    episode
+        .checked_add(1)
+        .ok_or_else(|| EnvError::Overflow("episode counter overflow".into()))
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct TransitionCache {
@@ -183,10 +229,12 @@ pub struct PendingBatch {
     stream: SeedStream,
     selected: Option<Vec<bool>>,
     transition: Option<TransitionCache>,
-    metrics: Vec<(f64, f64, f64)>,
+    metrics: Vec<(f64, f64, f64, Option<usize>)>,
 }
 impl PendingBatch {
-    pub fn metrics(&self) -> &[(f64, f64, f64)] {
+    /// Per completed game in env order: seat banks, seat-0 margin and, for a
+    /// fixed-opponent game, the learned seat.
+    pub fn metrics(&self) -> &[(f64, f64, f64, Option<usize>)] {
         &self.metrics
     }
 }
@@ -197,6 +245,7 @@ pub struct NativeEnv {
     hire_multiplier: i64,
     reward: RewardConfig,
     hire_limit: i64,
+    opponent: Option<OpponentMix>,
     pool: ThreadPool,
     slots: Vec<EnvSlot>,
     stream: SeedStream,
@@ -205,6 +254,7 @@ pub struct NativeEnv {
     fault: Option<Fault>,
 }
 impl NativeEnv {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         n: usize,
         seed: i64,
@@ -213,11 +263,20 @@ impl NativeEnv {
         reward: RewardConfig,
         threads: usize,
         hire_limit: i64,
+        opponent: Option<OpponentMix>,
     ) -> Result<Self, EnvError> {
         caught(|| {
             checked_lengths(n)?;
             if threads == 0 {
                 return Err(EnvError::Value("native_threads must be positive".into()));
+            }
+            if let Some(mix) = opponent {
+                if !(1..=n).contains(&mix.envs) {
+                    return Err(EnvError::Value(format!(
+                        "opponent envs must be in 1..={n}, got {}",
+                        mix.envs
+                    )));
+                }
             }
             grammar::plan(1, 1, hire_limit)?;
             reward.validate()?;
@@ -243,6 +302,7 @@ impl NativeEnv {
                                 ObservationGame::from_seed(config.clone(), &seed.to_string())?;
                             let prepared = game.prepare()?;
                             write_env(&prepared, &mut rows);
+                            let bot = new_bot(opponent, &config, i, 0, &prepared)?;
                             Ok(EnvSlot {
                                 game,
                                 prepared,
@@ -255,6 +315,8 @@ impl NativeEnv {
                                 steps: 0,
                                 hires: [0, 0],
                                 terminal: None,
+                                episode: 0,
+                                bot,
                             })
                         })
                         .map_err(|e| at_env(i, e))
@@ -275,6 +337,7 @@ impl NativeEnv {
                 hire_multiplier,
                 reward,
                 hire_limit,
+                opponent,
                 pool,
                 slots,
                 stream,
@@ -286,6 +349,25 @@ impl NativeEnv {
     }
     pub fn n_envs(&self) -> usize {
         self.slots.len()
+    }
+    pub fn opponent(&self) -> Option<OpponentMix> {
+        self.opponent
+    }
+    /// `[env][seat]` flattened: true where the learner acts on the current
+    /// observation. Self-play envs mark both seats; a fixed-opponent env marks
+    /// only its learned seat.
+    pub fn learner_mask(&self) -> Vec<bool> {
+        self.slots
+            .iter()
+            .flat_map(|slot| match &slot.bot {
+                None => [true, true],
+                Some(bot) => {
+                    let mut mask = [true, true];
+                    mask[bot.seat()] = false;
+                    mask
+                },
+            })
+            .collect()
     }
     pub fn seed_state(&self) -> (i64, Vec<i64>) {
         (
@@ -383,6 +465,8 @@ impl NativeEnv {
                             }
                             let prepared = game.prepare()?;
                             write_env(&prepared, &mut rows);
+                            let episode = next_episode(self.slots[i].episode)?;
+                            let bot = new_bot(self.opponent, &self.config, i, episode, &prepared)?;
                             Ok(Some(EnvSlot {
                                 game,
                                 prepared,
@@ -395,6 +479,8 @@ impl NativeEnv {
                                 steps: 0,
                                 hires: [0, 0],
                                 terminal: None,
+                                episode,
+                                bot,
                             }))
                         })
                         .map_err(|e| at_env(i, e))
@@ -437,11 +523,28 @@ impl NativeEnv {
             }
             // Raw signed transport is admitted before seed reservation or any
             // narrowing; complete State decoding follows reservation below.
+            let bot_seats: Vec<Option<usize>> = self
+                .slots
+                .iter()
+                .map(|slot| slot.bot.as_ref().map(HostedSeat::seat))
+                .collect();
             for (row, (tokens, length)) in tokens
                 .chunks_exact(grammar::TOKENS_PER_SEAT)
                 .zip(lengths)
                 .enumerate()
             {
+                if bot_seats[row / 2] == Some(row % 2) {
+                    // The scripted seat's transport must be the absent program:
+                    // nothing the learner submits for it is ever executed.
+                    if *length != 0 || tokens.iter().any(|token| *token != 0) {
+                        return Err(EnvError::Value(format!(
+                            "env={} seat={} is played by the fixed opponent; submit length 0 and zero tokens",
+                            row / 2,
+                            row % 2
+                        )));
+                    }
+                    continue;
+                }
                 if !(1..=grammar::MAX_FRAMES as i64).contains(length) {
                     return Err(EnvError::Value(format!(
                         "env={} seat={} length outside 1..=252",
@@ -474,6 +577,11 @@ impl NativeEnv {
             for (env, slot) in self.slots.iter().enumerate() {
                 let mut pair = Vec::with_capacity(2);
                 for seat in 0..2 {
+                    if bot_seats[env] == Some(seat) {
+                        // Filled by the hosted controller inside the worker.
+                        pair.push(serde_json::Value::Null);
+                        continue;
+                    }
                     let offset = (env * 2 + seat) * grammar::TOKENS_PER_SEAT;
                     let plan = grammar::plan(slot.actors[seat], slot.orders, self.hire_limit)?;
                     pair.push(
@@ -501,7 +609,25 @@ impl NativeEnv {
                                 let before_banks = game_banks(&game)?;
                                 let before_econ = game_econ(&game)?;
                                 let before_hires = executed_hires(&game)?;
-                                game.step_with_market_metrics(&actions[i])?;
+                                // The controller is cloned so a failed batch
+                                // leaves the committed one untouched.
+                                let mut bot = slot.bot.clone();
+                                let hosted_joint;
+                                let joint: &[serde_json::Value] = match bot.as_mut() {
+                                    None => &actions[i],
+                                    Some(bot) => {
+                                        let seat = bot.seat();
+                                        let mut pair = actions[i].clone();
+                                        pair[seat] = bot
+                                            .action(slot.prepared.snapshot().clone())
+                                            .map_err(|e| {
+                                            EnvError::Value(format!("opponent seat={seat}: {e}"))
+                                        })?;
+                                        hosted_joint = pair;
+                                        &hosted_joint
+                                    },
+                                };
+                                game.step_with_market_metrics(joint)?;
                                 #[cfg(test)]
                                 {
                                     self.inject(FaultPoint::StepResult, i)?;
@@ -560,25 +686,35 @@ impl NativeEnv {
                                             -1
                                         },
                                         econ: after_econ,
+                                        learner_seat: bot.as_ref().map(|bot| 1 - bot.seat()),
                                     })
                                 } else {
                                     None
                                 };
-                                let seed = if let Some(seed) = seeds[i] {
+                                let (seed, episode) = if let Some(seed) = seeds[i] {
                                     #[cfg(test)]
                                     self.inject(FaultPoint::AutoReset, i)?;
                                     game = ObservationGame::from_seed(
                                         self.config.clone(),
                                         &seed.to_string(),
                                     )?;
-                                    seed
+                                    (seed, next_episode(slot.episode)?)
                                 } else {
-                                    slot.seed
+                                    (slot.seed, slot.episode)
                                 };
                                 #[cfg(test)]
                                 self.inject(FaultPoint::StepPrepare, i)?;
                                 let prepared = game.prepare()?;
                                 write_env(&prepared, &mut rows);
+                                if seeds[i].is_some() {
+                                    bot = new_bot(
+                                        self.opponent,
+                                        &self.config,
+                                        i,
+                                        episode,
+                                        &prepared,
+                                    )?;
+                                }
                                 let candidate = EnvSlot {
                                     game,
                                     prepared,
@@ -594,6 +730,8 @@ impl NativeEnv {
                                         rows.seats[1].globals_int[12] as usize,
                                     ],
                                     terminal: record,
+                                    episode,
+                                    bot,
                                 };
                                 Ok((
                                     candidate,
@@ -631,7 +769,12 @@ impl NativeEnv {
                     transition.transition_econ_after[range].copy_from_slice(&row.after_econ[seat]);
                 }
                 if let Some(record) = &slot.terminal {
-                    metrics.push((record.banks[0], record.banks[1], record.margin));
+                    metrics.push((
+                        record.banks[0],
+                        record.banks[1],
+                        record.margin,
+                        record.learner_seat,
+                    ));
                 }
                 candidates.push(Some(slot));
             }
@@ -814,6 +957,10 @@ impl NativeEnv {
         Ok(())
     }
     pub(super) fn replace_game(&mut self, i: usize, game: ObservationGame) {
+        assert!(
+            self.opponent.is_none(),
+            "replace_game would desynchronize a hosted opponent"
+        );
         let prepared = game.prepare().unwrap();
         let mut staging = ObsStaging::new(1).unwrap();
         let mut buffers = staging.buffers_mut();
@@ -831,6 +978,8 @@ impl NativeEnv {
                 rows.seats[1].globals_int[12] as usize,
             ],
             terminal: None,
+            episode: self.slots[i].episode,
+            bot: None,
         };
     }
 }

@@ -25,7 +25,10 @@ from owl.checkpoint_quantization import (
 )
 from owl.game import create_env
 from owl.kaggriculture.codec import encode_actions
-from owl.kaggriculture.config import KaggricultureEnvConfig
+from owl.kaggriculture.config import (
+    KaggricultureEnvConfig,
+    KaggricultureOpponentMixConfig,
+)
 from owl.kaggriculture.env import KaggricultureVectorizedEnv
 from owl.kaggriculture.types import (
     MAX_ACTORS,
@@ -4347,7 +4350,11 @@ _FUNCTIONAL_EPISODE_STEPS = 6
 
 
 def _run_functional_check(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, threshold: float
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    threshold: float,
+    extra_overrides: tuple[str, ...] = (),
 ) -> tuple[dict[str, Any], dict[str, torch.Tensor], _FakeLogger]:
     n_envs = 2
     update_steps = _FUNCTIONAL_HORIZON * n_envs
@@ -4362,6 +4369,7 @@ def _run_functional_check(
         f"rl.horizon={_FUNCTIONAL_HORIZON}",
         f"env.config.episodeSteps={_FUNCTIONAL_EPISODE_STEPS}",
         f"rl.teacher_init={teacher}",
+        *extra_overrides,
     ]
     monkeypatch.setattr(
         sys, "argv", ["run_ppo.py", *argv, "--log-mode", LogMode.DEBUG.value]
@@ -4512,6 +4520,104 @@ def test_kaggriculture_two_update_functional_check_through_main(
         assert last_best_checkpoint["env_steps"] == 0
         assert _states_equal(last_best_state, teacher_state)
         assert _states_equal(trainer.teacher_model.state_dict(), teacher_state)
+
+
+def test_kaggriculture_fixed_opponent_two_update_run_through_main(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """env.opponent_mix at fraction 1.0 through the canonical trainer."""
+    torch.manual_seed(359)
+    session, initial, logger = _run_functional_check(
+        tmp_path,
+        monkeypatch,
+        threshold=0.0,
+        extra_overrides=(
+            "env.opponent_mix.bot=starter",
+            "env.opponent_mix.fraction=1.0",
+        ),
+    )
+    cfg = session["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert cfg.env.opponent_mix is not None
+    assert (cfg.env.opponent_mix.bot, cfg.env.opponent_mix.fraction) == ("starter", 1.0)
+    trainer = session["trainer"]
+    assert isinstance(trainer, PPOTrainer)
+    assert trainer.rollout.learner is not None
+    # The bot's name is a run label only.
+    assert logger.summary["opponent_mix/bot"] == "starter"
+    assert logger.summary["opponent_mix/fraction"] == 1.0
+    training_logs = [metrics for metrics, _step in logger.logged[0::2]]
+    eval_logs = [metrics for metrics, _step in logger.logged[1::2]]
+    assert len(training_logs) == len(eval_logs) == _FUNCTIONAL_UPDATES
+    for metrics in training_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        assert "train/bank_games_vs_bot" in metrics
+        assert metrics["train/bank_games"] == 0.0  # no self-play games at 1.0
+        # One learned seat per env: two learner player-steps per step.
+        assert metrics["train/policy_active_ratio"] == pytest.approx(0.5)
+    # Four transitions complete no 5-transition game: the count is still
+    # logged (test_opponent_mix.py covers completed training games).
+    assert [m["train/bank_games_vs_bot"] for m in training_logs] == [0.0, 0.0]
+    for metrics in eval_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        # Promotion stays against last_best; the bot evaluation sits beside it.
+        assert metrics["eval/games"] == float(cfg.env.n_envs)
+        assert 0.0 <= metrics["eval/win_rate_against_last_best"] <= 1.0
+        assert metrics["eval/bank_games_vs_bot"] == float(cfg.env.n_envs)
+        assert metrics["eval/bank_games_vs_bot_seat_0"] == 1.0
+        assert metrics["eval/bank_games_vs_bot_seat_1"] == 1.0
+        for key in (
+            "eval/win_rate_vs_bot",
+            "eval/own_bank_mean_vs_bot",
+            "eval/margin_mean_vs_bot",
+            "eval/win_rate_vs_bot_seat_0",
+            "eval/win_rate_vs_bot_seat_1",
+        ):
+            assert key in metrics
+        assert metrics["eval/promoted"] == 1.0
+    assert not _states_equal(initial, run_ppo.unwrap_model(trainer.model).state_dict())
+    # Checkpoints carry no opponent state or label.
+    run_dir = session["run_dir"]
+    assert isinstance(run_dir, Path)
+    for path in run_dir.glob("*.pt"):
+        assert b"starter" not in path.read_bytes(), path.name
+
+
+def test_last_best_evaluation_env_never_hosts_the_training_opponent() -> None:
+    cfg = _kaggriculture_eval_config()
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    mixed = cfg.model_copy(
+        update={
+            "env": cfg.env.model_copy(
+                update={
+                    "opponent_mix": KaggricultureOpponentMixConfig(
+                        bot="r04", fraction=0.5
+                    )
+                }
+            )
+        }
+    )
+    device = torch.device("cpu")
+    plain = run_ppo._create_eval_env(mixed, n_envs=2, device=device, env_steps=1000)
+    assert isinstance(plain, KaggricultureVectorizedEnv)
+    assert plain.opponent_envs == 0
+    hosted = run_ppo._create_eval_env(
+        mixed,
+        n_envs=2,
+        device=device,
+        env_steps=1000,
+        opponent_mix=KaggricultureOpponentMixConfig(bot="r04", fraction=1.0),
+    )
+    assert isinstance(hosted, KaggricultureVectorizedEnv)
+    assert (hosted.opponent_bot, hosted.opponent_envs) == ("r04", 2)
+    with pytest.raises(ValueError, match="requires env.opponent_mix"):
+        run_ppo._evaluate_against_bot(
+            current_model=_LaunchPolicy(launch=True),
+            cfg=cfg,
+            device=device,
+            env_steps=1000,
+        )
 
 
 class _SeatPinnedNativeEvalEnv(KaggricultureVectorizedEnv):

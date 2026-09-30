@@ -9,10 +9,12 @@ use num_bigint::BigInt;
 use serde_json::Value;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+pub use hosted::HostedSeat;
 pub use kaggriculture_engine::{Config, Farm, Inventory, PrivateState};
 pub use registry::{OpponentKind, SeatController};
 pub use runner::{MatchResult, SeatStep, StepRecord, play_match};
 
+mod hosted;
 mod native_agents;
 mod registry;
 mod runner;
@@ -23,18 +25,28 @@ mod engine_owner {
     use kaggriculture_engine::{Game, StepMetrics, StepSnapshot};
     use serde_json::Value;
 
+    /// None for a hosted view: the host owns and steps the engine, and the
+    /// view only receives its snapshots (see `HostedSeat`).
     #[derive(Clone)]
-    pub(super) struct EngineOwner(Game);
+    pub(super) struct EngineOwner(Option<Game>);
 
     impl EngineOwner {
         pub(super) fn new(engine: Game) -> Self {
-            Self(engine)
+            Self(Some(engine))
         }
-        pub(super) fn snapshot(&self) -> StepSnapshot {
-            self.0.snapshot()
+        pub(super) fn hosted() -> Self {
+            Self(None)
+        }
+        pub(super) fn snapshot(&self) -> Option<StepSnapshot> {
+            self.0.as_ref().map(Game::snapshot)
         }
         pub(super) fn step(&mut self, actions: &[Value]) -> Result<StepMetrics, String> {
-            self.0.step_with_market_metrics(actions)
+            self.0
+                .as_mut()
+                .ok_or_else(|| {
+                    "a hosted controller view owns no engine and cannot step".to_string()
+                })?
+                .step_with_market_metrics(actions)
         }
     }
 }
@@ -106,10 +118,28 @@ impl Game {
         let engine = engine_owner::EngineOwner::new(engine);
         Ok(Self {
             config: ControllerConfig::from_config(config)?,
-            snapshot: engine.snapshot(),
+            snapshot: engine
+                .snapshot()
+                .ok_or_else(|| "an adopted engine must be present".to_string())?,
             engine,
             episode: NEXT_EPISODE.fetch_add(1, Ordering::Relaxed),
         })
+    }
+
+    /// An engine-less view of a game stepped by a host (a training
+    /// environment). It starts a new episode identity; `refresh` replaces its
+    /// snapshot after each host transition. Its `step` always fails.
+    fn hosted(config: &Config, snapshot: StepSnapshot) -> Result<Self, String> {
+        Ok(Self {
+            config: ControllerConfig::from_config(config)?,
+            engine: engine_owner::EngineOwner::hosted(),
+            snapshot,
+            episode: NEXT_EPISODE.fetch_add(1, Ordering::Relaxed),
+        })
+    }
+
+    fn refresh(&mut self, snapshot: StepSnapshot) {
+        self.snapshot = snapshot;
     }
 
     pub fn step(&mut self, actions: &[Value]) -> Result<(), String> {
@@ -118,7 +148,11 @@ impl Game {
 
     fn step_with_metrics(&mut self, actions: &[Value]) -> Result<StepMetrics, String> {
         let metrics = self.engine.step(actions)?;
-        self.snapshot = self.engine.snapshot();
+        // A successful step proves the engine is present; hosted views fail above.
+        self.snapshot = self
+            .engine
+            .snapshot()
+            .ok_or_else(|| "stepped engine vanished".to_string())?;
         Ok(metrics)
     }
 

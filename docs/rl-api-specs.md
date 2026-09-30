@@ -1106,9 +1106,96 @@ p10/p50/p90 of `eval/own_bank_*` (candidate bank), `eval/opponent_bank_*`
 (last-best bank) and the signed `eval/margin_*` (own minus opponent). The means
 equal the existing candidate metrics. Do not read `eval/margin_mean` as
 `eval/margin_0`: the latter is the seat-0 mean `bank_0 - bank_1`, whichever
-model held seat 0, and says nothing about the candidate. `run_ppo` has no fixed-opponent panel
-yet; a panel reuses `opponent_bank_metrics` with the opponent's name only in
-the key prefix (a label), never as a model input.
+model held seat 0, and says nothing about the candidate. The fixed-opponent
+collection below logs its own `*_vs_bot` keys; the bot's name is never in a key
+or a model input, only the W&B summary label `opponent_mix/bot`.
+
+#### Fixed-opponent collection (`env.opponent_mix`)
+
+Owner, 2026-09-30: "OK, for fixed bot, we can use cha22 (check
+~/kaggriculture-v2)." and "implement the new rewrad first before we revisit
+the cha22 anchor setup." PPO can train against a fixed scripted bot instead of
+mirror self-play. The feature is bot-agnostic: any key of the `opponents_rs`
+registry (`owl.rs.kaggriculture_opponent_bots()`, today `starter`, `r04`,
+`ecobot`, `e776`) is accepted.
+
+```yaml
+env:
+  opponent_mix: {bot: r04, fraction: 1.0}   # absent/None: pure self-play
+```
+
+- **Default.** Without `opponent_mix` the trainer, adapter and native env run
+  the pre-mix path byte for byte, and the config dumps exactly as before, so
+  `config.yaml` and `v3/config_sha256` are unchanged. A golden digest recorded
+  on the pre-mix tree (`25412a7`) pins this
+  (`tests/kaggriculture/test_opponent_mix.py`).
+- **Which envs.** `fraction * env.n_envs` must be a whole number of at least
+  one (no silent rounding). The first that many envs of each rank host the
+  bot; the rest stay self-play.
+- **Which seat.** In env `e`'s `k`-th game (`k = 0` at construction, +1 at
+  every reset, truncation and auto-reset) the learner plays seat
+  `(e + k) mod 2` and the bot the other. The adapter's `learner_mask`
+  (`bool [E,2]`, all true without a mix) says which seats the learner plays on
+  the current observation.
+- **Native step.** The bot seat's transport must be the absent program:
+  length 0 and all-zero tokens. Anything else fails the whole batch, with no
+  state published. Inside the step's worker, a cloned `HostedSeat` controller
+  computes the bot's official JSON from the pre-step snapshot, so a failed
+  batch keeps the committed controller. The learner's decoded program is
+  executed unchanged. A new controller starts with every new game.
+  Controllers are deterministic, and no seed is consumed beyond the self-play
+  stream. Observations are written exactly as in self-play and contain no
+  bot identity.
+- **Trainer.** The rollout forward runs on the learner's seat rows only
+  (`forward_learner_rows`), so scripted seats cost no rollout forward pass.
+  They are stored with the absent program, zero log-probabilities and zero
+  values. The rollout buffer stores the learner mask per step. `train_iteration`
+  ANDs it into the value, policy and entity masks (`_apply_learner_mask`), so
+  scripted rows contribute nothing to any of these:
+  - the policy, entropy and teacher-KL terms (policy weight);
+  - the value and teacher-value terms (value weight);
+  - advantage normalization and every denominator, including
+    `train/player_step_total` and `policy_active_ratio`.
+
+  GAE runs per seat column on that seat's own rewards. A seat switch happens
+  only across a `done`, so a learned seat never bootstraps from a scripted
+  row. Replay and teacher inputs mark scripted rows not playing
+  (`_learner_model_view`); rows are encoded independently, so learner rows are
+  unaffected. The update still encodes scripted rows: in a fraction-1.0 batch,
+  half the update's rows are masked work. Stateless models only.
+- **Telemetry**, per update, gathered over ranks. The self-play keys above
+  cover self-play games only. Every step of a mixed batch returns
+  `_terminal_learner_seat` (-1 for a self-play game), which the reducer skips.
+  The fixed-opponent keys are:
+  - `train/bank_games_vs_bot` (always logged);
+  - with at least one game: `train/win_rate_vs_bot` (a draw scores one half,
+    as in the last-best evaluation), `train/own_bank_mean_vs_bot`,
+    `train/opponent_bank_mean_vs_bot` and `train/margin_mean_vs_bot`
+    (own minus bot).
+- **Evaluation.** At every `checkpoint_freq`, after the last-best evaluation,
+  `run_ppo._evaluate_against_bot` plays one game per env on the same
+  evaluation worlds with every env hosting the bot. The learned seat is seat 1
+  in even envs and seat 0 in odd ones, so an even `env.n_envs` covers both
+  seats equally. It logs:
+  - `eval/{bank_games,win_rate,own_bank_mean,opponent_bank_mean,margin_mean}_vs_bot`;
+  - `eval/{bank_games,win_rate}_vs_bot_seat_{0,1}`;
+  - `time/eval_vs_bot_seconds` and `perf/eval_vs_bot_sps`.
+
+  Promotion still reads `eval/win_rate_against_last_best` alone, and the
+  last-best evaluation env never hosts the bot.
+- **Stateless policy.** The bot key reaches only collection bookkeeping and the
+  W&B summary labels `opponent_mix/bot` and `opponent_mix/fraction`. It never
+  reaches observations, embeddings, heads, losses, rewards, normalization,
+  checkpoints or checkpoint selection. The bot keeps its own scripted state.
+- **Build.** The controllers are the root crate's default Cargo feature
+  `fixed-opponents`. The Kaggle submission build (`--no-default-features`)
+  drops them, because EcoBot and E776 carry no redistribution license. There
+  `kaggriculture_opponent_bots()` is empty and every bot key is refused.
+- **Limits.** Bot behaviour is qualified against the original Python
+  submissions at the default game configuration only; shorter test
+  configurations run the same controllers unqualified. Nothing has been
+  trained with a mix yet. Cha22 is not in the registry until its import (Track
+  B) lands.
 
 ### Structured native observation buffers (Task 1.3)
 
@@ -1294,11 +1381,13 @@ state-import API.
 KaggricultureEnv(
     n_envs: int, seed: int, seed_stride: int, config: str,
     reward_config: KaggricultureRewardDict, native_threads: int,
-    *, hire_limit: int,
+    *, hire_limit: int, opponent_bot: str | None = None, opponent_envs: int = 0,
 )
 ```
 
-Every constructor argument is required. `config` is validated game-envelope
+Every constructor argument but the fixed-opponent pair is required;
+`opponent_bot`/`opponent_envs` are given together or not at all (see
+"Fixed-opponent collection" below). `config` is validated game-envelope
 JSON text. `n_envs` and `native_threads` are positive; even one thread uses an
 explicit native Rayon pool. `hire_limit` is the action-spec capacity, never a
 cash estimate. Native has no `pin_memory` argument: Python owns and pins its
@@ -1371,9 +1460,10 @@ before synchronously constructing one new game for that environment. Observation
 rows then describe the reset game: clock zero and live masks. Default
 `episodeSteps=720` ends on transition 719; settings 1 and 2 end after one
 transition. The returned dictionary always has exactly `total_games_played`,
-`terminal_bank_0`, `terminal_bank_1`, `terminal_margin_0`. Its lists are empty
-without completions; each completed environment contributes one entry in
-ascending environment order, with `1.0` in `total_games_played`.
+`terminal_bank_0`, `terminal_bank_1`, `terminal_margin_0`, plus
+`terminal_learner_seat` exactly when the env hosts a fixed opponent. Its lists
+are empty without completions; each completed environment contributes one entry
+in ascending environment order, with `1.0` in `total_games_played`.
 
 `truncate_envs` reserves seeds only for true mask entries, in ascending
 environment order. Its separate infallible commit copies only those environments'

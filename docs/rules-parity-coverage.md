@@ -249,9 +249,13 @@ No Rust engine participates. This is not engine parity or proof of label correct
   were omitted; generation-time dirty bytes and the full producer module inventory are absent.
 - Task 7.1 beyond its tested scope: custom configurations, CPython 3.12 or
   later (R04 diverges there), states the controllers did not create, individual
-  order rejection and engine-confirmed shortages, and playing strength. The
-  native environment has no `opponents_rs` seat for the learned policy, so the
-  nine learned-seat opponent tests skip.
+  order rejection and engine-confirmed shortages, and playing strength. Since
+  the fixed-opponent collection (`env.opponent_mix`, 2026-09-30), the native
+  environment hosts an `opponents_rs` seat (`HostedSeat`) against the learned
+  policy. Its nine learned-seat tests now run, and native replays against an
+  independent kernel + controller reference check every bot's actions
+  (`src/kaggriculture/opponent_env_tests.rs`, `opponents_rs/tests/hosted.rs`).
+  Custom configurations remain unqualified there too.
 - Task 7.3 replay export / Kaggle-episode round trip in this integration;
   it is unmerged, with no approving verdict in this tip's phase tracker.
 - Task 7.4 Kaggriculture packaging; this tip records a brief under review, not implementation.
@@ -424,9 +428,11 @@ original file (owner's machine only); Claude's review split the modes because
 the first version made `just prepare` require the owner's sibling tree.
 EcoBot/E776 explicitly declare no software license and must not be redistributed;
 engine licensing does not resolve that notice gap. No original Python submission
-source is copied. Learned-seat integration tests are explicitly skipped: Task 1.4's
-`KaggricultureEnv` has landed but has no `opponents_rs` seat hook, so no
-substitute binding is introduced. Default-config
+source is copied. Learned-seat integration tests were skipped until the
+fixed-opponent collection (2026-09-30) gave `KaggricultureEnv` its
+`opponents_rs` seat hook (`HostedSeat`, constructor keywords
+`opponent_bot`/`opponent_envs`); they now run in
+`tests/owl/kaggriculture/test_opponents.py`. Default-config
 CPU qualification establishes neither custom-config support nor playing strength.
 
 Run 1 at `21d0f45` stopped on private `fib`, private `Game.config` and missing

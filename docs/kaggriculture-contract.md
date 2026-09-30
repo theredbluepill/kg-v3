@@ -236,6 +236,7 @@ Wiring: player tokens are `player_tokens + player_feature_proj(player_features)`
   - The complete-episode return is bounded by 1; bootstrapped PPO targets carry no such guarantee.
   - Known limit (term M): the return-to-go from a mid-game state is `M(final margin) − M(margin_t) + terminal_scale · sign(final margin)`. `M` is signed, so its magnitude reaches `2 · margin_cap + terminal_scale` (1.5 for the margin preset), outside the winner critic's `2p − 1 ∈ (−1, 1)`. The value fit is biased in states whose lead or deficit later reverses. Unmeasured.
   - Known limit: the winner critic's two seat values always sum to zero, so it cannot represent the common-mode part of `ΔB` (logged as `train/return_common_mean`, beside its zero-sum counterpart `train/return_zero_sum_abs_mean` and `train/reward_bank_mean`).
+- **Fixed opponent (`env.opponent_mix`):** optional. Constructor keywords `opponent_bot` (an `opponents_rs` registry key) and `opponent_envs` (1..E) make the first `opponent_envs` environments host a native scripted seat. In env `e`'s `k`-th game (construction is `k = 0`; every reset, truncation and auto-reset adds one) the learner plays seat `(e + k) mod 2`. `learner_mask() -> bool [E,2]` marks the learner's seats on the current observation. The scripted seat must be submitted as the absent program (length 0, zero tokens); its official JSON comes from a per-game `HostedSeat` controller inside the step, while the learner's decoded program runs unchanged. Observations, rewards and the seed stream are exactly those of self-play; with a fixed opponent the step metrics add `terminal_learner_seat` (-1 for a self-play game). Absent, the environment is byte-identical to the pre-mix one.
 - **Truncation:** `truncate_envs(mask)` keeps the transition's economic reward, bootstraps from the pre-reset observation and fabricates no terminal winner (L2). The reset keeps the transition buffers (`clear_transition = False` semantics).
 - **Buffer lifetime and transactions:**
   - Before the env overwrites any published buffer generation (observations, rewards, dones, banks, counters, metrics), every reader of it must have finished. A synchronous-copy baseline satisfies this; double buffering needs a per-buffer reuse fence.
@@ -253,6 +254,14 @@ horizon dimension. Device-to-CPU transfer and C-contiguous action
 materialization belong to the trainer and shared evaluation mapper, before the
 strict native adapter boundary. No model hidden state or opponent identity is
 introduced.
+
+With `env.opponent_mix` the same collector stores a per-step learner mask. The
+rollout forward runs only on learner rows. The update's value, policy and
+entity masks are ANDed with the learner mask, so a scripted seat's rows add
+nothing to any loss term, advantage normalization or denominator. Replay inputs
+mark those rows not playing. A fixed-bot evaluation (`eval/*_vs_bot`) runs
+beside the last-best evaluation, and promotion is unchanged. See
+`docs/rl-api-specs.md`, "Fixed-opponent collection".
 
 Kaggriculture rollout construction uses `owl.game.create_env` with distributed
 rank/world size and the transfer device. A fresh launch uses

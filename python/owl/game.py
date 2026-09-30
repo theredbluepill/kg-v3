@@ -29,8 +29,10 @@ def create_env(
 ) -> GameVectorizedEnv:
     """Construct one game's adapter, with disjoint Kaggriculture rank streams.
 
-    Kaggriculture consumes ``base_seed + rank + k * world_size``. Orbit keeps
-    Isaiah's original constructor and its existing native seed behavior.
+    Kaggriculture consumes ``base_seed + rank + k * world_size``. With
+    ``env.opponent_mix`` the first ``fraction * n_envs`` envs of each rank host
+    the fixed opponent. Orbit keeps Isaiah's original constructor and its
+    existing native seed behavior.
     """
     for name, value in (
         ("n_envs", n_envs),
@@ -51,6 +53,7 @@ def create_env(
     if base_seed + rank > _I64_MAX:
         raise ValueError("base_seed + rank must fit int64")
     if isinstance(env_config, KaggricultureEnvConfig):
+        mix = env_config.opponent_mix
         return KaggricultureVectorizedEnv(
             n_envs=n_envs,
             seed=base_seed + rank,
@@ -63,6 +66,8 @@ def create_env(
             transfer_device=transfer_device,
             obs_spec=env_config.obs_spec,
             action_spec=env_config.action_spec,
+            opponent_bot=None if mix is None else mix.bot,
+            opponent_envs=0 if mix is None else mix.bot_envs(n_envs),
         )
     if isinstance(env_config, EnvConfig):
         return VectorizedEnv(

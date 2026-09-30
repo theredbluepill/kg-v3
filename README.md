@@ -565,6 +565,22 @@ Kaggriculture adapter through `owl.game.create_env`, with rank 0, world size 1
 and the evaluation transfer device. Policy evaluation uses the same typed
 observation/action mapper as PPO, and the adapter fences device reads before
 reusing its buffers. Orbit evaluation environments stay unseeded.
+
+Fixed-opponent PPO (`env.opponent_mix: {bot: <registry key>, fraction: f}`,
+Kaggriculture only) trains against a scripted `opponents_rs` bot instead of
+mirror self-play in the first `f * env.n_envs` envs of each rank (a whole
+number, at least one). The learned seat alternates by env index and episode.
+The bot acts natively inside the step. The learner mask keeps the bot's seat
+out of every loss term, advantage normalization and denominator, and the
+rollout forward skips its rows. Each update logs `train/win_rate_vs_bot`,
+`train/own_bank_mean_vs_bot`, `train/margin_mean_vs_bot` and
+`train/bank_games_vs_bot`. Each checkpoint evaluation adds a fixed-bot
+evaluation in both seats, `eval/*_vs_bot`. Promotion still reads the last-best
+win rate only, and the bot's name is only the W&B summary label
+`opponent_mix/bot`. Absent (the default) is pure self-play, byte-identical to
+before; details in `docs/rl-api-specs.md`, "Fixed-opponent collection". For
+example, `-o env.opponent_mix.bot=r04 env.opponent_mix.fraction=1.0`. Cha22 is
+not a registry key until its import lands.
 For Orbit, set `rl.eval_replay_games` to a positive count to save random eval replay
 samples from the weighted eval game set under
 `eval_replays/<checkpoint-name>/` in the run directory. The sampled game

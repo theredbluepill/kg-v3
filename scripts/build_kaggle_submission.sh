@@ -182,11 +182,14 @@ if virtual_env := os.environ.get("VIRTUAL_ENV"):
             f"expected {expected_python}, found {actual_python}"
         )
 PY
-"${uv_run[@]}" maturin develop --release
+# --no-default-features drops the fixed-opponent controllers (training-only
+# env.opponent_mix): EcoBot/E776 carry no redistribution license.
+"${uv_run[@]}" maturin develop --release --no-default-features
 "${uv_run[@]}" python - <<'PY'
 import owl.rs
 
 owl.rs.assert_release_build()
+assert owl.rs.kaggriculture_opponent_bots() == (), "submission build ships bots"
 PY
 
 mkdir -p "$stage_dir/submission"

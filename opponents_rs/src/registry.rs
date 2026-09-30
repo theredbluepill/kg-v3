@@ -89,6 +89,12 @@ impl SeatController {
             controller: Controller::new(kind),
         })
     }
+    pub fn kind(&self) -> OpponentKind {
+        self.kind
+    }
+    pub fn seat(&self) -> usize {
+        self.seat
+    }
     pub fn reset(&mut self, game: &Game) -> Result<(), String> {
         if game.episode == self.episode {
             return Err("reset requires a new episode, not the current game".into());

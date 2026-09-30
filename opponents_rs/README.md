@@ -2,8 +2,9 @@
 
 This standalone edition-2024 crate imports Starter, R04, EcoBot and E776 plus
 E776's executable policy tape byte-exactly from reference commit
-65f0eac5bb00b18a9d3acce319c2a231cbd5dff0. The root training crate has no dependency
-on it. The dedicated OPPONENT_MANIFEST.json records source, authored files and
+65f0eac5bb00b18a9d3acce319c2a231cbd5dff0. The root training crate depends on it
+only for fixed-opponent collection (env.opponent_mix, through HostedSeat below).
+The dedicated OPPONENT_MANIFEST.json records source, authored files and
 original-Python oracle custody; run scripts/check_opponent_import.py from the
 repository root. That default check (also run by `just prepare`) needs no
 sibling repository and pins the original entry hashes structurally; add
@@ -28,6 +29,17 @@ state at seven checkpoints in both seats for all four bots, with own-state
 positive controls. Engine RNG, seed and hidden counters cannot be perturbed
 through this view. The boundary prevents reads rather than testing arbitrary
 mutations of those inaccessible fields.
+
+HostedSeat serves a host that owns and steps its own engine: the root crate's
+native training environment (env.opponent_mix). It holds an engine-less Game
+view, so it can never step, and a SeatController with the same lifecycle
+checks. Construct it with the step-zero snapshot of a new game (one per
+environment, seat and episode) and call action with the pre-step snapshot once
+per host transition. tests/hosted.rs shows a host-driven pair reproduces
+play_match's actions and final banks for every bot in both seats. The host
+clones the controller per step so a failed batch can retry the same turn.
+Bot identity and state stay in the host's bookkeeping, never in learned
+inputs.
 
 Game::from_engine adopts an existing native engine; its caller must supply that
 engine's original Config. The frozen engine has no config getter, so this
