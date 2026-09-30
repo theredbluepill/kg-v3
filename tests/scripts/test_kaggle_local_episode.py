@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 _SCRIPT_PATH = Path(__file__).parents[2] / "scripts" / "kaggle_local_episode.py"
 _SPEC = importlib.util.spec_from_file_location("kaggle_local_episode", _SCRIPT_PATH)
 assert _SPEC is not None
@@ -72,3 +74,43 @@ def test_non_dict_return_is_flagged_before_kaggle_normalizes_it() -> None:
     assert summary["bad_status_count"] == 0
     assert summary["seats"]["0"]["invalid_raw_actions"] == 1
     assert summary["seats"]["0"]["first_problems"][0]["step"] == 2
+
+
+class _Stop(Exception):
+    pass
+
+
+def test_cli_forwards_the_episode_step_bound(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: dict[str, Any] = {}
+
+    def fake_run_episode(agents: list[Any], **kwargs: Any) -> None:
+        seen.update(kwargs, agents=agents)
+        raise _Stop
+
+    monkeypatch.setattr(harness, "run_episode", fake_run_episode)
+    monkeypatch.setattr(sys, "path", list(sys.path))
+    monkeypatch.delenv("KAGGRICULTURE_AGENT_STRICT", raising=False)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "kaggle_local_episode.py",
+            "--agent-dir",
+            str(tmp_path),
+            "--seed",
+            "3",
+            "--episode-steps",
+            "4",
+            "--replay-dir",
+            str(tmp_path / "replays"),
+            "--receipt",
+            str(tmp_path / "receipt.json"),
+        ],
+    )
+    with pytest.raises(_Stop):
+        harness.main()
+    assert seen["episode_steps"] == 4
+    assert seen["seed"] == 3
+    assert seen["agents"] == [str(tmp_path / "main.py")] * 2

@@ -241,7 +241,12 @@ def main() -> None:
         agents[args.agent_seat] = str(main_path)
         recorded = {args.agent_seat}
     started = time.time()
-    result = run_episode(agents, seed=args.seed, recorded_seats=recorded)
+    result = run_episode(
+        agents,
+        seed=args.seed,
+        recorded_seats=recorded,
+        episode_steps=args.episode_steps,
+    )
     wall_s = time.time() - started
     import owl
     import owl.rs
@@ -277,6 +282,7 @@ def main() -> None:
         "qualified": qualified,
         "expected_calls_per_seat": expected_calls,
         "seed": args.seed,
+        "episode_steps": args.episode_steps,
         "opponent": args.opponent,
         "agent_seats": sorted(recorded),
         "strict": True,
