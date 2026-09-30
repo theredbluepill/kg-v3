@@ -370,6 +370,71 @@ fn allocate<T: Clone + Default>(length: usize, field_index: usize) -> Result<Vec
     Ok(values)
 }
 
+fn row_field<T, const N: usize>(
+    values: &mut [T],
+    field_index: usize,
+) -> Result<&mut [T; N], ObserveError> {
+    check_length(field_index, values.len(), N)?;
+    Ok(values
+        .try_into()
+        .expect("length checked against the fixed row width"))
+}
+
+fn row_matrix<T, const C: usize, const N: usize>(
+    values: &mut [T],
+    field_index: usize,
+) -> Result<&mut [[T; C]; N], ObserveError> {
+    check_length(field_index, values.len(), C * N)?;
+    let (rows, remainder) = values.as_chunks_mut::<C>();
+    assert!(remainder.is_empty(), "length checked against C * N");
+    Ok(rows
+        .try_into()
+        .expect("length checked against the fixed row height"))
+}
+
+fn row_scalar<T>(values: &mut [T], field_index: usize) -> Result<&mut T, ObserveError> {
+    check_length(field_index, values.len(), 1)?;
+    Ok(&mut values[0])
+}
+
+impl<'a> ObsRowMut<'a> {
+    /// View 29 flat buffers holding exactly one seat row (leading shape
+    /// `[1, 1]`) as one row. Every length is checked before any write.
+    pub fn from_single_row(buffers: ObsBuffersMut<'a>) -> Result<Self, ObserveError> {
+        Ok(Self {
+            tile_kind: row_field(buffers.tile_kind, 0)?,
+            tile_crop: row_field(buffers.tile_crop, 1)?,
+            tile_animal: row_field(buffers.tile_animal, 2)?,
+            tile_cell: row_field(buffers.tile_cell, 3)?,
+            tile_role: row_field(buffers.tile_role, 4)?,
+            tiles_int: row_matrix(buffers.tiles_int, 5)?,
+            tiles_float: row_matrix(buffers.tiles_float, 6)?,
+            actor_slot: row_field(buffers.actor_slot, 7)?,
+            actor_cell: row_field(buffers.actor_cell, 8)?,
+            actor_role: row_field(buffers.actor_role, 9)?,
+            actor_mask: row_field(buffers.actor_mask, 10)?,
+            actor_inventory: row_matrix(buffers.actor_inventory, 11)?,
+            actor_inventory_rank: row_matrix(buffers.actor_inventory_rank, 12)?,
+            actors_float: row_matrix(buffers.actors_float, 13)?,
+            player_features: row_matrix(buffers.player_features, 14)?,
+            storage_counts: row_field(buffers.storage_counts, 15)?,
+            storage_rank: row_field(buffers.storage_rank, 16)?,
+            banks: row_field(buffers.banks, 17)?,
+            shop_type: row_field(buffers.shop_type, 18)?,
+            shop_slot: row_field(buffers.shop_slot, 19)?,
+            shop_mask: row_field(buffers.shop_mask, 20)?,
+            market_product: row_field(buffers.market_product, 21)?,
+            market_float: row_matrix(buffers.market_float, 22)?,
+            market_int: row_matrix(buffers.market_int, 23)?,
+            global_features: row_field(buffers.global_features, 24)?,
+            globals_int: row_field(buffers.globals_int, 25)?,
+            still_playing: row_scalar(buffers.still_playing, 26)?,
+            order_limits: row_scalar(buffers.order_limits, 27)?,
+            can_act: row_field(buffers.can_act, 28)?,
+        })
+    }
+}
+
 impl<'a> ObsBuffersMut<'a> {
     pub fn validate(self, n_envs: usize) -> Result<ValidatedObsBuffersMut<'a>, ObserveError> {
         let lengths = checked_lengths(n_envs)?;

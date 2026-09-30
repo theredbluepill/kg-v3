@@ -334,3 +334,4 @@ The oracle test (plan Task 1.3) reconstructs every retained reference value from
   - `pin_memory`, the single caller-owned buffer set and its reuse fence move to the Python adapter.
   - `observe` publishes the cached observation and transition outputs and consumes no seed.
   - `step`, `reset` and `observe` write all six transition outputs; `truncate_envs` leaves them untouched and writes only the selected observation rows.
+- v4.3 (Task 7.4, Claude; binding approved in the Codex-reviewed brief `ops/rebuild-2026-09-29/briefs/7.4-packaging.md` §4). No tensor change: a new binding, `encode_kaggriculture_seat_into`, writes one live seat's `[1,1]` row from its legal view (public state and own private) through the same `write_seat`; a shape-valid empty rival private stands in for the state a live agent cannot see. See `docs/rl-api-specs.md`.

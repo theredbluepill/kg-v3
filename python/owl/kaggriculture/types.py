@@ -264,6 +264,20 @@ class KaggricultureObsBatch(BaseModel):
             raise ValueError(
                 f"still_playing must have shape [env, {PLAYERS}], got {tuple(lead)}"
             )
+        self._check_fields(tuple(lead))
+
+    def check_single_seat_contract(self) -> None:
+        """Check one live seat's row: the same per-field checks, lead ``[1, 1]``.
+
+        Scoped to the Kaggle agent, which encodes only its own seat; every
+        environment and training path keeps the two-seat ``check_contract``.
+        """
+        lead = tuple(self.still_playing.shape)
+        if lead != (1, 1):
+            raise ValueError(f"still_playing must have shape (1, 1), got {lead}")
+        self._check_fields(lead)
+
+    def _check_fields(self, lead: tuple[int, ...]) -> None:
         # Iterating the pinned schema's known field names is the sanctioned
         # dynamic-access case (AGENTS.md).
         for name, (dtype, trailing, low, high) in _SCHEMA.items():

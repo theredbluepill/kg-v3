@@ -49,49 +49,50 @@ def allocate_observation_buffers(
     """Allocate the contract's 29 CPU buffers; native observe fills all padding."""
     if type(n_envs) is not int or n_envs < 1:
         raise ValueError("n_envs must be a positive integer")
+    return _allocate_batch((n_envs, 2), pin_memory=pin_memory)
+
+
+def allocate_single_seat_buffers() -> KaggricultureObsBatch:
+    """Allocate one live seat's ``[1, 1]`` row for the Kaggle agent's encoder."""
+    return _allocate_batch((1, 1), pin_memory=False)
+
+
+def _allocate_batch(
+    lead: tuple[int, int], *, pin_memory: bool
+) -> KaggricultureObsBatch:
     return KaggricultureObsBatch(
-        tile_kind=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
-        tile_crop=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
-        tile_animal=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
-        tile_cell=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
-        tile_role=_allocate((n_envs, 2, 200), torch.int64, pin_memory=pin_memory),
-        tiles_int=_allocate((n_envs, 2, 200, 7), torch.int64, pin_memory=pin_memory),
-        tiles_float=_allocate(
-            (n_envs, 2, 200, 15), torch.float32, pin_memory=pin_memory
-        ),
-        actor_slot=_allocate((n_envs, 2, 482), torch.int64, pin_memory=pin_memory),
-        actor_cell=_allocate((n_envs, 2, 482), torch.int64, pin_memory=pin_memory),
-        actor_role=_allocate((n_envs, 2, 482), torch.int64, pin_memory=pin_memory),
-        actor_mask=_allocate((n_envs, 2, 482), torch.bool, pin_memory=pin_memory),
-        actor_inventory=_allocate(
-            (n_envs, 2, 241, 12), torch.int64, pin_memory=pin_memory
-        ),
+        tile_kind=_allocate((*lead, 200), torch.int64, pin_memory=pin_memory),
+        tile_crop=_allocate((*lead, 200), torch.int64, pin_memory=pin_memory),
+        tile_animal=_allocate((*lead, 200), torch.int64, pin_memory=pin_memory),
+        tile_cell=_allocate((*lead, 200), torch.int64, pin_memory=pin_memory),
+        tile_role=_allocate((*lead, 200), torch.int64, pin_memory=pin_memory),
+        tiles_int=_allocate((*lead, 200, 7), torch.int64, pin_memory=pin_memory),
+        tiles_float=_allocate((*lead, 200, 15), torch.float32, pin_memory=pin_memory),
+        actor_slot=_allocate((*lead, 482), torch.int64, pin_memory=pin_memory),
+        actor_cell=_allocate((*lead, 482), torch.int64, pin_memory=pin_memory),
+        actor_role=_allocate((*lead, 482), torch.int64, pin_memory=pin_memory),
+        actor_mask=_allocate((*lead, 482), torch.bool, pin_memory=pin_memory),
+        actor_inventory=_allocate((*lead, 241, 12), torch.int64, pin_memory=pin_memory),
         actor_inventory_rank=_allocate(
-            (n_envs, 2, 241, 12), torch.int64, pin_memory=pin_memory
+            (*lead, 241, 12), torch.int64, pin_memory=pin_memory
         ),
-        actors_float=_allocate(
-            (n_envs, 2, 482, 26), torch.float32, pin_memory=pin_memory
-        ),
-        player_features=_allocate(
-            (n_envs, 2, 2, 44), torch.float32, pin_memory=pin_memory
-        ),
-        storage_counts=_allocate((n_envs, 2, 17), torch.int64, pin_memory=pin_memory),
-        storage_rank=_allocate((n_envs, 2, 12), torch.int64, pin_memory=pin_memory),
-        banks=_allocate((n_envs, 2, 2), torch.float64, pin_memory=pin_memory),
-        shop_type=_allocate((n_envs, 2, 8), torch.int64, pin_memory=pin_memory),
-        shop_slot=_allocate((n_envs, 2, 8), torch.int64, pin_memory=pin_memory),
-        shop_mask=_allocate((n_envs, 2, 8), torch.bool, pin_memory=pin_memory),
-        market_product=_allocate((n_envs, 2, 9), torch.int64, pin_memory=pin_memory),
-        market_float=_allocate((n_envs, 2, 9, 2), torch.float32, pin_memory=pin_memory),
-        market_int=_allocate((n_envs, 2, 9, 2), torch.int64, pin_memory=pin_memory),
-        global_features=_allocate(
-            (n_envs, 2, 15), torch.float32, pin_memory=pin_memory
-        ),
-        globals_int=_allocate((n_envs, 2, 16), torch.int64, pin_memory=pin_memory),
-        still_playing=_allocate((n_envs, 2), torch.bool, pin_memory=pin_memory),
-        order_limits=_allocate((n_envs, 2), torch.int64, pin_memory=pin_memory),
+        actors_float=_allocate((*lead, 482, 26), torch.float32, pin_memory=pin_memory),
+        player_features=_allocate((*lead, 2, 44), torch.float32, pin_memory=pin_memory),
+        storage_counts=_allocate((*lead, 17), torch.int64, pin_memory=pin_memory),
+        storage_rank=_allocate((*lead, 12), torch.int64, pin_memory=pin_memory),
+        banks=_allocate((*lead, 2), torch.float64, pin_memory=pin_memory),
+        shop_type=_allocate((*lead, 8), torch.int64, pin_memory=pin_memory),
+        shop_slot=_allocate((*lead, 8), torch.int64, pin_memory=pin_memory),
+        shop_mask=_allocate((*lead, 8), torch.bool, pin_memory=pin_memory),
+        market_product=_allocate((*lead, 9), torch.int64, pin_memory=pin_memory),
+        market_float=_allocate((*lead, 9, 2), torch.float32, pin_memory=pin_memory),
+        market_int=_allocate((*lead, 9, 2), torch.int64, pin_memory=pin_memory),
+        global_features=_allocate((*lead, 15), torch.float32, pin_memory=pin_memory),
+        globals_int=_allocate((*lead, 16), torch.int64, pin_memory=pin_memory),
+        still_playing=_allocate(lead, torch.bool, pin_memory=pin_memory),
+        order_limits=_allocate(lead, torch.int64, pin_memory=pin_memory),
         action_mask=KaggricultureActionMask(
-            can_act=_allocate((n_envs, 2, 252), torch.bool, pin_memory=pin_memory)
+            can_act=_allocate((*lead, 252), torch.bool, pin_memory=pin_memory)
         ),
     )
 

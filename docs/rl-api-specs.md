@@ -1157,6 +1157,32 @@ where applicable, environment context; all output bytes stay unchanged. The
 call returns `None`, retains no caller array and allocates no replacement output
 arrays. Parsing and prepared snapshots still allocate scratch storage.
 
+The live-seat seam (Task 7.4) writes one seat's row from that seat's legal
+view alone, for the Kaggle agent:
+
+```python
+encode_kaggriculture_seat_into(
+    view: str, seat: int, *,
+    <the same 29 keyword buffers>,
+) -> None
+```
+
+Every buffer has leading shape `[1,1]`. `view` is a JSON object with exactly
+`configuration` (the game envelope; unknown keys such as Kaggle's local
+`__raw_path__` are rejected), `public` (`step`, `day`, `hour`, `farms`,
+`market`, `town`) and `private` (the seat's own shed, seeds and inventories).
+`PreparedObservation::from_seat_view` admits it through the same
+`ObservationConfig`, public-context and snapshot checks as the header path,
+with a shape-valid empty rival private (one empty inventory per rival actor);
+the row is then written by the same `write_seat` that `write_env` calls, which
+reads only the own seat's private state. Rust tests compare this row bytewise
+with the two-seat row over played games while the rival holds private state;
+Python tests compare Kaggle's own per-seat observations with the native env's
+rows after identical actions. Admission completes before the first write, so a
+rejected call leaves every buffer unchanged. `check_single_seat_contract()`
+applies the per-field checks to a `[1,1]` batch; `check_contract()` stays
+two-seat for every environment and training path.
+
 `ObservationGame` owns its immutable checked config, forwards native stepping
 and prepares both seat views from one public snapshot. Exact count/rank tensors,
 strict engine-shaped tiles and wide intermediate arithmetic preserve admitted
