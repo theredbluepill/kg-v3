@@ -1,0 +1,79 @@
+---
+type: "Decision"
+title: "Add absolute own-bank shaping and halve the recipe-J learning rates"
+description: "Owner decision (2026-09-30), answering the BC-to-PPO economy collapse: add reward term A, a capped absolute own-bank score whose per-step change is paid to that seat alone (not zero-sum), and halve recipe J's learning rates (muon 0.0002 -> 0.0001, adamw 1e-5 -> 5e-6). Native reward.rs and the Python oracle implement B(bank) = min(cap_b, w_b * max(0, bank) / S) with bit-exact parity, required config fields, a below-one cap budget and terminal_scale reduced by cap_b. The bank presets configs/kaggriculture_{2,4,8}rank_bc_finetune_bank.yaml use w_b 1, S 100,000 and cap_b .25 (terminal_scale .5); every other config sets the term off, which leaves rewards bit-identical. The zero-sum winner critic cannot represent the term's common mode; train/reward_bank_mean and train/return_common_mean measure it. A deliberate deviation from the pure relative reward; CPU checks only, nothing trained."
+tags: ["kaggriculture-v3", "rewards", "training", "decisions", "adaptation"]
+status: "adopted"
+generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
+decider: "Owner, 2026-09-30: \"A is good + decrease the LR by half?\""
+sources: [{"resource": "user-directive:2026-09-30:a-is-good-and-decrease-the-lr-by-half"}, {"resource": "pod4-evidence-branch:c0b551f:ops/rebuild-2026-09-29/pod4-2026-09-30/main-J-4rank/launch.md"}, {"resource": "pod4-evidence-branch:c0b551f:ops/rebuild-2026-09-29/pod4-2026-09-30/main-J-4rank/run-statement.md"}, {"resource": "external-url:https://wandb.ai/spoon/kg-v3/runs/gq94cyyp"}, {"resource": "repository:src/kaggriculture/reward.rs"}, {"resource": "repository:src/kaggriculture/env.rs"}, {"resource": "repository:src/kaggriculture/bindings.rs"}, {"resource": "repository:src/kaggriculture/env_tests.rs"}, {"resource": "repository:python/owl/kaggriculture/rewards.py"}, {"resource": "repository:python/owl/kaggriculture/env.py"}, {"resource": "repository:python/owl/train/ppo.py"}, {"resource": "repository:python/owl/rs.pyi"}, {"resource": "repository:configs/kaggriculture_2rank_bc_finetune_bank.yaml"}, {"resource": "repository:configs/kaggriculture_4rank_bc_finetune_bank.yaml"}, {"resource": "repository:configs/kaggriculture_8rank_bc_finetune_bank.yaml"}, {"resource": "repository:configs/kaggriculture_4rank_bc_finetune.yaml"}, {"resource": "repository:tests/kaggriculture/test_rewards.py"}, {"resource": "repository:tests/kaggriculture/test_native_env.py"}, {"resource": "repository:tests/kaggriculture/test_env.py"}, {"resource": "repository:tests/kaggriculture/test_env_reference.py"}, {"resource": "repository:tests/kaggriculture/test_configs.py"}, {"resource": "repository:tests/kaggriculture/test_training_smoke.py"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/reward-bank/prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/reward-bank/mutations.log"}]
+---
+
+# Add absolute own-bank shaping and halve the recipe-J learning rates
+
+## Decision
+
+After the 4-rank main run on recipe J collapsed its bank economy, the owner was offered options. Option A read: "A. Absolute bank shaping: a small per-step reward for own bank growth ... capped like the other terms". A halving of the recipe-J learning rates (muon 0.0002 -> 0.0001, adamw 0.00001 -> 0.000005) was offered with it. The owner answered, verbatim: **"A is good + decrease the LR by half?"**
+
+The adopted values are term A with weight 1, scale 100,000 and cap .25, and recipe J with both learning rates halved. This is a **deliberate deviation from the pure relative reward**, which pays nothing for absolute wealth. It is the "new v3 choice" that the [[../references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]] required to be named before any dense bank shaping was introduced. It is an owner decision, not an implementer choice under the [[recipe-choices-align-to-isaiah-without-owner-escalation|recipe-choices Decision]].
+
+## Why: the evidence
+
+- **The collapse.** The 4-rank main run J (W&B `spoon/kg-v3` `gq94cyyp`; receipts on the unlanded `kg/rebuild-pod4-evidence` `c0b551f`, `ops/rebuild-2026-09-29/pod4-2026-09-30/main-J-4rank/launch.md`) started from the BC best with `model_only`. Rank 0's `train/own_bank_mean` held at 72.6k–74.3k through iteration 34. It then fell to 68.4k at iteration 45, 52.6k at 57, 17.9k at 68 and 5.7k at 79, just after the LR warm-up peak at iteration 63. The watchdog stopped the run on its 20k floor. `margin_abs_mean` fell with the bank, and the draw rate stayed 0.
+- **The reward has no absolute term.** Before this change, `src/kaggriculture/reward.rs` was fully relative: the economic term is `ΔP(opp) − ΔP(self)`. The starvation and drought penalty is capped at .25 and saturates after one or two deaths. The terminal term is `0.75 × sign(bank diff)`. In mirror self-play, both seats can slide into poverty together while every game still has a winner, and nothing punishes that.
+- **Limits of that evidence.** It is one seed on one run. The run cannot separate an LR effect, since the decline tracks the warm-up, from the objective and from a teacher coefficient (0.005) too weak to anchor the policy. No checkpoint was saved, so the late policy was never evaluated against the BC best. The owner's two changes act on two of these candidate causes at once, so a run of the bank presets cannot attribute its outcome to either change alone.
+
+## Design (as implemented)
+
+- **Score.** `B(bank) = min(cap_b, w_b × max(0, bank) / S)` in binary64, evaluated as the product, then the quotient, then the cap. An overflowing product saturates at the cap (`S > 0`, so the result is never NaN). A negative bank scores 0.
+- **Per-step reward, own seat only.** Seat `s` adds `B(bank_s after) − B(bank_s before)` to its economic term. The rival's bank does not enter it, so the term is not zero-sum. Over a complete game it telescopes to `B(final) − B(reset bank)`.
+- **Before and after.** The native step already reads both seats' banks before the kernel step and after it (`game_banks` in `env.rs`), before any auto-reset. A game's first transition therefore starts from the reset bank, and no delta spans two games. No per-seat bank has to be carried between steps. Truncation resets a game the same way.
+- **Rounding.** The relative term plus the bank term is summed in float64 and rounded to f32 once. On a terminal step, the result is promoted to f64, `terminal_scale × sign` is added, and it is rounded to f32 again: the same schedule as before. With `w_b = 0` nothing is added, so rewards are bit-identical to the relative-only reward.
+- **Budget.** `terminal_scale = 1 − (econ_cap if W > 0) − (econ_ineffective_cap if active) − (cap_b if w_b > 0)`. Validation requires every coefficient to be finite and nonnegative, and requires `S > 0` and `cap_b > 0` when `w_b > 0`. The active caps, summed as death, then ineffective, then bank, must be below 1. So a complete-game return stays in [−1, 1], but bootstrapped partial returns still carry no such bound. Rust `validate()` and `KaggricultureRewardConfig` apply the same predicate. The three new fields are required in every config, with no defaults.
+- **Values.** The bank presets set `econ_bank_weight` 1.0, `econ_bank_scale` 100000.0 and `econ_bank_cap` 0.25, with `econ_shaping` 0.2 and cap .25 unchanged. So `terminal_scale` is 1 − .25 − .25 = **0.5**. Every other Kaggriculture config sets 0.0 / 100000.0 / 0.0 explicitly.
+- **Stateless policy.** The term is computed natively from game banks and only enters rewards. It never feeds model inputs, and no opponent identity is involved.
+
+## Known limit: the critic cannot represent the common mode
+
+The Kaggriculture critic is the zero-sum winner softmax. Each seat's value is `2p − 1` with `p_0 + p_1 = 1`, so the two seat values always sum to 0. The bank term is not zero-sum: both seats can gain or lose together. The critic therefore cannot represent the common-mode part of the return, the mean over both seats. That part enters the advantages as unexplained return, and it caps the explained variance. The critic architecture is deliberately unchanged. Two telemetry values measure the limit:
+
+- `train/reward_bank_mean`: the per-update mean of the own-bank component over every seat-step. The adapter computes one value per step from the transition banks with the float64 oracle, and the trainer averages the values over steps and ranks.
+- `train/return_common_mean`: the mean over segments of both seats' mean segment return. Under the relative-only reward it is exactly 0, because the f32 rewards are exactly antisymmetric. When every seat is valid, as in Kaggriculture self-play, it equals `train/return_mean` by construction. The separate key keeps the common-mode reading explicit.
+
+## Consequence the owner may want to revisit
+
+At `w_b = 1` and `S = 100,000`, the score reaches its .25 cap at a bank of **25,000**. The BC economy in the collapse run held at about 72–74k. So in the bank presets, the term pays nothing for any bank change above 25k: it penalises a slide below 25k (the collapse reached 5.7k), and it gives no incentive to grow past 25k. Spending that leaves the bank above 25k costs nothing. The starting bank of 3,000 scores .03, so one game's bank term lies in [−.03, +.22]. These are the owner's values as given, not measured optima. The owner decides whether the scale or cap should change.
+
+## Adaptation inventory
+
+- **Native.** `src/kaggriculture/reward.rs` adds the three fields, `bank_score`, the budget and validation rules, and `transition(before, after, banks_before, banks_after, done)`. `src/kaggriculture/env.rs` passes the banks read before the step. `src/kaggriculture/bindings.rs` requires the ten-key dict. `python/owl/rs.pyi` updates `KaggricultureRewardDict`.
+- **Python.** `python/owl/kaggriculture/rewards.py` adds the three required fields, the shared admission predicate, the `bank_score` and `bank_rewards` oracles, and `transition_rewards(..., banks_before, banks_after, ...)`. `python/owl/kaggriculture/env.py` adds the `reward_bank_mean` step metric. `python/owl/train/ppo.py` logs `train/return_common_mean`.
+- **Configs.** All seven existing Kaggriculture configs get the explicit off values. The new `configs/kaggriculture_4rank_bc_finetune.yaml` is recipe J at 4 ranks, the base the task asked for when it was missing. The new `configs/kaggriculture_{2,4,8}rank_bc_finetune_bank.yaml` copy their recipe-J preset with the two halved LRs and the bank term on. `rl.checkpoint_freq` stays the owner's 10M. Their headers quote the owner and cite the evidence and its limits.
+- **Tests.**
+  - Rust `src/kaggriculture/env_tests.rs`:
+    - growth pays, spending costs, the cap binds, and overflow saturates;
+    - the term is own-seat only;
+    - the terminal scale is reduced;
+    - a disabled term is bit-identical to an independent relative-only formula;
+    - a 719-step walk telescopes to `B(final) − B(start)`;
+    - a native autoreset test (a purchase leaves the first game at 2,980, and the next game's first transition starts from 3,000);
+    - the admission table gains eight bank rows, including the exact binary64 budget edge .25 + .1 + .65 = 1.0, and invalid bank values are rejected.
+  - Python `tests/kaggriculture/test_rewards.py`:
+    - the same admission rows, run against the native constructor;
+    - three live native games with the bank term (preset values, a cap that binds near the start bank, overflow saturation) match the oracle bit-exactly;
+    - score, growth and spending, own-seat, terminal scale, admission and required keys, bit-identity with the term off, telescoping, and a native autoreset case.
+  - Python `tests/kaggriculture/test_native_env.py` carries the same bank rows.
+  - `tests/kaggriculture/test_env_reference.py` replays the recorded 16-game fixture bit-exactly with the term off. That is the byte-identical regression against the pre-change native rewards, and the policy module's bytes stay untouched as fixture custody.
+  - `tests/kaggriculture/test_env.py` checks the adapter metric.
+  - `tests/kaggriculture/test_training_smoke.py` checks both telemetry keys through `train_iteration`: exactly 0 with the term off, and consistent with the per-step bank means with it on.
+  - `tests/kaggriculture/test_configs.py` covers the workload and shape tests over the new presets, the halved LRs, the bank values and `terminal_scale` .5. A whole-config diff test shows that only the two LRs and the two enabled bank coefficients differ from recipe J, and the startup workload headroom equals the base's.
+- **Docs.** `docs/rl-api-specs.md` (reward config and native reward sections), `docs/kaggriculture-contract.md` ("Rewards") and `README.md` (config list).
+
+## Checks and limits
+
+- Full `CARGO_BUILD_JOBS=2 OMP_NUM_THREADS=2 uvx --from rust-just just prepare` on this change exits 0. Rust passes 280 with 5 ignored, plus the engine and opponent crates. Python passes 2,825 with 18 skipped. mypy, docs-lint and docs-fresh also pass (`ops/rebuild-2026-09-29/reward-bank/prepare.log`). A first attempt failed only on three ruff findings in new tests, which were fixed before the rerun.
+- 14 seam mutations were each applied, run and restored from git, and all 14 were killed (`ops/rebuild-2026-09-29/reward-bank/mutations.py` and `mutations.log`, at `8de8f0d`). They cover: the rival's bank used in place of the seat's own, the terminal scale without the bank cap, the budget without the bank cap, a missing scale requirement, after-banks passed as before-banks in `env.rs`, the missing negative-bank clamp, the Python terminal scale and admission, the adapter metric and the common-mode metric reading seat 0 only, and preset drifts (scale, LR, `vf_coef`, the 4-rank base's `adamw_lr`). The Rust mutants were checked with the Rust tests only.
+- Nothing was trained, and no pod was touched. Whether term A plus the halved LRs holds the economy is unmeasured.
+- The common-mode limit is documented and instrumented but not measured on a run.
+- An inert bank term is not rejected: a positive `w_b` whose product or quotient underflows to 0 for every reachable bank passes validation. The death term's binary64 product check has no analogue here, because the score depends on the bank.
+- Reopen if a bank-preset run collapses anyway, if `train/return_common_mean` grows large relative to the zero-sum return and explained variance drops, or if the owner changes the scale, cap or learning rates.
