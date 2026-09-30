@@ -1,0 +1,73 @@
+.........................F....                                           [100%]
+=================================== FAILURES ===================================
+________________ test_attempt_records_reject_malformed_lineage _________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-343/test_attempt_records_reject_ma0')
+
+    def test_attempt_records_reject_malformed_lineage(tmp_path: Path) -> None:
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        path = run_dir / train_bc_script.ATTEMPTS
+        resume = cast(Any, SimpleNamespace(step=2))
+    
+        def start(resume: Any) -> dict[str, object]:
+            return cast(
+                dict[str, object],
+                train_bc_script._start_attempt(
+                    run_dir,
+                    source_commit="b",
+                    data=tmp_path,
+                    dataset_manifest_sha256="0" * 64,
+                    world_size=1,
+                    resume=resume,
+                ),
+            )
+    
+        with pytest.raises(FileNotFoundError, match="attempt records missing"):
+            start(resume)
+        path.write_text("")
+        with pytest.raises(ValueError, match="needs the run's attempt records"):
+            start(resume)
+        with pytest.raises(FileExistsError, match="already has attempts"):
+            start(None)
+        for lines, match in (
+            (['{"attempt": 1, "source_commit": "a"}'], "is not attempt 0"),
+            (['["attempt", 0]'], "is not attempt 0"),
+            (['{"attempt": 0, "source_commit": 7}'], "has no source_commit"),
+            (['{"attempt": 0}'], "has no source_commit"),
+        ):
+            path.write_text("\n".join(lines) + "\n")
+            with pytest.raises(ValueError, match=match):
+>               start(resume)
+
+tests/kaggriculture/test_bc.py:856: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:831: in start
+    train_bc_script._start_attempt(
+scripts/train_bc.py:263: in _start_attempt
+    None if resume is None else file_sha256(run_dir / BC_STATE)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/train/bc.py:491: in file_sha256
+    with path.open("rb") as handle:
+         ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-343/test_attempt_records_reject_ma0/run/bc_state.pt')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-343/test_attempt_records_reject_ma0/run/bc_state.pt'
+
+/Users/poonszesen/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/pathlib.py:1013: FileNotFoundError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_attempt_records_reject_malformed_lineage
+1 failed, 29 passed in 10.35s

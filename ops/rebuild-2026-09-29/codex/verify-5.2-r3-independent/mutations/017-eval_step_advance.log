@@ -1,0 +1,50 @@
+.............FF...............                                           [100%]
+=================================== FAILURES ===================================
+____ test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience _____
+
+    def test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience() -> None:
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.05)
+        assert selection.observe(3.0, step=0)
+        assert selection.observe(2.0, step=2)
+        # A new minimum inside min_delta is still the best checkpoint; it only fails
+        # to reset the patience count.
+        assert selection.observe(1.97, step=4)
+        assert (selection.best_nll, selection.best_step) == (1.97, 4)
+        assert selection.evals_since_improvement == 1
+        assert not selection.should_stop
+        assert not selection.observe(2.4, step=6)
+        assert selection.should_stop
+        assert (selection.best_nll, selection.best_step) == (1.97, 4)
+>       with pytest.raises(ValueError, match="advance"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:496: Failed
+_______ test_an_unscheduled_evaluation_selects_but_leaves_patience_alone _______
+
+    def test_an_unscheduled_evaluation_selects_but_leaves_patience_alone() -> None:
+        """An off-cadence evaluation may keep a lower checkpoint but not add patience.
+    
+        A budget or runtime stop evaluates between scheduled steps; a restart must
+        keep the scheduled cadence.
+        """
+        selection = HeldOutSelection(patience_evals=2, min_delta=0.0)
+        assert selection.observe(3.0, step=0)
+        assert not selection.observe(4.0, step=1, scheduled=False)
+        assert selection.evals_since_improvement == 0
+        assert selection.observe(2.5, step=3, scheduled=False)
+        assert (selection.best_nll, selection.best_step) == (2.5, 3)
+        assert (selection.improvement_nll, selection.evals_since_improvement) == (3.0, 0)
+        assert (selection.last_nll, selection.last_step) == (2.5, 3)
+        assert not selection.observe(2.8, step=4)
+        assert selection.evals_since_improvement == 0  # 2.8 beat the scheduled 3.0
+        assert (selection.best_nll, selection.best_step) == (2.5, 3)
+>       with pytest.raises(ValueError, match="advance"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_bc.py:519: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_held_out_selection_keeps_the_lowest_nll_and_stops_after_patience
+FAILED tests/kaggriculture/test_bc.py::test_an_unscheduled_evaluation_selects_but_leaves_patience_alone
+2 failed, 28 passed in 5.67s

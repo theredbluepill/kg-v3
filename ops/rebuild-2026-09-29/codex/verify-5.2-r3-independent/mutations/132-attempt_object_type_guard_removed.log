@@ -1,0 +1,70 @@
+.........................F....                                           [100%]
+=================================== FAILURES ===================================
+________________ test_attempt_records_reject_malformed_lineage _________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-357/test_attempt_records_reject_ma0')
+
+    def test_attempt_records_reject_malformed_lineage(tmp_path: Path) -> None:
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        path = run_dir / train_bc_script.ATTEMPTS
+        resume = cast(Any, SimpleNamespace(step=2))
+    
+        def start(resume: Any) -> dict[str, object]:
+            return cast(
+                dict[str, object],
+                train_bc_script._start_attempt(
+                    run_dir,
+                    source_commit="b",
+                    data=tmp_path,
+                    dataset_manifest_sha256="0" * 64,
+                    world_size=1,
+                    resume=resume,
+                ),
+            )
+    
+        with pytest.raises(FileNotFoundError, match="attempt records missing"):
+            start(resume)
+        path.write_text("")
+        with pytest.raises(ValueError, match="needs the run's attempt records"):
+            start(resume)
+        with pytest.raises(FileExistsError, match="already has attempts"):
+            start(None)
+        for lines, match in (
+            (['{"attempt": 1, "source_commit": "a"}'], "is not attempt 0"),
+            (['["attempt", 0]'], "is not attempt 0"),
+            (['{"attempt": 0, "source_commit": 7}'], "has no source_commit"),
+            (['{"attempt": 0}'], "has no source_commit"),
+        ):
+            path.write_text("\n".join(lines) + "\n")
+            with pytest.raises(ValueError, match=match):
+>               start(resume)
+
+tests/kaggriculture/test_bc.py:856: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:831: in start
+    train_bc_script._start_attempt(
+scripts/train_bc.py:249: in _start_attempt
+    earlier = _read_attempts(path) if resume is not None else []
+              ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-357/test_attempt_records_reject_ma0/run/bc_attempts.jsonl')
+
+    def _read_attempts(path: Path) -> list[dict[str, object]]:
+        if not path.is_file():
+            raise FileNotFoundError(f"BC attempt records missing: {path}")
+        records = [
+            json.loads(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line
+        ]
+        for index, record in enumerate(records):
+>           if record.get("attempt") != index:
+               ^^^^^^^^^^
+E           AttributeError: 'list' object has no attribute 'get'
+
+scripts/train_bc.py:284: AttributeError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_attempt_records_reject_malformed_lineage
+1 failed, 29 passed in 15.29s

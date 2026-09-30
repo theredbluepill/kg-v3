@@ -1,0 +1,1514 @@
+F..FFF.F.FF.....FFFFFFFFF.F.FF                                           [100%]
+=================================== FAILURES ===================================
+________________ test_shards_round_trip_rows_at_contract_dtypes ________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_shards_round_trip_rows_at0')
+
+    def test_shards_round_trip_rows_at_contract_dtypes(tmp_path: Path) -> None:
+        episodes = [
+            _episode("ep-a", "train", 4, seed=1),
+            _episode("ep-v", "validation", 2, seed=4),
+        ]
+        root = _write(tmp_path / "data", episodes)
+        assert (root / "train" / "2026-09-21-ep-a.npz").is_file()
+>       dataset = load_bc_dataset(root)
+                  ^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:206: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_shards_round_trip_rows_at0/data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+_______________ test_loader_requires_both_splits_and_paired_rows _______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_loader_requires_both_spli0')
+
+    def test_loader_requires_both_splits_and_paired_rows(tmp_path: Path) -> None:
+        root = _write(tmp_path / "train-only", [_episode("ep-a", "train", 2, seed=1)])
+        with pytest.raises(ValueError, match="no admitted validation rows"):
+>           load_bc_dataset(root)
+
+tests/kaggriculture/test_bc.py:257: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_loader_requires_both_spli0/train-only')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=2, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='7ea55228ceffd552f51303a529ae27bf02c090bd5db7ed950fff442d434241b3', shard_bytes=13200)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_loader_requires_both_spli0')
+
+    def test_loader_requires_both_splits_and_paired_rows(tmp_path: Path) -> None:
+        root = _write(tmp_path / "train-only", [_episode("ep-a", "train", 2, seed=1)])
+>       with pytest.raises(ValueError, match="no admitted validation rows"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'no admitted validation rows'
+E         Actual message: "1 validation error for KaggricultureObsBatch\nglobals_int\n  Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+
+tests/kaggriculture/test_bc.py:256: AssertionError
+_____________ test_loader_range_checks_its_compact_integer_storage _____________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_loader_range_checks_its_c0')
+
+    def test_loader_range_checks_its_compact_integer_storage(tmp_path: Path) -> None:
+        wide = _episode("ep-w", "train", 2, seed=1)
+        wide.obs.globals_int[0, 0, 0] = 2**40  # contract-valid, not int32
+        root = _write(tmp_path / "wide", [wide, _episode("ep-v", "validation", 2, seed=4)])
+        with pytest.raises(ValueError, match="storage range"):
+>           load_bc_dataset(root)
+
+tests/kaggriculture/test_bc.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_loader_range_checks_its_c0/wide')
+record = BCManifestEpisode(episode_id='ep-w', split='train', terminal_banks=(3000.0, 2500.0), admitted=2, shard_path='train/2026-09-21-ep-w.npz', shard_sha256='7ea55228ceffd552f51303a529ae27bf02c090bd5db7ed950fff442d434241b3', shard_bytes=13200)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_loader_range_checks_its_c0')
+
+    def test_loader_range_checks_its_compact_integer_storage(tmp_path: Path) -> None:
+        wide = _episode("ep-w", "train", 2, seed=1)
+        wide.obs.globals_int[0, 0, 0] = 2**40  # contract-valid, not int32
+        root = _write(tmp_path / "wide", [wide, _episode("ep-v", "validation", 2, seed=4)])
+>       with pytest.raises(ValueError, match="storage range"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'storage range'
+E         Actual message: "1 validation error for KaggricultureObsBatch\nglobals_int\n  Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+
+tests/kaggriculture/test_bc.py:271: AssertionError
+__________ test_two_fake_ranks_hold_disjoint_rows_covering_the_split ___________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_two_fake_ranks_hold_disjo0')
+
+    def test_two_fake_ranks_hold_disjoint_rows_covering_the_split(tmp_path: Path) -> None:
+        root = _dataset_root(tmp_path)
+>       ranks = [load_bc_dataset(root, rank=r, world_size=2) for r in range(2)]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:277: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_two_fake_ranks_hold_disjo0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+__________________ test_loss_decreases_on_a_memorizable_batch __________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_loss_decreases_on_a_memor0')
+
+    def test_loss_decreases_on_a_memorizable_batch(tmp_path: Path) -> None:
+>       dataset = load_bc_dataset(_dataset_root(tmp_path))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:332: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_loss_decreases_on_a_memor0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+_______________ test_the_real_training_loop_lowers_the_objective _______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_the_real_training_loop_lo0')
+
+    def test_the_real_training_loop_lowers_the_objective(tmp_path: Path) -> None:
+        """train_bc's own update path moves every tensor and lowers the train loss."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(
+            optimizer=AdamWConfig(learning_rate=1e-2), max_steps=12, eval_interval_steps=12
+        )
+        initial = build_bc_model(_ppo_config(), device=_CONTEXT.device, seed=config.seed)
+>       before = _train_objective(initial, data)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:404: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:388: in _train_objective
+    split = load_bc_dataset(data).train
+            ^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_the_real_training_loop_lo0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+_____________________ test_bc_loss_reaches_every_parameter _____________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_bc_loss_reaches_every_par0')
+
+    def test_bc_loss_reaches_every_parameter(tmp_path: Path) -> None:
+        """The critic is trained with the policy; DDP needs no unused-parameter scan."""
+>       dataset = load_bc_dataset(_dataset_root(tmp_path))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:420: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_bc_loss_reaches_every_par0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+__________ test_best_checkpoint_is_the_minimum_even_inside_min_delta ___________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_best_checkpoint_is_the_mi0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113010200>
+
+    def test_best_checkpoint_is_the_minimum_even_inside_min_delta(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The verifier's probe: NLLs 2.0, 1.97, 2.4 with min_delta 0.05 keep step 1."""
+        data = _dataset_root(tmp_path)
+        scripted = iter([2.0, 1.97, 2.4])
+        _script_validation(monkeypatch, scripted, snapshots={})
+        run_dir = tmp_path / "run"
+        config = _bc_config(
+            eval_interval_steps=1, patience_evals=2, min_delta=0.05, max_steps=50
+        )
+>       result, _ = _run(run_dir, data, config)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:547: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:161: in _run
+    dataset = load_bc_dataset(data)
+              ^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_best_checkpoint_is_the_mi0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+_______ test_training_keeps_the_best_checkpoint_and_stops_on_degradation _______
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_training_keeps_the_best_c0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113010b00>
+
+    def test_training_keeps_the_best_checkpoint_and_stops_on_degradation(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        snapshots: dict[int, dict[str, torch.Tensor]] = {}
+        _script_validation(
+            monkeypatch, iter([3.0, 2.0, 2.5, 2.6, 2.7]), snapshots=snapshots
+        )
+        run_dir = tmp_path / "run"
+        config = _bc_config(eval_interval_steps=1, patience_evals=2, max_steps=50)
+>       result, _ = _run(run_dir, data, config)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:161: in _run
+    dataset = load_bc_dataset(data)
+              ^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_training_keeps_the_best_c0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+_____________ test_restart_from_state_matches_an_uninterrupted_run _____________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_restart_from_state_matche0')
+
+    def test_restart_from_state_matches_an_uninterrupted_run(tmp_path: Path) -> None:
+        data = _dataset_root(tmp_path)
+>       straight, straight_model = _run(
+            tmp_path / "straight", data, _bc_config(max_steps=4)
+        )
+
+tests/kaggriculture/test_bc.py:617: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:161: in _run
+    dataset = load_bc_dataset(data)
+              ^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_restart_from_state_matche0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+_ test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls0-0] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_an_off_cadence_stop_resta0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112c4d8e0>
+interrupted_nlls = [3.0, 4.0, 4.0, 4.0], best_step = 0
+
+    @pytest.mark.parametrize(
+        ("interrupted_nlls", "best_step"),
+        [
+            # The verifier's probe: the off-cadence NLL is no better.
+            ([3.0, 4.0, 4.0, 4.0], 0),
+            # A lower off-cadence NLL is kept, but patience still runs on cadence.
+            ([3.0, 2.5, 4.0, 4.0], 1),
+        ],
+    )
+    def test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        interrupted_nlls: list[float],
+        best_step: int,
+    ) -> None:
+        """A budget stop between evaluations must not shorten the resumed patience."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(eval_interval_steps=2, patience_evals=2, max_steps=8)
+        # Uninterrupted: evaluations at steps 0, 2, 4; then the interrupted run's.
+        nlls = iter([3.0, 4.0, 4.0, *interrupted_nlls])
+        _script_validation(monkeypatch, nlls, snapshots={})
+>       straight, straight_model = _run(tmp_path / "straight", data, config)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:660: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:161: in _run
+    dataset = load_bc_dataset(data)
+              ^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_an_off_cadence_stop_resta0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+_ test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls1-1] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_an_off_cadence_stop_resta1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1126ba510>
+interrupted_nlls = [3.0, 2.5, 4.0, 4.0], best_step = 1
+
+    @pytest.mark.parametrize(
+        ("interrupted_nlls", "best_step"),
+        [
+            # The verifier's probe: the off-cadence NLL is no better.
+            ([3.0, 4.0, 4.0, 4.0], 0),
+            # A lower off-cadence NLL is kept, but patience still runs on cadence.
+            ([3.0, 2.5, 4.0, 4.0], 1),
+        ],
+    )
+    def test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        interrupted_nlls: list[float],
+        best_step: int,
+    ) -> None:
+        """A budget stop between evaluations must not shorten the resumed patience."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(eval_interval_steps=2, patience_evals=2, max_steps=8)
+        # Uninterrupted: evaluations at steps 0, 2, 4; then the interrupted run's.
+        nlls = iter([3.0, 4.0, 4.0, *interrupted_nlls])
+        _script_validation(monkeypatch, nlls, snapshots={})
+>       straight, straight_model = _run(tmp_path / "straight", data, config)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/kaggriculture/test_bc.py:660: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:161: in _run
+    dataset = load_bc_dataset(data)
+              ^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_an_off_cadence_stop_resta1/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+______________ test_resume_rejects_another_dataset_or_world_size _______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_resume_rejects_another_da0')
+
+    def test_resume_rejects_another_dataset_or_world_size(tmp_path: Path) -> None:
+        data = _dataset_root(tmp_path)
+>       _run(tmp_path / "run", data, _bc_config(max_steps=2))
+
+tests/kaggriculture/test_bc.py:687: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:161: in _run
+    dataset = load_bc_dataset(data)
+              ^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_resume_rejects_another_da0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+_______________ test_resume_rejects_changed_trajectory_settings ________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_resume_rejects_changed_tr0')
+
+    def test_resume_rejects_changed_trajectory_settings(tmp_path: Path) -> None:
+        """Only max_steps may change on resume; the rest set the continued trajectory."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(max_steps=2)
+>       _run(tmp_path / "run", data, config)
+
+tests/kaggriculture/test_bc.py:716: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:161: in _run
+    dataset = load_bc_dataset(data)
+              ^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_resume_rejects_changed_tr0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+_________ test_script_resume_records_a_new_attempt_with_its_own_source _________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_script_resume_records_a_n0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112cef6b0>
+
+    def test_script_resume_records_a_new_attempt_with_its_own_source(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2, eval_interval_steps=1).to_file(config_path)
+        out = tmp_path / "runs"
+        _script_argv(
+            monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+        )
+>       train_bc_script.main()
+
+tests/kaggriculture/test_bc.py:771: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/train_bc.py:118: in main
+    dataset = load_bc_dataset(
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_script_resume_records_a_n0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+----------------------------- Captured stderr call -----------------------------
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/scripts/train_bc.py", line 118, in main
+    dataset = load_bc_dataset(
+              ^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/kaggriculture/bc_data.py", line 269, in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/kaggriculture/bc_data.py", line 298, in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/kaggriculture/bc_data.py", line 359, in _read_shard
+    obs = kt.KaggricultureObsBatch(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/kg-v3-bc/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+globals_int
+  Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+__________________ test_script_resume_rejects_an_edited_seed ___________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_script_resume_rejects_an_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112c53d10>
+
+    def test_script_resume_rejects_an_edited_seed(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2).to_file(config_path)
+        out = tmp_path / "runs"
+        _script_argv(
+            monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+        )
+>       train_bc_script.main()
+
+tests/kaggriculture/test_bc.py:810: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/train_bc.py:118: in main
+    dataset = load_bc_dataset(
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_script_resume_rejects_an_0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+----------------------------- Captured stderr call -----------------------------
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/scripts/train_bc.py", line 118, in main
+    dataset = load_bc_dataset(
+              ^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/kaggriculture/bc_data.py", line 269, in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/kaggriculture/bc_data.py", line 298, in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/kaggriculture/bc_data.py", line 359, in _read_shard
+    obs = kt.KaggricultureObsBatch(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/kg-v3-bc/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+globals_int
+  Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+__________________ test_best_checkpoint_loads_through_run_ppo __________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_best_checkpoint_loads_thr0')
+
+    def test_best_checkpoint_loads_through_run_ppo(tmp_path: Path) -> None:
+        data = _dataset_root(tmp_path)
+        run_dir = tmp_path / "run"
+>       _run(run_dir, data, _bc_config(max_steps=2, eval_interval_steps=1))
+
+tests/kaggriculture/test_bc.py:866: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/kaggriculture/test_bc.py:161: in _run
+    dataset = load_bc_dataset(data)
+              ^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_best_checkpoint_loads_thr0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+__________________ test_script_runs_fresh_and_resumes_on_cpu ___________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_script_runs_fresh_and_res0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112cefb90>
+
+    def test_script_runs_fresh_and_resumes_on_cpu(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2).to_file(config_path)
+        out = tmp_path / "runs"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "train_bc.py",
+                str(config_path),
+                "--data",
+                str(data),
+                "--output-dir",
+                str(out),
+                "--log-mode",
+                "debug",
+                "--source-commit",
+                "test-commit",
+            ],
+        )
+>       train_bc_script.main()
+
+tests/kaggriculture/test_bc.py:940: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/train_bc.py:118: in main
+    dataset = load_bc_dataset(
+python/owl/kaggriculture/bc_data.py:269: in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python/owl/kaggriculture/bc_data.py:298: in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-253/test_script_runs_fresh_and_res0/bc-data')
+record = BCManifestEpisode(episode_id='ep-a', split='train', terminal_banks=(3000.0, 2500.0), admitted=4, shard_path='train/2026-09-21-ep-a.npz', shard_sha256='818ecbb7589837433e93c2612b737f5422625de4ff80d157f5f461e46c41d4af', shard_bytes=17731)
+
+    def _read_shard(
+        root: Path, record: BCManifestEpisode
+    ) -> dict[str, npt.NDArray[np.generic]]:
+        """One shard, fully checked: custody, schema id, layout and contract."""
+        _check_shard_path(record.shard_path, record.split)
+        if not all(math.isfinite(bank) for bank in record.terminal_banks):
+            raise ValueError(f"episode {record.episode_id} terminal_banks must be finite")
+        path = root / record.shard_path
+        if not path.is_file():
+            raise FileNotFoundError(f"BC shard missing: {path}")
+        if path.stat().st_size != record.shard_bytes:
+            raise ValueError(f"{path} size differs from the manifest")
+        if _sha256(path) != record.shard_sha256:
+            raise ValueError(f"{path} SHA-256 does not match the manifest")
+        with np.load(path, allow_pickle=False) as shard:
+            names = set(shard.files)
+            if "schema" not in names or str(shard["schema"][()]) != SHARD_SCHEMA:
+                raise ValueError(f"{path} is not a {SHARD_SCHEMA} shard")
+            if names != SHARD_ARRAYS:
+                raise ValueError(
+                    f"{path} arrays must be exactly {sorted(SHARD_ARRAYS)}, got "
+                    f"{sorted(names)}"
+                )
+            arrays = {name: shard[name] for name in (*ROW_FIELDS, "turn")}
+        for name, array in arrays.items():
+            if array.shape[:1] != (record.admitted,):
+                raise ValueError(f"{path} {name} must lead with {record.admitted} rows")
+        turn = arrays["turn"]
+        if turn.dtype != np.int64 or turn.ndim != 1:
+            raise ValueError(f"{path} turn must be int64 [T]")
+        if int(turn[0]) < 0 or not bool(np.all(np.diff(turn) > 0)):
+            raise ValueError(f"{path} turn must be non-negative and increasing")
+        tensors = {name: torch.from_numpy(arrays[name]) for name in ROW_FIELDS}
+        for name, (dtype, trailing) in _ACTION_LAYOUT.items():
+            if tensors[name].dtype != dtype or tuple(tensors[name].shape[1:]) != trailing:
+                raise ValueError(f"{path} {name} must be {dtype} {trailing}")
+>       obs = kt.KaggricultureObsBatch(
+            **{name: tensors[name] for name in OBS_FIELDS},
+            action_mask=kt.KaggricultureActionMask(can_act=tensors["can_act"]),
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+E       globals_int
+E         Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/missing
+
+python/owl/kaggriculture/bc_data.py:359: ValidationError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+----------------------------- Captured stderr call -----------------------------
+[rank0] training failed:
+Traceback (most recent call last):
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/train/distributed.py", line 114, in distributed_session
+    yield DistributedContext.from_runtime()
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/scripts/train_bc.py", line 118, in main
+    dataset = load_bc_dataset(
+              ^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/kaggriculture/bc_data.py", line 269, in load_bc_dataset
+    train=_load_split(root, "train", manifest, rank=rank, world_size=world_size),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/kaggriculture/bc_data.py", line 298, in _load_split
+    arrays = _read_shard(root, record)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/kg-bc-r3-w0-z1i_aetp/python/owl/kaggriculture/bc_data.py", line 359, in _read_shard
+    obs = kt.KaggricultureObsBatch(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/poonszesen/kg-v3-bc/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for KaggricultureObsBatch
+globals_int
+  Field required [type=missing, input_value={'tile_kind': tensor([[[2...alse, False, False]]]))}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing
+______________ test_contract_shapes_cover_every_observation_field ______________
+
+    def test_contract_shapes_cover_every_observation_field() -> None:
+>       assert set(OBS_FIELDS) | {"action_mask"} == set(
+            kt.KaggricultureObsBatch.model_fields
+        )
+E       AssertionError: assert {'action_mask...or_role', ...} == {'action_mask...or_role', ...}
+E         
+E         Extra items in the right set:
+E         'globals_int'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:969: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_shards_round_trip_rows_at_contract_dtypes
+FAILED tests/kaggriculture/test_bc.py::test_loader_requires_both_splits_and_paired_rows
+FAILED tests/kaggriculture/test_bc.py::test_loader_range_checks_its_compact_integer_storage
+FAILED tests/kaggriculture/test_bc.py::test_two_fake_ranks_hold_disjoint_rows_covering_the_split
+FAILED tests/kaggriculture/test_bc.py::test_loss_decreases_on_a_memorizable_batch
+FAILED tests/kaggriculture/test_bc.py::test_the_real_training_loop_lowers_the_objective
+FAILED tests/kaggriculture/test_bc.py::test_bc_loss_reaches_every_parameter
+FAILED tests/kaggriculture/test_bc.py::test_best_checkpoint_is_the_minimum_even_inside_min_delta
+FAILED tests/kaggriculture/test_bc.py::test_training_keeps_the_best_checkpoint_and_stops_on_degradation
+FAILED tests/kaggriculture/test_bc.py::test_restart_from_state_matches_an_uninterrupted_run
+FAILED tests/kaggriculture/test_bc.py::test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls0-0]
+FAILED tests/kaggriculture/test_bc.py::test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls1-1]
+FAILED tests/kaggriculture/test_bc.py::test_resume_rejects_another_dataset_or_world_size
+FAILED tests/kaggriculture/test_bc.py::test_resume_rejects_changed_trajectory_settings
+FAILED tests/kaggriculture/test_bc.py::test_script_resume_records_a_new_attempt_with_its_own_source
+FAILED tests/kaggriculture/test_bc.py::test_script_resume_rejects_an_edited_seed
+FAILED tests/kaggriculture/test_bc.py::test_best_checkpoint_loads_through_run_ppo
+FAILED tests/kaggriculture/test_bc.py::test_script_runs_fresh_and_resumes_on_cpu
+FAILED tests/kaggriculture/test_bc.py::test_contract_shapes_cover_every_observation_field
+19 failed, 11 passed in 3.03s

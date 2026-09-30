@@ -1,0 +1,105 @@
+........FFF...................                                           [100%]
+=================================== FAILURES ===================================
+________________ test_bc_loss_matches_a_hand_computed_objective ________________
+
+    def test_bc_loss_matches_a_hand_computed_objective() -> None:
+        """Oracle: per-frame probabilities in, the length-normalized NLL + CE out."""
+        frame_probs = torch.tensor(
+            [[[0.5, 0.25, 1.0], [0.8, 1.0, 1.0]], [[0.1, 1.0, 1.0], [0.5, 0.5, 0.5]]]
+        )
+        lengths = torch.tensor([[2, 1], [1, 3]])
+        # Seat rows: (self win, opponent win) probabilities.
+        winner = torch.tensor([[[0.6, 0.4], [0.3, 0.7]], [[0.2, 0.8], [0.5, 0.5]]])
+        evaluation = cast(
+            Any,
+            SimpleNamespace(
+                log_probs=SimpleNamespace(per_player_entity=frame_probs.log()),
+                winner_log_probabilities=winner.log(),
+            ),
+        )
+        batch = cast(
+            Any,
+            SimpleNamespace(
+                actions=SimpleNamespace(lengths=lengths),
+                # Row 0: seat 0 wins; row 1: a draw.
+                final_banks=torch.tensor([[9.0, 1.0], [4.0, 4.0]], dtype=torch.float64),
+            ),
+        )
+        turn_nll = [
+            [-math.log(0.5 * 0.25) / 2, -math.log(0.8) / 1],
+            [-math.log(0.1) / 1, -math.log(0.125) / 3],
+        ]
+        value_ce = [
+            [-math.log(0.6), -math.log(0.7)],
+            [-0.5 * (math.log(0.2) + math.log(0.8)), -math.log(0.5)],
+        ]
+        terms = bc_terms(evaluation, batch)
+        assert torch.allclose(terms.turn_nll, torch.tensor(turn_nll))
+        assert torch.allclose(terms.value_ce, torch.tensor(value_ce))
+        expected = float(np.mean(turn_nll)) + 0.25 * float(np.mean(value_ce))
+>       assert float(bc_loss(terms, value_coef=0.25)) == pytest.approx(expected)
+E       assert 1.0646491050720215 == 1.219457803935706 ± 1.2e-06
+E         
+E         comparison failed
+E         Obtained: 1.0646491050720215
+E         Expected: 1.219457803935706 ± 1.2e-06
+
+tests/kaggriculture/test_bc.py:384: AssertionError
+_______________ test_the_real_training_loop_lowers_the_objective _______________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-237/test_the_real_training_loop_lo0')
+
+    def test_the_real_training_loop_lowers_the_objective(tmp_path: Path) -> None:
+        """train_bc's own update path moves every tensor and lowers the train loss."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(
+            optimizer=AdamWConfig(learning_rate=1e-2), max_steps=12, eval_interval_steps=12
+        )
+        initial = build_bc_model(_ppo_config(), device=_CONTEXT.device, seed=config.seed)
+        before = _train_objective(initial, data)
+        _, trained = _run(tmp_path / "run", data, config)
+        after = _train_objective(trained, data)
+        assert 0.0 < after < 0.9 * before, (before, after)
+        unchanged = [
+            name
+            for (name, a), (_, b) in zip(
+                initial.state_dict().items(), trained.state_dict().items(), strict=True
+            )
+            if a.is_floating_point() and torch.equal(a, b)
+        ]
+>       assert unchanged == []
+E       AssertionError: assert ['critic_head...ead.out.bias'] == []
+E         
+E         Left contains 4 more items, first extra item: 'critic_head.up.weight'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:415: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.010108584014233202, 'time/elapsed_seconds': 0.041710458986926824}
+{'bc/step': 12.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.405224641164144, 'bc/validation_frame_nll': 4.2845723288399835, 'bc/validation_value_ce': 0.6907913287480673, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 48.0, 'bc/epoch': 2.4, 'time/eval_seconds': 0.011734042025636882, 'time/elapsed_seconds': 0.23108508402947336, 'bc/train_nll': 4.033722817897797, 'bc/train_value_ce': 0.7883270333210627, 'bc/grad_norm': 0.9903767704963684, 'perf/learner_seat_rows_per_second': 277.7832707848153}
+_____________________ test_bc_loss_reaches_every_parameter _____________________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-237/test_bc_loss_reaches_every_par0')
+
+    def test_bc_loss_reaches_every_parameter(tmp_path: Path) -> None:
+        """The critic is trained with the policy; DDP needs no unused-parameter scan."""
+        dataset = load_bc_dataset(_dataset_root(tmp_path))
+        batch = dataset.train.gather(np.array([0, 1]))
+        model = _tiny(seed=3)
+        bc_loss(
+            bc_terms(model.evaluate_actions(batch.obs, batch.actions), batch),
+            value_coef=1.0,
+        ).backward()
+        missing = [name for name, p in model.named_parameters() if p.grad is None]
+>       assert missing == []
+E       AssertionError: assert ['critic_head...ead.out.bias'] == []
+E         
+E         Left contains 4 more items, first extra item: 'critic_head.up.weight'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:428: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_bc_loss_matches_a_hand_computed_objective
+FAILED tests/kaggriculture/test_bc.py::test_the_real_training_loop_lowers_the_objective
+FAILED tests/kaggriculture/test_bc.py::test_bc_loss_reaches_every_parameter
+3 failed, 27 passed in 4.96s

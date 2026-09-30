@@ -1,0 +1,106 @@
+...................FF.........                                           [100%]
+=================================== FAILURES ===================================
+_ test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls0-0] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-359/test_an_off_cadence_stop_resta0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110cfd4c0>
+interrupted_nlls = [3.0, 4.0, 4.0, 4.0], best_step = 0
+
+    @pytest.mark.parametrize(
+        ("interrupted_nlls", "best_step"),
+        [
+            # The verifier's probe: the off-cadence NLL is no better.
+            ([3.0, 4.0, 4.0, 4.0], 0),
+            # A lower off-cadence NLL is kept, but patience still runs on cadence.
+            ([3.0, 2.5, 4.0, 4.0], 1),
+        ],
+    )
+    def test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        interrupted_nlls: list[float],
+        best_step: int,
+    ) -> None:
+        """A budget stop between evaluations must not shorten the resumed patience."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(eval_interval_steps=2, patience_evals=2, max_steps=8)
+        # Uninterrupted: evaluations at steps 0, 2, 4; then the interrupted run's.
+        nlls = iter([3.0, 4.0, 4.0, *interrupted_nlls])
+        _script_validation(monkeypatch, nlls, snapshots={})
+        straight, straight_model = _run(tmp_path / "straight", data, config)
+        assert (straight.stop_reason, straight.steps) == ("no_held_out_improvement", 4)
+    
+        interrupted = tmp_path / "interrupted"
+        first, _ = _run(interrupted, data, config.model_copy(update={"max_steps": 1}))
+        assert (first.stop_reason, first.steps) == ("max_steps", 1)
+        resumed, resumed_model = _run(
+            interrupted, data, config, resume_from=interrupted / BC_STATE
+        )
+>       assert next(nlls, None) is None
+E       assert 4.0 is None
+E        +  where 4.0 = next(<list_iterator object at 0x110cf9960>, None)
+
+tests/kaggriculture/test_bc.py:669: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.024680458998773247, 'time/elapsed_seconds': 0.08832308300770819}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.02658320899354294, 'time/elapsed_seconds': 0.1930164999794215, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 115.69080714200145}
+{'bc/step': 4.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.112016950334821, 'bc/validation_value_ce': 0.7213282585144043, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.035172667005099356, 'time/elapsed_seconds': 0.3299094169633463, 'bc/train_nll': 4.089404463768005, 'bc/train_value_ce': 0.7476610541343689, 'bc/grad_norm': 1.9763959646224976, 'perf/learner_seat_rows_per_second': 96.16266032252847}
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.02789237501565367, 'time/elapsed_seconds': 0.10934770799940452}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.026510166993830353, 'time/elapsed_seconds': 0.09269874996971339, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 122.14944795156927}
+{'bc/step': 4.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.112016950334821, 'bc/validation_value_ce': 0.7213282585144043, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.02497954200953245, 'time/elapsed_seconds': 0.20100754196755588, 'bc/train_nll': 4.089404463768005, 'bc/train_value_ce': 0.7476610541343689, 'bc/grad_norm': 1.9763959646224976, 'perf/learner_seat_rows_per_second': 129.7495427431375}
+_ test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls1-1] _
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-359/test_an_off_cadence_stop_resta1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110d17110>
+interrupted_nlls = [3.0, 2.5, 4.0, 4.0], best_step = 1
+
+    @pytest.mark.parametrize(
+        ("interrupted_nlls", "best_step"),
+        [
+            # The verifier's probe: the off-cadence NLL is no better.
+            ([3.0, 4.0, 4.0, 4.0], 0),
+            # A lower off-cadence NLL is kept, but patience still runs on cadence.
+            ([3.0, 2.5, 4.0, 4.0], 1),
+        ],
+    )
+    def test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        interrupted_nlls: list[float],
+        best_step: int,
+    ) -> None:
+        """A budget stop between evaluations must not shorten the resumed patience."""
+        data = _dataset_root(tmp_path)
+        config = _bc_config(eval_interval_steps=2, patience_evals=2, max_steps=8)
+        # Uninterrupted: evaluations at steps 0, 2, 4; then the interrupted run's.
+        nlls = iter([3.0, 4.0, 4.0, *interrupted_nlls])
+        _script_validation(monkeypatch, nlls, snapshots={})
+        straight, straight_model = _run(tmp_path / "straight", data, config)
+        assert (straight.stop_reason, straight.steps) == ("no_held_out_improvement", 4)
+    
+        interrupted = tmp_path / "interrupted"
+        first, _ = _run(interrupted, data, config.model_copy(update={"max_steps": 1}))
+        assert (first.stop_reason, first.steps) == ("max_steps", 1)
+        resumed, resumed_model = _run(
+            interrupted, data, config, resume_from=interrupted / BC_STATE
+        )
+        assert next(nlls, None) is None
+>       assert (resumed.stop_reason, resumed.steps) == ("no_held_out_improvement", 4)
+E       AssertionError: assert ('no_held_out_improvement', 6) == ('no_held_out_improvement', 4)
+E         
+E         At index 1 diff: 6 != 4
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:670: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.024124499992467463, 'time/elapsed_seconds': 0.09221708303084597}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.026156332984101027, 'time/elapsed_seconds': 0.1910317080328241, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 123.42512428002895}
+{'bc/step': 4.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.112016950334821, 'bc/validation_value_ce': 0.7213282585144043, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.025953917007427663, 'time/elapsed_seconds': 0.29320000001462176, 'bc/train_nll': 4.089404463768005, 'bc/train_value_ce': 0.7476610541343689, 'bc/grad_norm': 1.9763959646224976, 'perf/learner_seat_rows_per_second': 124.82251796770436}
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 3.0, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 3.0, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.026446707954164594, 'time/elapsed_seconds': 0.0981327909976244}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 2.5, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.5, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.02464179100934416, 'time/elapsed_seconds': 0.09443612501490861, 'bc/train_nll': 4.056017160415649, 'bc/train_value_ce': 0.7332080006599426, 'bc/grad_norm': 2.2450164556503296, 'perf/learner_seat_rows_per_second': 115.7737527681996}
+{'bc/step': 4.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.112016950334821, 'bc/validation_value_ce': 0.7213282585144043, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.5, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 1.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.0278088339837268, 'time/elapsed_seconds': 0.2293550000176765, 'bc/train_nll': 4.089404463768005, 'bc/train_value_ce': 0.7476610541343689, 'bc/grad_norm': 1.9763959646224976, 'perf/learner_seat_rows_per_second': 126.31495647279274}
+{'bc/step': 6.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.0, 'bc/validation_frame_nll': 4.105792045593262, 'bc/validation_value_ce': 0.7098214228947958, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 2.5, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 2.0, 'bc/learner_seat_rows': 24.0, 'bc/epoch': 1.2, 'time/eval_seconds': 0.02585616597207263, 'time/elapsed_seconds': 0.3363225419889204, 'bc/train_nll': 4.407640218734741, 'bc/train_value_ce': 0.6703861951828003, 'bc/grad_norm': 1.3268706798553467, 'perf/learner_seat_rows_per_second': 120.86052695480198}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls0-0]
+FAILED tests/kaggriculture/test_bc.py::test_an_off_cadence_stop_restarts_on_the_uninterrupted_cadence[interrupted_nlls1-1]
+2 failed, 28 passed in 13.49s

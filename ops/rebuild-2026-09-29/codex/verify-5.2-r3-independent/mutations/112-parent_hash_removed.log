@@ -1,0 +1,57 @@
+.......................F......                                           [100%]
+=================================== FAILURES ===================================
+_________ test_script_resume_records_a_new_attempt_with_its_own_source _________
+
+tmp_path = PosixPath('/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-337/test_script_resume_records_a_n0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1103919d0>
+
+    def test_script_resume_records_a_new_attempt_with_its_own_source(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        data = _dataset_root(tmp_path)
+        config_path = tmp_path / "bc.yaml"
+        _bc_config(max_steps=2, eval_interval_steps=1).to_file(config_path)
+        out = tmp_path / "runs"
+        _script_argv(
+            monkeypatch, config_path, data, "--output-dir", str(out), "--source-commit", "a"
+        )
+        train_bc_script.main()
+        (run_dir,) = out.iterdir()
+        saved = BCConfig.from_file(run_dir / "bc_config.yaml")
+        saved.model_copy(update={"max_steps": 4}).to_file(run_dir / "bc_config.yaml")
+        parent_sha = bc_module.file_sha256(run_dir / BC_STATE)
+        monkeypatch.setattr(train_bc_script, "_git_head", lambda: "b")
+        _script_argv(monkeypatch, run_dir, data)
+        train_bc_script.main()
+    
+        attempts = [
+            json.loads(line)
+            for line in (run_dir / train_bc_script.ATTEMPTS).read_text().splitlines()
+        ]
+        assert [a["source_commit"] for a in attempts] == ["a", "b"]
+        assert [a["attempt"] for a in attempts] == [0, 1]
+        assert [a["start_step"] for a in attempts] == [0, 2]
+>       assert [a["parent_state_sha256"] for a in attempts] == [None, parent_sha]
+E       AssertionError: assert [None, None] == [None, '21d3e...6f3b4081368a']
+E         
+E         At index 1 diff: None != '21d3e15bf49f59d93658864468797b720331ec8f35b59736909f6f3b4081368a'
+E         Use -v to get more diff
+
+tests/kaggriculture/test_bc.py:787: AssertionError
+----------------------------- Captured stdout call -----------------------------
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 0.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.266387462615967, 'bc/validation_frame_nll': 4.1179929460797995, 'bc/validation_value_ce': 0.6857630014419556, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.266387462615967, 'bc/best_step': 0.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 0.0, 'bc/epoch': 0.0, 'time/eval_seconds': 0.014949875010643154, 'time/elapsed_seconds': 0.06120729201938957}
+{'bc/step': 1.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.261711597442627, 'bc/validation_frame_nll': 4.120692661830357, 'bc/validation_value_ce': 0.7830143570899963, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.261711597442627, 'bc/best_step': 1.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 4.0, 'bc/epoch': 0.2, 'time/eval_seconds': 0.013432124978862703, 'time/elapsed_seconds': 0.10207808401901275, 'bc/train_nll': 4.195200443267822, 'bc/train_value_ce': 0.7126380205154419, 'bc/grad_norm': 1.7132797241210938, 'perf/learner_seat_rows_per_second': 188.9696880467826}
+{'bc/step': 2.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.253199974695842, 'bc/validation_frame_nll': 4.1155018125261575, 'bc/validation_value_ce': 0.7645830909411112, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.253199974695842, 'bc/best_step': 2.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 8.0, 'bc/epoch': 0.4, 'time/eval_seconds': 0.015392999979667366, 'time/elapsed_seconds': 0.1548467919928953, 'bc/train_nll': 3.9168338775634766, 'bc/train_value_ce': 0.7537779808044434, 'bc/grad_norm': 2.7767531871795654, 'perf/learner_seat_rows_per_second': 196.08604406733548}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-337/test_script_resume_records_a_n0/runs/bc-20260929-203052", "stop_reason": "max_steps", "steps": 2, "best_step": 2, "best_validation_nll": 4.253199974695842, "final_validation_nll": 4.253199974695842}
+GEMM workload headroom bc_microbatch: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+GEMM workload headroom bc_validation: 4 rows x 709 padded tokens; trunk 94652 rows/call at full padding (>= 2.366e+04x headroom, <= 1 call(s)); heads 177536 rows/call (4.438e+04x headroom, 1 call(s))
+Compiled model regions: 0
+{'bc/step': 3.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.246249278386434, 'bc/validation_frame_nll': 4.1109320776803155, 'bc/validation_value_ce': 0.7385952472686768, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.246249278386434, 'bc/best_step': 3.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 12.0, 'bc/epoch': 0.6, 'time/eval_seconds': 0.015798374952282757, 'time/elapsed_seconds': 0.03934283397393301, 'bc/train_nll': 3.828782320022583, 'bc/train_value_ce': 0.7821226119995117, 'bc/grad_norm': 2.3529200553894043, 'perf/learner_seat_rows_per_second': 173.21297666049784}
+{'bc/step': 4.0, 'bc/scheduled_evaluation': 1.0, 'bc/validation_nll': 4.24483847618103, 'bc/validation_frame_nll': 4.112016950334821, 'bc/validation_value_ce': 0.7213282585144043, 'bc/validation_seat_rows': 6.0, 'bc/best_validation_nll': 4.24483847618103, 'bc/best_step': 4.0, 'bc/evals_since_improvement': 0.0, 'bc/learner_seat_rows': 16.0, 'bc/epoch': 0.8, 'time/eval_seconds': 0.015016874996945262, 'time/elapsed_seconds': 0.09598966699559242, 'bc/train_nll': 4.350026607513428, 'bc/train_value_ce': 0.7131994962692261, 'bc/grad_norm': 1.5998718738555908, 'perf/learner_seat_rows_per_second': 185.40943632754855}
+{"run_dir": "/Users/poonszesen/kg-v3-bc/.codex-tmp/pytest-of-poonszesen/pytest-337/test_script_resume_records_a_n0/runs/bc-20260929-203052", "stop_reason": "max_steps", "steps": 4, "best_step": 4, "best_validation_nll": 4.24483847618103, "final_validation_nll": 4.24483847618103}
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_bc.py::test_script_resume_records_a_new_attempt_with_its_own_source
+1 failed, 29 passed in 8.00s
