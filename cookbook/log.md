@@ -1,5 +1,22 @@
 # Change log
 
+## 2026-10-01 — Merge rule 2 beside rule 1 and A/B it on c50: no measurable gain
+
+Owner, verbatim: "if we do it right, it would be assistance, and absolutely no harm right?"; "OK go ahead to implement it."
+
+- **Merge.** `31c99619` merges `kg/rule2-late-invest` into `kg/submit-08bc` (`--no-ff`).
+  - Both switches are off by default and read strictly (`0`/unset off, `1` on, anything else raises).
+  - When both are on, rule 2 filters first and rule 1 then rewrites the final turn.
+  - Ruff, mypy, docs-fresh and 139 agent/ship tests passed (`ops/late-invest-2026-10-01/merge-checks.log`).
+- **A/B.** c50, fixed-shop engine, 48 games paired with the rule-1-only and no-rule games. Every block was logged.
+  - 0 errors or fallbacks. No-block games are identical to rule 1 alone.
+  - 24 `BUY_SEED WHEAT` orders were blocked in 16 games, and nothing else.
+  - W-L stayed 6-42. The margin change against rule 1 was −1 ± 21 per game: 8 games better, 8 worse, down to −220.
+  - The direct saving is only about 5 per game; the swings are trajectory divergence.
+- **Recommendation.** Rule 1 on and rule 2 off by default. No default was flipped, and nothing was submitted.
+
+See [[late-investment-filter-drops-only-purchases-that-cannot-sell-in-time|the rule 2 Reference]] and `ops/late-invest-2026-10-01/ab-rule2/ab-rule2.md`.
+
 ## 2026-10-01 — Add an optional final-turn liquidation rule and A/B it on c50
 
 Owner, verbatim: "the current kaggle submission didnt sell stuff at the last day?"

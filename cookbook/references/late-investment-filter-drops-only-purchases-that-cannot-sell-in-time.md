@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Late-investment filter drops only purchases that cannot sell in time"
-description: "Rule 2 on kg/rule2-late-invest: an off-by-default post-decode filter in the packaged Kaggle agent replaces each BUY_SEED, BUY_ANIMAL, BUY_LAND or HIRE order with the empty market command only when no play could turn it into a sale by the last processed action (step episodeSteps - 2). Thresholds come from the Kaggle engine and engine_rs with line citations; at the default 720/24 configuration the first dropped steps are WHEAT/CARROT 671, TOMATO 527, STRAWBERRY/MELON 479, animals 694, land 695, hires 717 plus hour 23 of every day. Scripted plays in the Kaggle engine sell each last allowed purchase before the end. SELL, BUY_PRODUCT and unit actions are never touched. Local tests only; no episode-level money effect is measured."
+description: "Rule 2, merged into kg/submit-08bc at 31c99619 beside rule 1: an off-by-default post-decode filter in the packaged Kaggle agent replaces each BUY_SEED, BUY_ANIMAL, BUY_LAND or HIRE order with the empty market command only when no play could turn it into a sale by the last processed action (step episodeSteps - 2). Thresholds come from the Kaggle engine and engine_rs with line citations; at the default 720/24 configuration the first dropped steps are WHEAT/CARROT 671, TOMATO 527, STRAWBERRY/MELON 479, animals 694, land 695, hires 717 plus hour 23 of every day. Scripted plays in the Kaggle engine sell each last allowed purchase before the end. SELL, BUY_PRODUCT and unit actions are never touched. On c50 over 48 paired fixed-shop games with rule 1 also on, it blocked 24 late BUY_SEED WHEAT orders in 16 games with 0 errors or fallbacks and no win change, and the margin change against rule 1 alone was -1 +/- 21 per game (8 games better, 8 worse, the rest identical), so it stays off by default."
 tags: ["kaggriculture-v3", "adaptation", "kaggle-runtime", "action-filter"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-10-01"}
@@ -11,6 +11,10 @@ sources:
   - resource: "repository:python/kaggriculture_main.py"
   - resource: "repository:tests/kaggriculture/test_late_invest.py"
   - resource: "repository:ops/late-invest-2026-10-01/checks.log"
+  - resource: "repository:ops/late-invest-2026-10-01/merge-checks.log"
+  - resource: "repository:ops/late-invest-2026-10-01/ab-rule2/ab-rule2.md"
+  - resource: "repository:ops/late-invest-2026-10-01/ab-rule2/ab_rule2_tables.md"
+  - resource: "repository:python/owl/kaggriculture/final_turn.py"
   - resource: "repository:engine_rs/src/lib.rs"
   - resource: "repository:pyproject.toml"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/envs/kaggriculture/kaggriculture.py"
@@ -23,7 +27,7 @@ sources:
 
 Owner, verbatim (2026-09-30/10-01): "Is there something liek this we can do in package/evaluation, not much right?", "State a list for worth considering option?", "if we do it right, it would be assistance, and absolutely no harm right?", "OK go ahead to implement it." The agreed definition of rule 2 is strict: block only purchases that physically cannot produce anything sellable before the game ends, never feed, upkeep, inputs or labour for existing assets, with thresholds taken from the engine. The definition came from the main agent's exchange with the owner. It reached this change through a workflow task, not directly from the owner. Rule 1 (last-day sell-out) is a separate change on `kg/submit-08bc`.
 
-`KaggricultureAgent(block_late_investments=True)` passes the natively validated action through `late_invest.filter_late_investments`. The flag defaults to false; `python/kaggriculture_main.py` sets it only when `KAGGRICULTURE_AGENT_BLOCK_LATE_INVESTMENTS=1`. A submission that wants it must set that constant before packaging. The filter reads only the observation's `step` (checked against `day` and `hour`) and the configuration's `turnsPerDay` and `episodeSteps`. It keeps no state and never touches the model. Each dropped order becomes `[]`, the canonical empty market command the engine skips, so the other orders keep their lockstep slots. The filtered action is validated again through the same native round trip.
+`KaggricultureAgent(block_late_investments=True)` passes the natively validated action through `late_invest.filter_late_investments`. The flag defaults to false; `python/kaggriculture_main.py` sets it through `late_invest.enabled_from_env()`: unset or `0` is off, `1` is on, and any other value raises, like rule 1's `KAGGRICULTURE_FINAL_TURN_LIQUIDATION`. Kaggle sets no such variable, so a submission that wants it must change the default before packaging. Merge `31c99619` on `kg/submit-08bc` joins it with rule 1 (`final_turn.py`): rule 2 filters the validated action first, then rule 1 rewrites the final resolved turn, and each rewrite is validated again. The filter reads only the observation's `step` (checked against `day` and `hour`) and the configuration's `turnsPerDay` and `episodeSteps`. It keeps no state and never touches the model. Each dropped order becomes `[]`, the canonical empty market command the engine skips, so the other orders keep their lockstep slots. The filtered action is validated again through the same native round trip.
 
 ## Derivation
 
@@ -50,6 +54,11 @@ Five threshold mutations were each killed. The last one survived until the 699-s
 ## Limits and consequence
 
 - **Direction of error.** For other configurations the land and hire rules are only lower bounds: they may keep a purchase that cannot pay back, but never drop one that can. The land play needs two steps after the fertilizer day starts, because the farmer respawns on the NW tile.
-- **Unmeasured value.** No full episode compared money with the filter on and off, so its value is unmeasured. It removes spending only; it cannot add income.
-- **Not in any package.** `package_checkpoint.sh` was not run, and no Kaggle submission includes the filter. Submission remains the owner's decision.
+- **Measured value on c50: none.** `ops/late-invest-2026-10-01/ab-rule2/ab-rule2.md` compares rules 1+2 against rule 1 alone and against no rule on c50. It covers 48 paired fixed-shop games (8 seeds × 2 seats × smaller_market_shock, cha22, v56), and every block is logged.
+  - Health: 0 errors or fallbacks. The 32 games without a block replay identically to rule 1 alone. The other 16 first differ exactly at the first block, where the model's order equals rule 1's.
+  - Every block was a `BUY_SEED WHEAT 1` on day 28, hours 5–9: 24 orders in total.
+  - Wins stayed 6-42. The margin change against rule 1 alone was −1 ± 21 per game (SE over 8 seeds): 8 games better, 8 worse (as low as −220), the rest identical.
+  - The direct saving is the seed price, 10 per block, or about 5 per game. The larger swings come from trajectory divergence: the opponent bank also moved in 14 of the 16 games.
+  - The recommendation to the main agent is to leave it off by default and re-test it on a policy that makes large late purchases. c50 exercised only the wheat branch in games.
+- **Not in any shipped package.** A local macOS package (`pkg-c50-r12`) was staged for the A/B only. `package_checkpoint.sh` was not run, and no Kaggle submission includes the filter. Submission remains the owner's decision.
 - **Legality only.** The filter checks legality and timing, not affordability or holdings. A purchase that could still pay back in principle is kept, even when the agent will never use it.
