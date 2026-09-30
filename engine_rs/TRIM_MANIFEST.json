@@ -55,13 +55,13 @@
     {
       "path": "engine_rs/VENDORED_FROM.md",
       "reference_sha256": "bb2940661fac106aa05454ee6641c095fb6ecd722ec48668f232af9e2ece81ea",
-      "sha256": "be889fe524eedeb31813e608705ea9ba00ba11535437dc3ced1cc8ed26ab6a98",
+      "sha256": "7c70038d389643e2a0f99b5da9b46e232e01ca3bc157892c3247977ee3a795b5",
       "edits": [
         {
           "start_line": 56,
           "delete_lines": 0,
-          "insert": "\n## Task 1.1 rules-only trim \u2014 2026-09-29\n\nThe sections above describe historical full imports, not this trimmed package.\nThis copy is pinned to kg/reference-2026-09-29 at\n65f0eac5bb00b18a9d3acce319c2a231cbd5dff0. TRIM_MANIFEST.json accounts for every\nreference path, source hash, permitted line edit and excluded component.\nThe only rules-source edits remove lib.rs reference lines 19, 21\u201325 and 27:\nffi, joint_matching, myolie_features, myolie_sampler, native_agents,\npolicy_rows and training declarations. py_random.rs, econ_attrib.rs and the\nRNG integration tests are unchanged. Cargo drops the cdylib/binary targets\nand unused Rayon dependency; Cargo regenerates the lockfile. This provenance\nnote is append-only. No bot, v2 collector, trainer, model or C ABI is imported.\nFour episode traces remain as rules oracles; the new replay integration test\nstarts from configuration and seed. Historic opponent/ABI/performance claims\nabove do not qualify this trim. See ../docs/rules-parity-coverage.md for current\nchecks and limits, and ../ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md\nfor the reviewed import plan. The root crate does not yet depend on this package.\n",
-          "reason": "Append current trim scope while preserving all historical provenance bytes."
+          "insert": "\n## Task 1.1 rules-only trim \u2014 2026-09-29\n\nThe sections above describe historical full imports, not this trimmed package.\nThis copy is pinned to kg/reference-2026-09-29 at\n65f0eac5bb00b18a9d3acce319c2a231cbd5dff0. TRIM_MANIFEST.json accounts for every\nreference path, source hash, permitted line edit and excluded component.\nThe only rules-source edits remove lib.rs reference lines 19, 21\u201325 and 27:\nffi, joint_matching, myolie_features, myolie_sampler, native_agents,\npolicy_rows and training declarations. py_random.rs, econ_attrib.rs and the\nRNG integration tests are unchanged. Cargo drops the cdylib/binary targets\nand unused Rayon dependency; Cargo regenerates the lockfile. This provenance\nnote is append-only. No bot, v2 collector, trainer, model or C ABI is imported.\nFour episode traces remain as rules oracles; the new replay integration test\nstarts from configuration and seed. Historic opponent/ABI/performance claims\nabove do not qualify this trim. See ../docs/rules-parity-coverage.md for current\nchecks and limits, and ../ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md\nfor the reviewed import plan. The root crate does not yet depend on this package.\n\n## Transactional candidate API \u2014 2026-10-01\n\nThe SPS native-step adaptation adds `Game::stepped_with_market_metrics`, which\nreturns the already-transactional candidate and metrics without changing the\nsource game. `step_with_market_metrics` delegates to it and assigns the candidate\nonly after success. The existing done/action-count checks, one candidate clone,\n`step_in_place` body, RNG inputs, error text and error order are unchanged.\nThis avoids a redundant caller-side clone when a batch stages all transitions\nbefore publication. The original seven module removals remain exact; the trim\nchecker derives and hashes this one API extraction independently of the manifest.\nNo other retained rules-source bytes change. `tests/replay_parity.rs` checks both\nAPIs over all four recorded episodes and early/deferred failure rollback; native\nbatch parity and component timing evidence live in `../ops/sps-2026-10-01/`.\nThe change does not resolve the previously documented malformed-input divergences\nor claim complete learner throughput on an NVIDIA host.\n",
+          "reason": "Append pinned trim scope and transactional candidate provenance while preserving historical bytes."
         }
       ]
     },
@@ -98,7 +98,7 @@
     {
       "path": "engine_rs/src/lib.rs",
       "reference_sha256": "a33c70ffb1f1ee887b4c51b66d8592dd7cab38f583cd3af06586356e27fd6d84",
-      "sha256": "c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd",
+      "sha256": "2669c74e20f7ce2876c983ed56fa519aac121d662ab44ddd1191b7f89f091c4b",
       "edits": [
         {
           "start_line": 19,
@@ -117,6 +117,18 @@
           "delete_lines": 1,
           "insert": "",
           "reason": "Remove only excluded module declarations at reference lines 19, 21-25, 27; see brief dependency table."
+        },
+        {
+          "start_line": 1439,
+          "delete_lines": 0,
+          "insert": "        let (candidate, metrics) = self.stepped_with_market_metrics(actions)?;\n        *self = candidate;\n        Ok(metrics)\n    }\n\n    /// Return a successfully stepped copy while leaving the source game untouched.\n    /// Batch callers can stage this candidate without first cloning the source.\n    pub fn stepped_with_market_metrics(&self, actions: &[Value]) -> Result<(Self, StepMetrics), String> {\n",
+          "reason": "Extract the transactional candidate API without changing checks or step_in_place, so batch callers need only one Game clone."
+        },
+        {
+          "start_line": 1455,
+          "delete_lines": 2,
+          "insert": "        Ok((candidate, metrics))\n",
+          "reason": "Extract the transactional candidate API without changing checks or step_in_place, so batch callers need only one Game clone."
         }
       ]
     },
@@ -703,8 +715,8 @@
   "authored": [
     {
       "path": "engine_rs/tests/replay_parity.rs",
-      "sha256": "6520938a1900dbeaa0ef95724de3b588a62424ad68b62b674afd90985f6852e1",
-      "reason": "Direct native-reset parity replay over official, committed generated and KAGG_PARITY_TRACES traces; comparator regressions; perturbation and expected-divergence checks (Task 1.1b)"
+      "sha256": "fd93959c2a10b2be0f0f6269d4a2daed566906bfc451a13110e9e7c3f6a03f90",
+      "reason": "Direct native-reset parity replay over official, committed generated and KAGG_PARITY_TRACES traces; comparator regressions; perturbation and expected-divergence checks (Task 1.1b); immutable-candidate equivalence and rollback checks (SPS 2026-10-01)"
     },
     {
       "path": "engine_rs/fixtures/generated/MANIFEST.json",

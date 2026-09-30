@@ -71,3 +71,19 @@ starts from configuration and seed. Historic opponent/ABI/performance claims
 above do not qualify this trim. See ../docs/rules-parity-coverage.md for current
 checks and limits, and ../ops/rebuild-2026-09-29/briefs/1.1-rules-kernel.md
 for the reviewed import plan. The root crate does not yet depend on this package.
+
+## Transactional candidate API — 2026-10-01
+
+The SPS native-step adaptation adds `Game::stepped_with_market_metrics`, which
+returns the already-transactional candidate and metrics without changing the
+source game. `step_with_market_metrics` delegates to it and assigns the candidate
+only after success. The existing done/action-count checks, one candidate clone,
+`step_in_place` body, RNG inputs, error text and error order are unchanged.
+This avoids a redundant caller-side clone when a batch stages all transitions
+before publication. The original seven module removals remain exact; the trim
+checker derives and hashes this one API extraction independently of the manifest.
+No other retained rules-source bytes change. `tests/replay_parity.rs` checks both
+APIs over all four recorded episodes and early/deferred failure rollback; native
+batch parity and component timing evidence live in `../ops/sps-2026-10-01/`.
+The change does not resolve the previously documented malformed-input divergences
+or claim complete learner throughput on an NVIDIA host.

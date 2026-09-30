@@ -29,6 +29,14 @@ oracle = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(oracle)
 
 
+@pytest.fixture(autouse=True)
+def fresh_oracle_execution_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Pytest imports this module during collection, potentially minutes before
+    # its tests run. Each test models a fresh oracle invocation: preserve the
+    # production 115-second budget minus its five-second cleanup reserve.
+    monkeypatch.setattr(oracle, "RUN_DEADLINE", time.monotonic() + 115 - 5)
+
+
 def sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -360,6 +368,19 @@ def test_shared_deadline_stops_child_group_before_outer_limit(
     with pytest.raises(RuntimeError, match="shared execution deadline"):
         oracle.run([sys.executable, "-c", "import time; time.sleep(30)"])
     assert time.monotonic() - started < 2
+
+
+def test_expired_shared_deadline_rejects_before_launch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(oracle, "RUN_DEADLINE", time.monotonic() - 1)
+
+    def forbidden_launch(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("expired deadline launched a process")
+
+    monkeypatch.setattr(oracle.subprocess, "Popen", forbidden_launch)
+    with pytest.raises(RuntimeError, match="deadline expired before launch"):
+        oracle.run([sys.executable, "-c", "print('must not run')"])
 
 
 def test_group_rss_measures_a_live_child_group() -> None:
