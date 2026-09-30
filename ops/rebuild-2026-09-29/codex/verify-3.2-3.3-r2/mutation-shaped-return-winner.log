@@ -1,0 +1,46 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+__________ test_kaggriculture_evaluation_decides_winners_by_raw_banks __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e86b170>
+
+    def test_kaggriculture_evaluation_decides_winners_by_raw_banks(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        built_for: list[int] = []
+    
+        def fake_create_eval_env(
+            cfg: FullConfig, *, n_envs: int, device: torch.device, env_steps: int
+        ) -> _ShapedReturnMisranksBanksEnv:
+            assert device.type == "cpu"
+            assert isinstance(cfg.env.obs_spec, KaggricultureObsConfig)
+            built_for.append(env_steps)
+            return _ShapedReturnMisranksBanksEnv(n_envs)
+    
+        monkeypatch.setattr(run_ppo, "_create_eval_env", fake_create_eval_env)
+    
+        stats, stats_by_player_count, env_metrics, steps = run_ppo._evaluate_games(
+            current_model=_LaunchPolicy(launch=True),
+            last_best_model=_LaunchPolicy(launch=False),
+            cfg=_kaggriculture_eval_config(),
+            n_games=2,
+            n_envs=2,
+            device=torch.device("cpu"),
+            env_steps=20_000_000,
+        )
+    
+        # Shaped returns would give the incumbent both games (win rate 0.0); the
+        # banks give the candidate one win and one draw.
+        assert built_for == [20_000_000]
+        assert steps == 2
+        assert stats.model_games == [2, 2]
+>       assert stats.wins == [1.5, 0.5]
+E       assert [0.0, 2.0] == [1.5, 0.5]
+E         
+E         At index 0 diff: 0.0 != 1.5
+E         Use -v to get more diff
+
+ops/rebuild-2026-09-29/codex/verify-3.2-3.3-r2/scratch/tests/scripts/test_run_ppo.py:2872: AssertionError
+=========================== short test summary info ============================
+FAILED ops/rebuild-2026-09-29/codex/verify-3.2-3.3-r2/scratch/tests/scripts/test_run_ppo.py::test_kaggriculture_evaluation_decides_winners_by_raw_banks
+1 failed, 2 passed, 90 deselected in 0.79s
