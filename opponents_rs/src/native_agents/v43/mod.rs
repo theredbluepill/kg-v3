@@ -21,6 +21,12 @@ pub struct V43Controller {
     debug: Value,
 }
 impl V43Controller {
+    /// An interrupted terminal plan must never replay its projected future.
+    pub(crate) fn cancel_terminal_plan(&mut self, seat: &str) {
+        if let Some(plans) = self.terminal.plans.as_object_mut() {
+            plans.remove(seat);
+        }
+    }
     pub fn act(&mut self, obs: &Value, config: &Value) -> Value {
         if !obs["farms"].is_array() || array(&obs["farms"]).len() < 2 {
             return common::pass_action();

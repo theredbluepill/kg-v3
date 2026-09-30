@@ -15,10 +15,11 @@ mod ecobot;
 #[rustfmt::skip]
 mod e776;
 
-// Cha22's full ig_agent and its v2 dependency closure (V43/V47/V48, Farm2945,
-// Metav4, Pipe16), imported from kaggriculture-v2 commit 30a3ac47. Only the
-// Game-view accessor lines differ (OPPONENT_MANIFEST.json `adapted`). The
-// dependency controllers are not registered opponents; only Cha22 is.
+// Cha22's full ig_agent and its dependency closure (V43/V47/V48, Farm2945,
+// Metav4, Pipe16), from the same pinned commit as the bots above. Eight files
+// differ only in their Game-view accessor lines (OPPONENT_MANIFEST.json
+// `adapted`). The dependency controllers are not registered opponents; only
+// Cha22 is. Upstream notices: opponents_rs/notices/cha22/.
 #[allow(dead_code, clippy::all)]
 #[rustfmt::skip]
 mod cha22;

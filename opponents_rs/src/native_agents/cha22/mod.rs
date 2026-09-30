@@ -1,6 +1,9 @@
 //! Native frozen cha22 full ig_agent entry (SHA256 127ed3e6…).
 //! Attribution and exact upstream source: agents/cha22/main.py.
 pub mod early;
+mod execution;
+#[cfg(test)]
+mod execution_tests;
 pub mod market;
 pub mod tail;
 use crate::Game;
@@ -15,6 +18,8 @@ pub struct Cha22Controller {
     pub market: market::Market,
     pub tail: tail::Tail,
     stages: Value,
+    execution: Value,
+    recovery: Value,
 }
 impl Default for Cha22Controller {
     fn default() -> Self {
@@ -29,6 +34,8 @@ impl Default for Cha22Controller {
             market: Default::default(),
             tail: Default::default(),
             stages: Value::Null,
+            execution: Value::Null,
+            recovery: json!({}),
         }
     }
 }
@@ -39,6 +46,11 @@ fn merge(dest: &mut Value, other: Value) {
 }
 impl Cha22Controller {
     pub fn act(&mut self, obs: &Value, config: &Value) -> Value {
+        let recovery_before = if self.recovery.as_object().is_some_and(|m| !m.is_empty()) {
+            Some(self.clone())
+        } else {
+            None
+        };
         self.tail.before(obs);
         self.market.before(obs);
         self.early.before(obs);
@@ -78,7 +90,15 @@ impl Cha22Controller {
         let merged = self.tail.merge(obs, seeds.clone());
         let final_action = self.tail.queue(obs, merged.clone());
         self.stages = json!({"parent":parent,"weedlag":weedlag,"advance":advance,"terminal_clear":terminal_clear,"pipe":pipe,"mirror":pipe,"buyfirst":buyfirst,"flow":flow,"dawn":dawn,"midday":midday,"bankdrip":bankdrip,"premium":premium,"shield":shield,"reorder":reorder,"fertilizer":fertilizer,"seeds":seeds,"merge":merged,"final":final_action});
-        final_action
+        if let Some(before) = recovery_before {
+            let recovered = self.recover_movement(obs, final_action.clone());
+            if recovered != final_action {
+                self.reconcile_interruption(&before, obs, &final_action, &recovered);
+            }
+            recovered
+        } else {
+            final_action
+        }
     }
     pub fn action(&mut self, game: &Game, seat: usize) -> Result<Value, String> {
         if seat > 1 {
@@ -121,6 +141,10 @@ impl Cha22Controller {
         );
         states["reports"] = self.reports();
         states["debug"] = self.debug();
+        if !self.execution.is_null() {
+            states["execution"] = self.execution.clone();
+            states["execution_recovery"] = self.recovery.clone();
+        }
         states
     }
     pub fn inject(&mut self, state: &Value) {
@@ -152,6 +176,13 @@ impl Cha22Controller {
         let a = v.get("action").cloned().unwrap_or(Value::Null);
         let result = match v["mode"].as_str().unwrap_or("act") {
             "act" => self.act(obs, &config),
+            "drive_executed" => {
+                let before = self.clone();
+                let proposal = self.act(obs, &config);
+                let executed = v.get("executed").unwrap_or(&proposal);
+                self.commit_executed(&before, obs, &proposal, executed);
+                proposal
+            }
             "clone_act" => {
                 let mut copy = self.clone();
                 let a = self.act(obs, &config);

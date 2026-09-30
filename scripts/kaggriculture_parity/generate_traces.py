@@ -853,13 +853,10 @@ class SiblingPolicy:
 # Cha22's original is the public Kaggle notebook abhinav0370/cha22-agent (ID
 # 135642255) output main.py; no local repository holds it. The caller supplies a
 # downloaded copy, which must match this SHA-256; it is never copied here.
-CHA22_SOURCE_SHA256 = (
-    "127ed3e62988c0474d386db6527ae8ca9de9bb1fe7004128557ddef67126c652"
-)
+CHA22_SOURCE_SHA256 = "127ed3e62988c0474d386db6527ae8ca9de9bb1fe7004128557ddef67126c652"
 CHA22_SOURCE_ENV = "KAGG_CHA22_SOURCE"
-# Kaggle calls a submission's last top-level function: ig_agent, whose layers
-# wrap the earlier agent functions.
-CHA22_ENTRY = "ig_agent"
+# Kaggle calls a submission's last callable: kaggle_agent, an alias of ig_agent,
+# whose layers wrap the earlier agent functions.
 
 
 def cha22_source() -> bytes:
@@ -906,7 +903,7 @@ class UpstreamPolicy:
             module = importlib.util.module_from_spec(spec)
             sys.modules[self.name] = module
             spec.loader.exec_module(module)
-            self.agent = getattr(module, CHA22_ENTRY)
+            self.agent = module.ig_agent
         except BaseException:
             self.close()
             raise
@@ -1884,11 +1881,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise ParityGeneratorError(
                     "opponent trace byte budget exceeded before writing"
                 )
-        if (
-            oracle
-            and path.exists()
-            and path.read_bytes() != encoded
-        ):
+        if oracle and path.exists() and path.read_bytes() != encoded:
             raise ParityGeneratorError(f"refusing to overwrite frozen oracle {path}")
         path.write_bytes(encoded)
         results.append(result)

@@ -135,6 +135,27 @@ fn exposure(obs: &Value, item: &str, qty: i64, batch: i64) -> i64 {
 }
 
 impl OrderPri2 {
+    /// Preserve rival observations, replacing only the own-sale attribution.
+    pub(crate) fn observe_executed(&mut self, obs: &Value, action: &Value) {
+        let who = seat(obs);
+        let Some(state) = self.states[who].as_mut() else {
+            return;
+        };
+        let Some(prev) = state.prev.as_mut() else {
+            return;
+        };
+        let mut stock = Core::projected_shed(action, &View::new(obs));
+        let mut own = json!({});
+        for order in orders(action).iter().take(MAX_ORDERS) {
+            let item = text(&order[1]);
+            if array(order).len() >= 3 && order[0] == "SELL" && ITEMS.contains(&item) {
+                let count = int(&order[2]).max(0).min(int(&stock[item]).max(0));
+                increment(&mut stock, item, -count);
+                increment(&mut own, item, count);
+            }
+        }
+        prev.own = own;
+    }
     pub fn layer(&mut self, obs: &Value, action: Value, core: &mut Core) -> Value {
         let step = int(&obs["step"]);
         let who = seat(obs).min(1);

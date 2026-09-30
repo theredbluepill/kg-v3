@@ -170,6 +170,8 @@ fn cha22_registry_key_and_full_match_against_starter() {
         assert_eq!(a.final_banks, b.final_banks);
         assert!(a.steps.iter().all(|row| row.engine_error.is_none()
             && row.seats.iter().all(|seat| seat.controller_error.is_none())));
-        eprintln!("{kinds:?} seed 17 final banks {:?}", a.final_banks);
+        // Non-vacuity: an inert or misrouted port would not beat Starter.
+        let cha22 = kinds.iter().position(|kind| *kind == OpponentKind::Cha22);
+        assert_eq!(a.winner, cha22, "{kinds:?} banks {:?}", a.final_banks);
     }
 }

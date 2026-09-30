@@ -1,5 +1,10 @@
 """Verify byte-exact opponent imports, authored inventory and Python oracle custody.
 
+Imports come from this repository's own pinned history. Cha22's closure adds a
+second, narrow category: files whose only edits are the v3 Game-view accessor
+lines, re-derived here from the pinned blob. Cha22's upstream notices are
+pinned by hash to kaggriculture-v2 and to the original submission.
+
 The manifest records actual comparison counts separately from the available actions
 in generated traces. A successful custody check does not establish action parity.
 Original Python submissions are never copied into this repository. The default
@@ -18,6 +23,7 @@ import hashlib
 import importlib.metadata
 import io
 import json
+import os
 import re
 import subprocess
 import sys
@@ -40,12 +46,79 @@ E776_MANIFEST_SHA256 = (
 MANIFEST = "opponents_rs/OPPONENT_MANIFEST.json"
 ORACLE_DIR = "opponents_rs/fixtures/oracle"
 ORACLE_MANIFEST = f"{ORACLE_DIR}/MANIFEST.json"
+CHA22_ORACLE_DIR = "opponents_rs/fixtures/oracle-cha22"
+ORACLE_DIRS = (ORACLE_DIR, CHA22_ORACLE_DIR)
 TRACE_FORMAT = "kaggriculture-re-parity-v1"
 GENERATOR = "scripts/kaggriculture_parity/generate_traces.py"
 TRACE_BUDGET = 4_000_000
 MAX_TRACE_EXPANSION = 128_000_000
-BOTS = ("starter", "r04", "ecobot", "e776")
-POLICIES = ("builtin:starter", "sibling:r04", "sibling:ecobot", "sibling:e776")
+BOTS = ("starter", "r04", "ecobot", "e776", "cha22")
+POLICIES = (
+    "builtin:starter",
+    "sibling:r04",
+    "sibling:ecobot",
+    "sibling:e776",
+    "upstream:cha22",
+)
+# Cha22's original is the public notebook abhinav0370/cha22-agent (ID 135642255)
+# output main.py, retrieved 2026-09-24. No local Git repository holds it;
+# ``--original-sources`` reads a caller-supplied copy (the generator's variable).
+CHA22_SOURCE_REPO = "kaggle-notebook:abhinav0370/cha22-agent"
+CHA22_SOURCE_VERSION = "135642255"
+CHA22_SOURCE_PATH = "main.py"
+CHA22_SOURCE_SHA256 = "127ed3e62988c0474d386db6527ae8ca9de9bb1fe7004128557ddef67126c652"
+CHA22_SOURCE_ENV = "KAGG_CHA22_SOURCE"
+V2_REPO = "/Users/poonszesen/kaggriculture-v2"
+V2_PIN = "30a3ac47f8a19725c2a0da762f9ffdf87c9cd389"
+NOTICE_DIR = "opponents_rs/notices/cha22"
+# Every comment line of the original submission, in order: its Apache-2.0
+# license text and the attribution notices its layers carry.
+COMMENT_LINES = "main.py#comment-lines"
+NOTICES = {
+    f"{NOTICE_DIR}/NOTICE.md": (
+        V2_REPO,
+        V2_PIN,
+        "opponents/cha22/NOTICE.md",
+        "9c52f8bdfdcc4786e0f1786d446a760ec8ed9fd52123025ed4f8d723b8242074",
+    ),
+    f"{NOTICE_DIR}/UPSTREAM-NOTEBOOK.md": (
+        V2_REPO,
+        V2_PIN,
+        "opponents/cha22/UPSTREAM-NOTEBOOK.md",
+        "6e3f4bf38ad43e9ffd8ca3a5ef32acb7078fe5fa6628db02cfca34dc7db7a9f4",
+    ),
+    f"{NOTICE_DIR}/UPSTREAM_README.md": (
+        V2_REPO,
+        V2_PIN,
+        "opponents/cha22/UPSTREAM_README.md",
+        "b7bba756b2533ddd5429bb9fa00e6f78d7ab8b0851f81d13ba96a390c618cece",
+    ),
+    f"{NOTICE_DIR}/UPSTREAM-SOURCE-COMMENTS.txt": (
+        CHA22_SOURCE_REPO,
+        CHA22_SOURCE_VERSION,
+        COMMENT_LINES,
+        "06c1701e76cc897e8af93a7ee065d7eafaf61ed94e341266294112c8f435d31d",
+    ),
+}
+NOTICE_KEYS = ("path", "source_repo", "source_commit", "source_path", "sha256")
+# The v2 controllers read ``game.privates``/``game.config`` fields; the v3 view
+# exposes accessors. Each substitution must occur exactly once per adapted file.
+VIEW_ADAPTATION = "v3-game-view-accessors"
+VIEW_EDITS = (
+    (
+        b"serde_json::to_value(game.snapshot().public)",
+        b"serde_json::to_value(&game.snapshot().public)",
+    ),
+    (
+        b"serde_json::to_value(&game.privates[",
+        b"serde_json::to_value(&game.privates()[",
+    ),
+    (
+        b"serde_json::to_value(&game.config)",
+        b"serde_json::to_value(game.configuration())",
+    ),
+)
+ADAPTED_KEYS = ("path", "reference_path", "reference_sha256", "sha256", "adaptation")
 COVERAGE_KEYS = (
     "openings",
     "day_resets",
@@ -71,6 +144,124 @@ IMPORT_HASHES = {
     ),
     "engine_rs/fixtures/e776-kenjo-trace.json": (
         "da0d5d1bd326cb5bf068c2065ba1fe8f7e644107db806d7f9a1eae4dafd89692"
+    ),
+    # Cha22 (full ig_agent) and its dependency closure, byte-exact.
+    "engine_rs/src/native_agents/cha22/early.rs": (
+        "2c9c4658d8d45c0fae65172cbc29caed7eaf1729bf608b72bae16f45b542779e"
+    ),
+    "engine_rs/src/native_agents/cha22/execution.rs": (
+        "b6933502cb655fca7de2e1c057269d8e2b19014f71b49a5b3c5eb17cf62ac53a"
+    ),
+    "engine_rs/src/native_agents/cha22/market.rs": (
+        "a60fc74266fb5a3392c08306805d2fae586a18934052b4844898c5b4d168b97a"
+    ),
+    "engine_rs/src/native_agents/cha22/tail.rs": (
+        "837dc61172a299d5a14758511bf7ae4150d0cb529f5074ebdaffe1503a91db43"
+    ),
+    "engine_rs/src/native_agents/farm2945/capharv.rs": (
+        "327765645193594df0bed214e71508a9917367e5504ffecbbe389eb78be66761"
+    ),
+    "engine_rs/src/native_agents/farm2945/carrot2.rs": (
+        "ec6dd1b6db37af53d0803aaa04a56afb57e393aa227630d690f405fbff84a768"
+    ),
+    "engine_rs/src/native_agents/farm2945/early.rs": (
+        "e7b48136a19dc060565a4b7573d308be4eb58a62a053d9efd7bfad7afe5bd2ff"
+    ),
+    "engine_rs/src/native_agents/farm2945/herd2.rs": (
+        "253dd24d1b0513791feada2fb54e744b085c9ca26eb2921d3a2e955f1d05a425"
+    ),
+    "engine_rs/src/native_agents/farm2945/market.rs": (
+        "6de2753da7f59ed4f0d59eb7760bc6e25acf069be94abc43672c8a4c02fe6f32"
+    ),
+    "engine_rs/src/native_agents/farm2945/orderpri2.rs": (
+        "f05ecb3260475076f022006893b0a7e86e05b6110917fa4b1a08cd6003ec8c30"
+    ),
+    "engine_rs/src/native_agents/farm2945/race.rs": (
+        "c104e52c102668763937b359ff9a0481b119f00f017e0e4250d0af3b6f8068e6"
+    ),
+    "engine_rs/src/native_agents/farm2945/sheep.rs": (
+        "b5a9129d3d4823ecd7a454037935a959098d85d2fcd429ad8c0d5f9088bc53cd"
+    ),
+    "engine_rs/src/native_agents/farm2945/util.rs": (
+        "adeaa37bb9ae7b551cc508bd5952fcd04a05e0f0f46cc7e14c152caffae356f5"
+    ),
+    "engine_rs/src/native_agents/metav4/library_lengths.rs": (
+        "bfb174fa470cc2e78dd382f5883fdca5a50b2dc02e07b41d11f57fd6450ca75f"
+    ),
+    "engine_rs/src/native_agents/v43/common.rs": (
+        "9928b24f592746a4e33905b86039cd7313195b7a4eb7eeb11a84ea0db5ec458d"
+    ),
+    "engine_rs/src/native_agents/v43/contracts.rs": (
+        "ca13f6e147d96fa847c58e5db9cc8beb9ceb38dc8b864513be6e137ce7c75f2a"
+    ),
+    "engine_rs/src/native_agents/v43/core.rs": (
+        "fa8c916b80f9526c5b2cedb976b7f6d59dedaaa29e13f41e28de3d4b1af68bdf"
+    ),
+    "engine_rs/src/native_agents/v43/late.rs": (
+        "1066a2b5dbec33ba4f84cf916f2c6e48a54bef0b10af66042d80706c3fd018e4"
+    ),
+    "engine_rs/src/native_agents/v43/production.rs": (
+        "a7c43b240dd58dc7b4c4284a9da319b31594406cdbdaa4102a1f4773a5ec862d"
+    ),
+    "engine_rs/src/native_agents/v43/terminal.rs": (
+        "cef1571aef93de57c382b94dbceace6e6431442fd2350e608b89448be36e0088"
+    ),
+    "engine_rs/src/native_agents/v47/advance.rs": (
+        "4759ff16b9cb7652e314d46152cb40d87e1e0fd62dd3a5c1e1c972ffe273b614"
+    ),
+    "engine_rs/src/native_agents/v47/herd.rs": (
+        "c2892be9caedbf97b021b61ebdb634581e831f773c8d8b6c19a1a85580260e8f"
+    ),
+    "engine_rs/src/native_agents/v47/lockstep.rs": (
+        "8d5759ddb51baf97649c7be6ad2b8d4b257dc70aabffbb3621eb6703b4bf46eb"
+    ),
+    "engine_rs/src/native_agents/v47/opening.rs": (
+        "b8b53987f1f0597ae5b165b6af7139c5c3067ac02b8736e844771118a466ad35"
+    ),
+    "engine_rs/src/native_agents/v47/preguard.rs": (
+        "b09682d386a438f6d1e3765725efeb27155cffc220ca7192cd6038014e07b9f0"
+    ),
+    "engine_rs/src/native_agents/v47/race.rs": (
+        "483ac19861dea65d16a711982bd2d1cc566897c4d7bf03383a926ec4c430b305"
+    ),
+    "engine_rs/src/native_agents/v48/compact.rs": (
+        "7de1fd89a128f3548e51a720c0926ed10ec59a1a062fb180cb3aa19875b872e6"
+    ),
+    "engine_rs/fixtures/v43-routes.json": (
+        "8dcd59e074e2842d781b6b00769cb060c94af1ee39e36a78a3457c6f165000c9"
+    ),
+    "engine_rs/fixtures/farm2945-sell-library.bin": (
+        "1ad6523dd8fb09439340100a2dc0a6083d7accd91bc54915667a1e54da91ebd6"
+    ),
+    "engine_rs/fixtures/metav4-sell-library.bin": (
+        "f5c3d06b214d369768a92e6dfb8e07aa5e5da6cffe15bd423af4160261ee73d4"
+    ),
+}
+# Cha22 closure files whose only edits are the v3 Game-view accessor lines.
+ADAPTED_HASHES = {
+    "engine_rs/src/native_agents/cha22/execution_tests.rs": (
+        "6ef8cf8ef2a49c0c519f6095145dc34c72ac38fd8d945ef4b29b60d957afe1b6"
+    ),
+    "engine_rs/src/native_agents/cha22/mod.rs": (
+        "801eb7bf33d3c61fdfcddbf4af5ffc13cc8bee99e4fd181e4b65eb47c8baa269"
+    ),
+    "engine_rs/src/native_agents/farm2945/mod.rs": (
+        "adba16f6d7994711917e7f086a574b49639f33ce6d57c43d766b32fc4ba7cb0c"
+    ),
+    "engine_rs/src/native_agents/metav4/mod.rs": (
+        "7fed16b8b2714536e71add914674916cfdb5707f19346f217b0b1c6477330ea5"
+    ),
+    "engine_rs/src/native_agents/pipe16.rs": (
+        "a13fba34d0e743551cbf3a6e99d7aa1117632d95929864eb1d0a816ada7ff615"
+    ),
+    "engine_rs/src/native_agents/v43/mod.rs": (
+        "1ef789938e5ee571081cbe05e50a5311e5f97cb676ce884e065693e1f3e42e77"
+    ),
+    "engine_rs/src/native_agents/v47/mod.rs": (
+        "bf6b19129f2808ca890fd3832ab74bd189f4e325a3dff0a41d01d34c05409932"
+    ),
+    "engine_rs/src/native_agents/v48/mod.rs": (
+        "5cfe000bbe28d9ba5059739d9b11caa6da6ea7f2e1b157e1510677e81cb26517"
     ),
 }
 PYTHON_MAIN_HASHES = {
@@ -194,11 +385,43 @@ def _loads(data: bytes | str) -> Any:
 
 
 def reference_files(root: Path) -> dict[str, bytes]:
-    """Read exactly the five selected reference blobs from the pinned commit."""
+    """Read exactly the selected (imported and adapted) blobs at the pinned commit."""
     return {
         path: subprocess.check_output(["git", "show", f"{PIN}:{path}"], cwd=root)
-        for path in IMPORT_HASHES
+        for path in [*IMPORT_HASHES, *ADAPTED_HASHES]
     }
+
+
+def view_adapted(reference: bytes, label: str) -> bytes:
+    """Apply exactly the declared Game-view accessor edits to a pinned blob."""
+    adapted = reference
+    for old, new in VIEW_EDITS:
+        _require(
+            adapted.count(old) == 1,
+            f"{label}: view adaptation expects one {old.decode()!r}",
+        )
+        adapted = adapted.replace(old, new)
+    return adapted
+
+
+def comment_lines(source: bytes) -> bytes:
+    """Every line of the original submission that starts with ``#``, in order."""
+    return b"".join(
+        line for line in source.splitlines(keepends=True) if line.startswith(b"#")
+    )
+
+
+def cha22_source() -> bytes:
+    """Read the caller-supplied original Cha22 submission and check its hash."""
+    location = os.environ.get(CHA22_SOURCE_ENV)
+    _require(
+        bool(location),
+        f"set {CHA22_SOURCE_ENV} to the original Cha22 main.py "
+        f"(SHA-256 {CHA22_SOURCE_SHA256})",
+    )
+    data = Path(cast(str, location)).read_bytes()
+    _require(sha(data) == CHA22_SOURCE_SHA256, "Cha22 Python source hash changed")
+    return data
 
 
 @lru_cache(maxsize=1)
@@ -236,7 +459,17 @@ def _python_files() -> dict[str, dict[str, bytes]]:
         data = blob(path)
         _require(sha(data) == _digest(digest, path), f"{path}: E776 dependency hash")
         sources["e776"][path] = data
+    sources["cha22"] = {CHA22_SOURCE_PATH: cha22_source()}
     return sources
+
+
+def _python_origin(bot: str) -> tuple[str, str]:
+    """The pinned (repository, version) that holds each original Python bot."""
+    if bot == "starter":
+        return "kaggle-environments", KAGGLE_VERSION
+    if bot == "cha22":
+        return CHA22_SOURCE_REPO, CHA22_SOURCE_VERSION
+    return PYTHON_REPO, PYTHON_PIN
 
 
 def python_oracle_receipts() -> list[dict[str, Any]]:
@@ -259,12 +492,16 @@ def python_oracle_receipts() -> list[dict[str, Any]]:
             "software license for the submission; do not redistribute without "
             "resolving that license gap."
         ),
+        "cha22": (
+            "Public notebook output main.py, Apache-2.0 with its upstream notices "
+            "(opponents_rs/notices/cha22); full ig_agent entry. Not copied here."
+        ),
     }
     return [
         {
             "bot": bot,
-            "source_repo": "kaggle-environments" if bot == "starter" else PYTHON_REPO,
-            "source_commit": KAGGLE_VERSION if bot == "starter" else PYTHON_PIN,
+            "source_repo": _python_origin(bot)[0],
+            "source_commit": _python_origin(bot)[1],
             "files": [
                 {"path": path, "sha256": sha(data)}
                 for path, data in sorted(files.items())
@@ -283,6 +520,7 @@ def _structural_python_pins(bot: str, files: Mapping[str, str]) -> None:
             "agents/e776/main.py": PYTHON_MAIN_HASHES["e776"],
             "agents/e776/MANIFEST.sha256": E776_MANIFEST_SHA256,
         },
+        "cha22": {CHA22_SOURCE_PATH: CHA22_SOURCE_SHA256},
     }.get(bot, {f"agents/{bot}/main.py": PYTHON_MAIN_HASHES.get(bot, "")})
     for path, digest in pins.items():
         _require(path in files, f"{bot}: Python source inventory missing={path}")
@@ -302,16 +540,9 @@ def _verify_python(value: object, *, original_sources: bool) -> None:
         bot = _string(entry["bot"], "bot")
         _require(bot in BOTS, f"unknown Python oracle: {bot}")
         seen.append(bot)
-        _require(
-            entry["source_repo"]
-            == ("kaggle-environments" if bot == "starter" else PYTHON_REPO),
-            f"{bot}: source_repo",
-        )
-        _require(
-            entry["source_commit"]
-            == (KAGGLE_VERSION if bot == "starter" else PYTHON_PIN),
-            f"{bot}: source_commit",
-        )
+        repo, version = _python_origin(bot)
+        _require(entry["source_repo"] == repo, f"{bot}: source_repo")
+        _require(entry["source_commit"] == version, f"{bot}: source_commit")
         _text(entry["provenance"], f"{bot}: provenance")
         files: dict[str, str] = {}
         for value in _array(entry["files"], f"{bot}: files"):
@@ -339,8 +570,12 @@ def _trace_entry(value: object) -> dict[str, Any]:
     entry = _object(value, TRACE_KEYS, "oracle trace")
     path = _path(entry["path"], crate=True)
     _require(
-        re.fullmatch(re.escape(ORACLE_DIR) + r"/[a-z0-9][a-z0-9.-]*\.jsonl\.gz", path)
-        is not None,
+        any(
+            re.fullmatch(
+                re.escape(directory) + r"/[a-z0-9][a-z0-9.-]*\.jsonl\.gz", path
+            )
+            for directory in ORACLE_DIRS
+        ),
         f"{path}: trace path",
     )
     _digest(entry["sha256"], path)
@@ -542,8 +777,18 @@ def _verify_traces(entries: list[dict[str, Any]], current: Mapping[str, bytes]) 
         total <= TRACE_BUDGET,
         f"oracle traces use {total:,} B; budget is {TRACE_BUDGET:,} B",
     )
+    for directory in ORACLE_DIRS:
+        listed = [e for e in entries if str(Path(e["path"]).parent) == directory]
+        if listed:
+            _verify_oracle_manifest(f"{directory}/MANIFEST.json", listed, current)
+
+
+def _verify_oracle_manifest(
+    manifest: str, entries: list[dict[str, Any]], current: Mapping[str, bytes]
+) -> None:
+    """One generated corpus: its MANIFEST lists exactly the traces beside it."""
     raw = _object(
-        _loads(current[ORACLE_MANIFEST]),
+        _loads(current[manifest]),
         (
             "schema_version",
             "format",
@@ -629,6 +874,37 @@ def _verify_traces(entries: list[dict[str, Any]], current: Mapping[str, bytes]) 
     _inventory(listed, list(by_name), "oracle MANIFEST trace inventory")
 
 
+def _verify_notices(
+    entries: list[dict[str, Any]],
+    current: Mapping[str, bytes],
+    *,
+    original_sources: bool,
+) -> None:
+    """Upstream notices are exact copies (or the declared comment-line excerpt)."""
+    _inventory([entry["path"] for entry in entries], list(NOTICES), "notice inventory")
+    for entry in entries:
+        path = entry["path"]
+        repo, version, source, digest = NOTICES[path]
+        _require(
+            (entry["source_repo"], entry["source_commit"], entry["source_path"])
+            == (repo, version, source),
+            f"{path}: notice source",
+        )
+        _require(
+            _digest(entry["sha256"], path) == digest == sha(current[path]),
+            f"{path}: notice hash",
+        )
+        if original_sources:
+            original = (
+                comment_lines(cha22_source())
+                if source == COMMENT_LINES
+                else subprocess.check_output(
+                    ["git", "show", f"{version}:{source}"], cwd=repo
+                )
+            )
+            _require(original == current[path], f"{path}: notice differs from source")
+
+
 def verify(
     value: object,
     originals: Mapping[str, bytes],
@@ -638,8 +914,9 @@ def verify(
 ) -> None:
     """Check an inventory, raising ValueError at the first custody failure.
 
-    ``original_sources`` re-reads the original Python files (sibling repository
-    and installed Starter package); the default pins only recorded entry hashes.
+    ``original_sources`` re-reads the original Python files (sibling repository,
+    installed Starter package and the supplied Cha22 source) and the v2 notice
+    blobs; the default pins only recorded entry hashes.
     """
     raw = _object(
         value,
@@ -647,6 +924,8 @@ def verify(
             "schema_version",
             "reference_commit",
             "imported",
+            "adapted",
+            "notices",
             "authored",
             "python_oracles",
             "oracle_traces",
@@ -669,6 +948,14 @@ def verify(
         )
         for entry in _array(raw["imported"], "imported")
     ]
+    adapted = [
+        _object(entry, ADAPTED_KEYS, "adapted")
+        for entry in _array(raw["adapted"], "adapted")
+    ]
+    notices = [
+        _object(entry, NOTICE_KEYS, "notice")
+        for entry in _array(raw["notices"], "notices")
+    ]
     authored = [
         _object(entry, ("path", "sha256", "reason"), "authored")
         for entry in _array(raw["authored"], "authored")
@@ -678,16 +965,26 @@ def verify(
     ]
     _require(bool(traces), "at least one oracle trace is required")
     declared = [
-        _path(entry["path"], crate=True) for entry in [*imports, *authored, *traces]
+        _path(entry["path"], crate=True)
+        for entry in [*imports, *adapted, *notices, *authored, *traces]
     ]
     _inventory(declared, list(current), "current inventory")
-    _require(
-        ORACLE_MANIFEST in [entry["path"] for entry in authored],
-        "oracle MANIFEST must be authored",
-    )
+    authored_paths = [entry["path"] for entry in authored]
+    for directory in {str(Path(entry["path"]).parent) for entry in traces}:
+        _require(
+            f"{directory}/MANIFEST.json" in authored_paths,
+            f"{directory}: oracle MANIFEST must be authored",
+        )
     reference_paths = [_path(entry["reference_path"]) for entry in imports]
     _inventory(reference_paths, list(IMPORT_HASHES), "import inventory")
-    _inventory(list(originals), list(IMPORT_HASHES), "reference inventory")
+    _inventory(
+        [_path(entry["reference_path"]) for entry in adapted],
+        list(ADAPTED_HASHES),
+        "adapted inventory",
+    )
+    _inventory(
+        list(originals), [*IMPORT_HASHES, *ADAPTED_HASHES], "reference inventory"
+    )
     for entry in imports:
         path, reference = entry["path"], entry["reference_path"]
         _require(
@@ -708,6 +1005,27 @@ def verify(
             and entry["sha256"] == entry["reference_sha256"],
             f"{path}: import must remain byte-exact",
         )
+    for entry in adapted:
+        path, reference = entry["path"], entry["reference_path"]
+        _require(
+            path == reference.replace("engine_rs/", "opponents_rs/", 1),
+            f"{path}: adapted destination",
+        )
+        _require(entry["adaptation"] == VIEW_ADAPTATION, f"{path}: adaptation")
+        _require(
+            _digest(entry["reference_sha256"], path)
+            == sha(originals[reference])
+            == ADAPTED_HASHES[reference],
+            f"{path}: reference hash",
+        )
+        _require(
+            sha(current[path]) == _digest(entry["sha256"], path),
+            f"{path}: adapted hash",
+        )
+        _require(
+            current[path] == view_adapted(originals[reference], path),
+            f"{path}: only the Game-view accessor lines may differ",
+        )
     for entry in authored:
         path = entry["path"]
         _text(entry["reason"], f"{path}: reason")
@@ -716,6 +1034,7 @@ def verify(
             f"{path}: authored hash",
         )
     _verify_python(raw["python_oracles"], original_sources=original_sources)
+    _verify_notices(notices, current, original_sources=original_sources)
     _verify_traces(traces, current)
 
 
