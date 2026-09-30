@@ -281,7 +281,8 @@ counters remain fresh, and optimizer hyperparameters such as LR and weight decay
 come from the fresh config rather than the checkpoint param groups. Set it to
 `model_fresh_critic_head` to load every model tensor except the Kaggriculture
 critic head, which keeps its fresh initialization; the optimizer starts fresh as
-in `model_only`.
+in `model_only`. That mode is the diagnostic comparison: a Kaggriculture launch
+from the BC best uses the default `model_only`, which keeps the BC critic head.
 
 You can also pass `--load-model-weights` after the batch script. Use a container
 path under `/runs`, a host path under `ORBIT_WARS_OUTPUT_DIR`, or another

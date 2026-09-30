@@ -43,7 +43,16 @@ _RANKED = {
     "kaggriculture_4rank.yaml": 4,
     "kaggriculture_8rank.yaml": 8,
 }
-_ALL = (*_RANKED, "kaggriculture.yaml")
+# Recipe J's BC fine-tune presets and the ranked config each one copies.
+_FINETUNE = {
+    "kaggriculture_2rank_bc_finetune.yaml": "kaggriculture_2rank.yaml",
+    "kaggriculture_8rank_bc_finetune.yaml": "kaggriculture_8rank.yaml",
+}
+_RANKED_AND_FINETUNE = {
+    **_RANKED,
+    **{name: _RANKED[base] for name, base in _FINETUNE.items()},
+}
+_ALL = (*_RANKED, *_FINETUNE, "kaggriculture.yaml")
 _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_shaping=0.2,
     econ_starvation_weight=4.0,
@@ -138,7 +147,7 @@ def _global_workload(n_envs: int, rl: PPOConfig, world_size: int) -> _GlobalWork
     )
 
 
-@pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+@pytest.mark.parametrize(("name", "world_size"), _RANKED_AND_FINETUNE.items())
 def test_ranked_config_global_workload_equals_scaling_6m(
     name: str, world_size: int
 ) -> None:
@@ -149,7 +158,7 @@ def test_ranked_config_global_workload_equals_scaling_6m(
     assert _global_workload(ours.env.n_envs, ours.rl, world_size) == expected
 
 
-@pytest.mark.parametrize(("name", "world_size"), _RANKED.items())
+@pytest.mark.parametrize(("name", "world_size"), _RANKED_AND_FINETUNE.items())
 def test_ranked_config_per_rank_shapes_are_scaling_6m_divided(
     name: str, world_size: int
 ) -> None:
@@ -220,7 +229,7 @@ def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
 
 # Every Kaggriculture GPU training config; the CPU config keeps its 1,000-step
 # test cadence.
-_GPU_CONFIGS = {**_RANKED, "kaggriculture_1gpu_eager.yaml": 1}
+_GPU_CONFIGS = {**_RANKED_AND_FINETUNE, "kaggriculture_1gpu_eager.yaml": 1}
 _ENV_STEPS_PER_ITERATION = 16_384
 
 
@@ -238,6 +247,43 @@ def test_checkpoint_interval_is_the_owners_half_of_scaling_6m(
     # interval is 610 or 611 iterations after that.
     assert -(-ours.rl.checkpoint_freq // _ENV_STEPS_PER_ITERATION) == 611
     assert ours.rl.checkpoint_freq // _ENV_STEPS_PER_ITERATION == 610
+
+
+# --- recipe J: BC fine-tune presets ------------------------------------------
+
+
+@pytest.mark.parametrize(("name", "base"), _FINETUNE.items())
+def test_finetune_preset_divides_both_learning_rates_by_ten(
+    name: str, base: str
+) -> None:
+    ours = _sections(name).optimizer
+    ranked = _sections(base).optimizer
+    assert ranked == _scaling_6m().optimizer
+    assert (ours.muon_lr, ours.adamw_lr) == (0.0002, 1.0e-05)
+    assert ours.muon_lr == ranked.muon_lr / 10
+    assert ours.adamw_lr == ranked.adamw_lr / 10
+
+
+@pytest.mark.parametrize(("name", "base"), _FINETUNE.items())
+def test_finetune_preset_equals_its_ranked_config_apart_from_the_lrs(
+    name: str, base: str
+) -> None:
+    # A diff test over the whole loaded config: env, model, schedule, PPO,
+    # teacher, checkpoint cadence and runtime all equal the ranked config's.
+    ours = FullConfig.from_file(ROOT / "configs" / name)
+    ranked = FullConfig.from_file(ROOT / "configs" / base)
+    assert ours != ranked
+    restored = ours.model_copy(
+        update={
+            "optimizer": ours.optimizer.model_copy(
+                update={
+                    "muon_lr": ranked.optimizer.muon_lr,
+                    "adamw_lr": ranked.optimizer.adamw_lr,
+                }
+            )
+        }
+    )
+    assert restored == ranked
 
 
 # --- teacher settings (plan Task 4.4) -------------------------------------------

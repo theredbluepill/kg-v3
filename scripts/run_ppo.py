@@ -784,8 +784,9 @@ def _parse_args() -> argparse.Namespace:
             "loads optimizer moment/momentum state while keeping the fresh "
             "scheduler and fresh optimizer hyperparameters. "
             "model_fresh_critic_head loads every model tensor except the "
-            "Kaggriculture critic head, which keeps its fresh initialization "
-            "(for a BC checkpoint whose critic learned a different target)."
+            "Kaggriculture critic head, which keeps its fresh initialization; "
+            "it is the diagnostic comparison, and a launch from the BC best "
+            "keeps the BC critic head with model_only."
         ),
     )
     parser.add_argument(
