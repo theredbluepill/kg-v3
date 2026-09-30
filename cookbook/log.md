@@ -184,6 +184,33 @@ Claude verification r2 of the BC handoff (`ops/rebuild-2026-09-29/codex/claude-v
 
 Claude verification r1 of the BC handoff (`ops/rebuild-2026-09-29/codex/claude-verify-bchandoff-r1.md`, REQUEST CHANGES) raised two P2s. No test reached `main`'s wiring of `--load-model-weights-mode`: passing `model_only` in place of the launch mode (M8) or loading optimizer state for `model_fresh_critic_head` (M9) passed the whole suite. And no run record named the warm-start checkpoint. The fake-trainer `main` test now runs once per mode and catches M8 and M9. A fresh launch with `--load-model-weights` writes `warm_start.json` (path, SHA-256, mode) and `warm_start/*` summary keys, and mutations of those are caught too (`ops/rebuild-2026-09-29/bc-handoff/mutations-r1fix.txt`). P3s: `launch-train.sbatch` accepts the new mode; `ppo.CHECKPOINT_KEYS`/`OPTIONAL_CHECKPOINT_KEYS` are the one allowed-key set for `run_ppo` and `PPOTrainer` loaders; a checkpoint missing run metadata now fails with a named error. The [[references/bc-best-starts-ppo-with-a-fresh-critic-head|handoff Reference]] narrows its loader scope to `run_ppo`/`PPOTrainer` and minimal checkpoints to `teacher_init`, labels the 30-row gradient sample and says eager/2-/8-rank (4-rank by equal model sections). `just py-prepare` passes (see `py-prepare-r1fix.log`). No separate reviewer has re-verified these fixes.
 
+## 2026-09-29 — Correct the packaging Reference's failure modes and limits
+
+The Codex re-review of the Task 7.4 brief found the [[references/kaggle-packaging-reuses-the-starter-submission-path|packaging Reference]] still said a non-dict action loses the episode and that resource limits were unknown. It now records that Kaggle silently normalizes a non-dict return to PASS, that termination overwrites a final-call fault to `DONE`, and the 1.6 vCPU / 6.5 GiB / 8 GiB / 100 MiB limits from the indexed official FAQ. Source: `ops/rebuild-2026-09-29/codex/brief-7.4-rereview.md`.
+
+## 2026-09-29 — Remove the competition deadline from the packaging Reference
+
+At the owner's direction, the cookbook records no competition deadline. The [[references/kaggle-packaging-reuses-the-starter-submission-path|packaging Reference]] keeps only the packaging rules that bear on the design.
+
+## 2026-09-29 — Draft the Task 7.4 Kaggle packaging brief
+
+`ops/rebuild-2026-09-29/briefs/7.4-packaging.md` plans the packaged agent on
+the starter's existing submission path: in-image `abi3-py311` build and the
+tarball script. Research covered the cached kaggle-environments 1.32.7 source
+(hash-matched to the 7.3 archive), Kaggle competition pages and forum topic
+739874, and Kaggle's Dockerfile.
+
+It found:
+
+- the local loader injects `__raw_path__`, which the Rust configuration
+  envelope rejects;
+- the only merged binding needs both seats' private state;
+- first-turn loading bills to the 60 s overage bank;
+- only the latest 2 submissions count for the final leaderboard.
+
+Nothing was built, timed or submitted; seven open questions remain. See the
+[[references/kaggle-packaging-reuses-the-starter-submission-path|packaging Reference]].
+
 ## 2026-09-29 — Separate the 5.1 normalization probe and narrow the pairing claim
 
 Codex's confirmation (`ops/rebuild-2026-09-29/codex/brief-5.1-owner-edits-r2.md`) asked for two edits:
