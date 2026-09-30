@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-30 — Land the per-seat critic offset and the bank-critic preset onto the integration
+
+`kg/rebuild-critic-offset` `a496af9` merges onto `kg/isaiah-gap-closure` `3e89425` as the regular merge commit `9cb115f` (`--no-ff`, no conflicts). It carries the [[decisions/add-a-per-seat-critic-offset-for-the-own-bank-reward|critic offset Decision]] (owner, relayed: "per-player critic might be the way out?"), `model.critic_offset` (default off, byte-identical to `3e89425`) and `configs/kaggriculture_4rank_bank_critic.yaml`. Full `just prepare` on the merge exits 0: Rust 407 passed with 5 ignored, Python 2,969 passed with 9 skipped, plus ruff, mypy, markdown lint and docs-fresh, and the formatters changed no file (`ops/critic-offset/prepare-landing.log`). Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. Report: `ops/critic-offset/review-r1.md` (APPROVE on `732438c`); the follow-ups in `a496af9` were not re-reviewed. The Decision gains a landing section, and the decisions index and phase status are updated. Nothing was trained.
+
 ## 2026-09-30 — Commit the critic-offset review r1 (APPROVE) and its test and docs follow-ups
 
 An independent review of `kg/rebuild-critic-offset` `732438c` (`ops/critic-offset/review-r1.md`, VERDICT: APPROVE, no P1) is committed with author follow-ups. Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. Only a test, docs, one docstring and receipts changed:
