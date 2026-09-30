@@ -160,7 +160,7 @@ def test_the_fraction_must_name_whole_envs(
     else:
         assert mix.bot_envs(n_envs) == expected
     for bad in (0.0, 1.5, math.nan):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="fraction"):
             KaggricultureOpponentMixConfig(bot="r04", fraction=bad)
 
 

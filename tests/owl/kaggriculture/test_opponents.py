@@ -55,7 +55,8 @@ def test_learned_seat_plays_opponent_and_preserves_observation_boundary(
     env.observe(**arrays)
     # Construction is episode 0: env e learns seat e % 2.
     mask = env.learner_mask()
-    assert mask.dtype == np.bool_ and mask.shape == (2, 2)
+    assert mask.dtype == np.bool_
+    assert mask.shape == (2, 2)
     assert mask[learned_seat].tolist() == [seat == learned_seat for seat in range(2)]
     # The observation is identical to a self-play env's at step zero.
     plain = rs.KaggricultureEnv(2, 31, 1, "{}", REWARD, 1, hire_limit=241)
@@ -118,5 +119,5 @@ def test_constructor_admits_opponent_arguments_together() -> None:
         {"opponent_bot": "starter", "opponent_envs": 3},
         {"opponent_bot": "unknown", "opponent_envs": 1},
     ):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="opponent"):
             rs.KaggricultureEnv(2, 1, 1, "{}", REWARD, 1, hire_limit=241, **kwargs)

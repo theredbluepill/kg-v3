@@ -4611,7 +4611,7 @@ def test_last_best_evaluation_env_never_hosts_the_training_opponent() -> None:
     )
     assert isinstance(hosted, KaggricultureVectorizedEnv)
     assert (hosted.opponent_bot, hosted.opponent_envs) == ("r04", 2)
-    with pytest.raises(ValueError, match="requires env.opponent_mix"):
+    with pytest.raises(ValueError, match=r"requires env\.opponent_mix"):
         run_ppo._evaluate_against_bot(
             current_model=_LaunchPolicy(launch=True),
             cfg=cfg,
