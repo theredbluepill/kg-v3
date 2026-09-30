@@ -62,8 +62,8 @@ RUN --mount=type=cache,target=/opt/cargo/registry \
     --mount=type=cache,target=/opt/cargo/git \
     --mount=type=cache,target=/workspace/orbit-wars/target \
     uv run --active python -c 'import os, sys; assert sys.version_info[:2] == (3, 11), f"uv must use Python 3.11, found {sys.version} at {sys.executable}"; expected = os.path.realpath(os.path.join(os.environ["VIRTUAL_ENV"], "bin", "python")); actual = os.path.realpath(sys.executable); assert actual == expected, f"uv must use Kaggle venv Python at {expected}, found {actual}"' && \
-    uv run --active maturin develop --release && \
-    uv run --active python -c 'import owl.rs; owl.rs.assert_release_build()'
+    uv run --active maturin develop --release --no-default-features && \
+    uv run --active python -c 'import owl.rs; owl.rs.assert_release_build(); assert owl.rs.kaggriculture_opponent_bots() == ()'
 
 ENTRYPOINT ["scripts/build_kaggle_submission.sh"]
 CMD ["--help"]

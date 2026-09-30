@@ -291,7 +291,8 @@ def test_requested_pinning_allocator_spy(monkeypatch):
     monkeypatch.setattr(torch, "empty", allocate)
     monkeypatch.setattr(torch.Tensor, "is_pinned", lambda _tensor: True)
     env = make_env(pin_memory=True)
-    assert requests == [True] * 35
+    # 29 observation + 6 transition buffers + the learner mask.
+    assert requests == [True] * 36
     assert env.pin_memory_enabled
 
 

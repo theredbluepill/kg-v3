@@ -43,6 +43,8 @@ rs-format:
 [group: 'rust']
 rs-lint:
     cargo clippy --all-targets -- -D warnings
+    # The Kaggle submission build drops the fixed-opponent controllers.
+    cargo clippy --no-default-features -- -D warnings
     # Six pinned upstream style findings; see ops/rebuild-2026-09-29/1.1/results.md.
     cargo clippy --manifest-path engine_rs/Cargo.toml --all-targets --locked -- -D warnings -A clippy::too_many_arguments -A clippy::collapsible_if -A clippy::needless_range_loop
     cargo clippy --offline --manifest-path opponents_rs/Cargo.toml --all-targets --locked -- -D warnings

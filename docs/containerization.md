@@ -8,7 +8,11 @@ For Kaggle submission builds, use `Dockerfile.kaggle`. It starts from Kaggle's
 CPU Python image, verifies that its Python version is at least 3.11, installs
 the repo-pinned Rust toolchain, creates a uv build venv for `maturin`, compiles
 the PyO3 extension using the repository's release profile, as in
-`just prepare-rl`, and packages the importable `owl` package plus the requested
+`just prepare-rl`, but with `--no-default-features`. That drops the
+`fixed-opponents` feature, so the submission extension contains none of the
+imported `opponents_rs` controllers (EcoBot and E776 carry no redistribution
+license). The build then asserts `owl.rs.kaggriculture_opponent_bots() == ()`.
+It packages the importable `owl` package plus the requested
 model checkpoint and adjacent model config into `submission.tar.gz`.
 The checkpoint is slimmed into a temporary file before packaging so the
 original training checkpoint is not overwritten.

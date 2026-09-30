@@ -204,6 +204,13 @@ pub struct PreparedObservation {
     config: Arc<ObservationConfig>,
 }
 
+impl PreparedObservation {
+    /// The validated pre-step snapshot a hosted fixed opponent acts on.
+    pub fn snapshot(&self) -> &StepSnapshot {
+        &self.snapshot
+    }
+}
+
 fn validate_private_count(count: usize) -> Result<(), ObserveError> {
     if count != 2 {
         return Err(ObserveError::new(

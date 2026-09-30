@@ -158,8 +158,12 @@ Each of them covers one layer, so this record is new rather than a revision.
 
 - The summary maps integration `994818b` and was reconciled at its landing onto
   `bd1c927`. Update it when Task 7.3 (replay export) or 7.4 (packaging) merges,
-  when a learned-seat `opponents_rs` hook lands, or when the integration tip
-  otherwise changes a cited layer. Tasks 7.1 and 3.1 are now covered.
+  or when the integration tip otherwise changes a cited layer. Tasks 7.1 and
+  3.1 are now covered. The learned-seat `opponents_rs` hook landed on
+  `kg/rebuild-opponent-mix` (2026-09-30,
+  [[../decisions/train-ppo-against-a-fixed-opponent-with-a-learner-mask|fixed-opponent Decision]]).
+  That branch updated the page's Task 7.1 untested-scope bullet and section,
+  but the summary row still maps the pre-hook tip.
 - No new sweep or parity run was made. Apart from the three replay negative
   controls, the page only maps existing evidence. D1/D2 malformed-input divergences, framework behavior outside the
   interpreter, strong-play worlds, a pod-scale sweep, CUDA/BF16 and pinned-memory

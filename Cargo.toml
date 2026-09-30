@@ -9,10 +9,17 @@ name = "rs"
 crate-type = ["cdylib"]
 
 [features]
+default = ["fixed-opponents"]
 extension-module = ["pyo3/extension-module"]
+# Fixed-opponent PPO collection (env.opponent_mix) compiles the imported
+# opponents_rs controllers into the extension. Training builds keep it (default);
+# the Kaggle submission build passes --no-default-features, because EcoBot/E776
+# carry no redistribution license (opponents_rs/README.md).
+fixed-opponents = ["dep:kaggriculture-opponents"]
 
 [dependencies]
 kaggriculture-engine = { version = "0.1.0", path = "engine_rs" }
+kaggriculture-opponents = { version = "0.1.0", path = "opponents_rs", optional = true }
 num-bigint = "0.4"
 num-traits = "0.2"
 numpy = "0.28.0"
@@ -37,4 +44,9 @@ pyo3-build-config = { version = "0.28.3", features = ["resolve-config"] }
 
 # Native candidate workers catch unwinds before publishing any batch state.
 [profile.release.package.kaggriculture-engine]
+overflow-checks = true
+
+# Scripted fixed-opponent controllers run inside the native step (env.opponent_mix);
+# keep their integer arithmetic checked in release, as in the engine.
+[profile.release.package.kaggriculture-opponents]
 overflow-checks = true

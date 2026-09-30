@@ -18,10 +18,13 @@ from typing import Any, Literal
 import torch
 import yaml
 from owl.game import GameActions, GameObsBatch, GameVectorizedEnv, create_env
-from owl.kaggriculture.config import KaggricultureEnvConfig
+from owl.kaggriculture.config import (
+    KaggricultureEnvConfig,
+    KaggricultureOpponentMixConfig,
+)
 from owl.kaggriculture.env import KaggricultureVectorizedEnv
 from owl.kaggriculture.evaluation import terminal_seat_banks
-from owl.kaggriculture.telemetry import opponent_bank_metrics
+from owl.kaggriculture.telemetry import fixed_opponent_metrics, opponent_bank_metrics
 from owl.kaggriculture.types import (
     KaggricultureActionConfig,
     KaggricultureActions,
@@ -107,6 +110,7 @@ from owl.train.ppo import (
     PPOCheckpointMetadata,
     _mean_env_metrics,
     _obs_to_device,
+    forward_learner_rows,
     reject_unknown_checkpoint_keys,
 )
 from owl.train.utils import (
@@ -512,6 +516,11 @@ def _run_training_session(
         if warm_start is not None:
             for key, value in warm_start.items():
                 logger.set_summary(f"warm_start/{key}", value)
+        opponent_mix = _opponent_mix(cfg)
+        if opponent_mix is not None:
+            # A run label only; the bot never reaches the model or selection.
+            logger.set_summary("opponent_mix/bot", opponent_mix.bot)
+            logger.set_summary("opponent_mix/fraction", opponent_mix.fraction)
         if compiled_model_modules > 0:
             logger.set_summary("compiled_model_modules", compiled_model_modules)
         if compile_claim is not None:
@@ -652,6 +661,17 @@ def _run_training_loop(
                             else None
                         ),
                     )
+                    if _opponent_mix(cfg) is not None:
+                        # Telemetry beside the promotion evaluation; promotion
+                        # below reads the last-best win rate alone.
+                        eval_metrics.update(
+                            _evaluate_against_bot(
+                                current_model=unwrap_model(trainer.model),
+                                cfg=cfg,
+                                device=trainer.device,
+                                env_steps=env_steps,
+                            )
+                        )
                 eval_metrics = broadcast_object(eval_metrics, dist_ctx)
                 if eval_metrics is None:
                     raise RuntimeError("missing broadcast eval metrics")
@@ -1964,11 +1984,17 @@ def _create_eval_env(
     n_envs: int,
     device: torch.device,
     env_steps: int,
+    opponent_mix: KaggricultureOpponentMixConfig | None = None,
 ) -> GameVectorizedEnv:
-    """Build an independent evaluation env for the evaluation at ``env_steps``."""
+    """Build an independent evaluation env for the evaluation at ``env_steps``.
+
+    A Kaggriculture evaluation env hosts ``opponent_mix`` (the fixed-opponent
+    evaluation) or none at all: the last-best evaluation stays two-model
+    whatever the training collection mix.
+    """
     if isinstance(cfg.env, KaggricultureEnvConfig):
         return create_env(
-            cfg.env,
+            cfg.env.model_copy(update={"opponent_mix": opponent_mix}),
             n_envs=n_envs,
             base_seed=_evaluation_seed(base_seed=cfg.env.seed, env_steps=env_steps),
             rank=0,
@@ -1986,6 +2012,113 @@ def _create_eval_env(
         reward_mode=env_config.reward_mode,
         pin_memory=device.type == "cuda",
     )
+
+
+def _opponent_mix(cfg: FullConfig) -> KaggricultureOpponentMixConfig | None:
+    if isinstance(cfg.env, KaggricultureEnvConfig):
+        return cfg.env.opponent_mix
+    return None
+
+
+def _evaluate_against_bot(
+    *,
+    current_model: BaseModelAPI[Any, Any, Any],
+    cfg: FullConfig,
+    device: torch.device,
+    env_steps: int,
+) -> dict[str, float]:
+    """The candidate against the training mix's fixed opponent, in both seats.
+
+    One game per env on this checkpoint's evaluation worlds, every env hosting
+    the bot. The learned seat alternates with the env index (seat 1 in even
+    envs, seat 0 in odd ones, after the reset), so an even ``env.n_envs`` plays
+    each seat equally. Games are decided by raw final banks. Telemetry only:
+    promotion stays on the last-best win rate, and the bot's name is a run label.
+    """
+    mix = _opponent_mix(cfg)
+    if mix is None:
+        raise ValueError("the fixed-opponent evaluation requires env.opponent_mix")
+    started_at = time.perf_counter()
+    n_envs = cfg.env.n_envs
+    env = _create_eval_env(
+        cfg,
+        n_envs=n_envs,
+        device=device,
+        env_steps=env_steps,
+        opponent_mix=KaggricultureOpponentMixConfig(bot=mix.bot, fraction=1.0),
+    )
+    if not isinstance(env, KaggricultureVectorizedEnv):
+        raise TypeError("the fixed-opponent evaluation needs a Kaggriculture env")
+    own: list[float] = []
+    opponent: list[float] = []
+    seats: list[int] = []
+    finished = [False] * n_envs
+    steps = 0
+    was_training = current_model.training
+    current_model.eval()
+    try:
+        with torch.no_grad():
+            obs = env.reset()
+            while not all(finished):
+                learner = env.learner_mask.clone()
+                device_obs = _obs_to_device(
+                    obs, device, non_blocking=device.type == "cuda"
+                )
+                with autocast_context(cfg.rl, device):
+                    actions = forward_learner_rows(
+                        current_model, device_obs, learner
+                    ).actions
+                obs, _rewards, dones, _metrics = env.step(
+                    KaggricultureActions(
+                        tokens=actions.tokens.cpu().contiguous(),
+                        lengths=actions.lengths.cpu().contiguous(),
+                    )
+                )
+                steps += n_envs
+                done_envs = torch.nonzero(dones.all(dim=1)).flatten().tolist()
+                for env_index in done_envs:
+                    if finished[env_index]:
+                        continue
+                    terminal = env.terminal_metrics(env_index)
+                    if terminal is None:
+                        raise RuntimeError(
+                            f"missing terminal metrics for env {env_index}"
+                        )
+                    banks = terminal_seat_banks(
+                        {
+                            "bank_0": terminal["bank_0"],
+                            "bank_1": terminal["bank_1"],
+                            "margin_0": terminal["margin_0"],
+                            "winner": float(terminal["winner"]),
+                        }
+                    )
+                    seat = int(learner[env_index].to(torch.int64).argmax())
+                    if not bool(learner[env_index, seat]) or bool(
+                        learner[env_index, 1 - seat]
+                    ):
+                        raise RuntimeError(
+                            f"env {env_index} must have exactly one learned seat"
+                        )
+                    own.append(float(banks[seat]))
+                    opponent.append(float(banks[1 - seat]))
+                    seats.append(seat)
+                    finished[env_index] = True
+    finally:
+        current_model.train(was_training)
+    metrics = fixed_opponent_metrics(own, opponent, prefix="eval/")
+    for seat in (0, 1):
+        seat_metrics = fixed_opponent_metrics(
+            [bank for bank, s in zip(own, seats, strict=True) if s == seat],
+            [bank for bank, s in zip(opponent, seats, strict=True) if s == seat],
+            prefix="eval/",
+        )
+        for key in ("bank_games_vs_bot", "win_rate_vs_bot"):
+            if f"eval/{key}" in seat_metrics:
+                metrics[f"eval/{key}_seat_{seat}"] = seat_metrics[f"eval/{key}"]
+    elapsed = max(time.perf_counter() - started_at, 1e-12)
+    metrics["time/eval_vs_bot_seconds"] = float(elapsed)
+    metrics["perf/eval_vs_bot_sps"] = float(steps / elapsed)
+    return metrics
 
 
 def _evaluation_scores_and_metrics(

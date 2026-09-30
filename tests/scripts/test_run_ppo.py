@@ -25,10 +25,14 @@ from owl.checkpoint_quantization import (
 )
 from owl.game import create_env
 from owl.kaggriculture.codec import encode_actions
-from owl.kaggriculture.config import KaggricultureEnvConfig
+from owl.kaggriculture.config import (
+    KaggricultureEnvConfig,
+    KaggricultureOpponentMixConfig,
+)
 from owl.kaggriculture.env import KaggricultureVectorizedEnv
 from owl.kaggriculture.types import (
     MAX_ACTORS,
+    KaggricultureActionConfig,
     KaggricultureActions,
     KaggricultureObsConfig,
 )
@@ -37,6 +41,10 @@ from owl.model.compile_gemm import (
     CompileStackReport,
     GemmBackendClaim,
     InstalledCompileStack,
+)
+from owl.model.kaggriculture import (
+    KaggricultureTransformer,
+    KaggricultureTransformerConfig,
 )
 from owl.rl import (
     ACTION_ENTITY_SLOTS,
@@ -4347,7 +4355,12 @@ _FUNCTIONAL_EPISODE_STEPS = 6
 
 
 def _run_functional_check(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, threshold: float
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    threshold: float,
+    extra_overrides: tuple[str, ...] = (),
+    episode_steps: int = _FUNCTIONAL_EPISODE_STEPS,
 ) -> tuple[dict[str, Any], dict[str, torch.Tensor], _FakeLogger]:
     n_envs = 2
     update_steps = _FUNCTIONAL_HORIZON * n_envs
@@ -4360,8 +4373,9 @@ def _run_functional_check(
         str(_FUNCTIONAL_UPDATES * update_steps),
         "-o",
         f"rl.horizon={_FUNCTIONAL_HORIZON}",
-        f"env.config.episodeSteps={_FUNCTIONAL_EPISODE_STEPS}",
+        f"env.config.episodeSteps={episode_steps}",
         f"rl.teacher_init={teacher}",
+        *extra_overrides,
     ]
     monkeypatch.setattr(
         sys, "argv", ["run_ppo.py", *argv, "--log-mode", LogMode.DEBUG.value]
@@ -4512,6 +4526,278 @@ def test_kaggriculture_two_update_functional_check_through_main(
         assert last_best_checkpoint["env_steps"] == 0
         assert _states_equal(last_best_state, teacher_state)
         assert _states_equal(trainer.teacher_model.state_dict(), teacher_state)
+
+
+def test_kaggriculture_fixed_opponent_two_update_run_through_main(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """env.opponent_mix at fraction 1.0 through the canonical trainer."""
+    torch.manual_seed(359)
+    session, initial, logger = _run_functional_check(
+        tmp_path,
+        monkeypatch,
+        threshold=0.0,
+        extra_overrides=(
+            "env.opponent_mix.bot=starter",
+            "env.opponent_mix.fraction=1.0",
+        ),
+    )
+    cfg = session["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert cfg.env.opponent_mix is not None
+    assert (cfg.env.opponent_mix.bot, cfg.env.opponent_mix.fraction) == ("starter", 1.0)
+    trainer = session["trainer"]
+    assert isinstance(trainer, PPOTrainer)
+    assert trainer.rollout.learner is not None
+    # The bot's name is a run label only.
+    assert logger.summary["opponent_mix/bot"] == "starter"
+    assert logger.summary["opponent_mix/fraction"] == 1.0
+    training_logs = [metrics for metrics, _step in logger.logged[0::2]]
+    eval_logs = [metrics for metrics, _step in logger.logged[1::2]]
+    assert len(training_logs) == len(eval_logs) == _FUNCTIONAL_UPDATES
+    for metrics in training_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        assert "train/bank_games_vs_bot" in metrics
+        assert metrics["train/bank_games"] == 0.0  # no self-play games at 1.0
+        # One learned seat per env: two learner player-steps per step.
+        assert metrics["train/policy_active_ratio"] == pytest.approx(0.5)
+    # Four transitions complete no 5-transition game: the count is still
+    # logged (test_opponent_mix.py covers completed training games).
+    assert [m["train/bank_games_vs_bot"] for m in training_logs] == [0.0, 0.0]
+    for metrics in eval_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        # Promotion stays against last_best; the bot evaluation sits beside it.
+        assert metrics["eval/games"] == float(cfg.env.n_envs)
+        assert 0.0 <= metrics["eval/win_rate_against_last_best"] <= 1.0
+        assert metrics["eval/bank_games_vs_bot"] == float(cfg.env.n_envs)
+        assert metrics["eval/bank_games_vs_bot_seat_0"] == 1.0
+        assert metrics["eval/bank_games_vs_bot_seat_1"] == 1.0
+        for key in (
+            "eval/win_rate_vs_bot",
+            "eval/own_bank_mean_vs_bot",
+            "eval/margin_mean_vs_bot",
+            "eval/win_rate_vs_bot_seat_0",
+            "eval/win_rate_vs_bot_seat_1",
+        ):
+            assert key in metrics
+        assert metrics["eval/promoted"] == 1.0
+    assert not _states_equal(initial, run_ppo.unwrap_model(trainer.model).state_dict())
+    # Checkpoints carry no opponent state or label.
+    run_dir = session["run_dir"]
+    assert isinstance(run_dir, Path)
+    for path in run_dir.glob("*.pt"):
+        assert b"starter" not in path.read_bytes(), path.name
+
+
+def test_cha22_anchor_two_update_run_through_main(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The cha22 anchor setup: Cha22 hosted at fraction 1.0 under term M.
+
+    A tiny CPU run of two updates through the canonical trainer. Three-step
+    games (two transitions) complete one training game per env per update, so
+    the per-update vs-bot telemetry is measured, not only present.
+    """
+    torch.manual_seed(367)
+    session, initial, logger = _run_functional_check(
+        tmp_path,
+        monkeypatch,
+        threshold=0.0,
+        episode_steps=3,
+        extra_overrides=(
+            "env.opponent_mix.bot=cha22",
+            "env.opponent_mix.fraction=1.0",
+            # Term M exactly as configs/kaggriculture_4rank_vs_cha22.yaml.
+            "env.reward_shaping.econ_shaping=0.0",
+            "env.reward_shaping.econ_bank_weight=0.0",
+            "env.reward_shaping.econ_bank_cap=0.0",
+            "env.reward_shaping.econ_margin_weight=0.5",
+            "env.reward_shaping.econ_margin_scale=50000.0",
+            "env.reward_shaping.econ_margin_cap=0.5",
+        ),
+    )
+    cfg = session["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert cfg.env.opponent_mix == KaggricultureOpponentMixConfig(
+        bot="cha22", fraction=1.0
+    )
+    assert cfg.env.reward_shaping.terminal_scale == 0.5
+    trainer = session["trainer"]
+    assert isinstance(trainer, PPOTrainer)
+    assert trainer.rollout.learner is not None
+    assert logger.summary["opponent_mix/bot"] == "cha22"
+    assert logger.summary["opponent_mix/fraction"] == 1.0
+    training_logs = [metrics for metrics, _step in logger.logged[0::2]]
+    eval_logs = [metrics for metrics, _step in logger.logged[1::2]]
+    assert len(training_logs) == len(eval_logs) == _FUNCTIONAL_UPDATES
+    for metrics in training_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        assert metrics["train/policy_active_ratio"] == pytest.approx(0.5)
+        # Every game is against Cha22: one per env per update, none self-play.
+        assert metrics["train/bank_games_vs_bot"] == float(cfg.env.n_envs)
+        assert metrics["train/bank_games"] == 0.0
+        assert 0.0 <= metrics["train/win_rate_vs_bot"] <= 1.0
+        assert metrics["train/opponent_bank_mean_vs_bot"] > 0.0
+        # Term M pays per step against the bot.
+        assert metrics["train/reward_margin_abs_mean"] > 0.0
+        assert metrics["train/margin_mean_vs_bot"] == pytest.approx(
+            metrics["train/own_bank_mean_vs_bot"]
+            - metrics["train/opponent_bank_mean_vs_bot"]
+        )
+    for metrics in eval_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        assert metrics["eval/games"] == float(cfg.env.n_envs)
+        assert metrics["eval/bank_games_vs_bot"] == float(cfg.env.n_envs)
+        assert metrics["eval/bank_games_vs_bot_seat_0"] == 1.0
+        assert metrics["eval/bank_games_vs_bot_seat_1"] == 1.0
+        for seat in (0, 1):
+            assert 0.0 <= metrics[f"eval/win_rate_vs_bot_seat_{seat}"] <= 1.0
+        assert metrics["eval/margin_mean_vs_bot"] == pytest.approx(
+            metrics["eval/own_bank_mean_vs_bot"]
+            - metrics["eval/opponent_bank_mean_vs_bot"]
+        )
+    assert not _states_equal(initial, run_ppo.unwrap_model(trainer.model).state_dict())
+    run_dir = session["run_dir"]
+    assert isinstance(run_dir, Path)
+    checkpoints = list(run_dir.glob("*.pt"))
+    assert checkpoints
+    for path in checkpoints:
+        assert b"cha22" not in path.read_bytes(), path.name
+
+
+def test_last_best_evaluation_env_never_hosts_the_training_opponent() -> None:
+    cfg = _kaggriculture_eval_config()
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    mixed = cfg.model_copy(
+        update={
+            "env": cfg.env.model_copy(
+                update={
+                    "opponent_mix": KaggricultureOpponentMixConfig(
+                        bot="r04", fraction=0.5
+                    )
+                }
+            )
+        }
+    )
+    device = torch.device("cpu")
+    plain = run_ppo._create_eval_env(mixed, n_envs=2, device=device, env_steps=1000)
+    assert isinstance(plain, KaggricultureVectorizedEnv)
+    assert plain.opponent_envs == 0
+    hosted = run_ppo._create_eval_env(
+        mixed,
+        n_envs=2,
+        device=device,
+        env_steps=1000,
+        opponent_mix=KaggricultureOpponentMixConfig(bot="r04", fraction=1.0),
+    )
+    assert isinstance(hosted, KaggricultureVectorizedEnv)
+    assert (hosted.opponent_bot, hosted.opponent_envs) == ("r04", 2)
+    with pytest.raises(ValueError, match=r"requires env\.opponent_mix"):
+        run_ppo._evaluate_against_bot(
+            current_model=_LaunchPolicy(launch=True),
+            cfg=cfg,
+            device=device,
+            env_steps=1000,
+        )
+
+
+def test_fixed_bot_evaluation_attributes_banks_to_the_learned_seat(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``eval/*_vs_bot`` reads the learned seat's bank as own, in both seats.
+
+    The real hosted-Cha22 env plays three-step games; its terminal banks are
+    replaced by seat-distinct known values (seat 0 always richer), so the
+    learner wins every seat-0 game and loses every seat-1 game. Swapping own
+    and opponent anywhere in the attribution inverts every assertion.
+    """
+    torch.manual_seed(401)
+    base = _kaggriculture_eval_config()
+    assert isinstance(base.env, KaggricultureEnvConfig)
+    n_envs = 4
+    cfg = base.model_copy(
+        update={
+            "env": base.env.model_copy(
+                update={
+                    "n_envs": n_envs,
+                    "native_threads": 1,
+                    "pin_memory": False,
+                    "config": base.env.config.model_copy(update={"episode_steps": 3}),
+                    "opponent_mix": KaggricultureOpponentMixConfig(
+                        bot="cha22", fraction=1.0
+                    ),
+                }
+            )
+        }
+    )
+    real_create_eval_env = run_ppo._create_eval_env
+    reset_learner: list[list[list[bool]]] = []
+    terminal_calls: list[int] = []
+
+    def seat_zero_richer(env_index: int) -> dict[str, float]:
+        bank_0, bank_1 = 100.0 * (env_index + 1), 7.0 * (env_index + 1)
+        return {
+            "bank_0": bank_0,
+            "bank_1": bank_1,
+            "margin_0": bank_0 - bank_1,
+            "winner": 0.0,
+        }
+
+    def create_eval_env(cfg: FullConfig, **kwargs: Any) -> Any:
+        env = real_create_eval_env(cfg, **kwargs)
+        assert isinstance(env, KaggricultureVectorizedEnv)
+        assert (env.opponent_bot, env.opponent_envs) == ("cha22", n_envs)
+        real_reset = env.reset
+        real_terminal = env.terminal_metrics
+
+        def reset() -> Any:
+            obs = real_reset()
+            reset_learner.append(env.learner_mask.tolist())
+            return obs
+
+        def terminal_metrics(env_index: int) -> dict[str, float] | None:
+            real = real_terminal(env_index)
+            assert real is not None
+            terminal_calls.append(env_index)
+            return {**real, **seat_zero_richer(env_index)}
+
+        monkeypatch.setattr(env, "reset", reset)
+        monkeypatch.setattr(env, "terminal_metrics", terminal_metrics)
+        return env
+
+    monkeypatch.setattr(run_ppo, "_create_eval_env", create_eval_env)
+    model = KaggricultureTransformer(
+        KaggricultureTransformerConfig(
+            embed_dim=16, depth=1, n_heads=1, mlp_ratio=1, n_scratch_tokens=0
+        ),
+        obs_spec=KaggricultureObsConfig(),
+        action_spec=KaggricultureActionConfig(),
+    )
+    metrics = run_ppo._evaluate_against_bot(
+        current_model=model, cfg=cfg, device=torch.device("cpu"), env_steps=1000
+    )
+
+    # After the reset the learner holds seat 1 in even envs and seat 0 in odd.
+    assert reset_learner == [[[False, True], [True, False]] * 2]
+    assert sorted(terminal_calls) == list(range(n_envs))
+    own = [7.0, 200.0, 21.0, 400.0]  # bank_1, bank_0, bank_1, bank_0
+    opponent = [100.0, 14.0, 300.0, 28.0]
+    assert metrics["eval/bank_games_vs_bot"] == float(n_envs)
+    assert metrics["eval/bank_games_vs_bot_seat_0"] == 2.0
+    assert metrics["eval/bank_games_vs_bot_seat_1"] == 2.0
+    assert metrics["eval/win_rate_vs_bot_seat_0"] == 1.0
+    assert metrics["eval/win_rate_vs_bot_seat_1"] == 0.0
+    assert metrics["eval/win_rate_vs_bot"] == 0.5
+    assert metrics["eval/own_bank_mean_vs_bot"] == pytest.approx(sum(own) / n_envs)
+    assert metrics["eval/opponent_bank_mean_vs_bot"] == pytest.approx(
+        sum(opponent) / n_envs
+    )
+    assert metrics["eval/margin_mean_vs_bot"] == pytest.approx(
+        (sum(own) - sum(opponent)) / n_envs
+    )
+    assert model.training
 
 
 class _SeatPinnedNativeEvalEnv(KaggricultureVectorizedEnv):

@@ -152,10 +152,12 @@ oracle above. Starter never hires in these games.
 
 Default-config-only support is deliberate: the controllers hardcode calendar
 and rule constants. Custom configs accepted by the general v4.1 environment
-contract are not thereby supported by these opponents. Learned-seat binding
-checks stay skipped: Task 1.4's `KaggricultureEnv` has landed but has no hook
-that puts an `opponents_rs` controller in the other seat, and the skipped tests
-describe that future API.
+contract are not thereby supported by these opponents. The learned-seat hook
+exists since the fixed-opponent collection (2026-09-30,
+[[../decisions/train-ppo-against-a-fixed-opponent-with-a-learner-mask|fixed-opponent Decision]]).
+`HostedSeat` puts a controller in the other seat of a native
+`KaggricultureEnv` game, and the nine formerly skipped binding checks now run
+in `tests/owl/kaggriculture/test_opponents.py`.
 No playing-strength, held-out panel or generality result follows from bounded
 CPU qualification.
 

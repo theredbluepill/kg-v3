@@ -1,0 +1,620 @@
+# Kaggriculture submission v9/3: public V39 (Apache-2.0, notices below) plus the v9 layers
+# RACEPX gate, RACE (reservation from step 192, horizon 40 / margin 12), COURIER, CARROT and HERD
+# appended at the end of this file.
+# EXP-173 isolate opening market sequence inspired by yhay81/shop-router-0911-simple (Apache-2.0).
+# Kaggriculture EXP-167 candidate. Not submitted automatically.
+# Attribution: thomastschinkel, yhay81, destbreso, aurax7, tetsutani,
+# prvsiyan and Dmitrii Gluzdov. Apache-2.0 derivations; notices retained below.
+# Kaggriculture v31 / EXP-157, Ahmed Berat Ozer, September 9 2026.
+# Selected mechanism: crop_public_order. New independent confirmation is required.
+# Public V221B/V224C production/timing lineage: prvsiyan, Apache-2.0.
+# Original economics and integration; retained upstream licenses follow.
+# Kaggriculture v28 / EXP-154, Ahmed Berat Ozer, September 9 2026.
+# Changes: aurax7 day-end storage guard; Dmitrii Gluzdov physical terminal rescue
+# adapted to v27, with 64 deterministic simulations. Apache-2.0.
+# New action tapes and ordered shop-pair map: yhay81/shop-router-0909, Apache-2.0.
+# Kaggriculture v25, EXP-149: Shop0908 production, sale lead, terminal cargo rescue.
+# Runtime chassis: Apache-2.0; thomastschinkel, yhay81, tetsutani.
+# Routing and public action data: yhay81/shop-router-0908, frozen September 8, 2026.
+# 
+#                                  Apache License
+#                            Version 2.0, January 2004
+#                         http://www.apache.org/licenses/
+# 
+#    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+# 
+#    1. Definitions.
+# 
+#       "License" shall mean the terms and conditions for use, reproduction,
+#       and distribution as defined by Sections 1 through 9 of this document.
+# 
+#       "Licensor" shall mean the copyright owner or entity authorized by
+#       the copyright owner that is granting the License.
+# 
+#       "Legal Entity" shall mean the union of the acting entity and all
+#       other entities that control, are controlled by, or are under common
+#       control with that entity. For the purposes of this definition,
+#       "control" means (i) the power, direct or indirect, to cause the
+#       direction or management of such entity, whether by contract or
+#       otherwise, or (ii) ownership of fifty percent (50%) or more of the
+#       outstanding shares, or (iii) beneficial ownership of such entity.
+# 
+#       "You" (or "Your") shall mean an individual or Legal Entity
+#       exercising permissions granted by this License.
+# 
+#       "Source" form shall mean the preferred form for making modifications,
+#       including but not limited to software source code, documentation
+#       source, and configuration files.
+# 
+#       "Object" form shall mean any form resulting from mechanical
+#       transformation or translation of a Source form, including but
+#       not limited to compiled object code, generated documentation,
+#       and conversions to other media types.
+# 
+#       "Work" shall mean the work of authorship, whether in Source or
+#       Object form, made available under the License, as indicated by a
+#       copyright notice that is included in or attached to the work
+#       (an example is provided in the Appendix below).
+# 
+#       "Derivative Works" shall mean any work, whether in Source or Object
+#       form, that is based on (or derived from) the Work and for which the
+#       editorial revisions, annotations, elaborations, or other modifications
+#       represent, as a whole, an original work of authorship. For the purposes
+#       of this License, Derivative Works shall not include works that remain
+#       separable from, or merely link (or bind by name) to the interfaces of,
+#       the Work and Derivative Works thereof.
+# 
+#       "Contribution" shall mean any work of authorship, including
+#       the original version of the Work and any modifications or additions
+#       to that Work or Derivative Works thereof, that is intentionally
+#       submitted to Licensor for inclusion in the Work by the copyright owner
+#       or by an individual or Legal Entity authorized to submit on behalf of
+#       the copyright owner. For the purposes of this definition, "submitted"
+#       means any form of electronic, verbal, or written communication sent
+#       to the Licensor or its representatives, including but not limited to
+#       communication on electronic mailing lists, source code control systems,
+#       and issue tracking systems that are managed by, or on behalf of, the
+#       Licensor for the purpose of discussing and improving the Work, but
+#       excluding communication that is conspicuously marked or otherwise
+#       designated in writing by the copyright owner as "Not a Contribution."
+# 
+#       "Contributor" shall mean Licensor and any individual or Legal Entity
+#       on behalf of whom a Contribution has been received by Licensor and
+#       subsequently incorporated within the Work.
+# 
+#    2. Grant of Copyright License. Subject to the terms and conditions of
+#       this License, each Contributor hereby grants to You a perpetual,
+#       worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+#       copyright license to reproduce, prepare Derivative Works of,
+#       publicly display, publicly perform, sublicense, and distribute the
+#       Work and such Derivative Works in Source or Object form.
+# 
+#    3. Grant of Patent License. Subject to the terms and conditions of
+#       this License, each Contributor hereby grants to You a perpetual,
+#       worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+#       (except as stated in this section) patent license to make, have made,
+#       use, offer to sell, sell, import, and otherwise transfer the Work,
+#       where such license applies only to those patent claims licensable
+#       by such Contributor that are necessarily infringed by their
+#       Contribution(s) alone or by combination of their Contribution(s)
+#       with the Work to which such Contribution(s) was submitted. If You
+#       institute patent litigation against any entity (including a
+#       cross-claim or counterclaim in a lawsuit) alleging that the Work
+#       or a Contribution incorporated within the Work constitutes direct
+#       or contributory patent infringement, then any patent licenses
+#       granted to You under this License for that Work shall terminate
+#       as of the date such litigation is filed.
+# 
+#    4. Redistribution. You may reproduce and distribute copies of the
+#       Work or Derivative Works thereof in any medium, with or without
+#       modifications, and in Source or Object form, provided that You
+#       meet the following conditions:
+# 
+#       (a) You must give any other recipients of the Work or
+#           Derivative Works a copy of this License; and
+# 
+#       (b) You must cause any modified files to carry prominent notices
+#           stating that You changed the files; and
+# 
+#       (c) You must retain, in the Source form of any Derivative Works
+#           that You distribute, all copyright, patent, trademark, and
+#           attribution notices from the Source form of the Work,
+#           excluding those notices that do not pertain to any part of
+#           the Derivative Works; and
+# 
+#       (d) If the Work includes a "NOTICE" text file as part of its
+#           distribution, then any Derivative Works that You distribute must
+#           include a readable copy of the attribution notices contained
+#           within such NOTICE file, excluding those notices that do not
+#           pertain to any part of the Derivative Works, in at least one
+#           of the following places: within a NOTICE text file distributed
+#           as part of the Derivative Works; within the Source form or
+#           documentation, if provided along with the Derivative Works; or,
+#           within a display generated by the Derivative Works, if and
+#           wherever such third-party notices normally appear. The contents
+#           of the NOTICE file are for informational purposes only and
+#           do not modify the License. You may add Your own attribution
+#           notices within Derivative Works that You distribute, alongside
+#           or as an addendum to the NOTICE text from the Work, provided
+#           that such additional attribution notices cannot be construed
+#           as modifying the License.
+# 
+#       You may add Your own copyright statement to Your modifications and
+#       may provide additional or different license terms and conditions
+#       for use, reproduction, or distribution of Your modifications, or
+#       for any such Derivative Works as a whole, provided Your use,
+#       reproduction, and distribution of the Work otherwise complies with
+#       the conditions stated in this License.
+# 
+#    5. Submission of Contributions. Unless You explicitly state otherwise,
+#       any Contribution intentionally submitted for inclusion in the Work
+#       by You to the Licensor shall be under the terms and conditions of
+#       this License, without any additional terms or conditions.
+#       Notwithstanding the above, nothing herein shall supersede or modify
+#       the terms of any separate license agreement you may have executed
+#       with Licensor regarding such Contributions.
+# 
+#    6. Trademarks. This License does not grant permission to use the trade
+#       names, trademarks, service marks, or product names of the Licensor,
+#       except as required for reasonable and customary use in describing the
+#       origin of the Work and reproducing the content of the NOTICE file.
+# 
+#    7. Disclaimer of Warranty. Unless required by applicable law or
+#       agreed to in writing, Licensor provides the Work (and each
+#       Contributor provides its Contributions) on an "AS IS" BASIS,
+#       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+#       implied, including, without limitation, any warranties or conditions
+#       of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+#       PARTICULAR PURPOSE. You are solely responsible for determining the
+#       appropriateness of using or redistributing the Work and assume any
+#       risks associated with Your exercise of permissions under this License.
+# 
+#    8. Limitation of Liability. In no event and under no legal theory,
+#       whether in tort (including negligence), contract, or otherwise,
+#       unless required by applicable law (such as deliberate and grossly
+#       negligent acts) or agreed to in writing, shall any Contributor be
+#       liable to You for damages, including any direct, indirect, special,
+#       incidental, or consequential damages of any character arising as a
+#       result of this License or out of the use or inability to use the
+#       Work (including but not limited to damages for loss of goodwill,
+#       work stoppage, computer failure or malfunction, or any and all
+#       other commercial damages or losses), even if such Contributor
+#       has been advised of the possibility of such damages.
+# 
+#    9. Accepting Warranty or Additional Liability. While redistributing
+#       the Work or Derivative Works thereof, You may choose to offer,
+#       and charge a fee for, acceptance of support, warranty, indemnity,
+#       or other liability obligations and/or rights consistent with this
+#       License. However, in accepting such obligations, You may act only
+#       on Your own behalf and on Your sole responsibility, not on behalf
+#       of any other Contributor, and only if You agree to indemnify,
+#       defend, and hold each Contributor harmless for any liability
+#       incurred by, or claims asserted against, such Contributor by reason
+#       of your accepting any such warranty or additional liability.
+# 
+#    END OF TERMS AND CONDITIONS
+# 
+#    APPENDIX: How to apply the Apache License to your work.
+# 
+#       To apply the Apache License to your work, attach the following
+#       boilerplate notice, with the fields enclosed by brackets "[]"
+#       replaced with your own identifying information. (Don't include
+#       the brackets!)  The text should be enclosed in the appropriate
+#       comment syntax for the file format. We also recommend that a
+#       file or class name and description of purpose be included on the
+#       same "printed page" as the copyright notice for easier
+#       identification within third-party archives.
+# 
+#    Copyright [yyyy] [name of copyright owner]
+# 
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+# 
+#        http://www.apache.org/licenses/LICENSE-2.0
+# 
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+# --------------------------------------------------------------------------- helpers
+# --------------------------------------------------------------------------- chassis
+# --------------------------------------------------------------------------- factory
+# EXP239 native schedules: Yusuke Hayashi (yhay81), Shop Router 0913.
+# https://www.kaggle.com/code/yhay81/shop-router-0913
+# Ahmed Berat Ozer: V39 prefix/terminal, shared-action encoding and controllers.
+# EXP241: fixed two-policy choice, learned with five whole-team held-out folds.
+# The full-fit tree and all five fold trees use only first-two-shop YARN_STORE count.
+# V39 handles yarn-specialized worlds; EXP240 handles the other shop combinations.
+# EXP-154 modifications: Ahmed Berat Ozer; public capabilities credited below.
+# Dmitrii Gluzdov Seven Turn Rescue and Kaggle engine contributors, Apache-2.0.
+# EXP-154 integration by Ahmed Berat Ozer, derived from Dmitrii Gluzdov E182.
+# The preserved v27 parent is simulated on a private shadow only at step 712.
+# EXP-154: aurax7 Reactive v2 day-end storage guard, adapted to our v27 view.
+# Incorporated upstream attribution and change notice:
+# E182 Shop0909 + terminal physical closure (modified 2026-09-09)
+# 
+# The active public parent is Yusuke Hayashi's yhay81/shop-router-0909 v3.
+# router_parent.py and actions.json are exact original bytes, not newly authored
+# routes. The parent credits aurax7's Reactive Router for sale timing and shed
+# projection; that attribution remains in router_parent.py. Original payload
+# LICENSE.txt is preserved unchanged (Apache License 2.0 text); it contains no
+# named copyright grantor and no separate NOTICE was supplied. No additional
+# ownership, endorsement, or upstream replay-data rights claim is made.
+# 
+# Local changes: separate main.py/policy.py adapter; bounded start712 planner
+# copied from frozen E180/S78 and modified for seven callbacks, exact Shop final
+# liquidation, strict positive physical delivery/sale gain, and observation guards.
+# unit_model.py is an unchanged frozen E180 copy of Kaggle's extracted semantics.
+# The following original E180 notice is retained verbatim for attribution history.
+# Its references to Thomas files describe E180, not files supplied in this Shop
+# package: no Thomas tapes, trees or policy are included here.
+# 
+# ----- Original E180 notice -----
+# Kaggriculture: Last-Mile Harvest Planner
+# Attribution and change notice
+# 
+# Thomas Tschinkel is the author of the parent public state-router policy and its
+# published decision trees and action-route data. Source: Kaggriculture: 93.8% Win
+# Rate Public State Router, notebook version 3, scriptVersionId 347936183:
+# https://www.kaggle.com/code/thomastschinkel/kaggriculture-93-8-win-rate-public-state-router?scriptVersionId=347936183
+# The public notebook identifies its license as Apache License, Version 2.0.
+# Original published main.py SHA-256:
+# b87a27ed614a33329be85f1b662e51cf4078a019fee937afcebbbbf2f51f8522
+# 
+# Changes to that source for this distribution: compressed route/tree literals
+# were decoded into readable tapes.json and trees.json; a read-only planned_action
+# helper was added; descriptive headers and local data loading were adapted.
+# The original parent feature extraction, tree traversal and agent behavior are
+# retained. These public routes are not claimed as newly authored or trained by
+# the notebook distributor.
+# 
+# unit_model.py contains deterministic unit-action and crop-decay definitions
+# extracted from Kaggle's kaggle-environments 1.32.7 Kaggriculture engine, licensed
+# under Apache License, Version 2.0. Credit: Kaggle and the kaggle-environments
+# contributors. Project: https://github.com/Kaggle/kaggle-environments
+# Source file: kaggle_environments/envs/kaggriculture/kaggriculture.py
+# Source SHA-256:
+# bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e
+# The extracted unit/decay definitions are not a newly authored game engine;
+# market price dynamics and the full interpreter are not part of this module.
+# 
+# Additional work in this distribution: a bounded last-nine-action collection
+# and delivery planner, observation guards and recovery, a settings-consuming
+# factory and entry point, standalone examples, and deterministic packaging.
+# The full Apache License, Version 2.0 is included as LICENSE.txt.
+# No endorsement by Thomas Tschinkel or Kaggle is implied.
+# 
+# Data provenance limitation: Thomas's source refers to public replay data and
+# an upstream provenance.json. That original episode-level manifest, replay IDs
+# and individual replay-author identities were not supplied with the public
+# notebook/output used here. No names or episode lineage have been invented.
+# Notebook-level licensing does not independently establish the missing underlying
+# replay-data rights chain. The package supplies usable readable routes, not a
+# reproducible reconstruction of their original collection or training process.
+# 
+# Packaging note: source inputs described as byte-exact above are
+# normalized to UTF-8/LF text with a final newline in this standalone
+# notebook package. Route JSON values and parent policy behavior are unchanged.
+# Final public-entry guard; measured separately and compared on captured observations.
+# EXP-155: prvsiyan V221B finite tomato investment, adapted by Ahmed Berat Ozer.
+# Original public source is retained under research24/public; Apache-2.0.
+# V219: a finite late tomato investment with dedicated, observed workers.
+# V221B: labor-only ablation of frozen V219G; not yet publicly scored.
+# Crop workers own their final routes after commitment. A private parent shadow
+# does not contain these obligations, so terminal rescue must abstain there.
+# Apache-2.0; later cattle transfer from prvsiyan, Moon (2026-09-10).
+# Bounded livestock substitution; confirm owned animals before redirecting workers.
+# EXP-167, adapted from Dmitrii Gluzdov's Two Coins, One Sheep (Apache-2.0).
+# Reserve only physically available stock after the final parent worker actions.
+# Ensure the Kaggle-selected final callable is the exported policy.
+# Public capability transfer: lucifer19; Flexon is the same Two Coins asset set.
+# Apache-2.0; exact functions from Kaggle kaggle-environments 1.32.7.
+# https://github.com/Kaggle/kaggle-environments/tree/master/kaggle_environments/envs/kaggriculture
+# EXP175: bounded public cash-response probe inspired by leoprovorov,
+# Two Coins Mirror Counter v1 (Apache-2.0). No hidden rival inventory.
+# EXP-168: adapted from lucifer19 / Harvest Nocturne, Apache-2.0.
+# All rivalry features use public occupied tiles; no private rival inventory.
+# Export guard: normal decisions stay identical to the frozen screened policy.
+# Adapted from prvsiyan / The Soil Remembers Rain, Apache-2.0.
+# V233: bounded, financed six-sheep SE discovery investment.
+# EXP182: finite-harvest wheat/carrot input planner; original adaptation.
+# EXP182: project the final hour's actual worker actions before automatic deposit.
+# EXP193: deterministic HIRE spawn after native unit actions, then next-turn pickup.
+# EXP216: original adaptation of economic feed and fertilizer-sale concepts.
+# Conceptual credit: Steven Lee Hans, "Lord Momo Returns", September12 snapshot.
+# EXP217: planned next-day service is required before discretionary feed cuts.
+# EXP219: charge care credits only when this feeding decision can affect them.
+# EXP226: retain physical grain for two complete days before trimming a buy.
+# EXP231: protect inputs using funded current orders without unassigned cash padding from observed physical resources.
+# ---------------------------------------------------------------------------
+# v9 COURIER: deliver premium cargo before midnight and sell it the same day.
+#
+# Roughly 40% of the tape's strawberries and milk are still in workers' hands
+# when the day ends; the engine drops them into the shed *after* the market,
+# so every sibling of this policy sells them the next morning.  No town draw
+# happens between hour 20 and the next dawn's market, so an evening sale gets
+# the morning's quote a day earlier than a rival who waits for the auto-drop.
+#
+# From hour V9_COURIER_FROM_HOUR, a tape worker carrying premium goods whose
+# every remaining command today is a PASS or a move (moves are free: workers
+# respawn at the shed at dawn) walks to the nearest shed-access tile, drops,
+# and the delivered units are offered in the first market slot.
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# v9 CARROT: plant carrots instead of wheat when the carrot book pays for it.
+#
+# The tape replants wheat on the same short cycle a carrot needs (water daily,
+# harvest at age 2-4), so the swap keeps every worker's schedule intact.  A
+# watered wheat plant yields 4 and a carrot 3, for $10 more seed, so the swap
+# only pays once the carrot quote clears V9_CARROT_RATIO x the wheat quote --
+# which pet cafes and farmers markets make happen by draining the hinge book.
+# Wheat is also feed, so the swap stops while the shed holds less than
+# V9_CARROT_WHEAT_RESERVE wheat.
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# v9 HERD: raise the tape's day-10 geese as sheep or cows when the draw pays.
+#
+# A cared goose lays 2 eggs a day into a $50 book; a cared sheep grows 4 wool
+# every 3 days into a $200 book, a cow 3 milk every 2 days into a $160 book.
+# The tape handles its geese exactly like pasture animals (build, pick up,
+# place, feed, care, collect fertilizer, harvest), so swapping the species at
+# the first goose purchase keeps every worker's schedule.  Wool needs a yarn
+# store to hold its price and milk needs pizza / ice cream / smoothie shops;
+# egg shops keep the geese.  The swapped herd's extra product has no planned
+# sale on the tape, so anything beyond the tape's remaining planned sales is
+# sold as it reaches the shed.
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# v9 FERT: spend carried fertilizer on young wheat and carrots.
+#
+# Workers that tend animals carry collected fertilizer back to the shed, where
+# the tape sells it into a book that falls from $55 on day 14 to $10 by day 27.
+# On a short crop the same unit is worth far more: a watered wheat plant ends at
+# 4 units, but fertilized for its yield window it caps at 6.  A worker that
+# carries fertilizer and is about to water a wheat or carrot plant one day
+# after planting (watered on planting day, not yet fertilized) fertilizes it
+# instead; the tape waters it again on the following days.  Fertilizer the
+# worker's own tape commands still spend today is left alone, and the layer only
+# acts from day 16, once the fertilizer book is worth less than two wheat.
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# v9 OPENING: a cash-safe step-0 wheat trade.
+#
+# Every route tape opens with a wheat round trip
+#     step 0: BUY 13, BUY 30, SELL 30      step 1: SELL 13, BUY 5   (net +5)
+# and then runs days 0-9 with only ~$6 of cash slack (minimum at step 32).
+# The round trip wins cash from rivals whose own opening buys into it, but
+# against openings that dump wheat in the same slots (e.g. BUY 43 / SELL 20 /
+# SELL 22 or BUY 30 / SELL all) it ends step 1 up to $75 short; the day-1
+# wheat and hire orders then fail, the herd goes unfed, and by days 5-8 the
+# strawberry seed orders fail too (18-21 plants instead of 33, -20k..-65k).
+#
+# Replacing it with BUY 10, SELL 5 at step 0 (still net +5, nothing at
+# step 1) leaves >= $1,050 after step 1 against all 6,648 recorded openings
+# in the metav2 / M&M replays (exact market simulation, build/v9/opensim.py),
+# and $2 more than the round trip against the V38/V39 tape lineage.
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# v9 RACE: fit the sale-reservation horizon to the rival's observed sale lead.
+#
+# Premium books crash within ~60 units of glut, so the first seller of a lot
+# takes the price and the second sells into the crash.  The parent reserves
+# planned tape sales a fixed four turns ahead; any deeper fixed horizon beats
+# it head-to-head, but selling earlier than necessary gives away town-demand
+# recovery against a rival that does not race.
+#
+# Everything here is public.  Each turn the rival's executed sales are
+#
+#   rival_sold[p] = inventory'[p] - inventory[p] + town_draw[p] - own_sold[p]
+#
+# (exact above the $1 floor, where sales never enter inventory).  When the
+# rival sells a product while we still hold stock that our tape sells later,
+# and the sale is not a late fill of our previous lot, the turns until our next
+# planned sale are the rival's lead.  One horizon serves every product:
+#
+#   horizon = clamp(largest lead seen + RACE_MARGIN, RACE_DEFAULT, RACE_MAX)
+#
+# and it also lifts the parent's 72-turn block bound (patched into the
+# parent's reservation by the release builder).
+#
+# v9/2: the shipped horizon is 40 turns with a 12-turn margin (was 6 and 4).
+# Mirrors are the ladder's real opponent, and the premium books are first-come
+# races, so reserve depth is the whole decision.  Against the 6/4 build the new
+# setting wins 73-7 (+308) over 80 mirror games; against the shipped 32/12 build
+# it wins 74-6 (+358).  Deeper is not better: 44/12 beats 40 head to head but
+# drops the shallow-baseline record to 65-15, and 48/12 (a constant 48) falls to
+# 14-26 against it, because a horizon past the rival's next lot gives up
+# town-demand recovery for nothing.  The frozen top-30 stream panel is unchanged
+# inside its noise (52.2% / +2,797 over 178 games vs 52.8% / +2,929 at 32/12) and
+# the public field still goes 8-0.
+#
+# v9/2b: the reservation window starts at step 192 (day 8) instead of 288 (day 12),
+# a one-line change in the parent's `_r36_reserve` gate made by the release builder.
+# The herd's first milk and wool lots land on days 8-11 and the same-day sale
+# reservation is what takes their price before a rival's lot lands; the two middle
+# days of the tape's own schedule give that up.  Three fresh mirror blocks against
+# the step-288 build: 32-0 (+147), 30-2 (+11), 30-2 (+10); and against the shallow
+# 6/4 baseline the new build is if anything stronger, not weaker: 28-4 (+556) vs
+# 28-4 (+406), 29-3 (+272), 31-1 (+359) vs 31-1 (+349).  Per-item horizons instead of
+# one global horizon change nothing once the window starts at 192 (28 of 32 games
+# identical), so the one-line gate is the whole change.
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# v9 RACEPX: lead-sell a planned lot early only while its book is not glutted.
+#
+# The engine prices a product off the market inventory: below I0 the quote is above
+# base, above I0 it is below.  The lead sale moves a lot one turn ahead of the tape's
+# own plan, which is what takes the price when both sides hold the same lot -- but
+# when the book is already above I0 the same units only fetch a lower price, and the
+# town drain between the two turns is not enough to pay for it.
+#
+# Measured against the frozen top-20 streams the shipped build realizes below-base
+# prices on exactly the products it floods (strawberry $107-123 vs a $120 base, milk
+# $98-107 vs $160, wool $129-139 vs $200, melon $212 vs $250, fertilizer $43 vs $100)
+# and above base on the ones the town drains (wheat $38 vs $25, carrot $54 vs $35,
+# tomato $125 vs $60, egg $52 vs $50).
+#
+# This layer keeps the lead sale for products quoted at or above base + MARGIN and
+# leaves the rest to the tape's own schedule.  The reservation (`_r36_reserve`) is
+# untouched, so the RACE horizon still governs how far ahead lots may be pulled.
+#
+# Evidence (v9/3): mirror against the shipped build 35-13 (+220) over 48 fresh games;
+# against the 6/4 ancestor 41-7 (+620) where the shipped build is 45-3 (+449); frozen
+# top-20 panel 69/120 (+3,586) against 66/120 (+3,364); second panel 63/120 (+2,264)
+# against 63/120 (+1,882); public field pool unchanged (14-2 vs cdb and fh11, 16-0
+# vs fa103/fa141/fa238/wd14).
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# v9 RACEGATE: the same glut gate for the *reservation* (the 40-turn pull-forward).
+#
+# `_r36_reserve` moves tape-planned sales up to the RACE horizon forward, item by
+# item.  RACEPX only gated the one-turn lead sale; this layer gates the reservation
+# too: an item whose quote is at or below its base price is left to the tape's own
+# schedule.  The debt ledger is untouched for the items that are still reserved, so
+# suppression stays consistent.
+#
+# Evidence: see README (v9/3 round).
+# ---------------------------------------------------------------------------
+# ==== layer ctrtable.py 
+# ---------------------------------------------------------------------------
+# v9/3 CTRTABLE: rival-specific early wheat counters.
+# Under the BUY 20 | SELL 15 opening, a rival tape's turn-2 observation (rival money, market wheat)
+# identifies it exactly.  For known cash-tight tapes we trade alongside their own early wheat orders
+# in the same market slots (checked unique over 4,604 recorded games):
+#   feel the agi (979.0, 9989): steps 7-8  BUY 5 slot 0, SELL 5 slot 1
+#   Mother-Goose (33.0, 9990): step 3      BUY 20 slot 0, SELL 20 slot 1
+# ---------------------------------------------------------------------------
+# ==== layer overflow.py 
+# ---------------------------------------------------------------------------
+# v9/3 OVERFLOW (ported from public V43 R148, Ahmed Berat Ozer, Apache-2.0):
+# at hour 23 the workers' cargo drops into a 100-unit shed; cargo that does not fit
+# is destroyed.  Sell exactly the shed stock that the destroyed cargo would replace,
+# so the complete post-dawn stock vector is unchanged and the sold units are extra.
+# ---------------------------------------------------------------------------
+# One-worker non-harvest service for the inherited six-sheep project.
+# All feeding and care are mandatory. Optional fertilizer collection only uses
+# leftover time; setup, wool harvests, and late-start days keep the old crew.
+# v9/4 VE: commit the six-sheep expansion on day 11 when two of the first three
+# shops are yarn stores. The melon sale lands on day 11, and sheep placed that
+# day produce on days 17, 20, 23, 26 and 29 instead of 18, 21, 24 and 27: a
+# fifth wool harvest for one more day of feed and labour.
+# Day 11 waits until the tape's own land purchase (hour 1) and only ignores a
+# native sheep that the tape itself picks up later today (units act before the
+# market, and the project's hands spawn a step after its purchase). It commits
+# only when cash also covers every purchase the tape still plans through day 12
+# (its day-11 strawberry seeds above all); otherwise day 12 decides as before.
+# v9/4 VT: the sheep expansion's last two days.
+# No refresh follows day 29, so feeding, caring and buying feed that day are
+# worthless: only wool already grown is worth a hand. Day 29 hires nothing when
+# no sheep holds wool, and otherwise one harvest-only hand that delivers the
+# wool before the final market. A care on day 28 adds to the bonus after the
+# last production refresh has already consumed it, so day-28 hands skip CARE.
+# ---------------------------------------------------------------------------
+# Claude CARROT2 layer: carrot instead of wheat when the carrot book pays. Own implementation.
+# Built by tools/claude_build_carrot.py (derivation there).
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Claude ORDERPRI2 layer: sales ordered by the rival's estimated sellable stock. Own implementation.
+# Built by tools/claude_build_orderpri2.py (derivation there).
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Claude CAPHARV layer: harvest animals that would overflow tonight. Own implementation.
+# Built by tools/claude_build_capharv.py (derivation there).
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Claude SHEDROOM layer: sell shed goods before the night drop overflows. Own implementation.
+# Built by tools/claude_build_shedroom.py (derivation there).
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Claude HERD2 layer: goose / cow / sheep choice at the tape's goose purchase.
+# Own implementation. Built by tools/claude_build_herd2.py (derivation there).
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Claude COWSWAP layer: cow / goose / sheep at the tape's first cow purchase. Own implementation.
+# Built by tools/claude_build_cowswap.py (derivation there). Requires HERD2 above.
+# ---------------------------------------------------------------------------
+# EXP283 adaptive arm: clone-gated sale pre-emption with drop-time race escalation.
+# Original mechanism by Ahmed Berat Ozer's project. Live top-band replays (research155) show
+# rivals executing the same public route tape and quoting the same product batches at the
+# same drop turns. While the rival is observed executing our tape, V43's R36 native-tape
+# reservation runs with horizon 8; if the rival is then observed selling a race product at the
+# very turn the same product was dropped into our shed while we did not sell it (public market
+# inventory change beyond town consumption; no own realized sale; own shed stock rose), the rival
+# quotes at the drop and the horizon escalates to 24 for the rest of the game.
+# ---- v44y pre-guard: quote at hour 21,22 what the hour-23 day-end storage guard (EXP-154) would dump ----
+# The guard sells shed stock by price desc once shed+carried exceeds 99 at hour 23. Selling those lots
+# a step earlier stays in the same town-consumption price window and quotes before a same-tape rival.
+# ---- v44y: clone-mode race horizon override ----
+# ---- v44y: exact lockstep best-response SELL ordering against a detected clone ----
+# ==== v44y shop-aware herd wrapper (appended after the public V44 file; host entry captured first) ====
+# V47 attribution and modification notice (17 September 2026):
+# Seyit Kaan Gunes, kaggle.com/code/seyitkaangunes/kaggriculture-2820-score:
+# pre-overflow sale guard, clone-market lockstep ordering/horizon, and shop-aware herd layers.
+# Ahmed Berat Ozer: transfer onto V46 EXP293, exact per-product score caching,
+# exact physical-prefix/resource reuse, terminal no-op/movement fast paths,
+# private reacting-opponent confirmation and packaging.
+# Original source notices and license text above are retained.
+# EXP334: remove useless cash-product sale slots without moving purchases.
+# EXP335: empty buyable-product sales are holes too, when no purchases exist.
+# ---------------------------------------------------------------------------
+# v11 entry normalisation: Kaggle's loader takes the last callable in the module
+# namespace.  Rebind it to a fresh `agent` so the packaged name matches the rest
+# of the v9 releases (and so validate.py's name check passes).
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# v13 V219SKIP (review suggestion #1): V219 hires a tomato crew every day from
+# day 19, but tomatoes planted on day 18 only produce at the refreshes ending
+# days 25-28.  Before that, watering only keeps them alive, and a plant
+# survives one dry day (it dies after two consecutive dry refreshes).  On the
+# chosen skip days, when every committed tomato was watered yesterday
+# (consecutive_unwatered == 0), no crew is hired and nobody waters them today;
+# the next day's crew waters them again.
+# ---------------------------------------------------------------------------
+# ===========================================================================
+# AXIS 1.1: Weed Lag Replay Recovery (_e343_weedlag)
+# ===========================================================================
+# ===========================================================================
+# AXIS 2.1: Ready-Stock Sale Advancing & Frontloading (_adv_apply, _adv_frontload)
+# ===========================================================================
+# ===========================================================================
+# AXIS 6.2A: Terminal 7-Turn Zero-Waste Liquidation (T_TERMINAL_CLEAR)
+# ===========================================================================
+# ===========================================================================
+# PIPE16 HybridOpening port onto cha20 (mode=HybridOpening)
+# ===========================================================================
+# ===========================================================================
+# MIRROR-LIKE CLASSIFIER (behavior only; no recorded streams)
+# ===========================================================================
+# ===========================================================================
+# WHEAT BUY-FIRST (gated): profitable pairs + mirror-like opponent
+# ===========================================================================
+# ===========================================================================
+# FLOWPX: live rival-flow lead-sell (general; no recorded opponent data)
+#
+# Rival sales are recovered each turn from public market inventory deltas, the
+# town draw and our own submitted sells (same arithmetic RACE uses).  When the
+# rival has been active in an item over the last few turns and the item's quote
+# sits at or above its trailing average, planned sells of that item from the next
+# turns are pulled forward into this turn, capped by shed stock and the planned
+# quantity.  Raises our realized rate in endgame sale races without any
+# opponent-specific data.
+# ===========================================================================
+# ===========================================================================
+# DAWNPX: dawn-window chunked lead-sell (AXIS2 #8; general, no opponent data)
+# ===========================================================================
+# ===========================================================================
+# BUYDIP: buy-the-dip for large wheat buys (general, no opponent data)
+# ===========================================================================
+# ===========================================================================
+# MODELPX: model-based lead seller for MILK/STRAWBERRY (general)
+# ===========================================================================
+# ===========================================================================
+# SHIELD-MILK: fund failing animal/land buys only in milk-shop worlds
+# ===========================================================================
+# ==== F4: Layer D - exact best-response ordering (_CXD from elo_2615 order-book) ====
+# ==== F5: EXP410 fertilizer guard (pipe18 `e410_agent`) ====
+# ==== F6: EXP402 late seed cap (pipe18 `e402_agent`) ====
+# ==== MERGE: same-item SELL compaction (port of 2695's E334) ====
+# ==== IG (bundled): queue hole-closure ====

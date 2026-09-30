@@ -9,8 +9,9 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PyInt, PyTuple};
 
 use super::buffers::{ObsBuffersMut, ValidatedObsBuffersMut};
-use super::env::{EnvError, NativeEnv, TransitionBuffersMut};
+use super::env::{EnvError, NativeEnv, OpponentMix, TransitionBuffersMut};
 use super::grammar;
+use super::opponents::OpponentKind;
 use super::reward::{RewardConfig, RewardMode};
 
 fn python_error(error: EnvError) -> PyErr {
@@ -416,7 +417,7 @@ pub struct PyKaggricultureEnv {
 #[pymethods]
 impl PyKaggricultureEnv {
     #[new]
-    #[pyo3(signature = (n_envs, seed, seed_stride, config, reward_config, native_threads, *, hire_limit))]
+    #[pyo3(signature = (n_envs, seed, seed_stride, config, reward_config, native_threads, *, hire_limit, opponent_bot=None, opponent_envs=0))]
     fn new(
         py: Python<'_>,
         n_envs: usize,
@@ -426,12 +427,26 @@ impl PyKaggricultureEnv {
         reward_config: &Bound<'_, PyDict>,
         native_threads: usize,
         hire_limit: i64,
+        opponent_bot: Option<&str>,
+        opponent_envs: usize,
     ) -> PyResult<Self> {
         let seed = integer_seed(seed, "seed")?;
         let stride = integer_seed(seed_stride, "seed_stride")?;
         let config: Config = serde_json::from_str(config)
             .map_err(|error| PyValueError::new_err(format!("config: {error}")))?;
         let reward = self::reward_config(reward_config)?;
+        let opponent = match (opponent_bot, opponent_envs) {
+            (None, 0) => None,
+            (Some(key), envs) if envs > 0 => Some(OpponentMix {
+                kind: key.parse::<OpponentKind>().map_err(PyValueError::new_err)?,
+                envs,
+            }),
+            _ => {
+                return Err(PyValueError::new_err(
+                    "opponent_bot and a positive opponent_envs must be given together",
+                ))
+            },
+        };
         py.detach(move || {
             NativeEnv::new(
                 n_envs,
@@ -441,6 +456,7 @@ impl PyKaggricultureEnv {
                 reward,
                 native_threads,
                 hire_limit,
+                opponent,
             )
         })
         .map(|native| Self { native })
@@ -852,6 +868,17 @@ impl PyKaggricultureEnv {
             "terminal_margin_0",
             metrics.iter().map(|m| m.2).collect::<Vec<_>>(),
         )?;
+        if self.native.opponent().is_some() {
+            // Per completed game: the learned seat, or -1 for a self-play game.
+            // Present only with a fixed-opponent mix; telemetry, never a model input.
+            result.set_item(
+                "terminal_learner_seat",
+                metrics
+                    .iter()
+                    .map(|m| m.3.map_or(-1.0, |seat| seat as f64))
+                    .collect::<Vec<_>>(),
+            )?;
+        }
         let result = result.unbind();
         py.detach(|| self.native.commit(pending, &mut out, transitions))
             .map_err(python_error)?;
@@ -1007,6 +1034,17 @@ impl PyKaggricultureEnv {
         result.set_item("econ_0", record.econ[0].to_vec().into_pyarray(py))?;
         result.set_item("econ_1", record.econ[1].to_vec().into_pyarray(py))?;
         Ok(Some(result.unbind()))
+    }
+    /// `[n_envs, 2]` bool copy: where the learner acts on the current
+    /// observation (a fixed-opponent env marks only its learned seat).
+    fn learner_mask<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArrayDyn<bool>>> {
+        let n = self.native.n_envs();
+        let array = numpy::ndarray::ArrayD::from_shape_vec(
+            numpy::ndarray::IxDyn(&[n, 2]),
+            self.native.learner_mask(),
+        )
+        .map_err(|error| PyRuntimeError::new_err(format!("learner mask: {error}")))?;
+        Ok(array.into_pyarray(py))
     }
     fn state_snapshot(&self, env_index: usize) -> PyResult<String> {
         self.native.state_snapshot(env_index).map_err(python_error)
@@ -1277,6 +1315,12 @@ pub(super) fn kaggriculture_grammar_tables(py: Python<'_>) -> PyResult<Bound<'_,
         bool_table(py, &[8, 32], tables.market_quantity.into_iter().flatten())?,
     )?;
     Ok(result)
+}
+
+/// The fixed-opponent registry's exact keys, in registry order.
+#[pyfunction]
+pub(super) fn kaggriculture_opponent_bots(py: Python<'_>) -> PyResult<Bound<'_, PyTuple>> {
+    PyTuple::new(py, OpponentKind::ALL.map(OpponentKind::key))
 }
 
 #[pyfunction]

@@ -92,6 +92,66 @@ def opponent_bank_metrics(
     return metrics
 
 
+def fixed_opponent_metrics(
+    own: Sequence[float],
+    opponent: Sequence[float],
+    *,
+    prefix: str,
+) -> dict[str, float]:
+    """The learner's results against the fixed opponent (``env.opponent_mix``).
+
+    One entry per completed game: the learned seat's raw final bank and the
+    scripted seat's. Always returns ``{prefix}bank_games_vs_bot``. With at
+    least one game it adds ``win_rate_vs_bot`` (a draw scores one half, as in
+    the last-best evaluation), ``own_bank_mean_vs_bot``,
+    ``opponent_bank_mean_vs_bot`` and ``margin_mean_vs_bot`` (own minus
+    opponent). The bot's name is only ever a run label; nothing here reaches
+    the model, rewards, losses, normalization or checkpoint selection.
+    """
+    banks = _paired_banks(own, opponent, names=("own", "opponent"))
+    games = banks.shape[1]
+    metrics = {f"{prefix}bank_games_vs_bot": float(games)}
+    if games == 0:
+        return metrics
+    margin = banks[0] - banks[1]
+    score = (margin > 0).to(torch.float64) + 0.5 * (margin == 0).to(torch.float64)
+    metrics[f"{prefix}win_rate_vs_bot"] = float(score.mean())
+    metrics[f"{prefix}own_bank_mean_vs_bot"] = float(banks[0].mean())
+    metrics[f"{prefix}opponent_bank_mean_vs_bot"] = float(banks[1].mean())
+    metrics[f"{prefix}margin_mean_vs_bot"] = float(margin.mean())
+    return metrics
+
+
+def split_fixed_opponent_games(
+    bank_0: Sequence[float],
+    bank_1: Sequence[float],
+    learner_seat: Sequence[float],
+) -> tuple[tuple[list[float], list[float]], tuple[list[float], list[float]]]:
+    """Split completed games into self-play and fixed-opponent games.
+
+    ``learner_seat[i]`` is -1 for a self-play game, else game ``i``'s learned
+    seat. Returns ``((self_play_bank_0, self_play_bank_1), (own, opponent))``.
+    """
+    if not len(bank_0) == len(bank_1) == len(learner_seat):
+        raise ValueError(
+            "terminal bank and learner-seat lists differ in length: "
+            f"{len(bank_0)}, {len(bank_1)}, {len(learner_seat)}"
+        )
+    self_play: tuple[list[float], list[float]] = ([], [])
+    versus: tuple[list[float], list[float]] = ([], [])
+    for first, second, seat in zip(bank_0, bank_1, learner_seat, strict=True):
+        if seat == -1:
+            self_play[0].append(first)
+            self_play[1].append(second)
+        elif seat in (0, 1):
+            banks = (first, second)
+            versus[0].append(banks[int(seat)])
+            versus[1].append(banks[1 - int(seat)])
+        else:
+            raise ValueError(f"learner seat must be -1, 0 or 1, got {seat}")
+    return self_play, versus
+
+
 def _paired_banks(
     first: Sequence[float], second: Sequence[float], *, names: tuple[str, str]
 ) -> torch.Tensor:

@@ -1,7 +1,7 @@
 use super::env::SeedStream;
 use super::reward::{RewardConfig, RewardMode};
 
-fn reward_config() -> RewardConfig {
+pub(super) fn reward_config() -> RewardConfig {
     RewardConfig {
         reward_mode: RewardMode::WinLoss,
         econ_shaping: 0.02,
@@ -555,7 +555,7 @@ fn bank_episode_telescopes_to_final_minus_start_score() {
 fn autoreset_never_spans_two_games_in_the_bank_term() {
     let config: Config = serde_json::from_value(json!({"episodeSteps":4})).unwrap();
     let cfg = bank_only_config();
-    let mut env = NativeEnv::new(1, 17000, 1, config, cfg.clone(), 1, 241).unwrap();
+    let mut env = NativeEnv::new(1, 17000, 1, config, cfg.clone(), 1, 241, None).unwrap();
     let mut out = Output::new(1);
     out.observe(&env);
     let mut spent = false;
@@ -877,7 +877,7 @@ fn margin_episode_telescopes_to_the_final_margin_score() {
 fn autoreset_never_spans_two_games_in_the_margin_term() {
     let config: Config = serde_json::from_value(json!({"episodeSteps":4})).unwrap();
     let cfg = margin_config();
-    let mut env = NativeEnv::new(1, 17000, 1, config, cfg.clone(), 1, 241).unwrap();
+    let mut env = NativeEnv::new(1, 17000, 1, config, cfg.clone(), 1, 241, None).unwrap();
     let mut out = Output::new(1);
     out.observe(&env);
     let mut after_terminal = None;
@@ -930,23 +930,23 @@ fn autoreset_never_spans_two_games_in_the_margin_term() {
     assert!(after_terminal.is_some_and(|t| t <= 6));
 }
 
-use super::env::{EnvError, FaultPoint, NativeEnv, TransitionCache};
+use super::env::{EnvError, FaultPoint, NativeEnv, PendingBatch, TransitionCache};
 use super::{grammar, ObsRowMut, ObsStaging, ObservationGame};
 use kaggriculture_engine::{Config, TraceHeader};
 use serde_json::{json, Value};
 
-struct Output {
+pub(super) struct Output {
     obs: ObsStaging,
     transition: TransitionCache,
 }
 impl Output {
-    fn new(n: usize) -> Self {
+    pub(super) fn new(n: usize) -> Self {
         Self {
             obs: ObsStaging::new(n).unwrap(),
             transition: TransitionCache::test_zeros(n),
         }
     }
-    fn observe(&mut self, env: &NativeEnv) {
+    pub(super) fn observe(&mut self, env: &NativeEnv) {
         env.publish_observe(
             env.prepare_observe().unwrap(),
             &mut self.obs.buffers_mut(),
@@ -954,7 +954,7 @@ impl Output {
         )
         .unwrap();
     }
-    fn step(
+    pub(super) fn step(
         &mut self,
         env: &mut NativeEnv,
         tokens: &[i64],
@@ -967,7 +967,15 @@ impl Output {
             self.transition.buffers_mut(),
         )
     }
-    fn reset(
+    pub(super) fn step_pending(&mut self, env: &mut NativeEnv, pending: PendingBatch) {
+        env.commit(
+            pending,
+            &mut self.obs.buffers_mut(),
+            self.transition.buffers_mut(),
+        )
+        .unwrap()
+    }
+    pub(super) fn reset(
         &mut self,
         env: &mut NativeEnv,
         mask: &[bool],
@@ -980,7 +988,7 @@ impl Output {
             self.transition.buffers_mut(),
         )
     }
-    fn bytes(&mut self) -> Vec<u8> {
+    pub(super) fn bytes(&mut self) -> Vec<u8> {
         let mut bytes = Vec::new();
         for rows in self.obs.buffers_mut().envs_mut() {
             for row in rows.seats {
@@ -1135,6 +1143,7 @@ fn fixture(seed: i64, episode: i64, terminal: bool) -> (NativeEnv, Output) {
         reward_config(),
         1,
         241,
+        None,
     )
     .unwrap();
     let mut out = Output::new(2);
@@ -1284,7 +1293,7 @@ fn release_dependency_overflow_is_caught() {
     header.initial.privates[0]
         .shed
         .insert("FERTILIZER".into(), 1);
-    let mut env = NativeEnv::new(1, 42, 1, config, reward_config(), 1, 241).unwrap();
+    let mut env = NativeEnv::new(1, 42, 1, config, reward_config(), 1, 241, None).unwrap();
     env.replace_game(0, ObservationGame::from_header(&header).unwrap());
     let mut out = Output::new(1);
     out.observe(&env);
@@ -1302,7 +1311,7 @@ fn executed_unbounded_hire_cast_rejects_before_publication() {
     let mut header = header(config.clone());
     header.initial.public.farms[0].hires_today = 2;
     header.initial.public.farms[0].money = 3e19;
-    let mut env = NativeEnv::new(1, 42, 1, config, reward_config(), 1, 241).unwrap();
+    let mut env = NativeEnv::new(1, 42, 1, config, reward_config(), 1, 241, None).unwrap();
     env.replace_game(0, ObservationGame::from_header(&header).unwrap());
     let mut out = Output::new(1);
     out.observe(&env);
@@ -1334,7 +1343,17 @@ impl std::fmt::Debug for Snapshot {
 
 #[test]
 fn default_horizon_terminates_at_719() {
-    let mut env = NativeEnv::new(1, 17000, 1, Config::default(), reward_config(), 1, 241).unwrap();
+    let mut env = NativeEnv::new(
+        1,
+        17000,
+        1,
+        Config::default(),
+        reward_config(),
+        1,
+        241,
+        None,
+    )
+    .unwrap();
     let mut out = Output::new(1);
     out.observe(&env);
     for transition in 1..=719 {

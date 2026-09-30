@@ -366,6 +366,10 @@ pub(super) fn add_to_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(
         bindings::kaggriculture_grammar_constants,
         module
+    )?)?;
+    module.add_function(wrap_pyfunction!(
+        bindings::kaggriculture_opponent_bots,
+        module
     )?)
 }
 
@@ -373,6 +377,9 @@ mod admission;
 mod env;
 #[cfg(test)]
 mod env_tests;
+#[cfg(all(test, feature = "fixed-opponents"))]
+mod opponent_env_tests;
+mod opponents;
 mod reward;
 
 #[cfg(test)]

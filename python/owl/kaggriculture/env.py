@@ -8,6 +8,15 @@ mean absolute margin (cash-difference) component over every seat (its signed
 mean is zero: the term is zero-sum). Both are recomputed in float64 from the
 transition banks by the reward oracle and are zero with their term off. They
 are metric-logger telemetry only and never reach the model or the rewards.
+
+Fixed-opponent collection (``opponent_bot``/``opponent_envs``): the first
+``opponent_envs`` envs host a native scripted seat. ``learner_mask`` is the
+``[n_envs, 2]`` bool mask of seats the learner plays on the current
+observation (all true without a mix); the scripted seat must be submitted as
+the absent program (length 0, zero tokens). Such a step also returns
+``_terminal_learner_seat`` (per completed game in env order: the learned seat,
+or -1 for self-play), a telemetry key the metric reducer skips. The bot key never
+enters an observation, reward or tensor the model reads.
 """
 
 from __future__ import annotations
@@ -175,6 +184,8 @@ class KaggricultureVectorizedEnv:
         transfer_device: torch.device,
         obs_spec: KaggricultureObsConfig,
         action_spec: KaggricultureActionConfig,
+        opponent_bot: str | None = None,
+        opponent_envs: int = 0,
     ) -> None:
         for name, value, low in (
             ("n_envs", n_envs, 1),
@@ -186,6 +197,14 @@ class KaggricultureVectorizedEnv:
                 raise ValueError(f"{name} must be an integer in {low}..2**63-1")
         if reward_mode != "win_loss":
             raise ValueError("Kaggriculture requires reward_mode='win_loss'")
+        if (opponent_bot is None) != (opponent_envs == 0) or not (
+            type(opponent_envs) is int and 0 <= opponent_envs <= n_envs
+        ):
+            raise ValueError(
+                "opponent_bot and opponent_envs in 1..n_envs must be given together"
+            )
+        self._opponent_bot = opponent_bot
+        self._opponent_envs = opponent_envs
         self._n_envs = n_envs
         self._obs_spec = obs_spec
         self._action_spec = action_spec
@@ -208,6 +227,8 @@ class KaggricultureVectorizedEnv:
         self._transition_econ_after = _allocate(
             (n_envs, 2, 32), torch.int64, pin_memory=pin_memory
         )
+        self._learner_mask = _allocate((n_envs, 2), torch.bool, pin_memory=pin_memory)
+        self._learner_mask.fill_(True)
         obs = self._observations
         self._arrays = NativeArrays(
             tile_kind=obs.tile_kind.numpy(),
@@ -246,14 +267,24 @@ class KaggricultureVectorizedEnv:
             transition_econ_before=self._transition_econ_before.numpy(),
             transition_econ_after=self._transition_econ_after.numpy(),
         )
-        self._native = rs.KaggricultureEnv(
+        native_args = (
             n_envs,
             seed,
             seed_stride,
             config.to_native_json(),
             reward_config.to_native_dict(reward_mode),
             native_threads,
-            hire_limit=action_spec.hire_limit,
+        )
+        # Without a mix the native constructor sees exactly its pre-mix call.
+        self._native = (
+            rs.KaggricultureEnv(*native_args, hire_limit=action_spec.hire_limit)
+            if opponent_bot is None
+            else rs.KaggricultureEnv(
+                *native_args,
+                hire_limit=action_spec.hire_limit,
+                opponent_bot=opponent_bot,
+                opponent_envs=opponent_envs,
+            )
         )
         arrays = self._arrays
         self._native.observe(
@@ -293,10 +324,28 @@ class KaggricultureVectorizedEnv:
             transition_econ_before=arrays.transition_econ_before,
             transition_econ_after=arrays.transition_econ_after,
         )
+        self._refresh_learner_mask()
 
     @property
     def n_envs(self) -> int:
         return self._n_envs
+
+    @property
+    def opponent_bot(self) -> str | None:
+        return self._opponent_bot
+
+    @property
+    def opponent_envs(self) -> int:
+        return self._opponent_envs
+
+    @property
+    def learner_mask(self) -> torch.Tensor:
+        """``[n_envs, 2]`` bool: seats the learner plays on the current obs."""
+        return self._learner_mask
+
+    def _refresh_learner_mask(self) -> None:
+        if self._opponent_envs > 0:
+            self._learner_mask.numpy()[...] = self._native.learner_mask()
 
     @property
     def obs_spec(self) -> KaggricultureObsConfig:
@@ -386,6 +435,7 @@ class KaggricultureVectorizedEnv:
             transition_econ_before=arrays.transition_econ_before,
             transition_econ_after=arrays.transition_econ_after,
         )
+        self._refresh_learner_mask()
         return self.observations
 
     def step(
@@ -440,6 +490,9 @@ class KaggricultureVectorizedEnv:
             transition_econ_before=arrays.transition_econ_before,
             transition_econ_after=arrays.transition_econ_after,
         )
+        self._refresh_learner_mask()
+        if self._opponent_envs > 0:
+            metrics["_terminal_learner_seat"] = metrics.pop("terminal_learner_seat")
         # One value per step: every step covers all n_envs x 2 seats, so the
         # trainer's per-update mean over steps (and ranks) is the seat mean.
         # With the term off it is exactly zero and costs nothing.
@@ -514,6 +567,7 @@ class KaggricultureVectorizedEnv:
             transition_econ_before=arrays.transition_econ_before,
             transition_econ_after=arrays.transition_econ_after,
         )
+        self._refresh_learner_mask()
         return self.observations
 
     def terminal_metrics(self, i: int) -> KaggricultureTerminalMetrics | None:

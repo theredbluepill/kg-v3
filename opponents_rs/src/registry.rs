@@ -1,5 +1,7 @@
 use crate::Game;
-use crate::native_agents::{E776Controller, EcoBotController, R04Controller, StarterController};
+use crate::native_agents::{
+    Cha22Controller, E776Controller, EcoBotController, R04Controller, StarterController,
+};
 use serde_json::Value;
 use std::str::FromStr;
 
@@ -9,16 +11,24 @@ pub enum OpponentKind {
     R04,
     Ecobot,
     E776,
+    Cha22,
 }
 
 impl OpponentKind {
-    pub const ALL: [Self; 4] = [Self::Starter, Self::R04, Self::Ecobot, Self::E776];
+    pub const ALL: [Self; 5] = [
+        Self::Starter,
+        Self::R04,
+        Self::Ecobot,
+        Self::E776,
+        Self::Cha22,
+    ];
     pub fn key(self) -> &'static str {
         match self {
             Self::Starter => "starter",
             Self::R04 => "r04",
             Self::Ecobot => "ecobot",
             Self::E776 => "e776",
+            Self::Cha22 => "cha22",
         }
     }
 }
@@ -30,7 +40,7 @@ impl FromStr for OpponentKind {
             .into_iter()
             .find(|kind| kind.key() == key)
             .ok_or_else(|| {
-                format!("unknown opponent {key:?}; expected starter, r04, ecobot or e776")
+                format!("unknown opponent {key:?}; expected starter, r04, ecobot, e776 or cha22")
             })
     }
 }
@@ -41,6 +51,7 @@ enum Controller {
     R04(Box<R04Controller>),
     Ecobot(Box<EcoBotController>),
     E776(Box<E776Controller>),
+    Cha22(Box<Cha22Controller>),
 }
 
 impl Controller {
@@ -50,6 +61,7 @@ impl Controller {
             OpponentKind::R04 => Self::R04(Box::default()),
             OpponentKind::Ecobot => Self::Ecobot(Box::default()),
             OpponentKind::E776 => Self::E776(Box::default()),
+            OpponentKind::Cha22 => Self::Cha22(Box::default()),
         }
     }
     fn action(&mut self, game: &Game, seat: usize) -> Result<Value, String> {
@@ -58,6 +70,7 @@ impl Controller {
             Self::R04(bot) => bot.action(game, seat),
             Self::Ecobot(bot) => bot.action(game, seat),
             Self::E776(bot) => bot.action(game, seat),
+            Self::Cha22(bot) => bot.action(game, seat),
         }
     }
 }
@@ -88,6 +101,12 @@ impl SeatController {
             next_step: 0,
             controller: Controller::new(kind),
         })
+    }
+    pub fn kind(&self) -> OpponentKind {
+        self.kind
+    }
+    pub fn seat(&self) -> usize {
+        self.seat
     }
     pub fn reset(&mut self, game: &Game) -> Result<(), String> {
         if game.episode == self.episode {
