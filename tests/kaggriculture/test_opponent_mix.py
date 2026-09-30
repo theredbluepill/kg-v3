@@ -415,21 +415,41 @@ def test_rollout_forward_runs_on_learner_rows_only(
 
 def test_forward_learner_rows_matches_the_full_batch_rows() -> None:
     # Rows are encoded independently: the selected rows' deterministic actions
-    # and values equal the same rows of a full-batch forward.
+    # and values equal the same rows of a full-batch forward. Hosted and
+    # self-play envs are mixed, and sampled play first makes every learned
+    # row's value distinct (at the reset all rows are identical), so a row
+    # scattered to the wrong place cannot match by coincidence.
     torch.manual_seed(13)
-    env = _env(n_envs=2, bot="starter", bot_envs=2)
+    env = _env(n_envs=4, bot="starter", bot_envs=2)
     model = _tiny_model().eval()
     obs = env.observations
+    for _ in range(4):
+        with torch.no_grad():
+            played = ppo.forward_learner_rows(model, obs, env.learner_mask.clone())
+        obs, _rewards, dones, _metrics = env.step(
+            KaggricultureActions(
+                tokens=played.actions.tokens.contiguous(),
+                lengths=played.actions.lengths.contiguous(),
+            )
+        )
+        assert not dones.any()
     learner = env.learner_mask.clone()
+    assert learner.sum().item() == 6
     with torch.no_grad():
         full = model(obs, deterministic=True)
         rows = ppo.forward_learner_rows(model, obs, learner, deterministic=True)
+    learned_values = full.values[learner]
+    assert torch.unique(learned_values).numel() == learned_values.numel()
     assert torch.equal(rows.actions.tokens[learner], full.actions.tokens[learner])
     assert torch.equal(rows.actions.lengths[learner], full.actions.lengths[learner])
-    torch.testing.assert_close(rows.values[learner], full.values[learner])
+    torch.testing.assert_close(rows.values[learner], learned_values)
     torch.testing.assert_close(
         rows.logp[learner], full.log_probs.per_player_entity.sum(dim=-1)[learner]
     )
+    # Scripted rows are never forwarded: zero actions, log-probs and values.
+    assert rows.actions.lengths[~learner].eq(0).all()
+    assert rows.logp[~learner].eq(0).all()
+    assert rows.values[~learner].eq(0).all()
 
 
 def _perturb_scripted_rows(trainer: PPOTrainer) -> None:

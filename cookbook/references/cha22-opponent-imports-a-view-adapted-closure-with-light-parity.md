@@ -28,6 +28,7 @@ sources:
   - resource: "repository:ops/cha22-opponent-import-2026-09-30/results.md"
   - resource: "repository:ops/cha22-opponent-import-2026-09-30/regeneration.log"
   - resource: "repository:ops/cha22-opponent-import-2026-09-30/cha22-parity.json"
+  - resource: "repository:ops/opponent-mix/review-r1.md"
   - resource: "repository:ops/cha22-opponent-import-2026-09-30/opponents-test.log"
   - resource: "repository:ops/cha22-opponent-import-2026-09-30/original-sources-cha22.log"
   - resource: "repository:ops/cha22-opponent-import-2026-09-30/mutation.log"
@@ -74,7 +75,11 @@ load probe saw no read over four full matches.
 Cha22 is Apache-2.0. `opponents_rs/notices/cha22/` keeps v2's notice files
 byte-exact and every comment line of the original main.py, which carries the
 license text and the attributions of its layers. The original source is not
-copied here.
+copied here. The byte-pinned Rust headers cite `agents/cha22/main.py`, a v2
+working name present in neither repository; `opponents_rs/README.md` maps it
+to the original's SHA-256 (`127ed3e6…`). The license text exists only as those
+comment lines, so redistribution would first need the plain text and a change
+statement (review r1 P3-3, `ops/opponent-mix/review-r1.md`).
 
 ## Verification
 

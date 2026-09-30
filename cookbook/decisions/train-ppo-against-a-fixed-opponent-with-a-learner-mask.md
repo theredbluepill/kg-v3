@@ -1,12 +1,12 @@
 ---
 type: "Decision"
 title: "Train PPO against a fixed opponent with a learner mask"
-description: "Owner decision (2026-09-30): the anchor setup trains PPO against a fixed scripted bot (cha22) instead of mirror self-play, after the new reward. Track A adds the bot-agnostic mechanism on kg/rebuild-opponent-mix. env.opponent_mix = {bot, fraction} hosts an opponents_rs controller natively in the first fraction x n_envs envs of each rank, with the learned seat alternating by env index and episode. The rollout forward runs on learner rows only. A learner mask removes the bot's seat from every loss term, advantage normalization and denominator. Per-update *_vs_bot telemetry and a fixed-bot evaluation in both seats at each checkpoint_freq are added; promotion stays vs last_best. Absent, the pipeline is byte-identical to the pre-mix tree (golden digest). A default Cargo feature keeps the controllers out of the Kaggle build. Merged with the Track B import (kg/rebuild-cha22-opponent ab09708), cha22 is a registry key, and the anchor presets configs/kaggriculture_{4,2}rank_vs_cha22.yaml host it in every env under term M with J/2's halved LRs, warm-started from the BC best. Nothing has been trained. Mechanism details and the preset's warm start are implementer choices. CPU checks only."
+description: "Owner decision (2026-09-30): the anchor setup trains PPO against a fixed scripted bot (cha22) instead of mirror self-play, after the new reward. Track A adds the bot-agnostic mechanism on kg/rebuild-opponent-mix. env.opponent_mix = {bot, fraction} hosts an opponents_rs controller natively in the first fraction x n_envs envs of each rank, with the learned seat alternating by env index and episode. The rollout forward runs on learner rows only. A learner mask removes the bot's seat from every loss term, advantage normalization and denominator. Per-update *_vs_bot telemetry and a fixed-bot evaluation in both seats at each checkpoint_freq are added; promotion stays vs last_best. Absent, the pipeline is byte-identical to the pre-mix tree (golden digest). A default Cargo feature keeps the controllers out of the Kaggle build. Merged with the Track B import (kg/rebuild-cha22-opponent ab09708), cha22 is a registry key, and the anchor presets configs/kaggriculture_{4,2}rank_vs_cha22.yaml host it in every env under term M with J/2's halved LRs, warm-started from the BC best. Nothing has been trained. Review r1 (a Claude substitute for Codex) approved 0f70773; its follow-ups pin the fixed-bot evaluation's seat attribution and the learner-row value routing (both surviving mutations now caught), document degenerate telemetry under fraction 1.0 and the unmeasured evaluation time before the rank-0 broadcast, and record the trainer digest's thread count. Mechanism details and the preset's warm start are implementer choices. CPU checks only."
 tags: ["kaggriculture-v3", "training", "opponents", "decisions", "adaptation"]
 status: "adopted"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
 decider: "Owner, 2026-09-30: \"OK, for fixed bot, we can use cha22 (check ~/kaggriculture-v2).\""
-sources: [{"resource": "user-directive:2026-09-30:fixed-bot-use-cha22"}, {"resource": "user-directive:2026-09-30:can-we-accelerate-this-setup"}, {"resource": "user-directive:2026-09-30:implement-the-new-reward-first"}, {"resource": "user-directive:2026-09-30:is-anchor-thing-ready"}, {"resource": "repository:opponents_rs/src/hosted.rs"}, {"resource": "repository:opponents_rs/src/lib.rs"}, {"resource": "repository:opponents_rs/src/registry.rs"}, {"resource": "repository:opponents_rs/tests/hosted.rs"}, {"resource": "repository:opponents_rs/OPPONENT_MANIFEST.json"}, {"resource": "repository:opponents_rs/README.md"}, {"resource": "repository:src/kaggriculture/env.rs"}, {"resource": "repository:src/kaggriculture/opponents.rs"}, {"resource": "repository:src/kaggriculture/bindings.rs"}, {"resource": "repository:src/kaggriculture/observe.rs"}, {"resource": "repository:src/kaggriculture/mod.rs"}, {"resource": "repository:src/kaggriculture/opponent_env_tests.rs"}, {"resource": "repository:src/kaggriculture/env_tests.rs"}, {"resource": "repository:Cargo.toml"}, {"resource": "repository:Cargo.lock"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:justfile"}, {"resource": "repository:Dockerfile.kaggle"}, {"resource": "repository:scripts/build_kaggle_submission.sh"}, {"resource": "repository:python/owl/rs.pyi"}, {"resource": "repository:python/owl/game.py"}, {"resource": "repository:python/owl/kaggriculture/config.py"}, {"resource": "repository:python/owl/kaggriculture/env.py"}, {"resource": "repository:python/owl/kaggriculture/telemetry.py"}, {"resource": "repository:python/owl/train/ppo.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/kaggriculture/test_opponent_mix.py"}, {"resource": "repository:tests/owl/kaggriculture/test_opponents.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:tests/kaggriculture/test_env.py"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:docs/rules-parity-coverage.md"}, {"resource": "repository:docs/containerization.md"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/opponent-mix-2026-09-30/baseline_digest.py"}, {"resource": "repository:ops/opponent-mix-2026-09-30/baseline-digest-25412a7.json"}, {"resource": "repository:ops/opponent-mix-2026-09-30/mutations.py"}, {"resource": "repository:ops/opponent-mix-2026-09-30/mutations.log"}, {"resource": "repository:ops/opponent-mix-2026-09-30/prepare.log"}, {"resource": "repository:ops/opponent-mix-2026-09-30/post-digest.json"}, {"resource": "repository:cookbook/references/snapshot-view-isolates-byte-exact-evaluation-opponents.md"}, {"resource": "repository:cookbook/references/kaggriculture-parity-summary-maps-tested-and-untested-layers.md"}, {"resource": "repository:configs/kaggriculture_4rank_vs_cha22.yaml"}, {"resource": "repository:configs/kaggriculture_2rank_vs_cha22.yaml"}, {"resource": "repository:configs/kaggriculture_4rank_margin.yaml"}, {"resource": "repository:tests/kaggriculture/test_configs.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:ops/cha22-anchor-2026-09-30/run-statement.md"}, {"resource": "repository:ops/cha22-anchor-2026-09-30/prepare.log"}, {"resource": "repository:cookbook/references/cha22-opponent-imports-a-view-adapted-closure-with-light-parity.md"}]
+sources: [{"resource": "user-directive:2026-09-30:fixed-bot-use-cha22"}, {"resource": "user-directive:2026-09-30:can-we-accelerate-this-setup"}, {"resource": "user-directive:2026-09-30:implement-the-new-reward-first"}, {"resource": "user-directive:2026-09-30:is-anchor-thing-ready"}, {"resource": "repository:opponents_rs/src/hosted.rs"}, {"resource": "repository:opponents_rs/src/lib.rs"}, {"resource": "repository:opponents_rs/src/registry.rs"}, {"resource": "repository:opponents_rs/tests/hosted.rs"}, {"resource": "repository:opponents_rs/OPPONENT_MANIFEST.json"}, {"resource": "repository:opponents_rs/README.md"}, {"resource": "repository:src/kaggriculture/env.rs"}, {"resource": "repository:src/kaggriculture/opponents.rs"}, {"resource": "repository:src/kaggriculture/bindings.rs"}, {"resource": "repository:src/kaggriculture/observe.rs"}, {"resource": "repository:src/kaggriculture/mod.rs"}, {"resource": "repository:src/kaggriculture/opponent_env_tests.rs"}, {"resource": "repository:src/kaggriculture/env_tests.rs"}, {"resource": "repository:Cargo.toml"}, {"resource": "repository:Cargo.lock"}, {"resource": "repository:pyproject.toml"}, {"resource": "repository:justfile"}, {"resource": "repository:Dockerfile.kaggle"}, {"resource": "repository:scripts/build_kaggle_submission.sh"}, {"resource": "repository:python/owl/rs.pyi"}, {"resource": "repository:python/owl/game.py"}, {"resource": "repository:python/owl/kaggriculture/config.py"}, {"resource": "repository:python/owl/kaggriculture/env.py"}, {"resource": "repository:python/owl/kaggriculture/telemetry.py"}, {"resource": "repository:python/owl/train/ppo.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/kaggriculture/test_opponent_mix.py"}, {"resource": "repository:tests/owl/kaggriculture/test_opponents.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:tests/kaggriculture/test_env.py"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:docs/rules-parity-coverage.md"}, {"resource": "repository:docs/containerization.md"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/opponent-mix-2026-09-30/baseline_digest.py"}, {"resource": "repository:ops/opponent-mix-2026-09-30/baseline-digest-25412a7.json"}, {"resource": "repository:ops/opponent-mix-2026-09-30/mutations.py"}, {"resource": "repository:ops/opponent-mix-2026-09-30/mutations.log"}, {"resource": "repository:ops/opponent-mix-2026-09-30/prepare.log"}, {"resource": "repository:ops/opponent-mix-2026-09-30/post-digest.json"}, {"resource": "repository:cookbook/references/snapshot-view-isolates-byte-exact-evaluation-opponents.md"}, {"resource": "repository:cookbook/references/kaggriculture-parity-summary-maps-tested-and-untested-layers.md"}, {"resource": "repository:configs/kaggriculture_4rank_vs_cha22.yaml"}, {"resource": "repository:configs/kaggriculture_2rank_vs_cha22.yaml"}, {"resource": "repository:configs/kaggriculture_4rank_margin.yaml"}, {"resource": "repository:tests/kaggriculture/test_configs.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:ops/cha22-anchor-2026-09-30/run-statement.md"}, {"resource": "repository:ops/cha22-anchor-2026-09-30/prepare.log"}, {"resource": "repository:cookbook/references/cha22-opponent-imports-a-view-adapted-closure-with-light-parity.md"}, {"resource": "repository:ops/opponent-mix/review-r1.md"}, {"resource": "repository:ops/opponent-mix/r1_mutations.py"}, {"resource": "repository:ops/opponent-mix/r1-mutations.log"}, {"resource": "repository:ops/opponent-mix/digest-environment.log"}, {"resource": "repository:ops/opponent-mix/prepare.log"}]
 ---
 
 # Train PPO against a fixed opponent with a learner mask
@@ -108,7 +108,12 @@ as follows; the owner has not confirmed these readings:
   Both digests reproduce on this branch
   (`baseline-digest-25412a7.json`, `post-digest.json`). The native one is a
   golden test (`test_self_play_native_env_is_byte_identical_to_the_pre_mix_tree`).
-  The trainer one is Mac-CPU specific and stays a receipt. A test also shows
+  The trainer one depends on the CPU thread count and stays a receipt.
+  `3ffd53a0…` reproduces on `0f70773` with `OMP_NUM_THREADS=2` (torch 2.9.0,
+  Accelerate BLAS, Apple M5, Python 3.12.13). One thread gives `2fd98367…`,
+  and four threads or an unset variable give `efe76677…`, the value review
+  r1 saw on both base and HEAD (`ops/opponent-mix/digest-environment.log`).
+  The base was not rebuilt and re-run at two threads for this note. A test also shows
   the self-play trainer never calls a mix helper.
 - **Bot actions and learner actions.** `opponent_env_tests.rs` replays every
   bot in both seats on an independent kernel plus `HostedSeat` reference, and
@@ -151,6 +156,28 @@ as follows; the owner has not confirmed these readings:
 
   Its peak RSS is 3.3 GB, as on earlier landings. Two earlier attempts failed
   on a clippy and four ruff findings in the new tests, and both were fixed.
+
+## Review r1 and its follow-ups
+
+An independent Claude review (a substitute for Codex under the owner's
+approval, not a Codex verdict) approved `0f70773` with no P1
+(`ops/opponent-mix/review-r1.md`). It re-ran the fast suites, regenerated the
+Cha22 oracle games byte-identically and ran nine mutations. Two survived; the
+follow-ups change tests, docs and receipts only, so the vs-cha22 run launched
+from `0f70773` computes exactly what this tree computes:
+
+- **P2-1.** `test_fixed_bot_evaluation_attributes_banks_to_the_learned_seat`
+  runs `_evaluate_against_bot` on the real hosted-Cha22 env with seat-distinct
+  terminal banks. It asserts the per-seat win rates (1 in seat 0, 0 in seat 1),
+  the own and opponent bank means and the margin. M4 (own and opponent
+  swapped) now fails it.
+- **P3-1.** `test_forward_learner_rows_matches_the_full_batch_rows` now mixes
+  hosted and self-play envs and plays four sampled steps first, so every
+  learned row's value is distinct. M5 (values scattered to `rows.flip(0)`) now
+  fails it. Both results: `ops/opponent-mix/r1-mutations.log`.
+- **P3-2, P3-3, P3-4 and P3-5** are documented below and in
+  `docs/rl-api-specs.md` and `opponents_rs/README.md`. The trainer digest's
+  thread count is recorded above. No logged value changed.
 
 ## The cha22 anchor presets (merge of Track B, `kg/rebuild-opponent-mix`)
 
@@ -222,6 +249,30 @@ command are in `ops/cha22-anchor-2026-09-30/run-statement.md`.
   the same gap. The submission build must keep `--no-default-features` while
   the license gap stands. The `kg/rebuild-7-4-ship` branch's own build lines
   are separate and still need the flag.
-- **Evaluation cost.** The fixed-bot evaluation plays `env.n_envs` full games
-  per checkpoint beside the last-best evaluation. Its wall time at the pod's
-  `n_envs` is unmeasured. An odd `n_envs` covers seat 1 once more than seat 0.
+- **Evaluation cost and the collective timeout (review r1 P3-5).** The
+  fixed-bot evaluation plays `env.n_envs` full games per checkpoint after the
+  last-best evaluation. Both run on rank 0 before `broadcast_object`, while
+  the other ranks wait under the default NCCL timeout of 10 minutes. The
+  self-play run's last-best evaluation alone paused training about 33 s at
+  10M steps (orchestrator's report, not re-measured here). The fixed-bot
+  evaluation's wall time at the pod's `n_envs` is unmeasured. Check
+  `time/eval_seconds + time/eval_vs_bot_seconds` at the first checkpoint
+  interval against that timeout. Reopen if it comes within a few minutes of
+  it. An odd `n_envs` covers seat 1 once more than seat 0.
+- **Degenerate or bot-including telemetry (review r1 P3-2).** The values are
+  unchanged and documented in `docs/rl-api-specs.md`:
+  - at fraction 1.0 no segment has two learned seats, so
+    `train/return_common_mean` and `train/return_zero_sum_abs_mean` log an
+    empty-mask mean;
+  - `perf/tokens_per_second` and `train/{1,2}p_rate` count scripted rows;
+  - `train/reward_bank_mean` averages the bot's seat too, and is 0 under
+    term M.
+
+  Learner-masking them would change logged values, which is out of scope
+  while the run is live.
+- **Custody (review r1 P3-3).** The imported Cha22 headers cite
+  `agents/cha22/main.py`, a path that is in neither repository.
+  `opponents_rs/README.md` now maps it to the original's SHA-256. The
+  Apache-2.0 text exists only as comment lines in
+  `notices/cha22/UPSTREAM-SOURCE-COMMENTS.txt`. Before any redistribution,
+  add the plain license text and a change statement.

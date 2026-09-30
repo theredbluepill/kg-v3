@@ -1,5 +1,16 @@
 # Change log
 
+## 2026-09-30 — Apply the opponent-mix review r1 follow-ups: seat-attribution and row-routing tests, telemetry and timing limits
+
+An independent Claude review of `kg/rebuild-opponent-mix` `0f70773` (`ops/opponent-mix/review-r1.md`, APPROVE with no P1; a Claude substitute for Codex under the owner's approval, not a Codex verdict) is committed with its follow-ups. Only tests, docs, receipts and comments changed, so the vs-cha22 run launched from `0f70773` computes exactly what this tree computes.
+- **P2-1.** A new test runs `_evaluate_against_bot` on the hosted-Cha22 env with seat-distinct terminal banks and pins the per-seat win rates, bank means and margin. Mutation M4 (own and opponent swapped) now fails it.
+- **P3-1.** The learner-row forward test now plays four sampled steps across hosted and self-play envs, so every learned row's value is distinct. M5 (values scattered to `rows.flip(0)`) now fails it. Both results: `ops/opponent-mix/r1-mutations.log`.
+- **P3-2 and P3-5.** Documented, not changed. `docs/rl-api-specs.md` covers the fraction-1.0 empty-mask return keys, the scripted rows in the token and player-count rates, and the bot seat in `train/reward_bank_mean`. It also covers the rank-0 evaluations before `broadcast_object` under the 10-minute NCCL default, to check at the first checkpoint interval.
+- **P3-3.** `opponents_rs/README.md` maps the headers' `agents/cha22/main.py` to the original's SHA-256 and records the license-text redistribution gap. The manifest is rehashed.
+- **P3-4.** The trainer digest `3ffd53a0…` reproduces at `OMP_NUM_THREADS=2`; four threads give `efe76677…` (`ops/opponent-mix/digest-environment.log`).
+
+Revised the [[decisions/train-ppo-against-a-fixed-opponent-with-a-learner-mask|fixed-opponent Decision]] (a review section, the digest environment, three gaps and its description), its index entry and the [[references/cha22-opponent-imports-a-view-adapted-closure-with-light-parity|Cha22 Reference]]'s custody paragraph. `just prepare`: `ops/opponent-mix/prepare.log`. Nothing was trained, and no pod was touched.
+
 ## 2026-09-30 — Merge the Cha22 import into the fixed-opponent collection and add the cha22 anchor presets
 
 Owner, verbatim: "OK, for fixed bot, we can use cha22 (check ~/kaggriculture-v2).", "can we acceleerate this setup?", "implement the new rewrad first before we revisit the cha22 anchor setup." and "is anchor thing ready?". The orchestrating agent read the last as a build request; that is interpretation, not owner adoption.

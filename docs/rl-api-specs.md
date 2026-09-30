@@ -1175,6 +1175,23 @@ env:
     as in the last-best evaluation), `train/own_bank_mean_vs_bot`,
     `train/opponent_bank_mean_vs_bot` and `train/margin_mean_vs_bot`
     (own minus bot).
+
+  Some existing keys are degenerate or include the bot's seat under a mix.
+  Their logged values are unchanged; read them as follows:
+  - `train/return_common_mean` and `train/return_zero_sum_abs_mean` average
+    over segments where both seats are learned. At fraction 1.0 there are
+    none, so they log the empty-mask mean: finite but meaningless. At a
+    fraction below 1.0 they cover the self-play envs only.
+  - `perf/tokens_per_second` counts the non-masked tokens of every row,
+    scripted rows included. The rollout forward never encodes those rows, so
+    at fraction 1.0 it overstates learner tokens (about 2x); the update does
+    still encode them.
+  - `train/{1,2}p_rate` counts every row's live seats, the bot's included.
+    It describes games, not learner rows.
+  - `train/reward_bank_mean` averages both seats' own-bank reward, the bot's
+    included. It is exactly 0 while `econ_bank_weight` is 0, as under term M.
+    `train/reward_margin_abs_mean` also averages both seats; the margin
+    reward is antisymmetric, so the bot's rows equal the learner's.
 - **Evaluation.** At every `checkpoint_freq`, after the last-best evaluation,
   `run_ppo._evaluate_against_bot` plays one game per env on the same
   evaluation worlds with every env hosting the bot. The learned seat is seat 1
@@ -1185,7 +1202,17 @@ env:
   - `time/eval_vs_bot_seconds` and `perf/eval_vs_bot_sps`.
 
   Promotion still reads `eval/win_rate_against_last_best` alone, and the
-  last-best evaluation env never hosts the bot.
+  last-best evaluation env never hosts the bot. The attribution (own bank =
+  the learned seat's terminal bank, in both seats) is pinned by
+  `test_fixed_bot_evaluation_attributes_banks_to_the_learned_seat`.
+
+  Both evaluations run on rank 0 before `broadcast_object`, while the other
+  ranks wait in that collective under the default NCCL process-group timeout
+  (10 minutes; `python/owl/train/distributed.py` sets none). The self-play
+  run's last-best evaluation alone paused training about 33 s at 10M steps.
+  The fixed-bot evaluation (`env.n_envs` full games against the bot) adds an
+  unmeasured amount. Check `time/eval_seconds + time/eval_vs_bot_seconds`
+  at the first checkpoint interval against that timeout.
 - **Stateless policy.** The bot key reaches only collection bookkeeping and the
   W&B summary labels `opponent_mix/bot` and `opponent_mix/fraction`. It never
   reaches observations, embeddings, heads, losses, rewards, normalization,

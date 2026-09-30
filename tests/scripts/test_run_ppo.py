@@ -32,6 +32,7 @@ from owl.kaggriculture.config import (
 from owl.kaggriculture.env import KaggricultureVectorizedEnv
 from owl.kaggriculture.types import (
     MAX_ACTORS,
+    KaggricultureActionConfig,
     KaggricultureActions,
     KaggricultureObsConfig,
 )
@@ -40,6 +41,10 @@ from owl.model.compile_gemm import (
     CompileStackReport,
     GemmBackendClaim,
     InstalledCompileStack,
+)
+from owl.model.kaggriculture import (
+    KaggricultureTransformer,
+    KaggricultureTransformerConfig,
 )
 from owl.rl import (
     ACTION_ENTITY_SLOTS,
@@ -4696,6 +4701,103 @@ def test_last_best_evaluation_env_never_hosts_the_training_opponent() -> None:
             device=device,
             env_steps=1000,
         )
+
+
+def test_fixed_bot_evaluation_attributes_banks_to_the_learned_seat(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``eval/*_vs_bot`` reads the learned seat's bank as own, in both seats.
+
+    The real hosted-Cha22 env plays three-step games; its terminal banks are
+    replaced by seat-distinct known values (seat 0 always richer), so the
+    learner wins every seat-0 game and loses every seat-1 game. Swapping own
+    and opponent anywhere in the attribution inverts every assertion.
+    """
+    torch.manual_seed(401)
+    base = _kaggriculture_eval_config()
+    assert isinstance(base.env, KaggricultureEnvConfig)
+    n_envs = 4
+    cfg = base.model_copy(
+        update={
+            "env": base.env.model_copy(
+                update={
+                    "n_envs": n_envs,
+                    "native_threads": 1,
+                    "pin_memory": False,
+                    "config": base.env.config.model_copy(update={"episode_steps": 3}),
+                    "opponent_mix": KaggricultureOpponentMixConfig(
+                        bot="cha22", fraction=1.0
+                    ),
+                }
+            )
+        }
+    )
+    real_create_eval_env = run_ppo._create_eval_env
+    reset_learner: list[list[list[bool]]] = []
+    terminal_calls: list[int] = []
+
+    def seat_zero_richer(env_index: int) -> dict[str, float]:
+        bank_0, bank_1 = 100.0 * (env_index + 1), 7.0 * (env_index + 1)
+        return {
+            "bank_0": bank_0,
+            "bank_1": bank_1,
+            "margin_0": bank_0 - bank_1,
+            "winner": 0.0,
+        }
+
+    def create_eval_env(cfg: FullConfig, **kwargs: Any) -> Any:
+        env = real_create_eval_env(cfg, **kwargs)
+        assert isinstance(env, KaggricultureVectorizedEnv)
+        assert (env.opponent_bot, env.opponent_envs) == ("cha22", n_envs)
+        real_reset = env.reset
+        real_terminal = env.terminal_metrics
+
+        def reset() -> Any:
+            obs = real_reset()
+            reset_learner.append(env.learner_mask.tolist())
+            return obs
+
+        def terminal_metrics(env_index: int) -> dict[str, float] | None:
+            real = real_terminal(env_index)
+            assert real is not None
+            terminal_calls.append(env_index)
+            return {**real, **seat_zero_richer(env_index)}
+
+        monkeypatch.setattr(env, "reset", reset)
+        monkeypatch.setattr(env, "terminal_metrics", terminal_metrics)
+        return env
+
+    monkeypatch.setattr(run_ppo, "_create_eval_env", create_eval_env)
+    model = KaggricultureTransformer(
+        KaggricultureTransformerConfig(
+            embed_dim=16, depth=1, n_heads=1, mlp_ratio=1, n_scratch_tokens=0
+        ),
+        obs_spec=KaggricultureObsConfig(),
+        action_spec=KaggricultureActionConfig(),
+    )
+    metrics = run_ppo._evaluate_against_bot(
+        current_model=model, cfg=cfg, device=torch.device("cpu"), env_steps=1000
+    )
+
+    # After the reset the learner holds seat 1 in even envs and seat 0 in odd.
+    assert reset_learner == [[[False, True], [True, False]] * 2]
+    assert sorted(terminal_calls) == list(range(n_envs))
+    own = [7.0, 200.0, 21.0, 400.0]  # bank_1, bank_0, bank_1, bank_0
+    opponent = [100.0, 14.0, 300.0, 28.0]
+    assert metrics["eval/bank_games_vs_bot"] == float(n_envs)
+    assert metrics["eval/bank_games_vs_bot_seat_0"] == 2.0
+    assert metrics["eval/bank_games_vs_bot_seat_1"] == 2.0
+    assert metrics["eval/win_rate_vs_bot_seat_0"] == 1.0
+    assert metrics["eval/win_rate_vs_bot_seat_1"] == 0.0
+    assert metrics["eval/win_rate_vs_bot"] == 0.5
+    assert metrics["eval/own_bank_mean_vs_bot"] == pytest.approx(sum(own) / n_envs)
+    assert metrics["eval/opponent_bank_mean_vs_bot"] == pytest.approx(
+        sum(opponent) / n_envs
+    )
+    assert metrics["eval/margin_mean_vs_bot"] == pytest.approx(
+        (sum(own) - sum(opponent)) / n_envs
+    )
+    assert model.training
 
 
 class _SeatPinnedNativeEvalEnv(KaggricultureVectorizedEnv):

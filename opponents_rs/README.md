@@ -117,3 +117,15 @@ comment line of the original main.py in order (UPSTREAM-SOURCE-COMMENTS.txt),
 which carries the full license text and its layers' attributions. The original
 main.py is not copied; `--original-sources` reads a copy named by
 KAGG_CHA22_SOURCE and checks its hash.
+
+The imported Cha22 Rust headers (src/native_agents/cha22/mod.rs, early.rs,
+market.rs, tail.rs) cite `agents/cha22/main.py`. That path exists neither in
+this repository nor in kaggriculture-v2 commit 30a3ac47; it is the v2
+translation's working name. Read it as the original main.py with SHA-256
+127ed3e62988c0474d386db6527ae8ca9de9bb1fe7004128557ddef67126c652 (the file
+KAGG_CHA22_SOURCE names). The headers are byte-pinned imports and stay
+unchanged. The Apache-2.0 text is kept only as the comment-prefixed lines of
+notices/cha22/UPSTREAM-SOURCE-COMMENTS.txt, with no plain LICENSE file beside
+the derivative. That suffices while the derivative trains locally and is not
+distributed (the Kaggle build drops it). Before any redistribution, add the
+plain license text and a statement of the changes made (Apache-2.0 section 4).
