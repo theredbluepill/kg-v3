@@ -59,7 +59,7 @@ The bank held for the first three games, up to LR 1.1e-4. It started falling at 
 1. The first version only signalled the process group. torchrun puts each rank in its own session, so the second version also signals every descendant. I tested it on a synthetic process tree before the swap.
 2. The second version parsed records line by line. The ranks share the log file, and a record's newline can land after another rank's text, so it missed most records. The third version decodes every `[nt-probe]` tag wherever it appears. On the live log it counted 71/71/71/71 records per rank with none skipped, and I tested it on synthetic nan, bank and alarm logs before the swap.
 
-The stop sequence: the NaN, bank and alarm triggers were checked, the bank trigger fired at 00:46:34Z, SIGTERM went to 148 pids, and everything had exited by 00:46:36Z. All 4 GPUs were back to 0 MiB afterwards. Because `run_main.sh` was in the killed group, I wrote its post-run receipts (`times.txt` note, `run_dir_listing.txt`, `idle_after.csv`) by hand.
+The stop sequence: the NaN, bank and alarm triggers were checked, the bank trigger fired at 00:46:34Z, SIGTERM went to 143 pids, and everything had exited by 00:46:36Z. All 4 GPUs were back to 0 MiB afterwards. Because `run_main.sh` was in the killed group, I wrote its post-run receipts (`times.txt` note, `run_dir_listing.txt`, `idle_after.csv`) by hand.
 
 ## Custody
 
