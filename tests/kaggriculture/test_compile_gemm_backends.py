@@ -84,7 +84,10 @@ def _record_backends_at_compile(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 def test_the_probed_stack_is_one_constant() -> None:
     assert KAGGRICULTURE_PROBED_COMPILE_STACK.torch == "2.9.0"
     assert KAGGRICULTURE_PROBED_COMPILE_STACK.triton == "3.5.0"
-    assert KAGGRICULTURE_PROBED_COMPILE_STACK.nvidia_drivers == ("595.91.07",)
+    assert KAGGRICULTURE_PROBED_COMPILE_STACK.nvidia_drivers == (
+        "595.91.07",
+        "570.211.01",
+    )
     assert COMPILED_GEMM_BACKENDS == "ATEN"
 
 
@@ -411,6 +414,15 @@ def test_stack_check_accepts_the_probed_gpu_stack() -> None:
     assert check_compile_stack(_installed()) == CompileStackReport(
         torch="2.9.0+cu128", triton="3.5.0", nvidia_driver=PROBED_DRIVER
     )
+
+
+@pytest.mark.parametrize(
+    "drivers",
+    [("595.91.07",), ("570.211.01",) * 8, ("570.211.01", "595.91.07")],
+)
+def test_stack_check_accepts_each_probed_driver(drivers: tuple[str, ...]) -> None:
+    report = check_compile_stack(_installed(nvidia_drivers=drivers))
+    assert report.nvidia_driver == ", ".join(sorted(set(drivers)))
 
 
 @pytest.mark.parametrize(

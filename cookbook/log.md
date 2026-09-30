@@ -1,5 +1,13 @@
 # Change log
 
+## 2026-10-01 — Add NVIDIA driver 570.211.01 (H200) to the probed compile stack
+
+Owner, verbatim: "please setup this 8-gpu pod real quick and notice increased vram & h200." and "Keep the current recipe". The new 8×H200 pod runs driver 570.211.01, which `check_compile_stack` rejected, so the recipe could run compiled only after the ATEN-only A/B was repeated there.
+- **Run.** The correctness half and the template census of the ATEN-only GEMM A/B ran on H200 GPU 0 (sm_90) at `07c8fc9` (torch 2.9.0+cu128, triton 3.5.0, flash-attn 2.8.3), 17:01–17:04Z on 2026-09-30. Every ATEN stage passed: the real packed trunk up to 8,387,470 tokens had 0 wrong tokens; the Linear and MLP fwd/bwd probes had 0 bad rows. The ATEN caches had 0 `triton_tem_`. The default-backend Linear control reproduced the autotune illegal memory access. Run statement, outputs and adaptations: `ops/h200-driver-gate-2026-10-01/`.
+- **Changed.** `KAGGRICULTURE_PROBED_COMPILE_STACK.nvidia_drivers` is now `("595.91.07", "570.211.01")` in `python/owl/model/compile_gemm.py`. The constant test pins both, and a new test accepts either driver alone or both together. `tests/kaggriculture/conftest.py` stands in a single-driver host. The README names both drivers. The [[decisions/kaggriculture-compiles-gemms-with-cublas-only|cuBLAS-only Decision]] gains the H200 evidence and limits, and the decisions index is updated.
+- **Checks.** `uv run pytest tests/kaggriculture tests/scripts/test_run_ppo.py tests/owl/train/test_config.py`: 1,688 passed, 4 skipped (Mac, CPU). Ruff (check and format) and mypy pass on the touched Python files. `scripts/check_doc_freshness.py` flagged `docs/model-architecture.md`; it names no driver version, so it passes with `DOCS_CURRENT=1`.
+- **Not measured.** H200 timing, the default-backend trunk control, the real-trunk backward above the bound, GPUs 1–7 individually and multi-rank runs. `configs/kaggriculture_1gpu_eager.yaml` still names 595.91.07 in a historical comment (A100 pod), left unchanged.
+
 ## 2026-09-30 — Correct the A/A2 run ids, the h3lpxy6q sixths and two board wordings
 
 A review of `68202f10` (Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. REQUEST CHANGES) found two factual errors and two wording errors. The earlier entry below stays as written.

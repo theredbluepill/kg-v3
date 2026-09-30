@@ -1,12 +1,12 @@
 ---
 type: "Decision"
 title: "Kaggriculture compiles GEMMs with cuBLAS only"
-description: "To keep the compiled-GEMM CUDA crash from recurring, every compiled Kaggriculture region runs with Inductor's max_autotune_gemm_backends set to \"ATEN\" (cuBLAS) instead of Isaiah's default \"ATEN,TRITON,CPP\", after a startup check rejects an unprobed torch, triton or NVIDIA driver. The owner asked for the outcome; the implementer chose the setting from a measured A/B (+4.5–6.5 % model-only update wall). Enforcement is CPU-tested only, and the overflow guards stay."
+description: "To keep the compiled-GEMM CUDA crash from recurring, every compiled Kaggriculture region runs with Inductor's max_autotune_gemm_backends set to \"ATEN\" (cuBLAS) instead of Isaiah's default \"ATEN,TRITON,CPP\", after a startup check rejects an unprobed torch, triton or NVIDIA driver (probed: 595.91.07 on RTX PRO 6000 sm_120; 570.211.01 on H200 sm_90, correctness half only). The owner asked for the outcome; the implementer chose the setting from a measured A/B (+4.5–6.5 % model-only update wall). Enforcement is CPU-tested only, and the overflow guards stay."
 tags: ["kaggriculture-v3", "cuda", "compile", "decisions", "adaptation"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-29"}
 decider: "Owner: Also can we ensure under any circumstance, the CUDA crash we faced earlier on the compiler issue will never be met in our v3?"
-sources: [{"resource": "user-directive:2026-09-29:ensure-the-compiler-crash-never-recurs"}, {"resource": "rebuild-model-branch:9bdd82d:ops/rebuild-2026-09-29/results.md#L259-L303"}, {"resource": "rebuild-model-branch:9bdd82d:ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md"}, {"resource": "rebuild-model-branch:9bdd82d:ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/codex-verify-r1.md"}, {"resource": "rebuild-model-branch:9bdd82d:ops/rebuild-2026-09-29/run-statements/aten-gemm-ab.md"}, {"resource": "local-untracked:kg-v3/ops/rebuild-2026-09-29/codex/verify-aten-ab-r2.md"}, {"resource": "local-untracked:kg-v3/ops/rebuild-2026-09-29/codex/verify-aten-r1.md"}, {"resource": "local-untracked:kg-v3/ops/rebuild-2026-09-29/codex/verify-aten-r2.md"}, {"resource": "repository:python/owl/model/compile_gemm.py"}, {"resource": "repository:python/owl/train/utils.py"}, {"resource": "repository:python/owl/model/kaggriculture.py"}, {"resource": "repository:python/owl/model/stateless_transformer_v1.py"}, {"resource": "repository:python/owl/model/base.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:python/owl/train/logging.py"}, {"resource": "repository:tests/conftest.py"}, {"resource": "repository:tests/kaggriculture/conftest.py"}, {"resource": "repository:tests/kaggriculture/test_compile_gemm_backends.py"}, {"resource": "repository:tests/kaggriculture/test_model_compile.py"}, {"resource": "repository:tests/kaggriculture/test_model_encoder.py"}, {"resource": "repository:tests/kaggriculture/test_model_heads.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:ops/rebuild-2026-09-29/aten-wiring/py-prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/aten-wiring/py-prepare-r1.log"}, {"resource": "repository:README.md"}, {"resource": "repository:docs/model-architecture.md"}, {"resource": "repository:docs/kaggriculture-model.md"}]
+sources: [{"resource": "user-directive:2026-09-29:ensure-the-compiler-crash-never-recurs"}, {"resource": "rebuild-model-branch:9bdd82d:ops/rebuild-2026-09-29/results.md#L259-L303"}, {"resource": "rebuild-model-branch:9bdd82d:ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/README.md"}, {"resource": "rebuild-model-branch:9bdd82d:ops/rebuild-2026-09-29/aten-gemm-ab-2026-09-29/codex-verify-r1.md"}, {"resource": "rebuild-model-branch:9bdd82d:ops/rebuild-2026-09-29/run-statements/aten-gemm-ab.md"}, {"resource": "local-untracked:kg-v3/ops/rebuild-2026-09-29/codex/verify-aten-ab-r2.md"}, {"resource": "local-untracked:kg-v3/ops/rebuild-2026-09-29/codex/verify-aten-r1.md"}, {"resource": "local-untracked:kg-v3/ops/rebuild-2026-09-29/codex/verify-aten-r2.md"}, {"resource": "repository:ops/h200-driver-gate-2026-10-01/README.md"}, {"resource": "repository:ops/h200-driver-gate-2026-10-01/run-statement.md"}, {"resource": "repository:python/owl/model/compile_gemm.py"}, {"resource": "repository:python/owl/train/utils.py"}, {"resource": "repository:python/owl/model/kaggriculture.py"}, {"resource": "repository:python/owl/model/stateless_transformer_v1.py"}, {"resource": "repository:python/owl/model/base.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:python/owl/train/logging.py"}, {"resource": "repository:tests/conftest.py"}, {"resource": "repository:tests/kaggriculture/conftest.py"}, {"resource": "repository:tests/kaggriculture/test_compile_gemm_backends.py"}, {"resource": "repository:tests/kaggriculture/test_model_compile.py"}, {"resource": "repository:tests/kaggriculture/test_model_encoder.py"}, {"resource": "repository:tests/kaggriculture/test_model_heads.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:ops/rebuild-2026-09-29/aten-wiring/py-prepare.log"}, {"resource": "repository:ops/rebuild-2026-09-29/aten-wiring/py-prepare-r1.log"}, {"resource": "repository:README.md"}, {"resource": "repository:docs/model-architecture.md"}, {"resource": "repository:docs/kaggriculture-model.md"}]
 ---
 
 # Kaggriculture compiles GEMMs with cuBLAS only
@@ -25,7 +25,7 @@ The owner asked for the outcome, not for a specific mechanism. **The setting bel
 
 - **cuBLAS only.** Every compiled Kaggriculture region runs with `torch._inductor.config.max_autotune_gemm_backends = "ATEN"`, so compiled `mm`/`addmm`/`bmm` lower to extern cuBLAS calls. Isaiah's torch 2.9.0 default is `"ATEN,TRITON,CPP"`. Every public compile entry point applies the setting before `torch.compile`: `configure_model_compile` for the `mlp` target, and `KaggricultureTransformer.compile_transformer_trunk` itself for the `trunk` target, whether `configure_model_compile` or a caller invokes it directly. The claim lives in `python/owl/model/compile_gemm.py`.
 - **Every compile mode.** The task asked for max-autotune modes. The setting applies to every mode, because `TORCHINDUCTOR_MAX_AUTOTUNE` can switch on the Triton GEMM templates under any mode. When max-autotune is off, the templates are not candidates, so the setting changes nothing.
-- **Probed stack only.** Before the setting, a check rejects any version the A/B did not probe. The probed versions live in one constant, `KAGGRICULTURE_PROBED_COMPILE_STACK` in `python/owl/model/compile_gemm.py`: torch 2.9.0, any local build suffix such as `+cu128`; triton 3.5.0; NVIDIA driver 595.91.07.
+- **Probed stack only.** Before the setting, a check rejects any version the A/B did not probe. The probed versions live in one constant, `KAGGRICULTURE_PROBED_COMPILE_STACK` in `python/owl/model/compile_gemm.py`: torch 2.9.0, any local build suffix such as `+cu128`; triton 3.5.0; NVIDIA driver 595.91.07 or 570.211.01.
   - GPU hosts (`torch.cuda.is_available()`) read the driver with `nvidia-smi`. A missing `nvidia-smi`, a missing triton or any unprobed driver fails.
   - An installed triton is checked on every host, with or without CUDA.
   - Hosts without CUDA, such as the owner's Mac, skip the driver check and record why; they cannot report a driver. They skip the triton check, with a recorded reason, only when triton is not installed, since Inductor emits no Triton kernels there.
@@ -54,6 +54,16 @@ The ATEN-only GEMM A/B ran at `e1458d2` on pod `w7ia3zvxqsvs3g`. It is recorded 
   - Most of the cost is in the small no-grad calls (A +15–18 %, D +17–26 %). That is consistent with lost prologue/epilogue fusion, which is an inference; no timeline was captured.
   - Peak memory is about the same, and cold compile is faster.
 
+### H200 / driver 570.211.01 (2026-09-30, correctness half only)
+
+For the owner's 8×H200 pod ("please setup this 8-gpu pod real quick and notice increased vram & h200"; "Keep the current recipe"), the correctness half and the template census were repeated on NVIDIA H200 (sm_90, 143,771 MiB), driver 570.211.01, torch 2.9.0+cu128, triton 3.5.0, flash-attn 2.8.3, GPU 0 only, source `07c8fc9`. Run statement, outputs and adaptations: `ops/h200-driver-gate-2026-10-01/`.
+- Real packed trunk, guard bypassed, at 4,194,305 / 4,198,400 / 4,194,444 / 8,387,470 tokens: 0 wrong tokens, 0 non-finite, max |Δ| ≤ 0.1728, one trunk call each.
+- Linear 768→256 at 2,796,203 rows and 512→256 at 4,198,401 and 8,388,608 rows: 0 bad rows, max |Δ| 0.0. MLP 256→512→256 forward and backward at 4,194,305 rows: forward and dX clean, parameter-gradient relative max ≤ 0.0026.
+- Every ATEN cache has 0 `triton_tem_` definitions or launches and no decompose-K, persistent-TMA or contiguous-subgraph text; all 10 ATEN autotune lines log `num_triton_choices: 0`.
+- The default-backend Linear 768→256 control reproduced the fault on sm_90 (illegal memory access during Triton mm autotuning), so the A/B still discriminates there.
+- Adaptation: at `07c8fc9` the trunk compile itself runs the stack check, so the trunk probe replaced `check_compile_stack` with an explicit, flagged recorder. The claim still set `"ATEN"`, and the per-call re-check still ran.
+- Not repeated on H200: the timing half, the default-backend trunk control, GPUs 1–7 individually, and multi-rank runs.
+
 ## Checks of this version (owner's Mac, CPU, recording stand-ins)
 
 - `tests/kaggriculture/test_compile_gemm_backends.py` (55 tests) covers:
@@ -65,7 +75,7 @@ The ATEN-only GEMM A/B ran at `e1458d2` on pod `w7ia3zvxqsvs3g`. It is recorded 
   - A direct Orbit trunk compile claims Orbit without reading the Kaggriculture stack.
   - An Orbit claim from another thread while Kaggriculture reads its stack raises and leaves the Kaggriculture claim and `"ATEN"` in place.
   - A reset after compile stops the next trunk call before any block runs, for both targets.
-  - The single constant is 2.9.0, 3.5.0 and 595.91.07.
+  - The single constant is 2.9.0, 3.5.0 and drivers 595.91.07 and 570.211.01. Either driver, alone or together, passes the check (added with the H200 gate; `tests/kaggriculture/conftest.py` now stands in a single-driver host).
   - Unprobed torch (2.10.0, 2.9.1, 2.8.0), triton (3.4.0, 3.6.0) and drivers are rejected.
   - A GPU host without triton or without a driver reading is rejected.
   - The skip reasons are explicit when CUDA is absent.
@@ -94,7 +104,7 @@ The ATEN-only GEMM A/B ran at `e1458d2` on pod `w7ia3zvxqsvs3g`. It is recorded 
   - Static-shape compiles and `bmm` numerics were not measured.
   - The real-trunk backward was not element-compared above the bound.
   - Non-GEMM Triton kernels rely on Inductor's own 32-bit-indexing guards.
-- **One stack.** The measurement covers one GPU model and one run per arm, with inputs up to 2³² elements.
+- **Two stacks, one full A/B.** The full A/B covers one GPU model (RTX PRO 6000, driver 595.91.07), one run per arm, with inputs up to 2³² elements. The H200 / 570.211.01 stack has the correctness half and census only (one run, GPU 0): its compiled cost is unmeasured.
 - **Orbit.** Isaiah's Orbit path keeps the vulnerable default. It is outside v3's Kaggriculture scope, and this change does not protect it.
 - **The driver gate is conservative.** The crash mechanism is Inductor codegen, not the driver. A pod with another driver fails at startup until the A/B is repeated there.
 

@@ -35,7 +35,8 @@ PROBED_GPU_STACK = compile_gemm.InstalledCompileStack(
     torch=f"{compile_gemm.KAGGRICULTURE_PROBED_COMPILE_STACK.torch}+cu128",
     triton=compile_gemm.KAGGRICULTURE_PROBED_COMPILE_STACK.triton,
     cuda_available=True,
-    nvidia_drivers=compile_gemm.KAGGRICULTURE_PROBED_COMPILE_STACK.nvidia_drivers,
+    # One host reports one driver; the first probed one stands in for it.
+    nvidia_drivers=compile_gemm.KAGGRICULTURE_PROBED_COMPILE_STACK.nvidia_drivers[:1],
 )
 
 

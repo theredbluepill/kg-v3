@@ -510,7 +510,7 @@ Compiling a `KaggricultureTransformer` (either target, any mode, through
 `configure_model_compile` or a direct `compile_transformer_trunk` call) first
 checks the probed compile stack (`KAGGRICULTURE_PROBED_COMPILE_STACK` in
 `python/owl/model/compile_gemm.py`: torch 2.9.0, triton 3.5.0, NVIDIA driver
-595.91.07). An installed triton is always checked; on hosts without CUDA the
+595.91.07 or 570.211.01). An installed triton is always checked; on hosts without CUDA the
 driver check is skipped, and so is the triton check when triton is not
 installed, each with a printed reason. It then sets
 `torch._inductor.config.max_autotune_gemm_backends = "ATEN"` so compiled GEMMs
