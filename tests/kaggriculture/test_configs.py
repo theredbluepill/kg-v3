@@ -46,13 +46,22 @@ _RANKED = {
 # Recipe J's BC fine-tune presets and the ranked config each one copies.
 _FINETUNE = {
     "kaggriculture_2rank_bc_finetune.yaml": "kaggriculture_2rank.yaml",
+    "kaggriculture_4rank_bc_finetune.yaml": "kaggriculture_4rank.yaml",
     "kaggriculture_8rank_bc_finetune.yaml": "kaggriculture_8rank.yaml",
+}
+# Owner term A plus recipe J halved (2026-09-30), and the recipe-J preset each
+# one copies.
+_BANK = {
+    "kaggriculture_2rank_bc_finetune_bank.yaml": "kaggriculture_2rank_bc_finetune.yaml",
+    "kaggriculture_4rank_bc_finetune_bank.yaml": "kaggriculture_4rank_bc_finetune.yaml",
+    "kaggriculture_8rank_bc_finetune_bank.yaml": "kaggriculture_8rank_bc_finetune.yaml",
 }
 _RANKED_AND_FINETUNE = {
     **_RANKED,
     **{name: _RANKED[base] for name, base in _FINETUNE.items()},
+    **{name: _RANKED[_FINETUNE[base]] for name, base in _BANK.items()},
 }
-_ALL = (*_RANKED, *_FINETUNE, "kaggriculture.yaml")
+_ALL = (*_RANKED, *_FINETUNE, *_BANK, "kaggriculture.yaml")
 _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_shaping=0.2,
     econ_starvation_weight=4.0,
@@ -63,6 +72,9 @@ _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_bank_weight=0.0,
     econ_bank_scale=100_000.0,
     econ_bank_cap=0.0,
+)
+_BANK_SHAPING = _REWARD_SHAPING.model_copy(
+    update={"econ_bank_weight": 1.0, "econ_bank_cap": 0.25}
 )
 
 
@@ -289,6 +301,72 @@ def test_finetune_preset_equals_its_ranked_config_apart_from_the_lrs(
     assert restored == ranked
 
 
+# --- owner term A plus recipe J halved: bank presets (2026-09-30) -------------
+
+
+@pytest.mark.parametrize(("name", "base"), _BANK.items())
+def test_bank_preset_halves_recipe_j_learning_rates(name: str, base: str) -> None:
+    # The owner halved recipe J's learning rates (see the term A Decision).
+    ours = _sections(name).optimizer
+    recipe_j = _sections(base).optimizer
+    assert (recipe_j.muon_lr, recipe_j.adamw_lr) == (0.0002, 1.0e-05)
+    assert (ours.muon_lr, ours.adamw_lr) == (0.0001, 5.0e-06)
+    assert ours.muon_lr == recipe_j.muon_lr / 2
+    assert ours.adamw_lr == recipe_j.adamw_lr / 2
+
+
+@pytest.mark.parametrize(("name", "base"), _BANK.items())
+def test_bank_preset_turns_on_own_bank_shaping(name: str, base: str) -> None:
+    ours = _sections(name).env.reward_shaping
+    assert (ours.econ_bank_weight, ours.econ_bank_scale, ours.econ_bank_cap) == (
+        1.0,
+        100_000.0,
+        0.25,
+    )
+    assert ours.terminal_scale == 0.5
+    assert _sections(base).env.reward_shaping == _REWARD_SHAPING
+    assert _sections(name).rl.checkpoint_freq == 10_000_000
+
+
+@pytest.mark.parametrize(("name", "base"), _BANK.items())
+def test_bank_preset_equals_its_recipe_j_preset_apart_from_lrs_and_bank_term(
+    name: str, base: str
+) -> None:
+    # A diff test over the whole loaded config: only the two LRs and the two
+    # enabled bank coefficients differ (the scale is 100,000 in both).
+    ours = FullConfig.from_file(ROOT / "configs" / name)
+    recipe_j = FullConfig.from_file(ROOT / "configs" / base)
+    assert isinstance(ours.env, KaggricultureEnvConfig)
+    assert isinstance(recipe_j.env, KaggricultureEnvConfig)
+    assert ours != recipe_j
+    restored = ours.model_copy(
+        update={
+            "optimizer": ours.optimizer.model_copy(
+                update={
+                    "muon_lr": recipe_j.optimizer.muon_lr,
+                    "adamw_lr": recipe_j.optimizer.adamw_lr,
+                }
+            ),
+            "env": ours.env.model_copy(
+                update={
+                    "reward_shaping": ours.env.reward_shaping.model_copy(
+                        update={"econ_bank_weight": 0.0, "econ_bank_cap": 0.0}
+                    )
+                }
+            ),
+        }
+    )
+    assert restored == recipe_j
+
+
+@pytest.mark.parametrize(("name", "base"), _BANK.items())
+def test_bank_preset_passes_the_startup_workload_assertion(
+    name: str, base: str
+) -> None:
+    # run_ppo's GEMM-limit check at startup sees the same per-rank shapes.
+    assert _headroom(name) == _headroom(_FINETUNE[base])
+
+
 # --- teacher settings (plan Task 4.4) -------------------------------------------
 
 _TEACHER_FIELDS = (
@@ -344,8 +422,12 @@ def test_config_env_and_cross_section_rules(name: str) -> None:
     assert ours.env.obs_spec == kt.KaggricultureObsConfig(schema_version=3)
     assert ours.env.action_spec == kt.KaggricultureActionConfig(hire_limit=241)
     assert ours.env.reward_mode == "win_loss"
-    assert ours.env.reward_shaping == _REWARD_SHAPING
-    assert ours.env.reward_shaping.terminal_scale == 0.75
+    if name in _BANK:
+        assert ours.env.reward_shaping == _BANK_SHAPING
+        assert ours.env.reward_shaping.terminal_scale == 0.5
+    else:
+        assert ours.env.reward_shaping == _REWARD_SHAPING
+        assert ours.env.reward_shaping.terminal_scale == 0.75
     assert ours.rl.gamma == 1.0
     divisor = ours.rl.segments_per_minibatch * ours.rl.gradient_accumulation_steps
     assert ours.env.n_envs % divisor == 0

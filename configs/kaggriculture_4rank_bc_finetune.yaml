@@ -1,0 +1,118 @@
+# Recipe J: the BC fine-tune preset for 4 ranks. Identical to
+# configs/kaggriculture_4rank.yaml except both learning rates / 10
+# (optimizer.muon_lr 0.002 -> 0.0002, optimizer.adamw_lr 1e-4 -> 1e-5; the same
+# warm-up and cosine schedule), like the 2- and 8-rank presets. Launch it from
+# the BC best with the BC critic head kept:
+#   --load-model-weights <checkpoint_bc_best.pt> --load-model-weights-mode model_only
+#
+# Added 2026-09-30 as the base of configs/kaggriculture_4rank_bc_finetune_bank.yaml.
+# Evidence and limits as in the 2-rank preset (2-rank ablation, kg/pod-ppo-prelanding
+# ddcbf84; see cookbook/references/bc-fine-tune-presets-divide-both-learning-rates-by-ten.md).
+# The 4-rank main run J (W&B spoon/kg-v3 gq94cyyp; kg/rebuild-pod4-evidence c0b551f,
+# ops/rebuild-2026-09-29/pod4-2026-09-30/main-J-4rank/launch.md) ran exactly this
+# recipe as kaggriculture_4rank.yaml plus the two LR overrides (and
+# env.native_threads=4): rank 0's own_bank_mean fell from about 72-74k (iterations
+# 12-34) to 17.9k at iteration 68 and 5.7k at iteration 79, just after the LR
+# peak at iteration 63, and the watchdog stopped it. One seed; the cause (LR,
+# objective or teacher weight) is not attributed.
+#
+# The base config's header follows.
+# Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 4 ranks
+# (4x RTX PRO 6000). Isaiah's 6M multi-GPU division
+# (winner_ce_6m_4x5090.yaml): n_envs and segments_per_minibatch are divided by
+# the world size, so the GLOBAL batch
+# (256 envs), optimizer steps/iter (16), global segments per optimizer step (16)
+# and env steps/iter (16,384) equal scaling_6m; the optimizer, LR schedule, PPO
+# coefficients, compile settings and teacher are unchanged; only checkpoint_freq
+# differs (halved to 10M by the owner, below).
+# seg_per_minibatch * grad_accum stays 4 per rank; the split is set from the
+# pre-launch memory smoke (plan Task 6.1; Task 6.3 runs four ranks).
+# See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
+# Loads through FullConfig; run_ppo checks its GEMM workload, then builds the
+# native env and trains through the shared PPO path (Task 3.1).
+env:
+  n_envs: 64
+  obs_spec:
+    obs_spec: kaggriculture
+    schema_version: 3
+  action_spec:
+    action_spec: kaggriculture
+    hire_limit: 241
+  reward_mode: win_loss
+  # Economic shaping 0.2 is the owner's choice; the other coefficients are the
+  # reference branch's audited reward defaults (plan C8).
+  reward_shaping:
+    econ_shaping: 0.2
+    econ_starvation_weight: 4.0
+    econ_drought_weight: 1.0
+    econ_cap: 0.25
+    econ_ineffective_weight: 0.0
+    econ_ineffective_cap: 0.1
+    # Owner term A (2026-09-30): absolute own-bank shaping, off here
+    # (w_b 0 leaves rewards byte-identical); the *_bank presets enable it.
+    econ_bank_weight: 0.0
+    econ_bank_scale: 100000.0
+    econ_bank_cap: 0.0
+  pin_memory: true
+  # Provisional: Task 6.1 measures the native step time and verifies or resets it.
+  native_threads: 2
+
+model: kaggriculture
+
+optimizer:
+  optimizer: muon
+  adamw_lr: 1.0e-05
+  adamw_eps: 1.0e-05
+  weight_decay: 0.0
+  muon_lr: 0.0002
+  muon_weight_decay: 0.01
+  muon_momentum: 0.95
+  lr_schedule:
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 1000
+    decay_steps: 400_000
+    lr_min_ratio: 0.01
+
+rl:
+  horizon: 64
+  # Owner decision 2026-09-30 ("cut the interval into half"): 10M global env
+  # steps, half of scaling_6m's 20M. A checkpoint and the last-best evaluation
+  # (promotion at win rate >= 0.7) share this cadence: at 16,384 env steps per
+  # iteration, about every 610 iterations. See
+  # cookbook/decisions/halve-the-kaggriculture-checkpoint-interval-to-10m-steps.md.
+  checkpoint_freq: 10_000_000
+  ppo_epochs: 1
+  segments_per_minibatch: 4
+  gradient_accumulation_steps: 1
+  # gamma=1.0 keeps the critic softmax well-defined
+  gamma: 1.0
+  gae_lambda: 0.9
+  clip_coef: 0.2
+  vf_clip_coef: null
+  vf_coef: 2.0
+  ent_coef: 1e-6
+  max_grad_norm: 10.0
+  target_kl: null
+  ppo_clip_mode: per_player
+  normalize_advantages: true
+  # scaling_6m saves 8 replays; Kaggriculture replay export is Task 7.3, which
+  # restores 8. A positive value fails at startup until then.
+  eval_replay_games: 0
+  # Teacher (Phase 4.4): scaling_6m's last-best teacher. The teacher is the
+  # last-best model, refreshed in place when the student wins >= 0.7 of the
+  # evaluation at each checkpoint_freq (10M global env steps). Its targets are
+  # precomputed once per update and cached for the whole rollout
+  # (837,287,936 B per rank, FP32; run_ppo prints it with the headroom).
+  # The teacher checkpoint is a required launch-time input, never a config
+  # value: --load-model-weights CHECKPOINT (the BC best) or
+  # -o rl.teacher_init=CHECKPOINT; run_ppo rejects a fresh launch without one.
+  teacher_mode: last_best
+  teacher_kl_coef: 0.005
+  teacher_value_coef: 0.005
+  # A chunk size of the teacher precompute, not a batch: kept at scaling_6m's
+  # 128, not divided by the world size, as in Isaiah's per-rank configs
+  # (scaling_3m, scaling_1p5m, winner_ce_6m_4x5090). Per rank the chunk is
+  # min(128, 64) = 64 envs: the whole rollout, 8,192 rows, in one precompute call.
+  teacher_segments_per_minibatch: 128
+  compile_mode: default
+  dtype: bfloat16

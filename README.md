@@ -170,16 +170,26 @@ Training presets live in `configs/`:
   `scaling_6m`'s 20M by the owner's decision: each interval writes a checkpoint
   and runs the last-best evaluation (promotion at win rate >= 0.7), about every
   610 iterations of 16,384 env steps.
-- `kaggriculture_2rank_bc_finetune.yaml` and `kaggriculture_8rank_bc_finetune.yaml`
-  ("recipe J"): the 2- and 8-rank presets with both learning rates divided by
-  10 (`muon_lr` 0.0002, `adamw_lr` 1e-5) and nothing else changed, for PPO from
-  the BC best with the BC critic head kept (`--load-model-weights-mode
-  model_only`). A 2-rank ablation from the BC best found that the full learning
-  rates collapsed the self-play economy and that LR / 10 did not; the BC critic
-  head gave a mean explained variance of 0.84 against <= 0.29 for a fresh head.
-  Banks rising above the BC level is not established, and no 8-rank run has
-  used the preset. The 8-rank preset keeps the same global workload, so the
-  per-step learning rate carries over by construction.
+- `kaggriculture_{2,4,8}rank_bc_finetune.yaml` ("recipe J"): the ranked
+  presets with both learning rates divided by 10 (`muon_lr` 0.0002, `adamw_lr`
+  1e-5) and nothing else changed, for PPO from the BC best with the BC critic
+  head kept (`--load-model-weights-mode model_only`). A 2-rank ablation from the
+  BC best found that the full learning rates collapsed the self-play economy
+  and that LR / 10 did not; the BC critic head gave a mean explained variance of
+  0.84 against <= 0.29 for a fresh head. Banks rising above the BC level is not
+  established, and no 8-rank run has used the preset. The 4- and 8-rank presets
+  keep the same global workload, so the per-step learning rate carries over by
+  construction. The 4-rank main run on this recipe (W&B `gq94cyyp`) collapsed
+  the bank economy just after the LR warm-up peak.
+- `kaggriculture_{2,4,8}rank_bc_finetune_bank.yaml` (owner decision
+  2026-09-30, "A is good + decrease the LR by half?"): recipe J with both
+  learning rates halved (`muon_lr` 0.0001, `adamw_lr` 5e-6) and the absolute
+  own-bank reward term on (`econ_bank_weight` 1.0, `econ_bank_scale` 100,000,
+  `econ_bank_cap` 0.25, so `terminal_scale` is 0.5). Every other Kaggriculture
+  config sets the term explicitly off (weight 0), which leaves rewards
+  bit-identical. The trainer logs `train/reward_bank_mean` and
+  `train/return_common_mean`; the zero-sum winner critic cannot represent the
+  term's common mode. No run has used these presets.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.
