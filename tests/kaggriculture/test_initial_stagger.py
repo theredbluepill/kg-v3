@@ -183,6 +183,10 @@ def test_every_rollout_after_the_first_cycle_carries_game_ends(
             for rank in range(world_size)
         ]
     )
+    # The layout's global offsets (the presets' 64 at env.seed 0) cover every
+    # sixth of the game.
+    buckets = (offsets - 1) * STAGGER_PHASE_BUCKETS // _GAME_STEPS
+    assert set(buckets.tolist()) == set(range(STAGGER_PHASE_BUCKETS))
     iterations = 40
     ends = _game_ends_per_iteration(
         offsets, horizon=horizon, iterations=iterations, game_steps=_GAME_STEPS
@@ -190,7 +194,7 @@ def test_every_rollout_after_the_first_cycle_carries_game_ends(
     first_cycle = math.ceil(2 * _GAME_STEPS / horizon)
     assert all(count > 0 for count in ends[first_cycle:])
     mean = sum(ends[first_cycle:]) / len(ends[first_cycle:])
-    # 256 envs x horizon / 719 steps per game.
+    # Global envs x horizon / 719 steps per game.
     assert mean == pytest.approx(world_size * n_envs * horizon / _GAME_STEPS, rel=0.1)
     # Unstaggered, every env ends its games together: most rollouts carry none.
     lockstep = _game_ends_per_iteration(
@@ -458,6 +462,37 @@ def test_default_off_trainer_has_no_stagger_state_or_metrics() -> None:
     )
     assert trainer._phase_counts.numel() == 0
     assert trainer.rollout.truncated.any().item() is False
+
+
+def test_stagger_metrics_are_reduced_across_ranks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The phase mix, game ends and cuts go through ``all_reduce_sum``."""
+    torch.manual_seed(411)
+    env = _native_env(n_envs=2, episode_steps=4)
+    stagger = InitialStagger(first_game_steps=torch.tensor([1, 2]), game_steps=3)
+    trainer = _trainer(env, _tiny_model(), horizon=3, stagger=stagger)
+    local = {
+        key: value
+        for key, value in trainer.train_iteration().items()
+        if key.startswith(("train/game_phase_frac", "train/game_ends", "train/stagger"))
+    }
+    assert local["train/stagger_cuts"] == 2.0
+    reduced: list[torch.Tensor] = []
+
+    def two_identical_ranks(tensor: torch.Tensor, _context: object) -> torch.Tensor:
+        reduced.append(tensor.clone())
+        return tensor * 2
+
+    monkeypatch.setattr(ppo, "all_reduce_sum", two_identical_ranks)
+    doubled = trainer._stagger_metrics()
+    assert len(reduced) == 1
+    assert reduced[0].numel() == STAGGER_PHASE_BUCKETS + 2
+    assert doubled["train/stagger_cuts"] == 2 * local["train/stagger_cuts"]
+    assert doubled["train/game_ends"] == 2 * local["train/game_ends"]
+    for bucket in range(STAGGER_PHASE_BUCKETS):
+        key = f"train/game_phase_frac_{bucket}"
+        assert doubled[key] == pytest.approx(local[key])
 
 
 # --- the credit window ----------------------------------------------------------

@@ -71,7 +71,11 @@ from owl.train.logging import (
     WandbRunFacts,
 )
 from owl.train.optimizer import CompositeOptimizer
-from owl.train.ppo import CHECKPOINT_KEYS, OPTIONAL_CHECKPOINT_KEYS
+from owl.train.ppo import (
+    CHECKPOINT_KEYS,
+    OPTIONAL_CHECKPOINT_KEYS,
+    initial_stagger_steps,
+)
 
 _RUN_PPO_PATH = Path(__file__).parents[2] / "scripts" / "run_ppo.py"
 _RUN_PPO_SPEC = importlib.util.spec_from_file_location("run_ppo", _RUN_PPO_PATH)
@@ -4725,6 +4729,36 @@ def test_stagger_credit_two_update_run_through_main(
     assert [m["train/bank_games"] for m in training_logs] == [0.0, 1.0]
     assert "train/own_bank_mean" in training_logs[1]
     assert not _states_equal(initial, run_ppo.unwrap_model(trainer.model).state_dict())
+
+
+def test_initial_stagger_offsets_follow_the_launch_rank() -> None:
+    """Each rank builds its own offsets; a rank-0-only draw would re-lockstep ranks."""
+    cfg = FullConfig.from_file(_CONFIGS / "kaggriculture_4rank_bank_critic_credit.yaml")
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    by_rank: list[tuple[int, ...]] = []
+    for rank in range(4):
+        context = run_ppo.DistributedContext(
+            device=torch.device("cpu"),
+            rank=rank,
+            local_rank=rank,
+            world_size=4,
+            initialized=False,
+        )
+        stagger = run_ppo._initial_stagger(cfg, context)
+        assert stagger is not None
+        expected = initial_stagger_steps(
+            seed=cfg.env.seed,
+            rank=rank,
+            n_envs=cfg.env.n_envs,
+            episode_steps=cfg.env.config.episode_steps,
+        )
+        assert torch.equal(stagger.first_game_steps, expected.first_game_steps)
+        by_rank.append(tuple(stagger.first_game_steps.tolist()))
+    assert len(set(by_rank)) == 4
+    off = cfg.model_copy(
+        update={"rl": cfg.rl.model_copy(update={"initial_stagger": False})}
+    )
+    assert run_ppo._initial_stagger(off, _distributed_context(4)) is None
 
 
 def test_last_best_evaluation_env_never_hosts_the_training_opponent() -> None:

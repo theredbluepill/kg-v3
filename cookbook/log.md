@@ -1,5 +1,14 @@
 # Change log
 
+## 2026-09-30 — Commit the stagger review r1 (APPROVE) and its test and wording follow-ups
+
+An independent Claude review of `kg/rebuild-stagger-credit` `ba2c089` (`ops/stagger-credit/review-r1.md`) returned VERDICT APPROVE with no P1. Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. The report is committed with author follow-ups, which change only tests, comments and cookbook wording:
+- **P3-2.** Two tests pin the per-rank offsets built by `run_ppo._initial_stagger` and the `all_reduce_sum` in `_stagger_metrics`. The surviving mutations M9 and M11 now fail them (`ops/stagger-credit/r1-followup-mutation.log`).
+- **P3-3.** The preset header and the [[decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger Decision]] now say 64 global envs, not 256, and a test checks the coverage of those offsets.
+- **P2-1 and P2-2** stay merge and launch conditions, recorded in the Decision: the offset critic comes with the critic-offset landing, and the 16-game promotion is either fixed or named as a confound.
+
+These follow-ups were not independently re-reviewed.
+
 ## 2026-09-30 — Stagger game phases (rl.initial_stagger) and add the 256-step, λ = 1 credit presets
 
 Owner, verbatim, quoting the main agent's list of what a per-player critic does not fix: "- Lockstep game phases and the short credit window for long-payback investments. for sure." Earlier: "let's switch back to self play no matter what, and think about how do we get the agent to earn moneny for real?"

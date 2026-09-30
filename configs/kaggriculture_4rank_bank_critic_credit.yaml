@@ -13,7 +13,7 @@
 # - rl.initial_stagger true: env i's first game is cut at a step drawn from
 #   env.seed and the global env index (uniform over 1..719, the 720-turn game's
 #   719 transitions) and bootstrapped by the critic; later games run to their
-#   natural end. Every rollout then mixes all game phases and, at 256 global
+#   natural end. Every rollout then mixes all game phases and, at 64 global
 #   envs and 16,384 env steps per iteration, expects about 16384 / 719 = 22.8
 #   game ends (train/game_phase_frac_*, train/game_ends, train/stagger_cuts).
 # - the credit window: rl.horizon 64 -> 256 and rl.gae_lambda 0.9 -> 1.0 (gamma

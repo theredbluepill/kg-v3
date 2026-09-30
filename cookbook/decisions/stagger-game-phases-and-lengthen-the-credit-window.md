@@ -6,7 +6,7 @@ tags: ["kaggriculture-v3", "training", "decisions", "adaptation"]
 status: "adopted"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
 decider: "Owner, 2026-09-30: \"- Lockstep game phases and the short credit window for long-payback investments. for sure.\""
-sources: [{"resource": "user-directive:2026-09-30:lockstep-phases-and-short-credit-window-for-sure"}, {"resource": "user-directive:2026-09-30:switch-back-to-self-play-and-earn-money-for-real"}, {"resource": "repository:python/owl/train/ppo.py"}, {"resource": "repository:python/owl/train/config.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:configs/kaggriculture_4rank_bank_critic_credit.yaml"}, {"resource": "repository:configs/kaggriculture_2rank_bank_critic_credit.yaml"}, {"resource": "repository:tests/kaggriculture/test_initial_stagger.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:README.md"}, {"resource": "repository:src/kaggriculture/env.rs"}, {"resource": "repository:ops/stagger-credit-2026-09-30/baseline_digest.py"}, {"resource": "repository:ops/stagger-credit-2026-09-30/config_digest.py"}, {"resource": "repository:ops/stagger-credit-2026-09-30/digests.md"}, {"resource": "repository:ops/stagger-credit-2026-09-30/prepare.log"}]
+sources: [{"resource": "user-directive:2026-09-30:lockstep-phases-and-short-credit-window-for-sure"}, {"resource": "user-directive:2026-09-30:switch-back-to-self-play-and-earn-money-for-real"}, {"resource": "repository:python/owl/train/ppo.py"}, {"resource": "repository:python/owl/train/config.py"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:configs/kaggriculture_4rank_bank_critic_credit.yaml"}, {"resource": "repository:configs/kaggriculture_2rank_bank_critic_credit.yaml"}, {"resource": "repository:tests/kaggriculture/test_initial_stagger.py"}, {"resource": "repository:tests/scripts/test_run_ppo.py"}, {"resource": "repository:docs/rl-api-specs.md"}, {"resource": "repository:docs/kaggriculture-contract.md"}, {"resource": "repository:README.md"}, {"resource": "repository:src/kaggriculture/env.rs"}, {"resource": "repository:ops/stagger-credit-2026-09-30/baseline_digest.py"}, {"resource": "repository:ops/stagger-credit-2026-09-30/config_digest.py"}, {"resource": "repository:ops/stagger-credit-2026-09-30/digests.md"}, {"resource": "repository:ops/stagger-credit-2026-09-30/prepare.log"}, {"resource": "repository:ops/stagger-credit/review-r1.md"}, {"resource": "repository:ops/stagger-credit/r1-followup-mutation.log"}]
 ---
 
 # Stagger game phases and lengthen the credit window
@@ -87,7 +87,7 @@ The quarter-size evaluation makes the ≥ 0.7 promotion noisier. `rl.eval_games`
 
 ## Verification (this version, CPU)
 
-- **`tests/kaggriculture/test_initial_stagger.py`, 15 tests.**
+- **`tests/kaggriculture/test_initial_stagger.py`, 16 tests** (15 at `ba2c089`, plus the r1 reduction test).
   - The default-off dump omits the key.
   - Validation refuses the invalid combinations.
   - The offsets are deterministic, in range, independent of the rank split, and differ across ranks and seeds (61 of 64 distinct: birthday collisions).
@@ -107,11 +107,15 @@ The quarter-size evaluation makes the ≥ 0.7 promotion noisier. `rl.eval_games`
   - every preset's `config_sha256` is unchanged.
 
   See `ops/stagger-credit-2026-09-30/digests.md`.
+- **Review r1** (`ops/stagger-credit/review-r1.md`, on `ba2c089`): VERDICT APPROVE, no P1. Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. Its default-off digests (plain and the existing `truncation_prob` path) match the base, and 14 of 16 mutations were caught.
+  - **P3-2, author follow-up.** Two tests were added: `test_initial_stagger_offsets_follow_the_launch_rank` and `test_stagger_metrics_are_reduced_across_ranks`. The surviving mutations M9 (rank 0 on every rank) and M11 (no `all_reduce_sum`) now fail them (`ops/stagger-credit/r1-followup-mutation.log`).
+  - **P3-3, author follow-up.** The "256 envs" slips were corrected to the presets' 64 global envs, and a test now checks the phase coverage of the layouts' own offsets. These follow-ups were not independently re-reviewed.
+  - **Merge and launch conditions (P2).** P2-1: switch both presets to the offset critic when `kg/rebuild-critic-offset` lands, and launch neither before that. P2-2: at 4 ranks last-best promotion uses 16 games, not 64. Before comparing credit arms with the horizon-64 control, either add `rl.eval_games` or record the different teacher-refresh noise as a confound in the run question.
 - **Full `just prepare`** exits 0: root Rust 298 passed with 5 ignored plus the engine and opponent crates, Python 2,960 passed with 9 skipped, plus ruff, mypy, markdown lint and docs-fresh (`ops/stagger-credit-2026-09-30/prepare.log`; the gitignored Orbit replay fixtures were copied from the integration worktree).
 
 ## Consequences and limits
 
 - Nothing has been trained. Whether staggering or λ = 1 over 256 turns restores the investment chains (strawberry, sheep and land days) is the plan's F2/F3 question. It needs runs with a null twin and two seeds.
 - λ = 1 raises advantage variance, with 4 segments per global step. The plan pairs F3 with a larger batch per step (F1), which is not done here.
-- Offsets are independent draws, not stratified, so phases cluster slightly. At 256 envs every sixth of the game is covered, as tested.
+- Offsets are independent draws, not stratified, so phases cluster slightly. The presets draw 64 global offsets (env.seed 0); a test checks that those 64, and 256 draws, cover every sixth of the game.
 - Reopen the stagger design if `train/game_ends` stays zero after the first cycle, or if the phase fractions stay skewed beyond sampling.
