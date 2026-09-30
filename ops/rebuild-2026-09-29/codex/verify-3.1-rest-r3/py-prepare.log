@@ -1,0 +1,83 @@
+uvx ruff check python/ scripts/ tests/ --select I --fix
+All checks passed!
+uvx ruff format python/ scripts/ tests/
+103 files left unchanged
+uv run python scripts/check_python_311_syntax.py
+uvx ruff check python/ scripts/ tests/
+All checks passed!
+uv run mypy python/ scripts/
+Success: no issues found in 58 source files
+uv run pytest tests/ -m "not slow"
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/poonszesen/kg-v3-trainer-model
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 1328 items
+
+tests/kaggriculture/test_base_generics_typing.py .                       [  0%]
+tests/kaggriculture/test_gpu_grammar.py .......................s         [  1%]
+tests/kaggriculture/test_model_compile.py ...........                    [  2%]
+tests/kaggriculture/test_model_encoder.py .............................. [  4%]
+.............                                                            [  5%]
+tests/kaggriculture/test_model_heads.py ................................ [  8%]
+.................................                                        [ 10%]
+tests/kaggriculture/test_model_registration.py .......                   [ 11%]
+tests/kaggriculture/test_types.py ...................................... [ 14%]
+........................................................................ [ 19%]
+................                                                         [ 20%]
+tests/owl/agent/test_agent.py .......................................... [ 24%]
+...........                                                              [ 24%]
+tests/owl/agent/test_kaggle_engine_sanitization.py ....                  [ 25%]
+tests/owl/agent/test_kaggle_observation.py ...                           [ 25%]
+tests/owl/model/test_attn.py .....ss                                     [ 25%]
+tests/owl/model/test_model_config_files.py ............................. [ 28%]
+.................                                                        [ 29%]
+tests/owl/model/test_recurrent_transformer_v1.py ..............          [ 30%]
+tests/owl/model/test_stateless_transformer_v1.py ....................... [ 32%]
+........................................................................ [ 37%]
+...............................                                          [ 39%]
+tests/owl/model/test_teacher_targets.py ............................     [ 42%]
+tests/owl/test_checkpoint_quantization.py .............................. [ 44%]
+..............                                                           [ 45%]
+tests/owl/test_config.py .........                                       [ 46%]
+tests/owl/test_int8_emulation.py ...s                                    [ 46%]
+tests/owl/test_replay.py ...                                             [ 46%]
+tests/owl/test_rl.py ................................................... [ 50%]
+...........................                                              [ 52%]
+tests/owl/train/test_advantages.py ..............                        [ 53%]
+tests/owl/train/test_config.py ......................................... [ 56%]
+........................                                                 [ 58%]
+tests/owl/train/test_distributed.py ...................                  [ 59%]
+tests/owl/train/test_logging.py ..                                       [ 59%]
+tests/owl/train/test_loss.py .............                               [ 60%]
+tests/owl/train/test_metrics.py ..                                       [ 61%]
+tests/owl/train/test_optimizer.py ...........                            [ 61%]
+tests/owl/train/test_ppo.py ............................................ [ 65%]
+..............................                                           [ 67%]
+tests/owl/train/test_ppo_observation_mapping.py ........................ [ 69%]
+........................................................................ [ 74%]
+........................................................................ [ 80%]
+...                                                                      [ 80%]
+tests/scripts/test_benchmark_checkpoints.py ............................ [ 82%]
+.........                                                                [ 83%]
+tests/scripts/test_download_replays.py ....                              [ 83%]
+tests/scripts/test_extract_model_weights.py .................            [ 84%]
+tests/scripts/test_kaggriculture_parity.py ..................            [ 86%]
+tests/scripts/test_kaggriculture_select_replays.py .................     [ 87%]
+tests/scripts/test_roundtrip_checkpoint_quantization.py ................ [ 88%]
+..                                                                       [ 88%]
+tests/scripts/test_run_ppo.py .......................................... [ 91%]
+...................................                                      [ 94%]
+tests/tools/test_check_engine_trim.py .................................. [ 97%]
+.....................................                                    [ 99%]
+tests/tools/test_replay_viewer.py ..                                     [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/kaggriculture/test_gpu_grammar.py:171: Task 1.2/1.4 native grammar binding not available: native grammar tables arrive with Task 1.2/1.4 (owl.rs.kaggriculture_grammar_tables); use expected_grammar_tables until the binding exists
+SKIPPED [1] tests/owl/model/test_attn.py:60: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/model/test_attn.py:80: flash-attn CUDA backend is not available
+SKIPPED [1] tests/owl/test_int8_emulation.py:15: x86 torch quantized backend is unavailable: qnnpack
+======================= 1324 passed, 4 skipped in 27.03s =======================
+uv run python scripts/check_doc_freshness.py
+No doc updates required
