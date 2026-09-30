@@ -6,7 +6,7 @@ tags: ["kaggriculture-v3", "training", "decisions", "adaptation"]
 status: "adopted"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
 decider: "Owner, 2026-09-30: \"cut the interval into half. thanks. also stop any running J/K. We will prepare the run for 8-rank\""
-sources: [{"resource": "user-directive:2026-09-30:cut-the-checkpoint-interval-in-half"}, {"resource": "repository:configs/kaggriculture_2rank.yaml"}, {"resource": "repository:configs/kaggriculture_4rank.yaml"}, {"resource": "repository:configs/kaggriculture_8rank.yaml"}, {"resource": "repository:configs/kaggriculture_1gpu_eager.yaml"}, {"resource": "repository:configs/kaggriculture_2rank_bc_finetune.yaml"}, {"resource": "repository:configs/kaggriculture_8rank_bc_finetune.yaml"}, {"resource": "repository:configs/kaggriculture.yaml"}, {"resource": "repository:configs/scaling_6m.yaml"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/kaggriculture/test_configs.py"}, {"resource": "repository:README.md"}]
+sources: [{"resource": "user-directive:2026-09-30:cut-the-checkpoint-interval-in-half"}, {"resource": "repository:configs/kaggriculture_2rank.yaml"}, {"resource": "repository:configs/kaggriculture_4rank.yaml"}, {"resource": "repository:configs/kaggriculture_8rank.yaml"}, {"resource": "repository:configs/kaggriculture_1gpu_eager.yaml"}, {"resource": "repository:configs/kaggriculture_2rank_bc_finetune.yaml"}, {"resource": "repository:configs/kaggriculture_8rank_bc_finetune.yaml"}, {"resource": "repository:configs/kaggriculture.yaml"}, {"resource": "repository:configs/scaling_6m.yaml"}, {"resource": "repository:scripts/run_ppo.py"}, {"resource": "repository:tests/kaggriculture/test_configs.py"}, {"resource": "repository:README.md"}, {"resource": "repository:ops/rebuild-2026-09-29/8rank-run/prepare.log"}]
 ---
 
 # Halve the Kaggriculture checkpoint interval to 10M steps
@@ -40,6 +40,6 @@ This is a **deliberate deviation from Isaiah's `scaling_6m` (20M)**, decided by 
 
 ## Checks and limits
 
-- `tests/kaggriculture/test_configs.py` and `tests/owl/train/test_config.py` pass on this commit; the full `just prepare` of the 8-rank preparation branch is recorded with the run package.
+- `uvx --from rust-just just prepare` on this change: see `ops/rebuild-2026-09-29/8rank-run/prepare.log`.
 - No run has used the new cadence. Evaluation cost per interval is unchanged, but it now comes twice as often. Its share of wall time is unmeasured at 8 ranks.
 - Reopen if the owner changes the interval, or if a measurement shows the evaluation cost or promotion rate at 10M harms throughput or learning.
