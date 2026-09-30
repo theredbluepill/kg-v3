@@ -12,6 +12,11 @@ Nothing carries between turns except the loaded weights, the reusable buffers
 so it returns the default PASS program and counts the failure, unless the agent
 is strict (every test, benchmark and qualifying episode), which re-raises.
 Loading failures are never caught.
+
+With ``block_late_investments`` (default off) the validated action passes
+through ``late_invest.filter_late_investments``: each market purchase that
+cannot be sold back before the game ends becomes the empty market command, and
+the filtered action is validated again. The model is untouched.
 """
 
 from __future__ import annotations
@@ -33,6 +38,11 @@ from owl.kaggriculture.codec import decode_action, encode_action_into
 from owl.kaggriculture.config import KaggricultureEnvConfig
 from owl.kaggriculture.env import allocate_single_seat_buffers
 from owl.kaggriculture.kaggle_view import SeatArrays, encode_seat_into, seat_view_json
+from owl.kaggriculture.late_invest import (
+    GameClock,
+    filter_late_investments,
+    observation_step,
+)
 from owl.kaggriculture.types import (
     ACTION_SLOTS,
     MAX_ACTORS,
@@ -201,6 +211,7 @@ class KaggricultureAgent:
         deterministic: bool,
         strict: bool,
         min_overage_time: float,
+        block_late_investments: bool = False,
     ) -> None:
         start = perf_counter()
         self.config = load_checkpoint_config(model_root / "config.yaml")
@@ -209,12 +220,14 @@ class KaggricultureAgent:
         self.deterministic = deterministic
         self.strict = strict
         self.min_overage_time = min_overage_time
+        self.block_late_investments = block_late_investments
         self.obs: KaggricultureObsBatch = allocate_single_seat_buffers()
         self.arrays = SeatArrays.of(self.obs)
         self._scratch = np.empty((MAX_FRAMES, ACTION_SLOTS), dtype=np.int64)
         self.calls = 0
         self.caught_errors = 0
         self.budget_passes = 0
+        self.blocked_orders = 0
         self._logged_dropped: set[str] = set()
         print(f"kg load_s={perf_counter() - start:.2f}", flush=True)
 
@@ -290,6 +303,20 @@ class KaggricultureAgent:
             hire_limit=self.hire_limit,
             scratch=self._scratch,
         )
+        if self.block_late_investments:
+            clock = GameClock.of(configuration)
+            step = observation_step(observation, clock)
+            action, reasons = filter_late_investments(action, step, clock)
+            if reasons:
+                validate_action(
+                    action,
+                    actors=actors,
+                    order_limit=order_limit,
+                    hire_limit=self.hire_limit,
+                    scratch=self._scratch,
+                )
+                self.blocked_orders += len(reasons)
+                print(f"kg step={step} late-invest blocked {list(reasons)}", flush=True)
         done = perf_counter()
         print(
             f"kg step={observation['step']} seat={seat} "

@@ -13,6 +13,11 @@ import os
 THREADS = 1
 DETERMINISTIC = True
 MIN_OVERAGE_TIME = 2.0
+# Rule 2 (owl.kaggriculture.late_invest) is off unless explicitly enabled; a
+# submission that wants it sets this constant to True before packaging.
+BLOCK_LATE_INVESTMENTS = (
+    os.environ.get("KAGGRICULTURE_AGENT_BLOCK_LATE_INVESTMENTS") == "1"
+)
 os.environ.setdefault("OMP_NUM_THREADS", f"{THREADS}")
 os.environ.setdefault("MKL_NUM_THREADS", f"{THREADS}")
 
@@ -39,6 +44,7 @@ AGENT = KaggricultureAgent(
     deterministic=DETERMINISTIC,
     strict=os.environ.get("KAGGRICULTURE_AGENT_STRICT") == "1",
     min_overage_time=MIN_OVERAGE_TIME,
+    block_late_investments=BLOCK_LATE_INVESTMENTS,
 )
 AGENT.warm_up()
 
