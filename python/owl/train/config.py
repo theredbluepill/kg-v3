@@ -112,6 +112,12 @@ class FullConfig(BaseConfig):
             )
         else:
             _validate_orbit_constraints(env, model, self.rl)
+            if (
+                self.rl.compile_actor_heads
+                or self.rl.rollout_packing
+                or self.rl.pinned_action_d2h
+            ):
+                raise ValueError("rollout optimizations are Kaggriculture-only")
             if self.rl.initial_stagger:
                 raise ValueError(
                     "rl.initial_stagger is Kaggriculture-only: it reads the game "

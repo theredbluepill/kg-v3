@@ -872,6 +872,37 @@ The Kaggriculture game uses the same shared training path through its own observ
 
 ### Python adapter, factory and reward configuration (Task 1.5 Stage 2)
 
+Optional Python rollout optimizations (all default off) preserve the existing
+action/observation tensor schemas and reward arithmetic:
+
+- `rl.compile_actor_heads`: compile the grammar policy core independently of
+  `rl.model_compile`, using `rl.model_compile_mode` (`default` or
+  `max-autotune-no-cudagraphs` only). Eager exponential draws preserve the
+  original Gumbel RNG order; the compiled region receives the draws. Startup
+  and every actor dispatch enforce the cuBLAS-only GEMM claim.
+- `rl.rollout_packing`: the trainer scopes current host observation masks to
+  each sampling forward and the final value bootstrap. Packed indices and
+  lengths are computed and validated on CPU, then transferred to the device.
+  This avoids GPU `nonzero`, truth and scalar readbacks while retaining exactly
+  the live tokens. The host mask is cleared on context exit, including errors;
+  it adds no between-turn policy state. Learner-only batches preserve flattened
+  seat order. Update, teacher and truncation-bootstrap packing keep the existing
+  checked path. CPU padded attention is unchanged.
+- `rl.pinned_action_d2h`: preallocate pinned int64 tokens/lengths, issue both
+  copies on the producer's current CUDA stream, record one event and wait for it
+  immediately before the native step consumes the arrays. Storage is reused
+  only after the synchronous native call returns. CPU uses the existing
+  contiguous copy path. The environment's observation-buffer fence stays.
+- `env.skip_reward_telemetry_validation`: skip only the duplicate Python finite
+  scans in `reward_bank_mean` and `reward_margin_abs_mean`. Native reward
+  admission still checks finite banks, and public reward helpers validate by
+  default. Shape/dtype checks, FP64 operation order and logged values remain
+  unchanged. Leave this false for the original debug validation.
+
+False values are omitted from config serialization, preserving old config
+hashes. The three RL flags are rejected for Orbit configs. No preset changes;
+CPU checks do not establish CUDA parity, allocator cost or complete-update SPS.
+
 **Stage 2 status: real native binding wired.** The adapter and cold codec call
 the merged Task 1.4 extension directly. Real-binding CPU tests cover construction,
 reset, legal steps, terminal metrics, diagnostics, selected-row truncation,

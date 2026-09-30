@@ -1,5 +1,30 @@
 # Change log
 
+## 2026-10-01 — Add four default-off Python rollout optimization switches
+
+The owner asked to carry out `ops/sps-2026-10-01/brief-python.md` completely.
+The [[references/rollout-optimizations-preserve-sampling-behind-default-off-switches|rollout optimization Reference]] records the implementation, checks and GPU limits.
+
+- **Changed.** `rl.compile_actor_heads` compiles the grammar core with the
+  existing GEMM claim and eager RNG draws; `rl.rollout_packing` builds exact
+  packed metadata from current CPU observations; `rl.pinned_action_d2h` reuses
+  pinned buffers and fences one event before native consumption;
+  `env.skip_reward_telemetry_validation` skips duplicate finite scans of
+  native-validated banks. All default false and serialize no false key. No
+  preset, Rust code, reward formula, model parameter or remote machine changed.
+- **Checks.** Base `b2276bc5` native/trainer digests and all existing config
+  hashes reproduce exactly. CPU Inductor sampling/replay/backward parity and
+  two-update canonical PPO parity pass; full Python suite: 3,071 passed,
+  11 skipped. Ruff, mypy (78 files), Python 3.11 syntax and mapped docs pass.
+  Native prepare checks and the isolated CPU benchmark are receipted in the
+  [report](../ops/sps-2026-10-01/report-python.md).
+- **Records.** Added the portable W&B-free benchmark, verification plan and
+  report; updated README, model architecture, RL API, the cuBLAS-only Decision
+  and its index. The training board is unchanged: this adds no trained result.
+- **Limits.** Real CUDA packing/DMA and compiled BF16 heads, static variants,
+  multi-rank behavior and complete-update speed remain for the diagnostic
+  H200. Component CPU timing is not a live-recipe SPS claim.
+
 ## 2026-10-01 — Add NVIDIA driver 570.211.01 (H200) to the probed compile stack
 
 Owner, verbatim: "please setup this 8-gpu pod real quick and notice increased vram & h200." and "Keep the current recipe". The new 8×H200 pod runs driver 570.211.01, which `check_compile_stack` rejected, so the recipe could run compiled only after the ATEN-only A/B was repeated there.

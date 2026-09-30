@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass, replace
 from dataclasses import field as dataclass_field
 from pathlib import Path
@@ -193,6 +194,11 @@ class PPOConfig(BaseConfig):
     compile_mode: CompileMode | None = None
     model_compile: _ModelCompileTarget = "trunk"
     model_compile_mode: _ModelCompileMode = "max-autotune-no-cudagraphs"
+    # Optional Kaggriculture rollout optimizations. Omit default values from
+    # persisted configs so existing recipe hashes stay stable.
+    compile_actor_heads: bool = False
+    rollout_packing: bool = False
+    pinned_action_d2h: bool = False
     dtype: _TrainingDType = "float32"
     # Time-limit truncation with critic bootstrapping. When truncation_prob > 0,
     # each new game is independently selected for truncation with that
@@ -219,12 +225,24 @@ class PPOConfig(BaseConfig):
         data: dict[str, Any] = handler(self)
         if not self.initial_stagger:
             del data["initial_stagger"]
+        for name in ("compile_actor_heads", "rollout_packing", "pinned_action_d2h"):
+            if not data[name]:
+                del data[name]
         return data
 
     @model_validator(mode="after")
     def _validate_teacher_config(self) -> Self:
         if self.teacher_mode == "fixed" and self.teacher_init is None:
             raise ValueError("rl.teacher_init is required when rl.teacher_mode='fixed'")
+        return self
+
+    @model_validator(mode="after")
+    def _validate_actor_compile_mode(self) -> Self:
+        if self.compile_actor_heads and self.model_compile_mode not in (
+            "default",
+            "max-autotune-no-cudagraphs",
+        ):
+            raise ValueError("compiled actor heads require a mode without CUDA graphs")
         return self
 
     @model_validator(mode="after")
@@ -797,6 +815,17 @@ class PPOTrainer:
         self._non_blocking_env_to_device = (
             device.type == "cuda" and env.pin_memory_enabled
         )
+        if (config.pinned_action_d2h or config.rollout_packing) and not isinstance(
+            env, KaggricultureVectorizedEnv
+        ):
+            raise ValueError(
+                "rollout packing and pinned action D2H require Kaggriculture"
+            )
+        self._action_transfer = (
+            PinnedActionTransfer(env.n_envs, device)
+            if config.pinned_action_d2h
+            else None
+        )
         self._obs = _obs_to_device(
             env.reset(),
             device,
@@ -1268,7 +1297,10 @@ class PPOTrainer:
         with torch.no_grad():
             for step in range(self.config.horizon):
                 if self._learner_host is None:
-                    with _autocast_context(self.config, self.device):
+                    with (
+                        self._rollout_packing_context(),
+                        _autocast_context(self.config, self.device),
+                    ):
                         output = _model_forward(
                             self.model,
                             self._obs,
@@ -1282,7 +1314,10 @@ class PPOTrainer:
                     value_offsets = output.value_offsets
                 else:
                     # Scripted seats cost no forward pass: only learner rows run.
-                    with _autocast_context(self.config, self.device):
+                    with (
+                        self._rollout_packing_context(self._learner_host),
+                        _autocast_context(self.config, self.device),
+                    ):
                         learner_output = forward_learner_rows(
                             self.model, self._obs, self._learner_host
                         )
@@ -1292,7 +1327,7 @@ class PPOTrainer:
                     values = learner_output.values
                     value_offsets = learner_output.value_offsets
                 next_obs, rewards, dones, step_env_metrics = _step_env(
-                    self.env, actions
+                    self.env, actions, action_transfer=self._action_transfer
                 )
                 _extend_env_metrics(env_metrics, step_env_metrics)
                 rewards = rewards.to(
@@ -1341,7 +1376,10 @@ class PPOTrainer:
                     next_obs,
                     non_blocking=self._non_blocking_env_to_device,
                 )
-            with _autocast_context(self.config, self.device):
+            with (
+                self._rollout_packing_context(),
+                _autocast_context(self.config, self.device),
+            ):
                 last_values = _model_compute_value(
                     self.model,
                     self._obs,
@@ -1349,6 +1387,18 @@ class PPOTrainer:
                 )
             self._last_env_metrics = env_metrics
             return last_values.detach()
+
+    def _rollout_packing_context(
+        self, learner_mask: torch.Tensor | None = None
+    ) -> AbstractContextManager[None]:
+        if not self.config.rollout_packing:
+            return nullcontext()
+        model = unwrap_model(self.model)
+        if not isinstance(model, KaggricultureTransformer) or not isinstance(
+            self.env, KaggricultureVectorizedEnv
+        ):
+            raise TypeError("rollout packing requires a Kaggriculture model and env")
+        return model.rollout_packing(self.env.observations, learner_mask=learner_mask)
 
     def _stagger_metrics(self) -> dict[str, float]:
         """Global phase mix, game ends and cuts of the last rollout (stagger only).
@@ -2814,6 +2864,61 @@ def _copy_obs_to_device_(
     )
 
 
+class PinnedActionTransfer:
+    """Reusable action D2H storage, fenced before the native reader.
+
+    Both copies are enqueued on the producer's current stream, then a single
+    event is waited immediately before returning CPU actions. The CPU path is
+    the existing contiguous transfer, so this switch is harmless on CPU. The
+    caller must consume returned storage before the next transfer reuses it.
+    """
+
+    def __init__(self, n_envs: int, device: torch.device) -> None:
+        if device.type == "cuda" and device.index is None:
+            device = torch.device("cuda", torch.cuda.current_device())
+        self.device = device
+        self.n_envs = n_envs
+        self.buffers: KaggricultureActions | None = None
+        self.ready: torch.cuda.Event | None = None
+        if device.type == "cuda":
+            self.buffers = KaggricultureActions(
+                tokens=torch.empty(
+                    (n_envs, PLAYERS, MAX_FRAMES, ACTION_SLOTS),
+                    dtype=torch.int64,
+                    pin_memory=True,
+                ),
+                lengths=torch.empty(
+                    (n_envs, PLAYERS),
+                    dtype=torch.int64,
+                    pin_memory=True,
+                ),
+            )
+            self.ready = torch.cuda.Event()
+
+    def to_cpu(self, actions: KaggricultureActions) -> KaggricultureActions:
+        for name, tensor, shape in (
+            (
+                "tokens",
+                actions.tokens,
+                (self.n_envs, PLAYERS, MAX_FRAMES, ACTION_SLOTS),
+            ),
+            ("lengths", actions.lengths, (self.n_envs, PLAYERS)),
+        ):
+            if tensor.dtype != torch.int64 or tuple(tensor.shape) != shape:
+                raise ValueError(f"{name} must be int64 with shape {shape}")
+            if tensor.device != self.device:
+                raise ValueError(f"{name} must be on transfer device {self.device}")
+        if self.buffers is None:
+            return cast(KaggricultureActions, _actions_to_cpu(actions))
+        if self.ready is None:
+            raise RuntimeError("CUDA action transfer needs its completion event")
+        self.buffers.tokens.copy_(actions.tokens, non_blocking=True)
+        self.buffers.lengths.copy_(actions.lengths, non_blocking=True)
+        self.ready.record(torch.cuda.current_stream(self.device))
+        self.ready.synchronize()
+        return self.buffers
+
+
 def _actions_to_cpu(
     actions: GameActions,
     *,
@@ -2847,8 +2952,15 @@ def _flatten_actions_time(actions: GameActions) -> GameActions:
 def _step_env(
     env: GameVectorizedEnv,
     actions: GameActions,
+    *,
+    action_transfer: PinnedActionTransfer | None = None,
 ) -> tuple[GameObsBatch, torch.Tensor, torch.Tensor, dict[str, list[float]]]:
-    cpu_actions = _actions_to_cpu(actions)
+    if action_transfer is not None:
+        if not isinstance(actions, KaggricultureActions):
+            raise TypeError("pinned action D2H requires Kaggriculture actions")
+        cpu_actions: GameActions = action_transfer.to_cpu(actions)
+    else:
+        cpu_actions = _actions_to_cpu(actions)
     # PPO admission already requires identical model/env action specs. Narrow
     # the paired environment from the action schema, also admitting test envs
     # that implement the same interface without inheriting a native adapter.

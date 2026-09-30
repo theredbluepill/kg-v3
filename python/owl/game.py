@@ -68,6 +68,9 @@ def create_env(
             action_spec=env_config.action_spec,
             opponent_bot=None if mix is None else mix.bot,
             opponent_envs=0 if mix is None else mix.bot_envs(n_envs),
+            skip_reward_telemetry_validation=(
+                env_config.skip_reward_telemetry_validation
+            ),
         )
     if isinstance(env_config, EnvConfig):
         return VectorizedEnv(

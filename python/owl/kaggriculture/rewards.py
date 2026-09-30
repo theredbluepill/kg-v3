@@ -175,22 +175,29 @@ def economic_rewards(
     return delta.flip(-1) - delta
 
 
-def _validate_banks(banks: Tensor, name: str) -> None:
+def _validate_banks(banks: Tensor, name: str, *, validate_finite: bool = True) -> None:
     if banks.dtype != torch.float64:
         raise TypeError(f"{name} must have dtype float64")
     if banks.ndim < 1 or banks.shape[-1] != 2:
         raise ValueError(f"{name} must have trailing shape [2]")
-    if not bool(torch.isfinite(banks).all()):
+    if validate_finite and not bool(torch.isfinite(banks).all()):
         raise ValueError(f"{name} must be finite")
 
 
-def bank_score(banks: Tensor, config: KaggricultureRewardConfig) -> Tensor:
+def bank_score(
+    banks: Tensor,
+    config: KaggricultureRewardConfig,
+    *,
+    validate_finite: bool = True,
+) -> Tensor:
     """Return each seat's own-bank score ``min(cap_b, w_b * max(0, bank) / S)``.
 
     Float64 in native operation order (product, then quotient, then cap); an
     overflowing product saturates at the cap. Zero when ``econ_bank_weight`` is 0.
+    ``validate_finite=False`` trusts native-validated banks for telemetry only;
+    dtype and shape checks remain enabled.
     """
-    _validate_banks(banks, "banks")
+    _validate_banks(banks, "banks", validate_finite=validate_finite)
     if config.econ_bank_weight <= 0:
         return torch.zeros_like(banks)
     raw = config.econ_bank_weight * banks.clamp(min=0.0) / config.econ_bank_scale
@@ -198,12 +205,21 @@ def bank_score(banks: Tensor, config: KaggricultureRewardConfig) -> Tensor:
 
 
 def bank_rewards(
-    banks_before: Tensor, banks_after: Tensor, config: KaggricultureRewardConfig
+    banks_before: Tensor,
+    banks_after: Tensor,
+    config: KaggricultureRewardConfig,
+    *,
+    validate_finite: bool = True,
 ) -> Tensor:
-    """Return each seat's own bank-score increment in float64 (not zero-sum)."""
+    """Return each seat's own bank-score increment in float64 (not zero-sum).
+
+    Disable ``validate_finite`` only for telemetry on native-validated banks.
+    """
     if banks_before.shape != banks_after.shape:
         raise ValueError("banks_before and banks_after must have identical shapes")
-    return bank_score(banks_after, config) - bank_score(banks_before, config)
+    return bank_score(
+        banks_after, config, validate_finite=validate_finite
+    ) - bank_score(banks_before, config, validate_finite=validate_finite)
 
 
 def margin_score(margins: Tensor, config: KaggricultureRewardConfig) -> Tensor:
@@ -221,13 +237,20 @@ def margin_score(margins: Tensor, config: KaggricultureRewardConfig) -> Tensor:
 
 
 def margin_rewards(
-    banks_before: Tensor, banks_after: Tensor, config: KaggricultureRewardConfig
+    banks_before: Tensor,
+    banks_after: Tensor,
+    config: KaggricultureRewardConfig,
+    *,
+    validate_finite: bool = True,
 ) -> Tensor:
-    """Return each seat's margin-score increment in float64 (zero-sum)."""
+    """Return each seat's margin-score increment in float64 (zero-sum).
+
+    Disable ``validate_finite`` only for telemetry on native-validated banks.
+    """
     if banks_before.shape != banks_after.shape:
         raise ValueError("banks_before and banks_after must have identical shapes")
-    _validate_banks(banks_before, "banks_before")
-    _validate_banks(banks_after, "banks_after")
+    _validate_banks(banks_before, "banks_before", validate_finite=validate_finite)
+    _validate_banks(banks_after, "banks_after", validate_finite=validate_finite)
     return margin_score(banks_after - banks_after.flip(-1), config) - margin_score(
         banks_before - banks_before.flip(-1), config
     )

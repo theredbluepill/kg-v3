@@ -118,6 +118,27 @@ uv run python -c 'from importlib import import_module; from pathlib import Path;
 
 Training presets live in `configs/`:
 
+Kaggriculture has four independent rollout optimization switches, all default
+`false` and omitted from saved configs while disabled:
+`rl.compile_actor_heads`, `rl.rollout_packing`, `rl.pinned_action_d2h`, and
+`env.skip_reward_telemetry_validation`. No preset enables them. Actor compilation
+uses `rl.model_compile_mode` (default `max-autotune-no-cudagraphs`) and the same
+cuBLAS-only compile-stack checks as the trunk, even with `model_compile: none`.
+The actor accepts only `default` and `max-autotune-no-cudagraphs` until CUDA
+graphs are qualified. Packing uses current CPU observation masks within each
+rollout forward; pinned action copies wait on one CUDA event before native
+consumption. CPU uses the existing action-copy and padded attention paths. The
+telemetry switch skips duplicate Python finite scans of native-validated banks;
+it changes no reward or metric arithmetic. CUDA parity and complete-update
+speed still need a diagnostic H200 check.
+
+`uv run python scripts/bench_rollout_step.py --with-env --output <result.json>`
+compares baseline, each switch, and all switches at 40 seat rows without W&B.
+It reports cold startup separately and measures completed forwards, within-turn
+decode and action transfer, optionally native execution and observation copies.
+On CPU it uses FP32 and an eager trunk; `--config configs/kaggriculture.yaml`
+selects the tiny functional model. These are component timings, not PPO SPS.
+
 - `baseline.yaml`: PPO with last-best teacher stabilization and the 6m GELU
   stateless transformer preset,
   discrete-target actions, `max_entities=256`, one PPO epoch per rollout,

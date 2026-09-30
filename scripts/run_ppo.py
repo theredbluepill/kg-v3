@@ -1066,7 +1066,7 @@ def _check_compile_stack(
     """
     if not isinstance(model_config, KaggricultureTransformerConfig):
         return None
-    if rl.model_compile == "none":
+    if rl.model_compile == "none" and not rl.compile_actor_heads:
         return None
     report = check_compile_stack(installed_compile_stack())
     if distributed.is_main_process:
