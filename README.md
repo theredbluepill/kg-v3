@@ -335,7 +335,8 @@ step drawn from `env.seed` and the global env index. Later games run to their
 natural end, so every rollout mixes game phases and carries game ends. See
 `docs/rl-api-specs.md` ("Staggered game phases") and the
 `configs/kaggriculture_{4,2}rank_bank_critic_credit.yaml` presets. Those
-presets pair the stagger with 256-step segments at `gae_lambda: 1.0`.
+presets pair the stagger with 256-step segments at `gae_lambda: 1.0` and the
+per-seat critic offset (`model: kaggriculture_critic_offset`).
 `rl.first_minibatch_logratio_limit` (default `0.05` nats) is a correctness
 alarm. Before the first optimizer step of each update, the policy-weighted mean
 log-ratio of the first minibatch (replayed versus rollout log-probs, reduced

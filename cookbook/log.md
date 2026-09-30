@@ -1,5 +1,17 @@
 # Change log
 
+## 2026-09-30 — Switch the credit presets to the per-seat critic offset (stagger review P2-1)
+
+With `kg/rebuild-critic-offset` landed (`9cb115f`) and `kg/rebuild-stagger-credit` merged on top (`a807752`), `configs/kaggriculture_{4,2}rank_bank_critic_credit.yaml` now use `model: kaggriculture_critic_offset`. At λ = 1 the critic enters the advantage only through the segment-end and cut bootstraps, where the zero-sum winner critic cannot carry the own-bank remainder. This resolves review P2-1 of the [[decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger Decision]]; the decisions index, `docs/rl-api-specs.md` and `README.md` say so.
+
+Tests:
+- The preset test asserts the offset critic. Its undo-diff now reaches `kaggriculture_4rank_bank_critic.yaml` exactly: reward, model and recipe, less the stagger, credit window and per-rank split.
+- A new test requires every `*bank_critic*` preset to use the offset critic.
+- A new test shows that a cut's bootstrap includes the offset: two runs whose head biases differ by 0.75 sample the same trajectories, and every cut bootstrap moves by exactly 0.75. The mutation that drops the offset from the bootstrap fails it (`ops/stagger-credit/landing-mutation.log`).
+- The two-update `run_ppo.main` stagger test also runs with `model.critic_offset=true`.
+
+Default-off native and trainer digests (`OMP_NUM_THREADS=2`) and every shared preset's `config_sha256` equal the pre-landing `78dfd1f` (`ops/stagger-credit/landing-digests.md`). Nothing trained.
+
 ## 2026-09-30 — Land the per-seat critic offset and the bank-critic preset onto the integration
 
 `kg/rebuild-critic-offset` `a496af9` merges onto `kg/isaiah-gap-closure` `3e89425` as the regular merge commit `9cb115f` (`--no-ff`, no conflicts). It carries the [[decisions/add-a-per-seat-critic-offset-for-the-own-bank-reward|critic offset Decision]] (owner, relayed: "per-player critic might be the way out?"), `model.critic_offset` (default off, byte-identical to `3e89425`) and `configs/kaggriculture_4rank_bank_critic.yaml`. Full `just prepare` on the merge exits 0: Rust 407 passed with 5 ignored, Python 2,969 passed with 9 skipped, plus ruff, mypy, markdown lint and docs-fresh, and the formatters changed no file (`ops/critic-offset/prepare-landing.log`). Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. Report: `ops/critic-offset/review-r1.md` (APPROVE on `732438c`); the follow-ups in `a496af9` were not re-reviewed. The Decision gains a landing section, and the decisions index and phase status are updated. Nothing was trained.

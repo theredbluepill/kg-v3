@@ -40,9 +40,11 @@
 # iteration instead of 64: rollout wall time is unmeasured. Evaluation plays
 # env.n_envs games on rank 0, so the last-best promotion now has 16 games per
 # checkpoint instead of 64.
-# model.critic_offset (the per-seat critic offset, kg/rebuild-critic-offset) is
-# not on this base: when that branch lands, switch `model:` to
-# kaggriculture_critic_offset as in its kaggriculture_4rank_bank_critic.yaml.
+# model: kaggriculture_critic_offset (model.critic_offset true, detach false),
+# as in configs/kaggriculture_4rank_bank_critic.yaml: at gae_lambda 1.0 the
+# critic enters the advantage only through bootstraps (segment ends and stagger
+# cuts), where the zero-sum winner critic cannot carry the own-bank remainder.
+# A headless warm start loads with the offset head zeroed (model_only).
 # Launch: a warm start with --load-model-weights <checkpoint> (model_only).
 # Limits: nothing here has been trained; one seed; the rollout-time and
 # compile-time cost of the 256-step horizon are unmeasured. See
@@ -76,7 +78,8 @@ env:
   pin_memory: true
   native_threads: 4
 
-model: kaggriculture
+# Per-seat critic offset head on (configs/model/kaggriculture_critic_offset.yaml).
+model: kaggriculture_critic_offset
 
 optimizer:
   optimizer: muon

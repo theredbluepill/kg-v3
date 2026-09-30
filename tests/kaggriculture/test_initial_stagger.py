@@ -495,6 +495,51 @@ def test_stagger_metrics_are_reduced_across_ranks(
         assert doubled[key] == pytest.approx(local[key])
 
 
+def test_stagger_cut_bootstrap_includes_the_critic_offset() -> None:
+    """A cut's bootstrap value is the full critic value, offset included.
+
+    The offset head's output layer is zero-initialized, so its bias alone sets
+    every live row's offset. Two otherwise identical runs whose biases differ by
+    ``shift`` sample the same trajectories (the policy never reads the head), and
+    every cut bootstrap differs by exactly ``shift``.
+    """
+    shift = 0.75
+
+    def rollout(bias: float) -> PPOTrainer:
+        torch.manual_seed(421)
+        env = _native_env(n_envs=2, episode_steps=6)
+        model = KaggricultureTransformer(
+            KaggricultureTransformerConfig(
+                embed_dim=16,
+                depth=1,
+                n_heads=1,
+                mlp_ratio=1,
+                n_scratch_tokens=0,
+                critic_offset=True,
+            ),
+            obs_spec=KaggricultureObsConfig(),
+            action_spec=KaggricultureActionConfig(),
+        )
+        assert model.critic_offset_head is not None
+        with torch.no_grad():
+            model.critic_offset_head.out.bias.fill_(bias)
+        stagger = InitialStagger(first_game_steps=torch.tensor([2, 3]), game_steps=5)
+        trainer = _trainer(env, model, horizon=4, stagger=stagger)
+        trainer.train_iteration()
+        return trainer
+
+    base, shifted = rollout(0.0), rollout(shift)
+    cut = base.rollout.truncated
+    assert int(cut.sum()) == 4  # both envs' first games, both seats
+    assert torch.equal(shifted.rollout.truncated, cut)
+    assert torch.equal(shifted.rollout.logp, base.rollout.logp)
+    assert torch.equal(shifted.rollout.rewards, base.rollout.rewards)
+    torch.testing.assert_close(
+        shifted.rollout.bootstrap_values[cut] - base.rollout.bootstrap_values[cut],
+        torch.full((4,), shift),
+    )
+
+
 # --- the credit window ----------------------------------------------------------
 
 
@@ -623,30 +668,44 @@ def test_credit_presets_keep_the_global_work_and_per_rank_rows(
     ) == (0.0, 0.25, 150_000.0, 0.25, 0.25, 100_000.0, 0.25)
     assert shaping.terminal_scale == 0.5
     assert env.opponent_mix is None
-    margin = FullConfig.from_file(_CONFIGS / "kaggriculture_4rank_margin.yaml")
-    assert isinstance(margin.env, KaggricultureEnvConfig)
-    # Undo the reward, the stagger, the credit window and the per-rank split.
+    # The per-seat critic offset (review P2-1): at lambda 1 the critic enters
+    # only through the segment-end and cut bootstraps.
+    assert isinstance(cfg.model, KaggricultureTransformerConfig)
+    assert cfg.model.critic_offset
+    assert not cfg.model.critic_offset_detach_trunk
+    bank_critic = FullConfig.from_file(
+        _CONFIGS / "kaggriculture_4rank_bank_critic.yaml"
+    )
+    assert isinstance(bank_critic.env, KaggricultureEnvConfig)
+    # Undo the stagger, the credit window and the per-rank split: the rest is
+    # the 4-rank bank-critic preset (reward, offset critic and recipe).
     assert (
         cfg.model_copy(
             update={
-                "env": env.model_copy(
-                    update={
-                        "reward_shaping": margin.env.reward_shaping,
-                        "n_envs": margin.env.n_envs,
-                    }
-                ),
+                "env": env.model_copy(update={"n_envs": bank_critic.env.n_envs}),
                 "rl": rl.model_copy(
                     update={
                         "horizon": 64,
                         "gae_lambda": 0.9,
                         "initial_stagger": False,
-                        "segments_per_minibatch": margin.rl.segments_per_minibatch,
+                        "segments_per_minibatch": (
+                            bank_critic.rl.segments_per_minibatch
+                        ),
                     }
                 ),
             }
         )
-        == margin
+        == bank_critic
     )
+
+
+def test_every_bank_critic_preset_uses_the_offset_critic() -> None:
+    names = sorted(path.name for path in _CONFIGS.glob("*bank_critic*.yaml"))
+    assert set(_CREDIT) < set(names)
+    for name in names:
+        cfg = FullConfig.from_file(_CONFIGS / name)
+        assert isinstance(cfg.model, KaggricultureTransformerConfig), name
+        assert cfg.model.critic_offset, name
 
 
 def _workload_rows(cfg: FullConfig) -> dict[str, tuple[int, int, int]]:

@@ -4771,6 +4771,7 @@ def test_stagger_credit_two_update_run_through_main(
         extra_overrides=(
             "rl.initial_stagger=true",
             "rl.gae_lambda=1.0",
+            "model.critic_offset=true",
             "env.reward_shaping.econ_shaping=0.0",
             "env.reward_shaping.econ_bank_weight=0.25",
             "env.reward_shaping.econ_bank_scale=150000.0",
@@ -4784,6 +4785,9 @@ def test_stagger_credit_two_update_run_through_main(
     assert isinstance(cfg, FullConfig)
     assert isinstance(cfg.env, KaggricultureEnvConfig)
     assert cfg.rl.initial_stagger
+    # The presets pair the stagger with the per-seat critic offset.
+    assert isinstance(cfg.model, KaggricultureTransformerConfig)
+    assert cfg.model.critic_offset
     assert cfg.env.reward_shaping.terminal_scale == 0.5
     trainer = session["trainer"]
     assert isinstance(trainer, PPOTrainer)

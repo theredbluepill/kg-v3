@@ -1280,7 +1280,9 @@ The credit window is configuration only: with `rl.gamma: 1.0` and
 `done` in the segment. At a cut it adds the cut's bootstrap; without a `done` it
 adds the segment-end critic value (`last_values`). The presets
 `configs/kaggriculture_{4,2}rank_bank_critic_credit.yaml` set `horizon: 256`,
-`gae_lambda: 1.0` and `initial_stagger: true`. They scale per-rank `env.n_envs`
+`gae_lambda: 1.0` and `initial_stagger: true` with
+`model: kaggriculture_critic_offset` (the per-seat critic offset below), since
+at λ = 1 the critic enters only through the segment-end and cut bootstraps. They scale per-rank `env.n_envs`
 to 16 (4 ranks) or 32 (2 ranks) and `rl.segments_per_minibatch` to 1 or 2.
 This keeps 16,384 global env steps and 16 optimizer steps per iteration, and
 the same per-rank minibatch and teacher forward rows. The rollout forward runs
