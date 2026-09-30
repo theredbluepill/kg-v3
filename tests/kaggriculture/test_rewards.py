@@ -41,14 +41,18 @@ _BANK_OFF = (0.0, 100_000.0, 0.0)
 _RECIPE = dict(
     zip(_COEFFICIENTS, (0.2, 4.0, 1.0, 0.25, 0.0, 0.1, *_BANK_OFF), strict=True)
 )
-# Owner term A at the bank presets' values (w_b 1, S 100,000, cap_b .25).
+# Owner term A at unit weight (w_b 1, S 100,000, cap_b .25), so a score reads as
+# bank / S and saturates at 25,000. Not the presets' weight: see _BANK_PRESET.
 _BANK_ON = {
     "econ_bank_weight": 1.0,
     "econ_bank_scale": 100_000.0,
     "econ_bank_cap": 0.25,
 }
-# The ten paired cases are the shared ABI table, in exactly its published order,
-# run with the bank term off.
+# The bank presets' values (w_b .25, S 100,000, cap_b .25): .25 * min(1, bank/1e5).
+_BANK_PRESET = _BANK_ON | {"econ_bank_weight": 0.25}
+# The ten original paired cases are the shared ABI table, in exactly its
+# published order, run with the bank term off. The bank rows (_BANK_CASES) follow
+# in the Rust and native tables.
 _ADMISSION_CASES = (
     ((0.2, 4, 1, 0.25, 0, 0, *_BANK_OFF), True),
     ((0.2, 0, 1, 0.25, 0, 0, *_BANK_OFF), True),
@@ -422,7 +426,7 @@ def test_native_fixture_rewards_match_independent_oracle() -> None:
             "econ_drought_weight": 1e308,
             "econ_ineffective_weight": 0,
         },
-        _BANK_ON,
+        _BANK_PRESET,
         _BANK_ON | {"econ_bank_scale": 10_000.0, "econ_bank_cap": 0.29},
         _BANK_ON
         | {"econ_bank_weight": 1e308, "econ_bank_scale": 1e-300, "econ_bank_cap": 0.2},
@@ -518,6 +522,46 @@ def test_bank_score_is_own_bank_scaled_and_capped() -> None:
     # An overflowing product saturates at the cap, never NaN.
     huge = _bank_only(econ_bank_weight=1e308, econ_bank_scale=1e-300)
     assert bank_score(banks[:1], huge).tolist() == [[0.25, 0.25]]
+
+
+def test_preset_bank_score_matches_the_accepted_consequences() -> None:
+    # The proposal's stated consequences: a 70k final bank earns +.175 and 100k+
+    # earns the full +.25; the reset bank of 3,000 scores .0075.
+    config = _config(**_BANK_PRESET)
+    assert config.terminal_scale == 0.5
+    banks = torch.tensor(
+        [[3_000, 25_000], [70_000, 99_999], [100_000, 250_000]], dtype=torch.float64
+    )
+    score = bank_score(banks, config)
+    assert score[:, 0].tolist() == [0.0075, 0.175, 0.25]
+    assert score[0, 1].item() == 0.0625
+    assert score[1, 1].item() < 0.25
+    assert score[2, 1].item() == 0.25
+
+
+@pytest.mark.parametrize(
+    ("bank_term", "bank_after"), [(_BANK_ON, 3_006.0), (_BANK_PRESET, 3_024.0)]
+)
+def test_relative_and_bank_parts_round_to_float32_once(
+    bank_term: dict[str, float], bank_after: float
+) -> None:
+    # Seat 0 records one drought death, so seat 1's relative term is +.2, and
+    # seat 1's own bank grows. Rounding the parts to f32 separately differs here.
+    config = _config(**bank_term)
+    before = torch.zeros((1, 2, 32), dtype=torch.int64)
+    after = before.clone()
+    after[0, 0, 1] = 1
+    banks_before = torch.tensor([[3_000.0, 3_000.0]], dtype=torch.float64)
+    banks_after = torch.tensor([[3_000.0, bank_after]], dtype=torch.float64)
+    dones = torch.zeros((1, 2), dtype=torch.bool)
+    relative = economic_rewards(before, after, config)
+    bank = bank_rewards(banks_before, banks_after, config)
+    assert relative[0].tolist() == [-0.2, 0.2]
+    once = (relative + bank).float()
+    separately = relative.float() + bank.float()
+    assert not torch.equal(once[0, 1:], separately[0, 1:])
+    actual = transition_rewards(before, after, banks_before, banks_after, dones, config)
+    assert torch.equal(actual.view(torch.int32), once.view(torch.int32))
 
 
 def test_bank_growth_pays_and_spending_costs() -> None:

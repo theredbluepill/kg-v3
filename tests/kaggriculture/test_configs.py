@@ -18,7 +18,7 @@ import pytest
 import torch
 from owl.kaggriculture import types as kt
 from owl.kaggriculture.config import KaggricultureEnvConfig
-from owl.kaggriculture.rewards import KaggricultureRewardConfig
+from owl.kaggriculture.rewards import KaggricultureRewardConfig, bank_score
 from owl.model import create_model
 from owl.model import kaggriculture as km
 from owl.model.kaggriculture_teacher import TEACHER_TARGET_BYTES_PER_ROW
@@ -74,7 +74,7 @@ _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_bank_cap=0.0,
 )
 _BANK_SHAPING = _REWARD_SHAPING.model_copy(
-    update={"econ_bank_weight": 1.0, "econ_bank_cap": 0.25}
+    update={"econ_bank_weight": 0.25, "econ_bank_cap": 0.25}
 )
 
 
@@ -319,11 +319,21 @@ def test_bank_preset_halves_recipe_j_learning_rates(name: str, base: str) -> Non
 def test_bank_preset_turns_on_own_bank_shaping(name: str, base: str) -> None:
     ours = _sections(name).env.reward_shaping
     assert (ours.econ_bank_weight, ours.econ_bank_scale, ours.econ_bank_cap) == (
-        1.0,
+        0.25,
         100_000.0,
         0.25,
     )
     assert ours.terminal_scale == 0.5
+    # The proposal's stated consequences: 70k earns +.175 and 100k+ the full
+    # +.25, so the score still moves across run J's 73k -> 25k slide.
+    score = bank_score(
+        torch.tensor(
+            [[3_000, 25_000], [70_000, 73_000], [99_999, 100_000]],
+            dtype=torch.float64,
+        ),
+        ours,
+    )
+    assert score.tolist() == [[0.0075, 0.0625], [0.175, 0.1825], [0.2499975, 0.25]]
     assert _sections(base).env.reward_shaping == _REWARD_SHAPING
     assert _sections(name).rl.checkpoint_freq == 10_000_000
 

@@ -233,7 +233,7 @@ Wiring: player tokens are `player_tokens + player_feature_proj(player_features)`
   - `terminal_scale = 1 − (death_cap if W > 0 else 0) − (ineffective_cap if ineffective_weight > 0 else 0) − (bank_cap if bank_weight > 0 else 0)`. "Enabled" depends on the coefficients, not on whether an event occurred. The configuration validation requiring the active caps to sum below one is kept.
   - This requires `reward_mode = win_loss` and gamma 1.
   - The complete-episode return is bounded by 1; bootstrapped PPO targets carry no such guarantee.
-  - Known limit: the winner critic's two seat values always sum to zero, so it cannot represent the common-mode part of `ΔB` (logged as `train/return_common_mean`, with `train/reward_bank_mean`).
+  - Known limit: the winner critic's two seat values always sum to zero, so it cannot represent the common-mode part of `ΔB` (logged as `train/return_common_mean`, beside its zero-sum counterpart `train/return_zero_sum_abs_mean` and `train/reward_bank_mean`).
 - **Truncation:** `truncate_envs(mask)` keeps the transition's economic reward, bootstraps from the pre-reset observation and fabricates no terminal winner (L2). The reset keeps the transition buffers (`clear_transition = False` semantics).
 - **Buffer lifetime and transactions:**
   - Before the env overwrites any published buffer generation (observations, rewards, dones, banks, counters, metrics), every reader of it must have finished. A synchronous-copy baseline satisfies this; double buffering needs a per-buffer reuse fence.

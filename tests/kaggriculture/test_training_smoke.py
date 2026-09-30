@@ -241,7 +241,8 @@ def test_trainer_rejects_winner_ce_for_kaggriculture() -> None:
 def test_bank_and_common_mode_return_telemetry(bank_weight: float) -> None:
     # Owner term A telemetry: train/reward_bank_mean is the per-update mean of
     # the adapter's per-step own-bank component; train/return_common_mean is the
-    # mean over segments of both seats' mean segment return.
+    # mean over segments of both seats' mean segment return, and
+    # train/return_zero_sum_abs_mean the mean of |R0 - R1| / 2.
     torch.manual_seed(307)
     env = _native_env(seed=11, bank_weight=bank_weight)
     trainer = _trainer(env, _tiny_model())
@@ -252,14 +253,23 @@ def test_bank_and_common_mode_return_telemetry(bank_weight: float) -> None:
         assert metrics["train/reward_bank_mean"] == pytest.approx(
             sum(per_step) / len(per_step), abs=1e-12
         )
-        common = trainer.rollout.rewards.sum(dim=0).mean(dim=-1).mean()
+        seat_returns = trainer.rollout.rewards.sum(dim=0)
+        common = seat_returns.mean(dim=-1).mean()
         assert metrics["train/return_common_mean"] == pytest.approx(
             float(common), abs=1e-7
+        )
+        # The antisymmetric part, the one the zero-sum critic can represent.
+        zero_sum = ((seat_returns[..., 0] - seat_returns[..., 1]).abs() / 2).mean()
+        assert metrics["train/return_zero_sum_abs_mean"] == pytest.approx(
+            float(zero_sum), abs=1e-7
         )
         if bank_weight == 0.0:
             # The relative reward is exactly antisymmetric in f32: no common mode.
             assert per_step == [0.0, 0.0]
             assert metrics["train/return_common_mean"] == 0.0
+            assert metrics["train/return_zero_sum_abs_mean"] == pytest.approx(
+                float(seat_returns[..., 0].abs().mean()), abs=1e-7
+            )
         else:
             # With one env, the common mode is the horizon sum of the per-step
             # seat-mean bank component, up to the f32 reward rounding.

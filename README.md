@@ -184,12 +184,15 @@ Training presets live in `configs/`:
 - `kaggriculture_{2,4,8}rank_bc_finetune_bank.yaml` (owner decision
   2026-09-30, "A is good + decrease the LR by half?"): recipe J with both
   learning rates halved (`muon_lr` 0.0001, `adamw_lr` 5e-6) and the absolute
-  own-bank reward term on (`econ_bank_weight` 1.0, `econ_bank_scale` 100,000,
-  `econ_bank_cap` 0.25, so `terminal_scale` is 0.5). Every other Kaggriculture
-  config sets the term explicitly off (weight 0), which leaves rewards
-  bit-identical. The trainer logs `train/reward_bank_mean` and
-  `train/return_common_mean`; the zero-sum winner critic cannot represent the
-  term's common mode. No run has used these presets.
+  own-bank reward term on (`econ_bank_weight` 0.25, `econ_bank_scale` 100,000,
+  `econ_bank_cap` 0.25, so a 70k bank scores .175, the score saturates at
+  100k, and `terminal_scale` is 0.5; agent-proposed values, see the Decision).
+  Every other Kaggriculture config sets the term explicitly off (weight 0),
+  which leaves rewards bit-identical. The trainer logs `train/reward_bank_mean`,
+  `train/return_common_mean` and `train/return_zero_sum_abs_mean`; the zero-sum
+  winner critic cannot represent the term's common mode. Run J used
+  `env.native_threads=4` as a launch override, so a J/2 reproduction must pass
+  it again. No run has used these presets.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.

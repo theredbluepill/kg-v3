@@ -2,18 +2,24 @@
 # Identical to configs/kaggriculture_4rank_bc_finetune.yaml except:
 # - optimizer.muon_lr 0.0002 -> 0.0001 and optimizer.adamw_lr 1e-5 -> 5e-6
 #   (recipe J halved; same warm-up and cosine schedule);
-# - env.reward_shaping.econ_bank_weight 0 -> 1.0 and econ_bank_cap 0 -> 0.25
+# - env.reward_shaping.econ_bank_weight 0 -> 0.25 and econ_bank_cap 0 -> 0.25
 #   (econ_bank_scale stays 100000.0), so terminal_scale is 1 - .25 - .25 = 0.5;
 # - rl.checkpoint_freq stays the owner's 10_000_000.
 # Owner, 2026-09-30, verbatim: "A is good + decrease the LR by half?", answering
 # option "A. Absolute bank shaping: a small per-step reward for own bank growth
 # ... capped like the other terms" and halving the recipe-J learning rates.
-# Per step, each seat gets min(.25, max(0, own bank) / 100000) after minus
-# before, own seat only (not zero-sum), telescoping to the final minus the
-# reset-bank score. The score saturates at a bank of 25,000, so above 25k the
-# term pays nothing: it guards against the collapse, it does not reward growth
-# beyond 25k. The zero-sum winner critic (2p - 1 per seat) cannot represent the
-# common-mode part of this term (logged as train/return_common_mean).
+# Per step, each seat gets min(.25, .25 * max(0, own bank) / 100000) after
+# minus before, own seat only (not zero-sum), telescoping to the final minus the
+# reset-bank score (3,000 scores .0075). The score saturates at a bank of
+# 100,000: a 70k bank scores .175, so the term moves across the whole observed
+# 73k -> 5.7k slide. The zero-sum winner critic (2p - 1 per seat) cannot
+# represent the common-mode part of this term (logged as
+# train/return_common_mean beside train/return_zero_sum_abs_mean).
+# Provenance of the values: the owner gave none. After the owner's answer the
+# agent proposed "S = 100,000, w_b = 1.0, cap_b = 0.25" with the consequences
+# "A 70k final bank earns +0.175 and 100k+ earns the full +0.25"; w_b = 1.0
+# contradicts those consequences (it saturates at 25k), so the implementer set
+# w_b = 0.25, which realises them. The owner has not confirmed the numbers.
 #
 # Evidence: the 4-rank main run J (W&B spoon/kg-v3 gq94cyyp; kg/rebuild-pod4-evidence
 # c0b551f, ops/rebuild-2026-09-29/pod4-2026-09-30/main-J-4rank/launch.md) held
@@ -21,8 +27,8 @@
 # iteration 68 and 5.7k at iteration 79, just after the LR peak (iteration 63).
 # The relative-only reward pays nothing for a shared slide into poverty in
 # mirror self-play. Limits: one seed; LR, objective and teacher weight are not
-# separated; nothing here has been trained; the values are the owner's, not
-# measured optima. See
+# separated; nothing here has been trained; the values are agent-proposed, not
+# owner-given or measured optima. See
 # cookbook/decisions/add-absolute-own-bank-shaping-and-halve-the-recipe-j-learning-rates.md.
 #
 # The base preset's header follows.
@@ -77,7 +83,7 @@ env:
     econ_ineffective_weight: 0.0
     econ_ineffective_cap: 0.1
     # Owner term A (2026-09-30): absolute own-bank shaping, on.
-    econ_bank_weight: 1.0
+    econ_bank_weight: 0.25
     econ_bank_scale: 100000.0
     econ_bank_cap: 0.25
   pin_memory: true

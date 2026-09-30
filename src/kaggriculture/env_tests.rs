@@ -15,7 +15,9 @@ fn reward_config() -> RewardConfig {
         econ_bank_cap: 0.,
     }
 }
-/// Owner term A at the bank presets' values: w_b 1, S 100,000, cap_b .25.
+/// Owner term A at unit weight (w_b 1, S 100,000, cap_b .25), so a score reads
+/// as bank / S and saturates at 25,000. Not the presets' weight: see
+/// `preset_bank_config`.
 fn bank_reward_config() -> RewardConfig {
     RewardConfig {
         econ_shaping: 0.2,
@@ -23,6 +25,14 @@ fn bank_reward_config() -> RewardConfig {
         econ_bank_weight: 1.,
         econ_bank_cap: 0.25,
         ..reward_config()
+    }
+}
+/// The bank presets' values (w_b .25, S 100,000, cap_b .25): the score is
+/// `.25 * min(1, bank / 100,000)`, saturating at 100,000.
+fn preset_bank_config() -> RewardConfig {
+    RewardConfig {
+        econ_bank_weight: 0.25,
+        ..bank_reward_config()
     }
 }
 /// Only the bank term: relative penalties and their caps disabled.
@@ -342,6 +352,75 @@ fn bank_term_reduces_the_terminal_scale() {
     let economic = (0.25_f64 - 0.2) as f32;
     assert_eq!(r[0], (f64::from(economic) + 0.5) as f32);
     assert_eq!(r[1], -0.5);
+}
+
+#[test]
+fn preset_bank_values_match_the_accepted_consequences() {
+    // The proposal's stated consequences: a 70k final bank earns +.175 and
+    // 100k+ earns the full +.25; the reset bank of 3,000 scores .0075.
+    let cfg = preset_bank_config();
+    cfg.validate().unwrap();
+    assert_eq!(cfg.terminal_scale(), 0.5);
+    assert_eq!(cfg.bank_score(3_000.), 0.0075);
+    assert_eq!(cfg.bank_score(25_000.), 0.0625);
+    assert_eq!(cfg.bank_score(70_000.), 0.175);
+    assert!(cfg.bank_score(99_999.) < 0.25);
+    assert_eq!(cfg.bank_score(100_000.), 0.25);
+    assert_eq!(cfg.bank_score(250_000.), 0.25);
+    // A 73k -> 25k slide costs the sliding seat .12 (the run-J economy).
+    let zero = [[0; 32]; 2];
+    let r = cfg
+        .transition(&zero, &zero, [73_000., 73_000.], [25_000., 73_000.], false)
+        .unwrap();
+    assert_eq!(r, [(0.0625_f64 - 0.1825) as f32, 0.]);
+}
+
+#[test]
+fn relative_and_bank_parts_are_summed_in_f64_and_rounded_to_f32_once() {
+    // Seat 0 records one drought death, so seat 1's relative term is +.2, and
+    // seat 1's own bank grows. Rounding each part to f32 separately and adding
+    // in f32 gives a different bit pattern on these rows.
+    let mut after = [[0; 32]; 2];
+    after[0][1] = 1;
+    let zero = [[0; 32]; 2];
+    for (cfg, bank_after) in [
+        (bank_reward_config(), 3_006.),
+        (preset_bank_config(), 3_024.),
+    ] {
+        cfg.validate().unwrap();
+        let bank = cfg.bank_score(bank_after) - cfg.bank_score(3_000.);
+        let relative = cfg.penalty(&after[0]);
+        assert_eq!(relative, 0.2);
+        let once = (relative + bank) as f32;
+        let separately = relative as f32 + bank as f32;
+        assert_ne!(
+            once.to_bits(),
+            separately.to_bits(),
+            "row must discriminate"
+        );
+        let r = cfg
+            .transition(&zero, &after, [3_000., 3_000.], [3_000., bank_after], false)
+            .unwrap();
+        assert_eq!(r[1].to_bits(), once.to_bits());
+        assert_eq!(r[0].to_bits(), (-0.2_f64 as f32).to_bits());
+    }
+}
+
+#[test]
+fn transition_rejects_nonfinite_banks_before_and_after() {
+    let zero = [[0; 32]; 2];
+    for cfg in [reward_config(), bank_reward_config()] {
+        for bad in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            for seat in 0..2 {
+                let mut banks = [0.; 2];
+                banks[seat] = bad;
+                assert!(cfg
+                    .transition(&zero, &zero, banks, [0., 0.], false)
+                    .is_err());
+                assert!(cfg.transition(&zero, &zero, [0., 0.], banks, true).is_err());
+            }
+        }
+    }
 }
 
 #[test]

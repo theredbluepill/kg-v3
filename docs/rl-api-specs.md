@@ -1434,8 +1434,10 @@ spans two games and a complete game's term telescopes to `B(final) − B(reset)`
 `B` is evaluated as product, then quotient, then cap; an overflowing product
 saturates at the cap. With `econ_bank_weight = 0` nothing is added, so rewards
 are bit-identical to the relative-only reward (the recorded 16-game fixture
-replays bit-exactly). The bank presets use weight 1, scale 100,000 and cap .25,
-so `B` saturates at a bank of 25,000.
+replays bit-exactly). The bank presets use weight .25, scale 100,000 and cap
+.25, so `B = .25 · min(1, bank / 100,000)`: 3,000 scores .0075, 70,000 scores
+.175 and `B` saturates at a bank of 100,000. The values were proposed by the
+agent, not given by the owner (see the term A Decision).
 
 Disabled components short-circuit. Economic reward (relative penalties plus
 any bank term) is computed in float64 and rounded to float32 first; on terminal steps that float32 value is promoted to
@@ -1448,8 +1450,13 @@ The zero-sum winner critic (`2p − 1` per seat, `p_0 + p_1 = 1`) always predict
 seat values that sum to zero, so it cannot represent the common-mode (mean over
 both seats) part of the bank term's return. This is a known, unmeasured limit:
 the trainer logs `train/reward_bank_mean` (the per-update mean own-bank
-component per seat-step) and `train/return_common_mean` (the mean over segments
-of both seats' mean segment return, exactly 0 with the term off) to measure it. Python `rewards.py` and its independent
+component per seat-step), `train/return_common_mean` (the mean over segments
+of both seats' mean segment return, exactly 0 with the term off) and its
+zero-sum counterpart `train/return_zero_sum_abs_mean` (the mean over the same
+segments of `|R_0 − R_1| / 2`, the part the critic can represent) to measure it.
+The adapter's per-step `reward_bank_mean` recomputes the float64 oracle over
+`[n_envs, 2]` whenever the term is on; that cost is unmeasured against the
+rollout step time (it is skipped, and exactly 0, with the term off). Python `rewards.py` and its independent
 oracle belong to Task 1.5.
 
 The root release profile enables overflow checks for `kaggriculture-engine`;
