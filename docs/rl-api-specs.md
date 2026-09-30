@@ -911,7 +911,7 @@ aliases; only supplied non-null `actTimeout`, `runTimeout` and `seed` framework
 metadata is preserved. Framework seed metadata has no lifecycle effect.
 `hire_limit` is owned only by `action_spec` and is passed to native unchanged.
 
-The six reward coefficients have a single definition in
+The nine reward coefficients have a single definition in
 `owl.kaggriculture.rewards.KaggricultureRewardConfig`; all are required, finite
 and nonnegative. The existing `reward_shaping` field holds them, while the
 single top-level `reward_mode` remains `win_loss`. A complete example is:
@@ -933,16 +933,23 @@ env:
     econ_cap: 0.25
     econ_ineffective_weight: 0.0
     econ_ineffective_cap: 0.1
+    econ_bank_weight: 0.0
+    econ_bank_scale: 100000.0
+    econ_bank_cap: 0.0
 ```
 
 Inactive caps may be zero; enabled caps sum strictly below one. Positive
 `econ_shaping` requires positive `econ_cap` and at least one positive binary64
 product `econ_shaping * econ_starvation_weight` or
 `econ_shaping * econ_drought_weight`. Positive ineffective weight requires a
-positive ineffective cap. `terminal_scale` is one minus enabled caps. This
-per-component predicate intentionally strengthens the reference, including
-underflow cases. `to_native_dict(reward_mode)` produces the seven exact native
-keys. The float64 economic/terminal oracles validate shapes, finite banks and
+positive ineffective cap. Positive `econ_bank_weight` requires positive
+`econ_bank_scale` and `econ_bank_cap`; with the bank weight zero, scale and cap
+are only finite and nonnegative. `terminal_scale` is one minus enabled caps,
+including the bank cap. This per-component predicate intentionally strengthens
+the reference, including underflow cases. `to_native_dict(reward_mode)` produces
+the ten exact native keys. `bank_score` and `bank_rewards` are the float64
+oracle of the own-bank term (see the native reward below); the adapter uses
+`bank_rewards` for its `reward_bank_mean` step metric. The float64 economic/terminal oracles validate shapes, finite banks and
 monotonic int64 cumulative counters; only S0/D1/I2 contribute. The transition
 oracle casts the economic difference to f32, promotes to f64 for terminal
 addition, then casts to f32. It preserves native binary64 operation order:
@@ -1390,9 +1397,12 @@ sequentially on the Mac; this is a stream arithmetic test, not a distributed run
 
 `reward_config` must be a plain dict with exactly `reward_mode="win_loss"`,
 `econ_shaping`, `econ_starvation_weight`, `econ_drought_weight`, `econ_cap`,
-`econ_ineffective_weight`, `econ_ineffective_cap`; all six numeric coefficients
-are explicit, finite, nonnegative float64 values. Active caps must sum below
-one. With `W=econ_shaping`, `s=econ_starvation_weight`,
+`econ_ineffective_weight`, `econ_ineffective_cap`, `econ_bank_weight`,
+`econ_bank_scale`, `econ_bank_cap`; all nine numeric coefficients are explicit,
+finite, nonnegative float64 values. Active caps, including the bank cap when
+`econ_bank_weight>0`, must sum below one (summed as death, then ineffective,
+then bank). Positive `econ_bank_weight` requires `econ_bank_scale>0` and
+`econ_bank_cap>0`. With `W=econ_shaping`, `s=econ_starvation_weight`,
 `d=econ_drought_weight`, the additional admission predicate is evaluated with
 separate IEEE-754 binary64 multiplications: if `W>0`, require `econ_cap>0` and
 `(W*s>0 or W*d>0)`; if `econ_ineffective_weight>0`, require
@@ -1407,18 +1417,39 @@ For each seat, only its cumulative starvation, drought and ineffective counters
 P(c) = min(econ_cap, W * (s*S + d*D))
      + min(econ_ineffective_cap, econ_ineffective_weight * I)
 delta = P(after) - P(before)
+B(bank) = min(econ_bank_cap, econ_bank_weight * max(0, bank) / econ_bank_scale)
 economic_reward = delta_opponent - delta_self
+                + (B(bank_self_after) - B(bank_self_before) if econ_bank_weight>0)
 terminal_scale = 1 - (econ_cap if W>0 else 0)
                    - (econ_ineffective_cap if econ_ineffective_weight>0 else 0)
+                   - (econ_bank_cap if econ_bank_weight>0 else 0)
 ```
 
-Disabled components short-circuit. Economic reward is computed in float64 and
-rounded to float32 first; on terminal steps that float32 value is promoted to
+The own-bank term (owner decision 2026-09-30, "term A") pays each seat the
+change of its own capped bank score and nothing to the rival, so it is not
+zero-sum. `bank_before` is the bank of the state the action was taken in (the
+reset bank on a game's first transition, read before the step) and
+`bank_after` the completed transition's, before any auto-reset, so no delta
+spans two games and a complete game's term telescopes to `B(final) − B(reset)`.
+`B` is evaluated as product, then quotient, then cap; an overflowing product
+saturates at the cap. With `econ_bank_weight = 0` nothing is added, so rewards
+are bit-identical to the relative-only reward (the recorded 16-game fixture
+replays bit-exactly). The bank presets use weight 1, scale 100,000 and cap .25,
+so `B` saturates at a bank of 25,000.
+
+Disabled components short-circuit. Economic reward (relative penalties plus
+any bank term) is computed in float64 and rounded to float32 first; on terminal steps that float32 value is promoted to
 float64, the raw-bank sign times `terminal_scale` is added, then the result is
 rounded to float32 again. Counter monotonicity and representability, finite
 banks and final rewards are checked before publication. Full undiscounted
-untruncated real-arithmetic returns telescope within [-1,1]; this does not bound
-bootstrap-augmented partial returns. Python `rewards.py` and its independent
+untruncated real-arithmetic returns telescope within [-1,1] because the active
+caps sum below one; this does not bound bootstrap-augmented partial returns.
+The zero-sum winner critic (`2p − 1` per seat, `p_0 + p_1 = 1`) always predicts
+seat values that sum to zero, so it cannot represent the common-mode (mean over
+both seats) part of the bank term's return. This is a known, unmeasured limit:
+the trainer logs `train/reward_bank_mean` (the per-update mean own-bank
+component per seat-step) and `train/return_common_mean` (the mean over segments
+of both seats' mean segment return, exactly 0 with the term off) to measure it. Python `rewards.py` and its independent
 oracle belong to Task 1.5.
 
 The root release profile enables overflow checks for `kaggriculture-engine`;

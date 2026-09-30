@@ -1,4 +1,5 @@
-//! Native cumulative economic penalties and the reference's two f32 roundings.
+//! Native cumulative economic penalties, absolute own-bank shaping and the
+//! reference's two f32 roundings.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RewardMode {
     WinLoss,
@@ -13,6 +14,12 @@ pub struct RewardConfig {
     pub econ_cap: f64,
     pub econ_ineffective_weight: f64,
     pub econ_ineffective_cap: f64,
+    /// Own-bank shaping weight `w_b` (owner decision 2026-09-30, term A).
+    pub econ_bank_weight: f64,
+    /// Bank scale `S`: `w_b * max(0, bank) / S` before the cap.
+    pub econ_bank_scale: f64,
+    /// Bank cap `cap_b`: the score saturates here and it joins the cap budget.
+    pub econ_bank_cap: f64,
 }
 impl RewardConfig {
     pub fn validate(&self) -> Result<(), String> {
@@ -24,8 +31,11 @@ impl RewardConfig {
             econ_cap: cap,
             econ_ineffective_weight: i,
             econ_ineffective_cap: ic,
+            econ_bank_weight: wb,
+            econ_bank_scale: bs,
+            econ_bank_cap: bc,
         } = self;
-        if [w, s, d, cap, i, ic]
+        if [w, s, d, cap, i, ic, wb, bs, bc]
             .iter()
             .any(|v| !v.is_finite() || **v < 0.)
         {
@@ -39,7 +49,14 @@ impl RewardConfig {
         if *i > 0. && *ic <= 0. {
             return Err("econ_ineffective_weight requires a positive cap".into());
         }
-        let active = if *w > 0. { *cap } else { 0. } + if *i > 0. { *ic } else { 0. };
+        if *wb > 0. && (*bs <= 0. || *bc <= 0.) {
+            return Err(
+                "econ_bank_weight requires a positive econ_bank_scale and econ_bank_cap".into(),
+            );
+        }
+        let active = if *w > 0. { *cap } else { 0. }
+            + if *i > 0. { *ic } else { 0. }
+            + if *wb > 0. { *bc } else { 0. };
         if active >= 1. {
             return Err("active economic caps must sum below one".into());
         }
@@ -52,6 +69,10 @@ impl RewardConfig {
             0.
         } - if self.econ_ineffective_weight > 0. {
             self.econ_ineffective_cap
+        } else {
+            0.
+        } - if self.econ_bank_weight > 0. {
+            self.econ_bank_cap
         } else {
             0.
         }
@@ -74,14 +95,33 @@ impl RewardConfig {
         };
         death + ineffective
     }
+    /// Own-bank score `min(cap_b, (w_b * max(0, bank)) / S)` in binary64, in that
+    /// operation order; zero when the term is disabled. An overflowing product
+    /// or quotient is +inf and saturates at the cap (never NaN: `S > 0`).
+    pub fn bank_score(&self, bank: f64) -> f64 {
+        if self.econ_bank_weight > 0. {
+            (self.econ_bank_weight * bank.max(0.) / self.econ_bank_scale).min(self.econ_bank_cap)
+        } else {
+            0.
+        }
+    }
+    /// One transition's rewards. `banks_before` are the banks of the state the
+    /// action was taken in (the reset bank on a game's first transition) and
+    /// `banks_after` those of the completed transition, before any auto-reset,
+    /// so the own-bank term never spans two games.
     pub fn transition(
         &self,
         before: &[[i64; 32]; 2],
         after: &[[i64; 32]; 2],
-        banks: [f64; 2],
+        banks_before: [f64; 2],
+        banks_after: [f64; 2],
         done: bool,
     ) -> Result<[f32; 2], String> {
-        if banks.iter().any(|b| !b.is_finite()) {
+        if banks_before
+            .iter()
+            .chain(banks_after.iter())
+            .any(|b| !b.is_finite())
+        {
             return Err("transition banks must be finite".into());
         }
         if before.iter().flatten().any(|c| *c < 0)
@@ -96,11 +136,19 @@ impl RewardConfig {
         let delta: [f64; 2] =
             std::array::from_fn(|s| self.penalty(&after[s]) - self.penalty(&before[s]));
         let r: [f32; 2] = std::array::from_fn(|s| {
-            let economic = (delta[1 - s] - delta[s]) as f32;
+            let relative = delta[1 - s] - delta[s];
+            // Disabled bank shaping adds nothing, so rewards stay byte-identical
+            // to the relative-only reward; enabled, it joins before f32 rounding.
+            let economic = if self.econ_bank_weight > 0. {
+                (relative + (self.bank_score(banks_after[s]) - self.bank_score(banks_before[s])))
+                    as f32
+            } else {
+                relative as f32
+            };
             if done {
-                let sign = if banks[s] > banks[1 - s] {
+                let sign = if banks_after[s] > banks_after[1 - s] {
                     1.
-                } else if banks[s] < banks[1 - s] {
+                } else if banks_after[s] < banks_after[1 - s] {
                     -1.
                 } else {
                     0.

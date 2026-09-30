@@ -14,6 +14,9 @@ from owl import rs
 from .test_native_env import buffers
 
 ROOT = Path(__file__).resolve().parents[2]
+# Owner term A disabled, in the configs' explicit form. The recorded policy
+# module keeps its six-coefficient dicts: its bytes are fixture custody.
+BANK_OFF = {"econ_bank_weight": 0.0, "econ_bank_scale": 100000.0, "econ_bank_cap": 0.0}
 
 
 def _recorder() -> Any:
@@ -126,7 +129,9 @@ def test_native_matches_training_batch_16_complete_games() -> None:
     assert fixture["lengths"].shape == (16, 719, 2)
     compared = 0
     for game in range(16):
-        reward = recorder.reward_config(game)
+        # The fixture predates owner term A; it replays with the bank term off
+        # (explicit w_b = 0), so bit equality below is the w_b = 0 regression.
+        reward = recorder.reward_config(game) | BANK_OFF
         env = rs.KaggricultureEnv(1, 17000 + game, 1, "{}", reward, 1, hire_limit=241)
         out = buffers(1)
         env.observe(**out)

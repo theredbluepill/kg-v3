@@ -60,6 +60,9 @@ _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_cap=0.25,
     econ_ineffective_weight=0.0,
     econ_ineffective_cap=0.1,
+    econ_bank_weight=0.0,
+    econ_bank_scale=100_000.0,
+    econ_bank_cap=0.0,
 )
 
 
@@ -595,6 +598,9 @@ def test_config_round_trips_through_the_kaggriculture_env_schema() -> None:
             "econ_cap": 0.25,
             "econ_ineffective_weight": 0.0,
             "econ_ineffective_cap": 0.1,
+            "econ_bank_weight": 0.0,
+            "econ_bank_scale": 100000.0,
+            "econ_bank_cap": 0.0,
         },
         "pin_memory": True,
         "native_threads": 2,

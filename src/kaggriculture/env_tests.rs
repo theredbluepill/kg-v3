@@ -10,6 +10,27 @@ fn reward_config() -> RewardConfig {
         econ_cap: 0.25,
         econ_ineffective_weight: 0.001,
         econ_ineffective_cap: 0.10,
+        econ_bank_weight: 0.,
+        econ_bank_scale: 100_000.,
+        econ_bank_cap: 0.,
+    }
+}
+/// Owner term A at the bank presets' values: w_b 1, S 100,000, cap_b .25.
+fn bank_reward_config() -> RewardConfig {
+    RewardConfig {
+        econ_shaping: 0.2,
+        econ_ineffective_weight: 0.,
+        econ_bank_weight: 1.,
+        econ_bank_cap: 0.25,
+        ..reward_config()
+    }
+}
+/// Only the bank term: relative penalties and their caps disabled.
+fn bank_only_config() -> RewardConfig {
+    RewardConfig {
+        econ_shaping: 0.,
+        econ_ineffective_weight: 0.,
+        ..bank_reward_config()
     }
 }
 
@@ -42,37 +63,53 @@ fn reward_uses_only_own_counters_and_raw_banks() {
     let mut after = before;
     after[0][0] = 1;
     assert_eq!(
-        cfg.transition(&before, &after, [10., 5.], false).unwrap(),
+        cfg.transition(&before, &after, [10., 5.], [10., 5.], false)
+            .unwrap(),
         [-0.08f32, 0.08f32]
     );
-    let expected = cfg.transition(&before, &after, [10., 5.], true).unwrap();
+    let expected = cfg
+        .transition(&before, &after, [10., 5.], [10., 5.], true)
+        .unwrap();
     after[0][3..].fill(i64::MAX);
     after[1][3..].fill(i64::MAX);
     assert_eq!(
-        cfg.transition(&before, &after, [10., 5.], true).unwrap(),
+        cfg.transition(&before, &after, [10., 5.], [10., 5.], true)
+            .unwrap(),
         expected
     );
     assert_eq!(expected[0], (f64::from(-0.08f32) + 0.65) as f32);
     assert_eq!(
-        cfg.transition(&before, &before, [5., 5.], true).unwrap(),
+        cfg.transition(&before, &before, [5., 5.], [5., 5.], true)
+            .unwrap(),
         [0.; 2]
     );
 }
 
 #[test]
 fn reward_admission_predicate_cases() {
-    for (w, s, d, cap, iw, ic, accept) in [
-        (0.2, 4., 1., 0.25, 0., 0., true),
-        (0.2, 0., 1., 0.25, 0., 0., true),
-        (0.2, 0., 0., 0.25, 0., 0., false),
-        (0.2, 4., 1., 0., 0., 0., false),
-        (1e-300, 1e-300, 1e-300, 0.25, 0., 0., false),
-        (1e-300, 1e-300, 1., 0.25, 0., 0., true),
-        (0.2, 0., 0., 0.25, 0.001, 0.1, false),
-        (0., 0., 0., 0., 0., 0., true),
-        (0., 4., 1., 0.25, 0., 0., true),
-        (0., 0., 0., 0., 0.001, 0., false),
-        (0., 0., 0., 0., 0.001, 0.1, true),
+    // The original eleven rows run with bank shaping off; the bank rows follow
+    // in the same order as the Python/native tables.
+    let off = (0., 100_000., 0.);
+    for ((w, s, d, cap, iw, ic), (wb, bs, bc), accept) in [
+        ((0.2, 4., 1., 0.25, 0., 0.), off, true),
+        ((0.2, 0., 1., 0.25, 0., 0.), off, true),
+        ((0.2, 0., 0., 0.25, 0., 0.), off, false),
+        ((0.2, 4., 1., 0., 0., 0.), off, false),
+        ((1e-300, 1e-300, 1e-300, 0.25, 0., 0.), off, false),
+        ((1e-300, 1e-300, 1., 0.25, 0., 0.), off, true),
+        ((0.2, 0., 0., 0.25, 0.001, 0.1), off, false),
+        ((0., 0., 0., 0., 0., 0.), off, true),
+        ((0., 4., 1., 0.25, 0., 0.), off, true),
+        ((0., 0., 0., 0., 0.001, 0.), off, false),
+        ((0., 0., 0., 0., 0.001, 0.1), off, true),
+        ((0.2, 4., 1., 0.25, 0., 0.1), (1., 100_000., 0.25), true),
+        ((0.2, 4., 1., 0.25, 0., 0.1), (1., 0., 0.25), false),
+        ((0.2, 4., 1., 0.25, 0., 0.1), (1., 100_000., 0.), false),
+        ((0.2, 4., 1., 0.25, 0.001, 0.1), (1., 100_000., 0.65), false),
+        ((0.2, 4., 1., 0.25, 0.001, 0.1), (1., 100_000., 0.64), true),
+        ((0., 0., 0., 0., 0., 0.), (1., 100_000., 1.), false),
+        ((0., 0., 0., 0., 0., 0.), (0., 0., 2.), true),
+        ((0., 0., 0., 0., 0., 0.), (1e-300, 1e300, 0.25), true),
     ] {
         let c = RewardConfig {
             reward_mode: RewardMode::WinLoss,
@@ -82,6 +119,9 @@ fn reward_admission_predicate_cases() {
             econ_cap: cap,
             econ_ineffective_weight: iw,
             econ_ineffective_cap: ic,
+            econ_bank_weight: wb,
+            econ_bank_scale: bs,
+            econ_bank_cap: bc,
         };
         assert_eq!(c.validate().is_ok(), accept, "{c:?}");
     }
@@ -94,6 +134,15 @@ fn reward_rejects_invalid_coefficients_and_handles_huge_counts() {
         let mut c = cfg.clone();
         c.econ_shaping = bad;
         assert!(c.validate().is_err());
+        for field in 0..3 {
+            let mut c = bank_reward_config();
+            *[
+                &mut c.econ_bank_weight,
+                &mut c.econ_bank_scale,
+                &mut c.econ_bank_cap,
+            ][field] = bad;
+            assert!(c.validate().is_err(), "{c:?}");
+        }
     }
     let mut c = cfg.clone();
     c.econ_cap = 0.9;
@@ -138,7 +187,9 @@ fn reward_episode_telescopes_with_explicit_output_rounding_budget() {
             after[0][2] += 1;
             let delta: [f64; 2] =
                 std::array::from_fn(|s| cfg.penalty(&after[s]) - cfg.penalty(&before[s]));
-            let rewards = cfg.transition(&before, &after, banks, step == 718).unwrap();
+            let rewards = cfg
+                .transition(&before, &after, banks, banks, step == 718)
+                .unwrap();
             for s in 0..2 {
                 let econ = delta[1 - s] - delta[s];
                 let sign = if banks[s] > banks[1 - s] {
@@ -194,6 +245,248 @@ fn reward_episode_telescopes_with_explicit_output_rounding_budget() {
             assert!((actual_sum[s] - endpoint).abs() <= output_budget[s] + budget64);
         }
     }
+}
+
+// --- Owner term A: absolute own-bank shaping (2026-09-30) -------------------
+
+#[test]
+fn bank_growth_pays_spending_costs_and_the_cap_binds() {
+    let cfg = bank_only_config();
+    cfg.validate().unwrap();
+    assert_eq!(cfg.terminal_scale(), 0.75);
+    let zero = [[0; 32]; 2];
+    // 3,000 -> 5,000 is +.02; spending 5,000 -> 4,000 is -.01.
+    assert_eq!(
+        cfg.transition(&zero, &zero, [3_000., 3_000.], [5_000., 3_000.], false)
+            .unwrap(),
+        [(0.05_f64 - 0.03) as f32, 0.]
+    );
+    let spend = cfg
+        .transition(&zero, &zero, [5_000., 3_000.], [4_000., 3_000.], false)
+        .unwrap();
+    assert!(spend[0] < 0.);
+    assert_eq!(spend[0], (0.04_f64 - 0.05) as f32);
+    assert_eq!(spend[1], 0.);
+    // The score saturates at cap_b = .25, reached at bank 25,000.
+    assert_eq!(cfg.bank_score(25_000.), 0.25);
+    assert_eq!(cfg.bank_score(1e308), 0.25);
+    assert_eq!(cfg.bank_score(-500.), 0.);
+    assert_eq!(
+        cfg.transition(&zero, &zero, [20_000., 0.], [30_000., 0.], false)
+            .unwrap()[0],
+        (0.25_f64 - 0.2) as f32
+    );
+    assert_eq!(
+        cfg.transition(&zero, &zero, [30_000., 0.], [90_000., 0.], false)
+            .unwrap()[0],
+        0.
+    );
+    // Negative banks score zero, so debt carries no extra penalty.
+    assert_eq!(
+        cfg.transition(&zero, &zero, [0., 0.], [-400., 0.], false)
+            .unwrap()[0],
+        0.
+    );
+    // An overflowing product saturates at the cap instead of turning NaN.
+    let mut huge = cfg.clone();
+    huge.econ_bank_weight = f64::MAX;
+    huge.econ_bank_scale = f64::MIN_POSITIVE;
+    assert_eq!(huge.bank_score(f64::MAX), 0.25);
+    assert_eq!(huge.bank_score(0.), 0.);
+}
+
+#[test]
+fn bank_term_is_own_seat_only() {
+    let cfg = bank_reward_config();
+    let zero = [[0; 32]; 2];
+    let seat1 = |seat0_after: f64| {
+        cfg.transition(&zero, &zero, [3_000., 3_000.], [seat0_after, 7_000.], false)
+            .unwrap()[1]
+    };
+    let expected = (cfg.bank_score(7_000.) - cfg.bank_score(3_000.)) as f32;
+    for seat0_after in [0., 3_000., 12_345., 1e9] {
+        assert_eq!(seat1(seat0_after), expected);
+    }
+    // Relative penalties still move both seats; the bank term does not.
+    let mut after = zero;
+    after[0][0] = 1;
+    let r = cfg
+        .transition(&zero, &after, [3_000., 3_000.], [3_000., 8_000.], false)
+        .unwrap();
+    assert_eq!(r[0], -0.25_f64 as f32);
+    assert_eq!(r[1], (0.25 + (0.08 - 0.03_f64)) as f32);
+}
+
+#[test]
+fn bank_term_reduces_the_terminal_scale() {
+    let cfg = bank_reward_config();
+    assert_eq!(cfg.terminal_scale(), 1. - 0.25 - 0.25);
+    let mut both = cfg.clone();
+    both.econ_ineffective_weight = 0.001;
+    both.validate().unwrap();
+    assert_eq!(both.terminal_scale(), 1. - 0.25 - 0.1 - 0.25);
+    // Inactive: the cap does not count, whatever its value.
+    let mut off = cfg.clone();
+    off.econ_bank_weight = 0.;
+    off.econ_bank_cap = 0.9;
+    off.validate().unwrap();
+    assert_eq!(off.terminal_scale(), 0.75);
+    let zero = [[0; 32]; 2];
+    let r = cfg
+        .transition(&zero, &zero, [40_000., 10_000.], [40_000., 10_000.], true)
+        .unwrap();
+    assert_eq!(r, [0.5, -0.5]);
+    let r = cfg
+        .transition(&zero, &zero, [20_000., 10_000.], [30_000., 10_000.], true)
+        .unwrap();
+    let economic = (0.25_f64 - 0.2) as f32;
+    assert_eq!(r[0], (f64::from(economic) + 0.5) as f32);
+    assert_eq!(r[1], -0.5);
+}
+
+#[test]
+fn disabled_bank_term_is_byte_identical_to_the_relative_reward() {
+    // With w_b = 0 the reward ignores banks_before and any inactive scale/cap:
+    // bit-equal to the relative-only formula computed independently here.
+    let mut before = [[0; 32]; 2];
+    before[1][0] = 2;
+    let mut after = before;
+    after[0][0] = 3;
+    after[0][2] = 50;
+    after[1][1] = 1;
+    for (scale, cap) in [(100_000., 0.), (0., 0.), (1., 0.9)] {
+        let mut cfg = reward_config();
+        cfg.econ_bank_scale = scale;
+        cfg.econ_bank_cap = cap;
+        cfg.validate().unwrap();
+        for banks_after in [[10., 5.], [5., 10.], [7., 7.], [-3., 1e300]] {
+            for banks_before in [banks_after, [0., 0.], [1e9, -1e9]] {
+                for done in [false, true] {
+                    let delta: [f64; 2] =
+                        std::array::from_fn(|s| cfg.penalty(&after[s]) - cfg.penalty(&before[s]));
+                    let legacy: [f32; 2] = std::array::from_fn(|s| {
+                        let economic = (delta[1 - s] - delta[s]) as f32;
+                        let sign = f64::from(i8::from(banks_after[s] > banks_after[1 - s]))
+                            - f64::from(i8::from(banks_after[s] < banks_after[1 - s]));
+                        if done {
+                            (f64::from(economic) + cfg.terminal_scale() * sign) as f32
+                        } else {
+                            economic
+                        }
+                    });
+                    let actual = cfg
+                        .transition(&before, &after, banks_before, banks_after, done)
+                        .unwrap();
+                    assert_eq!(actual.map(f32::to_bits), legacy.map(f32::to_bits));
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn bank_episode_telescopes_to_final_minus_start_score() {
+    let cfg = bank_reward_config();
+    cfg.validate().unwrap();
+    let steps = 719;
+    // A deterministic bank walk: spend early, earn late, cross the cap.
+    let bank = |seat: usize, t: usize| -> f64 {
+        let t = t as f64;
+        if seat == 0 {
+            3_000. - 20. * t.min(100.) + 60. * (t - 100.).max(0.)
+        } else {
+            3_000. + 7.5 * t - 2. * (t * 0.37).sin() * 100.
+        }
+    };
+    let mut before = [[0; 32]; 2];
+    let mut sum = [0.0_f64; 2];
+    let mut budget = [0.0_f64; 2];
+    for t in 0..steps {
+        let mut after = before;
+        after[1][0] += i64::from(t % 150 == 0);
+        let b0 = [bank(0, t), bank(1, t)];
+        let b1 = [bank(0, t + 1), bank(1, t + 1)];
+        let done = t + 1 == steps;
+        let r = cfg.transition(&before, &after, b0, b1, done).unwrap();
+        for s in 0..2 {
+            let relative = (cfg.penalty(&after[1 - s]) - cfg.penalty(&before[1 - s]))
+                - (cfg.penalty(&after[s]) - cfg.penalty(&before[s]));
+            let economic = relative + (cfg.bank_score(b1[s]) - cfg.bank_score(b0[s]));
+            budget[s] += half_ulp32(economic) + 4. * f64::EPSILON;
+            if done {
+                budget[s] += half_ulp32(f64::from(economic as f32) + 1.);
+            }
+            sum[s] += f64::from(r[s]);
+        }
+        before = after;
+    }
+    let final_banks = [bank(0, steps), bank(1, steps)];
+    let start = [bank(0, 0), bank(1, 0)];
+    for s in 0..2 {
+        let relative = cfg.penalty(&before[1 - s]) - cfg.penalty(&before[s]);
+        let sign = if final_banks[s] > final_banks[1 - s] {
+            1.
+        } else {
+            -1.
+        };
+        let endpoint = relative
+            + (cfg.bank_score(final_banks[s]) - cfg.bank_score(start[s]))
+            + cfg.terminal_scale() * sign;
+        assert!(
+            (sum[s] - endpoint).abs() <= budget[s],
+            "{s}: {sum:?} {endpoint}"
+        );
+        assert!(endpoint.abs() <= 1.);
+    }
+    // The walk crossed the cap for seat 0 and spent below the start first.
+    assert_eq!(cfg.bank_score(final_banks[0]), 0.25);
+    assert!(bank(0, 100) < start[0]);
+}
+
+#[test]
+fn autoreset_never_spans_two_games_in_the_bank_term() {
+    let config: Config = serde_json::from_value(json!({"episodeSteps":4})).unwrap();
+    let cfg = bank_only_config();
+    let mut env = NativeEnv::new(1, 17000, 1, config, cfg.clone(), 1, 241).unwrap();
+    let mut out = Output::new(1);
+    out.observe(&env);
+    let mut spent = false;
+    let mut after_terminal = None;
+    for transition in 1..=6 {
+        let market = if transition == 1 {
+            json!([["BUY_SEED", "WHEAT", 2]])
+        } else {
+            json!([])
+        };
+        let (t, l) = actions(&env, json!(["PASS"]), market);
+        out.step(&mut env, &t, &l).unwrap();
+        let before: [f64; 2] = out.transition.transition_banks_before[..]
+            .try_into()
+            .unwrap();
+        let after: [f64; 2] = out.transition.transition_banks_after[..]
+            .try_into()
+            .unwrap();
+        spent |= after[0] < 3_000.;
+        let done = out.transition.dones[0];
+        let expected = cfg
+            .transition(&[[0; 32]; 2], &[[0; 32]; 2], before, after, done)
+            .unwrap();
+        // Counters are zero-weight here, so only the bank and terminal terms act.
+        assert_eq!(out.transition.rewards, expected, "transition {transition}");
+        if after_terminal == Some(transition) {
+            // The first transition of the next game starts from its reset bank,
+            // never the previous game's final bank.
+            assert_eq!(before, [3_000., 3_000.]);
+        }
+        if done && after_terminal.is_none() {
+            // The first game ends below its reset bank (the seed purchase), so
+            // a carried-over bank would pay +.0002 on the next transition.
+            assert!(after[0] < 3_000., "the bank walk must be discriminating");
+            after_terminal = Some(transition + 1);
+        }
+    }
+    assert!(spent);
+    assert!(after_terminal.is_some_and(|t| t <= 6));
 }
 
 use super::env::{EnvError, FaultPoint, NativeEnv, TransitionCache};

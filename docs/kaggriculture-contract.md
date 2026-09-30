@@ -227,11 +227,13 @@ Wiring: player tokens are `player_tokens + player_feature_proj(player_features)`
   - `margin_0 = bank_0 − bank_1`
   - `episode_steps` (`int64`): completed transitions, 719 by default. This is not the configured `episodeSteps = 720`, and the integer dtype is a deliberate ABI choice (the reference used `f64`)
   - extensions: `winner` (0, 1 or −1 for a draw, from raw banks) and `econ_0`/`econ_1` (the 32 cumulative economic counters, int64)
-- **Rewards:** for seat `s` against rival `o`, `r_s = ΔP_o − ΔP_s + done · terminal_scale · sign(bank_s − bank_o)`.
+- **Rewards:** for seat `s` against rival `o`, `r_s = ΔP_o − ΔP_s + ΔB_s + done · terminal_scale · sign(bank_s − bank_o)`.
   - `P` is the sum of the separately capped **cumulative** penalties (C8): `P = min(death_cap, W·(starvation_weight·S + drought_weight·D)) + min(ineffective_cap, ineffective_weight·I)`.
-  - `terminal_scale = 1 − (death_cap if W > 0 else 0) − (ineffective_cap if ineffective_weight > 0 else 0)`. "Enabled" depends on the coefficients, not on whether an event occurred. The configuration validation requiring the active caps to sum below one is kept.
+  - `ΔB_s` is the owner's absolute own-bank term A (2026-09-30): `B(bank) = min(bank_cap, bank_weight · max(0, bank) / bank_scale)` after the transition minus before it, for the seat's **own** bank only, so it is not zero-sum. The before bank is the state the action was taken in (the reset bank on a game's first transition) and the after bank is read before auto-reset, so no delta spans two games. With `bank_weight = 0` it is absent and rewards are bit-identical to the relative-only reward.
+  - `terminal_scale = 1 − (death_cap if W > 0 else 0) − (ineffective_cap if ineffective_weight > 0 else 0) − (bank_cap if bank_weight > 0 else 0)`. "Enabled" depends on the coefficients, not on whether an event occurred. The configuration validation requiring the active caps to sum below one is kept.
   - This requires `reward_mode = win_loss` and gamma 1.
   - The complete-episode return is bounded by 1; bootstrapped PPO targets carry no such guarantee.
+  - Known limit: the winner critic's two seat values always sum to zero, so it cannot represent the common-mode part of `ΔB` (logged as `train/return_common_mean`, with `train/reward_bank_mean`).
 - **Truncation:** `truncate_envs(mask)` keeps the transition's economic reward, bootstraps from the pre-reset observation and fabricates no terminal winner (L2). The reset keeps the transition buffers (`clear_transition = False` semantics).
 - **Buffer lifetime and transactions:**
   - Before the env overwrites any published buffer generation (observations, rewards, dones, banks, counters, metrics), every reader of it must have finished. A synchronous-copy baseline satisfies this; double buffering needs a per-buffer reuse fence.
