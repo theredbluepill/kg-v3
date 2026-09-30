@@ -212,6 +212,20 @@ Training presets live in `configs/`:
   `train/reward_margin_abs_mean`. A pre-change `config.yaml` must add
   `econ_margin_weight: 0.0`, `econ_margin_scale: 50000.0` and
   `econ_margin_cap: 0.0`.
+- `kaggriculture_4rank_bank_critic.yaml` (owner 2026-09-30, "per-player critic
+  might be the way out?", reward numbers agent-proposed and owner-approved
+  with "OK go ahead."): the margin preset with the reward 0.25 × own bank
+  (term A, scale 150,000, cap .25) + 0.25 × cash difference (term M, scale
+  100,000, cap .25) + 0.5 × terminal sign, and
+  `model: kaggriculture_critic_offset`, whose per-seat critic offset head
+  (`model.critic_offset`, zero-initialized) lets the value represent the own-bank
+  term's common mode. Launch from a checkpoint without the head (the BC best or
+  J/2) with `--load-model-weights-mode model_only`: the loader accepts exactly
+  the missing `critic_offset_head.*` keys, while `model_and_optimizer` fails
+  because the optimizer groups differ. The trainer adds
+  `train/value_offset_mean`, `train/value_offset_abs_mean` and
+  `train/ev_common`. `-o model.critic_offset_detach_trunk=true` keeps the
+  offset's gradient out of the trunk. No run has used it.
 - `kaggriculture_4rank_vs_cha22.yaml` and its 2-rank twin
   `kaggriculture_2rank_vs_cha22.yaml` (the cha22 anchor setup; owner
   2026-09-30, "OK, for fixed bot, we can use cha22" and "implement the new

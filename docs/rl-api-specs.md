@@ -1229,6 +1229,62 @@ env:
   (`docs/rules-parity-coverage.md`), and its stepping throughput in training
   is unmeasured.
 
+### Per-seat critic offset (`model.critic_offset`)
+
+Owner, 2026-09-30: "per-player critic might be the way out?". With
+`model.critic_offset: true` the Kaggriculture value of seat row `s` is
+`V_s = 2 p_s(self) − 1 + o_s`. `o_s` is a scalar from `critic_offset_head`, an
+`OutputProjectionMLP(trunk, 1)` on the row's own (self) critic-value token only:
+no opponent token, no other row and no opponent identity. Its output layer is
+zero-initialized, so at step 0 every value, action and log-probability equals
+the model without the head bit for bit. A non-live row's offset is exactly 0.
+The flag defaults to false: no head is built, `ModelOutput.value_offsets` is
+`None`, and the config dumps without the two fields, so the config hash, native
+env, trainer and model outputs are byte-identical to 3e89425
+(`ops/critic-offset-2026-09-30/`).
+
+- **Where the sum is used.** `_values` returns the sum, so the rollout values
+  for GAE, the truncation bootstrap, `last_values`, the value loss and
+  `train/explained_variance` all use it. Kaggriculture's value loss is MSE
+  (`winner_ce` is refused), and MSE fits the sum against the GAE return, so the
+  offset is not bounded to (−1, 1).
+- **Teacher.** Value distillation (`teacher_value_coef`) stays a CE between the
+  student's and the teacher's winner softmaxes; the offset is outside it and is
+  trained by the value loss alone. The last-best teacher is built from the
+  student config (head included), and its targets are still winner
+  probabilities, so the CE stays well-defined whether or not either side has a
+  head. MSE sees only the sum; the winner part is additionally pulled toward
+  the teacher's (zero-sum) winner distribution, and the offset takes the rest.
+- **`critic_offset_detach_trunk: true`** (requires `critic_offset`): the head
+  reads the critic token detached, so the offset's value gradient reaches the
+  head only; the trunk still gets the winner part's gradient.
+- **Telemetry** (only with the head): the rollout also stores each value's
+  offset. `train/value_offset_mean` and `train/value_offset_abs_mean` are masked
+  over the value mask. `train/ev_common` is the explained variance of the
+  common-mode return (the mean of both seats' GAE returns) by the mean of both
+  seats' offsets, over steps where both seats are trained. It is omitted when
+  there is no such step (`env.opponent_mix` at fraction 1.0). Fixed-opponent
+  learner rows scatter their offsets like their values, with zero on scripted
+  rows.
+- **Checkpoint loading.** `load_model_state_dict_allowing_lora` (every
+  `--load-model-weights` mode, `rl.teacher_init`, last-best and resume) accepts a
+  checkpoint that omits exactly all `critic_offset_head.*` keys. It then zeroes
+  the head's output layer; the hidden layer keeps its fresh initialization. Any
+  other missing key, a partial head, or an unexpected key still fails. A head
+  checkpoint loaded into a model without the head fails on its unexpected
+  `critic_offset_head.*` keys. `model_and_optimizer` from a headless checkpoint
+  fails, because the head adds optimizer parameters, so warm starts use
+  `model_only`.
+- **Kaggle agent.** The policy never reads the head (actions and
+  log-probabilities are unchanged by its weights). The packaging must build the
+  model from the checkpoint's own `config.yaml`, which records
+  `critic_offset`, so the head's keys load strictly; the Orbit `Agent` does not
+  load Kaggriculture checkpoints yet (Task 7.4).
+- **Preset.** `configs/kaggriculture_4rank_bank_critic.yaml` is the margin preset
+  with the owner's reward (term A .25 / 150,000 / .25, term M .25 / 100,000 /
+  .25, `econ_shaping` 0, so `terminal_scale` .5) and
+  `model: kaggriculture_critic_offset`.
+
 ### Structured native observation buffers (Task 1.3)
 
 The root `src/kaggriculture/` boundary uses the following named buffers. Every
@@ -1584,6 +1640,10 @@ replays bit-exactly). The bank presets use weight .25, scale 100,000 and cap
 .25, so `B = .25 · min(1, bank / 100,000)`: 3,000 scores .0075, 70,000 scores
 .175 and `B` saturates at a bank of 100,000. The values were proposed by the
 agent, not given by the owner (see the term A Decision).
+`configs/kaggriculture_4rank_bank_critic.yaml` (owner, 2026-09-30) uses weight
+.25, scale 150,000 and cap .25 (saturating at a bank of 150,000) beside term M
+at .25 / 100,000 / .25, with the per-seat critic offset on; the numbers were
+proposed by the agent and approved by the owner ("OK go ahead.").
 
 The cash-difference (margin) term (owner decision 2026-09-30, "term M": "0.5
 Cash Diff (add this in) + 0.5 (Terminal loss 1/-1/0)") pays each seat the
@@ -1610,7 +1670,8 @@ to break the bound; the effect is unmeasured (independent review r1,
 `ops/reward-margin/review-r1.md`). With
 `econ_margin_weight = 0` nothing is added, so rewards are bit-identical to the
 reward without it. In the economic sum it follows the bank term (relative,
-then bank, then margin, in float64) before the single f32 rounding. Only
+then bank, then margin, in float64) before the single f32 rounding. Besides
+the bank-critic preset above (term M at .25 / 100,000 / .25), only
 `configs/kaggriculture_4rank_margin.yaml` and the cha22 anchor presets
 (`configs/kaggriculture_{4,2}rank_vs_cha22.yaml`, the same reward against the
 fixed bot) enable it: weight .5, scale 50,000
@@ -1634,9 +1695,15 @@ native. Counter monotonicity and representability, finite banks and final
 rewards are checked before publication. Full undiscounted
 untruncated real-arithmetic returns telescope within [-1,1] because the active
 caps sum below one; this does not bound bootstrap-augmented partial returns.
-The zero-sum winner critic (`2p − 1` per seat, `p_0 + p_1 = 1`) always predicts
-seat values that sum to zero, so it cannot represent the common-mode (mean over
-both seats) part of the bank term's return. This is a known, unmeasured limit:
+The winner critic (`2p − 1` per seat row) is a softmax over (self, opponent)
+within each row. The two seats' rows are separate softmaxes, so their values
+sum to zero only when the critic is consistent across the two views, as winner
+cross-entropy and teacher value distillation train it; its hard limits are the
+(−1, 1) range and that winner semantic. It therefore cannot represent the
+common-mode (mean over both seats) part of the bank term's return without
+distorting its winner probabilities; `model.critic_offset` (above) adds a
+per-seat offset for that part. Without the head this is a known, unmeasured
+limit:
 the trainer logs `train/reward_bank_mean` (the per-update mean own-bank
 component per seat-step), `train/return_common_mean` (the mean over segments
 of both seats' mean segment return, exactly 0 with the term off) and its

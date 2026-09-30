@@ -806,7 +806,10 @@ def _parse_args() -> argparse.Namespace:
             "model_fresh_critic_head loads every model tensor except the "
             "Kaggriculture critic head, which keeps its fresh initialization; "
             "it is the diagnostic comparison, and a launch from the BC best "
-            "keeps the BC critic head with model_only."
+            "keeps the BC critic head with model_only. With model.critic_offset "
+            "a checkpoint without the offset head loads in any mode by leaving "
+            "out exactly critic_offset_head.* (the offset starts at 0); "
+            "model_and_optimizer then fails, because the optimizer groups differ."
         ),
     )
     parser.add_argument(

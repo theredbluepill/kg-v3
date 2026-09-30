@@ -1,5 +1,19 @@
 # Change log
 
+## 2026-09-30 — Add the per-seat critic offset (model.critic_offset) and the bank-critic preset
+
+Owner, verbatim as relayed by the orchestrating agent: "let's switch back to self play no matter what, and think about how do we get the agent to earn moneny for real?", then "per-player critic might be the way out?", and "OK go ahead." for the agent-proposed reward numbers. On `kg/rebuild-critic-offset`, cut from `kg/isaiah-gap-closure` `3e89425`:
+- **Head.** `model.critic_offset` (default off) adds a head on each seat row's own critic-value token. Its output layer is zero-initialized and added to the value, `V = 2p(self) − 1 + o`.
+- **Losses.** The value MSE fits the sum. Teacher value distillation stays on the winner softmax.
+- **`critic_offset_detach_trunk`** stops the head's gradient at the head.
+- **Loader.** The shared loader admits a checkpoint that omits exactly all `critic_offset_head.*` keys and zeroes the head's output. A head checkpoint fails on a model without the head.
+- **Telemetry.** `train/value_offset_mean`, `train/value_offset_abs_mean` and `train/ev_common`.
+- **Preset.** `configs/kaggriculture_4rank_bank_critic.yaml` is the margin preset with .25 own bank (/150k) + .25 cash difference (/100k) + .5 terminal sign and the head on.
+
+Default off is byte-identical to `3e89425` in its native, trainer (`3ffd53a0…`), model and 14-preset config digests. 10 of 10 source mutations are killed. `just prepare` exits 0 (Rust 407 passed with 5 ignored, Python 2,969 passed with 9 skipped). Nothing was trained.
+
+Added the [[decisions/add-a-per-seat-critic-offset-for-the-own-bank-reward|critic offset Decision]] and its index entry. Corrected the [[decisions/add-absolute-own-bank-shaping-and-halve-the-recipe-j-learning-rates|term A Decision]]'s claim that the two seat values "always sum to 0": the seats' rows are separate softmaxes, and the hard limits are the (−1, 1) range and the winner semantic. `docs/rl-api-specs.md` and `docs/kaggriculture-contract.md` are corrected to match.
+
 ## 2026-09-30 — Land the fixed-opponent collection and the cha22 anchor presets onto the integration, after the vs-cha22 pre-landing launch
 
 `kg/rebuild-opponent-mix` `0962744` merges onto `kg/isaiah-gap-closure` `8f17259` as the regular merge commit `cab06c9` (`--no-ff`). It carries the [[decisions/train-ppo-against-a-fixed-opponent-with-a-learner-mask|fixed-opponent Decision]] (owner: "OK, for fixed bot, we can use cha22"), the hosted Cha22 import and `configs/kaggriculture_{4,2}rank_vs_cha22.yaml`. Only `cookbook/log.md` and the decisions and references indexes conflicted; both sides were kept, with log entries in commit-time order. Full `just prepare` on the merge exits 0: root Rust 298 passed with 5 ignored plus the other crates, Python 2,934 passed with 9 skipped, plus ruff, mypy, markdown lint and docs-fresh, and the formatters changed no file (`ops/opponent-mix/prepare-landing.log`). Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. Reports: `ops/opponent-mix/review-r1.md` (APPROVE on `0f70773`) and `ops/opponent-mix/verify-followups.md` (APPROVE on `71daf36`; P3-2, P3-4 and P3-5 stay open as documented limits). At the owner's "Sure you can just launch the same reward on CHA22 run now?", the vs-cha22 run launched before this landing, from `0f70773`; the later commits changed only tests, docs and receipts, and the merge's only other non-doc change is the test-only `src/kaggriculture/env_tests.rs`. The Decision gains a landing section, and the decisions index is updated. Nothing was trained by the landing.
