@@ -1,0 +1,7 @@
+# Run statement: control J/2 without bank reward, 4 ranks (pod abl4mvr5w1mmn4, 2026-09-30)
+
+- **Question:** does halving J's LR alone (muon 1e-4, adamw 5e-6; everything else as main-J-4rank at `7e87f54`) keep the BC economy past the LR warm-up peak (1,000 optimizer steps, about iteration 63)?
+- **Control for:** the upcoming bank-reward run; this isolates the LR effect from a reward change.
+- **Prediction:** a slower `teacher/kl` rise than main-J-4rank (0.97 at iteration 45, 2.32 at iteration 63); banks hold longer; they may still decline.
+- **Stop:** 150 iterations (`--max-env-steps 2457600`, 16,384 steps per iteration) or the main-J-4rank watchdog (nonfinite loss, replay alarm, or rank-0 `train/own_bank_mean` < 20,000 on 2 consecutive completed-game intervals); `run_ppo` writes `checkpoint_final.pt` at the end, copied to the Mac with SHA-256.
+- **Inputs/code path:** `torchrun --nproc-per-node 4 /root/main-J/main_probe.py scripts/run_ppo.py configs/kaggriculture_4rank.yaml /root/runs/control-J2-4rank-20260930 --load-model-weights /root/bc-best/checkpoint_bc_best.pt --load-model-weights-mode model_only --log-mode wandb --wandb-mode online --experiment-id control-J2-4rank-20260930 --max-env-steps 2457600 -o optimizer.muon_lr=0.0001 optimizer.adamw_lr=0.000005 rl.checkpoint_freq=10000000 env.native_threads=4`; wrapper, watchdog and parser are the main-J-4rank files (sha256 `26ba5b0c…`, `65050a89…`, parse_iterations.py) unchanged.
