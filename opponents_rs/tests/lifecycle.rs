@@ -151,3 +151,25 @@ fn independent_seats_and_mid_episode_replay() {
         assert!(SeatController::new(kind, 0, &replay).is_err());
     }
 }
+
+#[test]
+fn cha22_registry_key_and_full_match_against_starter() {
+    assert_eq!(
+        "cha22".parse::<OpponentKind>().unwrap(),
+        OpponentKind::Cha22
+    );
+    assert_eq!(OpponentKind::Cha22.key(), "cha22");
+    for kinds in [
+        [OpponentKind::Cha22, OpponentKind::Starter],
+        [OpponentKind::Starter, OpponentKind::Cha22],
+    ] {
+        let a = play_match(Config::default(), 17, kinds).unwrap();
+        let b = play_match(Config::default(), 17, kinds).unwrap();
+        assert!(a.completed && a.steps.len() == 719);
+        assert_eq!(hashes(&a), hashes(&b));
+        assert_eq!(a.final_banks, b.final_banks);
+        assert!(a.steps.iter().all(|row| row.engine_error.is_none()
+            && row.seats.iter().all(|seat| seat.controller_error.is_none())));
+        eprintln!("{kinds:?} seed 17 final banks {:?}", a.final_banks);
+    }
+}

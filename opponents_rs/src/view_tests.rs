@@ -121,3 +121,7 @@ fn ecobot_visibility() {
 fn e776_visibility() {
     visibility(OpponentKind::E776);
 }
+#[test]
+fn cha22_visibility() {
+    visibility(OpponentKind::Cha22);
+}

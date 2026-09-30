@@ -850,11 +850,87 @@ class SiblingPolicy:
         self._directory.cleanup()
 
 
+# Cha22's original is the public Kaggle notebook abhinav0370/cha22-agent (ID
+# 135642255) output main.py; no local repository holds it. The caller supplies a
+# downloaded copy, which must match this SHA-256; it is never copied here.
+CHA22_SOURCE_SHA256 = (
+    "127ed3e62988c0474d386db6527ae8ca9de9bb1fe7004128557ddef67126c652"
+)
+CHA22_SOURCE_ENV = "KAGG_CHA22_SOURCE"
+# Kaggle calls a submission's last top-level function: ig_agent, whose layers
+# wrap the earlier agent functions.
+CHA22_ENTRY = "ig_agent"
+
+
+def cha22_source() -> bytes:
+    """Read and verify the caller-supplied original Cha22 submission."""
+    location = os.environ.get(CHA22_SOURCE_ENV)
+    if not location:
+        raise ParityGeneratorError(
+            f"set {CHA22_SOURCE_ENV} to the original Cha22 main.py "
+            f"(SHA-256 {CHA22_SOURCE_SHA256})"
+        )
+    blob = Path(location).read_bytes()
+    actual = hashlib.sha256(blob).hexdigest()
+    if actual != CHA22_SOURCE_SHA256:
+        raise ParityGeneratorError(
+            f"{location}: SHA-256 {actual}, expected {CHA22_SOURCE_SHA256}"
+        )
+    return blob
+
+
+class UpstreamPolicy:
+    """One isolated original Cha22 module per seat and episode.
+
+    The module keeps its own per-player state in globals, so each seat loads a
+    fresh copy under a unique name from a temporary directory.
+    """
+
+    def __init__(self, bot: str):
+        if bot != "cha22":
+            raise ParityGeneratorError(f"unknown upstream oracle {bot!r}")
+        self.bot = bot
+        blob = cha22_source()
+        self._directory = tempfile.TemporaryDirectory(
+            prefix="kagg-oracle-", dir="/private/tmp"
+        )
+        self.name = "_kagg_oracle_" + uuid.uuid4().hex
+        path = Path(self._directory.name) / "main.py"
+        path.write_bytes(blob)
+        previous_bytecode = sys.dont_write_bytecode
+        sys.dont_write_bytecode = True
+        try:
+            spec = importlib.util.spec_from_file_location(self.name, path)
+            if spec is None or spec.loader is None:
+                raise ParityGeneratorError(f"cannot load {bot} entry")
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[self.name] = module
+            spec.loader.exec_module(module)
+            self.agent = getattr(module, CHA22_ENTRY)
+        except BaseException:
+            self.close()
+            raise
+        finally:
+            sys.dont_write_bytecode = previous_bytecode
+
+    def __call__(
+        self, obs: dict[str, Any], config: dict[str, Any], rng: random.Random
+    ) -> Choice:
+        del rng
+        return Choice(self.agent(obs, config))
+
+    def close(self) -> None:
+        sys.modules.pop(self.name, None)
+        self._directory.cleanup()
+
+
 def resolve_policy(
     name: str, module: ModuleType, include_known_divergences: bool = False
 ) -> Policy:
     if name.startswith("sibling:"):
         return SiblingPolicy(name.removeprefix("sibling:"))
+    if name.startswith("upstream:"):
+        return UpstreamPolicy(name.removeprefix("upstream:"))
     if name == "random":
         return random_policy
     if name == "edge":
@@ -959,7 +1035,7 @@ def play(
         policies = []
         for name in [] if spec.script else spec.policies:
             policy = resolve_policy(name, module, include_known_divergences)
-            if isinstance(policy, SiblingPolicy):
+            if isinstance(policy, SiblingPolicy | UpstreamPolicy):
                 stack.callback(policy.close)
             policies.append(policy)
         return _play(spec, kaggle, pin, engine_sha256, policies)
@@ -1358,6 +1434,30 @@ def opponent_specs(start: int, games: int, base_seed: int) -> list[GameSpec]:
     ]
 
 
+CHA22_PAIRS = (
+    ("upstream:cha22", "builtin:starter"),
+    ("builtin:starter", "upstream:cha22"),
+)
+CHA22_BASE_SEED = 20260937
+CHA22_GAMES = 3
+CHA22_ORACLE_DIR = REPO_ROOT / "opponents_rs/fixtures/oracle-cha22"
+
+
+def cha22_specs() -> list[GameSpec]:
+    """Three default-config Cha22-vs-Starter games; Cha22 plays both seats."""
+    return [
+        GameSpec(
+            name=f"oracle-cha22-{index:02d}-"
+            + "-vs-".join(p.split(":")[1] for p in CHA22_PAIRS[index % 2]),
+            seed=CHA22_BASE_SEED + index,
+            policies=CHA22_PAIRS[index % 2],
+            variant="default",
+            policy_seed=CHA22_BASE_SEED + index,
+        )
+        for index in range(CHA22_GAMES)
+    ]
+
+
 def opponent_coverage(records: list[dict[str, Any]]) -> list[dict[str, int]]:
     """Count observable events; rejected_steps means whole Python-step rejection.
 
@@ -1401,7 +1501,8 @@ def opponent_coverage(records: list[dict[str, Any]]) -> list[dict[str, int]]:
                     for tile in row
                 )
             )
-            for order in action.get("market", []):
+            # Cha22 submits empty orders, which the engine ignores.
+            for order in filter(None, action.get("market", [])):
                 if order[0] == "BUY_PRODUCT" and int(order[2]) > public["market"][
                     "inventory"
                 ].get(order[1], 0):
@@ -1538,7 +1639,7 @@ def replay_case(
         policies = []
         for name in spec.policies:
             policy = resolve_policy(name, module)
-            if isinstance(policy, SiblingPolicy):
+            if isinstance(policy, SiblingPolicy | UpstreamPolicy):
                 stack.callback(policy.close)
             policies.append(policy)
         rngs = [random.Random(spec.policy_seed * 2 + seat) for seat in range(2)]
@@ -1682,7 +1783,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument(
         "--preset",
-        choices=["committed", "sweep", "probes", "opponents", "opponent-replay"],
+        choices=[
+            "committed",
+            "sweep",
+            "probes",
+            "opponents",
+            "opponent-replay",
+            "cha22",
+        ],
         required=True,
     )
     parser.add_argument(
@@ -1707,8 +1815,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
-        if args.preset in ("opponents", "opponent-replay"):
+        if args.preset in ("opponents", "opponent-replay", "cha22"):
             oracle_python_runtime()
+        if args.preset == "cha22":
+            cha22_source()
         pin = pinned_engine()
         kaggle, module, digest = load_pinned_kaggle(pin)
     except ParityGeneratorError as error:
@@ -1747,20 +1857,26 @@ def main(argv: list[str] | None = None) -> int:
         except ParityGeneratorError as error:
             print(f"refusing to generate: {error}", file=sys.stderr)
             return 2
+    elif args.preset == "cha22":
+        specs = cha22_specs()
     else:
         specs = probe_specs()
+    oracle = args.preset in ("opponents", "cha22")
     args.out.mkdir(parents=True, exist_ok=True)
     results = []
     for spec in specs:
         with ExitStack() as stack:
-            if args.preset == "opponents":
-                stack.enter_context(opponent_deadline())
+            if oracle:
+                # Cha22's layered Python submission is slower than the 7.1 bots.
+                stack.enter_context(
+                    opponent_deadline(600 if args.preset == "cha22" else 120)
+                )
             result = play(
                 spec, kaggle, module, pin, digest, args.include_known_divergences
             )
         path = args.out / f"{spec.name}.jsonl.gz"
         encoded = encode_trace(result.records)
-        if args.preset == "opponents":
+        if oracle:
             total = sum(
                 p.stat().st_size for p in args.out.glob("*.jsonl.gz") if p != path
             )
@@ -1769,7 +1885,7 @@ def main(argv: list[str] | None = None) -> int:
                     "opponent trace byte budget exceeded before writing"
                 )
         if (
-            args.preset == "opponents"
+            oracle
             and path.exists()
             and path.read_bytes() != encoded
         ):
@@ -1781,7 +1897,7 @@ def main(argv: list[str] | None = None) -> int:
             f"rejected, {path.stat().st_size:,} B, {result.seconds:.1f}s",
             flush=True,
         )
-    if args.preset == "opponents":
+    if oracle:
         write_opponent_manifest(args.out, results, pin)
     elif args.manifest:
         write_manifest(args.out, results, pin)

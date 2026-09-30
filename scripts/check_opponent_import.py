@@ -393,7 +393,8 @@ def _trace_coverage(records: Sequence[Mapping[str, Any]]) -> list[dict[str, int]
             count["hires"] += max(
                 0, len(after["farms"][seat]["hands"]) - len(farm["hands"])
             )
-            for order in record["actions"][seat]["market"]:
+            # Cha22 submits empty orders, which the engine ignores.
+            for order in filter(None, record["actions"][seat]["market"]):
                 count["final_day_sell_orders"] += int(
                     before["day"] == 29 and order[0] == "SELL"
                 )

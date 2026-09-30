@@ -74,6 +74,9 @@ pub struct Game {
     // Required by Starter's byte-exact inline tests/historical hire helper.
     #[allow(dead_code)]
     config: ControllerConfig,
+    // The public engine configuration, which the v2-imported controllers receive
+    // serialized as their `configuration` argument (Cha22's closure).
+    configuration: Config,
     engine: engine_owner::EngineOwner,
     snapshot: StepSnapshot,
     episode: u64,
@@ -106,6 +109,7 @@ impl Game {
         let engine = engine_owner::EngineOwner::new(engine);
         Ok(Self {
             config: ControllerConfig::from_config(config)?,
+            configuration: config.clone(),
             snapshot: engine.snapshot(),
             engine,
             episode: NEXT_EPISODE.fetch_add(1, Ordering::Relaxed),
@@ -139,6 +143,10 @@ impl Game {
     }
     pub fn step_index(&self) -> usize {
         self.snapshot.public.step
+    }
+    /// The configuration supplied at construction (see `from_engine`).
+    pub fn configuration(&self) -> &Config {
+        &self.configuration
     }
 }
 
