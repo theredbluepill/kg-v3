@@ -15,7 +15,7 @@ from owl.kaggriculture.env import (
     KaggricultureVectorizedEnv,
     allocate_observation_buffers,
 )
-from owl.kaggriculture.rewards import KaggricultureRewardConfig
+from owl.kaggriculture.rewards import KaggricultureRewardConfig, bank_rewards
 from owl.kaggriculture.types import (
     KaggricultureActionConfig,
     KaggricultureActionMask,
@@ -76,19 +76,24 @@ def reward_config():
         econ_cap=0.25,
         econ_ineffective_weight=0,
         econ_ineffective_cap=0.1,
+        econ_bank_weight=0.0,
+        econ_bank_scale=100_000.0,
+        econ_bank_cap=0.0,
     )
 
 
 _CPU_DEVICE = torch.device("cpu")
 
 
-def make_env(*, pin_memory=False, transfer_device=_CPU_DEVICE, config=None):
+def make_env(
+    *, pin_memory=False, transfer_device=_CPU_DEVICE, config=None, reward=None
+):
     return KaggricultureVectorizedEnv(
         n_envs=2,
         seed=41,
         seed_stride=2,
         config=KaggricultureGameConfig() if config is None else config,
-        reward_config=reward_config(),
+        reward_config=reward_config() if reward is None else reward,
         reward_mode="win_loss",
         native_threads=1,
         pin_memory=pin_memory,
@@ -139,7 +144,7 @@ def test_every_batch_checks_contract(fake):
     assert result is obs
     assert rewards is env.rewards
     assert dones is env.dones
-    assert metrics == {"fake_metric": [1.0]}
+    assert metrics == {"fake_metric": [1.0], "reward_bank_mean": [0.0]}
     obs.check_contract()
     transition_before = {
         k: v.clone() for k, v in tensors.items() if k not in _tensors(obs)
@@ -527,6 +532,8 @@ def test_real_binding_terminal_step_keeps_completed_transition_and_new_observati
     assert rewards is env.rewards
     assert dones is env.dones
     assert not dones.any()
+    # The adapter's own telemetry value is zero with the bank term off.
+    assert metrics.pop("reward_bank_mean") == [0.0]
     assert all(value == [] for value in metrics.values())
     assert all(env.terminal_metrics(i) is None for i in range(2))
     final_banks = env.transition_banks_after.clone()
@@ -556,6 +563,7 @@ def test_real_binding_terminal_step_keeps_completed_transition_and_new_observati
         "terminal_bank_0": final_banks[:, 0].tolist(),
         "terminal_bank_1": final_banks[:, 1].tolist(),
         "terminal_margin_0": (final_banks[:, 0] - final_banks[:, 1]).tolist(),
+        "reward_bank_mean": [0.0],
     }
     assert env.reset() is obs
     obs.check_contract()
@@ -647,3 +655,29 @@ def test_real_binding_invalid_action_preserves_all_35_buffers_and_diagnostics():
         assert current is not None
         for name, value in old.items():
             np.testing.assert_array_equal(current[name], value)
+
+
+def test_real_binding_reports_the_own_bank_reward_mean_per_step():
+    # Owner term A on: the adapter's telemetry value is the oracle's mean own
+    # bank increment over every seat of the completed transitions.
+    reward = reward_config().model_copy(
+        update={"econ_bank_weight": 1.0, "econ_bank_cap": 0.25}
+    )
+    env = make_env(config=KaggricultureGameConfig(episode_steps=3), reward=reward)
+    _, _, _, metrics = env.step(
+        native_actions(env, market=[["BUY_PRODUCT", "WHEAT", 1]])
+    )
+    increments = bank_rewards(
+        env.transition_banks_before, env.transition_banks_after, reward
+    )
+    assert increments.any(), "the purchase must move a bank"
+    assert metrics["reward_bank_mean"] == [float(increments.mean())]
+    _, _, dones, metrics = env.step(native_actions(env))
+    assert dones.all()
+    assert metrics["reward_bank_mean"] == [
+        float(
+            bank_rewards(
+                env.transition_banks_before, env.transition_banks_after, reward
+            ).mean()
+        )
+    ]

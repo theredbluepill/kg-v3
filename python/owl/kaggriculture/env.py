@@ -2,6 +2,10 @@
 
 Native code owns transitions and rewards. Returned tensors alias one retained
 buffer set; copy before the next mutating call when retaining a CPU value.
+The adapter adds one telemetry value per step, ``reward_bank_mean``: the mean
+own-bank shaping component over every seat, recomputed in float64 from the
+transition banks by the reward oracle (zero with the bank term off). It is
+metric-logger telemetry only and never reaches the model or the rewards.
 """
 
 from __future__ import annotations
@@ -15,7 +19,7 @@ import torch
 from numpy.typing import NDArray
 
 from owl import rs
-from owl.kaggriculture.rewards import KaggricultureRewardConfig
+from owl.kaggriculture.rewards import KaggricultureRewardConfig, bank_rewards
 from owl.kaggriculture.types import (
     JsonValue,
     KaggricultureActionConfig,
@@ -180,6 +184,7 @@ class KaggricultureVectorizedEnv:
         self._obs_spec = obs_spec
         self._action_spec = action_spec
         self._reward_mode = reward_mode
+        self._reward_config = reward_config
         self._pin_memory_enabled = pin_memory
         self.transfer_device = transfer_device
         self._observations = allocate_observation_buffers(n_envs, pin_memory=pin_memory)
@@ -429,6 +434,21 @@ class KaggricultureVectorizedEnv:
             transition_econ_before=arrays.transition_econ_before,
             transition_econ_after=arrays.transition_econ_after,
         )
+        # One value per step: every step covers all n_envs x 2 seats, so the
+        # trainer's per-update mean over steps (and ranks) is the seat mean.
+        # With the term off it is exactly zero and costs nothing.
+        bank_mean = (
+            float(
+                bank_rewards(
+                    self._transition_banks_before,
+                    self._transition_banks_after,
+                    self._reward_config,
+                ).mean()
+            )
+            if self._reward_config.econ_bank_weight > 0
+            else 0.0
+        )
+        metrics["reward_bank_mean"] = [bank_mean]
         return self.observations, self.rewards, self.dones, metrics
 
     def truncate_envs(self, mask: torch.Tensor) -> KaggricultureObsBatch:

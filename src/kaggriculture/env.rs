@@ -534,6 +534,7 @@ impl NativeEnv {
                                 let rewards = self.reward.transition(
                                     &before_econ,
                                     &after_econ,
+                                    before_banks,
                                     after_banks,
                                     done,
                                 )?;

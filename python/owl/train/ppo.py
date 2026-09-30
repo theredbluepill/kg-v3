@@ -798,6 +798,22 @@ class PPOTrainer:
         metrics["train/return_mean"] = float(
             self._masked_mean(player_returns, player_return_mask).item()
         )
+        if isinstance(self._obs, KaggricultureObsBatch):
+            # Common mode: the mean of both seats' segment returns. The winner
+            # critic's values are 2p - 1 per seat with p_0 + p_1 = 1, so they
+            # always sum to zero; this part of the return (the own-bank term's
+            # shared drift; ~0 under the relative-only reward) is outside what
+            # the critic can represent. Its zero-sum counterpart |R0 - R1| / 2
+            # is the antisymmetric part the critic can represent, so the two
+            # compare on the same segments. Telemetry only.
+            both_seats = player_return_mask.all(dim=-1)
+            metrics["train/return_common_mean"] = float(
+                self._masked_mean(player_returns.mean(dim=-1), both_seats).item()
+            )
+            zero_sum_abs = (player_returns[..., 0] - player_returns[..., 1]).abs() / 2
+            metrics["train/return_zero_sum_abs_mean"] = float(
+                self._masked_mean(zero_sum_abs, both_seats).item()
+            )
         metrics["train/return_max"] = float(
             self._masked_max(_masked_reward_max(segments.rewards, value_mask)).item()
         )

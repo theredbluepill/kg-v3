@@ -20,7 +20,11 @@ REWARD: rs.KaggricultureRewardDict = {
     "econ_cap": 0.25,
     "econ_ineffective_weight": 0.0,
     "econ_ineffective_cap": 0.1,
+    "econ_bank_weight": 0.0,
+    "econ_bank_scale": 100000.0,
+    "econ_bank_cap": 0.0,
 }
+_BANK_OFF = (0.0, 100000.0, 0.0)
 TRANSITIONS = (
     "rewards",
     "dones",
@@ -365,25 +369,37 @@ def test_distinct_numpy_bases_with_shared_storage_are_rejected() -> None:
 
 
 @pytest.mark.parametrize(
-    ("values", "accepted"),
+    ("values", "accepted", "bank"),
     [
-        ((0.2, 4.0, 1.0, 0.25, 0.0, 0.0), True),
-        ((0.2, 0.0, 1.0, 0.25, 0.0, 0.0), True),
-        ((0.2, 0.0, 0.0, 0.25, 0.0, 0.0), False),
-        ((0.2, 4.0, 1.0, 0.0, 0.0, 0.0), False),
-        ((1e-300, 1e-300, 1e-300, 0.25, 0.0, 0.0), False),
-        ((1e-300, 1e-300, 1.0, 0.25, 0.0, 0.0), True),
-        ((0.2, 0.0, 0.0, 0.25, 0.001, 0.1), False),
-        ((0.0, 0.0, 0.0, 0.0, 0.0, 0.0), True),
-        ((0.0, 4.0, 1.0, 0.25, 0.0, 0.0), True),
-        ((0.0, 0.0, 0.0, 0.0, 0.001, 0.0), False),
-        ((0.0, 0.0, 0.0, 0.0, 0.001, 0.1), True),
+        ((0.2, 4.0, 1.0, 0.25, 0.0, 0.0), True, _BANK_OFF),
+        ((0.2, 0.0, 1.0, 0.25, 0.0, 0.0), True, _BANK_OFF),
+        ((0.2, 0.0, 0.0, 0.25, 0.0, 0.0), False, _BANK_OFF),
+        ((0.2, 4.0, 1.0, 0.0, 0.0, 0.0), False, _BANK_OFF),
+        ((1e-300, 1e-300, 1e-300, 0.25, 0.0, 0.0), False, _BANK_OFF),
+        ((1e-300, 1e-300, 1.0, 0.25, 0.0, 0.0), True, _BANK_OFF),
+        ((0.2, 0.0, 0.0, 0.25, 0.001, 0.1), False, _BANK_OFF),
+        ((0.0, 0.0, 0.0, 0.0, 0.0, 0.0), True, _BANK_OFF),
+        ((0.0, 4.0, 1.0, 0.25, 0.0, 0.0), True, _BANK_OFF),
+        ((0.0, 0.0, 0.0, 0.0, 0.001, 0.0), False, _BANK_OFF),
+        ((0.0, 0.0, 0.0, 0.0, 0.001, 0.1), True, _BANK_OFF),
+        # Owner term A (2026-09-30), same rows and order as the Rust table.
+        ((0.2, 4.0, 1.0, 0.25, 0.0, 0.1), True, (1.0, 100000.0, 0.25)),
+        ((0.2, 4.0, 1.0, 0.25, 0.0, 0.1), False, (1.0, 0.0, 0.25)),
+        ((0.2, 4.0, 1.0, 0.25, 0.0, 0.1), False, (1.0, 100000.0, 0.0)),
+        ((0.2, 4.0, 1.0, 0.25, 0.001, 0.1), False, (1.0, 100000.0, 0.65)),
+        ((0.2, 4.0, 1.0, 0.25, 0.001, 0.1), True, (1.0, 100000.0, 0.64)),
+        ((0.0, 0.0, 0.0, 0.0, 0.0, 0.0), False, (1.0, 100000.0, 1.0)),
+        ((0.0, 0.0, 0.0, 0.0, 0.0, 0.0), True, (0.0, 0.0, 2.0)),
+        ((0.0, 0.0, 0.0, 0.0, 0.0, 0.0), True, (1e-300, 1e300, 0.25)),
     ],
 )
 def test_reward_admission_shared_binary64_predicate(
-    values: tuple[float, ...], accepted: bool
+    values: tuple[float, ...],
+    accepted: bool,
+    bank: tuple[float, float, float],
 ) -> None:
     shaping, starvation, drought, cap, ineffective, ineffective_cap = values
+    bank_weight, bank_scale, bank_cap = bank
     reward: rs.KaggricultureRewardDict = {
         "reward_mode": "win_loss",
         "econ_shaping": shaping,
@@ -392,12 +408,15 @@ def test_reward_admission_shared_binary64_predicate(
         "econ_cap": cap,
         "econ_ineffective_weight": ineffective,
         "econ_ineffective_cap": ineffective_cap,
+        "econ_bank_weight": bank_weight,
+        "econ_bank_scale": bank_scale,
+        "econ_bank_cap": bank_cap,
     }
     if accepted:
         env = rs.KaggricultureEnv(1, 0, 1, "{}", reward, 1, hire_limit=241)
         assert env.seed_state() == (1, (0,))
     else:
-        with pytest.raises(ValueError, match="econ_"):
+        with pytest.raises(ValueError, match=r"econ_|economic caps must sum below"):
             rs.KaggricultureEnv(1, 0, 1, "{}", reward, 1, hire_limit=241)
 
 

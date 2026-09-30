@@ -1,0 +1,13 @@
+# reward-bank verify r1 seam mutations, run 2026-09-30T01:37:50Z at 3d10f52
+# command: OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 uv run python ops/rebuild-2026-09-29/reward-bank/mutations-r1.py
+   Building owl @ file:///Users/poonszesen/kg-v3-rewardA
+      Built owl @ file:///Users/poonszesen/kg-v3-rewardA
+Uninstalled 1 package in 1ms
+Installed 1 package in 1ms
+KILLED: V11 relative and bank parts rounded to f32 separately (src/kaggriculture/reward.rs) exit=101 :: cargo test --lib kaggriculture::env_tests -q :: ['error: test failed, to rerun pass `--lib`']
+KILLED: V12 finiteness check reads banks_after twice (src/kaggriculture/reward.rs) exit=101 :: cargo test --lib kaggriculture::env_tests -q :: ['error: test failed, to rerun pass `--lib`']
+KILLED: C5 4-rank bank preset back to w_b 1.0 (configs/kaggriculture_4rank_bc_finetune_bank.yaml) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_configs.py :: ['Installed 1 package in 1ms']
+KILLED: C6 2-rank bank preset back to w_b 1.0 (configs/kaggriculture_2rank_bc_finetune_bank.yaml) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_configs.py :: ['1 failed, 43 passed in 0.18s']
+KILLED: P5 zero-sum return drops the absolute value (python/owl/train/ppo.py) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_training_smoke.py -k bank :: ['1 failed, 3 deselected in 0.09s']
+KILLED: P6 Python oracle rounds the parts to f32 separately (python/owl/kaggriculture/rewards.py) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_rewards.py -k round_to_float32_once :: ['1 failed, 70 deselected in 0.02s']
+survivors=0 of 6; tree restored: True

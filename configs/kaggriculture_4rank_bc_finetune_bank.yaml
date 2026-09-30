@@ -1,3 +1,56 @@
+# Recipe J halved with absolute own-bank shaping (owner term A), 4 ranks.
+# Identical to configs/kaggriculture_4rank_bc_finetune.yaml except:
+# - optimizer.muon_lr 0.0002 -> 0.0001 and optimizer.adamw_lr 1e-5 -> 5e-6
+#   (recipe J halved; same warm-up and cosine schedule);
+# - env.reward_shaping.econ_bank_weight 0 -> 0.25 and econ_bank_cap 0 -> 0.25
+#   (econ_bank_scale stays 100000.0), so terminal_scale is 1 - .25 - .25 = 0.5;
+# - rl.checkpoint_freq stays the owner's 10_000_000.
+# Owner, 2026-09-30, verbatim: "A is good + decrease the LR by half?", answering
+# option "A. Absolute bank shaping: a small per-step reward for own bank growth
+# ... capped like the other terms" and halving the recipe-J learning rates.
+# Per step, each seat gets min(.25, .25 * max(0, own bank) / 100000) after
+# minus before, own seat only (not zero-sum), telescoping to the final minus the
+# reset-bank score (3,000 scores .0075). The score saturates at a bank of
+# 100,000: a 70k bank scores .175, so the term moves across the whole observed
+# 73k -> 5.7k slide. The zero-sum winner critic (2p - 1 per seat) cannot
+# represent the common-mode part of this term (logged as
+# train/return_common_mean beside train/return_zero_sum_abs_mean).
+# Provenance of the values: the owner gave none. After the owner's answer the
+# agent proposed "S = 100,000, w_b = 1.0, cap_b = 0.25" with the consequences
+# "A 70k final bank earns +0.175 and 100k+ earns the full +0.25"; w_b = 1.0
+# contradicts those consequences (it saturates at 25k), so the implementer set
+# w_b = 0.25, which realises them. The owner has not confirmed the numbers.
+#
+# Evidence: the 4-rank main run J (W&B spoon/kg-v3 gq94cyyp; kg/rebuild-pod4-evidence
+# c0b551f, ops/rebuild-2026-09-29/pod4-2026-09-30/main-J-4rank/launch.md) held
+# own_bank_mean at about 72-74k up to iteration 34, then fell to 17.9k at
+# iteration 68 and 5.7k at iteration 79, just after the LR peak (iteration 63).
+# The relative-only reward pays nothing for a shared slide into poverty in
+# mirror self-play. Limits: one seed; LR, objective and teacher weight are not
+# separated; nothing here has been trained; the values are agent-proposed, not
+# owner-given or measured optima. See
+# cookbook/decisions/add-absolute-own-bank-shaping-and-halve-the-recipe-j-learning-rates.md.
+#
+# The base preset's header follows.
+# Recipe J: the BC fine-tune preset for 4 ranks. Identical to
+# configs/kaggriculture_4rank.yaml except both learning rates / 10
+# (optimizer.muon_lr 0.002 -> 0.0002, optimizer.adamw_lr 1e-4 -> 1e-5; the same
+# warm-up and cosine schedule), like the 2- and 8-rank presets. Launch it from
+# the BC best with the BC critic head kept:
+#   --load-model-weights <checkpoint_bc_best.pt> --load-model-weights-mode model_only
+#
+# Added 2026-09-30 as the base of configs/kaggriculture_4rank_bc_finetune_bank.yaml.
+# Evidence and limits as in the 2-rank preset (2-rank ablation, kg/pod-ppo-prelanding
+# ddcbf84; see cookbook/references/bc-fine-tune-presets-divide-both-learning-rates-by-ten.md).
+# The 4-rank main run J (W&B spoon/kg-v3 gq94cyyp; kg/rebuild-pod4-evidence c0b551f,
+# ops/rebuild-2026-09-29/pod4-2026-09-30/main-J-4rank/launch.md) ran exactly this
+# recipe as kaggriculture_4rank.yaml plus the two LR overrides (and
+# env.native_threads=4): rank 0's own_bank_mean fell from about 72-74k (iterations
+# 12-34) to 17.9k at iteration 68 and 5.7k at iteration 79, just after the LR
+# peak at iteration 63, and the watchdog stopped it. One seed; the cause (LR,
+# objective or teacher weight) is not attributed.
+#
+# The base config's header follows.
 # Kaggriculture on Isaiah's scaling_6m recipe (upstream 32b3ec9) for 4 ranks
 # (4x RTX PRO 6000). Isaiah's 6M multi-GPU division
 # (winner_ce_6m_4x5090.yaml): n_envs and segments_per_minibatch are divided by
@@ -29,11 +82,10 @@ env:
     econ_cap: 0.25
     econ_ineffective_weight: 0.0
     econ_ineffective_cap: 0.1
-    # Owner term A (2026-09-30): absolute own-bank shaping, off here
-    # (w_b 0 leaves rewards byte-identical); the *_bank presets enable it.
-    econ_bank_weight: 0.0
+    # Owner term A (2026-09-30): absolute own-bank shaping, on.
+    econ_bank_weight: 0.25
     econ_bank_scale: 100000.0
-    econ_bank_cap: 0.0
+    econ_bank_cap: 0.25
   pin_memory: true
   # Provisional: Task 6.1 measures the native step time and verifies or resets it.
   native_threads: 2
@@ -42,10 +94,10 @@ model: kaggriculture
 
 optimizer:
   optimizer: muon
-  adamw_lr: 0.0001
+  adamw_lr: 5.0e-06
   adamw_eps: 1.0e-05
   weight_decay: 0.0
-  muon_lr: 0.002
+  muon_lr: 0.0001
   muon_weight_decay: 0.01
   muon_momentum: 0.95
   lr_schedule:

@@ -1,0 +1,17 @@
+# reward-bank seam mutations, run 2026-09-30T01:19:27Z at 8de8f0d
+# command: OMP_NUM_THREADS=2 CARGO_BUILD_JOBS=2 uv run python ops/rebuild-2026-09-29/reward-bank/mutations.py
+KILLED: R1 bank term reads the rival's bank (src/kaggriculture/reward.rs) exit=101 :: cargo test --lib kaggriculture::env_tests -q :: ['error: test failed, to rerun pass `--lib`']
+KILLED: R2 terminal_scale ignores the bank cap (src/kaggriculture/reward.rs) exit=101 :: cargo test --lib kaggriculture::env_tests -q :: ['error: test failed, to rerun pass `--lib`']
+KILLED: R3 cap budget ignores the bank cap (src/kaggriculture/reward.rs) exit=101 :: cargo test --lib kaggriculture::env_tests -q :: ['error: test failed, to rerun pass `--lib`']
+KILLED: R4 positive weight no longer needs a positive scale (src/kaggriculture/reward.rs) exit=101 :: cargo test --lib kaggriculture::env_tests -q :: ['error: test failed, to rerun pass `--lib`']
+KILLED: R5 env passes the after banks as before banks (src/kaggriculture/env.rs) exit=101 :: cargo test --lib kaggriculture::env_tests -q :: ['error: test failed, to rerun pass `--lib`']
+KILLED: R6 negative banks are not clamped to zero (src/kaggriculture/reward.rs) exit=101 :: cargo test --lib kaggriculture::env_tests -q :: ['error: test failed, to rerun pass `--lib`']
+KILLED: P1 Python terminal_scale ignores the bank cap (python/owl/kaggriculture/rewards.py) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_rewards.py :: ['Installed 1 package in 1ms']
+KILLED: P2 Python admission drops the scale requirement (python/owl/kaggriculture/rewards.py) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_rewards.py :: ['1 failed, 13 passed in 0.02s']
+KILLED: P3 adapter metric averages seat 0 only (python/owl/kaggriculture/env.py) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_env.py -k bank :: ['1 failed, 54 deselected in 0.03s']
+KILLED: P4 common-mode return reads seat 0 only (python/owl/train/ppo.py) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_training_smoke.py -k bank :: ['1 failed, 3 deselected in 0.09s']
+KILLED: C1 4-rank bank preset scale 50,000 (configs/kaggriculture_4rank_bc_finetune_bank.yaml) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_configs.py :: ['1 failed, 44 passed in 0.22s']
+KILLED: C2 8-rank bank preset keeps recipe J's muon_lr (configs/kaggriculture_8rank_bc_finetune_bank.yaml) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_configs.py :: ['1 failed, 42 passed in 0.18s']
+KILLED: C3 2-rank bank preset drifts vf_coef (configs/kaggriculture_2rank_bc_finetune_bank.yaml) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_configs.py :: ['1 failed, 46 passed in 0.20s']
+KILLED: C4 4-rank recipe-J base keeps the full adamw_lr (configs/kaggriculture_4rank_bc_finetune.yaml) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_configs.py :: ['1 failed, 35 passed in 0.14s']
+survivors=0 of 14; tree restored: True

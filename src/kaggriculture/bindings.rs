@@ -328,7 +328,7 @@ fn integer_seed(value: &Bound<'_, PyAny>, name: &str) -> PyResult<i64> {
         .map_err(|error| PyOverflowError::new_err(format!("{name}: {error}")))
 }
 fn reward_config(value: &Bound<'_, PyDict>) -> PyResult<RewardConfig> {
-    const KEYS: [&str; 7] = [
+    const KEYS: [&str; 10] = [
         "reward_mode",
         "econ_shaping",
         "econ_starvation_weight",
@@ -336,10 +336,13 @@ fn reward_config(value: &Bound<'_, PyDict>) -> PyResult<RewardConfig> {
         "econ_cap",
         "econ_ineffective_weight",
         "econ_ineffective_cap",
+        "econ_bank_weight",
+        "econ_bank_scale",
+        "econ_bank_cap",
     ];
     if !value.is_exact_instance_of::<PyDict>() || value.len() != KEYS.len() {
         return Err(PyValueError::new_err(
-            "reward_config: expected plain dict with exactly the seven required keys",
+            "reward_config: expected plain dict with exactly the ten required keys",
         ));
     }
     for key in KEYS {
@@ -381,6 +384,9 @@ fn reward_config(value: &Bound<'_, PyDict>) -> PyResult<RewardConfig> {
         econ_cap: coefficient("econ_cap")?,
         econ_ineffective_weight: coefficient("econ_ineffective_weight")?,
         econ_ineffective_cap: coefficient("econ_ineffective_cap")?,
+        econ_bank_weight: coefficient("econ_bank_weight")?,
+        econ_bank_scale: coefficient("econ_bank_scale")?,
+        econ_bank_cap: coefficient("econ_bank_cap")?,
     };
     config.validate().map_err(PyValueError::new_err)?;
     Ok(config)
@@ -1148,6 +1154,9 @@ mod detached_test {
                     ("econ_cap", 0.25),
                     ("econ_ineffective_weight", 0.),
                     ("econ_ineffective_cap", 0.1),
+                    ("econ_bank_weight", 0.),
+                    ("econ_bank_scale", 100_000.),
+                    ("econ_bank_cap", 0.),
                 ] {
                     reward.set_item(key, value).unwrap();
                 }
