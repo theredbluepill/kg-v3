@@ -1,0 +1,22 @@
+# test_driver_cleanup.py  utc=2026-09-29T09:50:02Z
+# platform=macOS-26.4-arm64-arm-64bit python=3.9.6
+# emulated `timeout -s TERM -k 20 3` (GNU timeout not installed locally)
+# test script sha256=15007f03d7b3b656200ab6cec8f6ab755faf6cffe3d27da17cbb5f24195169eb
+Traceback (most recent call last):
+  File "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/test_driver_cleanup.py", line 249, in <module>
+    sys.exit(main())
+  File "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/test_driver_cleanup.py", line 219, in main
+    run_scenario("old_phase1", OLD_DRIVER)]
+  File "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/test_driver_cleanup.py", line 184, in run_scenario
+    pid_alive = {f.name: alive(int(f.name.split("-")[1])) for f in pids}
+  File "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/test_driver_cleanup.py", line 184, in <dictcomp>
+    pid_alive = {f.name: alive(int(f.name.split("-")[1])) for f in pids}
+  File "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/test_driver_cleanup.py", line 165, in alive
+    st = subprocess.run(["ps", "-o", "stat=", "-p", str(pid)], capture_output=True,
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 505, in run
+    with Popen(*popenargs, **kwargs) as process:
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 951, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 1821, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+PermissionError: [Errno 1] Operation not permitted: 'ps'

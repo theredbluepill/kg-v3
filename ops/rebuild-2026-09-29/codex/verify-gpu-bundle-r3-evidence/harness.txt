@@ -1,0 +1,8 @@
+# ps denied and pgrep cannot enumerate in this sandbox.
+# Liveness: os.kill(pid, 0) for recorded leaders/grandchildren/boundary PID.
+# PermissionError is conservatively treated as alive; no zombie exclusion.
+# Test tempdirs retained; driver/test source and assertions unchanged.
+{"label": "fixed", "test_exit": 0}
+{"label": "parent", "test_exit": 1}
+{"recorded_pids": 26, "final_survivors": []}
+# Review assertions PASS: fixed green, parent red at boundary, no survivors.

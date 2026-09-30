@@ -1,0 +1,113 @@
+"""Review-only harness: preserve test source, substitute sandbox liveness probes.
+
+Run the committed six-scenario test against HEAD, then against its parent.
+Only parent-side observation, receipt retention and selected driver path differ.
+Child driver/test code, signal injection, timeout and assertions are unchanged.
+"""
+import contextlib
+import importlib.util
+import json
+import os
+import signal
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[3]
+BUNDLE = ROOT / 'ops/rebuild-2026-09-29/gpu-checks-2026-09-29'
+TEST = BUNDLE / 'scripts/test_driver_cleanup.py'
+spec = importlib.util.spec_from_file_location('cleanup_review', TEST)
+test = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(test)
+test.HERE = ROOT / 'ops/placeholder'
+mkdtemp = test.tempfile.mkdtemp
+original_timeout = test.emulated_timeout
+original_scenario = test.run_scenario
+directories = {}
+outcomes = []
+
+def alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+def pid_roles(wd):
+    result = {int(f.name.split('-')[1]): f.name for f in wd.glob('pids/*')}
+    boundary_path = wd / 'boundary.json'
+    if boundary_path.exists():
+        pid = json.loads(boundary_path.read_text())['stage_pid']
+        result[pid] = f'race_stage-{pid}'
+    return result
+
+def survivors(token):
+    return [f'{pid} {role}' for pid, role in sorted(pid_roles(directories[token]).items())
+            if alive(pid)]
+
+def timeout(cmd, duration, kill_after, log_path):
+    directories[cmd[-1]] = log_path.parent
+    return original_timeout(cmd, duration, kill_after, log_path)
+
+def scenario(name, driver):
+    result = original_scenario(name, driver)
+    outcomes.append(result)
+    (HERE / 'scenario-results.json').write_text(json.dumps(outcomes, indent=2) + '\n')
+    print(f'# completed {driver.name} {name}', flush=True)
+    return result
+
+test.alive = alive
+test.survivors = survivors
+test.emulated_timeout = timeout
+test.run_scenario = scenario
+test.tempfile.mkdtemp = lambda **kw: mkdtemp(dir=HERE, **kw)
+test.shutil.rmtree = lambda wd: None
+print('# ps denied and pgrep cannot enumerate in this sandbox.', flush=True)
+print('# Liveness: os.kill(pid, 0) for recorded leaders/grandchildren/boundary PID.', flush=True)
+print('# PermissionError is conservatively treated as alive; no zombie exclusion.', flush=True)
+print('# Test tempdirs retained; driver/test source and assertions unchanged.', flush=True)
+exit_codes = {}
+try:
+    for label, driver in [('fixed', BUNDLE / 'scripts/driver.py'),
+                          ('parent', HERE / 'parent-driver.py')]:
+        test.NEW_DRIVER = driver
+        with (HERE / f'{label}-cleanup.txt').open('w') as fh:
+            with contextlib.redirect_stdout(fh):
+                exit_codes[label] = test.main()
+        print(json.dumps({'label': label, 'test_exit': exit_codes[label]}), flush=True)
+finally:
+    before = {str(pid): {'alive': alive(pid), 'role': role, 'workdir': str(wd)}
+              for wd in directories.values() for pid, role in pid_roles(wd).items()}
+    (HERE / 'pids-before-final-cleanup.json').write_text(json.dumps(before, indent=2) + '\n')
+    for wd in directories.values():
+        for pid, role in pid_roles(wd).items():
+            if alive(pid):
+                if role.startswith(('leader-', 'race_stage-')):
+                    with contextlib.suppress(ProcessLookupError, PermissionError):
+                        os.killpg(pid, signal.SIGKILL)
+                with contextlib.suppress(ProcessLookupError, PermissionError):
+                    os.kill(pid, signal.SIGKILL)
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and any(alive(int(pid)) for pid in before):
+        time.sleep(0.1)
+    final = {pid: {'alive': alive(int(pid)), 'role': info['role'], 'workdir': info['workdir']}
+             for pid, info in before.items()}
+    (HERE / 'final-pids.json').write_text(json.dumps(final, indent=2) + '\n')
+    print(json.dumps({'recorded_pids': len(final),
+                      'final_survivors': [pid for pid, info in final.items() if info['alive']]}),
+          flush=True)
+    (HERE / 'test-exit-codes.json').write_text(json.dumps(exit_codes, indent=2) + '\n')
+
+assert exit_codes == {'fixed': 0, 'parent': 1}, exit_codes
+assert not any(info['alive'] for info in final.values()), final
+assert len(outcomes) == 12, len(outcomes)
+for r in outcomes[6:]:
+    if r['scenario'].startswith('new_spawn_'):
+        assert r['stage_pids_alive'], r
+        assert r['boundary']['registered_at_signal'] is False, r
+        assert r['rc'] == 143 and r['timed_out'] is False, r
+        assert r['survivors_after_test_kill'] == [], r
+print('# Review assertions PASS: fixed green, parent red at boundary, no survivors.', flush=True)
