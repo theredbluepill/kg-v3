@@ -1,5 +1,9 @@
 # Change log
 
+## 2026-09-30 — Land the 8-rank prep (halved checkpoint interval, recipe-J presets, 8-rank run package) onto the integration
+
+Owner, verbatim: "cut the interval into half. thanks. also stop any running J/K. We will prepare the run for 8-rank". Staging branch `kg/merge-8rank-prep-c` merges `kg/rebuild-8rank-prep` `fee4c33` with `--no-ff` onto the integration tip `7e87f54` as `2907af1`. The branch was cut from that tip, so nothing conflicted and the merged tree equals the branch's. Full `just prepare` exits 0: Rust 274 passed with 5 ignored plus the other crates, and Python 2,729 passed with 18 skipped, plus mypy, docs-lint and docs-fresh (`ops/rebuild-2026-09-29/merge-8rank-prep-c/prepare.log`). A first attempt failed only because the git-ignored Orbit parity fixtures are absent from a fresh worktree. They were copied in from the main checkout (byte-identical), and the log header records their hashes. Five config-seam mutations are killed (`mutations.log` beside it). The merge verification `ops/rebuild-2026-09-29/codex/claude-verify-merge-8rank-prep.md` (APPROVE) is by the landing Claude agent substituting for Codex (owner-approved; not a Codex verdict). The [[decisions/halve-the-kaggriculture-checkpoint-interval-to-10m-steps|cadence Decision]] records the landing. The phase tracker's 6.2 and 6.3b rows are updated: 6.3b is prepared, not run. Nothing ran on a GPU and no pod was created or touched.
+
 ## 2026-09-30 — Apply the 8-rank package review: checkpoint hash custody, nsys kill, handoff launch wording
 
 An independent Claude verification of `kg/rebuild-8rank-prep` (`ops/rebuild-2026-09-29/codex/claude-verify-8rank-prep-r1.md`, APPROVE WITH EDITS; a Claude stand-in, not a Codex verdict) raised three P2s and several P3s. All are applied, in docs and scripts only. Nothing ran on a GPU and no pod was created or touched.
