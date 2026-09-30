@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-09-30 — Apply the reward-bank verify r2 edits: operation-order and sign-of-zero pins, config migration note
+
+An independent Claude verification of `kg/rebuild-reward-bank` `8aeba3d` (`ops/rebuild-2026-09-29/codex/claude-verify-reward-bank-r2.md`, APPROVE WITH EDITS; a Claude stand-in, not a Codex verdict) found only minor issues, and its edits are applied on the same branch:
+- **Operation order (finding 1).** Rust and Python rows at `w_b` .1 pin `bank_score` as the product, then the quotient, then the cap, on banks where the other association differs in the last bit. Its surviving mutation M11 is now killed.
+- **Sign of zero (finding 2).** `transition_rewards` adds the terminal term only where `dones` is true, so the oracle keeps a native non-terminal `-0.0`. The live native games compare bits, including the sign of zero, and a new tiny-W row must produce a native `-0.0`. Native rewards are unchanged.
+- **Migration (finding 3).** `README.md`, `docs/rl-api-specs.md` and the Decision say that a pre-change `config.yaml` needs the three off-valued bank fields, which reproduce its rewards exactly.
+- **Notes (findings 4, 5).** The [[decisions/add-absolute-own-bank-shaping-and-halve-the-recipe-j-learning-rates|term A Decision]] cites verify r2's report of the J/2 LR-only control (`nw3klj2s`) without checking it, and its inventory now names both return metrics.
+
+3 of 4 r2 seam mutations are killed: the Rust and Python operation-order mutants and the pre-r2 oracle under the new sign-of-zero unit test. The survivor runs the pre-r2 oracle against the live tiny-W game, whose only native -0.0 falls on a seat that trails in bank, where the old oracle also yields -0.0; the live row therefore pins native behaviour, and the unit test is the discriminator, as the test's comment now says (`ops/rebuild-2026-09-29/reward-bank/mutations-r2.log`). Full `just prepare` exits 0: Rust 284 passed with 5 ignored plus the other crates, Python 2,831 passed with 18 skipped, plus mypy, docs-lint and docs-fresh (`prepare-r2.log` beside it). Also revised the [[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]] and the decisions index. Nothing was trained, and no pod was touched.
+
 ## 2026-09-30 — Apply the reward-bank verify r1: bank presets at w_b .25, rounding and finiteness pins, zero-sum return metric
 
 An independent Claude verification of `kg/rebuild-reward-bank` `ab98e73` (`ops/rebuild-2026-09-29/codex/claude-verify-reward-bank-r1.md`, REQUEST CHANGES; a Claude stand-in, not a Codex verdict) found one blocker. The agent's proposal after the owner's "A is good + decrease the LR by half?" read "Proposed values: S = 100,000, w_b = 1.0, cap_b = 0.25" with "A 70k final bank earns +0.175 and 100k+ earns the full +0.25". But `w_b = 1.0` saturates at 25k, which contradicts those consequences and leaves run J's 73k → 25k slide unpaid, and the first commit recorded the numbers as "the owner's values". On the same branch (`3d10f52` code, then this record):

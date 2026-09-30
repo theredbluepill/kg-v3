@@ -487,6 +487,10 @@ def test_extreme_value_native_rewards_match_independent_oracle(overrides) -> Non
             np.sum((out["rewards"] == 0) & np.signbit(out["rewards"]))
         )
     if config.econ_shaping == 1e-300:
+        # Pins that native publishes the -0.0 and the oracle matches it. It does
+        # not discriminate the oracle's terminal gating: here the -0.0 seat trails
+        # in bank, so a pre-r2 `terminal * dones` also gave -0.0. The unit test
+        # test_non_terminal_rewards_keep_the_native_sign_of_zero discriminates.
         assert negative_zeros > 0, "the tiny-W row must produce a native -0.0"
     assert out["dones"].all()
     assert out["transition_econ_after"][0, 0, 0] >= 1

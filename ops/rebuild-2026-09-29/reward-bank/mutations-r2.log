@@ -1,0 +1,13 @@
+KILLED: M11 Rust bank score takes the quotient before the product (src/kaggriculture/reward.rs) exit=101 :: cargo test --lib kaggriculture::env_tests -q :: ['error: test failed, to rerun pass `--lib`']
+KILLED: O1 Python oracle bank score takes the quotient before the product (python/owl/kaggriculture/rewards.py) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_rewards.py -k product_then_the_quotient :: ['Installed 1 package in 1ms']
+KILLED: Z1 Python oracle adds the terminal term on every step (the pre-r2 oracle) (python/owl/kaggriculture/rewards.py) exit=1 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_rewards.py -k sign_of_zero :: ['1 failed, 74 deselected in 0.03s']
+SURVIVED: Z2 the pre-r2 oracle against the live tiny-W native game (python/owl/kaggriculture/rewards.py) exit=0 :: uv run pytest -q -x -p no:cacheprovider tests/kaggriculture/test_rewards.py -k extreme_value_native and tiny :: ['2 passed, 73 deselected in 0.06s']
+survivors=1 of 4; tree restored: True
+# Run at 71a964d. Z2 is not a test failure to fix: in this deterministic live
+# game the native -0.0 occurs only for seat 0 at steps 47 and 71, while seat 0
+# trails in bank (1,598 vs 3,002; the same for seeds 17000-17005), so the pre-r2
+# oracle's `terminal * dones` is also -0.0 there and it matches. The live row
+# pins that native publishes -0.0 and the oracle matches it; the unit test
+# test_non_terminal_rewards_keep_the_native_sign_of_zero (Z1, killed) is the
+# discriminator. A comment in the live test now says so (comment-only edit,
+# rechecked with ruff format/check and tests/kaggriculture/test_rewards.py: 75 passed).
