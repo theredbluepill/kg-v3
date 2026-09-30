@@ -1,0 +1,129 @@
+# Owner reward "bank + margin + sign" with staggered game phases and a long
+# credit window, 4 ranks. Self-play.
+# configs/kaggriculture_4rank_margin.yaml (J/2's recipe, term M) except:
+# - the reward: 0.25 x own bank (term A, scale 150,000) + 0.25 x cash
+#   difference (term M, scale 100,000) + 0.5 x terminal sign (+1/-1/0):
+#   econ_bank_weight .25, econ_bank_scale 150000, econ_bank_cap .25;
+#   econ_margin_weight .25, econ_margin_scale 100000, econ_margin_cap .25;
+#   econ_shaping 0 (death/drought off), so terminal_scale = 1 - .25 - .25 = .5.
+#   The weights, scales and caps were proposed by the agent and approved by the
+#   owner ("OK go ahead."), as in kg/rebuild-critic-offset's
+#   kaggriculture_4rank_bank_critic.yaml; they are not owner-derived or
+#   measured optima.
+# - rl.initial_stagger true: env i's first game is cut at a step drawn from
+#   env.seed and the global env index (uniform over 1..719, the 720-turn game's
+#   719 transitions) and bootstrapped by the critic; later games run to their
+#   natural end. Every rollout then mixes all game phases and, at 256 global
+#   envs and 16,384 env steps per iteration, expects about 16384 / 719 = 22.8
+#   game ends (train/game_phase_frac_*, train/game_ends, train/stagger_cuts).
+# - the credit window: rl.horizon 64 -> 256 and rl.gae_lambda 0.9 -> 1.0 (gamma
+#   stays 1.0), so an advantage is the Monte Carlo return to the segment end
+#   plus the critic's bootstrap, 256 turns (10.7 in-game days) instead of the
+#   ~10-turn effective window of lambda 0.9. env.n_envs 64 -> 16 and
+#   rl.segments_per_minibatch 4 -> 1 keep the global work equal: 16 x 256 x 4 =
+#   16,384 env steps per iteration, 16 optimizer steps per iteration and 256
+#   (horizon) x 1 (segment) = 256 env steps, 512 seat rows, per rank per
+#   optimizer step (1,024 env steps globally, as before). What changes is the
+#   composition: one env's 256-step segment per rank per step (4 envs per
+#   global step) instead of four 64-step segments (16 envs).
+# Owner, 2026-09-30, verbatim: "let's switch back to self play no matter what,
+# and think about how do we get the agent to earn moneny for real?" and, of the
+# main agent's list of what a per-player critic does not fix: "- Lockstep game
+# phases and the short credit window for long-payback investments. for sure."
+# The values are the plan's F2/F3 targets (ops/earn-money-2026-09-30/plan.md in
+# the integration worktree) on the v2 precedent (staggered starts; 256-turn
+# segments with lambda 1), not measured optima in v3.
+# Memory: per-rank forward rows are unchanged (minibatch 1 x 256 x 2 = 512;
+# teacher chunk min(128, 16) x 256 x 2 = 8,192 rows, the whole rollout, cached
+# as 837,287,936 B FP32 per rank; rollout buffers hold 16 x 256 = 4,096 env
+# steps). The rollout forward shrinks to 32 rows but runs 256 times per
+# iteration instead of 64: rollout wall time is unmeasured. Evaluation plays
+# env.n_envs games on rank 0, so the last-best promotion now has 16 games per
+# checkpoint instead of 64.
+# model.critic_offset (the per-seat critic offset, kg/rebuild-critic-offset) is
+# not on this base: when that branch lands, switch `model:` to
+# kaggriculture_critic_offset as in its kaggriculture_4rank_bank_critic.yaml.
+# Launch: a warm start with --load-model-weights <checkpoint> (model_only).
+# Limits: nothing here has been trained; one seed; the rollout-time and
+# compile-time cost of the 256-step horizon are unmeasured. See
+# cookbook/decisions/stagger-game-phases-and-lengthen-the-credit-window.md.
+#
+# The margin preset's header lives in configs/kaggriculture_4rank_margin.yaml.
+env:
+  n_envs: 16
+  obs_spec:
+    obs_spec: kaggriculture
+    schema_version: 3
+  action_spec:
+    action_spec: kaggriculture
+    hire_limit: 241
+  reward_mode: win_loss
+  # Owner reward (2026-09-30): .25 own bank + .25 cash difference + .5 sign.
+  # Death/drought shaping (econ_shaping) is off; its coefficients are inert.
+  reward_shaping:
+    econ_shaping: 0.0
+    econ_starvation_weight: 4.0
+    econ_drought_weight: 1.0
+    econ_cap: 0.25
+    econ_ineffective_weight: 0.0
+    econ_ineffective_cap: 0.1
+    econ_bank_weight: 0.25
+    econ_bank_scale: 150000.0
+    econ_bank_cap: 0.25
+    econ_margin_weight: 0.25
+    econ_margin_scale: 100000.0
+    econ_margin_cap: 0.25
+  pin_memory: true
+  native_threads: 4
+
+model: kaggriculture
+
+optimizer:
+  optimizer: muon
+  adamw_lr: 5.0e-06
+  adamw_eps: 1.0e-05
+  weight_decay: 0.0
+  muon_lr: 0.0001
+  muon_weight_decay: 0.01
+  muon_momentum: 0.95
+  lr_schedule:
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 1000
+    decay_steps: 400_000
+    lr_min_ratio: 0.01
+
+rl:
+  # Credit window: 256-turn segments with lambda 1 (see the header).
+  horizon: 256
+  initial_stagger: true
+  # Owner decision 2026-09-30 ("cut the interval into half"): 10M global env
+  # steps; about every 610 iterations at 16,384 env steps per iteration. See
+  # cookbook/decisions/halve-the-kaggriculture-checkpoint-interval-to-10m-steps.md.
+  checkpoint_freq: 10_000_000
+  ppo_epochs: 1
+  segments_per_minibatch: 1
+  gradient_accumulation_steps: 1
+  # gamma=1.0 keeps the critic softmax well-defined
+  gamma: 1.0
+  gae_lambda: 1.0
+  clip_coef: 0.2
+  vf_clip_coef: null
+  vf_coef: 2.0
+  ent_coef: 1e-6
+  max_grad_norm: 10.0
+  target_kl: null
+  ppo_clip_mode: per_player
+  normalize_advantages: true
+  eval_replay_games: 0
+  # scaling_6m's last-best teacher, precomputed once per update over the whole
+  # rollout (837,287,936 B per rank, FP32, as at horizon 64 x 64 envs). The
+  # teacher checkpoint is a launch-time input (--load-model-weights or
+  # -o rl.teacher_init=CHECKPOINT).
+  teacher_mode: last_best
+  teacher_kl_coef: 0.005
+  teacher_value_coef: 0.005
+  # A chunk size, not a batch: per rank min(128, 16) = 16 envs, the whole
+  # rollout, 8,192 rows, in one precompute call.
+  teacher_segments_per_minibatch: 128
+  compile_mode: default
+  dtype: bfloat16

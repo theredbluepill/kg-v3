@@ -1229,6 +1229,64 @@ env:
   (`docs/rules-parity-coverage.md`), and its stepping throughput in training
   is unmeasured.
 
+#### Staggered game phases (`rl.initial_stagger`) and the credit window
+
+Owner, 2026-09-30, of what a per-player critic does not fix: "- Lockstep game
+phases and the short credit window for long-payback investments. for sure."
+Every Kaggriculture game lasts `episodeSteps - 1` = 719 transitions and all
+envs reset together, so without a stagger each 64-step rollout trains one game
+phase and only about one rollout in eleven contains a game end.
+
+```yaml
+rl:
+  initial_stagger: true   # default false; omitted from the dump when false
+```
+
+- **Offsets.** `owl.train.ppo.initial_stagger_steps(seed, rank, n_envs,
+  episode_steps)` gives env `i` of `rank` one uniform draw `u` from
+  `1..episode_steps - 1`, seeded by `(env.seed, tag, rank * n_envs + i)`. It
+  depends only on the global env index, not on the world size, so ranks draw
+  different offsets. `run_ppo` passes the result to `PPOTrainer` as
+  `initial_stagger=` (an `InitialStagger`). The trainer refuses the config
+  without the offsets and the offsets without the config.
+- **Seam.** The stagger reuses the stateless truncation path
+  (`_apply_truncation`). Every env's first game is flagged, and its cut step is
+  `u`, not `rl.truncation_step`. The critic evaluates the cut state, and
+  `_cut_truncated_envs_` ends the trajectory there (done, `truncated`,
+  `bootstrap_values`; the transition's economic reward is kept). Then
+  `truncate_envs` resets the env. A new game is never flagged, so later games
+  run to their natural end. `u = 719` coincides with the natural end, so that
+  env's first game completes normally; the phase is uniform over all 719
+  residues.
+- **Metrics.** A cut publishes no transition metrics (the native truncate path
+  commits no `TransitionCache`), so a cut game adds nothing to `train/bank_games`,
+  `train/own_bank_*` or `train/total_games_played`. Per update, gathered over
+  ranks, and only under the stagger:
+  - `train/game_phase_frac_{0..5}`: the fraction of acted env observations whose
+    game step lies in each sixth of a game (120 turns, five in-game days);
+  - `train/game_ends`: completed games;
+  - `train/stagger_cuts`: first games cut.
+- **Rules.** Kaggriculture only (`FullConfig` refuses Orbit), `episodeSteps >= 2`,
+  a stateless model, and no combination with `rl.truncation_prob` or
+  `rl.truncation_step`.
+- **Resume.** A resumed launch restarts every env at step 0, and the same
+  offsets desynchronize it again. The step counters are not checkpointed.
+- **Stateless policy.** Offsets and step counters live in the trainer. They
+  never reach observations, embeddings, heads, losses, rewards or checkpoints.
+  A cut resets the env like any truncation.
+
+The credit window is configuration only: with `rl.gamma: 1.0` and
+`rl.gae_lambda: 1.0`, `compute_gae` returns the Monte Carlo return to the first
+`done` in the segment. At a cut it adds the cut's bootstrap; without a `done` it
+adds the segment-end critic value (`last_values`). The presets
+`configs/kaggriculture_{4,2}rank_bank_critic_credit.yaml` set `horizon: 256`,
+`gae_lambda: 1.0` and `initial_stagger: true`. They scale per-rank `env.n_envs`
+to 16 (4 ranks) or 32 (2 ranks) and `rl.segments_per_minibatch` to 1 or 2.
+This keeps 16,384 global env steps and 16 optimizer steps per iteration, and
+the same per-rank minibatch and teacher forward rows. The rollout forward runs
+256 times per iteration on a quarter of the rows. Rank 0's last-best evaluation
+plays `env.n_envs` games, a quarter of before. Both costs are unmeasured.
+
 ### Structured native observation buffers (Task 1.3)
 
 The root `src/kaggriculture/` boundary uses the following named buffers. Every

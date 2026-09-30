@@ -9,6 +9,7 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/briefs/1.4.md"
   - resource: "repository:ops/rebuild-2026-09-29/plan.md"
   - resource: "repository:docs/kaggriculture-contract.md"
+  - resource: "repository:tests/kaggriculture/test_initial_stagger.py"
   - resource: "repository:python/owl/kaggriculture/evaluation.py"
   - resource: "repository:python/owl/train/config.py"
   - resource: "repository:python/owl/train/ppo.py"
@@ -112,7 +113,7 @@ These tasks forked before Task 3.1 registered `KaggricultureTransformerConfig` a
 
 - **Config registration landed with Tasks 3.1 and 3.4** (see below). The guards and the Kaggriculture evaluation branches are now reachable through validated configs; `EnvConfig` itself stays Orbit-only.
 - **Policy evaluation runs on CPU.** Since Task 1.5 Stage 2, `_create_eval_env` builds the seeded native adapter, and `test_kaggriculture_native_evaluations_draw_fresh_reproducible_worlds` runs: different `env_steps` draw different worlds, and a repeated evaluation reproduces its worlds and final banks with fixed legal actions. Since the Task 3.1 remainder (`15ea55f`), `_evaluate_games` maps Kaggriculture batches with the shared `ppo._obs_to_device` and `_select_actions`, and `test_kaggriculture_policy_evaluation_runs_native_games` plays native games with policies and scores raw banks; swapping `bank_0`/`bank_1` fails it (Claude's review mutation). Replay export stays Orbit-only: a Kaggriculture `rl.eval_replay_games > 0` fails at startup until Task 7.3.
-- **Truncation through the trainer is untested for Kaggriculture.** Since `15ea55f`, `_obs_index` dispatches `KaggricultureActionMask`, but only the pure cut rule is tested; no test drives a Kaggriculture `_apply_truncation` through the native env. The Kaggriculture `truncate_envs` must also keep the transition buffers (contract).
+- **Truncation through the trainer is now tested for Kaggriculture.** Since `15ea55f`, `_obs_index` dispatches `KaggricultureActionMask`. `tests/kaggriculture/test_training_smoke.py::test_truncation_bootstraps_through_the_native_trainer` (`rl.truncation_prob`) and `tests/kaggriculture/test_initial_stagger.py` (the first-game stagger of the [[../decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger Decision]]) drive a Kaggriculture `_apply_truncation` through the native env: the cut is done, bootstrapped and reset, and publishes no bank telemetry. The Kaggriculture `truncate_envs` must also keep the transition buffers (contract).
 - **Orbit keeps a quirk.** Its truncation zeroes the whole cut row, including a 4-player elimination reward (−1) earned on that same step. That is Isaiah's behavior, recorded here, not changed.
 - **Telemetry is new for Orbit too.** Orbit runs now log `eval/games`, `eval/promoted` and `eval/promotion_threshold`. No selection behavior changed.
 - **The seed is unexercised natively.** The seed band is checked against the `i64` signature and the contract's non-negativity. No native game has consumed a seed in `[2**62, 2**63)` yet. Per-game seed custody for replays remains Task 7.3's.
