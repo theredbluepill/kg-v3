@@ -1,0 +1,22 @@
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "status": "driver_start", "budget_s": 3300}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "stage": "c3_mutated", "gpu": 0, "role": "correct", "backends": "ATEN", "cmd": ["/workspace/kg-v3-rebuild/.venv/bin/python", "/private/tmp/gpu-r3-mut-z43e6hsa/bundle/scripts/gemm_backend_wrap.py", "--backends", "ATEN", "--record", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-iq68z12k/c3_mutated.backend.json", "--", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-iq68z12k/noop.py", "--out", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-iq68z12k/c3_mutated.jsonl"], "status": "launch", "timeout_s": 3300}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "stage": "c3_mutated", "gpu": 0, "role": "correct", "rc": 0, "status": "pass"}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "status": "phase1_done", "stopped": false}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "stage": "c4_after", "gpu": 0, "role": "correct", "backends": "ATEN", "cmd": ["/workspace/kg-v3-rebuild/.venv/bin/python", "/private/tmp/gpu-r3-mut-z43e6hsa/bundle/scripts/gemm_backend_wrap.py", "--backends", "ATEN", "--record", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-iq68z12k/c4_after.backend.json", "--", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-iq68z12k/noop.py", "--out", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-iq68z12k/c4_after.jsonl"], "status": "launch", "timeout_s": 3300}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "stage": "c4_after", "gpu": 0, "role": "correct", "rc": 0, "status": "pass"}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "status": "driver_done", "exit": 0, "elapsed_s": 0.0}
+{"probe": "valid_baseline", "rc": 0, "launched": ["c3_mutated", "c4_after"], "guard_rejected": false, "evidence": "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-iq68z12k/driver.jsonl"}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "status": "driver_start", "budget_s": 3300}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "stage": "c3_mutated", "gpu": 0, "role": "correct", "backends": "ATEN", "cmd": ["/workspace/kg-v3-rebuild/.venv/bin/python", "/private/tmp/gpu-r3-mut-z43e6hsa/bundle/scripts/gemm_backend_wrap.py", "--backends", "ATEN", "--record", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-2p9lugly/c3_mutated.backend.json", "--", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-2p9lugly/noop.py", "--out", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-2p9lugly/c3_mutated.jsonl"], "status": "launch", "timeout_s": 3300}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "stage": "c3_mutated", "gpu": 0, "status": "driver_error", "error": "JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "status": "phase1_done", "stopped": true}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "stage": "c4_after", "gpu": 0, "status": "skipped_after_stop"}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "status": "driver_done", "exit": 5, "elapsed_s": 0.0}
+{"probe": "malformed_backend_record", "rc": 5, "launched": ["c3_mutated"], "guard_rejected": true, "evidence": "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-2p9lugly/driver.jsonl"}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "status": "driver_start", "budget_s": 3300}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "stage": "c3_mutated", "gpu": 0, "role": "correct", "backends": "ATEN", "cmd": ["/workspace/kg-v3-rebuild/.venv/bin/python", "/private/tmp/gpu-r3-mut-z43e6hsa/bundle/scripts/gemm_backend_wrap.py", "--backends", "ATEN", "--record", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-tg81ssr5/c3_mutated.backend.json", "--", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-tg81ssr5/noop.py", "--out", "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-tg81ssr5/c3_mutated.jsonl"], "status": "launch", "timeout_s": 3300}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "stage": "c3_mutated", "gpu": 0, "status": "driver_error", "error": "OSError: injected spawn failure"}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "status": "phase1_done", "stopped": true}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "stage": "c4_after", "gpu": 0, "status": "skipped_after_stop"}
+{"utc": "2026-09-29T13:51:36Z", "t": 0.0, "status": "driver_done", "exit": 5, "elapsed_s": 0.0}
+{"probe": "spawn_exception", "rc": 5, "launched": ["c3_mutated"], "guard_rejected": true, "evidence": "/private/tmp/gpu-r3-mut-z43e6hsa/gpu-driver-mutation-tg81ssr5/driver.jsonl"}

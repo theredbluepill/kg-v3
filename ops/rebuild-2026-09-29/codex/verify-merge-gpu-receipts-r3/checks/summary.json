@@ -1,0 +1,43 @@
+{
+  "head": "666deec789b2e75f56afb6dbb7b7acd40171c6b1",
+  "checks": {
+    "engine-cargo-test.log": {
+      "command": "cargo test --manifest-path engine_rs/Cargo.toml --locked --offline",
+      "exit_code": 0,
+      "passed": 69,
+      "failed": 0,
+      "ignored": 0,
+      "sha256": "8a24cb78376d8268c2155d07e76e0e9b745c60425af5baff247fcfe93d20257c"
+    },
+    "root-cargo-test.log": {
+      "command": "cargo test",
+      "exit_code": 0,
+      "passed": 254,
+      "failed": 0,
+      "ignored": 4,
+      "sha256": "0fcf59624d73727355e3a608bdf0106c773d8820d1366a901c96804a60fa723c"
+    },
+    "engine-trim.log": {
+      "command": "uv run python scripts/check_engine_trim.py",
+      "exit_code": 0,
+      "result": "engine trim manifest: OK",
+      "sha256": "fef502d13bbb709eb13457e1a485293ab0e2bb93b174680479e409ce3e814af8"
+    },
+    "pytest-full.log": {
+      "command": "uv run pytest tests/kaggriculture tests/owl tests/scripts tests/tools -m 'not slow' -q",
+      "exit_code": 0,
+      "passed": 1690,
+      "skipped": 11,
+      "failed": 0,
+      "elapsed_seconds": 48.87,
+      "sha256": "11745d19c38e0b5ec2945dbd7c358607729216cf1ee3ea417e2dfe54c594294d"
+    },
+    "mypy.log": {
+      "command": "uv run mypy python/owl scripts",
+      "exit_code": 0,
+      "source_files": 63,
+      "sha256": "0f5e2c0f274fe3238699ff97fc09737970ee01e440d6d8f78a8522bdc43ee59b"
+    }
+  },
+  "tracked_diff": ""
+}

@@ -1,0 +1,700 @@
+{
+  "head": "666deec789b2e75f56afb6dbb7b7acd40171c6b1",
+  "baseline": [
+    {
+      "check": "launcher_idle",
+      "pass": true,
+      "fails": [],
+      "rc": {
+        "idle": 0,
+        "busy_apps": 1,
+        "busy_util": 1,
+        "apps_query_fail": 1,
+        "util_query_fail": 1,
+        "util_query_fail_after_zero": 1,
+        "both_fail": 1
+      }
+    },
+    {
+      "check": "c2_nonfinite",
+      "pass": true,
+      "fails": [],
+      "rows": 513,
+      "row_chunk": 512,
+      "cases": [
+        {
+          "comparator": "dx",
+          "case": "baseline",
+          "nonfinite": 0,
+          "judge_errors": [],
+          "want_reject": false
+        },
+        {
+          "comparator": "dx",
+          "case": "compiled_error_only",
+          "nonfinite": 0,
+          "judge_errors": [
+            "target packed:4194305: dx nonfinite=0 tok>0.5=0 masked_nonzero=0 rel_max=0.10000002384185791"
+          ],
+          "want_reject": true
+        },
+        {
+          "comparator": "dx",
+          "case": "compiled_nan_chunk0",
+          "nonfinite": 1,
+          "judge_errors": [
+            "target packed:4194305: dx nonfinite=1 tok>0.5=1 masked_nonzero=0 rel_max=1.0000000150474662e+30"
+          ],
+          "want_reject": true
+        },
+        {
+          "comparator": "dx",
+          "case": "eager_nan_chunk0",
+          "nonfinite": 1,
+          "judge_errors": [
+            "target packed:4194305: dx nonfinite=1 tok>0.5=0 masked_nonzero=0 rel_max=1.0"
+          ],
+          "want_reject": true
+        },
+        {
+          "comparator": "dx",
+          "case": "eager_nan_masks_compiled_error",
+          "nonfinite": 1,
+          "judge_errors": [
+            "target packed:4194305: dx nonfinite=1 tok>0.5=0 masked_nonzero=0 rel_max=1.0"
+          ],
+          "want_reject": true
+        },
+        {
+          "comparator": "dx",
+          "case": "eager_nan_chunk1",
+          "nonfinite": 1,
+          "judge_errors": [
+            "target packed:4194305: dx nonfinite=1 tok>0.5=0 masked_nonzero=0 rel_max=1.0"
+          ],
+          "want_reject": true
+        },
+        {
+          "comparator": "dx",
+          "case": "eager_inf_chunk0",
+          "nonfinite": 1,
+          "judge_errors": [
+            "target packed:4194305: dx nonfinite=1 tok>0.5=0 masked_nonzero=0 rel_max=1.0"
+          ],
+          "want_reject": true
+        },
+        {
+          "comparator": "out",
+          "case": "baseline",
+          "nonfinite": 0,
+          "judge_errors": [],
+          "want_reject": false
+        },
+        {
+          "comparator": "out",
+          "case": "eager_nan_chunk0",
+          "nonfinite": 1,
+          "judge_errors": [
+            "target packed:4194305: out wrong=1 nonfinite=1"
+          ],
+          "want_reject": true
+        },
+        {
+          "comparator": "out",
+          "case": "eager_nan_chunk1",
+          "nonfinite": 1,
+          "judge_errors": [
+            "target packed:4194305: out wrong=1 nonfinite=1"
+          ],
+          "want_reject": true
+        },
+        {
+          "comparator": "params",
+          "case": "baseline",
+          "nonfinite": 0,
+          "judge_errors": [],
+          "want_reject": false
+        },
+        {
+          "comparator": "params",
+          "case": "eager_nan_weight",
+          "nonfinite": 1,
+          "judge_errors": [
+            "target packed:4194305: grad blocks.0.mlp.w rel_max=nan nonfinite=1"
+          ],
+          "want_reject": true
+        },
+        {
+          "comparator": "params",
+          "case": "eager_nan_k_bias",
+          "nonfinite": 1,
+          "judge_errors": [
+            "target packed:4194305: grad blocks.0.attn.k.bias max(|diff|,|c|,|e|)=nan > 0.05 x |q.bias grad| 1.0 nonfinite=1"
+          ],
+          "want_reject": true
+        }
+      ]
+    }
+  ],
+  "tensor_faults": [
+    {
+      "comparator": "out",
+      "operand": "compiled",
+      "value": "nan",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "compiled",
+      "value": "nan",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "compiled",
+      "value": "nan",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "compiled",
+      "value": "nan",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "compiled",
+      "value": "nan",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "compiled",
+      "value": "nan",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "compiled",
+      "value": "nan",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "compiled",
+      "value": "nan",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "compiled",
+      "value": "inf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "compiled",
+      "value": "inf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "compiled",
+      "value": "inf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "compiled",
+      "value": "inf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "compiled",
+      "value": "inf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "compiled",
+      "value": "inf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "compiled",
+      "value": "inf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "compiled",
+      "value": "inf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "compiled",
+      "value": "neginf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "compiled",
+      "value": "neginf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "compiled",
+      "value": "neginf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "compiled",
+      "value": "neginf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "compiled",
+      "value": "neginf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "compiled",
+      "value": "neginf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "compiled",
+      "value": "neginf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "compiled",
+      "value": "neginf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "reference",
+      "value": "nan",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "reference",
+      "value": "nan",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "reference",
+      "value": "nan",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "reference",
+      "value": "nan",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "reference",
+      "value": "nan",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "reference",
+      "value": "nan",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "reference",
+      "value": "nan",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "reference",
+      "value": "nan",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "reference",
+      "value": "inf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "reference",
+      "value": "inf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "reference",
+      "value": "inf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "reference",
+      "value": "inf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "reference",
+      "value": "inf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "reference",
+      "value": "inf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "reference",
+      "value": "inf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "reference",
+      "value": "inf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "reference",
+      "value": "neginf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "reference",
+      "value": "neginf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "reference",
+      "value": "neginf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "reference",
+      "value": "neginf",
+      "row": 0,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "out",
+      "operand": "reference",
+      "value": "neginf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "dx",
+      "operand": "reference",
+      "value": "neginf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.mlp.w",
+      "operand": "reference",
+      "value": "neginf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    },
+    {
+      "comparator": "params",
+      "parameter": "blocks.0.attn.k.bias",
+      "operand": "reference",
+      "value": "neginf",
+      "row": 512,
+      "nonfinite": 1,
+      "rejected": true
+    }
+  ],
+  "source_regressions": [
+    {
+      "file": "launch.sh",
+      "mutation": "restore pre-r2 implementation",
+      "killed": true,
+      "failures": [
+        "apps_query_fail: gpu_idle rc=0 (passed the idle gate)",
+        "util_query_fail_after_zero: gpu_idle rc=0 (passed the idle gate)"
+      ]
+    },
+    {
+      "file": "c2_trunk_bwd.py",
+      "mutation": "restore pre-r2 implementation",
+      "killed": true,
+      "failures": [
+        "dx eager_nan_chunk0: judge_c2 accepted ({'max_abs': 0.0, 'ref_max_abs': 1.0, 'rel_max': 0.0, 'rel_fro': nan, 'token_rel_l2_max': 0.0, 'token_rel_l2_p50_p99_p999': [nan, nan, nan], 'tokens_rel_gt_0.5': 0, 'nonfinite': 0, 'masked_nonzero': 0, 'first_bad_row': None, 'last_bad_row': None})",
+        "dx eager_nan_chunk0: nonfinite=0, want >= 1",
+        "dx eager_nan_masks_compiled_error: judge_c2 accepted ({'max_abs': 0.0, 'ref_max_abs': 1.0, 'rel_max': 0.0, 'rel_fro': nan, 'token_rel_l2_max': 0.0, 'token_rel_l2_p50_p99_p999': [nan, nan, nan], 'tokens_rel_gt_0.5': 0, 'nonfinite': 0, 'masked_nonzero': 0, 'first_bad_row': None, 'last_bad_row': None})",
+        "dx eager_nan_masks_compiled_error: nonfinite=0, want >= 1",
+        "dx eager_nan_chunk1: judge_c2 accepted ({'max_abs': 0.0, 'ref_max_abs': 1.0, 'rel_max': 0.0, 'rel_fro': nan, 'token_rel_l2_max': 0.0, 'token_rel_l2_p50_p99_p999': [nan, nan, nan], 'tokens_rel_gt_0.5': 0, 'nonfinite': 0, 'masked_nonzero': 0, 'first_bad_row': None, 'last_bad_row': None})",
+        "dx eager_nan_chunk1: nonfinite=0, want >= 1",
+        "dx eager_inf_chunk0: nonfinite=0, want >= 1",
+        "out eager_nan_chunk0: nonfinite=0, want >= 1",
+        "out eager_nan_chunk1: nonfinite=0, want >= 1",
+        "params eager_nan_weight: nonfinite=0, want >= 1",
+        "params eager_nan_k_bias: nonfinite=0, want >= 1"
+      ]
+    },
+    {
+      "file": "launch.sh",
+      "mutation": "remove status check --query-compute-apps=",
+      "killed": true,
+      "failures": [
+        "apps_query_fail: gpu_idle rc=0 (passed the idle gate)"
+      ]
+    },
+    {
+      "file": "launch.sh",
+      "mutation": "remove status check --query-gpu=",
+      "killed": true,
+      "failures": [
+        "util_query_fail_after_zero: gpu_idle rc=0 (passed the idle gate)"
+      ]
+    },
+    {
+      "file": "c2_trunk_bwd.py",
+      "mutation": "remove reference count in cmp_out",
+      "killed": true,
+      "failures": [
+        "out eager_nan_chunk0: nonfinite=0, want >= 1",
+        "out eager_nan_chunk1: nonfinite=0, want >= 1"
+      ]
+    },
+    {
+      "file": "c2_trunk_bwd.py",
+      "mutation": "remove reference count in cmp_dx",
+      "killed": true,
+      "failures": [
+        "dx eager_nan_chunk0: nonfinite=0, want >= 1",
+        "dx eager_nan_masks_compiled_error: nonfinite=0, want >= 1",
+        "dx eager_nan_chunk1: nonfinite=0, want >= 1",
+        "dx eager_inf_chunk0: nonfinite=0, want >= 1"
+      ]
+    },
+    {
+      "file": "c2_trunk_bwd.py",
+      "mutation": "remove reference count in cmp_params",
+      "killed": true,
+      "failures": [
+        "params eager_nan_weight: nonfinite=0, want >= 1",
+        "params eager_nan_k_bias: nonfinite=0, want >= 1"
+      ]
+    }
+  ],
+  "restoration": {
+    "files": 71,
+    "all_equal": true,
+    "sha256": {
+      "scripts/c3_smoke.py": "a6372f8dea674cd0e64c0c562acb6145f2df9cf253cadb0225e4b5e69e5ccf67",
+      "scripts/c4_timing.py": "fad2d9d60c7271fe08f453116f9f945fb0291d525bd198b29a8b411832534f11",
+      "scripts/launch.sh": "577a903384770576708fcb41ebbf5390ec468037ce6cd66a80a91ceae33f09aa",
+      "scripts/gemm_backend_wrap.py": "5a070ef6a69800420d0f0aa7b2521150278fb414ef5a9103ca2262968ba18087",
+      "scripts/c1_fp32_ref.py": "7a0d2c5d5a2d0ffbc4735245d888800c652b06646b8bf4d2670174fea0410373",
+      "scripts/c2_trunk_bwd.py": "8651779ca9ceedfe223153aadb819055494d18ba2ba76293cdb8539b63f83186",
+      "scripts/common.py": "06c5a25a5938701ab09c174cb7c6cb288a79bd2855d5cd84ab4c2894fb46f9a5",
+      "scripts/check_templates.py": "8261cb9f5290bf35262e62900767ff02712918a7b907a68c2ee41490f93fef8d",
+      "scripts/test_driver_cleanup.py": "d6e3c6013b5b4e1da1fd74dca12cf0fe215d9939b4725c40c2485c2838f4ae5e",
+      "scripts/driver.py": "d1147ba32441aad203d32ff7eaf04f2dd8219b328f566e94cc49d97238707572",
+      "scripts/test_driver_guards.py": "dc593e9a87f55ed2c6855f3c1e391badc2a73a10cf95462b15ce6e9652703c46",
+      "pod/attempt2/c2_ctl_default_bwd.backend.json": "c373da2c875904e306a2041deb07e00fc2f29866a32e7ff244111da2f014e6e9",
+      "pod/attempt2/c3_smoke.py": "a6372f8dea674cd0e64c0c562acb6145f2df9cf253cadb0225e4b5e69e5ccf67",
+      "pod/attempt2/c2_aten_bwd.log": "760bfd79fd1ad2a8f041f2c51172e02da7969ec33d6c5ea5b4a84df1aea3d212",
+      "pod/attempt2/c4_timing.py": "fad2d9d60c7271fe08f453116f9f945fb0291d525bd198b29a8b411832534f11",
+      "pod/attempt2/launch.sh": "32d69f312ffe6df8498bb18db160e51be909ae412c5a61730800e22dc0214f0b",
+      "pod/attempt2/c2_aten_bwd.jsonl": "ebf39da913982ed8c6e13b215386bd265c93b2e8cdd758cb5f59ca6ca43094c2",
+      "pod/attempt2/c3_dense_default.jsonl": "092f33fab3bcfb835661aaff37232c4ef3c36b48b0a7db5661a706f52d08509e",
+      "pod/attempt2/c1_aten.backend.json": "80e1a7f128f4445d664c2ef87222b5af33e4ece20cb3935cb3434a1ec7c5267d",
+      "pod/attempt2/c3_dense_aten.log": "557ff7919fe32c646d3e6300d2f1825237597b3a11c23d27ad6904bb9b3a5575",
+      "pod/attempt2/c2_ctl_default_bwd.log": "6a185770b54aa35870c0d20b155280fdc94051b4488727ac27001fe1a53d1763",
+      "pod/attempt2/template_census.json": "6ca49b10972f57340d1e1f22fa0ad563fd9cf12d7a0797f3c55d38760cbf6d6c",
+      "pod/attempt2/c4_dense_aten.log": "21384e95dd4d7a164d0c65ac053b8d14b16bafeb7782bec00ba2bd3df84139f4",
+      "pod/attempt2/c1_aten.outliers.json": "58f091d01d0d40fd7484fc5a267d81c88ea95b0a259bfcde763ac727989cee9c",
+      "pod/attempt2/c1_default.outliers.json": "8797ee89bbe5602905d60b3f419dcb270a7c46a82f026e95e49ca5843c48f44e",
+      "pod/attempt2/c4_dense_aten.backend.json": "235d6b63b5bee854108f31cd185f6dda5b301156993bd07306fabd0aee396530",
+      "pod/attempt2/driver.out": "7a07405c60c7f61024b3c12df098ab369217e7f59323835380c3532d53e06633",
+      "pod/attempt2/c3_mid_default.log": "54a1ff9a778c57f2d6f508605f6b955dfceeb4705f2a6486219c8a95c45afb79",
+      "pod/attempt2/c1_aten.log": "21a52242804c41a5508bc90c617237702d8f19b1023025e1293beffe81856274",
+      "pod/attempt2/c3_mid_aten.log": "31c7f23ab4b0024e8615c40ea6a5b406867b0c4da78c3893d4660cc9131b0da6",
+      "pod/attempt2/c4_mid_aten.backend.json": "3d32f961340bb95aecbdcdbeeb386ce10197471ce3ca19d2ea851b814808b36e",
+      "pod/attempt2/c4_mid_aten.log": "f6ad029e55295ce2e2f5143371bdf2adccec1cb08f748c14cd2267979518a75a",
+      "pod/attempt2/c3_dense_default.backend.json": "decf9ed7555c1b0a75ecf7818bfd3b5f078401e240e887cf71e6f414d2a10de9",
+      "pod/attempt2/c3_dense_aten.jsonl": "c17843de609b57e036e24b49fd09fee4e32ac79823c9f13d498669e00cc6472b",
+      "pod/attempt2/c3_dense_aten.backend.json": "e768cfbe794359d3f455e3779978fcbae35c95ac4bd0d9f6e4618993e5553d4e",
+      "pod/attempt2/c1_default.backend.json": "3a52be53283b4261784e8877f840496d0dc9cefc1f3f94145b8c88f574db0bc5",
+      "pod/attempt2/c3_mid_default.backend.json": "ae85c45d94321fb0ae0931e56f75c1d2e7b272cb5eda9b2a2c9d0f88e0595189",
+      "pod/attempt2/c2_aten_bwd.backend.json": "e8bcf3f02114b08e47e9985a9b109a58344baa6e0ed460f6e96d1406e3a6063d",
+      "pod/attempt2/gemm_backend_wrap.py": "5a070ef6a69800420d0f0aa7b2521150278fb414ef5a9103ca2262968ba18087",
+      "pod/attempt2/c3_dense_default.log": "da2b9f94b7c135ff4da8bac8a12eecfba30b8060c5bb1422199e024158078519",
+      "pod/attempt2/c3_mid_aten.backend.json": "93c7c9072449864e6a8c5f12cf8c7224e2e72bc54f5da5ce460741596e9c2e88",
+      "pod/attempt2/c4_dense_aten.jsonl": "0520b96f483e13cdeaf3d191e2865e5f6a66b893996c2911a9f59c7246dc6460",
+      "pod/attempt2/c1_fp32_ref.py": "21028a5707c742698a4b31bdeb36caae58952bd19a413ada031ad40925e68225",
+      "pod/attempt2/c1_default.jsonl": "77881f41d2ff7231a64b9dafb2634c4fb6d3887c601d43ca5e93a3fc36613344",
+      "pod/attempt2/c4_dense_aten.derived.json": "ae34fc2aae5a6a820762a5613aea9ad76494968e6b5d34dffa060ee226a49aab",
+      "pod/attempt2/c2_trunk_bwd.py": "12b46fd7bb1a9eb5f364b24c7c073902f1cda2610ff88f0642591757aa1fde18",
+      "pod/attempt2/common.py": "06c5a25a5938701ab09c174cb7c6cb288a79bd2855d5cd84ab4c2894fb46f9a5",
+      "pod/attempt2/driver.jsonl": "7a07405c60c7f61024b3c12df098ab369217e7f59323835380c3532d53e06633",
+      "pod/attempt2/check_templates.py": "8261cb9f5290bf35262e62900767ff02712918a7b907a68c2ee41490f93fef8d",
+      "pod/attempt2/template_census.txt": "66d5862e7cb43988dde77ed3946f76e59ef0b256ed1603755bd3ca93620c1401",
+      "pod/attempt2/c1_aten.jsonl": "c798ff09dc1791a2e2ec165060105e5a4b3f36096e4098c2fc8b048e6edf05d2",
+      "pod/attempt2/launch.out": "d86fe28894752319b458498e68f0fd9cd7d4a91fbaef4bd49b19667fc1bfa7c8",
+      "pod/attempt2/c3_mid_aten.jsonl": "c6340016195ece59d9a8f87fee68fb07b038dff0936e5cdf24c08152797582f5",
+      "pod/attempt2/c4_mid_aten.derived.json": "25429142077c851b52eea9d537bf1b4ee37e976c4a7b34719ead7b20720ac2d3",
+      "pod/attempt2/c4_mid_aten.jsonl": "d4242ecf888b21e312ac8d778bbe2b72144d992a1f8e2bf5c1f800a797d0509d",
+      "pod/attempt2/driver.py": "15b41c74d17c2df708e45843dc1fa6dcfa6ac85329deb7465a542cf2197469b2",
+      "pod/attempt2/c1_default.log": "36daf6fc6b90db90f8f1701a90b70c168e191c5fa0d50c067802d5bbab7a7a07",
+      "pod/attempt2/c2_ctl_default_bwd.jsonl": "514e2005e4a0ed6ace3de28293b47445cf6be49d273c5432563a152a715c19bc",
+      "pod/attempt2/c3_mid_default.jsonl": "cef0c7c0a4ab81a1373a829d9c55b713c22fff757434cf7baf0b8f12a5383313",
+      "pod/attempt2/receipts/git_post.txt": "5fc07d8af656308bb273ac208f5cb79f7a9b8b0ac0a9ff38bf31d6fc7f140870",
+      "pod/attempt2/receipts/idle_ps_post.txt": "a652915695a3d6128472f8239338ad521801191e2698c63e8fe94301a5b5799f",
+      "pod/attempt2/receipts/idle_ps_prelaunch.txt": "ce94cf3db47734645bfea613366b4c96510a054f3e88c2ed541ca610957026c6",
+      "pod/attempt2/receipts/nsys_check.txt": "523c5c0b413c909c4e1da6440375443de2110656defe152387e285ce3c0209b3",
+      "pod/attempt2/receipts/idle_nvidia_smi_pre.txt": "fe6d93bf161de1c0eb15e930be8c3504b8a56e17d924af3f50e41d49ab4d62b6",
+      "pod/attempt2/receipts/versions.txt": "51d687624282abfeaa55d47f286f7d23ceebc38bf0afca001021e4b447f002cf",
+      "pod/attempt2/receipts/idle_ps_pre.txt": "ce94cf3db47734645bfea613366b4c96510a054f3e88c2ed541ca610957026c6",
+      "pod/attempt2/receipts/idle_nvidia_smi_prelaunch.txt": "fe6d93bf161de1c0eb15e930be8c3504b8a56e17d924af3f50e41d49ab4d62b6",
+      "pod/attempt2/receipts/git_pre.txt": "e756c04db29967fc56c81bcc2603a4c8d715ef1110d1f5ab07de7744b8860435",
+      "pod/attempt2/receipts/idle_nvidia_smi_post.txt": "4f337630eb8961299ea22b3879f73da77ca0a565d9867c6afb2f0679dd966e53",
+      "pod/attempt2/receipts/git_update.txt": "ed1cb8dae008c988868847e566164488b642e58248bb85e87718946a01193862",
+      "pod/attempt2/receipts/scripts.sha256": "2adc56f66148336744cfdac449e8ab86e68f738bda2d08d7cc8d09b8af1f5851"
+    }
+  }
+}
