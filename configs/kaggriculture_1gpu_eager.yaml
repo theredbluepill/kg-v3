@@ -49,7 +49,12 @@ optimizer:
 
 rl:
   horizon: 64
-  checkpoint_freq: 20_000_000
+  # Owner decision 2026-09-30 ("cut the interval into half"): 10M global env
+  # steps, half of scaling_6m's 20M. A checkpoint and the last-best evaluation
+  # (promotion at win rate >= 0.7) share this cadence: at 16,384 env steps per
+  # iteration, about every 610 iterations. See
+  # cookbook/decisions/halve-the-kaggriculture-checkpoint-interval-to-10m-steps.md.
+  checkpoint_freq: 10_000_000
   ppo_epochs: 1
   segments_per_minibatch: 16
   gradient_accumulation_steps: 1

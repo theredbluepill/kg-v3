@@ -165,7 +165,11 @@ Training presets live in `configs/`:
   native adapter with caller-owned buffers. The presets set
   `rl.eval_replay_games: 0` until Task 7.3 adds Kaggriculture replay export
   (restoring `scaling_6m`'s 8); a positive value fails at startup before
-  creating the run directory, environment or model.
+  creating the run directory, environment or model. The GPU presets (and
+  `kaggriculture_1gpu_eager.yaml`) set `rl.checkpoint_freq: 10_000_000`, half of
+  `scaling_6m`'s 20M by the owner's decision: each interval writes a checkpoint
+  and runs the last-best evaluation (promotion at win rate >= 0.7), about every
+  610 iterations of 16,384 env steps.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.

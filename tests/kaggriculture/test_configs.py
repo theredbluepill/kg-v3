@@ -196,9 +196,10 @@ def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
     scaling = _scaling_6m()
     ours = _sections(name)
     assert ours.optimizer == scaling.optimizer
-    # Only the per-rank minibatch differs; target_kl, teacher, compile, dtype
-    # and checkpoint cadence are scaling_6m's. Replay export stays off until
-    # Task 7.3 adds it for Kaggriculture (a positive count fails at startup).
+    # Only the per-rank minibatch and the owner's halved checkpoint cadence
+    # differ; target_kl, teacher, compile and dtype are scaling_6m's. Replay
+    # export stays off until Task 7.3 adds it for Kaggriculture (a positive
+    # count fails at startup).
     assert ours.rl.gradient_accumulation_steps == 1
     assert ours.rl.target_kl is None
     assert ours.rl.eval_replay_games == 0
@@ -208,10 +209,35 @@ def test_ranked_config_optimizer_and_ppo_equal_scaling_6m(name: str) -> None:
             update={
                 "segments_per_minibatch": scaling.rl.segments_per_minibatch,
                 "eval_replay_games": scaling.rl.eval_replay_games,
+                "checkpoint_freq": scaling.rl.checkpoint_freq,
             }
         )
         == scaling.rl
     )
+
+
+# --- checkpoint and promotion cadence (owner decision 2026-09-30) ------------
+
+# Every Kaggriculture GPU training config; the CPU config keeps its 1,000-step
+# test cadence.
+_GPU_CONFIGS = {**_RANKED, "kaggriculture_1gpu_eager.yaml": 1}
+_ENV_STEPS_PER_ITERATION = 16_384
+
+
+@pytest.mark.parametrize(("name", "world_size"), _GPU_CONFIGS.items())
+def test_checkpoint_interval_is_the_owners_half_of_scaling_6m(
+    name: str, world_size: int
+) -> None:
+    # Owner: "cut the interval into half". One checkpoint_freq drives both the
+    # periodic checkpoint and the last-best evaluation (promotion at >= 0.7).
+    ours = _sections(name)
+    assert _scaling_6m().rl.checkpoint_freq == 20_000_000
+    assert ours.rl.checkpoint_freq == 10_000_000
+    assert ours.rl.horizon * ours.env.n_envs * world_size == _ENV_STEPS_PER_ITERATION
+    # The first checkpoint and evaluation fire after 611 iterations; the
+    # interval is 610 or 611 iterations after that.
+    assert -(-ours.rl.checkpoint_freq // _ENV_STEPS_PER_ITERATION) == 611
+    assert ours.rl.checkpoint_freq // _ENV_STEPS_PER_ITERATION == 610
 
 
 # --- teacher settings (plan Task 4.4) -------------------------------------------

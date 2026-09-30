@@ -5,9 +5,10 @@
 # n_envs and segments_per_minibatch are divided by the world size, so the GLOBAL
 # batch (8 x 32 = 256 envs), optimizer steps/iter (16), global segments per
 # optimizer step (8 x 2 = 16) and env steps/iter (16,384) equal scaling_6m; the
-# optimizer, LR schedule, PPO coefficients, compile settings, teacher and
-# checkpoint cadence are unchanged. seg_per_minibatch * grad_accum stays 2 per
-# rank (accum 1, as Isaiah's per-rank configs); plan Task 6.3b qualifies it.
+# optimizer, LR schedule, PPO coefficients, compile settings and teacher are
+# unchanged; only checkpoint_freq differs (halved to 10M by the owner, below).
+# seg_per_minibatch * grad_accum stays 2 per rank (accum 1, as Isaiah's per-rank
+# configs); plan Task 6.3b qualifies it.
 # See cookbook/decisions/recipe-choices-align-to-isaiah-without-owner-escalation.md.
 # Loads through FullConfig; run_ppo checks its GEMM workload, then builds the
 # native env and trains through the shared PPO path (Task 3.1).
@@ -51,7 +52,12 @@ optimizer:
 
 rl:
   horizon: 64
-  checkpoint_freq: 20_000_000
+  # Owner decision 2026-09-30 ("cut the interval into half"): 10M global env
+  # steps, half of scaling_6m's 20M. A checkpoint and the last-best evaluation
+  # (promotion at win rate >= 0.7) share this cadence: at 16,384 env steps per
+  # iteration, about every 610 iterations. See
+  # cookbook/decisions/halve-the-kaggriculture-checkpoint-interval-to-10m-steps.md.
+  checkpoint_freq: 10_000_000
   ppo_epochs: 1
   segments_per_minibatch: 2
   gradient_accumulation_steps: 1
@@ -71,7 +77,7 @@ rl:
   eval_replay_games: 0
   # Teacher (Phase 4.4): scaling_6m's last-best teacher. The teacher is the
   # last-best model, refreshed in place when the student wins >= 0.7 of the
-  # evaluation at each checkpoint_freq (20M global env steps). Its targets are
+  # evaluation at each checkpoint_freq (10M global env steps). Its targets are
   # precomputed once per update and cached for the whole rollout
   # (418,643,968 B per rank, FP32; run_ppo prints it with the headroom).
   # The teacher checkpoint is a required launch-time input, never a config
