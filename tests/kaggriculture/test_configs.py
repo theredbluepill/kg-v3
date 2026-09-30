@@ -439,8 +439,10 @@ def test_margin_preset_is_j2_apart_from_the_reward(name: str, base: str) -> None
         }
     )
     assert restored == ranked
-    # Every game's return m(final margin) + .5 * sign stays within [-1, 1],
-    # the zero-sum winner critic's range (2 p(self) - 1).
+    # A whole game's return from the reset state, m(final margin) + .5 * sign,
+    # stays within [-1, 1], the zero-sum winner critic's range (2 p(self) - 1).
+    # A mid-game return-to-go subtracts m(margin_t) and can reach +-1.5; that
+    # known limit is documented, not asserted away.
     finals = torch.tensor(
         [[1e6, 0.0], [50_000.0, 0.0], [3_001.0, 3_000.0], [3_000.0, 3_000.0]],
         dtype=torch.float64,

@@ -1470,11 +1470,22 @@ transition. It uses the same before/after banks as term A, so no delta spans
 two games. `M` is evaluated as product, then quotient, then clamp to
 `[−c_m, c_m]`; an overflowing product or quotient saturates at the cap, and
 `M` is odd in the margin bit for bit, so the two seats' increments are exact
-negations: the term is zero-sum, so unlike term A the zero-sum winner critic
-can represent it (with term A off, `train/return_common_mean` stays 0). Both farms reset to the same `startingMoney`, so
-a complete game's term telescopes to `M(final margin)`, and with
-`terminal_scale = 1 − c_m` (every other term off) a game's return is
-`M(final margin) + (1 − c_m) · sign(final margin)`, within [−1, 1]. With
+negations: the term is zero-sum, so unlike term A it has no common-mode part
+the zero-sum winner critic cannot represent (with term A off,
+`train/return_common_mean` stays 0). Both farms reset to the same
+`startingMoney`, so a complete game's term telescopes to `M(final margin)`, and
+with `terminal_scale = 1 − c_m` (every other term off) a whole game's return
+from the reset state is `M(final margin) + (1 − c_m) · sign(final margin)`,
+within [−1, 1]. The magnitude is not bounded that way mid-game. The critic
+predicts return-to-go, `M(final margin) − M(margin_t) + terminal_scale ·
+sign(final margin)`, and because `M` is signed that spans
+`[−(2 c_m + terminal_scale), 2 c_m + terminal_scale]`, which is [−1.5, 1.5] for
+the margin preset. That is outside the critic's `2p − 1 ∈ (−1, 1)`: for example
+a seat trailing by 30k that wins by 25k has a return-to-go of +1.05. The value
+fit is therefore biased in states with a large lead or deficit that later
+reverses. Term M is the first term with a signed potential, so it is the first
+to break the bound; the effect is unmeasured (independent review r1,
+`ops/reward-margin/review-r1.md`). With
 `econ_margin_weight = 0` nothing is added, so rewards are bit-identical to the
 reward without it. In the economic sum it follows the bank term (relative,
 then bank, then margin, in float64) before the single f32 rounding. Only

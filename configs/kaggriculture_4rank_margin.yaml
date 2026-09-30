@@ -13,7 +13,9 @@
 #   terminal_scale is 1 - .5 = 0.5.
 # Per step each seat gets m(after) - m(before) with
 # m = clamp(.5 * (bank_self - bank_opp) / 50000, -.5, .5); zero-sum. A game's
-# return is m(final margin) + .5 * sign(final margin), within [-1, 1].
+# return from the reset state is m(final margin) + .5 * sign(final margin),
+# within [-1, 1]. A mid-game return-to-go subtracts m(margin_t), so it spans
+# [-1.5, 1.5], outside the winner critic's (-1, 1): a known, unmeasured limit.
 # Scale: agent-proposed from the live run hz4bpjnq (self-play |margin| mean
 # 10-18k, p50 8-13k): typical games stay linear and saturate only at
 # |margin| >= 50k. Not owner-given or measured optimal.

@@ -684,13 +684,16 @@ fn margin_score_is_linear_then_clamps_at_both_signs() {
     assert_eq!(huge.margin_score(f64::MAX), 0.5);
     assert_eq!(huge.margin_score(-f64::MAX), -0.5);
     assert_eq!(huge.margin_score(0.), 0.);
+    // At weight .1 and scale 50,000 the two associations differ in the last bit
+    // on every margin below, so a quotient-first score fails.
     let odd = RewardConfig {
         econ_margin_weight: 0.1,
-        econ_margin_scale: 3.,
         ..margin_config()
     };
-    for margin in [7., 1. / 3., 12.345_678, 1.1] {
-        let product_first = 0.1 * margin / 3.;
+    for margin in [3_003., 12_345., 20_000., 40_000.] {
+        let product_first = (0.1_f64 * margin) / 50_000.;
+        let quotient_first = 0.1_f64 * (margin / 50_000.);
+        assert_ne!(product_first.to_bits(), quotient_first.to_bits());
         assert_eq!(odd.margin_score(margin).to_bits(), product_first.to_bits());
         assert_eq!(
             odd.margin_score(-margin).to_bits(),

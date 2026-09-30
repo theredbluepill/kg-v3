@@ -875,6 +875,20 @@ def test_margin_score_is_linear_then_clamps_at_both_signs() -> None:
     assert not margin_score(margins, _config()).any()
 
 
+def test_margin_score_takes_the_product_then_the_quotient_then_the_clamp() -> None:
+    # The parity contract's binary64 order (native `margin_score`). At weight .1
+    # and scale 50,000 the two associations differ in the last bit on every
+    # margin below, so a quotient-first oracle fails (review r1 mutation M6).
+    config = _config(**(_MARGIN_PRESET | {"econ_margin_weight": 0.1}))
+    margins = [3_003.0, 12_345.0, 20_000.0, 40_000.0]
+    product_first = [(0.1 * margin) / 50_000.0 for margin in margins]
+    quotient_first = [0.1 * (margin / 50_000.0) for margin in margins]
+    assert all(p != q for p, q in zip(product_first, quotient_first, strict=True))
+    signed = torch.tensor(margins, dtype=torch.float64)
+    assert margin_score(signed, config).tolist() == product_first
+    assert margin_score(-signed, config).tolist() == [-p for p in product_first]
+
+
 def test_margin_rewards_are_zero_sum_and_telescope_to_the_final_margin() -> None:
     config = _config(**_MARGIN_PRESET)
     time = torch.arange(720, dtype=torch.float64)
