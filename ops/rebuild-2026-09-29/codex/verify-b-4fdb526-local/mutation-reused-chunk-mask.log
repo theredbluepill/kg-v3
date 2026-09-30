@@ -1,0 +1,96 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_padded_chunks_dispatch_exact_row_slices_in_order[2-sizes0] ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10bc745c0>, chunk = 2
+sizes = [2, 2, 2]
+
+    @pytest.mark.parametrize(("chunk", "sizes"), [(2, [2, 2, 2]), (4, [4, 2])])
+    def test_padded_chunks_dispatch_exact_row_slices_in_order(
+        monkeypatch: pytest.MonkeyPatch, chunk: int, sizes: list[int]
+    ) -> None:
+        model = _tiny().eval()
+        # distinct per-row actor and shop masks (seat 1 sees the counts swapped)
+        obs = make_obs(
+            envs=3, own_actors=(1, 2, 3), rival_actors=(4, 5, 6), shops=(1, 4, 8)
+        )
+        with torch.inference_mode():
+            x_full, mask_full = model._assemble_tokens(obs)
+            whole = model.encode_observations(obs).hidden
+        assert len({tuple(row.tolist()) for row in mask_full}) == 6
+        tokens, kmax = x_full.shape[1], km.gemm_kmax(model.config)
+        monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", chunk * tokens * kmax + 1)
+        assert km.rows_per_chunk(tokens=tokens, kmax=kmax) == chunk
+        seen: list[tuple[torch.Tensor, torch.Tensor]] = []
+        original = model._forward_transformer_trunk
+    
+        def spy(x: torch.Tensor, mask: torch.Tensor | None, packed: object) -> torch.Tensor:
+            assert packed is None
+            assert mask is not None
+            assert x.shape[0] * tokens * kmax < km._GEMM_ELEMENT_LIMIT  # strict bound
+            seen.append((x.clone(), mask.clone()))
+            return original(x, mask, None)
+    
+        monkeypatch.setattr(model, "_forward_transformer_trunk", spy)
+        with torch.inference_mode():
+            chunked = model.encode_observations(obs).hidden
+        assert [x.shape[0] for x, _ in seen] == sizes
+        start = 0
+        for x, mask in seen:
+            stop = start + x.shape[0]
+            torch.testing.assert_close(x, x_full[start:stop])
+>           assert torch.equal(mask, mask_full[start:stop])
+E           assert False
+E            +  where False = <built-in method equal of type object at 0x109a0b778>(tensor([[ True, False, False,  ...,  True,  True,  True],\n        [ True,  True,  True,  ...,  True,  True,  True]]), tensor([[ True,  True, False,  ...,  True,  True,  True],\n        [ True,  True,  True,  ...,  True,  True,  True]]))
+E            +    where <built-in method equal of type object at 0x109a0b778> = torch.equal
+
+tests/kaggriculture/test_model_encoder.py:459: AssertionError
+_______ test_padded_chunks_dispatch_exact_row_slices_in_order[4-sizes1] ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e514230>, chunk = 4
+sizes = [4, 2]
+
+    @pytest.mark.parametrize(("chunk", "sizes"), [(2, [2, 2, 2]), (4, [4, 2])])
+    def test_padded_chunks_dispatch_exact_row_slices_in_order(
+        monkeypatch: pytest.MonkeyPatch, chunk: int, sizes: list[int]
+    ) -> None:
+        model = _tiny().eval()
+        # distinct per-row actor and shop masks (seat 1 sees the counts swapped)
+        obs = make_obs(
+            envs=3, own_actors=(1, 2, 3), rival_actors=(4, 5, 6), shops=(1, 4, 8)
+        )
+        with torch.inference_mode():
+            x_full, mask_full = model._assemble_tokens(obs)
+            whole = model.encode_observations(obs).hidden
+        assert len({tuple(row.tolist()) for row in mask_full}) == 6
+        tokens, kmax = x_full.shape[1], km.gemm_kmax(model.config)
+        monkeypatch.setattr(km, "_GEMM_ELEMENT_LIMIT", chunk * tokens * kmax + 1)
+        assert km.rows_per_chunk(tokens=tokens, kmax=kmax) == chunk
+        seen: list[tuple[torch.Tensor, torch.Tensor]] = []
+        original = model._forward_transformer_trunk
+    
+        def spy(x: torch.Tensor, mask: torch.Tensor | None, packed: object) -> torch.Tensor:
+            assert packed is None
+            assert mask is not None
+            assert x.shape[0] * tokens * kmax < km._GEMM_ELEMENT_LIMIT  # strict bound
+            seen.append((x.clone(), mask.clone()))
+            return original(x, mask, None)
+    
+        monkeypatch.setattr(model, "_forward_transformer_trunk", spy)
+        with torch.inference_mode():
+            chunked = model.encode_observations(obs).hidden
+        assert [x.shape[0] for x, _ in seen] == sizes
+        start = 0
+        for x, mask in seen:
+            stop = start + x.shape[0]
+            torch.testing.assert_close(x, x_full[start:stop])
+>           assert torch.equal(mask, mask_full[start:stop])
+E           assert False
+E            +  where False = <built-in method equal of type object at 0x109a0b778>(tensor([[ True, False, False,  ...,  True,  True,  True],\n        [ True,  True,  True,  ...,  True,  True,  True]]), tensor([[True, True, True,  ..., True, True, True],\n        [True, True, True,  ..., True, True, True]]))
+E            +    where <built-in method equal of type object at 0x109a0b778> = torch.equal
+
+tests/kaggriculture/test_model_encoder.py:459: AssertionError
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_model_encoder.py::test_padded_chunks_dispatch_exact_row_slices_in_order[2-sizes0]
+FAILED tests/kaggriculture/test_model_encoder.py::test_padded_chunks_dispatch_exact_row_slices_in_order[4-sizes1]
+2 failed, 31 deselected in 0.35s

@@ -1,0 +1,47 @@
+........................................................................ [ 57%]
+.................................................FFF..                   [100%]
+=================================== FAILURES ===================================
+_____________ test_tiles_int_count_channels_reject_the_sentinel[0] _____________
+
+channel = 0
+
+    @pytest.mark.parametrize("channel", [0, 5, 6])
+    def test_tiles_int_count_channels_reject_the_sentinel(channel: int) -> None:
+        obs = make_obs()
+        obs.tiles_int[0, 0, 0, channel] = -1
+>       with pytest.raises(ValueError, match=r"tiles_int count channels"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_types.py:293: Failed
+_____________ test_tiles_int_count_channels_reject_the_sentinel[5] _____________
+
+channel = 5
+
+    @pytest.mark.parametrize("channel", [0, 5, 6])
+    def test_tiles_int_count_channels_reject_the_sentinel(channel: int) -> None:
+        obs = make_obs()
+        obs.tiles_int[0, 0, 0, channel] = -1
+>       with pytest.raises(ValueError, match=r"tiles_int count channels"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_types.py:293: Failed
+_____________ test_tiles_int_count_channels_reject_the_sentinel[6] _____________
+
+channel = 6
+
+    @pytest.mark.parametrize("channel", [0, 5, 6])
+    def test_tiles_int_count_channels_reject_the_sentinel(channel: int) -> None:
+        obs = make_obs()
+        obs.tiles_int[0, 0, 0, channel] = -1
+>       with pytest.raises(ValueError, match=r"tiles_int count channels"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_types.py:293: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_types.py::test_tiles_int_count_channels_reject_the_sentinel[0]
+FAILED tests/kaggriculture/test_types.py::test_tiles_int_count_channels_reject_the_sentinel[5]
+FAILED tests/kaggriculture/test_types.py::test_tiles_int_count_channels_reject_the_sentinel[6]
+3 failed, 123 passed in 0.45s
