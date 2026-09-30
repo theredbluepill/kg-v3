@@ -100,8 +100,14 @@ def newest_run_dir(out: Path, since: float) -> Path | None:
 
 
 def wandb_run_path(run_dir: Path) -> str:
-    lines = (run_dir / "attempts.jsonl").read_text().splitlines()
-    attempt = json.loads(lines[-1])
+    path = run_dir / "attempts.jsonl"
+    lines = [line for line in path.read_text().splitlines() if line.strip()]
+    if not lines:
+        # run_ppo creates the file before writing its line; the next poll retries.
+        raise ValueError(f"{path} has no attempt line yet")
+    attempt = json.loads(
+        lines[-1]
+    )  # a partial line raises JSONDecodeError (ValueError)
     if attempt["telemetry_mode"] != "wandb-online":
         raise RuntimeError(f"telemetry_mode is {attempt['telemetry_mode']}")
     return f"{attempt['wandb_entity']}/{attempt['wandb_project']}/{attempt['wandb_run_id']}"
@@ -283,6 +289,18 @@ def self_test() -> int:
         reason = StopRules(20_000, 2).observe({"_step": 1, "loss/value_loss": bad})
         assert reason is not None and "nonfinite" in reason, bad
     assert StopRules(20_000, 2).observe({"_step": 1, "_runtime": float("nan")}) is None
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as scratch:
+        run_dir = Path(scratch)
+        for partial in ("", '{"telemetry_mode": "wandb-on'):
+            (run_dir / "attempts.jsonl").write_text(partial)
+            try:
+                wandb_run_path(run_dir)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(f"no ValueError for attempts.jsonl {partial!r}")
     print("watchdog self-test passed")
     return 0
 

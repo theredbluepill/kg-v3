@@ -19,6 +19,14 @@
 # checkpoint_final.pt; an outer timeout (cap + 45 min) kills a hung run.
 # watchdog.py copies checkpoints off the pod disk and applies the stop rules.
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+# setsid (below) forks only when its caller already leads a process group,
+# which a background job does under job control. Without job control
+# (`bash launch.sh`) it does not fork, so $! is the new session's leader and
+# its process-group id, which the watchdog signals. `setsid -w` alone would not
+# help: after a fork $! would still name the parent, not the new group.
+case $- in
+  *m*) kg_fail "job control is on; run launch.sh as 'bash launch.sh ...', not sourced" ;;
+esac
 
 OUT=${1:?usage: launch.sh OUT_DIR RUNTIME_HOURS [EXPERIMENT_ID]}
 HOURS=${2:?usage: launch.sh OUT_DIR RUNTIME_HOURS [EXPERIMENT_ID]}
@@ -46,7 +54,8 @@ kg_sampler_start "$R" "$HARD_LIMIT" 10000
 
 date -u +"launch %FT%TZ" > "$R/times.txt"
 START=$(date +%s)
-# setsid gives torchrun and its workers one process group for the watchdog.
+# setsid gives torchrun and its workers one process group for the watchdog
+# (no fork here: job control is off, checked above).
 setsid timeout --kill-after=120 "$HARD_LIMIT" "${cmd[@]}" > "$R/run.log" 2>&1 &
 PGID=$!
 echo "pgid=$PGID" >> "$R/launch.txt"

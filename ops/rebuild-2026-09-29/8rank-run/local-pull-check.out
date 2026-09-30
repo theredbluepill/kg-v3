@@ -1,0 +1,43 @@
+== N no watchdog list yet, final mode
+<t> pulled to S/mac:        0 checkpoint files
+no watchdog checkpoints.sha256 in S/mac/receipts
+exit=1
+== C1 clean first pull
+<t> pulled to S/mac:        3 checkpoint files
+checkpoints.sha256: verified 2 / mismatched 0 / missing 0
+exit=0
+== C2 clean final pull, two last_best versions, final list
+<t> pulled to S/mac:        5 checkpoint files
+checkpoints.sha256: verified 3 / mismatched 0 / missing 0
+checkpoints_final.sha256: verified 3 / mismatched 0 / missing 0
+exit=0
+== A wrong digest in the watchdog list
+<t> pulled to S/mac:        5 checkpoint files
+HASH MISMATCH 20260930-000000/checkpoint_000000016384.pt
+checkpoints.sha256: verified 0 / mismatched 1 / missing 0
+checkpoints_final.sha256: verified 3 / mismatched 0 / missing 0
+exit=1
+== B pod file changed after the final list (final-list mismatch)
+<t> pulled to S/mac:        5 checkpoint files
+checkpoints.sha256: verified 3 / mismatched 0 / missing 0
+HASH MISMATCH 20260930-000000/checkpoint_final.pt
+checkpoints_final.sha256: verified 2 / mismatched 1 / missing 0
+exit=1
+== D a last_best version the Mac never pulled
+<t> pulled to S/mac:        5 checkpoint files
+MISSING 20260930-000000/checkpoint_last_best.pt (abababababab)
+checkpoints.sha256: verified 3 / mismatched 0 / missing 1
+checkpoints_final.sha256: verified 3 / mismatched 0 / missing 0
+exit=1
+== E superseded digest of a non-last_best path, newest line matches
+<t> pulled to S/mac:        5 checkpoint files
+checkpoints.sha256: verified 4 / mismatched 0 / missing 0
+checkpoints_final.sha256: verified 3 / mismatched 0 / missing 0
+exit=0
+== D-interval (run by hand after the script: an unpulled last_best digest appended, then
+== `perl -e 'alarm 3; exec @ARGV' bash pull_from_pod.sh fakepod /out/main-x 1`)
+<t> pulled to S/mac:        5 checkpoint files
+MISSING 20260930-000000/checkpoint_last_best.pt (abababababab)
+checkpoints.sha256: verified 4 / mismatched 0 / missing 1
+checkpoints_final.sha256: verified 3 / mismatched 0 / missing 0
+(repeated each second until the alarm: missing is reported, the loop continues)

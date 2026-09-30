@@ -19,7 +19,7 @@ The original is on network volume `4llk4uaf20` (EU-RO-1) at `/workspace/kg-v3-bc
 | 1 | Mac | Bundle the source, clone it on the pod, copy and verify the BC best, install the W&B credential (stdin, api.wandb.ai only, mode 600) | `stage_from_mac.sh`, `copy_bc_best.sh` |
 | 2 | Pod | Toolchain, frozen sync with flash-attn, release build, driver gate (595.91.07), flash-attn on sm_120 on all 8 GPUs, W&B and BC checks | `setup.sh`, `check_flash_all_gpus.py` |
 | 3 | Pod | 6.3b checks: seeds, memory smoke, `native_threads` sweep 2/4/8, all-reduce, 30-minute complete-work | `qualify.sh`, `seed_probe.py`, `allreduce_bench.py`, `summarize_run.py`, `run-statement-6.3b.md` Part A |
-| 4 | Pod + Mac | Main run with the watchdog; keep pulling checkpoints to the Mac | `launch.sh`, `watchdog.py`, `pull_from_pod.sh`, `run-statement-6.3b.md` Part B |
+| 4 | Pod + Mac | Main run with the watchdog; keep pulling checkpoints to the Mac, then pull once more without an interval and require exit 0 (every hash verified, none missing) | `launch.sh`, `watchdog.py`, `pull_from_pod.sh`, `run-statement-6.3b.md` Part B |
 
 `common.sh` holds the pod-side preflight (clean tree, idle GPUs, BC SHA-256, credential mode, input hashes) and the nvidia-smi sampler.
 
@@ -33,7 +33,9 @@ The original is on network volume `4llk4uaf20` (EU-RO-1) at `/workspace/kg-v3-bc
 - `local-checks.md`: what was checked on the Mac (seed probe, watchdog scenarios, summarizer, shell syntax, lint).
 - `local-seed-probe.json`: the probe output at world size 8.
 - `prepare.log`: `just prepare` on this change.
-- `mutations.log`: the config-test mutations.
+- `mutations.log`: the config-test mutations (the r1 rerun records its command).
+- `local-pull-check.sh` and `local-pull-check.out`: the fake-rsync check of `pull_from_pod.sh`'s hash verification (r1 fix).
+- `prepare-r1fix.log`: `just prepare` on the committed r1 fixes.
 
 ## Open items for the owner
 

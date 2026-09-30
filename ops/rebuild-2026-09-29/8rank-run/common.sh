@@ -45,11 +45,16 @@ kg_sampler_start() {
 }
 
 # kg_post RECEIPT_DIR OUT_DIR: run listing, checkpoint hashes, idle check, peaks.
+# The end-of-run hashes go to checkpoints_final.sha256 with paths relative to
+# OUT_DIR, so pull_from_pod.sh can check them against its copy of OUT_DIR. The
+# watchdog's checkpoints.sha256 stays append-only: it is the only record of
+# every checkpoint_last_best.pt version.
 kg_post() {
   local r=$1 out=$2
   kill "${KG_SAMPLER_PID:-0}" 2>/dev/null || true
   ls -laR "$out" > "$r/run_dir_listing.txt" 2>&1 || true
-  find "$out" -type f -name 'checkpoint_*.pt' -exec sha256sum {} \; > "$r/checkpoints.sha256" 2>&1 || true
+  (cd "$out" && find . -type f -name 'checkpoint_*.pt' -exec sha256sum {} + | sed 's#  \./#  #') \
+    > "$r/checkpoints_final.sha256" 2> "$r/checkpoints_final.err" || true
   nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv > "$r/idle_after.csv"
   # Peak nvidia-smi memory per GPU (MiB). Includes the allocator's reserve, so it
   # bounds the allocated peak from above.

@@ -10,10 +10,13 @@ Writes ``iterations.tsv`` (one row per training iteration) and
 - complete iterations, and whether every iteration advanced
   ``optimizer/steps`` by 16 and ``train/env_steps`` by 16,384;
 - complete-work SPS over complete iterations after ``--skip-first``
-  (compile warm-up): global env steps and learner-seat rows per wall second,
-  from ``train/env_steps`` and the rows' ``_timestamp``;
+  (compile warm-up): global env steps and seat rows (2 per env step, both
+  self-play seats) per wall second, from ``train/env_steps`` and the rows'
+  ``_timestamp``. Seat rows are not valid learner actions: ``run_ppo`` logs no
+  valid-action count, so plan 6.3b's "learner turns (valid learner-seat
+  actions)" figure is not available from this summary;
 - mean phase seconds (rollout, teacher, update, iteration) and the mean of
-  ``perf/steps_per_second`` and ``perf/learner_seat_rows_per_second``;
+  ``perf/steps_per_second``;
 - ``teacher/cache_bytes``, the evaluation rows (win rate, promoted) and the
   game-interval banks (``train/own_bank_mean`` where ``train/bank_games > 0``);
 - the count of nonfinite logged values.
@@ -40,7 +43,6 @@ COLUMNS = (
     "time/update_seconds",
     "time/iteration_seconds",
     "perf/steps_per_second",
-    "perf/learner_seat_rows_per_second",
     "teacher/cache_bytes",
     "teacher/kl",
     "train/explained_variance",
@@ -97,7 +99,7 @@ def main() -> int:
             "env_steps": steps,
             "wall_seconds": seconds,
             "global_game_sps": steps / seconds,
-            "learner_seat_sps": 2 * steps / seconds,
+            "seat_rows_per_second": 2 * steps / seconds,
         }
     body = train[args.skip_first :]
     summary = {
@@ -121,13 +123,6 @@ def main() -> int:
                 r["perf/steps_per_second"]
                 for r in body
                 if r.get("perf/steps_per_second") is not None
-            ]
-        ),
-        "mean_perf_learner_seat_rows_per_second": _mean(
-            [
-                r["perf/learner_seat_rows_per_second"]
-                for r in body
-                if r.get("perf/learner_seat_rows_per_second") is not None
             ]
         ),
         "teacher_cache_bytes": sorted(

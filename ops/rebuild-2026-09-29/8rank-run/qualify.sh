@@ -6,7 +6,7 @@
 #
 #   bash ops/rebuild-2026-09-29/8rank-run/qualify.sh seeds
 #   bash ops/rebuild-2026-09-29/8rank-run/qualify.sh memory-smoke
-#   bash ops/rebuild-2026-09-29/8rank-run/qualify.sh threads-sweep            # 2, 4, 8
+#   bash ops/rebuild-2026-09-29/8rank-run/qualify.sh threads-sweep            # 2, 4, 8 (8 only with >= 72 vCPUs)
 #   bash ops/rebuild-2026-09-29/8rank-run/qualify.sh allreduce
 #   bash ops/rebuild-2026-09-29/8rank-run/qualify.sh complete-work MINUTES THREADS [nsys]
 #
@@ -51,7 +51,10 @@ case "$STEP" in
     ;;
   memory-smoke)
     # One full iteration with the teacher on and a forced last-best evaluation
-    # (checkpoint_freq = one iteration), as plan 6.1 did at 2 ranks.
+    # (checkpoint_freq = one iteration), as plan 6.1 did at 2 ranks. The
+    # evaluation starts from game start, not from dense BC positions, and the
+    # rollout and update see only turns 0-63; complete-work's nvidia-smi peak
+    # covers late-game iterations (see run-statement-6.3b.md, step 2).
     kg_preflight "$R"
     kg_sampler_start "$R" 1500 1000
     run_ppo_8 "$RUNS/memory-smoke" 1320 kg-v3-6.3b-memory-smoke \
@@ -63,9 +66,17 @@ case "$STEP" in
     # native_threads 2 / 4 / 8 at 32 envs per rank: 12 iterations each (one
     # 720-step game spans about 11.25 iterations), same seed. Compare
     # time/rollout_seconds and complete-work SPS over iterations 2-12.
+    # 8 threads needs 8 x 8 native threads + 8 trainer processes = 72 vCPUs;
+    # with fewer (nproc; kg_preflight also records cgroup cpu.max) it is skipped.
     kg_preflight "$R"
+    vcpus=$(nproc)
+    sweep=(2 4 8)
+    if [ "$vcpus" -lt 72 ]; then
+      sweep=(2 4)
+      echo "skipped native_threads 8: nproc $vcpus < 72 (8 x 8 + 8)" | tee -a "$R/times.txt"
+    fi
     kg_sampler_start "$R" 3600 2000
-    for threads in 2 4 8; do
+    for threads in "${sweep[@]}"; do
       out=$RUNS/threads-$threads
       run_ppo_8 "$out" 1200 kg-v3-6.3b-threads \
         --max-env-steps $(( 12 * ITER )) -o "env.native_threads=$threads" || { RC=$?; break; }
@@ -75,6 +86,7 @@ case "$STEP" in
     kg_post "$R" "$RUNS"
     ;;
   allreduce)
+    kg_preflight "$R"
     nvidia-smi topo -m > "$R/topo.txt"
     "$KG_TORCHRUN" --nproc-per-node 8 "$KG_PKG/allreduce_bench.py" --out "$R" \
       2>&1 | tail -20 | tee "$R/allreduce.log"
@@ -89,9 +101,18 @@ case "$STEP" in
     if [ "${4:-}" = nsys ]; then
       # Canonical timeline profiler: capture a bounded post-warm-up window
       # (starting after about 5 minutes, 60 s long) across all ranks.
+      # --kill=none keeps the learner running when the capture window ends
+      # (the profiling workflow never kills a learner for profiling);
+      # --wait=all is added only where this nsys offers it.
       command -v nsys >/dev/null || kg_fail "nsys requested but absent"
       nsys --version > "$R/nsys_version.txt"
+      nsys profile --help > "$R/nsys_profile_help.txt" 2>&1 || true
+      grep -q -- '--kill' "$R/nsys_profile_help.txt" \
+        || kg_fail "this nsys profile has no --kill option; see $R/nsys_profile_help.txt"
+      nsys_wait=()
+      grep -q -- '--wait' "$R/nsys_profile_help.txt" && nsys_wait=(--wait=all)
       KG_LAUNCHER=(nsys profile --trace=cuda,nvtx,osrt --delay=300 --duration=60
+        --kill=none "${nsys_wait[@]}"
         --trace-fork-before-exec=true "--output=$R/complete-work" --force-overwrite=true
         "$KG_TORCHRUN")
     fi

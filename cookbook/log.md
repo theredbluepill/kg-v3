@@ -1,5 +1,22 @@
 # Change log
 
+## 2026-09-30 — Apply the 8-rank package review: checkpoint hash custody, nsys kill, handoff launch wording
+
+An independent Claude verification of `kg/rebuild-8rank-prep` (`ops/rebuild-2026-09-29/codex/claude-verify-8rank-prep-r1.md`, APPROVE WITH EDITS; a Claude stand-in, not a Codex verdict) raised three P2s and several P3s. All are applied, in docs and scripts only. Nothing ran on a GPU and no pod was created or touched.
+- **Checkpoint custody (F2).** `common.sh`'s `kg_post` used to overwrite the watchdog's `checkpoints.sha256` with absolute pod paths, so `pull_from_pod.sh` silently skipped every line. `kg_post` now writes `checkpoints_final.sha256` with paths relative to `OUT_DIR`, and the watchdog's list stays append-only. `pull_from_pod.sh` checks both lists, checks every `checkpoint_last_best.pt` version against its hash-named copy, prints `verified / mismatched / missing` counts, and fails on a mismatch; the final pull also fails on a missing file. A fake-rsync harness (`local-pull-check.sh`/`.out`) exercised seven scenarios. It also exposed a second defect: macOS `cp -n` exits 1 on an existing target, which made the final pull exit 1 silently. It is replaced.
+- **Profiling (F1).** `qualify.sh complete-work … nsys` now passes `--kill=none`, and `--wait=all` where `nsys profile --help` lists it, as the profiling workflow requires. It is unexecuted, since the Mac has no nsys.
+- **Handoff wording (F3).** The [[references/bc-best-starts-ppo-with-a-fresh-critic-head|handoff Reference]] no longer requires `model_fresh_critic_head` in `warm_start.json`, and no longer says distillation starts against the fresh head for the recommended launch. Both statements are now scoped to the historical launch. Its index entry is updated.
+- **P3s.**
+  - The [[references/shared-ppo-adapts-game-batches-without-a-second-loop|shared-PPO Reference]] scopes its 20M cadence to the reference branch.
+  - The watchdog treats an empty `attempts.jsonl` as not yet resolvable, and its self-test covers this.
+  - `threads-sweep` skips 8 threads below 72 vCPUs, and `allreduce` runs the preflight.
+  - `launch.sh` refuses job control, the one case where `setsid` would fork.
+  - The summarizer labels seat rows as rows and drops a BC-only column.
+  - `run-statement-6.3b.md` records the preset-for-base substitution, the dense-position and learner-turn limits, and that `native_threads` must change the base config and the preset together.
+  - The config mutations were rerun with the command recorded (`mutations.log`).
+
+Receipts are in `ops/rebuild-2026-09-29/8rank-run/`: `local-checks.md` ("r1 fixes"), `local-pull-check.out`, `mutations.log` and `prepare-r1fix.log`. Gaps: every GPU path is still unexecuted, and nothing reads the cgroup CPU quota in the vCPU skip.
+
 ## 2026-09-30 — Prepare the 8-rank run package and a durable BC checkpoint copy
 
 `ops/rebuild-2026-09-29/8rank-run/` (docs and scripts only; nothing ran on a GPU and no pod was created or touched) holds the plan 6.3b package:
