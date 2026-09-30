@@ -1,5 +1,15 @@
 # Change log
 
+## 2026-09-30 — Apply the reward-bank verify r1: bank presets at w_b .25, rounding and finiteness pins, zero-sum return metric
+
+An independent Claude verification of `kg/rebuild-reward-bank` `ab98e73` (`ops/rebuild-2026-09-29/codex/claude-verify-reward-bank-r1.md`, REQUEST CHANGES; a Claude stand-in, not a Codex verdict) found one blocker. The agent's proposal after the owner's "A is good + decrease the LR by half?" read "Proposed values: S = 100,000, w_b = 1.0, cap_b = 0.25" with "A 70k final bank earns +0.175 and 100k+ earns the full +0.25". But `w_b = 1.0` saturates at 25k, which contradicts those consequences and leaves run J's 73k → 25k slide unpaid, and the first commit recorded the numbers as "the owner's values". On the same branch (`3d10f52` code, then this record):
+- **Values (F1).** The three `*_bank` presets set `econ_bank_weight` 0.25, so `B = .25 × min(1, bank / 100,000)`: 3k .0075, 70k .175, 100k+ .25. The preset headers, `README.md`, `docs/rl-api-specs.md` and the [[decisions/add-absolute-own-bank-shaping-and-halve-the-recipe-j-learning-rates|term A Decision]] now record the values as agent-proposed and corrected, not owner-given, and quote the proposal in full. The owner has not confirmed the numbers.
+- **Tests (F2, F3).** Rust and Python rows pin the single f64-sum, single-f32-rounding schedule on inputs where separate rounding changes the bits, and Rust rejects nonfinite `banks_before`. Both verification survivors are now killed.
+- **Telemetry (F4).** `ppo.py` logs `train/return_zero_sum_abs_mean` (mean `|R_0 − R_1| / 2`), the counterpart the Decision's reopen condition compares `train/return_common_mean` against.
+- **P3s.** The stale admission-table comment is fixed. The unit-weight test helpers are labelled as such, beside a preset-weight config. The oracle's per-step telemetry cost is stated as unmeasured. The `env.native_threads=4` override is noted for J/2 reproductions.
+
+6 of 6 r1 seam mutations are killed (`ops/rebuild-2026-09-29/reward-bank/mutations-r1.log`). Full `just prepare` exits 0: Rust 283 passed with 5 ignored plus the other crates, Python 2,828 passed with 18 skipped, plus mypy and docs-fresh (`prepare-r1.log` beside it). Also revised the [[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]], the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]] and the decisions index. Nothing was trained, and no pod was touched.
+
 ## 2026-09-30 — Add absolute own-bank shaping (owner term A) and halve recipe J's learning rates
 
 Owner, verbatim: "A is good + decrease the LR by half?", answering option "A. Absolute bank shaping: a small per-step reward for own bank growth ... capped like the other terms" and a halving of recipe J's LRs, after the 4-rank main run J (W&B `gq94cyyp`; unlanded `kg/rebuild-pod4-evidence` `c0b551f`) collapsed its bank economy from about 73k to 5.7k just after the LR peak. On `kg/rebuild-reward-bank` (from the integration tip `4731c49`):
