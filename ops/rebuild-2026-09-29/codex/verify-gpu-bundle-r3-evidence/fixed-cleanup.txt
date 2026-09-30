@@ -1,0 +1,429 @@
+# test_driver_cleanup.py  utc=2026-09-29T10:47:25Z
+# platform=macOS-26.4-arm64-arm-64bit python=3.9.6
+# emulated `timeout -s TERM -k 20 3` (GNU timeout not installed locally)
+# test script sha256=d6e3c6013b5b4e1da1fd74dca12cf0fe215d9939b4725c40c2485c2838f4ae5e
+# completed driver.py new_phase1
+# completed driver.py new_phase2
+# completed driver.py new_complete
+# completed driver.py new_spawn_after_popen
+# completed driver.py new_spawn_in_popen
+# completed driver.py old_phase1
+{
+ "timed_out": true,
+ "driver_rc": 143,
+ "timeout_needed_sigkill": false,
+ "driver_exit_after_signal_s": 8.18,
+ "elapsed_s": 11.18,
+ "scenario": "new_phase1",
+ "driver": "rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/driver.py",
+ "driver_sha256": "bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3",
+ "workdir": "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r3-evidence/kgv3-new_phase1-e9nsgmp9",
+ "stage_pids_recorded": 4,
+ "stage_pids_alive": [],
+ "boundary": null,
+ "survivors_by_token": [],
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_long_ignore",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_long",
+   "status": "launch"
+  },
+  {
+   "t": 3.0,
+   "status": "signal",
+   "signal": "SIGTERM"
+  },
+  {
+   "t": 3.0,
+   "stage": "c2_long",
+   "status": "terminated_by_stop",
+   "rc": -15
+  },
+  {
+   "t": 3.0,
+   "stage": "c1_after",
+   "status": "skipped_after_stop"
+  },
+  {
+   "t": 11.1,
+   "stage": "c3_long_ignore",
+   "status": "terminated_by_stop",
+   "rc": -9
+  },
+  {
+   "t": 11.1,
+   "stage": "c3_after",
+   "status": "skipped_after_stop"
+  },
+  {
+   "t": 11.1,
+   "status": "stage_cleanup",
+   "reason": "signal SIGTERM",
+   "groups": [
+    {
+     "stage": "c3_long_ignore",
+     "pgid": 75942,
+     "sigkill": true,
+     "survived": false
+    },
+    {
+     "stage": "c2_long",
+     "pgid": 75943,
+     "sigkill": false,
+     "survived": false
+    }
+   ]
+  }
+ ]
+}
+# new_phase1: PASS (survivors=0, pids recorded=4, driver rc=143, driver exit after signal=8.18 s)
+{
+ "timed_out": true,
+ "driver_rc": 143,
+ "timeout_needed_sigkill": false,
+ "driver_exit_after_signal_s": 8.14,
+ "elapsed_s": 11.15,
+ "scenario": "new_phase2",
+ "driver": "rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/driver.py",
+ "driver_sha256": "bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3",
+ "workdir": "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r3-evidence/kgv3-new_phase2-7ilovzw8",
+ "stage_pids_recorded": 2,
+ "stage_pids_alive": [],
+ "boundary": null,
+ "survivors_by_token": [],
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_ctl_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.7,
+   "stage": "c2_ctl_quick",
+   "status": "control_not_reproduced",
+   "rc": 0
+  },
+  {
+   "t": 0.7,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.7,
+   "stage": "c4_long_ignore",
+   "status": "launch"
+  },
+  {
+   "t": 3.0,
+   "status": "signal",
+   "signal": "SIGTERM"
+  },
+  {
+   "t": 11.1,
+   "status": "stage_cleanup",
+   "reason": "signal SIGTERM",
+   "groups": [
+    {
+     "stage": "c4_long_ignore",
+     "pgid": 76120,
+     "sigkill": true,
+     "survived": false
+    }
+   ]
+  }
+ ]
+}
+# new_phase2: PASS (survivors=0, pids recorded=2, driver rc=143, driver exit after signal=8.14 s)
+{
+ "timed_out": false,
+ "rc": 0,
+ "elapsed_s": 0.79,
+ "scenario": "new_complete",
+ "driver": "rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/driver.py",
+ "driver_sha256": "bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3",
+ "workdir": "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r3-evidence/kgv3-new_complete-wmrm1gi7",
+ "stage_pids_recorded": 0,
+ "stage_pids_alive": [],
+ "boundary": null,
+ "survivors_by_token": [],
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.3,
+   "stage": "c4_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.7,
+   "stage": "c4_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.7,
+   "status": "driver_done"
+  }
+ ]
+}
+# new_complete: PASS (survivors=0, pids recorded=0, driver rc=0, driver exit after signal=None s)
+{
+ "timed_out": false,
+ "rc": 143,
+ "elapsed_s": 0.5,
+ "scenario": "new_spawn_after_popen",
+ "driver": "rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/driver.py",
+ "driver_sha256": "bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3",
+ "workdir": "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r3-evidence/kgv3-new_spawn_after_popen-t5mnihds",
+ "stage_pids_recorded": 0,
+ "stage_pids_alive": [],
+ "boundary": {
+  "hook": "after Popen returned, before _spawn line 364",
+  "stage_pid": 76323,
+  "registered_at_signal": false,
+  "registered_groups": [
+   "c2_quick",
+   "c3_quick"
+  ]
+ },
+ "survivors_by_token": [],
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.3,
+   "stage": "c4_race",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "status": "signal",
+   "signal": "SIGTERM"
+  },
+  {
+   "t": 0.4,
+   "status": "stage_cleanup",
+   "reason": "signal SIGTERM",
+   "groups": [
+    {
+     "stage": "c4_race",
+     "pgid": 76323,
+     "sigkill": false,
+     "survived": false
+    }
+   ]
+  }
+ ]
+}
+# new_spawn_after_popen: PASS (survivors=0, pids recorded=0, driver rc=143, driver exit after signal=None s)
+{
+ "timed_out": false,
+ "rc": 143,
+ "elapsed_s": 0.51,
+ "scenario": "new_spawn_in_popen",
+ "driver": "rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/driver.py",
+ "driver_sha256": "bc89e8615cc8820b88721a5e7061cbfa32e866a48904d259b40e7676fde49ba3",
+ "workdir": "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r3-evidence/kgv3-new_spawn_in_popen-vsfoekm2",
+ "stage_pids_recorded": 0,
+ "stage_pids_alive": [],
+ "boundary": {
+  "hook": "inside Popen, after the child started",
+  "stage_pid": 76355,
+  "registered_at_signal": false,
+  "registered_groups": [
+   "c2_quick",
+   "c3_quick"
+  ]
+ },
+ "survivors_by_token": [],
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_quick",
+   "status": "launch"
+  },
+  {
+   "t": 0.3,
+   "stage": "c2_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "stage": "c3_quick",
+   "status": "pass",
+   "rc": 0
+  },
+  {
+   "t": 0.3,
+   "status": "phase1_done"
+  },
+  {
+   "t": 0.3,
+   "stage": "c4_race",
+   "status": "launch"
+  },
+  {
+   "t": 0.4,
+   "status": "signal",
+   "signal": "SIGTERM"
+  },
+  {
+   "t": 0.5,
+   "status": "stage_cleanup",
+   "reason": "signal SIGTERM",
+   "groups": [
+    {
+     "stage": "c4_race",
+     "pgid": 76355,
+     "sigkill": false,
+     "survived": false
+    }
+   ]
+  }
+ ]
+}
+# new_spawn_in_popen: PASS (survivors=0, pids recorded=0, driver rc=143, driver exit after signal=None s)
+{
+ "timed_out": true,
+ "driver_rc": -15,
+ "timeout_needed_sigkill": false,
+ "driver_exit_after_signal_s": 0.0,
+ "elapsed_s": 3.01,
+ "scenario": "old_phase1",
+ "driver": "rebuild-2026-09-29/gpu-checks-2026-09-29/pod/attempt2/driver.py",
+ "driver_sha256": "15b41c74d17c2df708e45843dc1fa6dcfa6ac85329deb7465a542cf2197469b2",
+ "workdir": "/Users/poonszesen/kg-v3-gpuchecks/ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r3-evidence/kgv3-old_phase1-ikx3q_ed",
+ "stage_pids_recorded": 4,
+ "stage_pids_alive": [
+  "grandchild-76379",
+  "grandchild-76380",
+  "leader-76377",
+  "leader-76378"
+ ],
+ "boundary": null,
+ "survivors_by_token": [
+  "76377 leader-76377",
+  "76378 leader-76378",
+  "76379 grandchild-76379",
+  "76380 grandchild-76380"
+ ],
+ "driver_log": [
+  {
+   "t": 0.0,
+   "status": "driver_start"
+  },
+  {
+   "t": 0.0,
+   "stage": "c3_long_ignore",
+   "status": "launch"
+  },
+  {
+   "t": 0.0,
+   "stage": "c2_long",
+   "status": "launch"
+  }
+ ],
+ "survivors_after_test_kill": []
+}
+# old_phase1: PASS (survivors=4, pids recorded=4, driver rc=-15, driver exit after signal=0.0 s)
+# overall: PASS

@@ -1,0 +1,58 @@
+import hashlib, importlib.util, json, os, signal, subprocess, sys, tempfile, time
+from pathlib import Path
+BASE = Path('/Users/poonszesen/kg-v3-gpuchecks')
+DRIVER = BASE / 'ops/rebuild-2026-09-29/gpu-checks-2026-09-29/scripts/driver.py'
+ART = BASE / 'ops/rebuild-2026-09-29/codex/verify-gpu-bundle-r2-cleanup-boundary'
+if len(sys.argv) > 1:
+    wd = Path(sys.argv[1])
+    spec = importlib.util.spec_from_file_location('boundary_driver', DRIVER)
+    drv = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(drv)
+    drv.RUN = drv.ROOT = wd
+    drv.PY = sys.executable
+    drv.WRAP = str(wd / 'sleeper.py')
+    drv.GPU0_PHASE1 = drv.GPU1_PHASE1 = []
+    drv.GPU0_PHASE2 = [('c4_boundary', 'correct', 'ATEN', 'c4_boundary', 'dummy.py', [])]
+    driver = drv.Driver()
+    def trace(frame, event, arg):
+        if frame.f_code.co_filename == str(DRIVER) and event == 'line' and frame.f_lineno == 358:
+            (wd / 'boundary.json').write_text(json.dumps({'stage_pid': frame.f_locals['p'].pid, 'registered_groups': list(driver.procs), 'main_thread': __import__('threading').current_thread() is __import__('threading').main_thread(), 'interrupted_line': frame.f_lineno}))
+            os.kill(os.getpid(), signal.SIGTERM)
+        return trace
+    sys.settrace(trace)
+    sys.exit(driver.main())
+def active(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+with tempfile.TemporaryDirectory(prefix='kgv3-cleanup-boundary-') as td:
+    wd = Path(td)
+    (wd / 'sleeper.py').write_text('import time; time.sleep(300)\n')
+    p = subprocess.Popen([sys.executable, __file__, td], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+    pid = None
+    try:
+        stdout, _ = p.communicate(timeout=10)
+        boundary = json.loads((wd / 'boundary.json').read_text())
+        pid = boundary['stage_pid']
+        time.sleep(.3)
+        result = {'driver_sha256': hashlib.sha256(DRIVER.read_bytes()).hexdigest(), 'driver_exit': p.returncode, 'boundary': boundary, 'stage_alive_after_driver_exit': active(pid), 'driver_stdout': stdout, 'driver_events': (wd / 'driver.jsonl').read_text()}
+    finally:
+        if p.poll() is None:
+            os.killpg(p.pid, signal.SIGKILL)
+            p.wait()
+        if pid is None and (wd / 'boundary.json').exists():
+            pid = json.loads((wd / 'boundary.json').read_text())['stage_pid']
+        if pid is not None:
+            try:
+                os.killpg(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            for _ in range(100):
+                if not active(pid):
+                    break
+                time.sleep(.02)
+    result['stage_alive_after_test_cleanup'] = active(pid)
+    (ART / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
+    print(json.dumps(result, indent=2))
